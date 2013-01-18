@@ -48,7 +48,6 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.update.JDUpdater;
 
 public class AboutDialog extends AbstractDialog<Integer> {
 
@@ -71,15 +70,6 @@ public class AboutDialog extends AbstractDialog<Integer> {
         final JPanel contentpane = new JPanel();
         JLabel lbl = new JLabel("JDownloader 2");
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
-
-        String branch = "";
-
-        try {
-            branch = JDUpdater.getInstance().getBranch().getName();
-
-        } catch (Throwable e2) {
-
-        }
 
         JPanel links = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]"));
         try {
@@ -121,7 +111,8 @@ public class AboutDialog extends AbstractDialog<Integer> {
         contentpane.add(new JLabel(NewTheme.I().getIcon("logo/jd_logo_128_128", -1)), "aligny center, spany 6");
 
         contentpane.add(lbl, "split 2");
-        contentpane.add(new JLabel(org.appwork.utils.StringUtils.isEmpty(branch) ? "" : "(" + branch + ")"), "pushx,growx");
+        // this has been the branch label
+        contentpane.add(new JLabel(""), "pushx,growx");
 
         MigPanel stats = new MigPanel("ins 0,wrap 2", "[][grow,align right]", "[]");
 

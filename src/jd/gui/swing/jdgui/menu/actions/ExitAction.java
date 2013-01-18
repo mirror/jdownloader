@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 
 import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.updatev2.RestartController;
 
 public class ExitAction extends ActionAdapter {
 
@@ -31,7 +32,7 @@ public class ExitAction extends ActionAdapter {
 
     @Override
     public void onAction(ActionEvent e) {
-        org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
+        RestartController.getInstance().exitAsynch();
     }
 
     @Override

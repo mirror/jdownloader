@@ -2080,4 +2080,60 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No, thanks" })
     String JDGui_showStatsDialog_no_();
 
+    @Default(lngs = { "en" }, values = { "App Manager" })
+    String ExtensionManager_getTitle_();
+
+    @Default(lngs = { "en" }, values = { "Extensions and additional Apps that make JDownloader even better can be found here." })
+    String ExtensionManager_ExtensionManager_description_();
+
+    @Default(lngs = { "en" }, values = { "Search here..." })
+    String pluginsettings_search_helptext();
+
+    @Default(lngs = { "en" }, values = { "Please wait. Loading all plugins..." })
+    String PluginSettingsPanel_PluginSettingsPanel_waittext_();
+
+    @Default(lngs = { "en" }, values = { "Host Plugin: %s1" })
+    String PluginSettingsPanel_runInEDT_plugin_header_text_host(String displayName);
+
+    @Default(lngs = { "en" }, values = { "Crawler Plugin: %s1" })
+    String PluginSettingsPanel_runInEDT_plugin_header_text_decrypt(String displayName);
+
+    @Default(lngs = { "en" }, values = { "%s1 Crawler" })
+    String PluginSettingsPanel_getListCellRendererComponent_crawler_(String displayName);
+
+    @Default(lngs = { "en" }, values = { "Install" })
+    String ExtensionModule_ExtensionModule_install_();
+
+    @Default(lngs = { "en" }, values = { "Uninstall" })
+    String ExtensionModule_ExtensionModule_uninstall_();
+
+    @Default(lngs = { "en" }, values = { "%s1" })
+    String ExtensionModule_createTitle_installed(String title);
+
+    @Default(lngs = { "en" }, values = { "%s1" })
+    String ExtensionModule_createTitle_not_installed(String title);
+
+    @Default(lngs = { "en" }, values = { "Restart Required!" })
+    String ExtensionModule_runInEDT_restart_required_();
+
+    @Default(lngs = { "en" }, values = { "Installing..." })
+    String ExtensionModule_run_installing_();
+
+    @Default(lngs = { "en" }, values = { "Uninstalling..." })
+    String ExtensionModule_run_uninstalling();
+
+    @Default(lngs = { "en" }, values = { "Experimental & BETA Extensions - Use at your own risk!" })
+    String ExtensionManager_getPanel_experimental_header_();
+
+    @Default(lngs = { "en" }, values = { "Official Extensions - Get more out of JDownloader" })
+    String ExtensionManager_getPanel_extensions_header_();
+
+    @Default(lngs = { "en" }, values = { "3rd Party Apps" })
+    String ExtensionManager_getPanel3rdparty_header_();
+
+    @Default(lngs = { "en" }, values = { "Your App" })
+    String Empty3rdPartyModule_getTitle_();
+
+    @Default(lngs = { "en" }, values = { "If you created an Application for JDownloader and want us to offer it here - write us!" })
+    String Empty3rdPartyModule_getDescription_();
 }

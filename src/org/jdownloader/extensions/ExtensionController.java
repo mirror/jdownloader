@@ -203,7 +203,7 @@ public class ExtensionController {
                                                 if (matcher.find()) {
                                                     String pkg = matcher.group(1);
                                                     String clazzName = matcher.group(2);
-                                                    Class<?> clazz = new URLClassLoader(new URL[] { jar.toURI().toURL() }).loadClass(AbstractExtension.class.getPackage().getName() + "." + pkg + "." + clazzName);
+                                                    Class<?> clazz = new URLClassLoader(new URL[] { jar.toURI().toURL() }, getClass().getClassLoader()).loadClass(AbstractExtension.class.getPackage().getName() + "." + pkg + "." + clazzName);
 
                                                     if (AbstractExtension.class.isAssignableFrom(clazz)) {
 
@@ -256,6 +256,10 @@ public class ExtensionController {
             return retl;
         }
         root = new File(root, AbstractExtension.class.getPackage().getName().replace('.', '/'));
+        if (!root.exists()) {
+            // workaround. this way extensions work in eclipse when started with the updater launcher as well
+            root = new File(root.getAbsolutePath().replace("JDownloaderUpdater", "JDownloader"));
+        }
         Log.L.finer("Load Extensions from: " + root.getAbsolutePath());
         File[] folders = root.listFiles(new FileFilter() {
             public boolean accept(File pathname) {

@@ -25,8 +25,8 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
+import jd.gui.swing.laf.LookAndFeelController;
 
-import org.appwork.shutdown.ShutdownController;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.jackson.JacksonMapper;
@@ -35,6 +35,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.IOErrorHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.logging.ExtLogManager;
 import org.jdownloader.logging.LogController;
 
 public class Main {
@@ -55,21 +56,13 @@ public class Main {
         }
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(jd.Launcher.class);
-        /* TODO: remove me */
-        try {
-            if (new File(new File(System.getProperty("user.home")), "b3984639.dat").exists()) {
-                System.out.println("Everybody's Klauseling");
-                System.exit(1);
-            }
 
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
+        Dialog.getInstance().setLafManager(LookAndFeelController.getInstance());
         try {
             // the logmanager should not be initialized here. so setting the
             // property should tell the logmanager to init a ExtLogManager
             // instance.
-            System.setProperty("java.util.logging.manager", "jd.ExtLogManager");
+            System.setProperty("java.util.logging.manager", ExtLogManager.class.getName());
             ((ExtLogManager) LogManager.getLogManager()).setLogController(LogController.getInstance());
         } catch (Throwable e) {
             e.printStackTrace();
@@ -186,48 +179,29 @@ public class Main {
     }
 
     public static void main(String[] args) {
+
+        // USe Jacksonmapper in this project
+        System.err.println(CrossSystem.class.getClassLoader());
+        System.err.println(JacksonMapper.class.getClassLoader());
+        System.err.println(Thread.currentThread().getContextClassLoader());
+        JacksonMapper jm = new JacksonMapper();
+        JSonStorage.setMapper(jm);
+
+        checkLanguageSwitch(args);
         try {
-            // USe Jacksonmapper in this project
-            JSonStorage.setMapper(new JacksonMapper());
-
-            checkLanguageSwitch(args);
-            try {
-                /* set D3D Property if not already set by user */
-                if (CrossSystem.isWindows() && System.getProperty("sun.java2d.d3d", null) == null) {
-                    if (JsonConfig.create(org.jdownloader.settings.GraphicalUserInterfaceSettings.class).isUseD3D()) {
-                        System.setProperty("sun.java2d.d3d", "true");
-                    } else {
-                        System.setProperty("sun.java2d.d3d", "false");
-                    }
-                }
-            } catch (final Throwable e) {
-                e.printStackTrace();
-            }
-
-            ShutdownController.getInstance().addShutdownEvent(RunUpdaterOnEndAtLeastOnceDaily.getInstance());
-            jd.Launcher.mainStart(args);
+            /* set D3D Property if not already set by user */
             if (CrossSystem.isWindows()) {
-                /* Main Thread must not die for JavaExe Extensions to work */
-                while (true) {
-                    Thread.sleep(10000);
+                if (JsonConfig.create(org.jdownloader.settings.GraphicalUserInterfaceSettings.class).isUseD3D()) {
+                    System.setProperty("sun.java2d.d3d", "true");
+                } else {
+                    System.setProperty("sun.java2d.d3d", "false");
                 }
             }
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             e.printStackTrace();
-            try {
-                org.appwork.utils.logging.Log.exception(e);
-            } catch (Throwable e2) {
-            }
-            try {
-                final org.appwork.utils.swing.dialog.ExceptionDialog dialog = new org.appwork.utils.swing.dialog.ExceptionDialog(org.appwork.utils.swing.dialog.Dialog.LOGIC_DONT_SHOW_AGAIN_DELETE_ON_EXIT | org.appwork.utils.swing.dialog.Dialog.BUTTONS_HIDE_CANCEL | org.appwork.utils.swing.dialog.Dialog.STYLE_HIDE_ICON, "Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e, null, null);
-
-                org.appwork.utils.swing.dialog.Dialog.getInstance().showDialog(dialog);
-            } catch (Throwable e2) {
-            }
-            try {
-                org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
-            } catch (Throwable e2) {
-            }
         }
+
+        jd.Launcher.mainStart(args);
+
     }
 }

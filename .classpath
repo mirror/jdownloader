@@ -67,7 +67,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/AppWorkUtils"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingWin.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/swingx.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/UpdateClient"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/mqtt.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/substance.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/neembuu/jpfm.jar" sourcepath="ressourcen/code-ressourcen/neembuu/jpfm.src.zip"/>

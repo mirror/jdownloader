@@ -33,6 +33,8 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     }
 
+    String getActivePluginConfigPanel();
+
     String getActiveConfigPanel();
 
     @AboutConfig
@@ -262,6 +264,8 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isWindowOpaque();
 
     void setActiveConfigPanel(String name);
+
+    void setActivePluginConfigPanel(String name);
 
     void setAnimationEnabled(boolean b);
 

@@ -52,7 +52,7 @@ public class RestartAction extends ActionAdapter {
         //
         // }
         // }
-        org.jdownloader.controlling.JDRestartController.getInstance().directRestart(true);
+        org.jdownloader.controlling.JDRestartController.getInstance().directRestart();
         // }
     }
 

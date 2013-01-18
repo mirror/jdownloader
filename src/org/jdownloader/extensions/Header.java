@@ -26,8 +26,12 @@ public class Header extends JPanel {
 
     public Header(String name, ImageIcon icon) {
         super(new MigLayout("ins 0", "[35!]5[]10[grow,fill]"));
+
         iconLabel = new JLabel(icon);
         add(iconLabel, "alignx right");
+        if (icon == null) {
+            setLayout(new MigLayout("ins 0", "[0!]5[]10[grow,fill]"));
+        }
         label = new JLabel("<html><u><b>" + name + "</b></u></html>");
 
         label.setBorder(null);
@@ -82,6 +86,11 @@ public class Header extends JPanel {
     }
 
     public void setIcon(ImageIcon _getIcon) {
+        if (iconLabel.getIcon() == null && _getIcon != null) {
+            setLayout(new MigLayout("ins 0", "[35!]5[]10[grow,fill]"));
+        } else if (iconLabel.getIcon() != null && _getIcon == null) {
+            setLayout(new MigLayout("ins 0", "[0!]5[]10[grow,fill]"));
+        }
         iconLabel.setIcon(_getIcon);
     }
 

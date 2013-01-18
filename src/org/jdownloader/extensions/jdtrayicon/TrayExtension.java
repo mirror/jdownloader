@@ -49,7 +49,6 @@ import jd.plugins.AddonPanel;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
-import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -74,6 +73,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.RlyExitListener;
 
 public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, ShutdownVetoListener, MainFrameClosingHandler {
 
@@ -704,7 +705,13 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             }.start();
             return;
         }
-        org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
+        RestartController.getInstance().exitAsynch();
+
+    }
+
+    @Override
+    public long getShutdownVetoPriority() {
+        return 0;
     }
 
 }

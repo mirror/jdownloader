@@ -1596,4 +1596,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     public void onRemoveFile(Object caller, File[] fileList) {
     }
 
+    @Override
+    public long getShutdownVetoPriority() {
+        return 0;
+    }
+
 }

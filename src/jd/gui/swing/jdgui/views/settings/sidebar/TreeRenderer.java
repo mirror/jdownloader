@@ -30,6 +30,7 @@ import javax.swing.ListCellRenderer;
 
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
+import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.ExtensionManager;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
@@ -97,6 +98,15 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
         if (value instanceof CheckBoxedEntry) {
             return extension.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
         } else if (value instanceof AdvancedSettings) {
+            AbstractConfigPanel te = (AbstractConfigPanel) value;
+            setText(te.getTitle());
+            setIcon(te.getIcon());
+            lbl.setVerticalTextPosition(JLabel.CENTER);
+            lbl.setHorizontalTextPosition(JLabel.RIGHT);
+            lbl.setHorizontalAlignment(JLabel.CENTER);
+            setPreferredSize(SMALL_DIMENSION);
+            this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, selectedBackground));
+        } else if (value instanceof ExtensionManager) {
             AbstractConfigPanel te = (AbstractConfigPanel) value;
             setText(te.getTitle());
             setIcon(te.getIcon());

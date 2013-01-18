@@ -10,6 +10,7 @@ import jd.gui.swing.jdgui.views.settings.panels.GUISettings;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
+import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.ExtensionManager;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.Packagizer;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
@@ -52,6 +53,8 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
 
     public void fill() {
         new EDTRunner() {
+
+            private ExtensionManager extensionManager;
 
             @Override
             protected void runInEDT() {
@@ -97,6 +100,8 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                     addElement(pz);
                     if (extract != null) addElement(extract);
                     if (tray != null) addElement(tray);
+                    if (extensionManager == null) extensionManager = new ExtensionManager();
+                    addElement(extensionManager);
                     if (ads == null) ads = new AdvancedSettings();
                     addElement(ads);
                     boolean first = true;

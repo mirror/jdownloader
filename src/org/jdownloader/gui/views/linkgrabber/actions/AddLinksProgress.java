@@ -26,7 +26,7 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.RememberRelativeLocator;
+import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -49,7 +49,7 @@ public class AddLinksProgress extends AbstractDialog<Object> {
 
     public AddLinksProgress(LinkCollectingJob crawljob) {
         super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksProgress_AddLinksProgress_(), null, _GUI._.literally_hide(), _GUI._.literally_abort());
-        setLocator(new RememberRelativeLocator("AddLinksProgress", JDGui.getInstance().getMainFrame()));
+        setLocator(new RememberRelativeDialogLocator("AddLinksProgress", JDGui.getInstance().getMainFrame()));
         this.job = crawljob;
     }
 

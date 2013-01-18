@@ -14,7 +14,6 @@ import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.update.inapp.WebupdateSettings;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogConfig;
 import org.jdownloader.api.RemoteAPIConfig;
@@ -28,6 +27,7 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.InternetConnectionSettings;
 import org.jdownloader.settings.RtmpdumpSettings;
+import org.jdownloader.updatev2.UpdateSettings;
 
 public class AdvancedConfigManager {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();
@@ -54,11 +54,12 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(ReconnectConfig.class));
         register(JsonConfig.create(RemoteAPIConfig.class));
         register(JsonConfig.create(PackagizerSettings.class));
-        register(JsonConfig.create(WebupdateSettings.class));
+
         register(JsonConfig.create(StatsManagerConfig.class));
         register(JsonConfig.create(LogConfig.class));
         register(JsonConfig.create(ShortcutSettings.class));
         register(JsonConfig.create(RtmpdumpSettings.class));
+        register(JsonConfig.create(UpdateSettings.class));
 
     }
 

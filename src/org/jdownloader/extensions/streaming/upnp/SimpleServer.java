@@ -3,7 +3,6 @@ package org.jdownloader.extensions.streaming.upnp;
 import java.io.IOException;
 import java.util.logging.LogManager;
 
-import jd.ExtLogManager;
 
 import org.fourthline.cling.UpnpServiceImpl;
 import org.fourthline.cling.binding.annotations.AnnotationLocalServiceBinder;
@@ -33,6 +32,7 @@ import org.fourthline.cling.support.model.DIDLContent;
 import org.fourthline.cling.support.model.Res;
 import org.fourthline.cling.support.model.SortCriterion;
 import org.fourthline.cling.support.model.item.VideoItem;
+import org.jdownloader.logging.ExtLogManager;
 import org.jdownloader.logging.LogController;
 import org.seamless.util.MimeType;
 

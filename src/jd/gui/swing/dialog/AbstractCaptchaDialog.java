@@ -50,7 +50,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.LocationStorage;
-import org.appwork.utils.swing.dialog.RememberAbsoluteLocator;
+import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
@@ -86,9 +86,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> imple
     public AbstractCaptchaDialog(int flags, String title, DialogType type, DomainInfo domainInfo, String explain, CaptchaResult defaultValue2, Image... images) {
         super(flags, title, null, null, null);
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogUniquePositionByHosterEnabled()) {
-            setLocator(new RememberAbsoluteLocator("CaptchaDialog_" + domainInfo.getTld()));
+            setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog_" + domainInfo.getTld()));
         } else {
-            setLocator(new RememberAbsoluteLocator("CaptchaDialog"));
+            setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog"));
         }
         // if we have gif images, but read them as non indexed images, we try to fix this here.
         java.util.List<Image> ret = new ArrayList<Image>();

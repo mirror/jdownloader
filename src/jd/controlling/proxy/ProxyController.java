@@ -19,14 +19,11 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.update.updateclient.UpdateHttpClientOptions;
-import org.appwork.update.updateclient.UpdaterConstants;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.DefaultEventSender;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.logging.LogController;
@@ -46,8 +43,6 @@ public class ProxyController {
 
     private InternetConnectionSettings                config;
 
-    private UpdateHttpClientOptions                   updaterConfig = null;
-
     private GeneralSettings                           generalConfig = null;
 
     private final Object                              LOCK          = new Object();
@@ -60,12 +55,23 @@ public class ProxyController {
         return eventSender;
     }
 
+    public static final String USE_PROXY        = "USE_PROXY";
+    public static final String PROXY_HOST       = "PROXY_HOST";
+    public static final String PROXY_PASS       = "PROXY_PASS";
+    public static final String PROXY_PASS_SOCKS = "PROXY_PASS_SOCKS";
+    public static final String PROXY_PORT       = "PROXY_PORT";
+    public static final String PROXY_USER       = "PROXY_USER";
+    public static final String PROXY_USER_SOCKS = "PROXY_USER_SOCKS";
+    public static final String SOCKS_HOST       = "SOCKS_HOST";
+    public static final String SOCKS_PORT       = "SOCKS_PORT";
+    public static final String USE_SOCKS        = "USE_SOCKS";
+
     private ProxyController() {
         eventSender = new DefaultEventSender<ProxyEvent<ProxyInfo>>();
         /* init needed configs */
         config = JsonConfig.create(InternetConnectionSettings.class);
         generalConfig = JsonConfig.create(GeneralSettings.class);
-        updaterConfig = JsonConfig.create(UpdateHttpClientOptions.class);
+
         /* init our NONE proxy */
         none = new ProxyInfo(HTTPProxy.NONE);
         loadProxySettings();
@@ -82,18 +88,18 @@ public class ProxyController {
             }
         });
 
-        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
-            @Override
-            public void run() {
-                exportUpdaterConfig();
-            }
-
-            @Override
-            public String toString() {
-                return "ProxyController: export important settings to updaterConfig";
-            }
-        });
+        // ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+        //
+        // @Override
+        // public void run() {
+        // exportUpdaterConfig();
+        // }
+        //
+        // @Override
+        // public String toString() {
+        // return "ProxyController: export important settings to updaterConfig";
+        // }
+        // });
         eventSender.addListener(new DefaultEventListener<ProxyEvent<ProxyInfo>>() {
             DelayedRunnable asyncSaving = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000l, 60000l) {
 
@@ -110,21 +116,21 @@ public class ProxyController {
         });
     }
 
-    private void exportUpdaterConfig() {
-        updaterConfig.setConnectTimeout(generalConfig.getHttpConnectTimeout());
-        updaterConfig.setReadTimeout(generalConfig.getHttpReadTimeout());
-        exportUpdaterProxy();
-    }
-
-    private void exportUpdaterProxy() {
-        ProxyInfo ldefaultproxy = defaultproxy;
-        if (ldefaultproxy != null && !ldefaultproxy.isNone()) {
-            HTTPProxyStorable storable = HTTPProxy.getStorable(ldefaultproxy);
-            updaterConfig.setProxy(storable);
-        } else {
-            updaterConfig.setProxy(null);
-        }
-    }
+    // private void exportUpdaterConfig() {
+    // updaterConfig.setConnectTimeout(generalConfig.getHttpConnectTimeout());
+    // updaterConfig.setReadTimeout(generalConfig.getHttpReadTimeout());
+    // exportUpdaterProxy();
+    // }
+    //
+    // private void exportUpdaterProxy() {
+    // ProxyInfo ldefaultproxy = defaultproxy;
+    // if (ldefaultproxy != null && !ldefaultproxy.isNone()) {
+    // HTTPProxyStorable storable = HTTPProxy.getStorable(ldefaultproxy);
+    // updaterConfig.setProxy(storable);
+    // } else {
+    // updaterConfig.setProxy(null);
+    // }
+    // }
 
     public static List<HTTPProxy> autoConfig() {
         java.util.List<HTTPProxy> ret = new ArrayList<HTTPProxy>();
@@ -213,12 +219,12 @@ public class ProxyController {
     private List<HTTPProxy> restoreFromOldConfig() {
         java.util.List<HTTPProxy> ret = new ArrayList<HTTPProxy>();
         SubConfiguration oldConfig = SubConfiguration.getConfig("DOWNLOAD", true);
-        if (oldConfig.getBooleanProperty(UpdaterConstants.USE_PROXY, false)) {
+        if (oldConfig.getBooleanProperty(USE_PROXY, false)) {
             /* import old http proxy settings */
-            final String host = oldConfig.getStringProperty(UpdaterConstants.PROXY_HOST, "");
-            final int port = oldConfig.getIntegerProperty(UpdaterConstants.PROXY_PORT, 8080);
-            final String user = oldConfig.getStringProperty(UpdaterConstants.PROXY_USER, "");
-            final String pass = oldConfig.getStringProperty(UpdaterConstants.PROXY_PASS, "");
+            final String host = oldConfig.getStringProperty(PROXY_HOST, "");
+            final int port = oldConfig.getIntegerProperty(PROXY_PORT, 8080);
+            final String user = oldConfig.getStringProperty(PROXY_USER, "");
+            final String pass = oldConfig.getStringProperty(PROXY_PASS, "");
             if (!StringUtils.isEmpty(host)) {
                 final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.HTTP, host, port);
                 if (!StringUtils.isEmpty(user)) {
@@ -230,12 +236,12 @@ public class ProxyController {
                 ret.add(pr);
             }
         }
-        if (oldConfig.getBooleanProperty(UpdaterConstants.USE_SOCKS, false)) {
+        if (oldConfig.getBooleanProperty(USE_SOCKS, false)) {
             /* import old socks5 settings */
-            final String user = oldConfig.getStringProperty(UpdaterConstants.PROXY_USER_SOCKS, "");
-            final String pass = oldConfig.getStringProperty(UpdaterConstants.PROXY_PASS_SOCKS, "");
-            final String host = oldConfig.getStringProperty(UpdaterConstants.SOCKS_HOST, "");
-            final int port = oldConfig.getIntegerProperty(UpdaterConstants.SOCKS_PORT, 1080);
+            final String user = oldConfig.getStringProperty(PROXY_USER_SOCKS, "");
+            final String pass = oldConfig.getStringProperty(PROXY_PASS_SOCKS, "");
+            final String host = oldConfig.getStringProperty(SOCKS_HOST, "");
+            final int port = oldConfig.getIntegerProperty(SOCKS_PORT, 1080);
             if (!StringUtils.isEmpty(host)) {
                 final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.SOCKS5, host, port);
                 if (!StringUtils.isEmpty(user)) {
@@ -429,7 +435,7 @@ public class ProxyController {
             defaultproxy = def;
         }
         eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REFRESH, null));
-        exportUpdaterProxy();
+        // exportUpdaterProxy();
     }
 
     /**

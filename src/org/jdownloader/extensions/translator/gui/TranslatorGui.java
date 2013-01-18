@@ -35,12 +35,14 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.txtresource.TranslationFactory;
-import org.appwork.update.inapp.RestartController;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
@@ -74,7 +76,7 @@ import org.tmatesoft.svn.core.wc.SVNCommitPacket;
  * @author thomas
  * 
  */
-public class TranslatorGui extends AddonPanel<TranslatorExtension> implements ListSelectionListener, TranslatorExtensionListener {
+public class TranslatorGui extends AddonPanel<TranslatorExtension> implements ListSelectionListener, TranslatorExtensionListener, ShutdownVetoListener {
 
     private static final String ID = "TRANSLATORGUI";
     private TranslateTableModel tableModel;
@@ -672,9 +674,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                RestartController.getInstance().getAdditionalParameters().add("-translatortest");
-                RestartController.getInstance().getAdditionalParameters().add(getExtension().getLoadedLocale().getId());
-                JDRestartController.getInstance().directRestart(true);
+                JDRestartController.getInstance().directRestart("-translatortest", getExtension().getLoadedLocale().getId());
 
             }
         }));
@@ -783,7 +783,8 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     @Override
     protected void onShow() {
         ti.start();
-        JDRestartController.getInstance().setSilentRestartAllowed(false);
+        ShutdownController.getInstance().addShutdownVetoListener(this);
+
         Log.L.finer("Shown " + getClass().getSimpleName());
         if (getExtension().isLoggedIn()) return;
         ProgressGetter pg = new ProgressDialog.ProgressGetter() {
@@ -838,7 +839,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     protected void onHide() {
         Log.L.finer("hidden " + getClass().getSimpleName());
         ti.stop();
-        JDRestartController.getInstance().setSilentRestartAllowed(true);
+        ShutdownController.getInstance().removeShutdownVetoListener(this);
     }
 
     public TLocale getLoaded() {
@@ -1018,6 +1019,28 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             stopEditing = false;
             Log.L.info("Editing has stopped");
         }
+    }
+
+    @Override
+    public void onShutdown(boolean silent) {
+    }
+
+    @Override
+    public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
+    }
+
+    @Override
+    public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+    }
+
+    @Override
+    public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+        throw new ShutdownVetoException("TranslatorGui is Active", this);
+    }
+
+    @Override
+    public long getShutdownVetoPriority() {
+        return 0;
     }
 
 }

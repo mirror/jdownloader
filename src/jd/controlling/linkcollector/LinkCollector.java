@@ -177,6 +177,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
             }
 
+            @Override
+            public long getShutdownVetoPriority() {
+                return 0;
+            }
+
         });
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 

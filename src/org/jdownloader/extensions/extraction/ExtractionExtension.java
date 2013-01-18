@@ -448,6 +448,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) { throw new ShutdownVetoException("ExtractionExtension is still running", this); }
             }
 
+            @Override
+            public long getShutdownVetoPriority() {
+                return 0;
+            }
+
         });
     }
 

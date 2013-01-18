@@ -10,7 +10,7 @@ import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.PointOnScreenLocator;
+import org.appwork.utils.swing.dialog.locator.PointOnScreenLocator;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 

@@ -1,13 +1,13 @@
 package jd.gui.swing.jdgui.views.settings.panels.pluginsettings;
 
 import javax.swing.JSeparator;
-import javax.swing.JTextArea;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.plugins.Plugin;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.swing.components.ExtTextArea;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
@@ -74,13 +74,14 @@ public class PluginConfigPanel extends SwitchPanel {
 
             String desc = proto.getDescription();
             if (desc != null) {
-                JTextArea txt = new JTextArea();
+                ExtTextArea txt = new ExtTextArea();
+
                 txt.setEditable(false);
                 txt.setLineWrap(true);
                 txt.setWrapStyleWord(true);
                 txt.setFocusable(false);
                 txt.setEnabled(false);
-
+                txt.setLabelMode(true);
                 txt.setText(desc);
                 ret.add(txt, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
                 ret.add(new JSeparator(), "spanx,growx,pushx,gapbottom 5");

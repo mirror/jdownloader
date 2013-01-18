@@ -27,10 +27,11 @@ import org.jdownloader.extensions.Header;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.RestartController;
 
 public abstract class AbstractConfigPanel extends SwitchPanel {
 
-    private static final long  serialVersionUID = -8483438886830392777L;
+    private static final long       serialVersionUID = -8483438886830392777L;
     private java.util.List<Pair<?>> pairs;
 
     public AbstractConfigPanel() {
@@ -67,7 +68,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     protected void showRestartRequiredMessage() {
         try {
             Dialog.getInstance().showConfirmDialog(0, _JDT._.dialog_optional_showRestartRequiredMessage_title(), _JDT._.dialog_optional_showRestartRequiredMessage_msg(), null, _JDT._.basics_yes(), _JDT._.basics_no());
-            org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
+            RestartController.getInstance().exitAsynch();
         } catch (DialogClosedException e) {
         } catch (DialogCanceledException e) {
         }

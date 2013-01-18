@@ -1,9 +1,10 @@
 <project default="all" basedir=".">
 	<!-- Dependencies -->
 	<property name="dep.awu" value="../AppWorkUtils" />
+	<property name="dep.serveroptions" value="../JDownloaderServerOptions" />
 	<property name="dep.browser" value="../JDBrowser" />
-	<property name="dep.updateclient" value="../UpdateClient" />
-
+	<property name="dep.updateclient" value="../UpdateClientV2" />
+	<property name="dep.jdupdateclient" value="../JDownloaderUpdater" />
 	<property name="debug" value="true" />
 
 
@@ -23,6 +24,7 @@
 		<fileset dir="${dep.awu}/libs" includes="**/*.jar" />
 		<fileset dir="${dep.browser}/libs" includes="**/*.jar" />
 		<fileset dir="${dep.updateclient}/libs" includes="**/*.jar" />
+
 		<fileset dir="${res}/libs" includes="**/*.jar" />
 		<fileset dir="${res}/libs_ext" includes="**/*.jar" />
 	</path>
@@ -42,29 +44,32 @@
 
 		<!-- Build dependencies -->
 
-		<javac  srcdir="${dep.awu}/src" excludes="**/test/**" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="${dep.awu}/src" excludes="**/test/**" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
-		<javac   srcdir="${dep.browser}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
-			<classpath refid="classpath" />
-
-		</javac>
-
-
-
-		<javac   srcdir="${dep.updateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
 
-		<javac   srcdir="src" debug="${debug}" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/neembuu/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+
+		<javac srcdir="${dep.updateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
+
+		<javac srcdir="src" debug="${debug}" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/neembuu/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+			<classpath refid="classpath" />
+
+		</javac>
+		<javac srcdir="${dep.jdupdateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+			<classpath refid="classpath" />
+
+		</javac>
 		<echo message="Finished." />
 	</target>
 
@@ -79,12 +84,17 @@
 			<fileset dir="${res}/libs" includes="**/*" />
 		</copy>
 		<copy todir="${dist}/libs">
-			<fileset dir="${dep.awu}/libs" includes="**/*.jar" />
+			<fileset dir="${dep.awu}/libs" includes="**/*.jar">
+				<!-- -->
+
+				<exclude name="miglayout.jar" />
+			</fileset>
 		</copy>
 
 		<copy todir="${dist}">
 			<fileset dir="themes" includes="**/*" />
 		</copy>
+
 		<copy todir="${dist}/licenses">
 			<fileset dir="${res}/licenses" includes="**/*" />
 		</copy>
@@ -96,8 +106,8 @@
 			<fileset dir="${res}" includes="*.txt, *.exe, *.bat, *.properties" />
 		</copy>
 		<copy todir="${dist}">
-				<fileset dir="${res}" includes="*.txt, *.exe, *.bat, *.properties" />
-			</copy>
+			<fileset dir="${res}" includes="*.txt, *.exe, *.bat, *.properties" />
+		</copy>
 		<mkdir dir="${dist}/java" />
 		<mkdir dir="${dist}/tmp" />
 
@@ -115,8 +125,7 @@
 		<copy todir="${dist}">
 
 			<fileset dir="translations" includes="**/*.lng" />
-			<fileset dir="fileoptions" includes="**/*.clientOptions" />
-			<fileset dir="fileoptions" includes="**/*.serverOptions" />
+			
 		</copy>
 		<loadfile property="svn.revision" srcFile=".svn/entries">
 			<filterchain>
@@ -195,21 +204,8 @@
 			</fileset>
 		</jar>
 
-		<jar file="${dist}/libs/AppWorkUtilities.jar" manifest="${dist}/Manifest.MF">
-			<fileset dir="${working}">
-				<include name="version.nfo" />
-			</fileset>
-			<fileset dir="${cls}">
-				<include name="org/appwork/**/*" />
-				<exclude name="org/appwork/update/server/**/*" />
-			</fileset>
-			<fileset dir="${dep.awu}/src">
-				<include name="images/*.png" />
 
-
-			</fileset>
-		</jar>
-		<delete file="${dist}/Manifest.MF" failonerror="false" />
+		<delete file="${dist}/Manifest.MF" failonerror="true" />
 		<pathconvert pathsep=" " dirsep="/" property="class-path">
 			<path>
 				<fileset dir="${dist}/libs" includes="**/*.jar" />
@@ -228,10 +224,12 @@
 			<attribute name="Created-By" value="JD-Team and AppWork GmbH" />
 			<attribute name="Main-Class" value="jd.Main" />
 			<!-- plugins that serialize own classes have to be put in the classpath -->
-			<attribute name="Class-Path" value="${class-path} ${class-path-extensions}" />
+			<attribute name="Class-Path" value="JDownloader.jar ${class-path} ${class-path-extensions}" />
 
 		</manifest>
-		<jar file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">
+		<!--CORE-->
+
+		<jar file="${dist}/Core.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${working}">
 				<include name="version.nfo" />
 			</fileset>
@@ -242,12 +240,13 @@
 				<exclude name="jd/controlling/reconnect/plugins/*/**/*" />
 				<exclude name="jd/captcha/**" />
 				<exclude name="org/appwork/**/*" />
+				<exclude name="org/jdownloader/update/**/*" />
 				<exclude name="org/jdownloader/dynamic/**/*" />
 				<exclude name="jd/dynamics/**" />
 				<exclude name="jd/gui/**" />
 				<exclude name="com/fastcgi/**" />
 				<exclude name="org/jdownloader/container/**/*" />
-
+				<exclude name="org/jdownloader/updatev2/**/*" />
 
 				<exclude name="jd/http/**" />
 				<exclude name="jd/nutils/**" />
@@ -263,11 +262,12 @@
 			<fileset dir="${cls}">
 				<include name="jd/plugins/hoster/RTMPDownload.class" />
 			</fileset>
+			<!--
 			<fileset dir="${dep.updateclient}/src">
 				<include name="**/*.lng" />
 				<include name="**/*.png" />
 			</fileset>
-
+-->
 
 
 			<fileset dir="${res}">
@@ -275,7 +275,63 @@
 				<exclude name="jd/captcha/methods" />
 			</fileset>
 		</jar>
-		<delete file="${dist}/Manifest.MF" failonerror="false" />
+		<delete file="${dist}/Manifest.MF" failonerror="true" />
+		<delete file="${working}/version.nfo" failonerror="true" />
+		<echo file="${working}/version.nfo">${updateclient.revision}</echo>
+
+		<pathconvert pathsep="${line.separator}" dirsep="/" property="cp">
+			<path>
+				<fileset dir="${dist}/libs" includes="**/*.jar" />
+			</path>
+			<mapper type="regexp" from="[\\/]dist[\\/](libs[\\/].*)" to="\1" />
+
+		</pathconvert>
+		<pathconvert pathsep="${line.separator}" dirsep="/" property="cpe">
+			<path>
+				<fileset dir="${dist}/extensions" includes="**/*.jar" />
+			</path>
+			<mapper type="regexp" from="[\\/]dist[\\/](extensions[\\/].*)" to="\1" />
+		</pathconvert>
+
+		<delete file="${working}/classpath" failonerror="true" />
+		<echo file="${working}/classpath">Core.jar${line.separator}${cp}${line.separator}${cpe}</echo>
+		<!--launcher-->
+		<manifest file="${dist}/Manifest.MF">
+			<attribute name="Created-By" value="AppWork GmbH" />
+			<attribute name="Main-Class" value="org.jdownloader.update.launcher.JDLauncher" />
+			<!-- plugins that serialize own classes have to be put in the classpath -->
+			<attribute name="Class-Path" value="" />
+
+		</manifest>
+		<jar file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">
+			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
+			<zipfileset src="${dep.updateclient}/libs/xz.jar" excludes="META-INF/*" />
+			<fileset dir="${working}">
+				<include name="version.nfo" />
+				<include name="classpath" />
+			</fileset>
+			<fileset dir="${cls}">
+				<include name="classpath" />
+				<include name="org/jdownloader/logging/**/*" />
+				<include name="org/jdownloader/updatev2/**/*" />
+				<include name="org/jdownloader/update/**/*.class" />
+				<include name="org/appwork/**/*" />
+				<exclude name="org/appwork/update/server/**/*" />
+			</fileset>
+
+			<fileset dir="${dep.jdupdateclient}/src">
+				<include name="cfg/**/*" />
+
+			</fileset>
+
+
+			<fileset dir="themes">
+				<include name="**/images/dialog/**/*" />
+				<include name="**/images/update*" />
+			</fileset>
+		</jar>
+		<delete file="${dist}/Manifest.MF" failonerror="true" />
+
 	</target>
 
 
@@ -342,7 +398,7 @@
 
 		<buildAddon package="JDGrowl" include="growl" />
 		<buildAddon package="AntiShutdown" include="antistandby" />
-	
+
 		<buildAddon package="Streaming" include="streaming" />
 
 		<buildAddon package="Extraction" include="extraction" />
@@ -350,7 +406,7 @@
 		<buildAddon package="webinterface" include="webinterface" />
 		<buildAddon package="neembuu" include="neembuu" />
 		<buildAddon package="translator" include="translator" />
-		<delete file="${dist}/Manifest.MF" failonerror="false" />
+		<delete file="${dist}/Manifest.MF" failonerror="true" />
 	</target>
 
 	<!-- Use this to build an reconnect plugin -->
@@ -376,13 +432,33 @@
 
 
 
-		<delete file="${dist}/Manifest.MF" failonerror="false" />
+		<delete file="${dist}/Manifest.MF" failonerror="true" />
 	</target>
 
 
 
 
-
+	<target name="update">
+		<delete dir="${update_1}" />
+		<mkdir dir="${update_1}" />
+		<delete dir="${update_2}" />
+		<mkdir dir="${update_2}" />
+		<copy todir="${update_1}" overwrite="true">
+			<fileset dir="${dist}" includes="JDownloader.jar" />
+		</copy>
+		<copy todir="${update_2}" overwrite="true">
+			<fileset dir="${dist}">
+				<exclude name="JDownloader.jar" />
+			</fileset>
+		</copy>
+		
+		<copy todir="${update_2}" overwrite="true">
+			<fileset dir="${dep.serveroptions}">
+				<include name="**/*.serverOptions" />
+				<include name="**/*.clientOptions" />
+			</fileset>
+		</copy>
+	</target>
 
 
 

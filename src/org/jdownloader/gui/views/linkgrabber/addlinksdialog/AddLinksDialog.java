@@ -55,7 +55,7 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.RememberRelativeLocator;
+import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
@@ -116,7 +116,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             }
 
         };
-        setLocator(new RememberRelativeLocator("AddLinksDialog", JDGui.getInstance().getMainFrame()));
+        setLocator(new RememberRelativeDialogLocator("AddLinksDialog", JDGui.getInstance().getMainFrame()));
     }
 
     @Override

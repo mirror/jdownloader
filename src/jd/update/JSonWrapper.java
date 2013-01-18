@@ -8,7 +8,6 @@ import java.util.Vector;
 
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.gui.swing.laf.LookAndFeelWrapper;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonKeyValueStorage;
@@ -172,8 +171,6 @@ public class JSonWrapper extends Property {
     private static final HashMap<String, TypeRef<?>> MAPPING = new HashMap<String, TypeRef<?>>();
     static {
         // convertermappings
-        MAPPING.put("jdgui.json.PLAF5", new TypeRef<LookAndFeelWrapper>() {
-        });
 
         MAPPING.put("folderwatch.json.FOLDER_LIST", new TypeRef<Vector<String>>() {
         });

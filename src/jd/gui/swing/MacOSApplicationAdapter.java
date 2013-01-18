@@ -32,6 +32,7 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.updatev2.RestartController;
 
 import com.apple.eawt.AboutHandler;
 import com.apple.eawt.AppEvent;
@@ -100,7 +101,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
     public void handleQuitRequestWith(QuitEvent e, final QuitResponse response) {
         quitResponse = response;
-        org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
+        RestartController.getInstance().exitAsynch();
     }
 
     public void handlePreferences(PreferencesEvent e) {

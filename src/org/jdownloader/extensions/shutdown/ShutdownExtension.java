@@ -54,6 +54,7 @@ import org.jdownloader.extensions.shutdown.translate.T;
 import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.updatev2.RestartController;
 
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener {
 
@@ -81,7 +82,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     private void closejd() {
         LogController.CL().info("close jd");
-        org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
+        RestartController.getInstance().exitAsynch();
     }
 
     private void shutdown() {

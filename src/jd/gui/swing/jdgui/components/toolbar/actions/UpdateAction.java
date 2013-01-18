@@ -2,10 +2,9 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.utils.WebUpdate;
-
 import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.updatev2.UpdateController;
 
 public class UpdateAction extends AbstractToolbarAction {
     private static final UpdateAction INSTANCE = new UpdateAction();
@@ -23,7 +22,7 @@ public class UpdateAction extends AbstractToolbarAction {
      * Create a new instance of UpdateAction. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private UpdateAction() {
-
+        setEnabled(false);
     }
 
     public boolean isDefaultVisible() {
@@ -32,7 +31,14 @@ public class UpdateAction extends AbstractToolbarAction {
 
     public void actionPerformed(ActionEvent e) {
         /* WebUpdate is running in its own Thread */
-        WebUpdate.doUpdateCheck(true);
+        new Thread() {
+            public void run() {
+                // runUpdateChecker is synchronized and may block
+                UpdateController.getInstance().setGuiVisible(true);
+                UpdateController.getInstance().runUpdateChecker(true);
+            }
+        }.start();
+
     }
 
     @Override

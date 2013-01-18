@@ -16,28 +16,24 @@
 package jd.gui.swing.laf;
 
 import java.awt.Font;
-import java.util.ArrayList;
 import java.util.Enumeration;
 
 import javax.swing.UIManager;
-import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.plaf.FontUIResource;
-
-import jd.Launcher;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.tooltips.ExtTooltip;
-import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.LAFManagerInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class LookAndFeelController {
+public class LookAndFeelController implements LAFManagerInterface {
     private static final String                DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel";
     private static final LookAndFeelController INSTANCE                                                      = new LookAndFeelController();
 
@@ -50,7 +46,6 @@ public class LookAndFeelController {
         return LookAndFeelController.INSTANCE;
     }
 
-    private LookAndFeelWrapper[]           supportedLookAndFeels;
     private LAFOptions                     lafOptions;
     private GraphicalUserInterfaceSettings config;
     private String                         laf = null;
@@ -63,23 +58,6 @@ public class LookAndFeelController {
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
     }
 
-    public LookAndFeelWrapper[] getSupportedLookAndFeels() {
-        if (supportedLookAndFeels != null) return supportedLookAndFeels;
-        synchronized (this) {
-            if (supportedLookAndFeels != null) return supportedLookAndFeels;
-            this.supportedLookAndFeels = collectSupportedLookAndFeels();
-        }
-        return supportedLookAndFeels;
-    }
-
-    public LookAndFeelWrapper getPlaf() {
-        String ret = config.getLookAndFeel();
-        if (ret == null || "".equals(ret)) {
-            ret = LookAndFeelController.DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL;
-        }
-        return new LookAndFeelWrapper(ret);
-    }
-
     /**
      * Config parameter to store the users laf selection
      */
@@ -88,92 +66,9 @@ public class LookAndFeelController {
     private static boolean     uiInitated     = false;
 
     /**
-     * Collects all supported LAFs for the current system
-     * 
-     * @return
-     */
-    private LookAndFeelWrapper[] collectSupportedLookAndFeels() {
-        LookAndFeelInfo[] lafis = UIManager.getInstalledLookAndFeels();
-
-        java.util.List<LookAndFeelWrapper> ret = new ArrayList<LookAndFeelWrapper>();
-
-        if (Application.getJavaVersion() >= Application.JAVA16 && LookAndFeelController.class.getResource("/org/pushingpixels/substance") != null) {
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Autumn", "org.pushingpixels.substance.api.skin.SubstanceAutumnLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Business Black Steel", "org.pushingpixels.substance.api.skin.SubstanceBusinessBlackSteelLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Business Blue Steel", "org.pushingpixels.substance.api.skin.SubstanceBusinessBlueSteelLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Business", "org.pushingpixels.substance.api.skin.SubstanceBusinessLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Challenger Deep", "org.pushingpixels.substance.api.skin.SubstanceChallengerDeepLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Creme Coffee", "org.pushingpixels.substance.api.skin.SubstanceCremeCoffeeLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Creme", "org.pushingpixels.substance.api.skin.SubstanceCremeLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Dust Coffee", "org.pushingpixels.substance.api.skin.SubstanceDustCoffeeLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Dust", "org.pushingpixels.substance.api.skin.SubstanceDustLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Emerald", "org.pushingpixels.substance.api.skin.SubstanceEmeraldDuskLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Gemini", "org.pushingpixels.substance.api.skin.SubstanceGeminiLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Graphite Aqua", "org.pushingpixels.substance.api.skin.SubstanceGraphiteAquaLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Graphite Glass", "org.pushingpixels.substance.api.skin.SubstanceGraphiteGlassLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Graphite", "org.pushingpixels.substance.api.skin.SubstanceGraphiteLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Magellan", "org.pushingpixels.substance.api.skin.SubstanceMagellanLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Mist Aqua", "org.pushingpixels.substance.api.skin.SubstanceMistAquaLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Mist Silver", "org.pushingpixels.substance.api.skin.SubstanceMistSilverLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Moderate", "org.pushingpixels.substance.api.skin.SubstanceModerateLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Nebula Brick Waöö", "org.pushingpixels.substance.api.skin.SubstanceNebulaBrickWallLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Nebula", "org.pushingpixels.substance.api.skin.SubstanceNebulaLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Office Blue", "org.pushingpixels.substance.api.skin.SubstanceOfficeBlue2007LookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Office Silver", "org.pushingpixels.substance.api.skin.SubstanceOfficeSilver2007LookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Raven", "org.pushingpixels.substance.api.skin.SubstanceRavenLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Sahara", "org.pushingpixels.substance.api.skin.SubstanceSaharaLookAndFeel")));
-            ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Twilight", "org.pushingpixels.substance.api.skin.SubstanceTwilightLookAndFeel")));
-
-        }
-
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Classic", "de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel")));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Black Moon", "de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel")));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Black Star", "de.javasoft.plaf.synthetica.SyntheticaBlackStarLookAndFeel")));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Blue Ice", "de.javasoft.plaf.synthetica.SyntheticaBlueIceLookAndFeel")));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Blue Moon", "de.javasoft.plaf.synthetica.SyntheticaBlueMoonLookAndFeel")));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Blue Steel", "de.javasoft.plaf.synthetica.SyntheticaBlueSteelLookAndFeel")));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Mauve Metallic", "de.javasoft.plaf.synthetica.SyntheticaMauveMetallicLookAndFeel")));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Orange Metallic", "de.javasoft.plaf.synthetica.SyntheticaOrangeMetallicLookAndFeel")));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Silver Moon", "de.javasoft.plaf.synthetica.SyntheticaSilverMoonLookAndFeel")));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica JDownloader", LookAndFeelController.DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL)));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Sky Metallic", "de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel")));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica White Vision", "de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel")));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Black Eye", "de.javasoft.plaf.synthetica.SyntheticaBlackEyeLookAndFeel")));
-        ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Synthetica Green Dream", "de.javasoft.plaf.synthetica.SyntheticaGreenDreamLookAndFeel")));
-
-        for (int i = 0; i < lafis.length; i++) {
-            String clname = lafis[i].getClassName();
-
-            if ((clname.startsWith("apple.laf")) || (clname.startsWith("com.apple.laf"))) {
-                LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
-                lafm.setName("Apple Aqua");
-                ret.add(lafm);
-            } else if (clname.endsWith("WindowsLookAndFeel")) {
-                LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
-                lafm.setName("Windows Style");
-                ret.add(lafm);
-            } else if (clname.endsWith("MetalLookAndFeel") && CrossSystem.isLinux()) {
-                LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
-                lafm.setName("Light(Metal)");
-                ret.add(lafm);
-            } else if (clname.endsWith("GTKLookAndFeel") && CrossSystem.isLinux()) {
-                LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
-                lafm.setName("Light(GTK)");
-                ret.add(lafm);
-            } else if (!Application.isJared(Launcher.class)) {
-                LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
-                lafm.setName(lafis[i].getName() + " [Debug]");
-                ret.add(lafm);
-            }
-
-        }
-        return ret.toArray(new LookAndFeelWrapper[] {});
-    }
-
-    /**
      * setups the correct Look and Feel
      */
-    public void setUIManager() {
+    public synchronized void setUIManager() {
         if (uiInitated) return;
         uiInitated = true;
         long t = System.currentTimeMillis();
@@ -181,7 +76,7 @@ public class LookAndFeelController {
             // de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setLookAndFeel("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel");
             // if (true) return;
 
-            laf = getPlaf().getClassName();
+            laf = DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL;
             LogController.GL.info("Use Look & Feel: " + laf);
             preSetup(laf);
             if (laf.contains("Synthetica")) {
@@ -225,21 +120,6 @@ public class LookAndFeelController {
     }
 
     /**
-     * Returns if currently a substance look and feel is selected. Not very fast.. do not use this in often used methods
-     * 
-     * @return
-     */
-    public boolean isSubstance() {
-        if (isSynthetica()) return false;
-        return UIManager.getLookAndFeel().getName().toLowerCase().contains("substance");
-    }
-
-    public boolean isSynthetica() {
-        if (laf == null) return false;
-        return laf.contains("Synthetica");
-    }
-
-    /**
      * Executes laf dependend commands AFTER setting the laf
      * 
      * @param className
@@ -275,8 +155,7 @@ public class LookAndFeelController {
             } catch (final Throwable e) {
                 LogController.CL().log(e);
             }
-        } else if (isSubstance()) {
-            doSubstance(fontName, config.getFontScaleFactor());
+
         } else {
             try {
                 int fontSize = config.getFontScaleFactor();
@@ -305,13 +184,8 @@ public class LookAndFeelController {
         }
     }
 
-    private void doSubstance(String fontName, int fontSize) {
-        try {
-            Class.forName("jd.gui.swing.laf.JDSubstanceFontPolicy").getMethod("invoke", new Class[] { String.class, int.class }).invoke(null, fontName, fontSize);
-
-        } catch (Throwable e) {
-            LogController.CL().log(e);
-        }
+    public boolean isSynthetica() {
+        return true;
     }
 
     /**
@@ -358,5 +232,10 @@ public class LookAndFeelController {
         } catch (final Throwable e) {
             LogController.CL().log(e);
         }
+    }
+
+    @Override
+    public void init() {
+        setUIManager();
     }
 }

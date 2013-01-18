@@ -47,7 +47,6 @@ import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.ext.security.JSPermissionRestricter;
 import jd.plugins.DownloadLink;
@@ -59,17 +58,12 @@ import org.appwork.app.launcher.parameterparser.CommandSwitchListener;
 import org.appwork.app.launcher.parameterparser.ParameterParser;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.shutdown.ShutdownController;
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.txtresource.TranslationFactory;
-import org.appwork.update.inapp.RlyExitListener;
-import org.appwork.update.inapp.WebupdateSettings;
-import org.appwork.update.updateclient.InstallLogList;
-import org.appwork.update.updateclient.InstalledFile;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.event.DefaultEventListener;
@@ -101,19 +95,16 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.toolbar.ToolbarOffer;
 import org.jdownloader.translate._JDT;
-import org.jdownloader.update.JDUpdater;
+import org.jdownloader.updatev2.RestartController;
 
 import sun.awt.shell.ShellFolder;
+import sun.java2d.ScreenUpdateManager;
 
 public class Launcher {
     static {
-        try {
-            statics();
-        } catch (Throwable e) {
-            e.printStackTrace();
-            org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
-            // TODO: call Updater.jar
-        }
+
+        statics();
+
     }
 
     private static LogSource           LOG;
@@ -142,16 +133,16 @@ public class Launcher {
         System.setProperty("apple.laf.useScreenMenuBar", "true");
 
         // native Mac just if User Choose Aqua as Skin
-        if (LookAndFeelController.getInstance().getPlaf().getName().equals("Apple Aqua")) {
-            // Mac Java from 1.3
-            System.setProperty("com.apple.macos.useScreenMenuBar", "true");
-            System.setProperty("com.apple.mrj.application.growbox.intrudes", "true");
-            System.setProperty("com.apple.hwaccel", "true");
-
-            // Mac Java from 1.4
-            System.setProperty("apple.laf.useScreenMenuBar", "true");
-            System.setProperty("apple.awt.showGrowBox", "true");
-        }
+        // if (LookAndFeelController.getInstance().getPlaf().getName().equals("Apple Aqua")) {
+        // // Mac Java from 1.3
+        // System.setProperty("com.apple.macos.useScreenMenuBar", "true");
+        // System.setProperty("com.apple.mrj.application.growbox.intrudes", "true");
+        // System.setProperty("com.apple.hwaccel", "true");
+        //
+        // // Mac Java from 1.4
+        // System.setProperty("apple.laf.useScreenMenuBar", "true");
+        // System.setProperty("apple.awt.showGrowBox", "true");
+        // }
 
         try {
             MacOSApplicationAdapter.enableMacSpecial();
@@ -169,11 +160,6 @@ public class Launcher {
             e.printStackTrace();
         }
         NewUIO.setUserIO(new JDSwingUserIO());
-        RlyExitListener.getInstance().setEnabled(true);
-        org.jdownloader.controlling.JDRestartController.getInstance().setApp("JDownloader.app");
-        org.jdownloader.controlling.JDRestartController.getInstance().setExe("JDownloader.exe");
-        org.jdownloader.controlling.JDRestartController.getInstance().setJar("JDownloader.jar");
-        org.jdownloader.controlling.JDRestartController.getInstance().setUpdaterJar("Updater.jar");
 
     }
 
@@ -214,6 +200,7 @@ public class Launcher {
         }
 
         Launcher.LOG = LogController.GL;
+        LOG.info("Using Direct 3D: " + (ScreenUpdateManager.getInstance().getClass().getSimpleName().equals("D3DScreenUpdateManager")) + " (" + ScreenUpdateManager.getInstance().getClass() + ")");
         // Mac OS specific
         if (CrossSystem.isMac()) {
             // Set MacApplicationName
@@ -240,7 +227,7 @@ public class Launcher {
             Launcher.LOG.finer(key + "=" + pr.get(key));
         }
         Launcher.LOG.info("JDownloader");
-        PARAMETERS = new ParameterParser(args);
+        PARAMETERS = RestartController.getInstance().getParameterParser(args);
         PARAMETERS.getEventSender().addListener(new CommandSwitchListener() {
 
             @Override
@@ -258,8 +245,18 @@ public class Launcher {
             }
         });
         PARAMETERS.parse(null);
-        checkSessionInstallLog();
-        org.jdownloader.controlling.JDRestartController.getInstance().setStartArguments(PARAMETERS.getRawArguments());
+
+        if (PARAMETERS.hasCommandSwitch("scanextensions")) {
+            JDInitFlags.REFRESH_CACHE = true;
+
+        }
+
+        if (PARAMETERS.hasCommandSwitch("scanplugins")) {
+            JDInitFlags.REFRESH_CACHE = true;
+
+        }
+        // checkSessionInstallLog();
+
         boolean jared = Application.isJared(Launcher.class);
         String revision = JDUtilities.getRevision();
         if (!jared) {
@@ -273,16 +270,7 @@ public class Launcher {
         Launcher.preInitChecks();
 
         for (int i = 0; i < args.length; i++) {
-            if (args[i].equalsIgnoreCase("-branch")) {
-                if (args[i + 1].equalsIgnoreCase("reset")) {
-                    JDUpdater.getInstance().setForcedBranch(null);
-                    Launcher.LOG.info("Switching back to default JDownloader branch");
-                } else {
-                    JDUpdater.getInstance().setForcedBranch(args[i + 1]);
-                    Launcher.LOG.info("Switching to " + args[i + 1] + " JDownloader branch");
-                }
-                i++;
-            } else if (args[i].equals("-prot")) {
+            if (args[i].equals("-prot")) {
                 Launcher.LOG.finer(args[i] + " " + args[i + 1]);
                 i++;
             } else if (args[i].equals("--help") || args[i].equals("-h")) {
@@ -348,53 +336,53 @@ public class Launcher {
 
     }
 
-    private static void checkSessionInstallLog() {
-        File logFile = null;
-        try {
-            InstallLogList tmpInstallLog = new InstallLogList();
-            logFile = Application.getResource(org.appwork.update.standalone.Main.SESSION_INSTALL_LOG_LOG);
-            if (logFile.exists()) {
-                Launcher.LOG.info("Check SessionInstallLog");
-                tmpInstallLog = JSonStorage.restoreFromFile(logFile, tmpInstallLog);
-
-                for (InstalledFile iFile : tmpInstallLog) {
-                    if (iFile.getRelPath().endsWith(".class")) {
-                        // Updated plugins
-                        JDInitFlags.REFRESH_CACHE = true;
-                        Launcher.LOG.info("RefreshCache=true");
-                        break;
-                    }
-                    if (iFile.getRelPath().startsWith("extensions") && iFile.getRelPath().endsWith(".jar")) {
-                        // Updated extensions
-                        JDInitFlags.REFRESH_CACHE = true;
-                        Launcher.LOG.info("RefreshCache=true");
-                        break;
-                    }
-                    if (iFile.getRelPath().endsWith(".class.backup")) {
-                        // Updated plugins
-                        JDInitFlags.REFRESH_CACHE = true;
-                        Launcher.LOG.info("RefreshCache=true");
-                        break;
-                    }
-                    if (iFile.getRelPath().startsWith("extensions") && iFile.getRelPath().endsWith(".jar.backup")) {
-                        // Updated extensions
-                        JDInitFlags.REFRESH_CACHE = true;
-                        Launcher.LOG.info("RefreshCache=true");
-                        break;
-                    }
-                }
-            }
-
-        } catch (Throwable e) {
-            // JUst to be sure
-            Launcher.LOG.log(e);
-        } finally {
-            if (logFile != null) {
-                logFile.renameTo(new File(logFile.getAbsolutePath() + "." + System.currentTimeMillis()));
-
-            }
-        }
-    }
+    // private static void checkSessionInstallLog() {
+    // File logFile = null;
+    // try {
+    // InstallLogList tmpInstallLog = new InstallLogList();
+    // logFile = Application.getResource(org.appwork.update.standalone.Main.SESSION_INSTALL_LOG_LOG);
+    // if (logFile.exists()) {
+    // Launcher.LOG.info("Check SessionInstallLog");
+    // tmpInstallLog = JSonStorage.restoreFromFile(logFile, tmpInstallLog);
+    //
+    // for (InstalledFile iFile : tmpInstallLog) {
+    // if (iFile.getRelPath().endsWith(".class")) {
+    // // Updated plugins
+    // JDInitFlags.REFRESH_CACHE = true;
+    // Launcher.LOG.info("RefreshCache=true");
+    // break;
+    // }
+    // if (iFile.getRelPath().startsWith("extensions") && iFile.getRelPath().endsWith(".jar")) {
+    // // Updated extensions
+    // JDInitFlags.REFRESH_CACHE = true;
+    // Launcher.LOG.info("RefreshCache=true");
+    // break;
+    // }
+    // if (iFile.getRelPath().endsWith(".class.backup")) {
+    // // Updated plugins
+    // JDInitFlags.REFRESH_CACHE = true;
+    // Launcher.LOG.info("RefreshCache=true");
+    // break;
+    // }
+    // if (iFile.getRelPath().startsWith("extensions") && iFile.getRelPath().endsWith(".jar.backup")) {
+    // // Updated extensions
+    // JDInitFlags.REFRESH_CACHE = true;
+    // Launcher.LOG.info("RefreshCache=true");
+    // break;
+    // }
+    // }
+    // }
+    //
+    // } catch (Throwable e) {
+    // // JUst to be sure
+    // Launcher.LOG.log(e);
+    // } finally {
+    // if (logFile != null) {
+    // logFile.renameTo(new File(logFile.getAbsolutePath() + "." + System.currentTimeMillis()));
+    //
+    // }
+    // }
+    // }
 
     private static void preInitChecks() {
         Launcher.javaCheck();
@@ -506,7 +494,7 @@ public class Launcher {
                     Launcher.LOG.log(e);
                     Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
 
-                    org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
+                    // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                 }
             }
         };
@@ -514,7 +502,8 @@ public class Launcher {
         final EDTHelper<Void> lafInit = new EDTHelper<Void>() {
             @Override
             public Void edtRun() {
-                LookAndFeelController.getInstance().setUIManager();
+                Dialog.getInstance().initLaf();
+
                 return null;
             }
         };
@@ -561,12 +550,7 @@ public class Launcher {
                                 public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                                 }
                             });
-                            /* check for available updates */
-                            // activate auto checker only if we are in jared
-                            // mode
-                            if ((JsonConfig.create(WebupdateSettings.class).isAutoUpdateCheckEnabled() && Application.isJared(Launcher.class)) || PARAMETERS.hasCommandSwitch("autoupdate")) {
-                                JDUpdater.getInstance().startChecker();
-                            }
+
                             /* start downloadwatchdog */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init DownloadWatchdog");
                             DownloadWatchDog.getInstance();
@@ -638,7 +622,7 @@ public class Launcher {
                         } catch (Throwable e) {
                             Launcher.LOG.log(e);
                             Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
-                            org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
+                            // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                         }
                     }
 
@@ -662,7 +646,7 @@ public class Launcher {
                     Launcher.LOG.log(e);
                     Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
 
-                    org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
+                    // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                 }
                 return null;
             }

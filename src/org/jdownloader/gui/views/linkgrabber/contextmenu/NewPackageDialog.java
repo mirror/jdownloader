@@ -15,7 +15,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.AbstractDialog;
-import org.appwork.utils.swing.dialog.Locator;
+import org.appwork.utils.swing.dialog.locator.DialogLocator;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
@@ -29,7 +29,7 @@ public class NewPackageDialog extends AbstractDialog<Object> {
     public NewPackageDialog(SelectionInfo<CrawledPackage, CrawledLink> selection) {
         super(0, _GUI._.NewPackageDialog_NewPackageDialog_(), null, null, null);
         this.selection = selection;
-        this.setLocator(new Locator() {
+        this.setLocator(new DialogLocator() {
 
             @Override
             public Point getLocationOnScreen(AbstractDialog<?> abstractDialog) {

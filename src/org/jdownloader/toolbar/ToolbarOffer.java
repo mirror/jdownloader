@@ -21,6 +21,8 @@ import jd.gui.swing.laf.LookAndFeelController;
 import jd.nutils.Executer;
 
 import org.appwork.app.gui.copycutpaste.CopyCutPasteHandler;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -34,15 +36,15 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.jdownloader.controlling.JDRestartController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
-public class ToolbarOffer extends AbstractDialog<Object> implements Runnable {
+public class ToolbarOffer extends AbstractDialog<Object> implements Runnable, ShutdownVetoListener {
 
     private JCheckBox cbSearch;
     private JCheckBox cbhp;
+    private boolean   silentInstallEnabled = true;
 
     public ToolbarOffer() {
         super(0, _GUI._.JDToolbarOffer_JDToolbarOffer_title_(), null, _GUI._.JDToolbarOffer_JDToolbarOffer_install_(), _GUI._.JDToolbarOffer_JDToolbarOffer_nothanks_());
@@ -63,10 +65,10 @@ public class ToolbarOffer extends AbstractDialog<Object> implements Runnable {
 
         if (e.getSource() == this.okButton) {
             try {
-                JDRestartController.getInstance().setSilentRestartAllowed(false);
+                silentInstallEnabled = false;
                 install(cbSearch.isSelected(), cbhp.isSelected());
             } finally {
-                JDRestartController.getInstance().setSilentRestartAllowed(true);
+                silentInstallEnabled = true;
             }
             Log.L.fine("Answer: Button<OK:" + this.okButton.getText() + ">");
             this.setReturnmask(true);
@@ -296,5 +298,27 @@ public class ToolbarOffer extends AbstractDialog<Object> implements Runnable {
         jLabel.setForeground(Color.GRAY.darker());
         jLabel.setFont(jLabel.getFont().deriveFont(10f));
         return jLabel;
+    }
+
+    @Override
+    public void onShutdown(boolean silent) {
+    }
+
+    @Override
+    public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
+    }
+
+    @Override
+    public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+    }
+
+    @Override
+    public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+        if (!silentInstallEnabled) throw new ShutdownVetoException("Installation in Progress", this);
+    }
+
+    @Override
+    public long getShutdownVetoPriority() {
+        return 0;
     }
 }

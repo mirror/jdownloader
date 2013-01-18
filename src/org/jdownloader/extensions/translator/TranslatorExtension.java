@@ -33,8 +33,6 @@ import org.appwork.txtresource.TranslationFactory;
 import org.appwork.txtresource.TranslationHandler;
 import org.appwork.txtresource.TranslationSource;
 import org.appwork.txtresource.TranslationUtils;
-import org.appwork.update.standalone.translate.StandaloneUpdaterTranslation;
-import org.appwork.update.updateclient.translation.UpdateTranslation;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
@@ -60,6 +58,7 @@ import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate.JdownloaderTranslation;
+import org.jdownloader.updatev2.UpdaterTranslation;
 import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNCommitItem;
@@ -80,11 +79,11 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     /**
      * List of all available languages
      */
-    private java.util.List<TLocale>             translations;
+    private java.util.List<TLocale>        translations;
     /**
      * If a translation is loaded, this list contains all it's entries
      */
-    private java.util.List<TranslateEntry>      translationEntries;
+    private java.util.List<TranslateEntry> translationEntries;
     /**
      * currently loaded Language
      */
@@ -357,8 +356,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             if (fontname.equalsIgnoreCase("default")) fontname = "Tahoma";
             load(tmp, locale, JdownloaderTranslation.class);
             load(tmp, locale, LiveheaderTranslation.class);
-            load(tmp, locale, StandaloneUpdaterTranslation.class);
-            load(tmp, locale, UpdateTranslation.class);
+            load(tmp, locale, UpdaterTranslation.class);
             load(tmp, locale, UpnpTranslation.class);
             // there should be no more entries. all of them should have been
             // mapped to an INterface

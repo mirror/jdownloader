@@ -39,6 +39,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
+import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.ExtensionManager;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
@@ -90,6 +91,14 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
                             g2.fillRect(0, p.y, list.getWidth(), 25);
                             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                         }
+
+                    } else if (index >= 0 && getModel().getElementAt(index) instanceof ExtensionManager) {
+                        Point p = indexToLocation(index);
+                        if (p != null) {
+                            g2.fillRect(0, p.y, list.getWidth(), 25);
+                            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                        }
+
                     } else {
                         Point p = indexToLocation(index);
                         if (p != null) {
@@ -126,6 +135,7 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
             // return Math.max(visibleRect.height / 10, 1);
             // }
         };
+
         list.addMouseMotionListener(this);
         list.addMouseListener(this);
         list.setModel(treemodel = new SettingsSidebarModel());

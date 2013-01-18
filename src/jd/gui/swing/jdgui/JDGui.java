@@ -31,6 +31,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
@@ -84,6 +85,8 @@ import org.jdownloader.settings.FrameStatus.ExtendedState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.UpdateController;
 
 public class JDGui extends SwingGui {
 
@@ -148,6 +151,35 @@ public class JDGui extends SwingGui {
         if (this.mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
             ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) this.mainFrame.getRootPane().getUI()).setMaximizedBounds(this.mainFrame);
         }
+
+        mainFrame.addWindowListener(new WindowListener() {
+
+            public void windowOpened(WindowEvent e) {
+                UpdateController.getInstance().setGuiToFront(mainFrame);
+
+            }
+
+            public void windowIconified(WindowEvent e) {
+            }
+
+            public void windowDeiconified(WindowEvent e) {
+                UpdateController.getInstance().setGuiToFront(mainFrame);
+
+            }
+
+            public void windowDeactivated(WindowEvent e) {
+            }
+
+            public void windowClosing(WindowEvent e) {
+            }
+
+            public void windowClosed(WindowEvent e) {
+            }
+
+            public void windowActivated(WindowEvent e) {
+                Dialog.getInstance().setParentOwner(getMainFrame());
+            }
+        });
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
 
             public boolean postProcessKeyEvent(final KeyEvent e) {
@@ -683,7 +715,8 @@ public class JDGui extends SwingGui {
                 }.start();
                 return;
             }
-            org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
+
+            RestartController.getInstance().exitAsynch();
         }
 
     }
