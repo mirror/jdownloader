@@ -42,7 +42,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaSkyMetallic.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaWhiteVision.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/jna.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/laf/substance-swingx.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlackEye.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaGreenDream.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/image4j.jar"/>
@@ -56,7 +55,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-swing-junit-4.5-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-swing-junit-4.5-1.2-sources.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-util-1.1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-util-1.1.2-sources.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar" sourcepath="ressourcen/code-ressourcen/svnkitsrc.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs/laf/trident.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/junit-4.8.2.jar" sourcepath="ressourcen/code-ressourcen/junit-4.8.2-src.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbinding.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/jpathwatch-0-93-rc1.jar"/>
@@ -68,7 +66,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingWin.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/swingx.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/mqtt.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/laf/substance.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/neembuu/jpfm.jar" sourcepath="ressourcen/code-ressourcen/neembuu/jpfm.src.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/neembuu/jpfm-fs.jar" sourcepath="ressourcen/code-ressourcen/neembuu/jpfm-fs.src.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-config.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-config.src.zip"/>
