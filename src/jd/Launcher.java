@@ -98,7 +98,6 @@ import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.RestartController;
 
 import sun.awt.shell.ShellFolder;
-import sun.java2d.ScreenUpdateManager;
 
 public class Launcher {
     static {
@@ -200,7 +199,7 @@ public class Launcher {
         }
 
         Launcher.LOG = LogController.GL;
-        LOG.info("Using Direct 3D: " + (ScreenUpdateManager.getInstance().getClass().getSimpleName().equals("D3DScreenUpdateManager")) + " (" + ScreenUpdateManager.getInstance().getClass() + ")");
+
         // Mac OS specific
         if (CrossSystem.isMac()) {
             // Set MacApplicationName
