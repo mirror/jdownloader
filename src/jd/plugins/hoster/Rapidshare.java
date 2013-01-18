@@ -58,6 +58,8 @@ public class Rapidshare extends PluginForHost {
     public static class RSLink {
 
         public static RSLink parse(final DownloadLink link) {
+
+            // test comment
             final RSLink ret = new RSLink(link);
             ret.id = Long.parseLong(new Regex(ret.url, "files/(\\d+)/").getMatch(0));
             if (ret.link.getProperty("htmlworkaround", null) == null) {
@@ -752,8 +754,8 @@ public class Rapidshare extends PluginForHost {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, directurl, true, 0);
                 final URLConnectionAdapter urlConnection = this.dl.getConnection();
                 /*
-                 * Download starten prüft ob ein content disposition header geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei oder eine Fehlerseite.
-                 * BIldfiles haben keinen Cache-Control Header
+                 * Download starten prüft ob ein content disposition header geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei
+                 * oder eine Fehlerseite. BIldfiles haben keinen Cache-Control Header
                  */
                 if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
                     // Lädt die zuletzt aufgebaute vernindung
