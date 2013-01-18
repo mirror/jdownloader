@@ -84,9 +84,9 @@ public class DreiSatDe extends PluginForHost {
                     }
                     String title = br.getRegex("<div class=\"MainBoxHeadline\">([^<]+)</").getMatch(0);
                     String titleUT = br.getRegex("<span class=\"BoxHeadlineUT\">([^<]+)</").getMatch(0);
-                    if (title == null) title = br.getRegex("<title>3sat.online \\- Mediathek: ([^<]+)</title>").getMatch(0);
+                    if (title == null) title = br.getRegex("<title>3sat\\.online \\- Mediathek: ([^<]+)</title>").getMatch(0);
                     if (title != null) title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
-                    if (title == null) title = "UnknownTitle";
+                    if (title == null) title = "UnknownTitle_" + System.currentTimeMillis();
                     /*
                      * little pause needed so the next call does not return trash
                      */
