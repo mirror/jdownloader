@@ -87,43 +87,53 @@ public class FrShrdFldr extends PluginForDecrypt {
 
         FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
+        int currentFirstLink = 0;
+        String[] filter = null;
+        do {
+            // get minifolder page, contains all files and subfolders in one page
+            br.getPage(parameter.replace(".com/folder", ".com/minifolder") + "?firstFileToShow=" + currentFirstLink);
 
-        // get minifolder page, contains all files and subfolders in one page
-        br.getPage(parameter.replace(".com/folder", ".com/minifolder"));
-
-        String[] filter = br.getRegex("<tr valign=\"top\">[\r\n\t ]+<td width=\"\\d+\"(.*?)</td>[\r\n\t ]+</tr>").getColumn(0);
-        if (filter == null) {
-            logger.warning("Couldn't filter /minifolder/ page!");
-        }
-        if (filter != null && filter.length > 0) {
-            for (String entry : filter) {
-                String dllink = new Regex(entry, "\"(.*?4shared.com/[^\"]+\\.html)").getMatch(0);
-                if (dllink == null) {
-                    logger.warning("Couldn't find dllink!");
-                    continue;
-                }
-                DownloadLink dlink = createDownloadlink(dllink.replace("https", "http"));
-                if (pass.length() != 0) {
-                    dlink.setProperty("pass", pass);
-                }
-                String fileName = new Regex(entry, "[^\\,]+, [\\d,]+ [^\"]+\">([^\"']+)</a>").getMatch(0);
-                String fileSize = new Regex(entry, "[^\\,]+, ([\\d,]+ [^\"]+)").getMatch(0);
-
-                if (fileName != null) {
-                    fileName = fileName.replace("<wbr>", "");
-                    dlink.setName(Encoding.htmlDecode(fileName));
-                }
-                if (fileSize != null) dlink.setDownloadSize(SizeFormatter.getSize(fileSize.replace(",", "")));
-                dlink.setAvailable(true);
-                fp.add(dlink);
-                try {
-                    distribute(dlink);
-                } catch (final Throwable e) {
-                    /* does not exist in 09581 */
-                }
-                decryptedLinks.add(dlink);
+            filter = br.getRegex("<tr valign=\"top\">[\r\n\t ]+<td width=\"\\d+\"(.*?)</td>[\r\n\t ]+</tr>").getColumn(0);
+            if (filter == null) {
+                logger.warning("Couldn't filter /minifolder/ page!");
+                return null;
             }
-        }
+            if (filter != null && filter.length > 0) {
+                for (final String entry : filter) {
+                    final String dllink = new Regex(entry, "\"(.*?4shared.com/[^\"]+\\.html)").getMatch(0);
+                    if (dllink == null) {
+                        logger.warning("Couldn't find dllink!");
+                        continue;
+                    }
+                    final DownloadLink dlink = createDownloadlink(dllink.replace("https", "http"));
+                    if (pass.length() != 0) {
+                        dlink.setProperty("pass", pass);
+                    }
+                    String fileName = new Regex(entry, "[^\\,]+, [\\d,]+ [^\"]+\">([^\"']+)</a>").getMatch(0);
+                    final String fileSize = new Regex(entry, "[^\\,]+, ([\\d,]+ [^\"]+)").getMatch(0);
+
+                    if (fileName != null) {
+                        fileName = fileName.replace("<wbr>", "");
+                        dlink.setName(Encoding.htmlDecode(fileName));
+                    }
+                    if (fileSize != null) dlink.setDownloadSize(SizeFormatter.getSize(fileSize.replace(",", "")));
+                    dlink.setAvailable(true);
+                    fp.add(dlink);
+                    try {
+                        distribute(dlink);
+                    } catch (final Throwable e) {
+                        /* does not exist in 09581 */
+                    }
+                    decryptedLinks.add(dlink);
+                }
+            }
+            if (currentFirstLink >= 10000) {
+                logger.info("Fail safe triggered, quitting...");
+                break;
+            }
+            currentFirstLink += 100;
+        } while (filter != null && filter.length == 100);
+
         // lets just add them back into the decrypter...
         if (filter != null && filter.length > 0) {
             for (String entry : filter) {

@@ -47,10 +47,11 @@ public class ZeveraCom extends PluginForHost {
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
 
-    private static final String mName = "zevera.com";
-    private static final String mProt = "http://";
-    private static final String mServ = mProt + "api." + mName;
-    private static Object       LOCK  = new Object();
+    private static final String                            mName              = "zevera.com";
+    private static final String                            mProt              = "http://";
+    private static final String                            mServ              = mProt + "api." + mName;
+    private static Object                                  LOCK               = new Object();
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     public ZeveraCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -125,6 +126,18 @@ public class ZeveraCom extends PluginForHost {
             /* without account its not possible to download the link */
             return false;
         }
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    return false;
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(downloadLink.getHost());
+                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                }
+            }
+        }
         return true;
     }
 
@@ -178,9 +191,14 @@ public class ZeveraCom extends PluginForHost {
             br.getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()));
         }
         // handleErrors();
-        br.getPage(br.getRedirectLocation());
+        final String continuePage = br.getRedirectLocation();
+        br.getPage(continuePage);
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink.contains("/member/systemmessage.aspx")) {
+            logger.info("Current host doesn't seem to work, deactivating it for 1 hour...");
+            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+        }
         showMessage(link, "Task 2: Download begins!");
         handleDL(link, dllink);
     }
@@ -259,6 +277,20 @@ public class ZeveraCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
+        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap == null) {
+                unavailableMap = new HashMap<String, Long>();
+                hostUnavailableMap.put(account, unavailableMap);
+            }
+            /* wait to retry this host */
+            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+        }
+        throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
     private void showMessage(DownloadLink link, String message) {

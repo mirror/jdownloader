@@ -38,7 +38,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=\\d+\\&id=\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|id\\d+(\\?z=albums\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=\\d+\\&id=\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|id\\d+(\\?z=albums\\d+)?)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -91,7 +91,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 /** Decryption process START */
                 br.setFollowRedirects(false);
                 if (parameter.matches(".*?vk\\.com/audio.*?")) {
-                    if (parameter.matches("http://(www\\.)?vk\\.com/audio(\\.php)?\\?id=(\\-)?\\d+")) {
+                    if (parameter.matches("http://(www\\.)?vk\\.com/(audio(\\.php)?\\?id=(\\-)?\\d+|audios\\d+)")) {
                         /** Audio links */
                         decryptedLinks = decryptAudioAlbum(decryptedLinks, parameter);
                     } else {
@@ -148,7 +148,7 @@ public class VKontakteRu extends PluginForDecrypt {
             postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + new Regex(parameter, "(\\d+)$").getMatch(0);
         }
         br.postPage("http://vk.com/audio", postData);
-        final String[][] audioLinks = br.getRegex("\\'(http://cs\\d+\\.(vk\\.com|userapi\\.com)/u\\d+/audio/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
+        final String[][] audioLinks = br.getRegex("\\'(http://cs\\d+\\.(vk\\.com|userapi\\.com)/u\\d+/audios?/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
         if (audioLinks == null || audioLinks.length == 0) return null;
         for (String audioInfo[] : audioLinks) {
             String finallink = audioInfo[0];
@@ -405,8 +405,8 @@ public class VKontakteRu extends PluginForDecrypt {
         if (videoID == null) videoID = new Regex(parameter, ".*?vk\\.com/video(\\-)?\\d+_(\\d+)").getMatch(1);
         if (videoID == null || urlPart == null || vtag == null) return null;
         /**
-         * Find the highest possible quality, also every video is only available in 1-2 formats so we HAVE to use the highest one, if we don't do that we get
-         * wrong links
+         * Find the highest possible quality, also every video is only available in 1-2 formats so we HAVE to use the highest one, if we
+         * don't do that we get wrong links
          */
         String quality = ".vk.flv";
         if (correctedBR.contains("\"hd\":1")) {
