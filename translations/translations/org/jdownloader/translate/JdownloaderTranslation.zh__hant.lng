@@ -1,4 +1,6 @@
+DownloadWatchDog_onShutdownRequest_=下載正在進行中！
 DownloadWatchDog_onShutdownRequest_msg=您想停止執行下載退出 JDownloader 嗎？
+DownloadWatchDog_onShutdownRequest_nonresumable=非斷點續傳下載正在進行中！
 DuplicateAction_DuplicateAction_=複製規則
 ExportAction_ExportAction_tt=規則儲存到一個檔案中。\n\n- 備份\n\n- 分享規則給其他人
 Extraction_onShutdownRequest_msg=中止解壓縮？
