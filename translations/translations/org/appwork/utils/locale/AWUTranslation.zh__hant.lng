@@ -2,6 +2,7 @@ ABSTRACTDIALOG_BUTTON_CANCEL=取消
 ABSTRACTDIALOG_BUTTON_OK=確定
 ABSTRACTDIALOG_STYLE_SHOW_DO_NOT_DISPLAY_AGAIN=不要再次顯示
 AccountNew_AccountNew_message=請在此輸入您的登錄資訊
+AccountNew_AccountNew_title=輸入登入資訊
 AccountNew_layoutDialogContent_accountname=使用者名稱
 AccountNew_layoutDialogContent_password=密碼
 AccountNew_layoutDialogContent_save=記憶
