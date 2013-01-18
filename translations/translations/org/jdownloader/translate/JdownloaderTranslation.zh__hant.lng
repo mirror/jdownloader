@@ -92,6 +92,7 @@ gui_settings_general_title=一般設定
 gui_settings_linkgrabber_filter_description=連結篩選用於篩選連結。根據連結、位址、網址或檔案的屬性來忽略。加入例外以便接受特殊的連結。例外情況在連結擷取器的側邊列中的自訂檢視將可以使用。
 gui_settings_linkgrabber_packagizer_description=Packagizer 規則可讓您根據其檔案的屬性自動設定下載設定。
 gui_settings_linkgrabber_title=連結擷取器篩選
+gui_settings_plugins_description=JDownloader 使用用於 %s1 的外掛以便自動下載網站的檔案，沒有 JDownloader 時這會花費很多時間。部份外掛有設定可以用來自訂動作。
 gui_settings_plugins_title=外掛設定
 gui_settings_premium_description=輸入和管理您的所有進階/黃金/白金帳號。
 gui_settings_premium_title=帳號管理
