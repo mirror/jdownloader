@@ -269,11 +269,12 @@ public class LnkCrptWs extends PluginForDecrypt {
             } catch (final Throwable e) {
                 /* ignore rhino Exceptions */
                 try {
-                    query = engine.eval(query).toString() + new Regex(js, doc + "=\"([^\"]+)").getMatch(0);
+                    // query = engine.eval(query).toString() + new Regex(js, doc + "=\"([^\"]+)").getMatch(0);
+                    query = new Regex(js, doc + "=\"([^\"]+)").getMatch(0);
                 } catch (Throwable e1) {
                 }
             }
-            return query;
+            return "|1|0|" + query;
         }
 
         private void makeFirstRequest() {
@@ -329,8 +330,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                     signFour = signFour.substring(0, 10) + "378" + signFour.substring(10);
                     PARAMS.put("s_s_c_web_server_sign4", signFour);
                 }
-                SERVERSTRING = rcBr.getRegex("s_s_c_resscript\\.setAttribute\\(\'src\',\'(.*?)\'").getMatch(0) + Encoding.urlEncode(getGjsParameter() + additionalQuery);
+                SERVERSTRING = rcBr.getRegex("\\.s_s_c_resurl=\'([^\']+)\'\\+").getMatch(0);
                 if (stImgs == null || sscStc == null || SERVERSTRING == null) throw new Exception("KeyCaptcha Module fails");
+                SERVERSTRING += Encoding.urlEncode(getGjsParameter() + additionalQuery);
             } else {
                 throw new Exception("KeyCaptcha Module fails");
             }
@@ -386,7 +388,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte Puzzleteile
             sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes Hintergrundbild
 
-            if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) { return "CANCEL"; }
+            if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) return "CANCEL";
 
             String out = null;
             ArrayList<Integer> marray = new ArrayList<Integer>();
@@ -418,7 +420,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 }
                 out = vC.POSITION;
             }
-            if (out == null) { return null; }
+            if (out == null) return null;
             if ("CANCEL".equals(out)) {
                 System.out.println("KeyCaptcha: User aborted captcha dialog.");
                 return out;
@@ -438,7 +440,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             out = rcBr.getPage(SERVERSTRING.substring(0, SERVERSTRING.lastIndexOf("%7C")));
             out = new Regex(out, "s_s_c_setcapvalue\\( \"(.*?)\" \\)").getMatch(0);
             // validate final response
-            if (!out.matches("[0-9a-f]+\\|[0-9a-f]+\\|http://back\\d+\\.keycaptcha\\.com/swfs/ckc/[0-9a-f-]+\\|[0-9a-f-\\.]+\\|(0|1)")) { return null; }
+            if (!out.matches("[0-9a-f]+\\|[0-9a-f]+\\|http://back\\d+\\.keycaptcha\\.com/swfs/ckc/[0-9a-f-]+\\|[0-9a-f-\\.]+\\|(0|1)")) return null;
             return out;
         }
 
@@ -1163,7 +1165,8 @@ public class LnkCrptWs extends PluginForDecrypt {
     }
 
     /**
-     * if packed js contain 'soft hyphen' encoding as \u00ad(unicode) or %C2%AD(uft-8) then result is broken in rhino decodeURIComponent('\u00ad') --> is empty.
+     * if packed js contain 'soft hyphen' encoding as \u00ad(unicode) or %C2%AD(uft-8) then result is broken in rhino
+     * decodeURIComponent('\u00ad') --> is empty.
      */
     public static class JavaScriptUnpacker {
 
