@@ -28,7 +28,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zpag.es" }, urls = { "http://(www\\.)?zpag\\.es/.+" }, flags = { 0 })
@@ -55,7 +54,7 @@ public class ZPagEs extends PluginForDecrypt {
             if (br.containsHTML(CAPTCHATEXT) || br.getURL().contains(CAPTCHATEXT2)) {
                 for (int i = 0; i <= 5; i++) {
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
                     rc.parse();
                     rc.getForm().setAction("http://zpag.es/receiveRecaptcha.do");
                     rc.getForm().put("URL", parameter);

@@ -169,7 +169,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         /* interfaceVersion 2 is for Stable/Nightly */
                         logger.log((new WTFException("PLUGIN STABLE ISSUE!! names.length(" + names.length + ")!= flags.length(" + flags.length + ")->" + simpleName)));
                     }
-                    if (names.length == 0) { throw new WTFException("names.length=0"); }
+                    if (names.length == 0) {
+                        //
+                        throw new WTFException("names.length=0");
+                    }
                     for (int i = 0; i < names.length; i++) {
                         classLoader = (PluginClassLoaderChild) c.getClazz().getClassLoader();
                         /* during init we dont want dummy libs being created */
@@ -193,6 +196,9 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             ap.setInterfaceVersion(a.interfaceVersion());
                             l = new LazyHostPlugin(ap, null, classLoader);
                             try {
+                                /* check for stable compatibility */
+                                classLoader.setPluginClass(c.getClazz().getName());
+                                classLoader.setCheckStableCompatibility(a.interfaceVersion() == 2);
                                 PluginForHost plg = l.newInstance(classLoader);
                                 ap.setPremium(plg.isPremiumEnabled());
                                 String purl = plg.getBuyPremiumUrl();

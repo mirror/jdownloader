@@ -87,7 +87,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-@HostPlugin(revision = "$Revision: 18910 $", interfaceVersion = 2, names = { "oceanus.ch" }, urls = { "oceanus://\\d+,\\d+,[0-9a-zA-Z\\-]*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 18910 $", interfaceVersion = 3, names = { "oceanus.ch" }, urls = { "oceanus://\\d+,\\d+,[0-9a-zA-Z\\-]*" }, flags = { 2 })
 public class Oceanus extends PluginForHost {
 
     private final String           DOWNLOAD_PREPARE_MSG  = "Preparing to download...";

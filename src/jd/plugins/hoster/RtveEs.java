@@ -34,8 +34,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 
-import org.appwork.utils.encoding.Base64;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "http://(www\\.)?rtve\\.es/alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?" }, flags = { 0 })
 public class RtveEs extends PluginForHost {
 
@@ -54,7 +52,7 @@ public class RtveEs extends PluginForHost {
     private byte[] getBlowfish(byte[] value, boolean decrypt) {
         try {
             Cipher c = Cipher.getInstance("Blowfish/ECB/PKCS5Padding");
-            SecretKeySpec keySpec = new SecretKeySpec(Base64.decode(BLOWFISHKEY), "Blowfish");
+            SecretKeySpec keySpec = new SecretKeySpec(org.appwork.utils.encoding.Base64.decode(BLOWFISHKEY), "Blowfish");
             if (decrypt) {
                 c.init(Cipher.DECRYPT_MODE, keySpec);
             } else {
@@ -124,11 +122,11 @@ public class RtveEs extends PluginForHost {
         String[] flashVars = br.getRegex("assetID=(\\d+)_([a-z]{2,3})_(audios|videos)\\&location=alacarta").getRow(0);
         if (flashVars == null || flashVars.length != 3) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         /* encrypt request query */
-        String getEncData = Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + ("audios".equals(flashVars[2]) ? "audio" : "video") + "_" + flashVars[1])), false), false);
+        String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + ("audios".equals(flashVars[2]) ? "audio" : "video") + "_" + flashVars[1])), false), false);
         Browser enc = br.cloneBrowser();
         enc.getPage("http://ztnr.rtve.es/ztnr/res/" + getEncData);
         /* decrypt response body */
-        DLURL = getLink(JDHexUtils.toString(JDHexUtils.getHexString(getBlowfish(Base64.decode(enc.toString()), true))));
+        DLURL = getLink(JDHexUtils.toString(JDHexUtils.getHexString(getBlowfish(org.appwork.utils.encoding.Base64.decode(enc.toString()), true))));
 
         String filename = br.getRegex("<h1><span title=\"([^\"]+)").getMatch(0);
         if (filename == null) {

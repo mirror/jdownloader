@@ -33,7 +33,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.FaceBookComVideos;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -86,7 +85,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     addAcc = true;
                 }
                 try {
-                    ((FaceBookComVideos) facebookPlugin).login(aa, false, this.br);
+                    ((jd.plugins.hoster.FaceBookComVideos) facebookPlugin).login(aa, false, this.br);
                 } catch (final PluginException e) {
                     aa.setEnabled(false);
                     aa.setValid(false);

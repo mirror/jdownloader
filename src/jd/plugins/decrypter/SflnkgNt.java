@@ -39,10 +39,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.Application;
 
 //Similar to SafeUrlMe (safeurl.me) and XSharezCom (xsharez.com)
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "https?://(www\\.)?(safelinking\\.net/(p|d)/[a-z0-9]+|sflk\\.in/[A-Za-z0-9]+)" }, flags = { 0 })
@@ -89,8 +86,7 @@ public class SflnkgNt extends PluginForDecrypt {
 
     public class GeneralSafelinkingHandling {
         /**
-         * A class to handle sites similar to safelinking.net ->Google "Secure your links with a captcha, a password and much more" to find
-         * such sites
+         * A class to handle sites similar to safelinking.net ->Google "Secure your links with a captcha, a password and much more" to find such sites
          */
 
         public GeneralSafelinkingHandling(final Browser br, final CryptedLink param, final String host) {
@@ -230,7 +226,7 @@ public class SflnkgNt extends PluginForDecrypt {
                         break;
                     case 2:
                         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
                         rc.parse();
                         rc.load();
                         File cfRe = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -339,7 +335,7 @@ public class SflnkgNt extends PluginForDecrypt {
                 if (con.getResponseCode() == 200) {
                     try {
                         /* does not exist in 09581 */
-                        file = Application.getResource("tmp/generalsafelinking/" + test.replaceAll("(:|/|\\?)", "") + format);
+                        file = org.appwork.utils.Application.getResource("tmp/generalsafelinking/" + test.replaceAll("(:|/|\\?)", "") + format);
                     } catch (Throwable e) {
                         file = JDUtilities.getResourceFile("tmp/generalsafelinking/" + test.replaceAll("(:|/|\\?)", "") + format);
                     }

@@ -46,7 +46,7 @@ public class DpstFlsCm extends PluginForDecrypt {
         if (MAINPAGE == null || DOMAINS == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("depositfiles.com");
-            MAINPAGE = jd.plugins.hoster.DepositFiles.MAINPAGE;
+            MAINPAGE = jd.plugins.hoster.DepositFiles.MAINPAGE.string;
             DOMAINS = jd.plugins.hoster.DepositFiles.DOMAINS;
             if (MAINPAGE == null || DOMAINS == null) {
                 logger.warning("Contant setters failed.");
@@ -68,6 +68,7 @@ public class DpstFlsCm extends PluginForDecrypt {
                     if (Integer.parseInt(currentPage) > pagecount) pagecount = Integer.parseInt(currentPage);
             }
         }
+        new Regex("", "");
         for (int x = 1; x <= pagecount; x++) {
             br.getPage(url + "?page=" + x + "&format=text");
             String[] finalLinks = br.getRegex("(https?://" + DOMAINS + "/files/[0-9a-z]+)").getColumn(0);

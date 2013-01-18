@@ -23,6 +23,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,9 +31,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.encoding.Base64;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viddler.com" }, urls = { "http://(www\\.)?viddler\\.com/(explore/\\w+/videos/\\d+|(player|simple)/\\w+(/)?(.+)?)" }, flags = { 0 })
 public class VddlrCm extends PluginForHost {
@@ -66,9 +64,9 @@ public class VddlrCm extends PluginForHost {
 
     private byte[] getBlowfish(final String strkey, final byte[] value, final boolean decrypt) {
         try {
-            final byte[] iv = Base64.decode(IV);
+            final byte[] iv = org.appwork.utils.encoding.Base64.decode(IV);
             final Cipher c = Cipher.getInstance("Blowfish/CFB/NoPadding");
-            final SecretKeySpec keySpec = new SecretKeySpec(Base64.decode(strkey), "Blowfish");
+            final SecretKeySpec keySpec = new SecretKeySpec(org.appwork.utils.encoding.Base64.decode(strkey), "Blowfish");
             final IvParameterSpec ivSpec = new IvParameterSpec(iv);
             if (decrypt) {
                 c.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
@@ -78,6 +76,7 @@ public class VddlrCm extends PluginForHost {
             final byte[] result = c.doFinal(value);
             return result;
         } catch (final Throwable e) {
+            e.printStackTrace();
             return null;
         }
     }

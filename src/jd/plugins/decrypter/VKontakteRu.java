@@ -36,7 +36,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.VKontakteRuHoster;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=\\d+\\&id=\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|id\\d+(\\?z=albums\\d+)?)" }, flags = { 0 })
@@ -406,8 +405,8 @@ public class VKontakteRu extends PluginForDecrypt {
         if (videoID == null) videoID = new Regex(parameter, ".*?vk\\.com/video(\\-)?\\d+_(\\d+)").getMatch(1);
         if (videoID == null || urlPart == null || vtag == null) return null;
         /**
-         * Find the highest possible quality, also every video is only available in 1-2 formats so we HAVE to use the highest one, if we
-         * don't do that we get wrong links
+         * Find the highest possible quality, also every video is only available in 1-2 formats so we HAVE to use the highest one, if we don't do that we get
+         * wrong links
          */
         String quality = ".vk.flv";
         if (correctedBR.contains("\"hd\":1")) {
@@ -516,7 +515,7 @@ public class VKontakteRu extends PluginForDecrypt {
             return false;
         }
         try {
-            ((VKontakteRuHoster) vkPlugin).login(this.br, aa, force);
+            ((jd.plugins.hoster.VKontakteRuHoster) vkPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
             aa.setEnabled(false);
             aa.setValid(false);

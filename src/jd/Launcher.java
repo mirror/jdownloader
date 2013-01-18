@@ -97,13 +97,9 @@ import org.jdownloader.toolbar.ToolbarOffer;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.RestartController;
 
-import sun.awt.shell.ShellFolder;
-
 public class Launcher {
     static {
-
         statics();
-
     }
 
     private static LogSource           LOG;
@@ -674,13 +670,17 @@ public class Launcher {
         StatsManager.I();
 
         // init Filechooser. filechoosers may freeze the first time the get initialized. maybe this helps
-        long t = System.currentTimeMillis();
-        File[] baseFolders = AccessController.doPrivileged(new PrivilegedAction<File[]>() {
-            public File[] run() {
-                return (File[]) ShellFolder.get("fileChooserComboBoxFolders");
-            }
-        });
-        LOG.info("fileChooserComboBoxFolders " + (System.currentTimeMillis() - t));
+        try {
+            long t = System.currentTimeMillis();
+            File[] baseFolders = AccessController.doPrivileged(new PrivilegedAction<File[]>() {
+                public File[] run() {
+                    return (File[]) sun.awt.shell.ShellFolder.get("fileChooserComboBoxFolders");
+                }
+            });
+            LOG.info("fileChooserComboBoxFolders " + (System.currentTimeMillis() - t));
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
 
     }
 }

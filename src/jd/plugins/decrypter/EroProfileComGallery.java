@@ -30,7 +30,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.EroProfileCom;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroprofile.com" }, urls = { "http://(www\\.)?eroprofile\\.com/m/photos/album/[A-Za-z0-9\\-_]+" }, flags = { 0 })
@@ -102,7 +101,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
         Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa == null) { return false; }
         try {
-            ((EroProfileCom) hostPlugin).login(this.br, aa, force);
+            ((jd.plugins.hoster.EroProfileCom) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
             aa.setEnabled(false);
             aa.setValid(false);

@@ -37,6 +37,7 @@ import jd.crypt.JDCrypt;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
@@ -49,7 +50,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDHexUtils;
 
-import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veoh.com" }, urls = { "http://(www\\.)?veohdecrypted\\.com/(browse/videos/category/.*?/)?watch/[A-Za-z0-9]+" }, flags = { 0 })
@@ -187,7 +187,7 @@ public class VeohCom extends PluginForHost {
             // prepareBrowser("veohplugin-1.3.6 service (NT 6.1; IE 7.0; en-US Windows)");
             /* generate crypted token (ct=) */
             final String path = "/veoh/" + permaLinkID + "/" + fHash + ".eveoh";
-            final String cryptedToken = Hash.getSHA1(sTime + "VT Copyright 2008 Veoh" + path);
+            final String cryptedToken = JDHash.getSHA1(sTime + "VT Copyright 2008 Veoh" + path);
             final int p = Integer.parseInt(cryptedToken.substring(0, 1), 16);
 
             downloadLink.getLinkStatus().setStatusText("download to initialize ...");

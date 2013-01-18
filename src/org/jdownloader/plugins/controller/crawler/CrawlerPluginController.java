@@ -204,6 +204,9 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                 existingPlugin.add(ap);
                             }
                             try {
+                                /* check for stable compatibility */
+                                classLoader.setPluginClass(c.getClazz().getName());
+                                classLoader.setCheckStableCompatibility(a.interfaceVersion() == 2);
                                 PluginForDecrypt plg = l.newInstance(classLoader);
                                 ap.setHasConfig(plg.hasConfig());
                                 ap.setMaxConcurrentInstances(plg.getMaxConcurrentProcessingInstances());

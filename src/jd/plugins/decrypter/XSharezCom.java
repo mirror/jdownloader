@@ -38,7 +38,7 @@ public class XSharezCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("safelinking.net");
-        final jd.plugins.decrypter.SflnkgNt.GeneralSafelinkingHandling gsh = ((SflnkgNt) solveplug).getGeneralSafelinkingHandling(this.br, param, this.getHost());
+        final jd.plugins.decrypter.SflnkgNt.GeneralSafelinkingHandling gsh = ((jd.plugins.decrypter.SflnkgNt) solveplug).getGeneralSafelinkingHandling(this.br, param, this.getHost());
         gsh.startUp();
         try {
             gsh.decrypt();

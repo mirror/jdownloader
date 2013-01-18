@@ -96,8 +96,8 @@ public class FizyCom extends PluginForHost {
 
             final String swfUrl = "http://apiplayer1.fizy.org/lib/player/fizyPlay1410a.swf";
             final String app = "fizy/";
-            dl = new RTMPDownload(this, downloadLink, dllink);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            dl = new jd.plugins.hoster.RTMPDownload(this, downloadLink, dllink);
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((jd.plugins.hoster.RTMPDownload) dl).getRtmpConnection();
 
             rtmp.setPlayPath(clipUrl);
             rtmp.setApp(app);

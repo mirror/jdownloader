@@ -32,7 +32,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hideurl.in" }, urls = { "http://(www\\.)?hideurl\\.in/(check\\.[a-z0-9]+|[a-z0-9]+\\-[a-z0-9\\-_]+)\\.html" }, flags = { 0 })
@@ -55,7 +54,7 @@ public class HideUrlIn extends PluginForDecrypt {
             return null;
         }
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(rcID);
         rc.load();
         for (int i = 0; i <= 5; i++) {

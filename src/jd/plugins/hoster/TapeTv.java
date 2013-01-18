@@ -49,7 +49,6 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDHexUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.encoding.Base64;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -114,7 +113,7 @@ public class TapeTv extends PluginForHost {
             String key = keyMap.get(secVersion);
             enc = enc.replaceAll("\n", "");
             if (key != null) {
-                byte t[] = getBlowFish(Base64.decode(enc), JDHexUtils.getByteArray(JDHexUtils.getHexString(key)));
+                byte t[] = getBlowFish(org.appwork.utils.encoding.Base64.decode(enc), JDHexUtils.getByteArray(JDHexUtils.getHexString(key)));
                 return new String(t);
             }
             return null;

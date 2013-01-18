@@ -34,7 +34,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.HastaTeamComHoster;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -88,7 +87,7 @@ public class HastaTeamCom extends PluginForDecrypt {
             aa = new Account(username, password);
         }
         try {
-            ((HastaTeamComHoster) hosterPlugin).login(this.br, aa, false);
+            ((jd.plugins.hoster.HastaTeamComHoster) hosterPlugin).login(this.br, aa, false);
         } catch (final PluginException e) {
             aa.setEnabled(false);
             aa.setValid(false);

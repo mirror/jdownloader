@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -59,7 +60,7 @@ public class IFileIt extends PluginForHost {
     private static final String  NORESUME                 = "NORESUME";
     private static final String  MAINPAGE                 = "http://filecloud.io/";
     private static AtomicInteger maxPrem                  = new AtomicInteger(1);
-    private static boolean       UNDERMAINTENANCE         = false;
+    private static AtomicBoolean UNDERMAINTENANCE         = new AtomicBoolean(false);
     private static final String  UNDERMAINTENANCEUSERTEXT = "The site is under maintenance!";
 
     public IFileIt(final PluginWrapper wrapper) {
@@ -116,7 +117,7 @@ public class IFileIt extends PluginForHost {
                 con = br.openGetConnection(downloadLink.getDownloadURL());
                 if (con.getResponseCode() == 503) {
                     downloadLink.getLinkStatus().setStatusText(UNDERMAINTENANCEUSERTEXT);
-                    UNDERMAINTENANCE = true;
+                    UNDERMAINTENANCE.set(true);
                     return AvailableStatus.UNCHECKABLE;
                 }
                 br.followConnection();
@@ -238,7 +239,7 @@ public class IFileIt extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        if (UNDERMAINTENANCE) throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
+        if (UNDERMAINTENANCE.get()) throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
         prepBrowser(br);
         br.setRequestIntervalLimit(getHost(), 250);
         simulateBrowser();
@@ -375,7 +376,7 @@ public class IFileIt extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        if (UNDERMAINTENANCE) throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
+        if (UNDERMAINTENANCE.get()) throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
         login(account);
         if ("premium".equals(account.getStringProperty("typ", null))) {
             final String apikey = getUrlEncodedAPIkey(account, this, br);

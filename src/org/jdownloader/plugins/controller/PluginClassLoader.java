@@ -15,9 +15,19 @@ public class PluginClassLoader extends URLClassLoader {
 
     public static class PluginClassLoaderChild extends URLClassLoader {
 
-        private boolean                 createDummyLibs = true;
-        private boolean                 jared           = Application.isJared(PluginClassLoader.class);
+        private boolean                 createDummyLibs          = true;
+        private boolean                 jared                    = Application.isJared(PluginClassLoader.class);
         private final PluginClassLoader parent;
+        private boolean                 checkStableCompatibility = false;
+        private String                  pluginClass              = null;
+
+        public boolean isCheckStableCompatibility() {
+            return checkStableCompatibility;
+        }
+
+        public void setCheckStableCompatibility(boolean checkStableCompatibility) {
+            this.checkStableCompatibility = checkStableCompatibility;
+        }
 
         public PluginClassLoaderChild(PluginClassLoader parent) {
             super(new URL[] { Application.getRootUrlByClass(jd.Launcher.class, null) }, parent);
@@ -88,6 +98,18 @@ public class PluginClassLoader extends URLClassLoader {
                         }
                     }
                 }
+                if (isCheckStableCompatibility() && name.equals(pluginClass) == false && !name.startsWith(pluginClass + "$")) {
+                    boolean check = true;
+                    if (check) check = !name.equals("jd.plugins.hoster.RTMPDownload");/* available in 09581 Stable */
+                    if (check) check = !name.equals("org.appwork.utils.speedmeter.SpeedMeterInterface");/* available in 09581 Stable */
+                    if (check) check = !name.equals("org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream");/* available in 09581 Stable */
+                    if (check) check = !name.equals("org.appwork.utils.net.throttledconnection.ThrottledConnection");/* available in 09581 Stable */
+                    if (check) {
+                        if (name.startsWith("org.appwork") || name.startsWith("jd.plugins.hoster") || name.startsWith("jd.plugins.decrypter")) {
+                            System.out.println("Check for Stable Compatibility!!!: " + getPluginClass() + " wants to load " + name);
+                        }
+                    }
+                }
                 if (!name.startsWith("jd.plugins.hoster") && !name.startsWith("jd.plugins.decrypter")) { return super.loadClass(name); }
                 if (name.startsWith("jd.plugins.hoster.RTMPDownload")) { return super.loadClass(name); }
                 Class<?> c = null;
@@ -154,6 +176,21 @@ public class PluginClassLoader extends URLClassLoader {
          */
         public void setCreateDummyLibs(boolean createDummyLibs) {
             this.createDummyLibs = createDummyLibs;
+        }
+
+        /**
+         * @return the pluginClass
+         */
+        public String getPluginClass() {
+            return pluginClass;
+        }
+
+        /**
+         * @param pluginClass
+         *            the pluginClass to set
+         */
+        public void setPluginClass(String pluginClass) {
+            this.pluginClass = pluginClass;
         }
     }
 

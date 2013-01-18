@@ -11,7 +11,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.Oceanus.Downloader;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
@@ -33,7 +32,7 @@ public class Oceanus extends PluginForDecrypt {
             String downloadXML = ((jd.plugins.hoster.Oceanus) oceanus).sendDownloadRequest(uploadID);
             if (((jd.plugins.hoster.Oceanus) oceanus).DOWNLOAD_INVALID.equals(downloadXML)) { return ret; }
             if (!StringUtils.isEmpty(downloadXML)) {
-                Downloader downloader = ((jd.plugins.hoster.Oceanus) oceanus).parseXML(downloadXML);
+                jd.plugins.hoster.Oceanus.Downloader downloader = ((jd.plugins.hoster.Oceanus) oceanus).parseXML(downloadXML);
                 FilePackage fp = FilePackage.getInstance();
                 for (jd.plugins.hoster.Oceanus.OCFile file : downloader.getFileList()) {
                     DownloadLink link = createDownloadlink("oceanus://" + uploadID + "," + file.getFileId() + "," + getDecryptionKey(parameter.getCryptedUrl()));

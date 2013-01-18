@@ -22,6 +22,7 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -52,7 +53,7 @@ public class TwojLimitPl extends PluginForHost {
     private void login(Account account, boolean force) throws PluginException, IOException {
         try {
             String username = Encoding.urlEncode(account.getUser());
-            br.postPage("http://crypt.twojlimit.pl", "username=" + username + "&password=" + Hash.getMD5(account.getPass()) + "&info=1&site=twojlimit");
+            br.postPage("http://crypt.twojlimit.pl", "username=" + username + "&password=" + JDHash.getMD5(account.getPass()) + "&info=1&site=twojlimit");
             String adres = br.toString();
             br.getPage(adres);
             adres = br.getRedirectLocation();

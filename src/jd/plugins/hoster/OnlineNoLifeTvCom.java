@@ -39,7 +39,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "online.nolife-tv.com" }, urls = { "http://(www\\.)?online\\.nolife\\-tvdecrypted\\.com/index\\.php\\?id=\\d+" }, flags = { 2 })
@@ -48,7 +47,7 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     private String              DLLINK              = null;
     private static final String ONLYPREMIUMUSERTEXT = "Only downloadable for premium members";
     private boolean             notDownloadable     = false;
-    private static Object LOCK                = new Object();
+    private static Object       LOCK                = new Object();
     private static final String MAINPAGE            = "http://online.nolife-tv.com/";
     private static final String SALT                = "YTUzYmUxODUzNzcwZjBlYmUwMzExZDY5OTNjN2JjYmU=";
 
@@ -153,7 +152,7 @@ public class OnlineNoLifeTvCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                final String pwhash = Hash.getMD5(account.getPass());
+                final String pwhash = JDHash.getMD5(account.getPass());
                 br.postPage("http://forum.nolife-tv.com/login.php?do=login", "vb_login_username=" + Encoding.urlEncode(account.getUser()) + "&cookieuser=1&vb_login_password=&s=&securitytoken=guest&do=login&vb_login_md5password=" + pwhash + "&vb_login_md5password_utf=" + pwhash);
                 if (br.getCookie(MAINPAGE, "bbuserid") == null || br.getCookie(MAINPAGE, "bbpassword") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 // Save cookies
@@ -195,8 +194,8 @@ public class OnlineNoLifeTvCom extends PluginForHost {
             return AvailableStatus.TRUE;
         } else {
             /*
-             * Hier wird über die Kekse(Premium/Free) bestimmt welche Videoqualität man bekommt. Spart oben in den dlmethoden einige Zeilen
-             * an Code. Die Methode "setBrowserExclusive()" muss dabei deaktiviert sein.
+             * Hier wird über die Kekse(Premium/Free) bestimmt welche Videoqualität man bekommt. Spart oben in den dlmethoden einige Zeilen an Code. Die Methode
+             * "setBrowserExclusive()" muss dabei deaktiviert sein.
              */
 
             long ts = System.currentTimeMillis();

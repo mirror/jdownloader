@@ -34,7 +34,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-my-links.com" }, urls = { "http://(www\\.)?(protect\\-my\\-links\\.com|i23\\.in)/([a-z0-9]+(/[a-z0-9]+)?\\.html|\\?id=[a-z0-9]+)" }, flags = { 0 })
@@ -68,7 +67,7 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         }
         /* recaptcha */
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(rcID);
         rc.load();
         for (int i = 0; i <= 5; i++) {

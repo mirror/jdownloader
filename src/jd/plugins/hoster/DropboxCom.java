@@ -26,7 +26,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" }, flags = { 2 })
@@ -128,8 +127,8 @@ public class DropboxCom extends PluginForHost {
             resume = false;
             try {
                 /* Decrypt oauth token and secret */
-                byte[] crypted_oauth_consumer_key = Base64.decode("1lbl8Ts5lNJPxMOBzazwlg==");
-                byte[] crypted_oauth_consumer_secret = Base64.decode("cqqyvFx1IVKNPennzVKUnw==");
+                byte[] crypted_oauth_consumer_key = org.appwork.utils.encoding.Base64.decode("1lbl8Ts5lNJPxMOBzazwlg==");
+                byte[] crypted_oauth_consumer_secret = org.appwork.utils.encoding.Base64.decode("cqqyvFx1IVKNPennzVKUnw==");
                 byte[] iv = new byte[] { (byte) 0xF0, 0x0B, (byte) 0xAA, (byte) 0x69, 0x42, (byte) 0xF0, 0x0B, (byte) 0xAA };
                 byte[] secretKey = (new Regex(dlURL, "passphrase=([^&]+)").getMatch(0).substring(0, 8)).getBytes("UTF-8");
 
@@ -242,7 +241,7 @@ public class DropboxCom extends PluginForHost {
             SecretKeySpec secret = new SecretKeySpec(keyString.getBytes("UTF-8"), "HmacSHA1");
             mac.init(secret);
             byte[] digest = mac.doFinal(signatureBaseString.getBytes("UTF-8"));
-            signature = new String(Base64.encodeToString(digest, false)).trim();
+            signature = new String(org.appwork.utils.encoding.Base64.encodeToString(digest, false)).trim();
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);

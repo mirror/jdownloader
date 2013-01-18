@@ -27,7 +27,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crypt2.net" }, urls = { "http://(www\\.)?crypt2\\.(be|net)/file/[a-z0-9]+" }, flags = { 0 })
@@ -50,7 +49,7 @@ public class Crypt2Be extends PluginForDecrypt {
                 return null;
             }
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
             rc.setId(rcID);
             for (int i = 0; i <= 5; i++) {
                 rc.load();

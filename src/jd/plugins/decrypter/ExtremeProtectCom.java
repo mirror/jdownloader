@@ -28,7 +28,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -50,7 +49,7 @@ public class ExtremeProtectCom extends PluginForDecrypt {
         for (int i = 0; i <= 5; i++) {
             if (!br.containsHTML(RECAPTCHATEXT) && !br.containsHTML(RECAPTCHATEXT2)) return null;
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());

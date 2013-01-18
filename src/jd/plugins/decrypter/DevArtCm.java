@@ -32,7 +32,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DeviantArtCom;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -172,7 +171,7 @@ public class DevArtCm extends PluginForDecrypt {
             aa = new Account(username, password);
         }
         try {
-            ((DeviantArtCom) DeviantArtPlugin).login(aa, this.br);
+            ((jd.plugins.hoster.DeviantArtCom) DeviantArtPlugin).login(aa, this.br);
         } catch (final PluginException e) {
             aa.setEnabled(false);
             aa.setValid(false);

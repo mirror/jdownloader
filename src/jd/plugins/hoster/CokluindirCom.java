@@ -28,6 +28,7 @@ import jd.controlling.AccountController;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -39,7 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cokluindir.com" }, urls = { "http://\\w+\\.cokluindir\\.com/aio2\\.php/.+\\?id=[a-z0-9]{32}" }, flags = { 2 })
@@ -244,7 +244,7 @@ public class CokluindirCom extends PluginForHost {
                         return;
                     }
                 }
-                br.getPage(mProt + mName + "/giris.php?isim=" + Encoding.urlEncode(account.getUser()) + "&parola=" + Hash.getMD5(account.getPass()));
+                br.getPage(mProt + mName + "/giris.php?isim=" + Encoding.urlEncode(account.getUser()) + "&parola=" + JDHash.getMD5(account.getPass()));
                 handleErrors(account, null);
                 if (br.getCookie(mProt + mName, "cokluindir") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */

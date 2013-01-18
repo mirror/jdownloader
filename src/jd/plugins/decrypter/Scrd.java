@@ -29,7 +29,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "secured.in" }, urls = { "http://(www\\.)?secured\\.in/download\\-[\\d]+\\-[\\w]+\\.html" }, flags = { 0 })
@@ -65,7 +64,7 @@ public class Scrd extends PluginForDecrypt {
                 if (recaptchaID == null || captchaForm == null) { return null; }
                 logger.fine("The current recaptcha ID is '" + recaptchaID + "'");
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
                 rc.setId(recaptchaID);
                 rc.setForm(captchaForm);
                 rc.load();

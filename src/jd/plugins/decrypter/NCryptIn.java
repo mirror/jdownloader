@@ -29,6 +29,7 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.nativeintegration.LocalBrowser;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -39,11 +40,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/(folder|link)\\-.{3,}|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }, flags = { 0 })
 public class NCryptIn extends PluginForDecrypt {
@@ -99,7 +97,7 @@ public class NCryptIn extends PluginForDecrypt {
                     captcha = true;
                     for (int i = 0; i <= 5; i++) {
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
                         rc.parse();
                         rc.load();
                         final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());

@@ -42,7 +42,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -79,7 +78,7 @@ public class LinkStoreUs extends PluginForDecrypt {
                 if (br.containsHTML(RECAPTCHATEXT)) {
                     logger.info("reCaptcha found...");
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
                     rc.parse();
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());

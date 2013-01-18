@@ -213,14 +213,14 @@ public class GrooveShark extends PluginForHost {
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
     }
 
-    private String             DLLINK         = null;
-    private String             STREAMKEY      = null;
-    private String             TOKEN          = "";
-    private String             SID            = null;
-    private static String      LISTEN         = "http://grooveshark.com/";
-    private static String      USERUID        = UUID.randomUUID().toString().toUpperCase(Locale.ENGLISH);
-    public static final String INVALIDTOKEN   = "\\{\"code\":\\d+,\"message\":\"invalid token\"\\}";
-    public static final String BLOCKEDGERMANY = "Der Zugriff auf \"grooveshark.com\" von Deutschland aus ist nicht mehr möglich!";
+    private String              DLLINK         = null;
+    private String              STREAMKEY      = null;
+    private String              TOKEN          = "";
+    private String              SID            = null;
+    private static final String LISTEN         = "http://grooveshark.com/";
+    private static final String USERUID        = UUID.randomUUID().toString().toUpperCase(Locale.ENGLISH);
+    public static final String  INVALIDTOKEN   = "\\{\"code\":\\d+,\"message\":\"invalid token\"\\}";
+    public static final String  BLOCKEDGERMANY = "Der Zugriff auf \"grooveshark.com\" von Deutschland aus ist nicht mehr möglich!";
 
     public GrooveShark(PluginWrapper wrapper) {
         super(wrapper);

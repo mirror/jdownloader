@@ -23,6 +23,7 @@ import java.util.Date;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -30,8 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Hash;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "judgeporn.com" }, urls = { "http://(www\\.)?judgeporn.com/videos/[a-z0-9\\-_]+" }, flags = { 0 })
 public class JudgePornCom extends PluginForHost {
@@ -44,11 +43,11 @@ public class JudgePornCom extends PluginForHost {
     }
 
     private String checkMD(final String videoUrl, final String time) {
-        return Hash.getMD5(videoUrl + time + Encoding.Base64Decode(AHV));
+        return JDHash.getMD5(videoUrl + time + Encoding.Base64Decode(AHV));
     }
 
     private String checkMD2(final String time) {
-        return Hash.getMD5(time + Encoding.Base64Decode(AHV));
+        return JDHash.getMD5(time + Encoding.Base64Decode(AHV));
     }
 
     private String checkTM() {

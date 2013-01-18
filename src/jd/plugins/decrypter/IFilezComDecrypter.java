@@ -26,7 +26,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.IFilezCom;
 import jd.utils.JDUtilities;
 
 //This decrypter is there to seperate folder- and hosterlinks as hosterlinks look the same as folderlinks
@@ -64,7 +63,7 @@ public class IFilezComDecrypter extends PluginForDecrypt {
     private void handleErrors() throws Exception {
         PluginForHost DeviantArtPlugin = JDUtilities.getPluginForHost("depfile.com");
         try {
-            ((IFilezCom) DeviantArtPlugin).handleErrors();
+            ((jd.plugins.hoster.IFilezCom) DeviantArtPlugin).handleErrors();
         } catch (final Exception e) {
             if (e instanceof PluginException) throw (PluginException) e;
         }

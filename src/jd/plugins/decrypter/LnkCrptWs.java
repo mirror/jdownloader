@@ -1163,8 +1163,7 @@ public class LnkCrptWs extends PluginForDecrypt {
     }
 
     /**
-     * if packed js contain 'soft hyphen' encoding as \u00ad(unicode) or %C2%AD(uft-8) then result is broken in rhino
-     * decodeURIComponent('\u00ad') --> is empty.
+     * if packed js contain 'soft hyphen' encoding as \u00ad(unicode) or %C2%AD(uft-8) then result is broken in rhino decodeURIComponent('\u00ad') --> is empty.
      */
     public static class JavaScriptUnpacker {
 
