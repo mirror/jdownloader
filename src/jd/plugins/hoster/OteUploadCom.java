@@ -570,7 +570,16 @@ public class OteUploadCom extends PluginForHost {
     }
 
     private void sendForm(final Form form) throws Exception {
-        br.submitForm(form);
+        try {
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+            br.submitForm(form);
+        } finally {
+            try {
+                br.getHeaders().remove("Content-Type");
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
+        }
         correctBR();
     }
 
