@@ -42,11 +42,11 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+(\\?documentId=\\d+)?" }, flags = { 32 })
 public class ARDMediathek extends PluginForHost {
 
-    private static final String Q_LOW    = "Q_LOW";
+    private static final String Q_LOW = "Q_LOW";
     private static final String Q_MEDIUM = "Q_MEDIUM";
-    private static final String Q_HIGH   = "Q_HIGH";
-    private static final String Q_HD     = "Q_HD";
-    private static final String Q_BEST   = "Q_BEST";
+    private static final String Q_HIGH = "Q_HIGH";
+    private static final String Q_HD = "Q_HD";
+    private static final String Q_BEST = "Q_BEST";
 
     public ARDMediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -60,7 +60,8 @@ public class ARDMediathek extends PluginForHost {
         try {
             if (ret != null && ret.size() > 0) {
                 /*
-                 * we make sure only one result is in ret, thats the case for svn/next major version
+                 * we make sure only one result is in ret, thats the case for
+                 * svn/next major version
                  */
                 final DownloadLink sourceLink = ret.get(0);
                 String ID = new Regex(sourceLink.getDownloadURL(), "\\?documentId=(\\d+)").getMatch(0);
@@ -74,14 +75,10 @@ public class ARDMediathek extends PluginForHost {
                         ret.set(0, sourceLink);
                         return ret;
                     }
-                    String title = br.getRegex("<div class=\"MainBoxHeadline\">([^<]+)</").getMatch(0);
-                    String titleUT = br.getRegex("<span class=\"BoxHeadlineUT\">([^<]+)</").getMatch(0);
-                    if (title == null) title = br.getRegex("<title>ard\\.online \\- Mediathek: ([^<]+)</title>").getMatch(0);
-                    if (title == null) title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-                    if (title != null) title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
-                    if (title == null) title = "UnknownTitle_" + System.currentTimeMillis();
+                    String title = getTitle();
                     /*
-                     * little pause needed so the next call does not return trash
+                     * little pause needed so the next call does not return
+                     * trash
                      */
                     Thread.sleep(1000);
 
@@ -160,7 +157,8 @@ public class ARDMediathek extends PluginForHost {
                             }
                         }
                         /*
-                         * only replace original found links by new ones, when we have some
+                         * only replace original found links by new ones, when
+                         * we have some
                          */
                         if (fp != null) {
                             fp.addLinks(newRet);
@@ -182,6 +180,16 @@ public class ARDMediathek extends PluginForHost {
             logger.severe(e.getMessage());
         }
         return ret;
+    }
+
+    private String getTitle() {
+        String title = br.getRegex("<div class=\"MainBoxHeadline\">([^<]+)</").getMatch(0);
+        String titleUT = br.getRegex("<span class=\"BoxHeadlineUT\">([^<]+)</").getMatch(0);
+        if (title == null) title = br.getRegex("<title>ard\\.online \\- Mediathek: ([^<]+)</title>").getMatch(0);
+        if (title == null) title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
+        if (title != null) title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
+        if (title == null) title = "UnknownTitle_" + System.currentTimeMillis();
+        return title;
     }
 
     @Override
@@ -244,12 +252,13 @@ public class ARDMediathek extends PluginForHost {
             }
 
             String newUrl[] = br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (" + downloadLink.getStringProperty("directQuality", "1") + "), \"([^\"]+|)\", \"([^\"]+)\", \"([^\"]+)\"\\);").getRow(0);
-            if (newUrl == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // rtmp
-            downloadLink.setProperty("directURL", newUrl[1] + "@" + newUrl[2].split("\\?")[0]);
             // http
-            if ("1".equals(downloadLink.getStringProperty("streamingType", "0"))) downloadLink.setProperty("directURL", newUrl[3] + "@");
+            if (newUrl == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            downloadLink.setProperty("directURL", newUrl[3] + "@");
+            // rtmp
+            if ("0".equals(downloadLink.getStringProperty("streamingType", "1"))) downloadLink.setProperty("directURL", newUrl[1] + "@" + newUrl[2].split("\\?")[0]);
         }
+        if (downloadLink.getStringProperty("directName", null) == null) downloadLink.setFinalFileName(getTitle() + ".mp4");
         if (!downloadLink.getStringProperty("directURL").startsWith("http")) return AvailableStatus.TRUE;
         // get filesize
         Browser br2 = br.cloneBrowser();
@@ -287,8 +296,8 @@ public class ARDMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.ard.best", "Load Best Version ONLY")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.ard.loadlow", "Load Low Version")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.ard.loadmedium", "Load High Version")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.ard.loadhigh", "Load VeryHigh Version")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.ard.loadmedium", "Load Medium Version")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.ard.loadhigh", "Load High Version")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.ard.loadhd", "Load HD Version")).setDefaultValue(false).setEnabled(false));
     }
 
