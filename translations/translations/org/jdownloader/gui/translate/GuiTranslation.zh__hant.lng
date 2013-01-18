@@ -104,6 +104,7 @@ ExceptionsTableModel_initColumns_condition_=允許連結，如果
 FiletypeFilter_toString_custom='%s1'-檔案
 FilterRuleDialog_FilterRuleDialog_=規則：%s1
 FilterRuleDialog_FilterRuleDialog_title_=篩選規則
+FilterRuleDialog_createTypeFilter_mime_archives=壓縮檔
 FilterRuleDialog_createTypeFilter_mime_audio=音訊檔案
 FilterRuleDialog_createTypeFilter_mime_images=圖像
 FilterRuleDialog_createTypeFilter_mime_video=視訊檔案
