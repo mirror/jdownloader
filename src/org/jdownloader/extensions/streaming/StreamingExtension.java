@@ -65,7 +65,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     private LogSource           logger;
     protected StreamingProvider streamProvider = null;
     static {
-        // we need a testcommit
+        // we need a testcommit 2
         // we need to load the profiles
         Profile.init();
     }
