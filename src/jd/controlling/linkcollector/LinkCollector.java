@@ -683,48 +683,54 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public LinkCrawler addCrawlerJob(final LinkCollectingJob job) {
-        if (job == null) throw new IllegalArgumentException("job is null");
-        lazyInit();
-        synchronized (shutdownRequests) {
-            if (shutdownRequests.get() > 0) return null;
-            final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
-                private LinkCollectingInformation collectingInfo = new LinkCollectingInformation(this, linkChecker);
+        try {
+            if (job == null) throw new IllegalArgumentException("job is null");
+            lazyInit();
+            synchronized (shutdownRequests) {
+                if (shutdownRequests.get() > 0) return null;
+                final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
+                    private LinkCollectingInformation collectingInfo = new LinkCollectingInformation(this, linkChecker);
 
-                @Override
-                protected CrawledLink crawledLinkFactorybyURL(String url) {
-                    CrawledLink ret = new CrawledLink(url);
-                    ret.setCollectingInfo(collectingInfo);
-                    ret.setSourceJob(job);
-                    return ret;
-                }
+                    @Override
+                    protected CrawledLink crawledLinkFactorybyURL(String url) {
+                        CrawledLink ret = new CrawledLink(url);
+                        ret.setCollectingInfo(collectingInfo);
+                        ret.setSourceJob(job);
+                        return ret;
+                    }
 
-                @Override
-                protected void generalCrawledLinkModifier(CrawledLink link) {
-                    crawledLinkModifier(link, job);
-                }
+                    @Override
+                    protected void generalCrawledLinkModifier(CrawledLink link) {
+                        crawledLinkModifier(link, job);
+                    }
 
-                @Override
-                protected void crawlerStopped() {
-                    eventsender.removeListener(this);
-                    super.crawlerStopped();
-                }
+                    @Override
+                    protected void crawlerStopped() {
+                        eventsender.removeListener(this);
+                        super.crawlerStopped();
+                    }
 
-                @Override
-                protected void crawlerStarted() {
-                    eventsender.addListener(this, true);
-                    super.crawlerStarted();
-                }
-            };
+                    @Override
+                    protected void crawlerStarted() {
+                        eventsender.addListener(this, true);
+                        super.crawlerStarted();
+                    }
+                };
 
-            lc.setFilter(crawlerFilter);
-            lc.setHandler(this);
-            String jobText = job.getText();
-            /*
-             * we don't want to keep reference on text during the whole link grabbing/checking/collecting way
-             */
-            job.setText(null);
-            lc.crawl(jobText, job.getCustomSourceUrl(), job.isDeepAnalyse());
-            return lc;
+                lc.setFilter(crawlerFilter);
+                lc.setHandler(this);
+                String jobText = job.getText();
+                /*
+                 * we don't want to keep reference on text during the whole link grabbing/checking/collecting way
+                 */
+                job.setText(null);
+                lc.crawl(jobText, job.getCustomSourceUrl(), job.isDeepAnalyse());
+                return lc;
+            }
+        } catch (VerifyError e) {
+            Dialog.getInstance().showExceptionDialog("Eclipse Java 1.7 Bug", "This is an eclipse Java 7 bug. See here: http://goo.gl/REs9c\r\nAdd JVM Parameter -XX:-UseSplitVerifier", e);
+
+            throw e;
         }
     }
 

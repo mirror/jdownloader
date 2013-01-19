@@ -32,6 +32,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeListener;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
@@ -136,17 +137,23 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                 setVisible(false);
             }
         });
-        LinkCrawler.getEventSender().addListener(new LinkCrawlerListener() {
+        try {
+            LinkCrawler.getEventSender().addListener(new LinkCrawlerListener() {
 
-            public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
-                if (event.getCaller() instanceof LinkCollectorCrawler) {
-                    /*
-                     * we only want to react on the LinkCrawler of the LinkCollector
-                     */
-                    update();
+                public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
+                    if (event.getCaller() instanceof LinkCollectorCrawler) {
+                        /*
+                         * we only want to react on the LinkCrawler of the LinkCollector
+                         */
+                        update();
+                    }
                 }
-            }
-        });
+            });
+        } catch (VerifyError e) {
+            Dialog.getInstance().showExceptionDialog("Eclipse Java 1.7 Bug", "This is an eclipse Java 7 bug. See here: http://goo.gl/REs9c\r\nAdd -XX:-UseSplitVerifier as JVM Parameter", e);
+
+            throw e;
+        }
         LinkChecker.getEventSender().addListener(new LinkCheckerListener() {
 
             public void onLinkCheckerEvent(LinkCheckerEvent event) {

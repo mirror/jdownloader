@@ -48,19 +48,36 @@ public class InstallLog {
 
     private Collection<String> modifiedRestartRequiredFiles;
     private Collection<String> modifiedExtensionFiles;
+    public static final String FILE_EXT_JARSIGNATURE    = ".jarSignature";
+
+    public static final String FILE_EXT_UPDATESIGNATURE = ".updateSignature";
+    public static final String FILE_EXT_REMOVEDFILE     = ".removed";
+    public static final String FILE_EXT_JAR             = ".jar";
+    public static final String CLIENT_OPTIONS           = ".clientOptions";
+    public static final String SERVER_OPTIONS           = ".serverOptions";
 
     public void add(String relPath) {
+        if (relPath.endsWith(FILE_EXT_UPDATESIGNATURE)) return;
+        if (relPath.endsWith(FILE_EXT_JARSIGNATURE)) return;
         modifiedFiles.add(relPath);
-        if (relPath.equals("build.json")) {
+        String check = relPath;
+        if (check.endsWith(CLIENT_OPTIONS)) {
+            check = relPath.substring(0, relPath.length() - CLIENT_OPTIONS.length());
+        } else if (check.endsWith(SERVER_OPTIONS)) {
+            check = relPath.substring(0, relPath.length() - SERVER_OPTIONS.length());
+        } else if (check.endsWith(FILE_EXT_REMOVEDFILE)) {
+            check = relPath.substring(0, relPath.length() - FILE_EXT_REMOVEDFILE.length());
+        }
+        if (check.equals("build.json")) {
             modifiedDirects.add(relPath);
             return;
         }
-        if (relPath.endsWith(".lng")) {
+        if (check.endsWith(".lng")) {
             modifiedDirects.add(relPath);
             return;
         }
 
-        if (relPath.endsWith(".class") && relPath.toLowerCase(Locale.ENGLISH).startsWith("jd/plugins")) {
+        if (check.endsWith(".class") && check.toLowerCase(Locale.ENGLISH).startsWith("jd/plugins")) {
             modifiedPlugins.add(relPath);
             return;
         }

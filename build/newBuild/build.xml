@@ -152,53 +152,41 @@
 			<attribute name="Created-By" value="JD-Team and AppWork GmbH" />
 		</manifest>
 		<jar file="${dist}/libs/JDHttp.jar" manifest="${dist}/Manifest.MF">
-			<fileset dir="${working}">
-				<include name="version.nfo" />
-			</fileset>
+			
 
 			<fileset dir="${cls}">
 				<include name="jd/http/**/*" />
 			</fileset>
 		</jar>
 		<jar file="${dist}/libs/JDGUI.jar" manifest="${dist}/Manifest.MF">
-			<fileset dir="${working}">
-				<include name="version.nfo" />
-			</fileset>
+		
 			<fileset dir="${cls}">
 				<include name="jd/gui/**" />
 			</fileset>
 		</jar>
 		<jar file="${dist}/libs/JAntiCaptcha.jar" manifest="${dist}/Manifest.MF">
-			<fileset dir="${working}">
-				<include name="version.nfo" />
-			</fileset>
+		
 			<fileset dir="${cls}">
 				<include name="jd/captcha/**" />
 				<exclude name="jd/captcha/methods/**" />
 			</fileset>
 		</jar>
 		<jar file="${dist}/libs/JDUtils.jar" manifest="${dist}/Manifest.MF">
-			<fileset dir="${working}">
-				<include name="version.nfo" />
-			</fileset>
+		
 			<fileset dir="${cls}">
 				<include name="jd/nutils/**" />
 			</fileset>
 		</jar>
 
 		<jar file="${dist}/libs/Dynamics.jar" manifest="${dist}/Manifest.MF">
-			<fileset dir="${working}">
-				<include name="version.nfo" />
-			</fileset>
+			
 			<fileset dir="${cls}">
 				<include name="org/jdownloader/dynamic/**/*" />
 			</fileset>
 		</jar>
 
 		<jar file="${dist}/libs/cons.jar" manifest="${dist}/Manifest.MF">
-			<fileset dir="${working}">
-				<include name="version.nfo" />
-			</fileset>
+			
 			<fileset dir="${cls}">
 				<include name="org/jdownloader/container/**/*" />
 			</fileset>
@@ -230,9 +218,7 @@
 		<!--CORE-->
 
 		<jar file="${dist}/Core.jar" manifest="${dist}/Manifest.MF">
-			<fileset dir="${working}">
-				<include name="version.nfo" />
-			</fileset>
+			
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
 				<include name="**/*.txt" />
@@ -307,7 +293,7 @@
 			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
 			<zipfileset src="${dep.updateclient}/libs/xz.jar" excludes="META-INF/*" />
 			<fileset dir="${working}">
-				<include name="version.nfo" />
+				
 				<include name="classpath" />
 			</fileset>
 			<fileset dir="${cls}">
