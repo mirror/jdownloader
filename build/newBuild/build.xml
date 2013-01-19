@@ -80,6 +80,8 @@
 		<copy todir="${dist}/jd">
 			<fileset dir="${res}/jd" includes="**/*" />
 		</copy>
+
+
 		<copy todir="${dist}/libs">
 			<fileset dir="${res}/libs" includes="**/*" />
 		</copy>
@@ -101,6 +103,12 @@
 
 		<copy todir="${dist}/tools">
 			<fileset dir="${res}/tools" includes="**/*" />
+		</copy>
+		<copy todir="${dist}" overwrite="true">
+			<fileset dir="${dep.serveroptions}">
+				<include name="**/*.serverOptions" />
+				<include name="**/*.clientOptions" />
+			</fileset>
 		</copy>
 		<copy todir="${dist}">
 			<fileset dir="${res}" includes="*.txt, *.exe, *.bat, *.properties" />
@@ -125,7 +133,7 @@
 		<copy todir="${dist}">
 
 			<fileset dir="translations" includes="**/*.lng" />
-			
+
 		</copy>
 		<loadfile property="svn.revision" srcFile=".svn/entries">
 			<filterchain>
@@ -152,41 +160,41 @@
 			<attribute name="Created-By" value="JD-Team and AppWork GmbH" />
 		</manifest>
 		<jar file="${dist}/libs/JDHttp.jar" manifest="${dist}/Manifest.MF">
-			
+
 
 			<fileset dir="${cls}">
 				<include name="jd/http/**/*" />
 			</fileset>
 		</jar>
 		<jar file="${dist}/libs/JDGUI.jar" manifest="${dist}/Manifest.MF">
-		
+
 			<fileset dir="${cls}">
 				<include name="jd/gui/**" />
 			</fileset>
 		</jar>
 		<jar file="${dist}/libs/JAntiCaptcha.jar" manifest="${dist}/Manifest.MF">
-		
+
 			<fileset dir="${cls}">
 				<include name="jd/captcha/**" />
 				<exclude name="jd/captcha/methods/**" />
 			</fileset>
 		</jar>
 		<jar file="${dist}/libs/JDUtils.jar" manifest="${dist}/Manifest.MF">
-		
+
 			<fileset dir="${cls}">
 				<include name="jd/nutils/**" />
 			</fileset>
 		</jar>
 
 		<jar file="${dist}/libs/Dynamics.jar" manifest="${dist}/Manifest.MF">
-			
+
 			<fileset dir="${cls}">
 				<include name="org/jdownloader/dynamic/**/*" />
 			</fileset>
 		</jar>
 
 		<jar file="${dist}/libs/cons.jar" manifest="${dist}/Manifest.MF">
-			
+
 			<fileset dir="${cls}">
 				<include name="org/jdownloader/container/**/*" />
 			</fileset>
@@ -218,7 +226,7 @@
 		<!--CORE-->
 
 		<jar file="${dist}/Core.jar" manifest="${dist}/Manifest.MF">
-			
+
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
 				<include name="**/*.txt" />
@@ -437,7 +445,7 @@
 				<exclude name="JDownloader.jar" />
 			</fileset>
 		</copy>
-		
+
 		<copy todir="${update_2}" overwrite="true">
 			<fileset dir="${dep.serveroptions}">
 				<include name="**/*.serverOptions" />
