@@ -273,7 +273,7 @@ public class SockShareCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(SERVERUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", 2 * 60 * 60 * 1000l);
-        String dllink = br.getRegex("\"(/get_file\\.php\\?download=[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(/get_file\\.php\\?id=[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

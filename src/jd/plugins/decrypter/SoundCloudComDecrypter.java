@@ -99,6 +99,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 br.getPage("https://api.sndcdn.com/e1/users/" + userID + "/sounds?limit=10000&offset=0&linked_partitioning=1&client_id=" + clientID);
                 final String[] items = br.getRegex("<stream\\-item>(.*?)</stream\\-item>").getColumn(0);
                 if (items == null || items.length == 0) {
+                    if (br.containsHTML("<stream\\-items type=\"array\"/>")) {
+                        logger.info("Link offline: " + parameter);
+                        return decryptedLinks;
+                    }
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }

@@ -304,7 +304,7 @@ public class DepositFiles extends PluginForHost {
             return lol[0];
         } else {
             String fid = br.getRegex("var fid = '(.*?)'").getMatch(0);
-            if (fid != null) { return MAINPAGE + "/get_file.php?fid=" + fid; }
+            if (fid != null) { return MAINPAGE.string + "/get_file.php?fid=" + fid; }
         }
         return null;
     }
@@ -418,12 +418,13 @@ public class DepositFiles extends PluginForHost {
             br.getHeaders().put("Accept-Charset", null);
             br.getHeaders().put("Pragma", null);
             br.getHeaders().put("Cache-Control", null);
-            br.getHeaders().put("Accept", "text/html, */*");
+            br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("Accept-Encoding", "gzip, deflate");
             br.getHeaders().put("Accept-Language", "de");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.setFollowRedirects(true);
             br.getPage(dllink);
-            br.getPage(MAINPAGE + "/get_file.php?fid=" + fid + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
+            br.getPage(MAINPAGE.string + "/get_file.php?fid=" + fid + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
             if (br.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             String finallink = br.getRegex("\"(http://fileshare\\d+\\." + DOMAINS + "/auth.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("<form action=\"(http://.*?)\"").getMatch(0);
@@ -553,7 +554,7 @@ public class DepositFiles extends PluginForHost {
             Object premium = acc.getBooleanProperty("premium", false);
             if (premium != null && premium instanceof Boolean && !force) return (Boolean) premium;
             setLangtoGer();
-            br.getPage(MAINPAGE + "/de/gold/");
+            br.getPage(MAINPAGE.string + "/de/gold/");
             boolean ret = false;
             if (br.containsHTML("Ihre aktuelle Status: Frei - Mitglied</div>")) {
                 ret = true;
@@ -625,7 +626,7 @@ public class DepositFiles extends PluginForHost {
                     Thread.sleep(2000);
                     final Form login = br.getFormBySubmitvalue("Anmelden");
                     if (login != null) {
-                        login.setAction(MAINPAGE + "/login.php?return=%2F");
+                        login.setAction(MAINPAGE.string + "/login.php?return=%2F");
                         login.put("login", Encoding.urlEncode(account.getUser()));
                         login.put("password", Encoding.urlEncode(account.getPass()));
                         br.submitForm(login);
@@ -638,8 +639,8 @@ public class DepositFiles extends PluginForHost {
                     br.getHeaders().put("User-Agent", UA);
                     br.setFollowRedirects(true);
                     Thread.sleep(2000);
-                    br.postPage(MAINPAGE + "/de/login.php", "go=1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                    br.getPage(MAINPAGE + "/gold/");
+                    br.postPage(MAINPAGE.string + "/de/login.php", "go=1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    br.getPage(MAINPAGE.string + "/gold/");
                 }
                 br.setFollowRedirects(false);
                 if (showCaptcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {

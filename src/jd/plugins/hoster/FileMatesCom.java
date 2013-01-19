@@ -837,7 +837,7 @@ public class FileMatesCom extends PluginForHost {
     }
 
     /**
-     * performs silly cloudflare anti DDoS crapola
+     * performs silly cloudflare anti DDoS crapola, made by Raztoki
      */
     private void cloudflare(String url) throws Exception {
         try {

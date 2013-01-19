@@ -75,15 +75,12 @@ public class XXXAPornCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<div class=\"video\\-info\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
         }
-        DLLINK = br.getRegex("(http://media\\.xxxaporn\\.com/media/player/config_embed\\.php\\?vkey=\\d+)").getMatch(0);
+        DLLINK = br.getRegex("\\(\\'flashvars\\',\\'file=(http://[^<>\"]*?)\\'\\)").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(DLLINK);
-        DLLINK = br.getRegex("<src>(http://[^<>\"]*?)</src>").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;

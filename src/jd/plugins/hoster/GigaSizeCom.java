@@ -55,7 +55,7 @@ public class GigaSizeCom extends PluginForHost {
         br.getPage("http://www.gigasize.com");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("limit-download-free")) { return AvailableStatus.UNCHECKABLE; }
-        if (br.containsHTML("error\">Download error<\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<h2 class=\"error\">Download error</h2>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String[] dat = br.getRegex("<strong title=\"(.*?)\".*?File size:.*?>(.*?)<").getRow(0);
         if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

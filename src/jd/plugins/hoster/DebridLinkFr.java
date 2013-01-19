@@ -103,7 +103,7 @@ public class DebridLinkFr extends PluginForHost {
         case 1:
             ac.setStatus("Premium Account");
             account.setValid(true);
-            ac.setValidUntil(System.currentTimeMillis() + Integer.parseInt(getJson("PREMIUMLEFT")) * 1000);
+            ac.setValidUntil(System.currentTimeMillis() + Long.parseLong(getJson("PREMIUMLEFT")) * 1000);
         case 2:
             ac.setStatus("Lifetime Premium Account");
             account.setValid(true);

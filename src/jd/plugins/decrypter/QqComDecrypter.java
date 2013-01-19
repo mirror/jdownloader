@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qq.com" }, urls = { "http://(www\\.)?(fenxiang\\.qq\\.com/share/index\\.php/share/share_c/index/[A-Za-z0-9\\-_]+|urlxf\\.qq\\.com/\\?[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qq.com" }, urls = { "http://(www\\.)?(fenxiang\\.qq\\.com/(share/index\\.php/share/share_c/index/|x/)[A-Za-z0-9\\-_~]+|urlxf\\.qq\\.com/\\?[A-Za-z0-9]+)" }, flags = { 0 })
 public class QqComDecrypter extends PluginForDecrypt {
 
     public QqComDecrypter(PluginWrapper wrapper) {

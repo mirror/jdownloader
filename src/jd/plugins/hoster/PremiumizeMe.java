@@ -151,11 +151,6 @@ public class PremiumizeMe extends PluginForHost {
             logger.info("Host:" + link.getHost() + " allows resume: " + resume);
         }
 
-        /* workaround for uploaded.to */
-        if (link.getHost().equalsIgnoreCase("uploaded.to") || link.getHost().equalsIgnoreCase("uploaded.net") || link.getHost().equalsIgnoreCase("ul.to")) { // uploaded
-            resume = false;
-        }
-
         if (resume == false) {
             logger.info("Host:" + link.getHost() + " does not allow resume, set chunks to 1");
             maxConnections = 1;

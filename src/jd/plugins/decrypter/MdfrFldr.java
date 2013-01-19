@@ -45,10 +45,11 @@ public class MdfrFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String             SESSIONTOKEN  = null;
-    public static final String APIKEY        = "czQ1cDd5NWE3OTl2ZGNsZmpkd3Q1eXZhNHcxdzE4c2Zlbmt2djdudw==";
-    public static final String APPLICATIONID = "27112";
-    private String             ERRORCODE     = null;
+    private String              SESSIONTOKEN  = null;
+    public static final String  APIKEY        = "czQ1cDd5NWE3OTl2ZGNsZmpkd3Q1eXZhNHcxdzE4c2Zlbmt2djdudw==";
+    public static final String  APPLICATIONID = "27112";
+    private String              ERRORCODE     = null;
+    private static final String OFFLINE       = ">Unknown or invalid FolderKey<";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -98,10 +99,15 @@ public class MdfrFldr extends PluginForDecrypt {
         // Check if we have a single link or multiple folders/files
         final String folderKey = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
         apiRequest(this.br, "http://www.mediafire.com/api/file/get_info.php", "?quick_key=" + folderKey);
+        boolean offline = false;
         if ("110".equals(this.ERRORCODE)) {
             try {
                 apiRequest(this.br, "http://www.mediafire.com/api/folder/get_content.php?folder_key=", folderKey + "&content_type=folders");
             } catch (final BrowserException e) {
+                offline = true;
+            }
+            // Offline error or browser exception --> Offline
+            if ("112".equals(this.ERRORCODE) || offline) {
                 final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + folderKey);
                 link.setProperty("offline", true);
                 link.setName(folderKey);
