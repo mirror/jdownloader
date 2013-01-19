@@ -293,7 +293,7 @@
 			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
 			<zipfileset src="${dep.updateclient}/libs/xz.jar" excludes="META-INF/*" />
 			<fileset dir="${working}">
-				
+				<include name="version.nfo" />
 				<include name="classpath" />
 			</fileset>
 			<fileset dir="${cls}">
