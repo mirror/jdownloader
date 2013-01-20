@@ -84,20 +84,17 @@ public class RTLnowDe extends PluginForHost {
         final String season = xPath.evaluate("/data/season", doc);
 
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
         if (dllink.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, dllink);
 
             String playpath = new Regex(dllink, "(rtlnow|voxnow|superrtlnow|rtl2now)/(.*?)$").getMatch(1);
-            String host = new Regex(dllink, "(.*?)(rtl.de/|rtl.de:1935/)").getMatch(-1);
+            String host = new Regex(dllink, "(.*?)((rtl\\.de|edgefcs\\.net)(:1935)?/(ondemand)?)").getMatch(-1);
             if (playpath == null || host == null) {
                 logger.info("dllink: " + dllink);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String app = dllink.replace(playpath, "").replace(host, "");
-            if (host.endsWith("de/")) {
-                host = host.replace("de/", "de:1935/");
-            }
+            String app = dllink.replace(playpath, "").replace(host, "");
+            if (host.endsWith("de/")) host = host.replace("de/", "de:1935/");
             String play = playpath.substring(0, playpath.lastIndexOf("."));
             if (dllink.endsWith(".f4v")) {
                 play = "mp4:" + playpath;
