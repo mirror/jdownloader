@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zdfmediathek.de" }, urls = { "http://(www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+(/[^<>\"/\\?#]{1})?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zdfmediathek.de" }, urls = { "http://(www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+" }, flags = { 0 })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     private static final String Q_LOW      = "Q_LOW";
@@ -51,7 +51,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
+        parameter = parameter.replace("ZDFmediathek#/", "ZDFmediathek/");
+
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -75,7 +77,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
         try {
-            String ID = new Regex(data, "/beitrag/video/(\\d+)").getMatch(0);
+            String ID = new Regex(data, "beitrag/video/(\\d+)").getMatch(0);
             if (ID != null) {
                 br.getPage("/ZDFmediathek/xmlservice/web/beitragsDetails?id=" + ID + "&ak=web");
                 if (br.containsHTML("<statuscode>wrongParameter</statuscode>")) return ret;
