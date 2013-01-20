@@ -153,6 +153,7 @@ public class SrBoxCom extends PluginForDecrypt {
     protected DownloadLink createDownloadlink(String link, Boolean bVerify) {
         if (!link.startsWith("http")) return null;
         if (link.contains("?media=")) return null;
+        if (link.startsWith("http://ax-d.pixfuture.net")) return null;
         if (bVerify && link.startsWith("http://www.israbox.com")) return null;
 
         return super.createDownloadlink(link);
