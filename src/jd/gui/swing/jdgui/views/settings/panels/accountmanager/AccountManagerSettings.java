@@ -18,6 +18,8 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
 import javax.swing.ImageIcon;
 
+import jd.controlling.AccountController;
+
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
@@ -46,6 +48,7 @@ public class AccountManagerSettings extends AbstractConfigPanel {
 
     @Override
     public void save() {
+        AccountController.getInstance().saveDelayedRequest();
     }
 
     @Override

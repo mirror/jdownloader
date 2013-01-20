@@ -532,10 +532,10 @@ public class AccountController implements AccountControllerListener {
         switch (event.getType()) {
         case ADDED:
             org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(true);
-            delayedSaver.run();
+            saveDelayedRequest();
             break;
         case REMOVED:
-            delayedSaver.run();
+            saveDelayedRequest();
             return;
         }
         if (event.isRecheckRequired()) {
@@ -543,6 +543,13 @@ public class AccountController implements AccountControllerListener {
             acc = event.getParameter();
             if (acc != null) AccountChecker.getInstance().check(acc, true);
         }
+    }
+
+    /**
+     * 
+     */
+    public void saveDelayedRequest() {
+        delayedSaver.run();
     }
 
     @Deprecated

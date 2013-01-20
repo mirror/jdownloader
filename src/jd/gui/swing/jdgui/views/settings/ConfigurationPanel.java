@@ -76,6 +76,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
 
     @Override
     protected void onHide() {
+        System.out.println(1);
     }
 
     public void valueChanged(ListSelectionEvent e) {
