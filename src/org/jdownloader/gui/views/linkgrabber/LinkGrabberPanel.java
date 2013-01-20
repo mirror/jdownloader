@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import javax.swing.JButton;
@@ -42,10 +41,10 @@ import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
-import org.jdownloader.gui.views.linkgrabber.actions.ClearAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.RemoveOptionsAction;
+import org.jdownloader.gui.views.linkgrabber.actions.ResetAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
@@ -53,14 +52,19 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     /**
      * 
      */
-    private static final long                                                  serialVersionUID = 1L;
-    private LinkGrabberTableModel                                              tableModel;
-    private LinkGrabberTable                                                   table;
+    private static final long     serialVersionUID = 1L;
+    private LinkGrabberTableModel tableModel;
+    private LinkGrabberTable      table;
+
+    public LinkGrabberTable getTable() {
+        return table;
+    }
+
     private JScrollPane                                                        tableScrollPane;
     private LinkGrabberSidebar                                                 sidebar;
     private JButton                                                            addLinks;
     private JButton                                                            confirmAll;
-    private JButton                                                            clearAll;
+    private JButton                                                            resetButton;
     private JButton                                                            popup;
     private JButton                                                            popupConfirm;
     private HeaderScrollPane                                                   sidebarScrollPane;
@@ -76,7 +80,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
         tableModel = LinkGrabberTableModel.getInstance();
-        table = new LinkGrabberTable(tableModel);
+        table = new LinkGrabberTable(this, tableModel);
         tableScrollPane = new JScrollPane(table);
         // tableScrollPane.setBorder(null);
         filteredAdd = new ExtButton(new AppAction() {
@@ -158,7 +162,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
 
         });
-        clearAll = new JButton(new ClearAction());
+        resetButton = new JButton(new ResetAction(this));
         popup = new JButton(new AddOptionsAction(addLinks)) {
             /**
              * 
@@ -169,7 +173,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 super.setBounds(x - 2, y, width + 2, height);
             }
         };
-        popupRemove = new JButton(new RemoveOptionsAction(table, clearAll)) {
+        popupRemove = new JButton(new RemoveOptionsAction(this, resetButton)) {
             /**
              * 
              */
@@ -215,7 +219,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         leftBar.add(addLinks, "height 24!,aligny top");
 
         leftBar.add(popup, "height 24!,width 12!,aligny top");
-        leftBar.add(clearAll, "width 24!,height 24!,aligny top");
+        leftBar.add(resetButton, "width 24!,height 24!,aligny top");
         leftBar.add(popupRemove, "height 24!,width 12!,aligny top");
         searchField = new SearchField<LinktablesSearchCategory, CrawledPackage, CrawledLink>(table, LinktablesSearchCategory.FILENAME) {
 
@@ -256,6 +260,10 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(this);
 
+    }
+
+    public SearchField<LinktablesSearchCategory, CrawledPackage, CrawledLink> getSearchField() {
+        return searchField;
     }
 
     private void setFilteredAvailable(final int size) {
@@ -424,5 +432,16 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     @Override
     public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
+    public void resetSearch() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                searchField.setText("");
+                searchField.onChanged();
+            }
+        };
     }
 }

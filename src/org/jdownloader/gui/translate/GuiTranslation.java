@@ -2136,4 +2136,28 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "If you created an Application for JDownloader and want us to offer it here - write us!" })
     String Empty3rdPartyModule_getDescription_();
+
+    @Default(lngs = { "en" }, values = { "Reset Linkgrabber" })
+    String ResetPopupAction_ResetPopupAction_();
+
+    @Default(lngs = { "en" }, values = { "Reset Linkgrabber - Remove Links & reset Filters" })
+    String ResetAction_ResetAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Reset Linkgrabber Options" })
+    String ResetLinkGrabberOptionDialog_ResetLinkGrabberOptionDialog_title();
+
+    @Default(lngs = { "en" }, values = { "Clear all Links & Packages" })
+    String ResetLinkGrabberOptionDialog_layoutDialogContent_remove_links();
+
+    @Default(lngs = { "en" }, values = { "Reset Table Sorter" })
+    String ResetLinkGrabberOptionDialog_layoutDialogContent_sort();
+
+    @Default(lngs = { "en" }, values = { "Clear Search Filter" })
+    String ResetLinkGrabberOptionDialog_layoutDialogContent_search();
+
+    @Default(lngs = { "en" }, values = { "Cancel pending Crawler jobs" })
+    String ResetLinkGrabberOptionDialog_layoutDialogContent_interrup_crawler();
+
+    @Default(lngs = { "en" }, values = { "Do you really want to reset the Linkgrabber? Please choose:" })
+    String ResetLinkGrabberOptionDialog_layoutDialogContent_();
 }

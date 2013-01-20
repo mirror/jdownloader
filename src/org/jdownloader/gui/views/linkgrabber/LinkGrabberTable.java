@@ -5,7 +5,6 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.EventObject;
 
 import javax.swing.DropMode;
@@ -38,13 +37,13 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     private static final long  serialVersionUID = 8843600834248098174L;
     private ContextMenuFactory contextMenuFactory;
 
-    public LinkGrabberTable(final LinkGrabberTableModel tableModel) {
+    public LinkGrabberTable(LinkGrabberPanel linkGrabberPanel, final LinkGrabberTableModel tableModel) {
         super(tableModel);
         this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
         this.setTransferHandler(new LinkGrabberTableTransferHandler(this));
         this.setDragEnabled(true);
         this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
-        contextMenuFactory = new ContextMenuFactory(this);
+        contextMenuFactory = new ContextMenuFactory(this, linkGrabberPanel);
     }
 
     @Override

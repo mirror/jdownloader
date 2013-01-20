@@ -27,6 +27,7 @@ import org.jdownloader.gui.views.components.packagetable.context.PrioritySubMenu
 import org.jdownloader.gui.views.components.packagetable.context.SetCommentAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
@@ -37,9 +38,11 @@ import org.jdownloader.images.NewTheme;
 public class ContextMenuFactory {
 
     private LinkGrabberTable table;
+    private LinkGrabberPanel panel;
 
-    public ContextMenuFactory(LinkGrabberTable linkGrabberTable) {
+    public ContextMenuFactory(LinkGrabberTable linkGrabberTable, LinkGrabberPanel linkGrabberPanel) {
         this.table = linkGrabberTable;
+        this.panel = linkGrabberPanel;
     }
 
     public JPopupMenu createPopup(AbstractNode context, java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent event) {
@@ -101,10 +104,13 @@ public class ContextMenuFactory {
         p.add(new RemoveSelectionAction(si).toContextMenuAction());
         m = new JMenu(_GUI._.ContextMenuFactory_linkgrabber_createPopup_cleanup());
         m.setIcon(NewTheme.I().getIcon("clear", 18));
+
         m.add(new RemoveAllAction().toContextMenuAction());
         m.add(new RemoveNonSelectedAction(si).toContextMenuAction());
         m.add(new RemoveOfflineAction().toContextMenuAction());
         m.add(new RemoveIncompleteArchives(si).toContextMenuAction());
+        m.add(new JSeparator());
+        m.add(new ResetPopupAction(panel).toContextMenuAction());
         p.add(m);
 
         return p;
