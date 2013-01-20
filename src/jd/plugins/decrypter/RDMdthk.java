@@ -64,6 +64,8 @@ public class RDMdthk extends PluginForDecrypt {
         boolean includeAudio = cfg.getBooleanProperty(AUDIO, true);
         BEST = cfg.getBooleanProperty(Q_BEST, false);
 
+        final String realBaseUrl = new Regex(br.getBaseURL(), "(^.*\\.de)").getMatch(0);
+
         String ID = new Regex(parameter, "\\?documentId=(\\d+)").getMatch(0);
         String next = br.getRegex("href=\"(/ard/servlet/ajax\\-cache/\\d+/view=switch/documentId=" + ID + "/index.html)").getMatch(0);
         br.getPage(next);
@@ -75,7 +77,7 @@ public class RDMdthk extends PluginForDecrypt {
 
             for (final String[] s : streams) {
                 if ("audio".equalsIgnoreCase(s[0]) && !includeAudio) continue;
-                decryptedLinks.addAll(getDownloadLinks("http://www." + br.getHost() + s[1], cfg));
+                decryptedLinks.addAll(getDownloadLinks(realBaseUrl + s[1], cfg));
                 try {
                     if (this.isAbort()) return decryptedLinks;
                 } catch (Throwable e) {
