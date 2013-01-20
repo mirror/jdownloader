@@ -301,7 +301,6 @@ public class DreiSatDe extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.dreisat.loadhigh", "Load High Version")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.dreisat.loadveryhigh", "Load VeryHigh Version")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.dreisat.loadhd", "Load HD Version")).setDefaultValue(false).setEnabled(false));
-
     }
 
 }
