@@ -123,7 +123,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         }
 
                         final String name = title + "@" + fmt.toUpperCase(Locale.ENGLISH) + extension;
-                        final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://"));
+                        final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + fmt);
                         link.setAvailable(true);
                         link.setFinalFileName(name);
                         link.setBrowserUrl(data);
@@ -131,7 +131,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         link.setProperty("directName", name);
                         link.setProperty("directQuality", stream[0]);
                         link.setProperty("streamingType", "http");
-                        link.setProperty("LINKDUPEID", "zdf" + ID + name + fmt);
 
                         try {
                             link.setDownloadSize(SizeFormatter.getSize(stream[2]));

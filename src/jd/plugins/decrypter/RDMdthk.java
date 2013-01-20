@@ -33,6 +33,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+(\\?documentId=\\d+)?" }, flags = { 32 })
 public class RDMdthk extends PluginForDecrypt {
@@ -59,7 +60,7 @@ public class RDMdthk extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        SubConfiguration cfg = SubConfiguration.getConfig("ardmediathek.de");
+        SubConfiguration cfg = SubConfiguration.getConfig("ard.de");
         boolean includeAudio = cfg.getBooleanProperty(AUDIO, true);
         BEST = cfg.getBooleanProperty(Q_BEST, false);
 
@@ -90,6 +91,18 @@ public class RDMdthk extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
+    }
+
+    private boolean isStableEnviroment() {
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        final int rev = Integer.parseInt(prev);
+        if (rev < 10000) { return true; }
+        return false;
     }
 
     private ArrayList<DownloadLink> getDownloadLinks(String data, SubConfiguration cfg) {
@@ -127,6 +140,9 @@ public class RDMdthk extends PluginForDecrypt {
                     if (t == 1 && url.endsWith("m3u8@") || t > 1) continue;
                     fmt = "hd";
 
+                    // only http streams for old stable
+                    if (url.startsWith("rtmp") && isStableEnviroment()) continue;
+
                     switch (Integer.valueOf(quality[1])) {
                     case 0:
                         if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
@@ -159,7 +175,7 @@ public class RDMdthk extends PluginForDecrypt {
                     }
 
                     final String name = title + "@" + fmt.toUpperCase(Locale.ENGLISH) + extension;
-                    final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://"));
+                    final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + fmt);
                     if (t == 1 ? false : true) link.setAvailable(true);
                     link.setFinalFileName(name);
                     link.setBrowserUrl(data);
@@ -167,7 +183,6 @@ public class RDMdthk extends PluginForDecrypt {
                     link.setProperty("directName", name);
                     link.setProperty("directQuality", quality[1]);
                     link.setProperty("streamingType", t);
-                    link.setProperty("LINKDUPEID", "ard" + ID + name + fmt);
 
                     DownloadLink best = bestMap.get(fmt);
                     if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
