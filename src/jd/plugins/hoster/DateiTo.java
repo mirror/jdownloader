@@ -18,8 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -27,11 +27,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -45,34 +45,15 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datei.to", "sharebase.to" }, urls = { "http://(www\\.)?(sharebase\\.(de|to)/(files/|1,)|datei\\.to/datei/)[\\w]+\\.html", "blablablaInvalid_regex" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datei.to", "sharebase.to" }, urls = { "http://(www\\.)?datei\\.to/(datei/[A-Za-z0-9]+\\.html|\\?[A-Za-z0-9]+)", "blablablaInvalid_regexbvj54zjhrß96ujß" }, flags = { 2, 2 })
 public class DateiTo extends PluginForHost {
 
-    private static final String  APIPAGE          = "http://api.datei.to/";
-    private static final String  FILEIDREGEX      = "datei\\.to/datei/(.*?)\\.html";
-    private static final String  DOWNLOADPOSTPAGE = "http://datei.to/response/download";
-    private static final String  RECAPTCHATEXT    = "Eingabe war leider falsch\\. Probiere es erneut";
-    private static AtomicBoolean useAPI           = new AtomicBoolean(true);
+    private static final String  APIPAGE = "http://datei.to/api/jdownloader/";
+    private static AtomicBoolean useAPI  = new AtomicBoolean(true);
 
     public DateiTo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://datei.to/premium");
-    }
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) throws MalformedURLException {
-        if ("sharebase.to".equals(link.getHost())) {
-            /* README: this is how to change hostname in 09581 stable */
-            try {
-                final Field pidField = link.getClass().getDeclaredField("host");
-                pidField.setAccessible(true);
-                pidField.set(link, "datei.to");
-            } catch (Throwable e) {
-                logger.severe("could not rewrite host: " + e.getMessage());
-            }
-        }
-        String id = new Regex(link.getDownloadURL(), "(/files/|/1,)([\\w]+\\.html)").getMatch(1);
-        if (id != null) link.setUrlDownload("http://datei.to/datei/" + id);
     }
 
     @Override
@@ -91,70 +72,119 @@ public class DateiTo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.postPage(APIPAGE, "key=YYMHGBR9SFQA0ZWA&info=COMPLETE&datei=" + new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0));
-        if (!br.containsHTML("online") || br.containsHTML("offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex info = br.getRegex(";(.*?);(\\d+);");
-        downloadLink.setFinalFileName(info.getMatch(0));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(info.getMatch(1)));
+    public void correctDownloadLink(final DownloadLink link) throws MalformedURLException {
+        String id = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)\\.html$").getMatch(0);
+        if (id != null) link.setUrlDownload("http://datei.to/?" + id);
+    }
+
+    private void prepBrowser(final Browser br) {
+        br.getHeaders().put("User-Agent", "JDownloader");
+    }
+
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            final Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            prepBrowser(br);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("op=check&file=");
+                for (final DownloadLink dl : links) {
+                    correctDownloadLink(dl);
+                    sb.append(getFID(dl));
+                    sb.append(";");
+                }
+                br.postPage(APIPAGE, sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String fid = getFID(dllink);
+                    if (br.containsHTML(fid + ";offline")) {
+                        dllink.setAvailable(false);
+                    } else {
+                        final String[][] linkInfo = br.getRegex(fid + ";online;([^<>\"/;]*?);(\\d+)").getMatches();
+                        if (linkInfo.length != 1) {
+                            logger.warning("Linkchecker for datei.to is broken!");
+                            return false;
+                        }
+                        dllink.setAvailable(true);
+                        dllink.setFinalFileName(Encoding.htmlDecode(linkInfo[0][0]));
+                        dllink.setDownloadSize(Long.parseLong(linkInfo[0][1]));
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        /** Old linkcheck code can be found in rev 16195 */
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        br.postPage(APIPAGE, "op=free&step=1&file=" + getFID(downloadLink));
+        generalAPIErrorhandling();
+        generalFreeAPIErrorhandling();
+        final Regex waitAndID = br.getRegex("(\\d+);([A-Za-z0-9]+)");
+        if (waitAndID.getMatches().length != 1) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        this.sleep(Long.parseLong(waitAndID.getMatch(0)) * 1001l, downloadLink);
+        final String id = waitAndID.getMatch(1);
 
-        if (true) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-        final String dlID = br.getRegex("id=\"DLB\"><button id=\"([^<>\"]*?)\"").getMatch(0);
-        if (dlID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage(DOWNLOADPOSTPAGE, "Step=1&ID=" + dlID);
-        final String waittime = br.getRegex("<span id=\"DCS\">(\\d+)</span> Sekunden").getMatch(0);
-        int wait = 30;
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
-        // Ab hier kaputt
-        boolean failed = true;
         for (int i = 0; i <= 5; i++) {
-            if (br.containsHTML("(Da hat etwas nicht geklappt|>Hast du etwa versucht, die Wartezeit zu umgehen)")) {
-                logger.info("Countdown or server-error");
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            String reCaptchaId = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
+            br.postPage(APIPAGE, "op=free&step=2&id=" + id);
+            final String reCaptchaId = br.toString().trim();
             if (reCaptchaId == null) {
                 logger.warning("reCaptchaId is null...");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final Form reCaptchaForm = new Form();
-            reCaptchaForm.setMethod(Form.MethodType.POST);
-            reCaptchaForm.setAction("http://datei.to/response/recaptcha");
-            reCaptchaForm.put("modul", "checkDLC");
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setForm(reCaptchaForm);
             rc.setId(reCaptchaId);
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             final String c = getCaptchaCode(cf, downloadLink);
-            reCaptchaForm.put("recaptcha_response_field", Encoding.urlEncode(c));
-            reCaptchaForm.put("recaptcha_challenge_field", rc.getChallenge());
-            rc.setCode(c);
-            if (!br.containsHTML(RECAPTCHATEXT)) {
-                failed = false;
+            br.postPage(APIPAGE, "op=free&step=3&id=" + id + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
+            if (!br.containsHTML("(wrong|no input)") && br.containsHTML("ok")) {
                 break;
             }
-            br.postPage(DOWNLOADPOSTPAGE, "Step=1&ID=" + dlID);
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String dllink = br.toString();
-        if (!dllink.startsWith("http") || dllink.length() > 500) {
-            logger.warning("Invalid dllink...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = dllink.trim();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (br.containsHTML("(wrong|no input)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+
+        br.postPage(APIPAGE, "op=free&step=4&id=" + id);
+        generalFreeAPIErrorhandling();
+        if (br.containsHTML("ticket expired")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (ticket expired)", 5 * 60 * 1000l);
+        String dlUrl = br.toString();
+        if (dlUrl == null || !dlUrl.startsWith("http") || dlUrl.length() > 500 || dlUrl.contains("no file")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        dlUrl = dlUrl.trim();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, false, 1);
         if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
             logger.warning("The dllink doesn't seem to be a file...");
             br.followConnection();
@@ -165,9 +195,19 @@ public class DateiTo extends PluginForHost {
         dl.startDownload();
     }
 
+    private void generalAPIErrorhandling() throws PluginException {
+        if (br.containsHTML("temp down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, file is temporarily not downloadable!", 30 * 60 * 1000l);
+        if (br.containsHTML("no file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    }
+
+    private void generalFreeAPIErrorhandling() throws NumberFormatException, PluginException {
+        if (br.containsHTML("limit reached")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(br.getRegex("limit reached;(\\d+)").getMatch(0)));
+        if (br.containsHTML("download active")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Another free download is already active, please wait before starting new ones.", 5 * 60 * 1000l);
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
@@ -179,23 +219,16 @@ public class DateiTo extends PluginForHost {
             try {
                 apiLogin(account);
             } catch (PluginException e) {
-                // free accounts are not supported atm, we need to exit when free account been detected, so we don't loop unnecessarily
-                if (!account.getBooleanProperty("isPremium")) {
-                    throw (PluginException) e;
-                } else {
-                    useAPI.set(false);
-                }
+                account.setValid(false);
+                throw (PluginException) e;
             }
             if (useAPI.get() == true) {
-                String expireDate = br.getRegex("premium;(\\d+)").getMatch(0);
-                if (expireDate != null)
-                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate));
-                else
-                    ai.setExpired(true);
-                ai.setUnlimitedTraffic();
+                final Regex accInfo = br.getRegex("premium;(\\d+);(\\d+)");
+                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(accInfo.getMatch(0)) * 1000l);
+                ai.setTrafficLeft(Long.parseLong(accInfo.getMatch(1)));
+                ai.setStatus("Premium User");
             }
-        }
-        if (useAPI.get() == false) {
+        } else {
             try {
                 webLogin(account, true);
             } catch (PluginException e) {
@@ -240,20 +273,17 @@ public class DateiTo extends PluginForHost {
 
     public void apiLogin(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://api.datei.to/", "info=jdLogin&Username=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()));
+        prepBrowser(br);
+        br.postPage(APIPAGE, "op=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
 
-        if (br.containsHTML("free")) {
-            logger.info("Free account found->Not support->Disable");
+        if (!br.containsHTML("premium;")) {
+            logger.info("Free account found->Not supported->Disable!");
             account.setProperty("isPremium", false);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        if (!br.containsHTML("premium") || br.containsHTML("false")) {
-            // remove when api gets fixed!!
-            useAPI.set(false);
-            // account.setProperty("isPremium", false);
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.containsHTML("wrong login")) {
+            logger.info("Wrong login or password entered!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -298,11 +328,20 @@ public class DateiTo extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         if (useAPI.get() == true) {
             // api dl
             requestFileInformation(downloadLink);
-            br.postPage("http://api.datei.to/", "info=jdPremDown&Username=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&datei=" + new Regex(downloadLink.getDownloadURL(), "datei\\.to/datei/(.*?)\\.html").getMatch(0));
+            br.postPage(APIPAGE, "op=premium&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&file=" + getFID(downloadLink));
+            generalAPIErrorhandling();
+            if (br.containsHTML("no premium")) {
+                logger.info("Cannot start download, this is no premium account anymore...");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            if (br.containsHTML("wrong login")) {
+                logger.info("Cannot start download, username or password wrong!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             String dlUrl = br.toString();
             if (dlUrl == null || !dlUrl.startsWith("http") || dlUrl.length() > 500 || dlUrl.contains("no file")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             dlUrl = dlUrl.trim();

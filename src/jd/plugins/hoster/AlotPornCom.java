@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alotporn.com" }, urls = { "http://(www\\.)?alotporn\\.com/\\d+/[\\w-]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alotporn.com" }, urls = { "http://(www\\.)?alotporn\\.com/\\d+/[A-Za-z0-9\\-_]+/" }, flags = { 0 })
 public class AlotPornCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -65,7 +65,7 @@ public class AlotPornCom extends PluginForHost {
         setBrowserExclusive();
         final String[] values = new Regex(downloadLink.getDownloadURL(), "http://.*?/(\\d+)/([\\w-]+)").getRow(0);
         String filename = values[1].replaceAll("-", "_");
-        br.getPage("http://alotporn.com/modules/video/player/confi.php?id=" + values[0]);
+        br.getPage("http://alotporn.com/modules/video/player/jw/config.php?id=" + values[0]);
         if (!br.containsHTML("<provider>http</provider>")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin update needed!"); }
         DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
         if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }

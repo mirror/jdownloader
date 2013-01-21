@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdu\\.com/(?!search|embed)[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdu\\.com/(?!search|embed|sitemaps)[a-z0-9\\-]+" }, flags = { 0 })
 public class FapduCom extends PluginForDecrypt {
 
     public FapduCom(PluginWrapper wrapper) {
@@ -195,6 +195,12 @@ public class FapduCom extends PluginForDecrypt {
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
+        externID = br.getRegex("http://alotporn\\.com/embed\\.php\\?id=(\\d+)\\&").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("http://alotporn.com/" + externID + "/" + filename.replace(" ", "-") + "/");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);

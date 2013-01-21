@@ -84,6 +84,13 @@ public class DataCloudTo extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL() + "/r");
             dllink = br.getRegex("\"(http://(mediacloud|datacloud)\\.to/get/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("<a class=\"csbutton yellow\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            // Streamlinks (playerlinks)
+            if (dllink == null) {
+                dllink = br.getRegex("file: \"(http://[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(http://[a-z0-9]+\\.datacloud\\.to/uploads/files\\d+/[^<>\"]*?)\"").getMatch(0);
+                }
+            }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
