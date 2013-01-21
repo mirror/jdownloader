@@ -8,5 +8,6 @@ jd_plugins_optional_jdchat_jdchat=Support Chat
 plugins_optional_jdchat_enternick=Dein gewünschter Nickname
 settings_nick=Dein Name
 settings_perform=Führe diese Aktion nach dem Beitreten in den Chat aus
+settings_userlist_position=Position der Nutzerliste
 settings_userlist_position_left=Linke Seite
 settings_userlist_position_right=Rechte Seite
