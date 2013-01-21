@@ -68,7 +68,7 @@ public class RTLnowDe extends PluginForHost {
     private void download(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String linkurl = br.getRegex("data:\'(.*?)\'").getMatch(0);
-        final String ivw = br.getRegex("ivw:\'/(.*?)\',").getMatch(0);
+        final String ivw = br.getRegex("ivw:\'(.*?)\',").getMatch(0);
         final String client = br.getRegex("id:\'(.*?)\'").getMatch(0);
         final String swfurl = br.getRegex("swfobject.embedSWF\\(\"(.*?)\",").getMatch(0);
         if (linkurl == null || ivw == null || client == null || swfurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
@@ -94,12 +94,16 @@ public class RTLnowDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String app = dllink.replace(playpath, "").replace(host, "");
+            if (host.contains("edgefcs.net")) {
+                app = "ondemand?ovpfv=1.1&" + new Regex(playpath, "(auth=.*?)$").getMatch(0);
+                playpath = new Regex(dllink, "(rtlnow|voxnow|superrtlnow|rtl2now)/(.*?)$").getMatch(-1);
+            }
             if (host.endsWith("de/")) host = host.replace("de/", "de:1935/");
             String play = playpath.substring(0, playpath.lastIndexOf("."));
             if (dllink.endsWith(".f4v")) {
                 play = "mp4:" + playpath;
             }
-            playpath = play + "?ivw=" + ivw + "&client=" + client + "&type=content&user=" + crc32Hash("user") + "&session=" + crc32Hash("session") + "&angebot=rtlnow&starttime=00:00:00:00";
+            playpath = play + "?ivw=" + ivw + "&client=" + client + "&type=content&user=" + crc32Hash("user") + "&mrwid=0&session=" + crc32Hash("session") + "&angebot=rtlnow&starttime=00:00:00:00";
             if (timetp != null) {
                 playpath = playpath + "&timetype=" + timetp;
             }
@@ -132,7 +136,7 @@ public class RTLnowDe extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
