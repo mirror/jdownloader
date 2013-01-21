@@ -53,7 +53,7 @@ public class ShareNeoNet extends PluginForHost {
 
     private final String  MAINPAGE  = "http://shareneo.net";
     private final String  TYPE      = "html";
-    private final boolean RESUME    = true;
+    private final boolean RESUME    = false;
     private final int     MAXCHUNKS = 1;
 
     public void correctDownloadLink(DownloadLink link) {
