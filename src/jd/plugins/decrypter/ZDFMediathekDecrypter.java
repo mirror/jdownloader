@@ -31,6 +31,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -73,6 +74,18 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private boolean isStableEnviroment() {
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        final int rev = Integer.parseInt(prev);
+        if (rev < 10000) { return true; }
+        return false;
+    }
+
     private ArrayList<DownloadLink> getDownloadLinks(String data, SubConfiguration cfg) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
@@ -89,8 +102,14 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
                 HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
                 for (String streams[] : br.getRegex("<formitaet basetype=\"([^\"]+)\" isDownload=\"[^\"]+\">(.*?)</formitaet>").getMatches()) {
-                    if (!streams[0].contains("mp4_http")) continue;
-                    for (String stream[] : new Regex(streams[1], "<quality>([^<]+)</quality>.*?<url>([^<]+)<.*?<filesize>(\\d+)<.*?<facet>(progressive|restriction_useragent)</").getMatches()) {
+
+                    if (!(streams[0].contains("mp4_http") || streams[0].contains("mp4_rtmp_zdfmeta"))) continue;
+
+                    for (String stream[] : new Regex(streams[1], "<quality>([^<]+)</quality>.*?<url>([^<]+)<.*?<filesize>(\\d+)<").getMatches()) {
+
+                        if (streams[0].contains("mp4_http") && !streams[1].matches("<facet>(progressive|restriction_useragent)</")) continue;
+
+                        String url = stream[1];
                         String fmt = stream[0];
                         if (fmt != null) fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
                         if (fmt != null) {
@@ -117,6 +136,13 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {
                                     continue;
                                 } else {
+                                    if (streams[0].contains("mp4_rtmp")) {
+                                        if (isStableEnviroment()) continue;
+                                        Browser rtmp = new Browser();
+                                        rtmp.getPage(stream[1]);
+                                        url = rtmp.getRegex("<default\\-stream\\-url>([^<]+)<").getMatch(0);
+                                        if (url == null) continue;
+                                    }
                                     fmt = "hd";
                                 }
                             }
@@ -127,7 +153,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         link.setAvailable(true);
                         link.setFinalFileName(name);
                         link.setBrowserUrl(data);
-                        link.setProperty("directURL", stream[1]);
+                        link.setProperty("directURL", url);
                         link.setProperty("directName", name);
                         link.setProperty("directQuality", stream[0]);
                         link.setProperty("streamingType", "http");

@@ -38,13 +38,14 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+(\\?documentId=\\d+)?" }, flags = { 32 })
 public class RDMdthk extends PluginForDecrypt {
 
-    private static final String Q_LOW    = "Q_LOW";
-    private static final String Q_MEDIUM = "Q_MEDIUM";
-    private static final String Q_HIGH   = "Q_HIGH";
-    private static final String Q_HD     = "Q_HD";
-    private static final String Q_BEST   = "Q_BEST";
-    private static final String AUDIO    = "AUDIO";
-    private boolean             BEST     = false;
+    private static final String Q_LOW        = "Q_LOW";
+    private static final String Q_MEDIUM     = "Q_MEDIUM";
+    private static final String Q_HIGH       = "Q_HIGH";
+    private static final String Q_HD         = "Q_HD";
+    private static final String Q_BEST       = "Q_BEST";
+    private static final String AUDIO        = "AUDIO";
+    private boolean             BEST         = false;
+    private int                 notForStable = 0;
 
     public RDMdthk(final PluginWrapper wrapper) {
         super(wrapper);
@@ -64,6 +65,7 @@ public class RDMdthk extends PluginForDecrypt {
         boolean includeAudio = cfg.getBooleanProperty(AUDIO, true);
         BEST = cfg.getBooleanProperty(Q_BEST, false);
 
+        final String fsk = br.getRegex("(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)").getMatch(0);
         final String realBaseUrl = new Regex(br.getBaseURL(), "(^.*\\.de)").getMatch(0);
 
         String ID = new Regex(parameter, "\\?documentId=(\\d+)").getMatch(0);
@@ -71,11 +73,14 @@ public class RDMdthk extends PluginForDecrypt {
         br.getPage(next);
         // Dossiers
         String pages[] = br.getRegex("value=\"(/ard/servlet/ajax\\-cache/\\d+/view=list/documentId=" + ID + "/goto=\\d+/index.html)").getColumn(0);
+        if (pages.length < 1) pages = new String[1];
         Collections.reverse(Arrays.asList(pages));
+
         for (int i = 0; i < pages.length; ++i) {
             final String[][] streams = br.getRegex("mt\\-icon_(audio|video).*?<a href=\"([^\"]+)\" class=\"mt\\-fo_source\" rel=\"[^\"]+\">([^<]+)<").getMatches();
-
+            progress.setRange(streams.length);
             for (final String[] s : streams) {
+                progress.increase(1);
                 if ("audio".equalsIgnoreCase(s[0]) && !includeAudio) continue;
                 decryptedLinks.addAll(getDownloadLinks(realBaseUrl + s[1], cfg));
                 try {
@@ -84,11 +89,22 @@ public class RDMdthk extends PluginForDecrypt {
                     /* does not exist in 09581 */
                 }
             }
+            progress.setRange(0);
+            if (pages.length == 1) break;
             br.getPage(pages[i]);
         }
         // Single link
         if (decryptedLinks == null || decryptedLinks.size() == 0) decryptedLinks.addAll(getDownloadLinks(parameter, cfg));
+
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            if (notForStable > 0) {
+                logger.info("ARD-Mediathek: Only flash content is available. Not downloadable with JD1, please use JD2!");
+                return decryptedLinks;
+            }
+            if (fsk != null) {
+                logger.info("ARD-Mediathek: " + fsk);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
@@ -143,7 +159,10 @@ public class RDMdthk extends PluginForDecrypt {
                     fmt = "hd";
 
                     // only http streams for old stable
-                    if (url.startsWith("rtmp") && isStableEnviroment()) continue;
+                    if (url.startsWith("rtmp") && isStableEnviroment()) {
+                        notForStable++;
+                        continue;
+                    }
 
                     switch (Integer.valueOf(quality[1])) {
                     case 0:

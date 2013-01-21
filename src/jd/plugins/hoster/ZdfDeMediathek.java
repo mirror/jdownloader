@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zdf.de" }, urls = { "decrypted://(www\\.)?zdf\\.de/ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+" }, flags = { 0 })
@@ -56,6 +57,37 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        download(downloadLink);
+    }
+
+    private void setupRTMPConnection(String stream, DownloadInterface dl) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setUrl(stream);
+        rtmp.setResume(true);
+    }
+
+    private void download(final DownloadLink downloadLink) throws Exception {
+        String dllink = downloadLink.getStringProperty("directURL", null);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink.startsWith("rtmp")) {
+            dl = new RTMPDownload(this, downloadLink, dllink);
+            setupRTMPConnection(dllink, dl);
+            ((RTMPDownload) dl).startDownload();
+        } else {
+            br.setFollowRedirects(true);
+            if (dllink.contains("hinweis_fsk")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         if (link.getStringProperty("directURL", null) == null) {
             /* fetch fresh directURL */
@@ -71,22 +103,6 @@ public class ZdfDeMediathek extends PluginForHost {
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()).replace("\"", "'").replace(":", " - ").replace("?", "") + ".mp4");
         }
         return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (downloadLink.getStringProperty("directURL", null) == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = downloadLink.getStringProperty("directURL");
-        if (dllink == null) dllink = br.getRegex("\"(http://rodl\\.zdf\\.de/de/zdf/\\d+/\\d+/[^<>\"/]*?_vh\\.mp4)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (dllink.contains("hinweis_fsk")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
@@ -108,7 +124,7 @@ public class ZdfDeMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.zdf.loadlow", "Load Low Version")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.zdf.loadhigh", "Load High Version")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.zdf.dreisat.loadveryhigh", "Load VeryHigh Version")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.zdf.loadhd", "Load HD Version")).setDefaultValue(false).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.zdf.loadhd", "Load HD Version")).setDefaultValue(true));
 
     }
 }
