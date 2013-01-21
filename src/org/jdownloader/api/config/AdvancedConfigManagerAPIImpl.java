@@ -81,7 +81,7 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                 result.add(new ConfigInterfaceAPIStorable(ace));
             } else {
                 ConfigInterfaceAPIStorable cis = result.get(result.indexOf(new ConfigInterfaceAPIStorable(ace)));
-                cis.getInfoMap().put("settingsCount", (int) cis.getInfoMap().get("settingsCount") + 1);
+                cis.getInfoMap().put("settingsCount", (Integer) cis.getInfoMap().get("settingsCount") + 1);
             }
         }
         return result;

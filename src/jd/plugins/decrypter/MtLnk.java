@@ -60,6 +60,14 @@ public class MtLnk extends PluginForDecrypt {
         return decryptString(metalink);
     }
 
+    public boolean pluginAPI(String method, Object input, Object output) throws Exception {
+        if ("decryptString".equalsIgnoreCase(method)) {
+            ((ArrayList<DownloadLink>) output).addAll(decryptString((String) input));
+            return true;
+        }
+        return false;
+    }
+
     public ArrayList<DownloadLink> decryptString(String metalink) {
         decryptedLinks = new ArrayList<DownloadLink>();
         DefaultHandler handler = new MetalinkSAXHandler();

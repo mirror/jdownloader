@@ -582,6 +582,10 @@ public class RapidGatorNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    if (br.getCookie(MAINPAGE, "user__") == null || "deleted".equalsIgnoreCase(br.getCookie(MAINPAGE, "user__"))) {
+                        logger.info("Account seems to be invalid!");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
