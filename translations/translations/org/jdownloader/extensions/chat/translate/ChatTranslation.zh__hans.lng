@@ -1,2 +1,8 @@
 jd_plugins_optional_jdchat_jdchat=聊天
 plugins_optional_jdchat_enternick=您期望的昵称?
+settings_enabled_userlist_colors=启用用户列表颜色
+settings_nick=您的名字
+settings_perform=输入聊天内容后执行此动作:
+settings_userlist_position=用户列表位置
+settings_userlist_position_left=左侧
+settings_userlist_position_right=右侧
