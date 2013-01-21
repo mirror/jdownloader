@@ -1,7 +1,9 @@
 package org.jdownloader.api.config;
 
 import java.util.ArrayList;
+import java.util.List;
 
+import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.ApiDoc;
 import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.RemoteAPIInterface;
@@ -28,4 +30,8 @@ public interface AdvancedConfigManagerAPI extends RemoteAPIInterface {
     @AllowStorage(value = { Object.class })
     @ApiDoc("get default value from interface by key")
     public Object getDefault(String interfacename, String key);
+
+    public List<ConfigInterfaceAPIStorable> queryConfigInterfaces(APIQuery query);
+
+    List<ConfigEntryAPIStorable> queryConfigSettings(APIQuery query);
 }

@@ -32,15 +32,15 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
     @Override
     public int getState() {
-        if (DownloadWatchDog.getInstance().isPaused()) return 1;
-        if (DownloadWatchDog.getInstance().getRunningDownloadLinks().isEmpty()) return 2;
+        if (DownloadWatchDog.getInstance().isPaused()) return 2;
+        if (DownloadWatchDog.getInstance().getRunningDownloadLinks().isEmpty()) return 1;
         return 0;
     }
 
     @Override
     public List<FilePackageAPIStorable> queryPackages(APIQuery queryParams) {
         DownloadController dlc = DownloadController.getInstance();
-        DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        // DownloadWatchDog dwd = DownloadWatchDog.getInstance();
 
         boolean b = dlc.readLock();
 
@@ -119,7 +119,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         List<DownloadLinkAPIStorable> result = new ArrayList<DownloadLinkAPIStorable>();
 
         DownloadController dlc = DownloadController.getInstance();
-        DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        // DownloadWatchDog dwd = DownloadWatchDog.getInstance();
 
         // retrieve packageUUIDs from queryParams
         List<Long> packageUUIDs = new ArrayList<Long>();
@@ -183,6 +183,12 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
             dls.setInfoMap(infomap);
             result.add(dls);
+        }
+
+        try {
+            Thread.sleep(500l);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
         return result;

@@ -151,7 +151,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     public Boolean addLinks(String links) {
         LinkCollector lc = LinkCollector.getInstance();
         lc.addCrawlerJob(new LinkCollectingJob(links));
-        simulateLatency();
         return true;
     }
 
@@ -186,6 +185,26 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         List<FilePackage> frets = LinkCollector.getInstance().convert(lks, true);
         dc.addAll(frets);
 
+        return true;
+    }
+
+    @Override
+    public Boolean removeLinks(final List<Long> linkIds) {
+        LinkCollector lc = LinkCollector.getInstance();
+
+        List<CrawledLink> lks = lc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
+            @Override
+            public int returnMaxResults() {
+                return -1;
+            }
+
+            @Override
+            public boolean isChildrenNodeFiltered(CrawledLink node) {
+                return linkIds != null && linkIds.contains(node.getUniqueID().getID());
+            }
+        });
+
+        lc.removeChildren(lks);
         return true;
     }
 
