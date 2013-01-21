@@ -111,7 +111,9 @@ public class RtmpDump extends RTMPDownload {
         }
         if (RTMPDUMP != null && !new File(RTMPDUMP).exists()) RTMPDUMP = null;
         if (RTMPDUMP == null && (CrossSystem.isLinux() || CrossSystem.isMac())) {
-            if (!new File("/usr/bin/rtmpdump").exists() || !new File("/usr/local/bin/rtmpdump").exists()) RTMPDUMP = null;
+            RTMPDUMP = "/usr/bin/rtmpdump";
+            if (!new File(RTMPDUMP).exists()) RTMPDUMP = "/usr/local/bin/rtmpdump";
+            if (!new File(RTMPDUMP).exists()) RTMPDUMP = null;
         }
         if (RTMPDUMP == null) RTMPDUMP = "";
         return RTMPDUMP.length() > 0;

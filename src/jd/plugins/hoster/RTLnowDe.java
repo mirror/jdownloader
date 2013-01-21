@@ -115,6 +115,7 @@ public class RTLnowDe extends PluginForHost {
             }
             DLCONTENT = host + "@" + app + "@" + playpath + "@" + swfurl + "@" + downloadLink.getDownloadURL();
 
+            downloadLink.setProperty("FLVFIXER", true);
             setupRTMPConnection(dl);
             ((RTMPDownload) dl).startDownload();
 
@@ -208,6 +209,7 @@ public class RTLnowDe extends PluginForHost {
         rtmp.setApp(DLCONTENT.split("@")[1]);
         rtmp.setUrl(DLCONTENT.split("@")[0] + DLCONTENT.split("@")[1]);
         rtmp.setResume(true);
+        rtmp.setRealTime();
         if (!getPluginConfig().getBooleanProperty("DEFAULTTIMEOUT", false)) rtmp.setTimeOut(-1);
     }
 
