@@ -1,0 +1,6 @@
+JDUpdater_start_restart_update_now_=现在更新并重启!
+JDUpdater_start_updater_update_msg=现在重启以执行更新。
+exit=关闭
+literally_exit=已完成升级检查 - 退出
+update_dialog_news_button=打开更新日志
+update_dialog_news_button_url=http://www.jdownloader.org/changelog
