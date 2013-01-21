@@ -37,13 +37,20 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/file\\.html|.*?key=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/file\\.html|.*?key=\\d+|downloadMusic\\?key=\\d+)" }, flags = { 0 })
 public class Zippysharecom extends PluginForHost {
 
     private String DLLINK = null;
 
     public Zippysharecom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        final String addedLink = link.getDownloadURL();
+        if (addedLink.matches("http://www\\d{0,}\\.zippyshare\\.com/downloadMusic\\?key=\\d+")) {
+            link.setUrlDownload(addedLink.replace("downloadMusic?key=", "view.jsp?key="));
+        }
     }
 
     @Override
