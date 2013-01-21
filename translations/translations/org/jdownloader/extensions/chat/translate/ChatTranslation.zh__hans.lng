@@ -1,5 +1,2 @@
 jd_plugins_optional_jdchat_jdchat=聊天
-jd_plugins_optional_jdchat_newmessage=New Message from %s1:<hr> %s2
-plugin_optional_jdchat_getlog=%s1 需要您提供log文件来解决次问题, 同意发送log文件吗?
 plugins_optional_jdchat_enternick=您期望的昵称?
-sys_warning_loguploadfailed=Upload of logfile failed!

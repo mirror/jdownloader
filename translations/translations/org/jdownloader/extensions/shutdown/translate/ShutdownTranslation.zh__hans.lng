@@ -3,8 +3,8 @@ addons_jdshutdown_statusmessage_enabled=已启用自动关机
 gui_config_jdshutdown_close=关闭JD
 gui_config_jdshutdown_forceshutdown=强制关机 (仅对部分操作系统有效)
 gui_config_jdshutdown_hibernate=休眠 (仅对部分操作系统有效)
-gui_config_jdshutdown_mode=Mode:
-gui_config_jdshutdown_shutdown=Shutdown
+gui_config_jdshutdown_mode=模式:
+gui_config_jdshutdown_shutdown=关机
 gui_config_jdshutdown_standby=待机 (仅对部分操作系统有效)
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">System will be put into hibernate mode!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">System will be shut down!</font></h2>
