@@ -63,6 +63,11 @@ import org.appwork.utils.os.CrossSystem;
 public class DepositFiles extends PluginForHost {
     public static class StringContainer {
         public String string = null;
+
+        @Override
+        public String toString() {
+            return string;
+        }
     }
 
     private static final String   UA                       = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:11.0) Gecko/20100101 Firefox/11.0";
@@ -281,7 +286,7 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return MAINPAGE + "/en/agreem.html";
+        return MAINPAGE.string + "/en/agreem.html";
     }
 
     private String getDllink() throws Exception {
@@ -296,7 +301,7 @@ public class DepositFiles extends PluginForHost {
             final String[] lol = HTMLParser.getHttpLinks(crap, "");
             if (lol == null || lol.length == 0) {
                 if (!crap.contains("depositfiles") && crap.contains("php?")) {
-                    return MAINPAGE + crap;
+                    return MAINPAGE.string + crap;
                 } else {
                     return null;
                 }
