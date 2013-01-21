@@ -38,7 +38,7 @@ public class DTemplateDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String parameter = param.toString();
-        final String host = new Regex(parameter, "http://(www\\.)?([^:/]+)").getMatch(1);
+        final String host = new Regex(parameter, "://(www\\.)?([^:/]+)").getMatch(1);
         if (host == null) {
             logger.warning("Failure finding 'host' : " + parameter);
             return null;

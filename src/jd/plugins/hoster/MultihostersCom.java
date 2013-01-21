@@ -55,7 +55,6 @@ public class MultihostersCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-        br.setDebug(true);
         String loginPage = null;
         String username = Encoding.urlEncode(account.getUser());
         String pass = Encoding.urlEncode(account.getPass());
@@ -73,7 +72,7 @@ public class MultihostersCom extends PluginForHost {
             if (AvailableTodayTraffic.equals("0")) {
                 ac.setUnlimitedTraffic();
             } else {
-                ac.setTrafficLeft(SizeFormatter.getSize(AvailableTodayTraffic + "mb"));
+                ac.setTrafficLeft(SizeFormatter.getSize(AvailableTodayTraffic + "MiB"));
             }
 
             if (ac.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

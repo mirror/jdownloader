@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -18,14 +18,17 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -36,11 +39,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(page\\d)\\.)?(yunfile|filemarkets|yfdisk)\\.com/file/[a-z0-9]+/[a-z0-9]+" }, flags = { 2 })
 public class YunFileCom extends PluginForHost {
-    private static final String MAINPAGE = "http://yunfile.com/";
 
+    private static final String MAINPAGE = "http://yunfile.com/";
     private static Object       LOCK     = new Object();
 
     // Works like HowFileCom
@@ -54,23 +58,17 @@ public class YunFileCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(yunfile|filemarkets|yfdisk)\\.com/file/", "yunfile.com/file/"));
     }
 
+    public void prepBrowser(Browser br) {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        // br.setCookie(this.getHost(), "language", "en_us");
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
+    }
+
     private void checkErrors() throws NumberFormatException, PluginException {
         String waittime = br.getRegex("id=\"down_interval\" style=\"font-size: 28px; color: green;\">(\\d+)</span> 分钟</span>").getMatch(0);
         if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true, "http://www.yunfile.com/explorer/list.html");
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-        ai.setStatus("Premium User");
-        return ai;
     }
 
     @Override
@@ -92,8 +90,8 @@ public class YunFileCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        prepBrowser(br);
         br.setFollowRedirects(true);
-        br.setReadTimeout(3 * 60 * 1000);
         URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
         if (con.getResponseCode() == 503) {
             con.disconnect();
@@ -120,8 +118,7 @@ public class YunFileCom extends PluginForHost {
         if (userid == null || fileid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Waittime is still skippable
         // int wait = 30;
-        // String shortWaittime =
-        // br.getRegex("id=wait_span style=\"font\\-size: 28px; color: green;\">(\\d+)</span>").getMatch(0);
+        // String shortWaittime = br.getRegex("id=wait_span style=\"font\\-size: 28px; color: green;\">(\\d+)</span>").getMatch(0);
         // if (shortWaittime != null) wait = Integer.parseInt(shortWaittime);
         // sleep(wait * 1001l, downloadLink);
         // Check if captcha needed
@@ -130,8 +127,7 @@ public class YunFileCom extends PluginForHost {
             br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + "/" + code + ".html");
             if (br.containsHTML("Not HTML Code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else {
-            // br.getPage("http://yunfile.com/file/down/" + userid + "/" +
-            // fileid + ".html");
+            // br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + ".html");
             br.getPage(domain + "/file/down/" + userid + "/" + fileid + ".html");
         }
         String vid = br.getRegex("name=\"vid\" value=\"(.*?)\"").getMatch(0);
@@ -140,7 +136,7 @@ public class YunFileCom extends PluginForHost {
         String action = br.getRegex("id=\"down_from\"([\t\n\r ]+)?action=\"(http://.*?)\"([\t\n\r ]+)?method=\"post\"").getMatch(1);
         if (action == null) action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/file/downfile/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
         if (vid == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Those cookies are important, no downloadstart without one of them!
+        // Those cookies are important, no download start without one of them!
         if (vid1 != null) br.setCookie(MAINPAGE, "vid1", vid1);
         if (vid2 != null) br.setCookie(MAINPAGE, "vid2", vid2);
         br.setFollowRedirects(true);
@@ -158,11 +154,23 @@ public class YunFileCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, true, link.getDownloadURL());
-        if (!br.getURL().equals(link.getDownloadURL())) br.getPage(link.getDownloadURL());
+        login(account, false, link.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         final String vid1 = br.getRegex("\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
         String dllink = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("<td align=center>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+        String[] counter = br.getRegex("document.getElementById\\(\\'.*?\\'\\)\\.src = \"([^\"]+)").getColumn(0);
+        if (counter != null || counter.length < 0) {
+            String referer = br.getURL();
+            for (String count : counter) {
+                // need the cookies to update after each response!
+                br.getHeaders().put("Referer", referer);
+                try {
+                    br.getPage(count);
+                } catch (Throwable e) {
+                }
+            }
+        }
         if (dllink == null || vid1 == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -177,10 +185,35 @@ public class YunFileCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true, "http://www.yunfile.com/explorer/list.html");
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        if (!br.getURL().contains("/user/edit.html")) {
+            br.getPage("/user/edit.html");
+        }
+        String expire = br.getRegex("Expire:(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        if (expire != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
+        }
+        String space = br.getRegex("Used Space:.+?>(\\d+ (b|kb|mb|gb|tb)), Files").getMatch(0);
+        if (space != null) {
+            ai.setUsedSpace(space);
+        }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
     private void login(Account account, final boolean force, final String returnPath) throws Exception {
         synchronized (LOCK) {
             // Load/Save cookies, if we do NOT do this parallel downloads fail
-            br.setReadTimeout(3 * 60 * 1000);
+            prepBrowser(br);
             br.setCookiesExclusive(true);
             br.setFollowRedirects(true);
             final Object ret = account.getProperty("cookies", null);
@@ -198,7 +231,15 @@ public class YunFileCom extends PluginForHost {
                 }
             }
             br.getPage(MAINPAGE);
-            br.postPage("http://www.yunfile.com/view", "remember=on&module=user&action=validateLogin&returnPath=" + Encoding.urlEncode(returnPath) + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            Form login = br.getFormbyProperty("id", "login_form");
+            if (login == null) {
+                logger.warning("Could not find login form");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            login.put("username", Encoding.urlEncode(account.getUser()));
+            login.put("password", Encoding.urlEncode(account.getPass()));
+            login.put("remember", "on");
+            br.submitForm(login);
             if (br.getCookie(MAINPAGE, "jforumUserHash") == null || br.getCookie(MAINPAGE, "membership") == null || !"2".equals(br.getCookie(MAINPAGE, "membership"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
