@@ -1,3 +1,6 @@
+UpdateServer_UpdaterGui_onStateChange_download=下载
+guiless_download_data=正在下载更新包……
 rlyexit=您确定要退出吗?
 rlyexit_title=确定退出?
+rlyrestart=您确定要重启程序吗？
 rlyrestart_restart=确定重启?

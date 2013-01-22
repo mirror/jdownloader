@@ -25,4 +25,5 @@ popup_exit=退出 JDownloader
 popup_pause=暂停下载
 popup_premiumtoggle=付费账户已启用
 popup_reconnect=立即重试
+popup_reconnecttoggle=启用自动重新连接
 popup_update=检查更新
