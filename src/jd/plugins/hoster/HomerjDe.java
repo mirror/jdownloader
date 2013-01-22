@@ -20,7 +20,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -65,21 +64,16 @@ public class HomerjDe extends PluginForHost {
         String res = getHighestResolution();
         if (res != null) br.getPage(downloadLink.getDownloadURL() + "&res=" + res);
         String filename = br.getRegex("<title>HomerJ.de \\- (.*?)</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta name=\"PAGE\\-TOPIC\" content=\"(.*?)\">").getMatch(0);
-        }
-        String content = br.getRegex("pseudo_VodPlayer\\((.*)\\)\\);").getMatch(0);
-        if (content == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null) filename = br.getRegex("<meta name=\"PAGE\\-TOPIC\" content=\"(.*?)\">").getMatch(0);
+
         String tmpDllink = null;
-        for (String s : new Regex(content, "base64_decode\\(\'(.*?)\'\\)").getColumn(0)) {
+        for (String s : br.getRegex("base64_decode\\(\'(.*?)\'\\)").getColumn(0)) {
             tmpDllink = Encoding.Base64Decode(s);
-            if (tmpDllink.startsWith("http") && tmpDllink.matches("http://vods\\d+\\.fr\\.ovh\\.homerj\\.de(:80)?/vods_homerj/[0-9a-f]+/[0-9a-f]+/[0-9a-f]+\\.mp4")) {
-                DLLINK = tmpDllink;
-            }
+            if (tmpDllink.startsWith("http") && tmpDllink.matches("http://[\\w\\-\\.]+\\.de(:80)?/vods_homerj/[0-9a-f/]+\\.mp4")) DLLINK = tmpDllink;
         }
 
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setFinalFileName(filename.trim() + "(" + res + ").mp4");
+        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setFinalFileName(filename.trim() + "@" + res + ".mp4");
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
