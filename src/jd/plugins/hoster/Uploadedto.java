@@ -628,7 +628,7 @@ public class Uploadedto extends PluginForHost {
 
     private void generalFreeErrorhandling(final Account account) throws PluginException {
         if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-        if (br.containsHTML("(You have reached the max\\. number of possible free downloads|err\":\"limit\\-dl\"")) {
+        if (br.containsHTML("You have reached the max\\. number of possible free downloads|err\":\"limit\\-dl\"")) {
             if (account == null) {
                 logger.info("Limit reached, throwing reconnect exception");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, RECONNECTWAIT);
