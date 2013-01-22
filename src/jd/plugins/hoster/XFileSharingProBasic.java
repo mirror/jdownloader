@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -336,7 +335,6 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
             }
         }
-        checkErrors(downloadLink, true);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
@@ -771,15 +769,14 @@ public class XFileSharingProBasic extends PluginForHost {
                     checkErrors(downloadLink, true);
                     if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     sendForm(dlform);
-                    dllink = getDllink();
                     checkErrors(downloadLink, true);
+                    dllink = getDllink();
                 }
             }
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
