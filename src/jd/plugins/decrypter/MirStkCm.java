@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2012  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -27,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "https?://(www\\.)?(mirrorstack\\.com|multishared\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com)/([a-z0-9]{2}_)?[a-z0-9]{12}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "https?://(www\\.)?(mirrorstack\\.com/([a-z0-9]{1,2}_)?[a-z0-9]{12}|(multishared\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com/([a-z0-9]{2}_)?[a-z0-9]{12}))" }, flags = { 0 })
 public class MirStkCm extends PluginForDecrypt {
 
     /*
@@ -88,7 +89,7 @@ public class MirStkCm extends PluginForDecrypt {
             singleLinks = new Regex(parameter, "(.+)").getColumn(0);
         }
         // Normal links, find all singleLinks
-        else if (parameter.matches(regexNormalLink)) {
+        else if (parameter.matches(regexNormalLink) || parameter.matches(".*mirrorstack\\.com/[a-z]_[a-z0-9]{12}")) {
             singleLinks = br.getRegex("<a href=\\'" + regexSingleLink + "\\'").getColumn(0);
             if (singleLinks == null || singleLinks.length == 0) {
                 singleLinks = br.getRegex(regexSingleLink).getColumn(0);
@@ -153,4 +154,33 @@ public class MirStkCm extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
+
+    /**
+     * just some code for mirrorstack.com which might be useful if mirrorstack or other sites remove singleLinks from source!
+     * 
+     * @param parameter
+     * @param singleLinks
+     * @throws IOException
+     */
+    @SuppressWarnings("unused")
+    private void notused(String parameter, String[] singleLinks) throws IOException {
+        // all links still found on main page
+        singleLinks = br.getRegex("<a href=\\'" + regexSingleLink + "\\'").getColumn(0);
+        if (singleLinks == null || singleLinks.length == 0) {
+            singleLinks = br.getRegex(regexSingleLink).getColumn(0);
+        }
+        if (singleLinks == null || singleLinks.length == 0) {
+            // final fail over, not really required but anyway here we go.
+            String fstat = br.getRegex("(http://mirrorstack\\.com/update_fstat/\\d+/)").getMatch(0);
+            if (fstat != null) {
+                String referer = br.getURL();
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getPage(fstat + Math.random() * 10000);
+                br.getHeaders().put("X-Requested-With", null);
+                br.getHeaders().put("Referer", referer);
+                singleLinks = br.getRegex(regexSingleLink).getColumn(0);
+            }
+        }
+    }
+
 }
