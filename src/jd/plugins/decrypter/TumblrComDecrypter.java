@@ -129,10 +129,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
-            if (externID == null) {
-                logger.info("Found no media to decrypt, decrypting all links...");
 
-            }
             if (externID == null) {
                 logger.info("Found nothing here so the decrypter is either broken or there isn't anything to decrypt. Link: " + parameter);
                 return decryptedLinks;
