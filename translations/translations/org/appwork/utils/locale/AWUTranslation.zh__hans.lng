@@ -20,3 +20,4 @@ SEARCHDIALOG_CHECKBOX_CASESENSITIVE=大小写敏感
 SEARCHDIALOG_CHECKBOX_REGULAREXPRESSION=正则表达式
 connecting=连接中
 crossSystem_open_url_failed_msg=请在浏览器中打开这个链接
+pathchooser_browselabel=选择
