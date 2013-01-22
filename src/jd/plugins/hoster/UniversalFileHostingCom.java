@@ -59,8 +59,10 @@ public class UniversalFileHostingCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Invalid link\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<p>Click to download : <strong>([^<>\"]*?)</strong>").getMatch(0);
+        String fileSize = br.getRegex("File size : (.*?)<br").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
+        if (fileSize != null) link.setDownloadSize(SizeFormatter.getSize(fileSize));
         return AvailableStatus.TRUE;
     }
 
