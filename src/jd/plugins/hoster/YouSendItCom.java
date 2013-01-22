@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yousendit.com" }, urls = { "http(s)?://(www\\.)?(yousendit\\.com/(?!cms|signup|aboutus|applications|compare).{2,}|rcpt\\.yousendit\\.com/\\d+/[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yousendit.com" }, urls = { "http(s)?://(www\\.)?(yousendit\\.com/(?!cms|signup|aboutus|applications|compare|dropbox).{2,}|rcpt\\.yousendit\\.com/\\d+/[a-z0-9]+)" }, flags = { 0 })
 public class YouSendItCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -39,6 +39,9 @@ public class YouSendItCom extends PluginForHost {
     public YouSendItCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String VERIFYRECEPTIENT         = ">Verify Recipient Identity<";
+    private static final String VERIFYRECEPTIENTUSERTEXT = "Recipient Identity verification needed!";
 
     public void correctDownloadLink(DownloadLink link) {
         // Downloadlink must be correct, that's really important for this
@@ -64,7 +67,7 @@ public class YouSendItCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         if (link.getDownloadURL().contains("directDownload")) {
             br.getPage(link.getDownloadURL());
@@ -99,36 +102,44 @@ public class YouSendItCom extends PluginForHost {
             if (br.containsHTML("Sorry, this file has expired and cannot be downloaded")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // Link invalid
             if (br.containsHTML(">The server returned a 404 response")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String filename = br.getRegex("style=\"width:390px; display:block; overflow:hidden;\">(.*?)</a>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<span style=\\'color:#1F3CD6;\\'>(.*?)</span><").getMatch(0);
+            String filename = null;
+            String filesize = null;
+            if (br.containsHTML(VERIFYRECEPTIENT)) {
+                filename = br.getRegex("<div style=\"width:380px;overflow:hidden;\">[\t\n\r ]+<strong>([^<>\"]*?)</strong>").getMatch(0);
+                filesize = br.getRegex(">Size:\\&nbsp;<strong>([^<>\"]*?)</strong>").getMatch(0);
+                link.getLinkStatus().setStatusText("Recipient Identity verification needed!");
+            } else {
+                filename = br.getRegex("style=\"width:390px; display:block; overflow:hidden;\">(.*?)</a>").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("clsDownloadFileName\">(.*?)</").getMatch(0);
+                    filename = br.getRegex("<span style=\\'color:#1F3CD6;\\'>(.*?)</span><").getMatch(0);
                     if (filename == null) {
-                        filename = br.getRegex(">([^<>]+)</a>\\&nbsp\\; <span>").getMatch(0);
+                        filename = br.getRegex("clsDownloadFileName\">(.*?)</").getMatch(0);
                         if (filename == null) {
-                            filename = br.getRegex("title=\"([^<>\"]+)\" style=\"w").getMatch(0);
+                            filename = br.getRegex(">([^<>]+)</a>\\&nbsp\\; <span>").getMatch(0);
                             if (filename == null) {
-                                logger.warning("YouSendIt: Can't find filename, Please report this to the JD Developement team!");
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                filename = br.getRegex("title=\"([^<>\"]+)\" style=\"w").getMatch(0);
                             }
                         }
                     }
                 }
-            }
-            String filesize = br.getRegex("\">Size:\\&nbsp;<strong>(.*?)</strong>").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex(";\\'>Size: (.*?)\\&nbsp;").getMatch(0);
+                filesize = br.getRegex("\">Size:\\&nbsp;<strong>(.*?)</strong>").getMatch(0);
                 if (filesize == null) {
-                    filesize = br.getRegex("\">Size: (.*?)</").getMatch(0);
+                    filesize = br.getRegex(";\\'>Size: (.*?)\\&nbsp;").getMatch(0);
                     if (filesize == null) {
-                        filesize = br.getRegex("(?i)\\(([\\d\\.]+ ?(MB|GB))\\)").getMatch(0);
+                        filesize = br.getRegex("\">Size: (.*?)</").getMatch(0);
                         if (filesize == null) {
-                            logger.warning("YouSendIt: Can't find filesize, Please report this to the JD Developement team!");
-                            logger.warning("YouSendIt: Continuing...");
+                            filesize = br.getRegex("(?i)\\(([\\d\\.]+ ?(MB|GB))\\)").getMatch(0);
                         }
                     }
                 }
+            }
+            if (filename == null) {
+                logger.warning("YouSendIt: Can't find filename, Please report this to the JD Developement team!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (filesize == null) {
+                logger.info("YouSendIt: Can't find filesize, Please report this to the JD Developement team!");
+                logger.info("YouSendIt: Continuing...");
             }
             // Set the final filename here because server sometimes doesn't give
             // us the correct filename
@@ -144,6 +155,7 @@ public class YouSendItCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(VERIFYRECEPTIENT)) throw new PluginException(LinkStatus.ERROR_FATAL, VERIFYRECEPTIENTUSERTEXT);
         String dllink = DLLINK;
         // Nearly all regexes are needed because they have lots of different
         // downloadlinks...

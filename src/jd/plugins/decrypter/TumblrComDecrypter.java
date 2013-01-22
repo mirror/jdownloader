@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -64,10 +65,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 }
             }
             String fpName = br.getRegex("<title>([^/\"]*?)</title>").getMatch(0);
-            if (fpName == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
+            if (fpName == null) fpName = "Tumblr post " + new Regex(parameter, "(\\d+)$").getMatch(0);
             fpName = Encoding.htmlDecode(fpName.trim());
 
             String externID = br.getRegex("(http://(www\\.)?gasxxx\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
@@ -131,7 +129,10 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+            if (externID == null) {
+                logger.info("Found no media to decrypt, decrypting all links...");
 
+            }
             if (externID == null) {
                 logger.info("Found nothing here so the decrypter is either broken or there isn't anything to decrypt. Link: " + parameter);
                 return decryptedLinks;

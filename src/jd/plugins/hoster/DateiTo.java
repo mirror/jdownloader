@@ -180,7 +180,7 @@ public class DateiTo extends PluginForHost {
 
         br.postPage(APIPAGE, "op=free&step=4&id=" + id);
         generalFreeAPIErrorhandling();
-        if (br.containsHTML("ticket expired")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (ticket expired)", 5 * 60 * 1000l);
+        if (br.containsHTML("ticket expired")) throw new PluginException(LinkStatus.ERROR_RETRY);
         String dlUrl = br.toString();
         if (dlUrl == null || !dlUrl.startsWith("http") || dlUrl.length() > 500 || dlUrl.contains("no file")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         dlUrl = dlUrl.trim();

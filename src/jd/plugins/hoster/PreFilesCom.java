@@ -153,7 +153,10 @@ public class PreFilesCom extends PluginForHost {
     private String[] scanInfo(String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "<div class=\"filename_bar\">(<[^>]+>)+?<h2>([^<>\"]*?)<small>").getMatch(1);
+            fileInfo[0] = new Regex(correctedBR, "class=\"filename_bar\"><i></i><h3>([^<>\"]*?)<small>").getMatch(0);
+            if (fileInfo[0] == null) {
+                fileInfo[0] = new Regex(correctedBR, "<title>Download ([^<>\"]*?) from PreFiles\\.com</title>").getMatch(0);
+            }
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "<small>\\(([^<>\"]*?)\\)</small>").getMatch(0);
