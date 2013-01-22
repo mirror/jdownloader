@@ -31,6 +31,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -183,7 +184,7 @@ public class FShareVn extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");
-        br.setCustomCharset("UTF-8");
+        br.setCustomCharset("utf-8");
     }
 
     @Override
@@ -256,18 +257,33 @@ public class FShareVn extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie("https://fshare.vn/", key, value);
+                            this.br.setCookie(this.getHost(), key, value);
                         }
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
+                br.setFollowRedirects(true);
                 br.getPage("https://www.fshare.vn/login.php");
-                br.postPage("https://www.fshare.vn/login.php", "login_useremail=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()) + "&url_refe=/index.php&auto_login=1");
-                if (br.getCookie("https://www.fshare.vn", "fshare_userpass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                Form login = br.getFormbyProperty("name", "loginfrm");
+                if (login != null) {
+                    // another stable issue....
+                    // eg. https://www.fshare.vn/login.php/login.php
+                    login.setAction("https://www.fshare.vn/login.php");
+                    login.put("login_useremail", Encoding.urlEncode(account.getUser()));
+                    login.put("login_password", Encoding.urlEncode(account.getPass()));
+                    // login.put("url_refe", Encoding.urlEncode("/index.php"));
+                    // login.put("auto_login", "1");
+                }
+                br.submitForm(login);
+                // stable br.postPage doesn't contain this header...
+                // br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                // stable also doesn't respect current browser protocol, so you must provide full url
+                // br.postPage("https://www.fshare.vn/login.php", "login_useremail=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()) + "&url_refe=" + Encoding.urlEncode("/index.php") + "&auto_login=1");
+
+                if (br.getCookie(this.getHost(), "fshare_userpass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies("https://fshare.vn/");
+                final Cookies add = this.br.getCookies(this.getHost());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }

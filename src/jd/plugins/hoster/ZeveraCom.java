@@ -67,7 +67,7 @@ public class ZeveraCom extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(mProt + mName, "lang", "english");
-        br.getHeaders().put("Agent", "JDOWNLOADER");
+        br.getHeaders().put("User-Agent", "JDOWNLOADER");
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);

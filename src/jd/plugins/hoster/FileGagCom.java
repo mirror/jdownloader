@@ -435,10 +435,10 @@ public class FileGagCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String space = br.getRegex(Pattern.compile("<td[^>]+>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         account.setValid(true);
-        String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD></TR>[\r\n\t ]+<TR><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
@@ -447,7 +447,7 @@ public class FileGagCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
         } else {
-            String expire = new Regex(correctedBR, Pattern.compile(">Premium account expire:</TD></TR>[\t\n\r ]+<TR><TD><b>([^<>\"]*?)</b></TD></TR>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String expire = new Regex(correctedBR, Pattern.compile(">Premium\\-Account expire:</TD></TR>[\t\n\r ]+<TR><TD><b>([^<>\"]*?)</b></TD></TR>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
