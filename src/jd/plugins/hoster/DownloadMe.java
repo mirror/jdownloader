@@ -140,7 +140,7 @@ public class DownloadMe extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         br.setCookie("http://download.me/", "user", acc.getStringProperty("usercookie", null));
-        String url = Encoding.urlEncode(link.getDownloadURL());
+        final String url = Encoding.urlEncode(link.getDownloadURL());
         int maxChunks = 0;
         if (link.getBooleanProperty(DownloadMe.NOCHUNKS, false)) {
             maxChunks = 1;
@@ -151,7 +151,7 @@ public class DownloadMe extends PluginForHost {
         if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         showMessage(link, "Phase 2/3: Generating downloadlink");
-        br.getPage("https://www.download.me/dlapi/file?id=503947");
+        br.getPage("https://www.download.me/dlapi/file?id=" + id);
 
         final int status = Integer.parseInt(getJson("status"));
         switch (status) {
@@ -159,6 +159,7 @@ public class DownloadMe extends PluginForHost {
             logger.info("Multi-Host API reports that link is offline!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (br.containsHTML("\"status\":\"0\",\"size\":\"0\",\"progress\":\"\"")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Downloadlink generation failed, please contact the download.me support!"); }
 
         String dllink = getJson("dlurl");
         if (dllink == null) {
