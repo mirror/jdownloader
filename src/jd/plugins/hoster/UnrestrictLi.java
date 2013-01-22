@@ -326,8 +326,8 @@ public class UnrestrictLi extends PluginForHost {
         if (expires != null) {
             account.setValid(true);
             ai.setValidUntil(Long.parseLong(expires) * 1000);
-            // Max. 100 GB/day
-            ai.setTrafficMax(107374182400l);
+            // Max. 75 GB/day
+            ai.setTrafficMax(80530636800l);
             ai.setTrafficLeft(Long.parseLong(traffic));
             ai.setStatus("VIP");
         } else {
