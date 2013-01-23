@@ -1,4 +1,6 @@
+UpdateServer_UpdaterGui_onStateChange_branchlist=找到最新版本
 UpdateServer_UpdaterGui_onStateChange_download=下载
+UpdateServer_UpdaterGui_onStateChange_filter=找到更新
 UpdateServer_UpdaterGui_onStateChange_install=正在安装
 UpdateServer_UpdaterGui_onUpdaterModuleEnd_end_filtering=%s1个更新已找到！
 cancel_update=取消更新

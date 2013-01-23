@@ -1,6 +1,7 @@
 DataCompareDialog_layoutDialogContent_password=密码
 DataCompareDialog_layoutDialogContent_router=你的路由器
 DataCompareDialog_layoutDialogContent_user=用户名
+GetIPAction_GetIPAction_=获取路由地址
 LiveHeaderDetectionWizard_runOnlineScan_collect=扫描连接信息
 gui_btn_abort=中止
 gui_btn_cancel=取消

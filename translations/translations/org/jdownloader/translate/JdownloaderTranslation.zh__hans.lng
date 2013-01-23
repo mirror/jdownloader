@@ -62,6 +62,7 @@ gui_javacheck_newerjavaavailable_msg=尽管Jdownloader能够在您目前的java�
 gui_javacheck_newerjavaavailable_title=检测到过期的java版本: %s1!
 gui_mainframe_title_updatemessage2=%s1个更新可用
 gui_menu_extensions=工具
+gui_setting_folderchooser_title=选择目录
 gui_settings_basicauth_title=基础授权
 gui_settings_downloadcontroll_title=下载管理
 gui_settings_downloadpath_description=在这里设置默认的下载路径。此默认路径只对新增加的下载有效（已下载完成、未下载完成、正在进行的下载不改变原保存路径）。

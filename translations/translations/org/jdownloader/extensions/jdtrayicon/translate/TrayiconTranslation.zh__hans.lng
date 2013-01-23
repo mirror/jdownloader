@@ -11,6 +11,7 @@ OnMinimizeAction_totaskbar=最小化到任务栏
 OnMinimizeAction_totray=关闭到托盘
 plugins_optional_JDLightTray_always=总是
 plugins_optional_JDLightTray_closetotray2=点击'关闭<X>'动作
+plugins_optional_JDLightTray_minimizetotray=点击'最小化<_>'动作
 plugins_optional_JDLightTray_never=从不
 plugins_optional_JDLightTray_startMinimized=启动时最小化
 plugins_optional_JDLightTray_tooltip=显示工具提示
