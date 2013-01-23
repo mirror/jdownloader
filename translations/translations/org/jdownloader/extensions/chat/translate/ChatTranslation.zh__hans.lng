@@ -1,4 +1,10 @@
+description=联系 JDownloader 开发人员和技术支持人员
 gui_tab_title=%s1个通道
+jd_plugins_optional_jdchat_JDChatView_title=JD 技术支持聊天
+jd_plugins_optional_jdchat_JDChatView_tooltip=JD 技术支持聊天
+jd_plugins_optional_jdchat_JDChat_topic_default=加载每日消息
+jd_plugins_optional_jdchat_JDChat_topic_tooltip=每日消息
+jd_plugins_optional_jdchat_closeTab=关闭标签
 jd_plugins_optional_jdchat_jdchat=聊天
 plugins_optional_jdchat_enternick=您期望的昵称?
 settings_enabled_userlist_colors=启用用户列表颜色
