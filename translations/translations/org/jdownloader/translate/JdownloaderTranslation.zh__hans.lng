@@ -1,6 +1,8 @@
 DownloadWatchDog_onShutdownRequest_msg=您是否想要停止正在进行的下载以退出JDownloader?
+Extraction_onShutdownRequest_msg=中止解压？
 LinkCollector_addCrawledLink_offlinepackage=离线文件
 Main_run_autostart_msg=稍后将启动下载……
+basics_browser_folder=选择
 basics_yes=是
 configheader_enabled=已启用
 controller_packages_defaultname=多种
