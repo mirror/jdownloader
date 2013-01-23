@@ -156,10 +156,9 @@ public class DownloadMe extends PluginForHost {
         final int status = Integer.parseInt(getJson("status"));
         switch (status) {
         case 0:
-            logger.info("Multi-Host API reports that link is offline!");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            logger.info("Received status 0, link generation failed!");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Downloadlink generation failed, please contact the download.me support!");
         }
-        if (br.containsHTML("\"status\":\"0\",\"size\":\"0\",\"progress\":\"\"")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Downloadlink generation failed, please contact the download.me support!"); }
 
         String dllink = getJson("dlurl");
         if (dllink == null) {

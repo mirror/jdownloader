@@ -32,7 +32,6 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-//Same code as for HsUploadCom
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoveeb.com" }, urls = { "http://(www\\.)?videoveeb\\.(com|net)/\\?dw?=[A-Z0-9]+" }, flags = { 0 })
 public class VideoVeebCom extends PluginForHost {
 
