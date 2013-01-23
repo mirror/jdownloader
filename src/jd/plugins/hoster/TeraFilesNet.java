@@ -145,7 +145,7 @@ public class TeraFilesNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Fichier indisponible</h1>|Le fichier que vous souhaitez télécharger n'est plus disponible sur nos serveurs\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Fichier indisponible</h1>|Le fichier que vous souhaitez télécharger (n'est plus disponible sur nos serveurs\\.|a été retiré de nos serveurs))")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Télécharger (.*?) - Envoi, hebergement,").getMatch(0);
         String filesize = br.getRegex("\">Taille du fichier :</td>[\t\n\r ]+<td><strong>(.*?)</strong></td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
