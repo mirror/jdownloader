@@ -48,7 +48,7 @@ public class Share4WebCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://www.share4web.com/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">File not found or removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">File not found or removed|Page Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fileInfo = br.getRegex("<span id=\"fileName\" style=\"font\\-weight: normal;\">([^<>\"\\']+)</span>[\t\n\r ]+\\(([^<>\"\\']+)\\)[\t\n\r ]+<script>");
         String filename = fileInfo.getMatch(0);
         String filesize = fileInfo.getMatch(1);
