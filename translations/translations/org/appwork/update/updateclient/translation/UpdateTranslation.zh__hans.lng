@@ -1,7 +1,13 @@
 UpdateServer_UpdaterGui_onStateChange_download=下载
 UpdateServer_UpdaterGui_onStateChange_install=正在安装
+UpdateServer_UpdaterGui_onUpdaterModuleEnd_end_filtering=%s1个更新已找到！
+cancel_update=取消更新
 close=关闭
 guiless_download_data=正在下载更新包……
+guiless_files_wait_for_removal=%s1个文件已过期将被删除
+guiless_locked_closed_app=%s1已关闭。现在继续。
+guiless_updates_waiting_for_download=%s1个文件必须下载完
+interrupted_title=已取消
 rlyexit=您确定要退出吗?
 rlyexit_title=确定退出?
 rlyrestart=您确定要重启程序吗？
