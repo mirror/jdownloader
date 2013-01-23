@@ -21,6 +21,7 @@ plugins_optional_trayIcon_downloads=下载:
 plugins_optional_trayIcon_eta=预计完成时间:
 plugins_optional_trayIcon_progress=进度：
 plugins_optional_trayIcon_speed=速度：
+popup_clipboardtoggle=剪切板监视已启用
 popup_downloadfolder=打开下载文件夹
 popup_exit=退出 JDownloader
 popup_pause=暂停下载
