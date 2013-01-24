@@ -91,6 +91,7 @@ FilterRule_toString_name=文件名 %s1
 FinishedDateColumn_FinishedDateColumn=完成日期
 GUISettings_save_language_changed_restart_required_title=需要重启!
 HosterColumn_HosterColumn=站点
+IfFileExistsDialog_layoutDialogContent_overwrite_=覆盖已存在的文件
 JDGui_showStatsDialog_no_=不了谢谢
 JDGui_showStatsDialog_title_=我们需要你的帮助
 JDGui_showStatsDialog_yes_=我要帮忙

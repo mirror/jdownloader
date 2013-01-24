@@ -8,6 +8,7 @@ UpdateServer_UpdaterGui_onUpdaterModuleEnd_end_filtering=%s1个更新已找到�
 cancel_update=取消更新
 close=关闭
 could_not_download_file=无法下载更新
+could_not_overwrite=无法覆盖已存在的文件 %s1 。
 details=更多...
 error_occured_detailed=无法完成更新
 guiless_download_data=正在下载更新包……
