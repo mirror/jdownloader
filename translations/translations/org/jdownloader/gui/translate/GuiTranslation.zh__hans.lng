@@ -190,6 +190,7 @@ authtablemodel_column_password=密码
 authtablemodel_column_username=用户名
 buyaction_title_buy_account=继续
 config_fontname=Dialog
+config_fontscale_faktor=200
 downloadview_all=所有下载
 downloadview_failed=下载失败
 downloadview_running=正在下载
