@@ -22,6 +22,8 @@ import javax.crypto.spec.SecretKeySpec;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
+import jd.http.Request;
 import jd.nutils.encoding.Base64;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -30,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "https?://(www\\.)?mega\\.co\\.nz/#![a-zA-Z0-9]+![a-zA-Z0-9_,\\-]+" }, flags = { 0 })
@@ -116,8 +119,8 @@ public class MegaConz extends PluginForHost {
         br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
         String downloadURL = br.getRegex("\"g\"\\s*?:\\s*?\"(https?.*?)\"").getMatch(0);
         if (downloadURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = createHackedDownloadInterface(br, link, downloadURL);
+        if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -126,6 +129,45 @@ public class MegaConz extends PluginForHost {
                 decrypt(link, keyString);
             }
         }
+    }
+
+    private RAFDownload createHackedDownloadInterface2(final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
+        final RAFDownload dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, request);
+        downloadLink.getPlugin().setDownloadInterface(dl);
+        dl.setResume(true);
+        dl.setChunkNum(1);
+        return dl;
+    }
+
+    /* Workaround for Bug in old 09581 Downloadsystem bug */
+    private RAFDownload createHackedDownloadInterface(final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
+        Request r = br.createRequest(url);
+        RAFDownload dl = this.createHackedDownloadInterface2(downloadLink, r);
+        try {
+            r.getHeaders().remove("Accept-Encoding");
+            dl.connect(br);
+        } catch (final PluginException e) {
+            if (e.getValue() == -1) {
+
+                int maxRedirects = 10;
+                while (maxRedirects-- > 0) {
+                    dl = this.createHackedDownloadInterface2(downloadLink, r = br.createGetRequestRedirectedRequest(r));
+                    try {
+                        r.getHeaders().remove("Accept-Encoding");
+                        dl.connect(br);
+                        break;
+                    } catch (final PluginException e2) {
+                        continue;
+                    }
+                }
+                if (maxRedirects <= 0) { throw new PluginException(LinkStatus.ERROR_FATAL, "Redirectloop"); }
+
+            }
+        }
+        if (downloadLink.getPlugin().getBrowser() == br) {
+            downloadLink.getPlugin().setDownloadInterface(dl);
+        }
+        return dl;
     }
 
     private void setConfigElements() {
