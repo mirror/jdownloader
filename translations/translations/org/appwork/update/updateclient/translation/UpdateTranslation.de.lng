@@ -61,6 +61,7 @@ error_locked=Der %s1 Updateserver ist momentan überlastet. Bitte später erneut
 error_occured=Ein Fehler ist aufgetreten
 error_occured_detailed=Update konnte nicht abgeschlossen werden.
 error_occured_start_reverting=Update wurde unterbrochen. Änderungen werden rückgängig gemacht.
+error_package_creation_failed=Paket fehlgeschlagen Fehler. Bitte versuchen Sie es später erneut.
 error_unknown=%s1
 error_unknown_app=Kann %s1 nicht aktualisieren. \r\n                  Bitte später erneut versuchen.
 error_unknown_branch=Unbekannte Version: %s1
