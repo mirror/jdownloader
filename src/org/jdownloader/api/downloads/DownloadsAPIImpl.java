@@ -31,19 +31,11 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     }
 
     @Override
-    public int getState() {
-        if (DownloadWatchDog.getInstance().isPaused()) return 2;
-        if (DownloadWatchDog.getInstance().getRunningDownloadLinks().isEmpty()) return 1;
-        return 0;
-    }
-
-    @Override
     public List<FilePackageAPIStorable> queryPackages(APIQuery queryParams) {
         DownloadController dlc = DownloadController.getInstance();
         // DownloadWatchDog dwd = DownloadWatchDog.getInstance();
 
         boolean b = dlc.readLock();
-
         try {
             List<FilePackageAPIStorable> ret = new ArrayList<FilePackageAPIStorable>(dlc.size());
 
@@ -106,7 +98,6 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 fps.setInfoMap(infomap);
                 ret.add(fps);
             }
-
             return ret;
         } finally {
             dlc.readUnlock(b);
@@ -136,15 +127,20 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
         List<FilePackage> matched = new ArrayList<FilePackage>();
 
-        // if no specific uuids are specified collect all packages
-        if (packageUUIDs.isEmpty()) {
-            matched = dlc.getPackages();
-        } else {
-            for (FilePackage pkg : dlc.getPackages()) {
-                if (packageUUIDs.contains(pkg.getUniqueID().getID())) {
-                    matched.add(pkg);
+        boolean b = dlc.readLock();
+        try {
+            // if no specific uuids are specified collect all packages
+            if (packageUUIDs.isEmpty()) {
+                matched = dlc.getPackages();
+            } else {
+                for (FilePackage pkg : dlc.getPackages()) {
+                    if (packageUUIDs.contains(pkg.getUniqueID().getID())) {
+                        matched.add(pkg);
+                    }
                 }
             }
+        } finally {
+            dlc.readUnlock(b);
         }
 
         // collect children of the selected packages and convert to storables for response
@@ -185,12 +181,12 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             result.add(dls);
         }
 
-        try {
-            Thread.sleep(500l);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
         return result;
+    }
+
+    @Override
+    public int speed() {
+        DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        return dwd.getDownloadSpeedManager().getSpeed();
     }
 }

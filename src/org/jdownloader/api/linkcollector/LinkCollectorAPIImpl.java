@@ -26,46 +26,51 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
 
-        if (startWith > lc.getPackages().size() - 1) return result;
-        if (startWith < 0) startWith = 0;
-        if (maxResults < 0) maxResults = lc.getPackages().size();
+        boolean b = lc.readLock();
+        try {
+            if (startWith > lc.getPackages().size() - 1) return result;
+            if (startWith < 0) startWith = 0;
+            if (maxResults < 0) maxResults = lc.getPackages().size();
 
-        for (int i = startWith; i < startWith + maxResults; i++) {
+            for (int i = startWith; i < startWith + maxResults; i++) {
 
-            CrawledPackage pkg = lc.getPackages().get(i);
-            CrawledPackageAPIStorable cps = new CrawledPackageAPIStorable(pkg);
+                CrawledPackage pkg = lc.getPackages().get(i);
+                CrawledPackageAPIStorable cps = new CrawledPackageAPIStorable(pkg);
 
-            QueryResponseMap infomap = new QueryResponseMap();
-            if (queryParams._getQueryParam("saveTo", Boolean.class, false)) {
-                infomap.put("saveTo", pkg.getRawDownloadFolder());
-            }
-            if (queryParams._getQueryParam("size", Boolean.class, false)) {
-                long size = 0;
-                for (CrawledLink cl : pkg.getChildren()) {
-                    size = size + cl.getSize();
+                QueryResponseMap infomap = new QueryResponseMap();
+                if (queryParams._getQueryParam("saveTo", Boolean.class, false)) {
+                    infomap.put("saveTo", pkg.getRawDownloadFolder());
                 }
-                infomap.put("size", pkg.getView().getFileSize());
-            }
-            if (queryParams._getQueryParam("childCount", Boolean.class, false)) {
-                infomap.put("childCount", pkg.getChildren().size());
-            }
-            if (queryParams._getQueryParam("hosts", Boolean.class, false)) {
-                Set<String> hosts = new HashSet<String>();
-                for (CrawledLink cl : pkg.getChildren()) {
-                    hosts.add(cl.getHost());
+                if (queryParams._getQueryParam("size", Boolean.class, false)) {
+                    long size = 0;
+                    for (CrawledLink cl : pkg.getChildren()) {
+                        size = size + cl.getSize();
+                    }
+                    infomap.put("size", pkg.getView().getFileSize());
                 }
-                infomap.put("hosts", hosts);
-            }
-            if (queryParams._getQueryParam("availability", Boolean.class, false)) {
-                infomap.put("availability", pkg.getChildren().get(0).getLinkState());
-            }
-            cps.setInfoMap(infomap);
+                if (queryParams._getQueryParam("childCount", Boolean.class, false)) {
+                    infomap.put("childCount", pkg.getChildren().size());
+                }
+                if (queryParams._getQueryParam("hosts", Boolean.class, false)) {
+                    Set<String> hosts = new HashSet<String>();
+                    for (CrawledLink cl : pkg.getChildren()) {
+                        hosts.add(cl.getHost());
+                    }
+                    infomap.put("hosts", hosts);
+                }
+                if (queryParams._getQueryParam("availability", Boolean.class, false)) {
+                    infomap.put("availability", pkg.getChildren().get(0).getLinkState());
+                }
+                cps.setInfoMap(infomap);
 
-            result.add(cps);
+                result.add(cps);
 
-            if (i == lc.getPackages().size() - 1) {
-                break;
+                if (i == lc.getPackages().size() - 1) {
+                    break;
+                }
             }
+        } finally {
+            lc.readUnlock(b);
         }
 
         simulateLatency();
@@ -94,14 +99,19 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         List<CrawledPackage> matched = new ArrayList<CrawledPackage>();
 
         // if no specific uuids are specified collect all packages
-        if (packageUUIDs.isEmpty()) {
-            matched = lc.getPackages();
-        } else {
-            for (CrawledPackage pkg : lc.getPackages()) {
-                if (packageUUIDs.contains(pkg.getUniqueID().getID())) {
-                    matched.add(pkg);
+        boolean b = lc.readLock();
+        try {
+            if (packageUUIDs.isEmpty()) {
+                matched = lc.getPackages();
+            } else {
+                for (CrawledPackage pkg : lc.getPackages()) {
+                    if (packageUUIDs.contains(pkg.getUniqueID().getID())) {
+                        matched.add(pkg);
+                    }
                 }
             }
+        } finally {
+            lc.readUnlock(b);
         }
 
         // collect children of the selected packages and convert to storables for response
@@ -170,17 +180,24 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         LinkCollector lc = LinkCollector.getInstance();
         DownloadController dc = DownloadController.getInstance();
 
-        List<CrawledLink> lks = lc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
-            @Override
-            public int returnMaxResults() {
-                return -1;
-            }
+        List<CrawledLink> lks;
 
-            @Override
-            public boolean isChildrenNodeFiltered(CrawledLink node) {
-                return linkIds != null && linkIds.contains(node.getUniqueID().getID());
-            }
-        });
+        boolean lb = lc.readLock();
+        try {
+            lks = lc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
+                @Override
+                public int returnMaxResults() {
+                    return -1;
+                }
+
+                @Override
+                public boolean isChildrenNodeFiltered(CrawledLink node) {
+                    return linkIds != null && linkIds.contains(node.getUniqueID().getID());
+                }
+            });
+        } finally {
+            lc.readUnlock(lb);
+        }
 
         List<FilePackage> frets = LinkCollector.getInstance().convert(lks, true);
         dc.addAll(frets);
@@ -192,19 +209,24 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     public Boolean removeLinks(final List<Long> linkIds) {
         LinkCollector lc = LinkCollector.getInstance();
 
-        List<CrawledLink> lks = lc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
-            @Override
-            public int returnMaxResults() {
-                return -1;
-            }
+        boolean lb = lc.readLock();
+        try {
+            List<CrawledLink> lks = lc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
+                @Override
+                public int returnMaxResults() {
+                    return -1;
+                }
 
-            @Override
-            public boolean isChildrenNodeFiltered(CrawledLink node) {
-                return linkIds != null && linkIds.contains(node.getUniqueID().getID());
-            }
-        });
+                @Override
+                public boolean isChildrenNodeFiltered(CrawledLink node) {
+                    return linkIds != null && linkIds.contains(node.getUniqueID().getID());
+                }
+            });
 
-        lc.removeChildren(lks);
+            lc.removeChildren(lks);
+        } finally {
+            lc.readUnlock(lb);
+        }
         return true;
     }
 

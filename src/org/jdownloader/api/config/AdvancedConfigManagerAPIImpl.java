@@ -110,7 +110,7 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
             ConfigEntryAPIStorable ces = new ConfigEntryAPIStorable(ace);
             // if only certain interfaces selected, skip if interface not included
             if (!interfaceKeys.isEmpty()) {
-                if (!interfaceKeys.contains(ces.getInterfaceKey())) {
+                if (!interfaceKeys.contains(ces.getInterfaceKey().substring(ces.getInterfaceKey().lastIndexOf(".") + 1, ces.getInterfaceKey().length()))) {
                     continue;
                 }
             }

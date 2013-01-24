@@ -14,9 +14,9 @@ public interface DownloadsAPI extends RemoteAPIInterface {
 
     boolean pause(Boolean value);
 
-    int getState();
-
     List<FilePackageAPIStorable> queryPackages(APIQuery queryParams);
 
     List<DownloadLinkAPIStorable> queryLinks(APIQuery queryParams);
+
+    int speed();
 }

@@ -11,6 +11,7 @@ import org.jdownloader.api.content.ContentAPIImpl;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.jd.JDAPIImpl;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
+import org.jdownloader.api.polling.PollingAPIImpl;
 import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
 
 public class RemoteAPIController {
@@ -73,6 +74,7 @@ public class RemoteAPIController {
         register(new AccountAPIImpl());
         register(new LinkCollectorAPIImpl());
         register(new ContentAPIImpl());
+        register(new PollingAPIImpl());
     }
 
     public synchronized void register(final RemoteAPIInterface x, boolean forceRegister) {
