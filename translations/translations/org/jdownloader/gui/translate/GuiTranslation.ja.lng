@@ -316,6 +316,7 @@ authtablemodel_column_username=ユーザ名
 buyaction_title=プレミアムアカウントを購入
 buyaction_title_buy_account=続行
 config_fontname=Dialog
+config_fontscale_faktor=110
 downloadview_all=全てのダウンロード
 downloadview_failed=失敗したダウンロード
 downloadview_running=ダウンロード中...
