@@ -167,6 +167,7 @@ StatusColumn_StatusColumn=活动任务
 StopSignColumn_StopSignColumn=取消下载
 SwingGui_setVisible_password_=需要密码
 TaskColumn_getStringValue_finished_=已完成
+TaskColumn_getStringValue_running_=正在运行
 account_remove_action_msg=确定要移除 %s1 ?
 account_remove_action_title=真的要移除账户 %s1 吗？
 accountdialog_check=检查账户

@@ -1,5 +1,7 @@
 JDUpdater_start_restart_update_now_=现在更新并重启!
 JDUpdater_start_updater_update_msg=现在重启以执行更新。
+JDUpdater_start_updater_update_title=发现新版本！
+dialog_rly_cancel=确定取消更新？
 exit=关闭
 install_updates_later=稍后询问
 literally_exit=已完成升级检查 - 退出
