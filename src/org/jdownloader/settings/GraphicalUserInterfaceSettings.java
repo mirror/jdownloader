@@ -20,6 +20,7 @@ import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     // Static Mappings for interface
+
     // org.jdownloader.settings.GraphicalUserInterfaceSettings
 
     class ThemeValidator extends AbstractValidator<String> {
@@ -63,18 +64,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @RequiresRestart
     public long getDownloadViewRefresh();
 
-    @AboutConfig
-    @DescriptionForConfigEntry("Font to be used. Default value is default. For foreign chars use e.g. Dialog")
-    @DefaultStringValue("default")
-    @RequiresRestart
-    String getFontName();
-
-    @AboutConfig
-    @DescriptionForConfigEntry("Font scale factor in percent. Default value is 100 which means no font scaling.")
-    @DefaultIntValue(100)
-    @RequiresRestart
-    int getFontScaleFactor();
-
     FrameStatus getLastFrameStatus();
 
     @DefaultEnumValue("SKIP_FILE")
@@ -93,12 +82,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @DescriptionForConfigEntry("Icon Theme ID. Make sure that ./themes/<ID>/ exists")
     @ValidatorFactory(ThemeValidator.class)
     String getThemeID();
-
-    @AboutConfig
-    @DescriptionForConfigEntry("Disable animation and all animation threads. Optional value. Default value is true.")
-    @DefaultBooleanValue(true)
-    @RequiresRestart
-    boolean isAnimationEnabled();
 
     // @AboutConfig
     // @Description("Enable/Disable the Linkgrabber Sidebar")
@@ -138,12 +121,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @DefaultBooleanValue(true)
     @RequiresRestart
     boolean isFilterHighlightEnabled();
-
-    @AboutConfig
-    @DescriptionForConfigEntry("Enable/disable support for system DPI settings. Default value is true.")
-    @DefaultBooleanValue(true)
-    @RequiresRestart
-    boolean isFontRespectsSystemDPI();
 
     @AboutConfig
     @DefaultBooleanValue(true)
@@ -226,12 +203,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isSortColumnHighlightEnabled();
 
     @AboutConfig
-    @DescriptionForConfigEntry("Paint all labels/text with or without antialias. Default value is false.")
-    @DefaultBooleanValue(false)
-    @RequiresRestart
-    boolean isTextAntiAliasEnabled();
-
-    @AboutConfig
     @DescriptionForConfigEntry("If false, Most of the Tooltips will be disabled")
     @DefaultBooleanValue(true)
     boolean isTooltipEnabled();
@@ -257,17 +228,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     //
     // void setDownloadViewSidebarVisible(boolean b);
 
-    @AboutConfig
-    @DescriptionForConfigEntry("Enable/disable window opacity on Java 6u10 and above. A value of 'false' disables window opacity which means that the window corner background which is visible for non-rectangular windows disappear. Furthermore the shadow for popupMenus makes use of real translucent window. Some themes like SyntheticaSimple2D support translucent titlePanes if opacity is disabled. The property is ignored on JRE's below 6u10. Note: It is recommended to activate this feature only if your graphics hardware acceleration is supported by the JVM - a value of 'false' can affect application performance. Default value is false which means the translucency feature is enabled")
-    @DefaultBooleanValue(false)
-    @RequiresRestart
-    boolean isWindowOpaque();
-
     void setActiveConfigPanel(String name);
 
     void setActivePluginConfigPanel(String name);
-
-    void setAnimationEnabled(boolean b);
 
     void setBalloonNotificationEnabled(boolean b);
 
@@ -286,12 +249,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     public void setDownloadViewRefresh(long t);
 
     void setFilterHighlightEnabled(boolean b);
-
-    void setFontName(String name);
-
-    void setFontRespectsSystemDPI(boolean b);
-
-    void setFontScaleFactor(int b);
 
     public void setLastFrameStatus(FrameStatus status);
 
@@ -336,18 +293,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setSortColumnHighlightEnabled(boolean b);
 
-    void setTextAntiAliasEnabled(boolean b);
-
     void setThemeID(String themeID);
 
     void setTooltipEnabled(boolean b);
-
-    void setWindowOpaque(boolean b);
-
-    void setLanguage(String lng);
-
-    @AboutConfig
-    String getLanguage();
 
     @AboutConfig
     @DefaultIntValue(2500)
@@ -383,4 +331,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setFileCountInSizeColumnVisible(boolean b);
 
+    @AboutConfig
+    @DescriptionForConfigEntry("Paint all labels/text with or without antialias. Default value is false.")
+    @DefaultBooleanValue(false)
+    @RequiresRestart
+    boolean isSpeedmeterAntiAliasingEnabled();
+
+    void setSpeedmeterAntiAliasingEnabled(boolean b);
 }

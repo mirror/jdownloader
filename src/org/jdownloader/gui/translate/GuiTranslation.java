@@ -2,7 +2,6 @@ package org.jdownloader.gui.translate;
 
 import org.appwork.txtresource.Default;
 import org.appwork.txtresource.Defaults;
-import org.appwork.txtresource.DescriptionForTranslationEntry;
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 
@@ -1914,10 +1913,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Delete Selection" })
     String RemoveOptionsAction_actionPerformed_selection_();
 
-    @DescriptionForTranslationEntry("Always use 'default' except for languages that do not display properly (Like Chinese or Japanese).\r\n In this case, you should use 'Dialog'")
-    @Default(lngs = { "en" }, values = { "default" })
-    String config_fontname();
-
     @Default(lngs = { "en" }, values = { "Folder does not exist!" })
     String DownloadFolderChooserDialog_handleNonExistingFolders_title_();
 
@@ -2160,4 +2155,5 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Do you really want to reset the Linkgrabber? Please choose:" })
     String ResetLinkGrabberOptionDialog_layoutDialogContent_();
+
 }

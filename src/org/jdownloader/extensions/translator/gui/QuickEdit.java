@@ -30,7 +30,7 @@ public class QuickEdit extends MigPanel implements ListSelectionListener {
     private ExtTextArea    translation;
     private ExtButton      next;
     private int            index;
-    private JLabel         desc;
+    private ExtTextArea    desc;
     private TranslateEntry entry;
     private JLabel         problems;
 
@@ -41,7 +41,9 @@ public class QuickEdit extends MigPanel implements ListSelectionListener {
 
         org = new ExtTextArea();
         org.setLabelMode(true);
-        add(desc = new JLabel(), "spanx,pushx,growx");
+        add(desc = new ExtTextArea(), "spanx,pushx,growx");
+        desc.setLabelMode(true);
+        // desc.setPreferredSize(new Dimension(20, 20));
         add(new JLabel("Default"));
         add(new JLabel("Translation"));
         add(new JScrollPane(org));

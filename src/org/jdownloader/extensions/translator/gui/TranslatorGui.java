@@ -915,18 +915,17 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             @Override
             protected void runInEDT() {
                 String desiredFont = getExtension().getFontname();
-                if (LookAndFeelController.getInstance().isSynthetica()) {
-                    try {
-                        if (desiredFont != null && !desiredFont.equals(de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontName())) {
-                            // switch fontname. create ne table to use the new font
-                            Font newFont = (Font) (new FontUIResource(desiredFont, 0, de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize()));
-                            de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(newFont, false);
-                            initTable();
-                            sp.getViewport().setView(table);
-                        }
-                    } catch (final Throwable e) {
-                        LogController.CL().log(e);
+
+                try {
+                    if (desiredFont != null && !desiredFont.equals(de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontName())) {
+                        // switch fontname. create ne table to use the new font
+                        Font newFont = (Font) (new FontUIResource(desiredFont, 0, de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize()));
+                        de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(newFont, false);
+                        initTable();
+                        sp.getViewport().setView(table);
                     }
+                } catch (final Throwable e) {
+                    LogController.CL().log(e);
                 }
 
                 tableModel.refresh(getExtension());

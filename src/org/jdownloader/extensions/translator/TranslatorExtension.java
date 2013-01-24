@@ -25,6 +25,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.exttable.ExtTableTranslation;
+import org.appwork.swing.synthetica.LanguageFileSetup;
 import org.appwork.txtresource.DynamicResourcePath;
 import org.appwork.txtresource.TranslateData;
 import org.appwork.txtresource.TranslateInterface;
@@ -351,7 +352,8 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             load(tmp, locale, ExternInterfaceTranslation.class);
             load(tmp, locale, ExternTranslation.class);
             load(tmp, locale, ExtTableTranslation.class);
-            GuiTranslation guiInterface = load(tmp, locale, GuiTranslation.class);
+
+            LanguageFileSetup guiInterface = load(tmp, locale, LanguageFileSetup.class);
             fontname = guiInterface.config_fontname();
             if (fontname.equalsIgnoreCase("default")) fontname = "Tahoma";
             load(tmp, locale, JdownloaderTranslation.class);
@@ -374,6 +376,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         TranslateInterface t = (TranslateInterface) Proxy.newProxyInstance(class1.getClassLoader(), new Class[] { class1 }, new TranslationHandler(class1, locale.getId()));
 
         for (Method m : t._getHandler().getMethods()) {
+            System.out.println("add " + m);
             tmp.add(new TranslateEntry(t, m));
         }
         return (T) t;

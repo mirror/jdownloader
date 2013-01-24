@@ -107,7 +107,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         JPanel panel = new JPanel(new MigLayout("ins 5, wrap 1", "[grow,fill,200]"));
         panel.setBorder(BorderFactory.createLineBorder(getBackground().darker().darker()));
         panel.add(speedmeter = new SpeedMeterPanel(false, true), "h 30!");
-        speedmeter.setAntiAliasing(JsonConfig.create(GraphicalUserInterfaceSettings.class).isTextAntiAliasEnabled());
+        speedmeter.setAntiAliasing(JsonConfig.create(GraphicalUserInterfaceSettings.class).isSpeedmeterAntiAliasingEnabled());
         panel.add(lblProgress, "split 2");
         panel.add(lblETA);
         panel.add(prgTotal);

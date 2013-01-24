@@ -43,11 +43,11 @@ import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class MainToolBar extends JToolBar {
 
@@ -76,7 +76,7 @@ public class MainToolBar extends JToolBar {
                     @Override
                     protected void runInEDT() {
                         speedmeter = new SpeedMeterPanel(true, false);
-                        speedmeter.setAntiAliasing(JsonConfig.create(GraphicalUserInterfaceSettings.class).isTextAntiAliasEnabled());
+                        speedmeter.setAntiAliasing(JsonConfig.create(SyntheticaSettings.class).isTextAntiAliasEnabled());
                         speedmeter.addMouseListener(new MouseAdapter() {
 
                             @Override
@@ -201,7 +201,7 @@ public class MainToolBar extends JToolBar {
         if (speedmeter != null) add(speedmeter, "hidemode 3, width 32:300:300");
     }
 
-	//made speedMeter Instance public. Used in remote API
+    // made speedMeter Instance public. Used in remote API
     public SpeedMeterPanel getSpeedMeter() {
         return speedmeter;
     }

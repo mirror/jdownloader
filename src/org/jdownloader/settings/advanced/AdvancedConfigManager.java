@@ -14,6 +14,7 @@ import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogConfig;
 import org.jdownloader.api.RemoteAPIConfig;
@@ -60,6 +61,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(ShortcutSettings.class));
         register(JsonConfig.create(RtmpdumpSettings.class));
         register(JsonConfig.create(UpdateSettings.class));
+        register(JsonConfig.create(SyntheticaSettings.class));
 
     }
 
