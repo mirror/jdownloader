@@ -209,7 +209,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     public Boolean removeLinks(final List<Long> linkIds) {
         LinkCollector lc = LinkCollector.getInstance();
 
-        boolean lb = lc.readLock();
+        lc.writeLock();
         try {
             List<CrawledLink> lks = lc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
                 @Override
@@ -225,7 +225,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
             lc.removeChildren(lks);
         } finally {
-            lc.readUnlock(lb);
+            lc.writeUnlock();
         }
         return true;
     }
