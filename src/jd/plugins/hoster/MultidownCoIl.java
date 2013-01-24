@@ -60,7 +60,7 @@ public class MultidownCoIl extends PluginForHost {
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "server error. Please try later.", 10 * 60 * 1000l);
         }
-        if (!error.equalsIgnoreCase("Host not supported")) {
+        if (!error.equalsIgnoreCase("Host not supported") && !error.equalsIgnoreCase("Host not supported or under maintenance")) {
             // wrong pass
             account.setValid(false);
             ac.setStatus("account invalid. Wrong password?");

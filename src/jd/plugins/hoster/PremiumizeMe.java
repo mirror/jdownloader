@@ -144,6 +144,7 @@ public class PremiumizeMe extends PluginForHost {
         if (ret != null && ret instanceof Integer) {
             maxConnections = (Integer) ret;
             logger.info("Host:" + link.getHost() + " is limited to " + maxConnections + " chunks");
+            if (maxConnections > 1) maxConnections = -maxConnections;
         }
         ret = getConnectionSettingsValue(link.getHost(), account, "resume");
         if (ret != null && ret instanceof Boolean) {

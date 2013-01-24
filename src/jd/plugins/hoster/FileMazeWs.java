@@ -590,7 +590,7 @@ public class FileMazeWs extends PluginForHost {
                 return ai;
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null) + (24 * 60 * 60 * 1000l));
                 try {
                     maxPrem.set(-1);
                     account.setMaxSimultanDownloads(maxPrem.get());
