@@ -377,6 +377,7 @@ buyaction_title=購買白金帳號
 buyaction_title_buy_account=繼續
 checksumcolumnmd5=總和檢查碼
 config_fontname=對話
+config_fontscale_faktor=110
 downloadview_all=全部下載
 downloadview_failed=下載失敗
 downloadview_running=執行中的下載
