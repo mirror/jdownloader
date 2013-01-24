@@ -1,8 +1,6 @@
 close=닫기
-contextmenu_auto_extract_package=자동 압축 풀기 활성화됨
 contextmenu_autoextract=자동 압축 풀기 활성화됨
 contextmenu_extract=지금 압축풀기
-contextmenu_set_password=압축해제 암호
 date=날짜
 downloadedok=파일이 이미 존재함
 exists=링크 상태
