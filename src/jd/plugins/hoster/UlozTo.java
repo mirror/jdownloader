@@ -107,8 +107,10 @@ public class UlozTo extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("This link is password protected");
         } else {
             String filename = br.getRegex("<title>(.*?) \\|").getMatch(0);
-            // if (filename == null) filename = br.getRegex("<a href=\"#download\"\t\n\r<span id=\"jsNameNoExt\">(.*?)</span>").getMatch(0);
-            final String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
+            // For video links
+            String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
+            // For file links
+            if (filesize == null) filesize = br.getRegex("<span id=\"fileSize\">([^<>\"]*?)</span>").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));

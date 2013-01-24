@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -54,13 +54,13 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "karadownloads.com" }, urls = { "https?://(www\\.)?karadownloads\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class KaraDownloadsCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spicyfile.com" }, urls = { "https?://(www\\.)?spicyfile\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class SpicyFileCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST                  = "http://karadownloads.com";
+    private static final String  COOKIE_HOST                  = "http://spicyfile.com";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -69,7 +69,7 @@ public class KaraDownloadsCom extends PluginForHost {
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -77,12 +77,12 @@ public class KaraDownloadsCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.0.9
-    // mods:added xfilesharing mass linkcheck
-    // non account: untestable, set 1 * 1
-    // free account: untested, set 1 * 1
-    // premium account: 20 * 20
+    // mods:
+    // non account: 1 * 20
+    // free account: untested, set FREE limits
+    // premium account: 1 * 20
     // protocol: no https
-    // captchatype: null 4dignum solvemedia recaptcha
+    // captchatype: recaptcha
     // other:
 
     @Override
@@ -99,66 +99,12 @@ public class KaraDownloadsCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
     }
 
-    // Because they don't provide a filename/size/status for single links, this is used for multiple links
-    @Override
-    public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            final Browser br = new Browser();
-            br.setCookie(COOKIE_HOST, "lang", "english");
-            br.setCookiesExclusive(true);
-            final StringBuilder sb = new StringBuilder();
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 50 links at once */
-                    if (index == urls.length || links.size() > 50) {
-                        break;
-                    }
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                sb.append("op=checkfiles&process=Check+URLs&list=");
-                for (final DownloadLink dl : links) {
-                    sb.append(dl.getDownloadURL());
-                    sb.append("%0A");
-                }
-                br.postPage(COOKIE_HOST + "/?op=checkfiles", sb.toString());
-                for (final DownloadLink dllink : links) {
-                    if (br.containsHTML(">" + dllink.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>")) {
-                        dllink.setAvailable(false);
-                    } else {
-                        final String[][] linkInformation = br.getRegex(">" + dllink.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatches();
-                        if (linkInformation == null) {
-                            logger.warning("Linkchecker broken for " + this.getHost());
-                            return false;
-                        }
-                        String name = extractFileNameFromURL(dllink.getDownloadURL());
-                        final String size = linkInformation[0][0];
-                        dllink.setAvailable(true);
-                        dllink.setName(Encoding.htmlDecode(name).replace(".html", ""));
-                        dllink.setDownloadSize(SizeFormatter.getSize(size));
-                    }
-                }
-                if (index == urls.length) {
-                    break;
-                }
-            }
-        } catch (final Exception e) {
-            return false;
-        }
-        return true;
-    }
-
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public KaraDownloadsCom(PluginWrapper wrapper) {
+    public SpicyFileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -248,7 +194,7 @@ public class KaraDownloadsCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, "freelink");
+        doFree(downloadLink, true, 0, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -721,7 +667,7 @@ public class KaraDownloadsCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
             try {
-                maxPrem.set(1);
+                maxPrem.set(20);
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -832,7 +778,7 @@ public class KaraDownloadsCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
                 logger.warning("The final dllink seems not to be a file!");
