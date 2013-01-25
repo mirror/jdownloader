@@ -1,8 +1,7 @@
-package org.jdownloader.settings;
+package org.jdownloader.updatev2;
 
 import java.util.ArrayList;
 
-import jd.controlling.proxy.ProxyData;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -12,6 +11,8 @@ import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 
 public interface InternetConnectionSettings extends ConfigInterface {
+
+    public static final String PATH = "cfg/org.jdownloader.settings.InternetConnectionSettings";
 
     @AboutConfig
     @DescriptionForConfigEntry("List of all external Proxies")

@@ -10,6 +10,7 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.updatev2.ProxyData;
 
 public class ProxyInfo extends HTTPProxy {
 

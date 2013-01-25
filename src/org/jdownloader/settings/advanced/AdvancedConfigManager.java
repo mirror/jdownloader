@@ -26,8 +26,8 @@ import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-import org.jdownloader.settings.InternetConnectionSettings;
 import org.jdownloader.settings.RtmpdumpSettings;
+import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.UpdateSettings;
 
 public class AdvancedConfigManager {
@@ -45,7 +45,7 @@ public class AdvancedConfigManager {
         eventSender = new AdvancedConfigEventSender();
         this.register(JsonConfig.create(GeneralSettings.class));
         register(JsonConfig.create(LinkFilterSettings.class));
-        register(JsonConfig.create(InternetConnectionSettings.class));
+        register(JsonConfig.create(InternetConnectionSettings.PATH,InternetConnectionSettings.class));
         register(JsonConfig.create(AccountSettings.class));
         register(JsonConfig.create(GraphicalUserInterfaceSettings.class));
         register(JsonConfig.create(LinkCheckerConfig.class));

@@ -1,4 +1,4 @@
-package jd.controlling.proxy;
+package org.jdownloader.updatev2;
 
 import java.util.List;
 

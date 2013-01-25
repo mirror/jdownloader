@@ -43,7 +43,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.settings.InternetConnectionSettings;
+import org.jdownloader.updatev2.InternetConnectionSettings;
 
 public class RouterUtils {
 
@@ -52,8 +52,8 @@ public class RouterUtils {
     private static InetAddress  ADDRESS_CACHE;
 
     /**
-     * Runs throw a predefined Host Table (multithreaded) and checks if there is a service on port 80. returns the ip if there is a webservice on any adress.
-     * See {@link #updateHostTable()}
+     * Runs throw a predefined Host Table (multithreaded) and checks if there is a service on port 80. returns the ip if there is a
+     * webservice on any adress. See {@link #updateHostTable()}
      * 
      * @return
      */
@@ -140,8 +140,8 @@ public class RouterUtils {
             br.setDebug(true);
             br.setVerbose(true);
             br.setProxy(HTTPProxy.NONE);
-            br.setConnectTimeout(Math.max(10, JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckConnectTimeout()));
-            br.setReadTimeout(Math.max(10, JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckReadTimeout()));
+            br.setConnectTimeout(Math.max(10, JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).getRouterIPCheckConnectTimeout()));
+            br.setReadTimeout(Math.max(10, JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).getRouterIPCheckReadTimeout()));
             br.setFollowRedirects(false);
             if (port == 443) {
                 /* 443 is https */

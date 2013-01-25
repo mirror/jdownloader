@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
@@ -107,6 +109,8 @@ public class Launcher {
     public static SingleReachableState INIT_COMPLETE = new SingleReachableState("INIT_COMPLETE");
     public static SingleReachableState GUI_COMPLETE  = new SingleReachableState("GUI_COMPLETE");
     public static ParameterParser      PARAMETERS;
+
+    private static File                FILE;
     public final static long           startup       = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;
@@ -313,6 +317,7 @@ public class Launcher {
             Launcher.LOG.severe("Instance Handling not possible!");
             instanceStarted = true;
         }
+
         if (instanceStarted) {
             Launcher.start(args);
         } else if (PARAMETERS.hasCommandSwitch("n")) {
@@ -383,7 +388,29 @@ public class Launcher {
         Launcher.javaCheck();
     }
 
+    private static void exitCheck() {
+        FILE = Application.getResource("tmp/exitcheck");
+        try {
+            if (FILE.exists()) {
+                String txt = "It seems that JDownloader did not exit properly on " + IO.readFileToString(FILE) + "\r\nThis might result in losing settings or your downloadlist!\r\n\r\nPlease make sure to close JDownloader using Menu->File->Exit or Window->Close [X]";
+                LOG.warning("BAD EXIT Detected!: " + txt);
+                Dialog.getInstance().showErrorDialog(Dialog.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY, "Warning - Bad Exit!", txt);
+
+            }
+
+            FILE.delete();
+            FILE.getParentFile().mkdirs();
+            IO.writeToFile(FILE, (new SimpleDateFormat("dd.MMM.yyyy HH:mm").format(new Date())).getBytes("UTF-8"));
+
+        } catch (Exception e) {
+            Log.exception(Level.WARNING, e);
+
+        }
+        FILE.deleteOnExit();
+    }
+
     private static void start(final String args[]) {
+        exitCheck();
         go();
         for (final String p : args) {
             Launcher.LOG.finest("Param: " + p);

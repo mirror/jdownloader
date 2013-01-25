@@ -28,7 +28,8 @@ import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.InternetConnectionSettings;
+import org.jdownloader.updatev2.InternetConnectionSettings;
+import org.jdownloader.updatev2.ProxyData;
 
 public class ProxyController {
 
@@ -69,7 +70,7 @@ public class ProxyController {
     private ProxyController() {
         eventSender = new DefaultEventSender<ProxyEvent<ProxyInfo>>();
         /* init needed configs */
-        config = JsonConfig.create(InternetConnectionSettings.class);
+        config = JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class);
         generalConfig = JsonConfig.create(GeneralSettings.class);
 
         /* init our NONE proxy */
