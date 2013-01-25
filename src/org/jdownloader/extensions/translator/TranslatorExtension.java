@@ -376,7 +376,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         TranslateInterface t = (TranslateInterface) Proxy.newProxyInstance(class1.getClassLoader(), new Class[] { class1 }, new TranslationHandler(class1, locale.getId()));
 
         for (Method m : t._getHandler().getMethods()) {
-            System.out.println("add " + m);
             tmp.add(new TranslateEntry(t, m));
         }
         return (T) t;
