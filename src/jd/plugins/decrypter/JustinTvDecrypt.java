@@ -95,7 +95,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 decryptedLinks.add(dlink);
                 counter++;
             }
-            FilePackage fp = FilePackage.getInstance();
+            final FilePackage fp = FilePackage.getInstance();
             fp.setName(filename);
             fp.addLinks(decryptedLinks);
         }

@@ -28,23 +28,23 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?avaxhome\\.ws/(ebooks|music|software|video|magazines|games|graphics|misc|hraphile|comics)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?avaxhome\\.(ws|bz)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+" }, flags = { 0 })
 public class AvxHmeW extends PluginForDecrypt {
 
     public AvxHmeW(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String AVXHMEREGEX = "http://(www\\.)?avaxhome\\.ws/(ebooks|music|software|video|magazines|games|graphics|misc|hraphile|comics)/.+";
+    private static final String AVXHMEREGEX = "http://(www\\.)?avaxhome\\.(ws|bz)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.clearCookies(getHost());
-        br.getPage(cryptedLink.getCryptedUrl());
+        br.getPage(cryptedLink.getCryptedUrl().replaceAll("avaxhome.ws", "avaxhome.bz"));
         // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore
         // images/self site refs + imdb refs
-        String[][] links = br.getRegex("<a href=\"(http(s)?://(?!(www[.]imdb[.]com|avaxhome[.]ws))[\\S&&[^<]]+?)\" target=\"_blank\" rel=\"nofollow\">(?!<img)").getMatches();
+        String[][] links = br.getRegex("<a href=\"(http(s)?://(?!(www[.]imdb[.]com|avaxhome[.](ws|bz)))[\\S&&[^<]]+?)\" target=\"_blank\" rel=\"nofollow\">(?!<img)").getMatches();
         if (null != links && 0 < links.length) {
             for (String[] link : links) {
                 if (null != link && 0 < link.length && null != link[0] && 0 < link[0].length()) {
@@ -55,7 +55,7 @@ public class AvxHmeW extends PluginForDecrypt {
 
         // try also LINK</br>, but ignore self site refs + imdb refs
         links = null;
-        links = br.getRegex("(http(s)?://(?!(www[.]imdb[.]com|avaxhome[.]ws))[\\S&&[^<]]+?)<br/>").getMatches();
+        links = br.getRegex("(http(s)?://(?!(www[.]imdb[.]com|avaxhome[.](ws|bz)))[\\S&&[^<]]+?)<br/>").getMatches();
         if (null != links && 0 < links.length) {
             for (String[] link : links) {
                 if (null != link && 0 < link.length && null != link[0] && 0 < link[0].length()) {

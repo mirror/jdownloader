@@ -46,6 +46,9 @@ public class AstrSk extends PluginForHost {
         return -1;
     }
 
+    private static final String UNTERMAINTENANCE         = ">We are currently performing system maintenance";
+    private static final String UNTERMAINTENANCEUSERTEXT = "Site is under maintenance!";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         br.setCustomCharset("utf-8");
@@ -57,6 +60,11 @@ public class AstrSk extends PluginForHost {
         if (br.containsHTML("súbor je fuč|>Možné dôvody:<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Invalid link
         if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Maintenance
+        if (br.containsHTML(UNTERMAINTENANCE)) {
+            link.getLinkStatus().setStatusText(UNTERMAINTENANCEUSERTEXT);
+            return AvailableStatus.UNCHECKABLE;
+        }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"Stiahni si (.*?) \\- mojedata\\.sk\" />").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
@@ -73,6 +81,7 @@ public class AstrSk extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(">If you reside outside of Slovakia, Czech Republic or the USA you will have to")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable in your country");
+        if (br.containsHTML(UNTERMAINTENANCE)) throw new PluginException(LinkStatus.ERROR_FATAL, UNTERMAINTENANCEUSERTEXT);
         br.setFollowRedirects(true);
         Form dlform = br.getForm(0);
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

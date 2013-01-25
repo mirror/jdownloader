@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 //INDO: belongs to fileserving.com
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mydrive.com" }, urls = { "http://(www\\.)?myvdrive\\.com/files/[A-Za-z0-9_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mydrive.com" }, urls = { "http://(www\\.)?(myvdrive|fileserving)\\.com/files/[A-Za-z0-9_]+" }, flags = { 0 })
 public class MyDriveCom extends PluginForHost {
 
     public MyDriveCom(PluginWrapper wrapper) {
@@ -42,6 +42,10 @@ public class MyDriveCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.myvdrive.com/Public/term";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("fileserving.com/", "myvdrive.com/"));
     }
 
     @Override

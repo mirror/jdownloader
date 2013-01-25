@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetolink.com" }, urls = { "http://(www\\.)?filetolink\\.com/([a-z0-9]+|d/\\?h=[a-z0-9]{32}\\&t=\\d{10}\\&f=[a-z0-9]{8})" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetolink.com" }, urls = { "http://(www\\.)?filetolink\\.com/(d/\\?h=[a-z0-9]{32}\\&t=\\d{10}\\&f=[a-z0-9]{8}|[a-z0-9]+)" }, flags = { 0 })
 public class FileToLinkCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -48,12 +48,19 @@ public class FileToLinkCom extends PluginForHost {
         return -1;
     }
 
+    private static final String LOGINNEEDED         = "This file was uploaded by an unregistered user of";
+    private static final String LOGINNEEDEDUSERTEXT = "Login needed to download this file";
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">Sorry, this file does not exist\\.<") || br.getURL().equals("http://www.filetolink.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(LOGINNEEDED)) {
+            downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            return AvailableStatus.TRUE;
+        }
         String filename = br.getRegex("<title>[a-z0-9_\\-]+/([^<>\"]*?) : File Sharing \\- Upload and Send big Files : FileToLink</title>").getMatch(0);
         if (filename == null) filename = br.getRegex(">Downloading <a href=\"[^<>\"]*?\" >([^<>\"]*?)</a>").getMatch(0);
         final String filesize = br.getRegex("Size:</td><td>([^<>\"]*?)</td></tr>").getMatch(0);
@@ -67,6 +74,7 @@ public class FileToLinkCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(LOGINNEEDED)) throw new PluginException(LinkStatus.ERROR_FATAL, LOGINNEEDEDUSERTEXT);
         boolean facebook = false;
         String finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"0\\; URL=(/download/\\?h=[0-9a-z]+\\&t=\\d+\\&f=[0-9a-z]+)\"/>\\'").getMatch(0);
         if (finallink != null) {

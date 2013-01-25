@@ -51,7 +51,7 @@ public class JustinTv extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         URLConnectionAdapter con = null;
         Browser br2 = br.cloneBrowser();
@@ -59,10 +59,12 @@ public class JustinTv extends PluginForHost {
         br2.setFollowRedirects(true);
         try {
             con = br2.openGetConnection(downloadLink.getDownloadURL());
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+                downloadLink.setFinalFileName(correctFilename(downloadLink.getName()));
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         } finally {
             try {
                 con.disconnect();
@@ -74,7 +76,7 @@ public class JustinTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -82,6 +84,11 @@ public class JustinTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String correctFilename(final String oldFilename) {
+        String newFilename = oldFilename.replace("#", "");
+        return newFilename;
     }
 
     @Override

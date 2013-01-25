@@ -58,7 +58,7 @@ public class AnitubeCo extends PluginForHost {
         if (br.containsHTML(">403 Forbidden<") && br.containsHTML(">nginx/[\\d+\\.]+<")) throw new PluginException(LinkStatus.ERROR_FATAL, "IP Blocked: Provider prevents access based on IP address.");
         if (br.containsHTML("Unfortunately it\\'s impossible to access the site from your current geographic location")) return AvailableStatus.UNCHECKABLE;
         if (br.getURL().contains("error.php?type=video_missing")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex match = br.getRegex("(http://(?:www\\.)?anitube\\.co/[^/]+)/config\\.php\\?key=([0-9a-f]+)'");
+        final Regex match = br.getRegex("(http://(?:www\\.)?anitube\\.co/[^/]+)/config\\.php\\?key=([0-9a-f]+)'");
         if (match.count() > 0) {
             br.getPage(match.getMatch(0) + "/playlist.php?key=" + match.getMatch(1));
             dllink = br.getRegex("<file>\\s*(http://[^<]+\\d+\\.flv)\\s*</file>").getMatch(0);

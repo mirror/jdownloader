@@ -102,8 +102,8 @@ public class SoundcloudCom extends PluginForHost {
             }
         }
         String username = getXML("username", source);
-        // String type = getXML("original-format", source);
-        final String type = "mp3";
+        String type = getXML("original-format", source);
+        if (type == null) type = "mp3";
         username = Encoding.htmlDecode(username.trim());
         if (username != null && !filename.contains(username)) filename += " - " + username;
         filename += "." + type;
