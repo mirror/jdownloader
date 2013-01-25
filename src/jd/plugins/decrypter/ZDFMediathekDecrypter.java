@@ -107,7 +107,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
                     for (String stream[] : new Regex(streams[1], "<quality>([^<]+)</quality>.*?<url>([^<]+)<.*?<filesize>(\\d+)<").getMatches()) {
 
-                        if (streams[0].contains("mp4_http") && !streams[1].matches("<facet>(progressive|restriction_useragent)</")) continue;
+                        if (streams[0].contains("mp4_http") && !new Regex(streams[1], ("<facet>(progressive|restriction_useragent|podcast)</")).matches()) continue;
+                        /* only http stream for the old stable */
+                        if (streams[0].contains("mp4_rtmp_zdfmeta") && isStableEnviroment()) continue;
 
                         String url = stream[1];
                         String fmt = stream[0];
