@@ -1,0 +1,5 @@
+gui_config_antistandby_whiledl2=다운로드가 진행중일 때
+gui_config_antistandby_whilejd2=JDownloader가 실행중일 때
+jd_plugins_optional_antistandby_jdantistandby=대기 모드 제한
+jd_plugins_optional_antistandby_jdantistandby_description=다운로드가 진행중일 때 컴퓨터를 대기 모드나 절전 모드로 전환하지 않게하는 기능입니다.
+mode=다음 조건일 때 대기 모드로 전환하지 않기
