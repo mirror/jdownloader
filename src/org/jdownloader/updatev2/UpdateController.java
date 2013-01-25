@@ -34,6 +34,8 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.locator.RememberRelativeLocator;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class UpdateController implements UpdateCallbackInterface {
@@ -345,6 +347,8 @@ public class UpdateController implements UpdateCallbackInterface {
                 if (settings.isDoNotAskToInstallPlugins()) {
                     // can install direct
                     UpdateController.getInstance().installUpdates(awfoverview);
+                    HostPluginController.getInstance().init(true);
+                    CrawlerPluginController.getInstance().init(true);
                     return;
                 }
 
