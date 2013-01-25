@@ -103,10 +103,11 @@ public class DrTuberCom extends PluginForHost {
             downloadLink.setUrlDownload(Encoding.htmlDecode(finallink));
         }
 
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("This video was deleted") || br.getURL().contains("missing=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
         /* normal links */
         if (new Regex(downloadLink.getDownloadURL(), Pattern.compile("http://(www\\.)?drtuber\\.com/video/\\d+", Pattern.CASE_INSENSITIVE)).matches()) {
-            br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("This video was deleted") || br.getURL().contains("missing=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = br.getRegex("<title>(.*?) \\- Free Porn.*?DrTuber\\.com</title>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<h1 class=\"name\">(.*?)</h1>").getMatch(0);
@@ -120,10 +121,9 @@ public class DrTuberCom extends PluginForHost {
 
         /* embed v4 */
         if (downloadLink.getDownloadURL().matches("http://(www\\.)?drtuber\\.com/embed/\\d+")) {
-            br.getPage(downloadLink.getDownloadURL());
             String[] hashEncValues = br.getRegex("flashvars=\"id_video=(\\d+)\\&t=(\\d+)").getRow(0);
             if (hashEncValues == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            continueLink = "/player/config_embed4.php?id_video=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + "&t=" + hashEncValues[1] + "&pkey=" + JDHash.getMD5(hashEncValues[0] + hashEncValues[1] + Encoding.Base64Decode("RXMxaldDemZOQmRsMlk4"));
+            continueLink = "/player/config_embed4.php?id_video=" + hashEncValues[0] + "&t=" + hashEncValues[1] + "&pkey=" + JDHash.getMD5(hashEncValues[0] + hashEncValues[1] + Encoding.Base64Decode("RXMxaldDemZOQmRsMlk4"));
             filename = br.getRegex("<title>(.*?)\\s+\\-\\s+Free Porn Videos").getMatch(0);
         }
         if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

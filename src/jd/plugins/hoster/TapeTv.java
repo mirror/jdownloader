@@ -348,7 +348,7 @@ public class TapeTv extends PluginForHost {
                     }
                 } else {
                     /*
-                     * no other qualities*&
+                     * no other qualities
                      */
                 }
             }
@@ -484,4 +484,5 @@ public class TapeTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.tapetv.loadhd", "Load HD Version")).setDefaultValue(true));
 
     }
+
 }
