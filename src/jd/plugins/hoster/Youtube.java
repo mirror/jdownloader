@@ -176,7 +176,7 @@ public class Youtube extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         this.prem = false;
-
+        if (true) throw new Exception("DEBUGGGGG");
         /* we now have to get fresh links */
         downloadLink.setProperty("valid", false);
         this.requestFileInformation(downloadLink);
