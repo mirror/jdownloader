@@ -18,6 +18,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool;
@@ -244,6 +245,8 @@ public class RAFChunk extends Thread {
         /* +1 because of startByte also gets loaded (startbyte till endbyte) */
         if (endByte > 0) bytes2Do = (endByte - startByte) + 1;
         try {
+            if (connection == null) throw new WTFException("connection null");
+            if (dl == null) throw new WTFException("connection null");
             connection.setReadTimeout(dl.getReadTimeout());
             connection.setConnectTimeout(dl.getRequestTimeout());
             inputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
@@ -589,7 +592,6 @@ public class RAFChunk extends Thread {
                 /* we can close cloned connections here */
                 if (this.clonedconnection) {
                     connection.disconnect();
-                    connection = null;
                 }
             } catch (Throwable e) {
             }

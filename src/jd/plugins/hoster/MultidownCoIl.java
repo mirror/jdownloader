@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -76,7 +77,7 @@ public class MultidownCoIl extends PluginForHost {
         account.setValid(true);
         long validuntil = System.currentTimeMillis() + (daysLeft * 1000 * 60 * 60 * 24);
         ac.setValidUntil(validuntil);
-        ArrayList<String> supportedHosts = new ArrayList<String>();
+        HashSet<String> supportedHosts = new HashSet<String>();
         hosts = br.getPage("http://multidown.co.il/api.php?hosts=1");
         if (hosts == null || hosts.isEmpty()) {
             account.setValid(false);
@@ -89,7 +90,6 @@ public class MultidownCoIl extends PluginForHost {
         }
         /* workaround for uploaded.to */
         if (supportedHosts.contains("uploaded.net")) {
-            supportedHosts.remove("uploaded.net");
             supportedHosts.add("uploaded.to");
         }
 
@@ -97,8 +97,8 @@ public class MultidownCoIl extends PluginForHost {
             ac.setStatus("Account valid: 0 Hosts via multihosters.com available");
         } else {
             ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via multihosters.com available");
-            ac.setProperty("multiHostSupport", supportedHosts);
         }
+        ac.setProperty("multiHostSupport", new ArrayList<String>(supportedHosts));
         return ac;
     }
 
