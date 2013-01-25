@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "http://(www\\.)?datpiff\\.com/(.*?\\-download(\\-track)?\\.php\\?id=[a-z0-9]+|mixtapes\\-detail\\.php\\?id=\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "http://(www\\.)?datpiff\\.com/(.*?\\-download(\\-track)?\\.php\\?id=[a-z0-9]+|mixtapes\\-detail\\.php\\?id=\\d+|.*?\\-mixtape\\.\\d+\\.html)" }, flags = { 2 })
 public class DatPiffCom extends PluginForHost {
 
     private static final String PREMIUMONLY            = ">you must be logged in to download mixtapes<";
@@ -51,7 +51,7 @@ public class DatPiffCom extends PluginForHost {
             final Browser br2 = new Browser();
             br2.getPage(link.getDownloadURL());
             String downID = br2.getRegex("openMixtape\\( \\'(.*?)\\'").getMatch(0);
-            if (downID == null) downID = br2.getRegex("mixtapePlayer\\.swf\\?mid=(.*?)\"").getMatch(0);
+            if (downID == null) downID = br2.getRegex("mixtapePlayer(Tall)?\\.swf\\?mid=(.*?)\"").getMatch(0);
             if (downID != null) link.setUrlDownload("http://www.datpiff.com/pop-mixtape-download.php?id=" + downID);
         }
     }
@@ -79,10 +79,8 @@ public class DatPiffCom extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         // Untested
-        // final String timeToRelease =
-        // br.getRegex("\\'dateTarget\\': (\\d+),").getMatch(0);
-        // if (timeToRelease != null) throw new
-        // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
+        // final String timeToRelease = br.getRegex("\\'dateTarget\\': (\\d+),").getMatch(0);
+        // if (timeToRelease != null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
         // "Not yet released", Long.parseLong(timeToRelease) -
         // System.currentTimeMillis());
         String dllink;
@@ -102,8 +100,7 @@ public class DatPiffCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // Server doesn't send the correct filename directly, filename fix also
-        // doesn't work so we have to do it this way
+        // Server doesn't send the correct filename directly, filename fix also doesn't work so we have to do it this way
         downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         dl.startDownload();
     }

@@ -216,7 +216,7 @@ public class OneFichierCom extends PluginForHost {
         boolean retried = false;
         String passCode = null;
         while (true) {
-            br.getPage(downloadLink.getDownloadURL() + "en/index.html");
+            br.getPage(downloadLink.getDownloadURL() + "/en/index.html");
             if (br.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             if (br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", 90 * 1000l);
             if (br.containsHTML(PASSWORDTEXT) || pwProtected) {
@@ -234,14 +234,9 @@ public class OneFichierCom extends PluginForHost {
                     if (passCode != null) downloadLink.setProperty("pass", passCode);
                 }
             } else {
-                // ddlink is within the ?e=1 page request! but it seems you need
-                // to
-                // do the following posts to be able to use the link
-                // dllink = br.getRegex("(http.+/get/" + new
-                // Regex(downloadLink.getDownloadURL(),
-                // "https?://([^\\.]+)").getMatch(0) +
-                // "[^;]+)").getMatch(0);
-                br.postPage(downloadLink.getDownloadURL() + "en/", "a=1&submit=Download+the+file");
+                // ddlink is within the ?e=1 page request! but it seems you need to do the following posts to be able to use the link
+                // dllink = br.getRegex("(http.+/get/" + new Regex(downloadLink.getDownloadURL(), "https?://([^\\.]+)").getMatch(0) + "[^;]+)").getMatch(0);
+                br.postPage(downloadLink.getDownloadURL() + "/en/", "a=1&submit=Download+the+file");
             }
             if (dllink == null) dllink = br.getRedirectLocation();
             if (dllink == null) {
