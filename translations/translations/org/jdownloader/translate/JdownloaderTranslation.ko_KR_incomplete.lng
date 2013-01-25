@@ -1,1 +1,13 @@
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=오프라인 파일
+PackagizerSettings_folderbypackage_rule_name=패키지 이름으로 하위 폴더 만들기
+gui_settings__gui_title=룩 & 필
+gui_settings_basicauth_title=기본 인증
+gui_settings_downloadcontroll_title=다운로드 관리
+gui_settings_extensions_description=확장 모듈
+gui_settings_general_title=일반
+gui_settings_plugins_title=플러그인 설정
+gui_settings_premium_title=계정 관리자
+gui_settings_proxy_title=연결 관리자
+gui_settings_reconnect_title=재연결
+gui_settings_reconnect_title_method=재연결 방법
+settings_sidebar_tooltip_enable_extension=이 확장을 활성/비활성

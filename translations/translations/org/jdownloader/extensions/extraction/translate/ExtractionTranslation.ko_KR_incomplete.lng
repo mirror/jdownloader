@@ -5,6 +5,7 @@ ValidateArchiveAction_actionPerformed_=%s1개의 완전한 압축 파일 조각�
 ValidateArchiveAction_actionPerformed_bad=%s1개의 불완전한 압축 파일 조각을 가지고있습니다
 close=닫기
 context_cleanup=압축 해제 후 정리
+contextmenu_extract=지금 압축 해제
 contextmenu_main=압축 파일
 date=날짜
 description=일반적인 유형의 압축 파일을 해제합니다 (zip, rar, 7zip, ...)
