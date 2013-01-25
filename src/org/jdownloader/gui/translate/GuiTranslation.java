@@ -2156,4 +2156,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you really want to reset the Linkgrabber? Please choose:" })
     String ResetLinkGrabberOptionDialog_layoutDialogContent_();
 
+    @Default(lngs = { "en" }, values = { "Internet Connection" })
+    String StatusBarImpl_initGUI_ip();
+
+    @Default(lngs = { "en" }, values = { "Offline - No Internet Connection or bad proxy setup!" })
+    String StatusBarImpl_onIPOffline_();
+
+    @Default(lngs = { "en" }, values = { "Online - External IP: %s1" })
+    String StatusBarImpl_onIPOnline_(String string);
+
+    @Default(lngs = { "en" }, values = { "Please wait..." })
+    String lit_please_wait();
+
 }

@@ -64,10 +64,8 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
     }
 
     /**
-     * Returns the current height of this component. This method is preferable
-     * to writing <code>component.getBounds().height</code>, or
-     * <code>component.getSize().height</code> because it doesn't cause any heap
-     * allocations.
+     * Returns the current height of this component. This method is preferable to writing <code>component.getBounds().height</code>, or
+     * <code>component.getSize().height</code> because it doesn't cause any heap allocations.
      * 
      * @return the current height of this component
      */
@@ -78,21 +76,24 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
     public IconedProcessIndicator(ImageIcon icon) {
         super();
         size = 22;
-        valuePainter = getPainer(icon, 1.0f);
-
-        valuePainter.setBackground(Color.WHITE);
-        valuePainter.setForeground(Color.GRAY);
-        nonValuePainter = getPainer(icon, 0.5f);
-        activeValuePainter = getPainer(icon, 1.0f);
-        activeValuePainter.setBackground(Color.WHITE);
-        activeValuePainter.setForeground(Color.GREEN);
-
-        activeNonValuePainter = getPainer(icon, 0.5f);
-        activeNonValuePainter.setBackground(Color.LIGHT_GRAY);
-        activeNonValuePainter.setForeground(Color.GREEN);
+        updatePainter(icon, Color.WHITE, Color.GRAY, Color.WHITE, Color.GREEN, Color.LIGHT_GRAY, Color.GREEN);
         ToolTipController.getInstance().register(this);
         setActive(false);
         addMouseListener(this);
+    }
+
+    public void updatePainter(ImageIcon icon, Color c1, Color c2, Color c3, Color c4, Color c5, Color c6) {
+        valuePainter = getPainer(icon, 1.0f);
+        valuePainter.setBackground(c1);
+        valuePainter.setForeground(c2);
+        nonValuePainter = getPainer(icon, 0.5f);
+        activeValuePainter = getPainer(icon, 1.0f);
+        activeValuePainter.setBackground(c3);
+        activeValuePainter.setForeground(c4);
+
+        activeNonValuePainter = getPainer(icon, 0.5f);
+        activeNonValuePainter.setBackground(c5);
+        activeNonValuePainter.setForeground(c6);
     }
 
     public ExtTooltip createExtTooltip(final Point mousePosition) {

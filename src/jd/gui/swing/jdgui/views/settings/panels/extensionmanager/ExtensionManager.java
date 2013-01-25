@@ -2,7 +2,6 @@ package jd.gui.swing.jdgui.views.settings.panels.extensionmanager;
 
 import java.awt.Component;
 import java.awt.Dimension;
-import java.io.IOException;
 import java.util.HashMap;
 
 import javax.swing.Box;
@@ -19,18 +18,22 @@ import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.modules.Webinte
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.MigPanel;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.UpdateController;
 
 public class ExtensionManager extends AbstractConfigPanel {
 
     private HashMap<String, ExtensionModule> modules;
+    private LogSource                        logger;
 
     public ExtensionManager() {
         super();
+        logger = LogController.getInstance().getLogger(ExtensionManager.class.getName());
         this.addHeader(getTitle(), NewTheme.I().getIcon("extensionmanager", 32));
         this.addDescription(_GUI._.ExtensionManager_ExtensionManager_description_());
 
@@ -59,50 +62,62 @@ public class ExtensionManager extends AbstractConfigPanel {
         }
         new Thread("App Manager Panel Builder") {
             public void run() {
-                try {
-                    new EDTRunner() {
 
-                        @Override
-                        protected void runInEDT() {
+                new EDTRunner() {
 
-                            add3rdParty(panel);
-                        }
+                    @Override
+                    protected void runInEDT() {
 
-                    };
-                    if (UpdateController.getInstance().isHandlerSet()) {
-                        String[] lst = UpdateController.getInstance().listExtensionIds();
-                        if (lst == null || lst.length == 0) return;
-                        new EDTRunner() {
-
-                            @Override
-                            protected void runInEDT() {
-                                panel.add(getExperimentalDivider(_GUI._.ExtensionManager_getPanel_experimental_header_()));
-                            }
-                        };
-
-                        for (final String s : lst) {
-                            if (!modules.containsKey(s)) {
-                                new EDTRunner() {
-
-                                    @Override
-                                    protected void runInEDT() {
-                                        addModule(panel, new GenericExtensionModule(s));
-                                    }
-                                };
-                            }
-
-                        }
+                        add3rdParty(panel);
                     }
+
+                };
+                if (UpdateController.getInstance().isHandlerSet()) {
+                    String[] lst = null;
+                    while (true) {
+                        try {
+                            lst = UpdateController.getInstance().listExtensionIds();
+                            break;
+                        } catch (Exception e) {
+
+                            try {
+                                Thread.sleep(30000);
+                            } catch (InterruptedException e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+
+                    }
+                    if (lst == null || lst.length == 0) return;
                     new EDTRunner() {
 
                         @Override
                         protected void runInEDT() {
-                            revalidate();
+                            panel.add(getExperimentalDivider(_GUI._.ExtensionManager_getPanel_experimental_header_()));
                         }
                     };
-                } catch (IOException e) {
-                    e.printStackTrace();
+
+                    for (final String s : lst) {
+                        if (!modules.containsKey(s)) {
+                            new EDTRunner() {
+
+                                @Override
+                                protected void runInEDT() {
+                                    addModule(panel, new GenericExtensionModule(s));
+                                }
+                            };
+                        }
+
+                    }
                 }
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        revalidate();
+                    }
+                };
+
             }
         }.start();
 

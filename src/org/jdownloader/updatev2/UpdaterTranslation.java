@@ -614,4 +614,16 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Failed to install the update. Please try again later.\r\nIf this problem does not \"solve itself\" after a few hours, contact our support or reinstall JDownloader.", "Das Update konnte nicht installiert werden. Bitte versuch es später erneut.\r\nInstalliere JDownloader bitte neu oder kontaktiere unseren Support falls sich das Problem nicht innerhalb einiger Stunden \"von selbst löst\"!" })
     String errordialog_selfupdate_failed();
 
+    @Default(lngs = { "en", "de" }, values = { "No Internet Connection!", "Keine Internet Verbindung!" })
+    String error_last_chance_connection_title();
+
+    @Default(lngs = { "en", "de" }, values = { "JDownloader could not connect to the Internet.\r\nPlease make sure to set up your Firewall, Antivirus Software and Proxies correctly!\r\nContact our support if you cannot get rid of this problem.", "JDownloader findet keine Internet Verbindung.\r\nBitte überprüfe deine Firewall, Antiviren Software und die Proxyeinstellungen.\r\nFalls das Problem weiterhin besteht hilft unser Support gerne weiter!" })
+    String error_last_chance_connection_message();
+
+    @Default(lngs = { "en", "de" }, values = { "Update Error!", "Update Fehler!" })
+    String error_last_chance_title();
+
+    @Default(lngs = { "en", "de" }, values = { "JDownloader could not install the latest update.\r\nPlease reinstall JDownloader or contact our support!", "JDownloader kann das aktuelle Update nicht installieren.\r\nBitte installiere JDownloader neu oder kontaktiere unseren Support!" })
+    String error_last_chance_message();
+
 }

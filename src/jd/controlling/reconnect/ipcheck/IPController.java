@@ -34,6 +34,7 @@ public class IPController extends ArrayList<IPConnectionState> {
     private final java.util.List<IPCheckProvider> badProviders = new ArrayList<IPCheckProvider>();
     private IPConnectionState                     invalidState = null;
     private IPControllEventSender                 eventSender;
+    private long                                  latestValidateTime;
 
     public IPControllEventSender getEventSender() {
         return eventSender;
@@ -41,6 +42,23 @@ public class IPController extends ArrayList<IPConnectionState> {
 
     private IPController() {
         eventSender = new IPControllEventSender();
+        new Thread("Connection Pinger") {
+            public void run() {
+
+                while (true) {
+                    if (!JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
+                        fetchIP();
+                    }
+                    try {
+                        Thread.sleep(60 * 1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+        }.start();
+
     }
 
     @Override
@@ -212,6 +230,7 @@ public class IPController extends ArrayList<IPConnectionState> {
      */
     public boolean validate() {
         if (!this.invalidated) { return true; }
+        latestValidateTime = System.currentTimeMillis();
         if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
             // IP check disabled. each validate request is successful
 
@@ -304,14 +323,27 @@ public class IPController extends ArrayList<IPConnectionState> {
         return !this.isInvalidated();
     }
 
-    public void waitUntilWeAreOnline() throws InterruptedException {
+    public void waitUntilWeAreOnline(long interval) throws InterruptedException {
         // Make sure that we are online
         while (IPController.getInstance().getIpState().isOffline()) {
             IPController.getInstance().invalidate();
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            Thread.sleep(1000);
+            Thread.sleep(interval);
+            while (System.currentTimeMillis() - latestValidateTime < interval) {
+                Thread.sleep(500);
+                if (!IPController.getInstance().getIpState().isOffline()) return;
+            }
             IPController.getInstance().validate();
         }
+
+    }
+
+    public void waitUntilWeAreOnline() throws InterruptedException {
+        waitUntilWeAreOnline(1000);
+    }
+
+    public void forceFetchIP() {
+        fetchIP();
     }
 
 }

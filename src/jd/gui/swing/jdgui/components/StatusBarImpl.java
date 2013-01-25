@@ -16,7 +16,9 @@
 
 package jd.gui.swing.jdgui.components;
 
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -40,6 +42,9 @@ import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerEvent;
 import jd.controlling.linkcrawler.LinkCrawlerListener;
 import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.ipcheck.IPConnectionState;
+import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.ipcheck.event.IPControllListener;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
@@ -57,6 +62,7 @@ public class StatusBarImpl extends JPanel {
     private ReconnectProgress      reconnectIndicator;
     private IconedProcessIndicator linkGrabberIndicator;
     private JLabel                 statusLabel;
+    private IconedProcessIndicator offlineIndicator;
 
     public StatusBarImpl() {
         Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -77,7 +83,7 @@ public class StatusBarImpl extends JPanel {
     }
 
     private void initGUI() {
-        setLayout(new MigLayout("ins 0", "[left]0[grow,fill][][][]3", "[22!]"));
+        setLayout(new MigLayout("ins 0", "[left]0[grow,fill][][][][]3", "[22!]"));
         if (LookAndFeelController.getInstance().getLAFOptions().isPaintStatusbarTopBorder()) {
             setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
         } else {
@@ -130,6 +136,11 @@ public class StatusBarImpl extends JPanel {
         linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
         linkGrabberIndicator.setIndeterminate(false);
         linkGrabberIndicator.setEnabled(false);
+        offlineIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("network-idle", 16));
+        offlineIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_ip());
+        offlineIndicator.setValue(0);
+        offlineIndicator.setIndeterminate(false);
+
         linkGrabberIndicator.addMouseListener(new MouseListener() {
 
             public void mouseReleased(MouseEvent e) {
@@ -185,11 +196,126 @@ public class StatusBarImpl extends JPanel {
                     }
 
                 });
+                IPController.getInstance().getEventSender().addListener(new IPControllListener() {
+
+                    @Override
+                    public void onIPValidated(IPConnectionState parameter, IPConnectionState parameter2) {
+                        System.out.println(1);
+                    }
+
+                    @Override
+                    public void onIPStateChanged(IPConnectionState parameter, IPConnectionState parameter2) {
+                        if (parameter2.isOnline()) {
+                            onIPOnline(parameter2);
+                        } else {
+                            onIPOffline();
+                        }
+                    }
+
+                    @Override
+                    public void onIPOnline(final IPConnectionState parameter) {
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+                                offlineIndicator.updatePainter(NewTheme.I().getIcon("network-idle", 16), Color.WHITE, Color.GRAY, Color.WHITE, Color.GREEN, Color.LIGHT_GRAY, Color.GREEN);
+                                offlineIndicator.setDescription(_GUI._.StatusBarImpl_onIPOnline_(parameter.getExternalIp().toString()));
+                                offlineIndicator.setIndeterminate(false);
+                                offlineIndicator.repaint();
+                            }
+                        };
+
+                    }
+
+                    @Override
+                    public void onIPOffline() {
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+
+                                offlineIndicator.updatePainter(NewTheme.I().getIcon("network-error", 16), Color.WHITE, Color.GRAY, Color.WHITE, Color.RED, Color.LIGHT_GRAY, Color.RED);
+                                offlineIndicator.setIndeterminate(true);
+                                offlineIndicator.setDescription(_GUI._.StatusBarImpl_onIPOffline_());
+                                offlineIndicator.repaint();
+                            }
+                        };
+
+                    }
+
+                    @Override
+                    public void onIPInvalidated(IPConnectionState parameter) {
+                    }
+
+                    @Override
+                    public void onIPForbidden(IPConnectionState parameter) {
+                    }
+
+                    @Override
+                    public void onIPChanged(IPConnectionState parameter, IPConnectionState parameter2) {
+                        if (parameter2.isOnline()) {
+                            onIPOnline(parameter2);
+                        }
+                    }
+                });
+                offlineIndicator.addMouseListener(new MouseListener() {
+
+                    @Override
+                    public void mouseReleased(MouseEvent e) {
+                    }
+
+                    @Override
+                    public void mousePressed(MouseEvent e) {
+                        new Thread("Fetch IO") {
+                            public void run() {
+                                new EDTRunner() {
+
+                                    @Override
+                                    protected void runInEDT() {
+                                        offlineIndicator.setEnabled(false);
+                                        offlineIndicator.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                                        offlineIndicator.setDescription(_GUI._.lit_please_wait());
+
+                                    }
+                                };
+
+                                try {
+                                    IPController.getInstance().forceFetchIP();
+                                } finally {
+                                    new EDTRunner() {
+
+                                        @Override
+                                        protected void runInEDT() {
+                                            offlineIndicator.setEnabled(true);
+                                            offlineIndicator.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+
+                                        }
+
+                                    };
+                                }
+                            }
+                        }.start();
+                    }
+
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                    }
+
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
+
+                    }
+
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                    }
+                });
 
             }
 
         });
 
+        // offlineIndicator.setEnabled(false);
         // linkGrabberIndicator.setToolTipText("<html><img src=\"" +
         // NewTheme.I().getImageUrl("linkgrabber") +
         // "\"></img>Crawling for Downloads</html>");
@@ -200,8 +326,10 @@ public class StatusBarImpl extends JPanel {
         super.add(statusLabel, "height 22!");
         statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
         super.add(Box.createHorizontalGlue(), "height 22!,width 22!");
+
         super.add(reconnectIndicator, "height 22!,width 22!");
         super.add(linkGrabberIndicator, "height 22!,width 22!");
+        super.add(offlineIndicator, "height 22!,width 22!");
         Timer timer = new Timer(1000, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
