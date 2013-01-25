@@ -54,7 +54,6 @@ authtablemodel_column_type_http=http://
 authtablemodel_column_username=사용자 ID
 buyaction_title_buy_account=계속
 config_fontname=Dialog
-config_fontscale_faktor=110
 downloadview_all=모든 다운로드
 downloadview_failed=실패한 다운로드
 downloadview_successful=성공한 다운로드
