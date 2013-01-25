@@ -611,4 +611,7 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "An unexpected IO error occured during the update.\r\nPlease try again or contact our support.", "Während dem Update ist ein IO Fehler aufgetreten.\r\nVersuchen Sie es erneut, oder kontaktieren Sie unseren Support." })
     String errordialog_defaultio();
 
+    @Default(lngs = { "en", "de" }, values = { "Failed to install the update. Please try again later.\r\nIf this problem does not \"solve itself\" after a few hours, contact our support or reinstall JDownloader.", "Das Update konnte nicht installiert werden. Bitte versuch es später erneut.\r\nInstalliere JDownloader bitte neu oder kontaktiere unseren Support falls sich das Problem nicht innerhalb einiger Stunden \"von selbst löst\"!" })
+    String errordialog_selfupdate_failed();
+
 }
