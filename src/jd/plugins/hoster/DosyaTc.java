@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dosya.tc" }, urls = { "http://(www\\.)?dosya\\.tc/.+\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dosya.tc" }, urls = { "http://[\\w\\.]*?dosya\\.tc/.+\\.html" }, flags = { 2 })
 public class DosyaTc extends PluginForHost {
 
     public DosyaTc(PluginWrapper wrapper) {
