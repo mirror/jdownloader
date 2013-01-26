@@ -65,7 +65,7 @@ public class UpstoRe extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://upsto.re/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">File not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">File not found<|>File was deleted by owner or due to a violation of service rules\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fileInfo = br.getRegex("<h2 style=\"margin:0\">([^<>\"]*?)</h2>[\t\n\r ]+<div class=\"comment\">([^<>\"]*?)</div>");
         String filename = fileInfo.getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Download file ([^<>\"]*?) \\&mdash; Upload, store \\& share your files on Upsto\\.re</title>").getMatch(0);
