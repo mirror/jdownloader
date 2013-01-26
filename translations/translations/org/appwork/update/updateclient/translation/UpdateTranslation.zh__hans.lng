@@ -1,6 +1,7 @@
 UpdateServer_UpdaterGui_onServiceNotAvailable_bar=请稍后重试
 UpdateServer_UpdaterGui_onStateChange_branchlist=找到最新版本
 UpdateServer_UpdaterGui_onStateChange_download=下载
+UpdateServer_UpdaterGui_onStateChange_failed=更新失败
 UpdateServer_UpdaterGui_onStateChange_filter=找到更新
 UpdateServer_UpdaterGui_onStateChange_install=正在安装
 UpdateServer_UpdaterGui_onStateChange_successful=成功
@@ -25,6 +26,7 @@ interrupted_title=已取消
 log_you_are_up2date=你已经在运行最新版本
 please_wait=请稍等！
 restart_required_msg=更新会自己重启
+resume_failed=恢复下载失败。重试...
 reverting_msg=更新被打断。
 rlyexit=您确定要退出吗?
 rlyexit_title=确定退出?

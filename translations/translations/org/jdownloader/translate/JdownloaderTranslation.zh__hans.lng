@@ -81,6 +81,7 @@ gui_settings_reconnect_title_method=重新连接方式
 gui_warning_reconnectFailed=重新连接失败！
 gui_warning_reconnectSuccess=重新连接成功
 gui_warning_reconnect_running=进行中...
+gui_warning_reconnectunknown=重新连接未知
 literally_yes=是
 plugins_error_downloadfailed=下载失败
 plugins_errors_disconnect=连接断开?
