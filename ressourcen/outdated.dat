@@ -1013,3 +1013,5 @@ jd/plugins/hoster/FileOrCom.class
 jd/plugins/hoster/FilePlayGroundCom.class
 jd/plugins/hoster/DopeShareCom.class
 jd/plugins/hoster/FileServingCom.class
+jd/plugins/hoster/FileMsgCom.class
+jd/plugins/hoster/RepoFileCom.class

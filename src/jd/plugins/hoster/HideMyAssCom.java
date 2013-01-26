@@ -135,7 +135,7 @@ public class HideMyAssCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<h4>Error\\! You don\\'t have access to this file\\.</h4>|<li>The file has been deleted due to inactivity\\.</li>|<li>The uploader has removed the file\\.</li>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Error\\! You don\\'t have access to this file|>This could be due to one or more of the following reasons|>The uploader set advanced privacy restrictions on the file|>The uploader has removed the file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">File name:</strong>([^<>\"]*?)</p>").getMatch(0);
         String filesize = br.getRegex(">File Size: ([^<>\"]*?)</strong>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -57,14 +57,21 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 logger.info("Nothing to decrypt here: " + parameter);
                 return decryptedLinks;
             }
+            final String[] decryptAgainLinks = br.getRegex("<p class=\\'title\\'>[\t\n\r ]+<a href=\\'(/[^<>\"]*?)\\'").getColumn(0);
             String[] links = br.getRegex("<p class=\"title\"><a href=\"(/.*?)\"").getColumn(0);
             if (links == null || links.length == 0) links = br.getRegex("<div class=\"left\">[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) {
+            if ((decryptAgainLinks == null || decryptAgainLinks.length == 0) && (links == null || links.length == 0)) {
                 logger.warning("Decrypter broken: " + parameter);
                 return null;
             }
-            for (String dl : links)
-                decryptedLinks.add(createDownloadlink(HOSTURL + dl));
+            if (links != null && links.length != 0) {
+                for (final String dl : links)
+                    decryptedLinks.add(createDownloadlink(HOSTURL + dl));
+            }
+            if (decryptAgainLinks != null && decryptAgainLinks.length != 0) {
+                for (final String dl : decryptAgainLinks)
+                    decryptedLinks.add(createDownloadlink("http://twitch.tv" + dl));
+            }
         } else {
             if (br.getURL().contains("/videos")) {
                 logger.info("Link offline: " + parameter);

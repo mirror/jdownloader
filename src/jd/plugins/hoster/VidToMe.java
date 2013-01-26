@@ -149,10 +149,7 @@ public class VidToMe extends PluginForHost {
     private String[] scanInfo(final String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "<h2 class=\"video\\-page\\-head\">(.*?)</h2>").getMatch(0);
-            if (fileInfo[0] == null) {
-                fileInfo[0] = new Regex(correctedBR, "<Title>[\r\n\t ]+(.*?) \\- Vidto[\r\n\t ]+</Title>").getMatch(0);
-            }
+            fileInfo[0] = new Regex(correctedBR, "class=\"main\\-video\\-head\">Watch ([^<>\"]*?) online</h2>").getMatch(0);
         }
         // String fileExtension = new Regex(correctedBR, "<META NAME=\"description\" CONTENT=\"[^>\"]+ ([^\"]+)\">").getMatch(0);
         // if (fileExtension == null) fileExtension = new Regex(correctedBR,
@@ -212,6 +209,7 @@ public class VidToMe extends PluginForHost {
                     }
                 }
                 // end of backward compatibility
+                waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 checkErrors(downloadLink, false, passCode);
                 dllink = getDllink();
@@ -487,7 +485,8 @@ public class VidToMe extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        if (ttt == null) ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

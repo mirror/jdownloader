@@ -134,7 +134,10 @@ public class FileFlyerCom extends PluginForHost {
         if (name == null) name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_img\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (br.containsHTML(ONLY4PREMIUM)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
         if (br.containsHTML("(class=\"handlink\">Expired</a>|class=\"handlink\">Removed</a>|>To report a bug ,press this link</a>|>Expired</a>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (name == null || filesize == null) {
+            if (!br.containsHTML("class=\"fileslistwrap\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setName(name.trim().replace("", ""));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
