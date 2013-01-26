@@ -79,7 +79,7 @@ public class PornerBrosCom extends PluginForHost {
         if (filename == null) filename = br.getRegex("<h1>(.*?)(\\.)?</h1>").getMatch(0);
         filename = filename.trim().replaceAll("\\.$", "");
         // both downloadmethods are still in use
-        String paramJs = br.getRegex("<script type=\"text/javascript\" src=\"(/content/\\d+\\.js)\"></script>").getMatch(0);
+        String paramJs = br.getRegex("<script type=\"text/javascript\" src=\"(/content/\\d+\\.js([^\"]+)?)\"></script>").getMatch(0);
         if (paramJs != null) {
             br.getPage("http://www.pornerbros.com" + paramJs);
             DLLINK = br.getRegex("url:escape\\(\\'(.*?)\\'\\)").getMatch(0);
@@ -134,4 +134,5 @@ public class PornerBrosCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
