@@ -95,26 +95,27 @@ public class RtmpDump extends RTMPDownload {
     }
 
     /**
-     * Attempt to locate a rtmpdump executable. The local tools folder is searched first, then *nix /usr bin folders. If found, the path
+     * Attempt to locate a rtmpdump executable. The *nix /usr bin folders is searched first, then local tools folder. If found, the path
      * will is saved to the variable RTMPDUMP.
      * 
      * @return Whether or not rtmpdump executable was found
      */
     private synchronized boolean findRtmpDump() {
-        if (RTMPDUMP != null) { return RTMPDUMP.length() > 0; }
+        if (RTMPDUMP != null) return RTMPDUMP.length() > 0;
+        if (CrossSystem.isLinux() || CrossSystem.isMac()) {
+            RTMPDUMP = "/usr/local/bin/rtmpdump";
+            if (!new File(RTMPDUMP).exists()) RTMPDUMP = "/usr/bin/rtmpdump";
+            if (!new File(RTMPDUMP).exists()) RTMPDUMP = null;
+        }
         if (CrossSystem.isWindows()) {
             RTMPDUMP = Application.getResource("tools/Windows/rtmpdump/rtmpdump.exe").getAbsolutePath();
-        } else if (CrossSystem.isLinux()) {
+        } else if (CrossSystem.isLinux() && RTMPDUMP == null) {
             RTMPDUMP = Application.getResource("tools/linux/rtmpdump/rtmpdump").getAbsolutePath();
-        } else if (CrossSystem.isMac()) {
+        } else if (CrossSystem.isMac() && RTMPDUMP == null) {
             RTMPDUMP = Application.getResource("tools/mac/rtmpdump/rtmpdump").getAbsolutePath();
         }
         if (RTMPDUMP != null && !new File(RTMPDUMP).exists()) RTMPDUMP = null;
-        if (RTMPDUMP == null && (CrossSystem.isLinux() || CrossSystem.isMac())) {
-            RTMPDUMP = "/usr/bin/rtmpdump";
-            if (!new File(RTMPDUMP).exists()) RTMPDUMP = "/usr/local/bin/rtmpdump";
-            if (!new File(RTMPDUMP).exists()) RTMPDUMP = null;
-        }
+
         if (RTMPDUMP == null) RTMPDUMP = "";
         return RTMPDUMP.length() > 0;
     }
@@ -141,7 +142,7 @@ public class RtmpDump extends RTMPDownload {
      */
     public synchronized String getRtmpDumpVersion() throws Exception {
         if (RTMPVERSION != null) return RTMPVERSION;
-        if (!findRtmpDump()) throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDump not found!");
+        if (!findRtmpDump()) throw new PluginException(LinkStatus.ERROR_FATAL, "rtmpdump executable not found!");
         final String arg = " -h";
         NativeProcess verNP = null;
         Process verP = null;

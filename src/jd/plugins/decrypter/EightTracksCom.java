@@ -42,11 +42,10 @@ public class EightTracksCom extends PluginForDecrypt {
     private String createFilename() {
         String album = getClipData("release_name");
         final String title = getClipData("name");
-        if (album == null || title == null) { return null; }
-        if (album.contains(":")) {
-            album = album.substring(0, album.indexOf(":"));
-        }
-        if (album.equals(title)) { return Encoding.htmlDecode(title).trim(); }
+        if (album == null || title == null) return null;
+        if (album.contains(":")) album = album.substring(0, album.indexOf(":"));
+        if (isEmpty(album)) album = title;
+        if (album.equals(title)) return Encoding.htmlDecode(title).trim();
         return Encoding.htmlDecode(album + "__" + title).trim();
     }
 
@@ -72,14 +71,15 @@ public class EightTracksCom extends PluginForDecrypt {
             mixId = br.getRegex("/mixes/(\\d+)/").getMatch(0);
         }
 
-        String name = br.getRegex("<title>(.*?)\\s\\|").getMatch(0);
-        if (name == null) {
-            name = br.getRegex("content=\"(.*?)\" property=\"og:title\"").getMatch(0);
-            if (name == null) {
-                name = "8tracks_playlist" + System.currentTimeMillis();
-            }
-        }
-        name = Encoding.htmlDecode(name.trim());
+        String fpName = br.getRegex("<meta content=\"([^\"]+)\" property=\"og:title\"").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("alt=\"([^\"]+)\" id=\"cover_art\"").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("class=\"cover\" alt=\"([^\"]+)\"").getMatch(0);
+        if (fpName == null) fpName = "8tracks_playlist" + System.currentTimeMillis();
+        fpName = Encoding.htmlDecode(fpName.trim());
+
+        /* tracks in mix */
+        String tracksInMix = br.getRegex("<span class=\"gray\">\\((\\d+) tracks?\\)</span>").getMatch(0);
+        boolean bigPlayList = tracksInMix != null && Integer.parseInt(tracksInMix) > 100;
 
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (br.getRegex("name=\"csrf-token\" content=\"(.*?)\"").matches()) {
@@ -105,8 +105,14 @@ public class EightTracksCom extends PluginForDecrypt {
         String ext = "", sameLink = "";
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(name);
+        fp.setName(fpName);
+
+        /* limit to 1000 API calls per minute */
+        int call = 1;
+        long a = 0, start = 0;
+
         while (!ATEND) {
+            start = System.currentTimeMillis();
             /* ATEND=true --> end of playlist */
             ATEND = Boolean.parseBoolean(getClipData("at_end"));
             if (dllink != null && filename != null) {
@@ -118,6 +124,7 @@ public class EightTracksCom extends PluginForDecrypt {
                 }
                 final DownloadLink dl = createDownloadlink(dllink);
                 dl.setFinalFileName(filename + "." + ext);
+                if (bigPlayList) dl.setAvailable(true);
                 fp.add(dl);
                 try {
                     distribute(dl);
@@ -125,6 +132,11 @@ public class EightTracksCom extends PluginForDecrypt {
                     /* does not exist in 09581 */
                 }
                 decryptedLinks.add(dl);
+                try {
+                    if (this.isAbort()) return decryptedLinks;
+                } catch (Throwable e) {
+                    /* does not exist in 09581 */
+                }
                 progress.increase(1);
                 /* Anzahl der Titel unbestimmt. Siehe ATEND! */
                 progress.setRange(count++);
@@ -135,6 +147,15 @@ public class EightTracksCom extends PluginForDecrypt {
 
             if (!ATEND && dllink == null || !ATEND && dllink != null && dllink.equals(sameLink)) {
                 ATEND = true;
+            }
+            a += (System.currentTimeMillis() - start);
+            call++;
+            if (call > 1000) {
+                if (a < 60 * 1000l) {
+                    sleep((60 * 1000l) - a, param);
+                    call = 1;
+                    a = 0;
+                }
             }
         }
 
@@ -150,4 +171,7 @@ public class EightTracksCom extends PluginForDecrypt {
         return new Regex(clipData, "\"" + tag + "\"\\s?:\\s?\"?(.*?)\"?,").getMatch(0);
     }
 
+    private boolean isEmpty(String ip) {
+        return ip == null || ip.trim().length() == 0;
+    }
 }
