@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "localhostr.com" }, urls = { "http://(www\\.)?(localhostr\\.com|lh\\.rs)/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "localhostr.com" }, urls = { "https?://(www\\.)?(localhostr\\.com|lh\\.rs)/[A-Za-z0-9]+" }, flags = { 0 })
 public class LocalHostrCom extends PluginForHost {
 
     public LocalHostrCom(PluginWrapper wrapper) {
@@ -43,7 +43,7 @@ public class LocalHostrCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("lh.rs/", "localhostr.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("lh.rs/", "localhostr.com/").replace("https://", "http://"));
     }
 
     @Override

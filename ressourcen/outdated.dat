@@ -1015,3 +1015,4 @@ jd/plugins/hoster/DopeShareCom.class
 jd/plugins/hoster/FileServingCom.class
 jd/plugins/hoster/FileMsgCom.class
 jd/plugins/hoster/RepoFileCom.class
+jd/plugins/hoster/FileUppedCom.class

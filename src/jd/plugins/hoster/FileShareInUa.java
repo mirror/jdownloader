@@ -214,7 +214,7 @@ public class FileShareInUa extends PluginForHost {
         // Using the link + "?free" we can get to the page with the captcha but
         // atm we do it without captcha
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Файл удален|К сожалению мы не смогли найти файл, который вы запрашиваете")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Файл удален|К сожалению мы не смогли найти файл, который вы запрашиваете|Такой страницы на нашем сайте нет")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>скачать (.*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"file_name sr_archive\">[\n\r ]+<span>(.*?)</span>").getMatch(0);

@@ -47,18 +47,26 @@ public class LimeLinxCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(">Error \\- File Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("class=\"fileName\">([^<>\"]*?)</strong>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>Download ([^<>\"]*?) \\| Limelinx</title>").getMatch(0);
+        }
+        String filesize = br.getRegex("class=\"fileSize\">File Size: ([^<>\"]*?), Downloads:").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("DownloadLI.*?downloadFile\\('(.*?)'").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("DownloadLI.*?download_file\\('(.*?)'").getMatch(0);
-        }
-        if (dllink != null) {
-            if (!dllink.startsWith("http") && dllink.endsWith("ptth")) {
-                dllink = new StringBuilder(dllink).reverse().toString();
-            }
-        }
-        if (dllink == null) dllink = br.getRegex("<a href=\"(https?://[^\"\\'<>]+)\">Download</a>").getMatch(0);
+        String dllink = br.getRegex("download_file\\(\\'([^<>\"]*?)\\'\\)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // dllink is encrypted
         String encodedLink = Encoding.Base64Decode(dllink);
@@ -68,24 +76,6 @@ public class LimeLinxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(File Not Found|The file you were looking for could not be found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Ready to download <b>(.*?)</b>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<h1>File Name: <b>(.*?)</b></h1>").getMatch(0);
-            if (filename == null) filename = br.getRegex("Sampling file <b>(.*?)</b>").getMatch(0);
-        }
-        String filesize = br.getRegex("File Size: <b>(.*?)</b>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

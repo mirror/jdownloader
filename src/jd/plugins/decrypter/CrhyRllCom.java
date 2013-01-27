@@ -102,6 +102,10 @@ public class CrhyRllCom extends PluginForDecrypt {
             // Load the linked page
             this.br.setFollowRedirects(true);
             this.br.getPage(cryptedLink.getCryptedUrl());
+            if (br.getURL().equals("http://www.crunchyroll.com/") || br.containsHTML("Sorry, this video is not available in your region due to licensing restrictions")) {
+                logger.info("Link offline: " + cryptedLink.getCryptedUrl());
+                return decryptedLinks;
+            }
 
             // Determine if the video exists
             if (this.br.containsHTML("(<title>Crunchyroll \\- Page Not Found</title>|<p>But we were unable to find the page you were looking for\\. Sorry\\.</p>)")) {

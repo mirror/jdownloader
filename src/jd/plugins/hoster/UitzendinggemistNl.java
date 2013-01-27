@@ -38,8 +38,9 @@ public class UitzendinggemistNl extends PluginForHost {
         std;
     }
 
-    private String clipData;
-    private String finalURL = null;
+    private String  clipData;
+    private String  finalURL         = null;
+    private boolean NEEDSSILVERLIGHT = false;
 
     public UitzendinggemistNl(final PluginWrapper wrapper) {
         super(wrapper);
@@ -109,6 +110,7 @@ public class UitzendinggemistNl extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (NEEDSSILVERLIGHT) { throw new PluginException(LinkStatus.ERROR_FATAL, "Can't download MS Silverlight videos!"); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL, true, 0);
         if (dl.getConnection().getContentType().contains("text")) {
             if (dl.getConnection().getContentType().contains("html")) {
@@ -138,23 +140,26 @@ public class UitzendinggemistNl extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<meta content=\"(.*?)\" property=\"og:title\"").getMatch(0);
         }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim().replaceAll("(:|,|\\s)", "_"));
+        link.setFinalFileName(filename + ".mp4");
         String episodeID = br.getRegex("episodeID=(\\d+)\\&").getMatch(0);
         if (episodeID == null) {
             episodeID = br.getRegex("data\\-episode\\-id=\"(\\d+)\"").getMatch(0);
         }
-        if (filename == null || episodeID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (episodeID == null) {
+            link.getLinkStatus().setStatusText("Can't download MS Silverlight videos!");
+            NEEDSSILVERLIGHT = true;
+            return AvailableStatus.TRUE;
+        }
 
         /*
-         * Es gibt mehrere Video urls in verschiedenen Qualitäten und Formaten.
-         * Methode ermittelt die höchst mögliche Qualität. mms:// Links werden
-         * ignoriert.
+         * Es gibt mehrere Video urls in verschiedenen Qualitäten und Formaten. Methode ermittelt die höchst mögliche Qualität. mms:// Links
+         * werden ignoriert.
          */
         getfinalLink(episodeID);
 
         if (finalURL == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-        filename = Encoding.htmlDecode(filename.trim().replaceAll("(:|,|\\s)", "_"));
-        link.setFinalFileName(filename + ".mp4");
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
