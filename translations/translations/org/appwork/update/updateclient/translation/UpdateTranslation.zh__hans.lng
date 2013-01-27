@@ -1,3 +1,4 @@
+UpdateServer_UpdaterGui_onException_error_occured=发生一个错误：%s1
 UpdateServer_UpdaterGui_onServiceNotAvailable_bar=请稍后重试
 UpdateServer_UpdaterGui_onServiceNotAvailable_wait=更新服务器忙。请稍后再试
 UpdateServer_UpdaterGui_onStateChange_branchlist=找到最新版本
@@ -45,4 +46,4 @@ rlyexit_title=确定退出?
 rlyrestart=您确定要重启程序吗？
 rlyrestart_restart=确定重启?
 stop_countdown=停止倒计时
-timer=%s1个
+timer=%s1秒

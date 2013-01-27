@@ -16,6 +16,7 @@ date=日期
 description=解压所有常见压缩\r\n包类型(zip,rar,7zip,...)
 downloadedbad=文件必须下载
 downloadedok=文件已经存在
+dummyarchivedialog_title=档案 %s1
 exists=链接状态
 failed_no_details=解压失败
 file_exists=文件已存在

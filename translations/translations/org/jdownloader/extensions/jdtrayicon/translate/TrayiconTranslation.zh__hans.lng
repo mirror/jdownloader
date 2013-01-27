@@ -12,6 +12,7 @@ OnMinimizeAction_totray=关闭到托盘
 plugins_optional_JDLightTray_always=总是
 plugins_optional_JDLightTray_closetotray2=点击'关闭<X>'动作
 plugins_optional_JDLightTray_linkgrabberresults=当抓取到新链接时前置主窗口
+plugins_optional_JDLightTray_minimized=仅当主窗口最小化时
 plugins_optional_JDLightTray_minimizetotray=点击'最小化<_>'动作
 plugins_optional_JDLightTray_never=从不
 plugins_optional_JDLightTray_passwordRequired=从任务栏打开时需要密码
