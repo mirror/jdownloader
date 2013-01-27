@@ -26,7 +26,6 @@ import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -75,10 +74,7 @@ public class FreeWayMe extends PluginForHost {
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        String cryptPass = JDHash.getSHA1(username.toLowerCase() + pass);
-        // sha1(strtolower($benutzername) . html_entity_decode($passwort) )
-        page = br.getPage("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + cryptPass);
-
+        page = br.getPage("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + pass);
         // "Invalid login" / "Banned" / "Valid login"
         if (page.equalsIgnoreCase("Valid login")) {
             account.setValid(true);
@@ -106,6 +102,7 @@ public class FreeWayMe extends PluginForHost {
             account.setTempDisabled(true);
             return ac;
         }
+
         int maxPremi = 1;
         final String maxPremApi = getJson("parallel", br.toString());
         if (maxPremApi != null) maxPremi = Integer.parseInt(maxPremApi);
@@ -169,10 +166,9 @@ public class FreeWayMe extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
         String user = Encoding.urlEncode(acc.getUser());
+        String pw = Encoding.urlEncode(acc.getPass());
         String url = Encoding.urlEncode(link.getDownloadURL());
-
-        String cryptPass = JDHash.getSHA1(user.toLowerCase() + Encoding.htmlDecode(acc.getPass()));
-        String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + cryptPass + "&url=" + url;
+        String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -263,17 +259,6 @@ public class FreeWayMe extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    private String htmlEntityDecode(String s) {
-        HashMap<String, String> map = new HashMap<String, String>();
-        // map.put("§", "&sect;");
-
-        // Set<String> keys = map.keySet();
-        // for (String key : keys) {
-        // s.replaceAll(key, map.get(key));
-        // }
-        return s;
-    }
-
     private static void showApiDisabledDialog() {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -284,7 +269,6 @@ public class FreeWayMe extends PluginForHost {
                         String lng = System.getProperty("user.language");
                         String message = null;
                         String title = null;
-                        String tab = "                        ";
                         if ("de".equalsIgnoreCase(lng)) {
                             title = " API deaktiviert";
                             message = "Du hast free-way API deaktiviert. Diese wird jedoch zum Downloaden benötigt.\r\n" + "Möchtest Du diese aktivieren?";
@@ -303,4 +287,5 @@ public class FreeWayMe extends PluginForHost {
         } catch (Throwable e) {
         }
     }
+
 }
