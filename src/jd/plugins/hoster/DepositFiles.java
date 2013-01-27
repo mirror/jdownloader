@@ -96,12 +96,15 @@ public class DepositFiles extends PluginForHost {
                 StringContainer main = new StringContainer();
                 main.string = baseURL;
                 if (baseURL != null) MAINPAGE = main;
+                System.out.println("depositfiles setter MAINPAGE = " + MAINPAGE.string);
             } catch (Throwable e) {
                 e.printStackTrace();
                 try {
+                    System.out.println("despostfiles setter failed, setting failover");
                     StringContainer main = new StringContainer();
                     main.string = "http://depositfiles.com";
                     MAINPAGE = main;
+                    System.out.println("depositfiles setter MAINPAGE = " + MAINPAGE.string);
                 } catch (final Throwable e2) {
                     e2.printStackTrace();
                 }
@@ -207,10 +210,8 @@ public class DepositFiles extends PluginForHost {
         }
         /* county slots full */
         if (br.containsHTML("but all downloading slots for your country")) {
-            // String wait =
-            // br.getRegex("html_download_api-limit_country\">(\\d+)</span>").getMatch(0);
-            // if (wait != null) throw new
-            // PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE,
+            // String wait = br.getRegex("html_download_api-limit_country\">(\\d+)</span>").getMatch(0);
+            // if (wait != null) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE,
             // Integer.parseInt(wait.trim()) * 1000l);
             // set to one minute according to user request
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.depositfilescom.errors.allslotsbusy", "All download slots for your country are busy"), 1 * 60 * 1000l);
@@ -695,6 +696,9 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        if (!new Regex(downloadLink.getDownloadURL(), MAINPAGE.string.replaceAll("https?://(www\\.)?", "")).matches()) {
+            correctDownloadLink(downloadLink);
+        }
         setBrowserExclusive();
         br.getHeaders().put("User-Agent", UA);
         final String link = downloadLink.getDownloadURL();

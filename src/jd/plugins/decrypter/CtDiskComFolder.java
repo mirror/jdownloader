@@ -28,11 +28,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "https?://(www\\.)?ctdisk\\.com/u/\\d{6}(/\\d{6,7})?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "https?://(www\\.)?(ctdisk|400gb|pipipan|t00y)\\.com/u/\\d{6}(/\\d{6,7})?" }, flags = { 0 })
 public class CtDiskComFolder extends PluginForDecrypt {
 
     // DEV NOTES
     // protocol: no https.
+    // t00y doesnt seem to work as alais but ill addd it anyway.
+
+    private static final String domains = "(ctdisk|400gb|pipipan|t00y)\\.com";
 
     public CtDiskComFolder(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,10 +43,10 @@ public class CtDiskComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("https://", "http://");
+        String parameter = param.toString().replace("https://", "http://").replaceAll(domains + "/", "400gb.com/");
         br.setCookiesExclusive(true);
         br.getPage(parameter);
-        String id = new Regex(parameter, "ctdisk\\.com/u/(\\d+)").getMatch(0);
+        String id = new Regex(parameter, domains + "/u/(\\d+)").getMatch(0);
         if (br.containsHTML("(Due to the limitaion of local laws, this url has been disabled\\!<|该用户还未打开完全共享\\。|您目前无法访问他的资源列表\\。)")) {
             logger.warning("Invalid URL: " + parameter);
             return null;
@@ -70,8 +73,8 @@ public class CtDiskComFolder extends PluginForDecrypt {
             logger.warning("Can not find 'results' : " + parameter);
             return;
         }
-        String[] links = new Regex(results, "<a href=\"(https?://(www\\.)?ctdisk\\.com/file/\\d+)\" title").getColumn(0);
-        if (links == null || links.length == 0) new Regex(results, "<a href=\"(https?://(www\\.)?ctdisk\\.com/file/\\d+)\" target=\"_blank\">").getColumn(0);
+        String[] links = new Regex(results, "<a href=\"(https?://(www\\.)?" + domains + "/file/\\d+)\" title").getColumn(0);
+        if (links == null || links.length == 0) new Regex(results, "<a href=\"(https?://(www\\.)?" + domains + "/file/\\d+)\" target=\"_blank\">").getColumn(0);
         if (links != null && links.length != 0) {
             for (String dl : links)
                 ret.add(createDownloadlink(dl));
@@ -80,7 +83,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
         String[] folders = new Regex(results, "<a href=\"(/u/" + id + "/\\d+)\">").getColumn(0);
         if (folders != null && folders.length != 0) {
             for (String folder : folders) {
-                ret.add(createDownloadlink(new Regex(parameter, "(https?://(www\\.)?ctdisk\\.com)").getMatch(0) + folder));
+                ret.add(createDownloadlink(new Regex(parameter, "(https?://(www\\.)?" + domains + ")").getMatch(0) + folder));
             }
         }
         String nextPage = br.getRegex("<a href=\"(/u/" + id + "/\\d+(/\\d+)?)\" class=\"p_redirect\">\\&#8250;</a>").getMatch(0);

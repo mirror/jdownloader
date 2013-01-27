@@ -450,14 +450,14 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
-     * singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
-     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
-     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
-     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
-     * begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -723,7 +723,7 @@ public class OteUploadCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        final String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getMatches();
+        final String space[][] = new Regex(br, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
             // free users it's provided by default
             ai.setUsedSpace(space[0][0] + " " + space[0][1]);
@@ -732,7 +732,8 @@ public class OteUploadCom extends PluginForHost {
             ai.setUsedSpace(space[0][0] + "Mb");
         }
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD></TR>[\r\n\t ]+<TR><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        String availabletraffic = new Regex(br, "Traffic available.*?:</TD></TR>[\r\n\t ]+<TR><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        if (availabletraffic == null) availabletraffic = new Regex(br, "Traffic available[^\r\n\t]+:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             // need to set 0 traffic left, as getSize returns a positive result, even when negative value supplied.

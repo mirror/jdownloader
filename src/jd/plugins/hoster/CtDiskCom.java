@@ -41,7 +41,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "http://(www\\.)?(ctdisk|400gb|pipipan)\\.com/file/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "http://(www\\.)?(ctdisk|400gb|pipipan|t00y)\\.com/file/\\d+" }, flags = { 2 })
 public class CtDiskCom extends PluginForHost {
 
     private static final String DLLINKREGEX2 = ">电信限速下载</a>[\t\n\r ]+<a href=\"(http://.*?)\"";
@@ -54,7 +54,7 @@ public class CtDiskCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(ctdisk|pipipan)\\.com/", "400gb.com/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(ctdisk|pipipan|t00y)\\.com/", "400gb.com/"));
     }
 
     public void prepBrowser(final Browser br) {
