@@ -107,7 +107,7 @@ public class EightTracksCom extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
 
-        /* limit to 1000 API calls per minute */
+        /* limit to 100 API calls per minute */
         int call = 1;
         long a = 0, start = 0;
 
@@ -150,7 +150,7 @@ public class EightTracksCom extends PluginForDecrypt {
             }
             a += (System.currentTimeMillis() - start);
             call++;
-            if (call > 1000) {
+            if (call > 100) {
                 if (a < 60 * 1000l) {
                     sleep((60 * 1000l) - a, param);
                     call = 1;
