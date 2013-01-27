@@ -1,2 +1,4 @@
-interaction_externreconnect_command=命令行 (直接路径)
-interaction_externreconnect_parameter=参数 (每行1个参数)
+interaction_externreconnect_command=命令(使用绝对目录路径)
+interaction_externreconnect_dummybat=使用用于 Windows 的特殊执行者
+interaction_externreconnect_parameter=参数(每行 1 个参数)
+jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=外置工具重新连接
