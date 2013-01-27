@@ -1,11 +1,16 @@
+action_tooltip=启用在下载完成后关机的功能
 addons_jdshutdown_statusmessage_disabled=系统将不会被 JDownloader 关闭
 addons_jdshutdown_statusmessage_enabled=JDownloader 将会在下载完成后关闭您的系统!
+config_toolbarbutton=工具栏按钮可见
 gui_config_jdshutdown_close=关闭 JDownloader
 gui_config_jdshutdown_forceshutdown=强制关机(并不适用所有操作系统)
 gui_config_jdshutdown_hibernate=休眠(并不适用所有操作系统)
 gui_config_jdshutdown_mode=模式:
 gui_config_jdshutdown_shutdown=关机
 gui_config_jdshutdown_standby=待机(并不适用所有操作系统)
+install_force=安装强制关机
+install_msg=您是否想准备让您的系统准备好使用强制关机功能?
+install_title=安装强制关机
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader 将会关闭!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">系统将会进入休眠模式!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">系统将会关机!</font></h2>
@@ -16,3 +21,5 @@ interaction_shutdown_dialog_title_shutdown=关机吗?
 interaction_shutdown_dialog_title_standby=待机吗?
 jd_plugins_optional_jdshutdown=JD 关机
 jd_plugins_optional_jdshutdown_description=当下载完成时将会自动关闭、挂起、休眠您的电脑或关闭 JDownloader。
+lit_shutdownn=关机
+show_admin=设置 JDownloader 使用休眠或待机模式需要管理员权限

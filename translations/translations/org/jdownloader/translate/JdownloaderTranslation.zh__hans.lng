@@ -140,6 +140,7 @@ settings_sidebar_tooltip_enable_extension=启用/禁用这个扩展
 system_download_doCRC2=[%s1] CRC 正在运行
 system_download_doCRC2_failed=[%s1] CRC 已失败
 system_download_doCRC2_success=[%s1] CRC 已通过
+system_download_errors_couldnotdelete=不能删除已有的部分文件
 system_download_errors_couldnotoverwrite=不能覆盖存在的文件
 system_download_errors_couldnotrename=不能重命名 Part (部分)文件
 system_download_errors_invalidoutputfile=无效输出文件
