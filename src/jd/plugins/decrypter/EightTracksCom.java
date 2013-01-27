@@ -41,12 +41,14 @@ public class EightTracksCom extends PluginForDecrypt {
 
     private String createFilename() {
         String album = getClipData("release_name");
-        final String title = getClipData("name");
+        String title = getClipData("name");
         if (album == null || title == null) return null;
         if (album.contains(":")) album = album.substring(0, album.indexOf(":"));
         if (isEmpty(album)) album = title;
-        if (album.equals(title)) return Encoding.htmlDecode(title).trim();
-        return Encoding.htmlDecode(album + "__" + title).trim();
+        album = album.trim().replaceAll("\\[|\\]|\\(|\\)|\\.\\.\\.", "_");
+        title = title.trim().replaceAll("\\[|\\]|\\(|\\)|\\.\\.\\.", "_");
+        if (album.equals(title)) return Encoding.htmlDecode(title);
+        return Encoding.htmlDecode(album + "__" + title);
     }
 
     @Override
@@ -174,4 +176,5 @@ public class EightTracksCom extends PluginForDecrypt {
     private boolean isEmpty(String ip) {
         return ip == null || ip.trim().length() == 0;
     }
+
 }
