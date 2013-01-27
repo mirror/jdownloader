@@ -1,0 +1,8 @@
+jd_plugins_optional_infobar_InfoDialog_help=拖放区域
+jd_plugins_optional_infobar_InfoDialog_help_tooltip2=拖动 URLs、超链接或 DLC 文件到这里!
+jd_plugins_optional_infobar_InfoDialog_hideWindow=隐藏信息栏
+jd_plugins_optional_infobar_docking=启用停靠到边缘
+jd_plugins_optional_infobar_dropLocation2=启用投放位置
+jd_plugins_optional_infobar_jdinfobar=信息栏
+jd_plugins_optional_infobar_jdinfobar_description=带有实时下载方面的信息的小浮动面板，以及您可以添加链接、URL 或 DLC 文件的拖放区域。
+jd_plugins_optional_infobar_opacity=GUI 色深 [%]
