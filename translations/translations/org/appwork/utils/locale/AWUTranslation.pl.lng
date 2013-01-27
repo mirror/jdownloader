@@ -36,6 +36,7 @@ DIALOG_FILECHOOSER_helpButtonToolTipText=Pomoc dla Wyboru Pliku
 DIALOG_FILECHOOSER_homeFolderAccessibleName=Katalog Domowy
 DIALOG_FILECHOOSER_listViewButtonAccessibleName=Lista
 DIALOG_FILECHOOSER_lookInLabelText=Przejrzyj:
+DIALOG_FILECHOOSER_networkfolder=Sieć
 DIALOG_FILECHOOSER_newFolderAccessibleName=Nowy katalog
 DIALOG_FILECHOOSER_newFolderErrorText=Błąd tworzenia nowego katalogu.
 DIALOG_FILECHOOSER_newFolderParentDoesntExistText=Nie można utworzyć katalogu.\r\nSystem nie może odnaleźć wymienionej ścieżki.
