@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2012  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xunlei.com" }, urls = { "http://(www\\.)?kuai\\.xunlei\\.com/(d/[A-Z]{12}|download\\?[^\"\\'<>]+|s/[\\w\\-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xunlei.com" }, urls = { "http://(www\\.)?(kuai\\.xunlei\\.com/(d/([a-zA-Z]{1,2}\\-)?[a-zA-Z0-9]+|download\\?[^\"\\'<>]+|s/[\\w\\-]+)|f\\.xunlei\\.com/\\d+/file/[a-z0-9\\-]+)" }, flags = { 0 })
 public class XunleiComDecrypter extends PluginForDecrypt {
 
     public XunleiComDecrypter(PluginWrapper wrapper) {
@@ -64,7 +64,7 @@ public class XunleiComDecrypter extends PluginForDecrypt {
         }
         checks(parameter, br.getURL());
         // hoster download links
-        if (parameter.matches("http://(www\\.)?kuai\\.xunlei\\.com/(d/[A-Z]{12}|download\\?[^\"\\'<>]+)")) {
+        if (parameter.matches("http://(www\\.)?(kuai\\.xunlei\\.com/(d/([a-zA-Z]{1,2}\\-)?[a-zA-Z0-9]+|download\\?[^\"\\'<>]+)|f\\.xunlei\\.com/\\d+/file/[a-z0-9\\-]+)")) {
             parseDownload(decryptedLinks, parameter, parameter);
         }
         // folders with spanning page, + subpage support
@@ -95,22 +95,44 @@ public class XunleiComDecrypter extends PluginForDecrypt {
     }
 
     private void parseDownload(final ArrayList<DownloadLink> ret, final String parameter, final String dlparm) throws Exception {
-        br.getPage(dlparm);
-        checks(parameter, br.getURL());
-        String fpName = br.getRegex("<span style=\"color:gray\">下载 (.*?) 分享的文件</span>").getMatch(0);
-        if (fpName == null) fpName = new Regex(parameter, "([A-Z0-9]+)$").getMatch(0);
-        final String[] links = br.getRegex("\"(http://dl\\d+\\.[a-z]+\\d+\\.sendfile\\.vip\\.xunlei\\.com:\\d+/[^<>\"]+)").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return;
+        if (!br.getURL().matches(dlparm)) {
+            br.getPage(dlparm);
         }
-        HashSet<String> fLinks = new HashSet<String>();
-        for (final String aLink : links) {
-            if (fLinks.add(aLink) == false) continue;
-            final DownloadLink dl = createDownloadlink(aLink);
-            dl.setProperty("origin", parameter);
-            dl.setAvailable(true);
-            ret.add(dl);
+        checks(parameter, br.getURL());
+        // think this old and out dated.
+        String fpName = br.getRegex("<span style=\"color:gray\">下载 (.*?) 分享的文件</span>").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("file_name=\"([^\"]+)").getMatch(0);
+            if (fpName == null) {
+                // for f.xunlei
+                fpName = br.getRegex("<h3 id=\"c_counts\">[\r\n\t ]+(.+?)</h3>").getMatch(0);
+                if (fpName == null) {
+                    fpName = new Regex(parameter, "([A-Z0-9]+)$").getMatch(0);
+                }
+            }
+        }
+        // video links?
+        if (br.getURL().matches("https?://f\\.xunlei\\.com/\\d+/file/[a-z0-9\\-]+.+")) {
+            // not supported yet..
+            return;
+        } else {
+            final String[] links = br.getRegex("\"(http://(dl\\d+\\.[a-z]+\\d+\\.sendfile\\.vip\\.xunlei\\.com|([1-2]?[0-9]{1,2}\\.){3}[1-2]?[0-9]{1,2}):\\d+/[^<>\"]+)").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return;
+            }
+            HashSet<String> fLinks = new HashSet<String>();
+            for (final String aLink : links) {
+                if (aLink.trim().matches("https?://(192\\.168\\.[^/]+|127\\.0\\.0\\.1|10\\.[^/]+):\\d+/.+")) {
+                    logger.info("Invalid URLs found (LAN or localhost subnets).");
+                    continue;
+                }
+                if (fLinks.add(aLink) == false) continue;
+                final DownloadLink dl = createDownloadlink(aLink);
+                dl.setProperty("origin", parameter);
+                dl.setAvailable(true);
+                ret.add(dl);
+            }
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

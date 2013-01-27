@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@ public class XunleiCom extends PluginForHost {
         } catch (final Throwable e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -5);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -3);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
