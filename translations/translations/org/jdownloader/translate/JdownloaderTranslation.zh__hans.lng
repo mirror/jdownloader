@@ -1,5 +1,5 @@
 DownloadWatchDog_onShutdownRequest_=下载在处理中!
-DownloadWatchDog_onShutdownRequest_msg=您是否想停止运行中的下载以退出 JDownloader?
+DownloadWatchDog_onShutdownRequest_msg=您是否想要停止正在进行的下载以退出JDownloader?
 DownloadWatchDog_onShutdownRequest_nonresumable=非可续传下载在处理中!
 DuplicateAction_DuplicateAction_=重复规则
 ExportAction_ExportAction_tt=保存规则到一个文件。\n\n- 备份\n\n- 与他人分享
@@ -32,7 +32,7 @@ captchacontroller_cancel_dialog_allorhost_cancelhost=不显示 %s1 的待定验�
 captchacontroller_cancel_dialog_allorhost_msg=您已取消了一个验证码对话框!\n\n您想如何继续?
 captchacontroller_cancel_dialog_allorhost_next=显示所有进一步待定的验证码
 configheader_enabled=启用
-controller_packages_defaultname=各种
+controller_packages_defaultname=多种
 controller_status_connectionproblems=连接丢失
 controller_status_containererror=容器错误
 controller_status_fileexists_overwritefailed=无法覆盖
