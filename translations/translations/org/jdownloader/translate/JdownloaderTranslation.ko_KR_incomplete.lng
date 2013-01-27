@@ -1,8 +1,11 @@
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=오프라인 파일
 PackagizerSettings_folderbypackage_rule_name=패키지 이름으로 하위 폴더 만들기
-gui_settings__gui_title=룩 & 필
+gui_menu_extensions=도구
+gui_settings__gui_title=Look And Feel
 gui_settings_basicauth_title=기본 인증
+gui_settings_downloadcontroll_description=다운로드 제어에서 사용될 최대 연결 수, 다운로드 순서, 우선순위 등의 설정입니다.
 gui_settings_downloadcontroll_title=다운로드 관리
+gui_settings_downloadpath_description=기본 다운로드 경로 설정입니다. 설정이 변경 된 후 시작된 다운로드에만 적용됩니다.
 gui_settings_extensions_description=확장 모듈
 gui_settings_general_title=일반
 gui_settings_plugins_title=플러그인 설정
