@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2012  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -80,7 +80,10 @@ public class ReplikPl extends PluginForHost {
         final String token = getJson("token", brClone);
         if (token == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "download token is null!"); }
         try {
-            finalLink = "http://" + link.getHost() + finalLink + "?token=" + token;
+            if (finalLink.contains("http://")) {
+                finalLink = finalLink + "?token=" + token;
+            } else
+                finalLink = "http://" + link.getHost() + finalLink + "?token=" + token;
 
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, maxChunksForFree.get());
         } catch (Exception e) {
@@ -105,6 +108,7 @@ public class ReplikPl extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         // Link offline
         if (br.containsHTML("Element nie może zostać wyświetlony")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
