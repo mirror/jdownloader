@@ -16,12 +16,17 @@
 
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -32,6 +37,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class FreeWayMe extends PluginForHost {
@@ -68,7 +75,10 @@ public class FreeWayMe extends PluginForHost {
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        page = br.getPage("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + pass);
+        String cryptPass = JDHash.getSHA1(username.toLowerCase() + pass);
+        // sha1(strtolower($benutzername) . html_entity_decode($passwort) )
+        page = br.getPage("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + cryptPass);
+
         // "Invalid login" / "Banned" / "Valid login"
         if (page.equalsIgnoreCase("Valid login")) {
             account.setValid(true);
@@ -89,6 +99,13 @@ public class FreeWayMe extends PluginForHost {
         }
         // account should be valid now, let's get account information:
         page = br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username);
+
+        if (page.contains("API deaktiviert")) {
+            showApiDisabledDialog();
+            ac.setStatus("API disabled");
+            account.setTempDisabled(true);
+            return ac;
+        }
         int maxPremi = 1;
         final String maxPremApi = getJson("parallel", br.toString());
         if (maxPremApi != null) maxPremi = Integer.parseInt(maxPremApi);
@@ -152,9 +169,10 @@ public class FreeWayMe extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
         String user = Encoding.urlEncode(acc.getUser());
-        String pw = Encoding.urlEncode(acc.getPass());
         String url = Encoding.urlEncode(link.getDownloadURL());
-        String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url;
+
+        String cryptPass = JDHash.getSHA1(user.toLowerCase() + Encoding.htmlDecode(acc.getPass()));
+        String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + cryptPass + "&url=" + url;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -245,4 +263,44 @@ public class FreeWayMe extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    private String htmlEntityDecode(String s) {
+        HashMap<String, String> map = new HashMap<String, String>();
+        // map.put("§", "&sect;");
+
+        // Set<String> keys = map.keySet();
+        // for (String key : keys) {
+        // s.replaceAll(key, map.get(key));
+        // }
+        return s;
+    }
+
+    private static void showApiDisabledDialog() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        String tab = "                        ";
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = " API deaktiviert";
+                            message = "Du hast free-way API deaktiviert. Diese wird jedoch zum Downloaden benötigt.\r\n" + "Möchtest Du diese aktivieren?";
+                        } else {
+                            title = "API disabled";
+                            message = "The free-way API seems to be disabled. To use jdownloader you need to enable it.";
+                        }
+                        if (CrossSystem.isOpenBrowserSupported()) {
+                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
+                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("https://www.free-way.me/account?api_enable"));
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
 }
