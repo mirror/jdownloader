@@ -77,7 +77,9 @@ public class MediaHideCom extends PluginForDecrypt {
                 return null;
             }
             for (String singleLink : links) {
-                if (singleLink.matches("http://(www\\.)?mediahide\\.com/(\\?[A-Za-z0-9]+|paste/\\?p=\\d+|paste/[A-Za-z0-9\\-]+)")) continue;
+                if (singleLink.matches("http://(www\\.)?mediahide\\.com/paste/[A-Za-z0-9\\-]+(/.*)?")) continue;
+                if (singleLink.matches("http://(www\\.)?mediahide\\.com/paste/\\?p=\\d+(.*)?")) continue;
+                if (singleLink.matches("http://(www\\.)?mediahide\\.com/\\?[A-Za-z0-9]+(.*)?")) continue;
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
             if (fpName != null) {
