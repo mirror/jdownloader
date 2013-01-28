@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkhalt.com" }, urls = { "http://(www\\.)?(umediafire|linkhalt)\\.com/\\?d=[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkhalt.com" }, urls = { "http://(www\\.)?(umediafire|linkhalt)\\.com/(\\?d=[A-Za-z0-9]+|index\\.php\\?p=[\\da-zA-Z]+)" }, flags = { 0 })
 public class UMediafireCom extends PluginForDecrypt {
 
     public UMediafireCom(PluginWrapper wrapper) {
@@ -38,52 +38,78 @@ public class UMediafireCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("umediafire.com/", "linkhalt.com/");
         br.getPage(parameter);
-        if (br.containsHTML(">Sorry, file is not exist or has been deleted")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        final String iFrame = br.getRegex("\"(index\\.php\\?get=\\d+)\"").getMatch(0);
-        if (iFrame == null) {
-            if (br.getRedirectLocation() != null) {
-                String link = br.getRedirectLocation();
-                br.getPage(link);
-                decryptedLinks.add(createDownloadlink(link));
-                return decryptedLinks;
+
+        if (parameter.contains("/index.php?p=")) {
+            if (br.containsHTML("Requested page not found\\.")) {
+                logger.info("Link offline: " + parameter);
+                 return decryptedLinks;
             }
-            logger.info("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        br.getPage("http://linkhalt.com/" + iFrame);
-        if (br.containsHTML("google\\.com/recaptcha")) {
-            if (br.containsHTML("google\\.com/recaptcha")) {
-                for (int i = 0; i <= 5; i++) {
-                    final String captchaLink = br.getRegex("var captcha = \"(https?://[^<>\"]*?)\";").getMatch(0);
-                    final String challenge = br.getRegex("var captchaInput = \"([^<>\"]*?)\"").getMatch(0);
-                    if (captchaLink == null || challenge == null) {
-                        logger.info("Decrypter broken for link: " + parameter);
-                        return null;
-                    }
-                    final String code = getCaptchaCode(captchaLink, param);
-                    br.postPage("http://umediafire.com/index.php", "type=captcha&proxy=0&get=" + new Regex(iFrame, "(\\d+)$").getMatch(0) + "&recaptcha_challenge_field=" + challenge + "&captcha=" + code);
-                    logger.warning(br.toString());
-                    if (br.containsHTML("google\\.com/recaptcha")) continue;
-                    break;
+            String[] links = br.getRegex("(https?://[^<>]+)</a></div>").getColumn(0);
+            if (links != null && links.length > 0) {
+                for (String link : links) {
+                    decryptedLinks.add(createDownloadlink(link));
                 }
-                if (br.containsHTML("google\\.com/recaptcha")) throw new Exception(DecrypterException.CAPTCHA);
             }
-        }
-        final String fastWay = br.getRegex("var check = \\'http://\\d+\\.\\d+\\.\\d+\\.\\d+/[a-z0-9]+/([a-z0-9]+)").getMatch(0);
-        if (fastWay == null) {
-            final String finallink = br.getRegex("var link = \"(http://[^<>\"]*?)\";").getMatch(0);
-            if (finallink == null) {
+            return decryptedLinks;
+        } else {
+            // the following string is always present in html, you need js confirmation.
+            //if (br.containsHTML(">Sorry, file is not exist or has been deleted")) {
+            //    logger.info("Link offline: " + parameter);
+            //    return decryptedLinks;
+            //}
+            final String iFrame = br.getRegex("\"(index\\.php\\?get=\\d+)\"").getMatch(0);
+            if (iFrame == null) {
+                if (br.getRedirectLocation() != null) {
+                    String link = br.getRedirectLocation();
+                    br.getPage(link);
+                    decryptedLinks.add(createDownloadlink(link));
+                    return decryptedLinks;
+                }
                 logger.info("Decrypter broken for link: " + parameter);
                 return null;
             }
-            decryptedLinks.add(createDownloadlink(finallink));
-        } else {
-            decryptedLinks.add(createDownloadlink("http://mediafire.com/?" + fastWay));
+            br.getPage("http://linkhalt.com/" + iFrame);
+            /* <script>
+                var data = 1;
+                var ori = "4it9yibit35i3xt";
+                var type = 2;
+                var restore = 1;
+
+                </script>
+             * */
+            // required js = http://linkhalt.com/styles/default/javascript/download.js
+            
+            if (br.containsHTML("google\\.com/recaptcha")) {
+                if (br.containsHTML("google\\.com/recaptcha")) {
+                    for (int i = 0; i <= 5; i++) {
+                        final String captchaLink = br.getRegex("var captcha = \"(https?://[^<>\"]*?)\";").getMatch(0);
+                        final String challenge = br.getRegex("var captchaInput = \"([^<>\"]*?)\"").getMatch(0);
+                        if (captchaLink == null || challenge == null) {
+                            logger.info("Decrypter broken for link: " + parameter);
+                            return null;
+                        }
+                        final String code = getCaptchaCode(captchaLink, param);
+                        br.postPage("http://umediafire.com/index.php", "type=captcha&proxy=0&get=" + new Regex(iFrame, "(\\d+)$").getMatch(0) + "&recaptcha_challenge_field=" + challenge + "&captcha=" + code);
+                        logger.warning(br.toString());
+                        if (br.containsHTML("google\\.com/recaptcha")) continue;
+                        break;
+                    }
+                    if (br.containsHTML("google\\.com/recaptcha")) throw new Exception(DecrypterException.CAPTCHA);
+                }
+            }
+            final String fastWay = br.getRegex("var check = \\'http://\\d+\\.\\d+\\.\\d+\\.\\d+/[a-z0-9]+/([a-z0-9]+)").getMatch(0);
+            if (fastWay == null) {
+                final String finallink = br.getRegex("var link = \"(http://[^<>\"]*?)\";").getMatch(0);
+                if (finallink == null) {
+                    logger.info("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                decryptedLinks.add(createDownloadlink(finallink));
+            } else {
+                decryptedLinks.add(createDownloadlink("http://mediafire.com/?" + fastWay));
+            }
+            return decryptedLinks;
         }
-        return decryptedLinks;
     }
 
 }
