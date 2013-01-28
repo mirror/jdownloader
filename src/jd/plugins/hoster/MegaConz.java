@@ -39,7 +39,7 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "https?://(www\\.)?mega\\.co\\.nz/#![a-zA-Z0-9]+![a-zA-Z0-9_,\\-]+" }, flags = { 0 })
 public class MegaConz extends PluginForHost {
     private static AtomicLong CS      = new AtomicLong(System.currentTimeMillis());
-    private final String      USE_SSL = "USE_SSL";
+    private final String      USE_SSL = "USE_SSL_V2";
 
     public MegaConz(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,7 +52,7 @@ public class MegaConz extends PluginForHost {
     }
 
     private String useSSL() {
-        if (getPluginConfig().getBooleanProperty(USE_SSL, true)) {
+        if (getPluginConfig().getBooleanProperty(USE_SSL, false)) {
             return "1";
         } else {
             return "0";
@@ -191,7 +191,7 @@ public class MegaConz extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(false));
     }
 
     private void decrypt(DownloadLink link, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IOException {
