@@ -166,11 +166,16 @@ public class VKontakteRuHoster extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         try {
             if (this.getPluginConfig().getBooleanProperty(USECOOKIELOGIN, false)) {
+                logger.info("Logging in with cookies.");
                 login(br, account, false);
+                logger.info("Logged in successfully with cookies...");
             } else {
+                logger.info("Logging in without cookies (forced login)...");
                 login(br, account, true);
+                logger.info("Logged in successfully without cookies (forced login)!");
             }
         } catch (PluginException e) {
+            logger.info("Login failed!");
             account.setValid(false);
             return ai;
         }

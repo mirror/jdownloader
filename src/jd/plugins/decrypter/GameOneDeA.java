@@ -124,7 +124,7 @@ public class GameOneDeA extends PluginForDecrypt {
                     br.getPage(parameter);
                 }
             }
-            if (!br.containsHTML("player/js/swfobject\\.js")) {
+            if (!br.containsHTML("\"player_swf\"")) {
                 logger.info("Wrong/Unsupported link: " + parameter);
                 return decryptedLinks;
             }

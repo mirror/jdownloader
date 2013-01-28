@@ -82,7 +82,7 @@ public class DivxStageNet extends PluginForHost {
             br.getPage("http://divxstage.eu/api/player.api.php?file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&user=undefined&key=" + Encoding.urlEncode(fkey) + "&pass=undefined&codes=1");
             DLLINK = br.getRegex("url=(http://[^<>\"]*?)\\&").getMatch(0);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            Browser br2 = br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = br2.openGetConnection(DLLINK);
@@ -92,7 +92,7 @@ public class DivxStageNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (filename.trim().equals("Untitled")) {
-            downloadLink.setFinalFileName("Video " + System.currentTimeMillis() + ".avi");
+            downloadLink.setFinalFileName("Video " + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".avi");
         } else {
             downloadLink.setFinalFileName(filename + ".flv");
         }

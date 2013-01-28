@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -94,13 +95,24 @@ public class ChipDe extends PluginForHost {
     // Sprache abändern. Somit muss man alle Sprachen manuell einbauen oder
     // bessere Regexes finden, die überall funktionieren
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("ISO-8859-1");
-        br.getPage(link.getDownloadURL());
+
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getDownloadURL());
+            if (con.getResponseCode() == 410) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+
         br.setFollowRedirects(false);
-        if (br.containsHTML("Seite nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)\\- Download \\- CHIP Online</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("somtr\\.prop18=\"(.*?)\";").getMatch(0);

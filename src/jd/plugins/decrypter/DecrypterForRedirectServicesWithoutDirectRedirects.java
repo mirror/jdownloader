@@ -394,23 +394,14 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 finallink = br.getRegex("<div id=\"removeFrame\">\\&raquo; <a href=\"(.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("eskimotube.com/")) {
-            finallink = br.getRegex("<font face=arial size=2 color=black><b><a href=(http://.*?)>").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("overlayId: \\'play\\' \\},[\t\n\r ]+\\{ url: \\'/movie\\.php\\?movie=(.*?)\\'").getMatch(0);
-                if (finallink != null) {
-                    finallink = Encoding.Base64Decode(finallink);
-                }
-            }
-            finalfilename = br.getRegex("<b><font color=green size=\\+1>(.*?)</font></b><br>").getMatch(0);
-            String name2 = br.getRegex("Scene Info: <b><font color=brown>(.*?)</font></b><br>").getMatch(0);
-            if (name2 == null) {
-                name2 = br.getRegex("<TITLE>EskimoTube\\.com - Streaming Videos of .*? \\- (.*?) \\- Pornstars And Centerfolds\\.</title>").getMatch(0);
-            }
+            finalfilename = br.getRegex("<TITLE>EskimoTube\\.com \\- Streaming Videos of Unknown \\-([^<>\"]*?)\\- Pornstars And Centerfolds\\.</title>").getMatch(0);
+            br.getPage("http://www.eskimotube.com/playlist-live.php?id=" + new Regex(parameter, "eskimotube\\.com/(\\d+)").getMatch(0));
+            finallink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
             if (finalfilename == null) {
                 finalfilename = br.getRegex("<TITLE>EskimoTube\\.com - Streaming Videos of (.*?) \\- ").getMatch(0);
             }
-            if (finalfilename != null && finallink != null && name2 != null) {
-                finalfilename += " - " + name2 + finallink.substring(finallink.length() - 4, finallink.length());
+            if (finalfilename != null && finallink != null) {
+                finalfilename += "." + finallink.substring(finallink.length() - 4, finallink.length());
             }
             dh = true;
         } else if (parameter.contains("linkexterno.com/")) {

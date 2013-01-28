@@ -41,6 +41,10 @@ public class UpstoReFolder extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML(">Folder is empty<")) {
+            logger.info("Folderlink is empty: " + parameter);
+            return decryptedLinks;
+        }
         final String[] links = br.getRegex("<td class=\"left\"><a href=\"(/[A-Za-z0-9]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

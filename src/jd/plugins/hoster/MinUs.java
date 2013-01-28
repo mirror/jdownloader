@@ -50,8 +50,7 @@ public class MinUs extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         /**
-         * More will work fine for pictures but will cause server errors for
-         * other links
+         * More will work fine for pictures but will cause server errors for other links
          */
         return 2;
     }
@@ -61,7 +60,9 @@ public class MinUs extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<h2>Not found\\.</h2>|<p>Our records indicate that the gallery/image you are referencing has been deleted or does not exist|The page you requested does not exist)") || br.containsHTML("\"items\": \\[\\]") || br.containsHTML("class=\"guesthomepage_cisi_h1\">Upload and share your files instantly") || br.containsHTML(">The folder you requested has been deleted or has expired")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Decrypter marks it as offline
+        if (link.getBooleanProperty("offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<h2>Not found\\.</h2>|<p>Our records indicate that the gallery/image you are referencing has been deleted or does not exist|The page you requested does not exist)") || br.containsHTML("\"items\": \\[\\]") || br.containsHTML("class=\"guesthomepage_cisi_h1\">Upload and share your files instantly") || br.containsHTML(">The folder you requested has been deleted or has expired") || br.containsHTML(">You\\'re invited to join Minus")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("\\'name\\': \\'([^<>\"]*?)\\'").getMatch(0);
         if (filename == null) filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?) \\- Minus\"").getMatch(0);
@@ -76,8 +77,7 @@ public class MinUs extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         /**
-         * Resume/Chunks depends on link and/or fileserver so to prevent errors
-         * we deactivate it
+         * Resume/Chunks depends on link and/or fileserver so to prevent errors we deactivate it
          */
         // Sometimes servers are pretty slow
         br.setReadTimeout(3 * 60);

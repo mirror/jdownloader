@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.co", "nowvideo.eu" }, urls = { "http://(www\\.)?(nowvideo\\.(eu|co)/(video/|player\\.php\\?v=)|embed\\.nowvideo\\.eu/embed\\.php\\?v=)[a-z0-9]+", "fvhg43zop89rghfc4p0zhjtiogDELETEMEdgz6uz5jhmnbrfdswf" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.co", "nowvideo.eu" }, urls = { "http://(www\\.)?(nowvideo\\.(eu|co)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.eu/embed\\.php\\?v=)[a-z0-9]+", "fvhg43zop89rghfc4p0zhjtiogDELETEMEdgz6uz5jhmnbrfdswf" }, flags = { 2, 0 })
 public class NowVideoEu extends PluginForHost {
 
     public NowVideoEu(PluginWrapper wrapper) {
@@ -100,9 +100,8 @@ public class NowVideoEu extends PluginForHost {
     }
 
     /**
-     * Dev note: Never buy premium from them, as freeuser you haveno limits, as
-     * premium neither and you can't even download the original videos as
-     * premiumuser->Senseless!!
+     * Dev note: Never buy premium from them, as freeuser you haveno limits, as premium neither and you can't even download the original
+     * videos as premiumuser->Senseless!!
      */
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
