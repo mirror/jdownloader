@@ -15,7 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package jd;
+package org.jdownloader.startup;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -24,6 +24,7 @@ import java.util.Enumeration;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import jd.Launcher;
 import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 import jd.gui.swing.laf.LookAndFeelController;
 
@@ -37,7 +38,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.logging.ExtLogManager;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.startup.ParameterHandler;
 
 public class Main {
 
