@@ -18,6 +18,13 @@ public interface UpdateSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("If enabled, JD will install Updates silently during the next JDStart")
+    boolean isDoNotAskJustInstallOnNextStartupEnabled();
+
+    void setDoNotAskJustInstallOnNextStartupEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Jar diffs speed up the update process because it reduces the update package size a lot. Do NOT disable this without a very good reason")
     boolean isJarDiffEnabled();
 

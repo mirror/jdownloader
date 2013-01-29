@@ -317,7 +317,7 @@ public class UpdateController implements UpdateCallbackInterface {
         try {
             if (handler.hasPendingSelfupdate()) {
                 if (!isThreadConfirmed()) {
-
+                    if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) return;
                     Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message(), null, _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
 
                     setUpdateConfirmed(true);
@@ -360,6 +360,7 @@ public class UpdateController implements UpdateCallbackInterface {
             } else {
                 if (!isThreadConfirmed()) {
 
+                    if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) return;
                     List<String> rInstalls = handler.getRequestedInstalls();
                     List<String> ruInstalls = handler.getRequestedUnInstalls();
                     if (rInstalls.size() > 0 || ruInstalls.size() > 0) {
@@ -371,6 +372,7 @@ public class UpdateController implements UpdateCallbackInterface {
                     setUpdateConfirmed(true);
                     handler.setGuiVisible(true, true);
                 }
+
                 UpdateController.getInstance().installUpdates(awfoverview);
             }
         } catch (DialogNoAnswerException e) {
