@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -63,20 +64,22 @@ public class FileImCom extends PluginForHost {
         requestFileInformation(downloadLink);
         final String fid = br.getRegex("download\\.fid=\"(\\d+)\"").getMatch(0);
         if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://www.fileim.com/ajax/download/getTimer.ashx");
-        String waittime = br.getRegex("(\\d+)_\\d+").getMatch(0);
-        if (waittime == null) waittime = br.getRegex("(\\d+)").getMatch(0);
+        Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.getPage("/ajax/download/getTimer.ashx");
+        String waittime = br2.getRegex("(\\d+)_\\d+").getMatch(0);
+        if (waittime == null) waittime = br2.getRegex("(\\d+)").getMatch(0);
         int wait = 150;
         if (waittime != null) wait = Integer.parseInt(waittime);
         // Bigger than 10 minutes? Let's reconnect!
         if (wait >= 600) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        // This request can be skipped but we do it anyways
-        br.getPage("http://www.fileim.com/ajax/download/setTimer.ashx?fid=" + fid + "&f=0");
+        br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.getPage("/ajax/getKey.ashx");
         sleep(wait * 1001l, downloadLink);
-        br.getPage("http://www.fileim.com/libs/downloader.aspx?a=0%2C" + new Regex(downloadLink.getDownloadURL(), "/file/([a-z0-9]{16})").getMatch(0) + "&f=0");
-        String dllink = br.getRegex("<div class=\"downarea\">([\r\n\t ]+)?<a href=\"(https?://[^\"]+)").getMatch(1);
-        if (dllink == null) dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fileim\\.com/download\\.ashx\\?a=[^\"]+)").getMatch(0);
+        br.getPage("http://www.fileim.com/libs/downloader.aspx?a=0%2C" + new Regex(downloadLink.getDownloadURL(), "/file/([a-z0-9]{16})").getMatch(0) + "%2C0");
+        String dllink = br.getRegex("class=\"downarea\">([\r\n\t ]+)?<a href=\"(https?://[^\"]+)").getMatch(1);
+        if (dllink == null) dllink = br.getRegex("\"(https?://([a-z0-9]+\\.fileim\\.com|([1-2]?[0-9]{1,2}\\.){3}[1-2]?[0-9]{1,2})/download\\.ashx\\?a=[^\"]+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);

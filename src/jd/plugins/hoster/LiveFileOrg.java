@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livefile.org" }, urls = { "https?://(www\\.)?livefile\\.org/get/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livefile.org" }, urls = { "https?://(www\\.)?livefile\\.org/get/[A-Za-z0-9]+" }, flags = { 2 })
 public class LiveFileOrg extends PluginForHost {
 
     public LiveFileOrg(PluginWrapper wrapper) {

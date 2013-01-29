@@ -95,6 +95,7 @@ public class CloudyLoadCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "?d=1", RESUME, MAXCHUNKS);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            handleErrors();
             final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
             final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
             if (rcID == null || captchaAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -117,6 +118,7 @@ public class CloudyLoadCom extends PluginForHost {
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            handleErrors();
             if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -190,9 +192,21 @@ public class CloudyLoadCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            handleErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleErrors() throws PluginException {
+        if (br.containsHTML(">Error: Could not open file for reading.<")) {
+            logger.warning("Hoster Error : Could not open file for reading.");
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        } else if (br.getURL().contains("/error.html")) {
+            logger.warning("Hoster Error : Uncaught error by our plugin, please report this to JDownloader Development Team.");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
     }
 
     @Override
