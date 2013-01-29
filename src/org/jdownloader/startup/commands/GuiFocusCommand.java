@@ -11,7 +11,7 @@ import org.jdownloader.extensions.ExtensionController;
 public class GuiFocusCommand extends AbstractStartupCommand {
 
     public GuiFocusCommand() {
-        super("focus", "f");
+        super("focus", "f", "afterupdate");
 
     }
 
