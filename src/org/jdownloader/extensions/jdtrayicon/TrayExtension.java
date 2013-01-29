@@ -588,6 +588,17 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
     }
 
+    @Override
+    public void handleCommand(String command, String... parameters) {
+
+        if (command.equals("focus") || command.equals("f")) {
+            miniIt(false);
+        } else if (command.equals("minimize") || command.equals("m")) {
+            miniIt(true);
+        }
+
+    }
+
     private OnCloseAction windowClosedTray(final WindowEvent e) {
         final OnCloseAction[] ret = new OnCloseAction[1];
         ret[0] = null;

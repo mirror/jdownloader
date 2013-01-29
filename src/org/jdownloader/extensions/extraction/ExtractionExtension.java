@@ -21,6 +21,8 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -460,6 +462,29 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         broadcaster.fireEvent(event);
     }
 
+    @Override
+    public void handleCommand(String command, String... parameters) {
+
+        if (command.equalsIgnoreCase("add-passwords") || command.equalsIgnoreCase("add-passwords") || command.equalsIgnoreCase("p")) {
+            List<String> lst = getSettings().getPasswordList();
+            ArrayList<String> ret = new ArrayList<String>();
+            if (lst != null) ret.addAll(lst);
+            Collection<String> newPws = Arrays.asList(parameters);
+            ret.removeAll(newPws);
+            ret.addAll(0, newPws);
+            getSettings().setPasswordList(ret);
+            logger.info("Added Passwords: " + newPws + " New List Size: " + ret.size());
+
+        }
+
+    }
+
+    // public void handleStartupParameters(ParameterParser parameters) {
+    // +#
+    // cs=parameters.getCommandSwitch(")
+    //
+    // ;
+    // }
     @Override
     protected void initExtension() throws StartException {
         /* import old passwordlist */

@@ -37,8 +37,11 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.logging.ExtLogManager;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.startup.ParameterHandler;
 
 public class Main {
+
+    public static ParameterHandler PARAMETER_HANDLER = null;
 
     static {
         // only use ipv4, because debian changed default stack to ipv6
@@ -201,6 +204,8 @@ public class Main {
             e.printStackTrace();
         }
 
+        PARAMETER_HANDLER = new ParameterHandler();
+        PARAMETER_HANDLER.onStartup(args);
         jd.Launcher.mainStart(args);
 
     }

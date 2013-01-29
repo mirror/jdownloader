@@ -17,7 +17,6 @@
 package org.jdownloader.extensions;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
@@ -122,9 +121,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /**
-     * Returns the internal storage. Most of the configvalues are for internal
-     * use only. This config only contains values which are valid for all
-     * extensions
+     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid
+     * for all extensions
      * 
      * @return
      */
@@ -167,9 +165,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      * 
      * @param translationInterface
      * @param contentType
-     *            name of this plugin. Until JD 2.* we should use null here to
-     *            use the old defaultname. we used to sue this localized name as
-     *            config key.
+     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name
+     *            as config key.
      * @throws
      * @throws StartException
      */
@@ -183,8 +180,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /*
-     * Dirty workaround for old Extensions to save primitive data inside the new
-     * ConfigSystem
+     * Dirty workaround for old Extensions to save primitive data inside the new ConfigSystem
      */
     /* Those Plugins should be rewritten to use new ConfigSystem correct! */
     @Deprecated
@@ -200,8 +196,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
                 {
                     /*
-                     * Workaround to make sure the internal HashMap of
-                     * JSonStorage is set to Property HashMap
+                     * Workaround to make sure the internal HashMap of JSonStorage is set to Property HashMap
                      */
                     store.getStorageHandler().getPrimitiveStorage().getInternalStorageMap().put("addWorkaround", true);
                     this.setProperties(store.getStorageHandler().getPrimitiveStorage().getInternalStorageMap());
@@ -212,8 +207,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
                 public void setProperty(String key, Object value) {
                     super.setProperty(key, value);
                     /*
-                     * this changes changeFlag in JSonStorage to signal that it
-                     * must be saved
+                     * this changes changeFlag in JSonStorage to signal that it must be saved
                      */
                     store.getStorageHandler().getPrimitiveStorage().put("saveWorkaround", System.currentTimeMillis());
                 }
@@ -267,8 +261,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /**
-     * Gets called once per session as soon as the extension gets loaded the
-     * first time
+     * Gets called once per session as soon as the extension gets loaded the first time
      * 
      * @throws StartException
      */
@@ -354,6 +347,9 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
     public boolean isQuickToggleEnabled() {
         return false;
+    }
+
+    public void handleCommand(String command, String... parameters) {
     }
 
 }

@@ -33,8 +33,6 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import jd.captcha.JACController;
-import jd.captcha.JAntiCaptcha;
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -55,8 +53,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
-import org.appwork.app.launcher.parameterparser.CommandSwitch;
-import org.appwork.app.launcher.parameterparser.CommandSwitchListener;
 import org.appwork.app.launcher.parameterparser.ParameterParser;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.shutdown.ShutdownController;
@@ -74,9 +70,6 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.singleapp.AnotherInstanceRunningException;
-import org.appwork.utils.singleapp.InstanceMessageListener;
-import org.appwork.utils.singleapp.SingleAppInstance;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -227,22 +220,7 @@ public class Launcher {
         }
         Launcher.LOG.info("JDownloader");
         PARAMETERS = RestartController.getInstance().getParameterParser(args);
-        PARAMETERS.getEventSender().addListener(new CommandSwitchListener() {
 
-            @Override
-            public void executeCommandSwitch(CommandSwitch event) {
-                if ("debug".equalsIgnoreCase(event.getSwitchCommand())) {
-
-                    Launcher.LOG.info("Activated JD Debug Mode");
-                } else if ("brdebug".equalsIgnoreCase(event.getSwitchCommand())) {
-                    Browser.setGlobalVerbose(true);
-                    Launcher.LOG.info("Activated Browser Debug Mode");
-                } else if ("update".equalsIgnoreCase(event.getSwitchCommand())) {
-                    JDInitFlags.REFRESH_CACHE = true;
-                    Launcher.LOG.info("RefreshCache=true");
-                }
-            }
-        });
         PARAMETERS.parse(null);
 
         if (PARAMETERS.hasCommandSwitch("scanextensions")) {
@@ -268,71 +246,7 @@ public class Launcher {
 
         Launcher.preInitChecks();
 
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-prot")) {
-                Launcher.LOG.finer(args[i] + " " + args[i + 1]);
-                i++;
-            } else if (args[i].equals("--help") || args[i].equals("-h")) {
-                ParameterManager.showCmdHelp();
-                System.exit(0);
-            } else if (args[i].equals("--captcha") || args[i].equals("-c")) {
-
-                if (args.length > i + 2) {
-                    Launcher.LOG.setLevel(Level.OFF);
-                    final String captchaValue = JAntiCaptcha.getCaptcha(args[i + 1], args[i + 2]);
-                    System.out.println(captchaValue);
-                    System.exit(0);
-                } else {
-                    System.out.println("Error: Please define filepath and JAC method");
-                    System.out.println("Usage: java -jar JDownloader.jar --captcha /path/file.png example.com");
-                    System.exit(0);
-                }
-            }
-        }
-        if (PARAMETERS.hasCommandSwitch("show") || PARAMETERS.hasCommandSwitch("s")) {
-            Launcher.LOG.info("Show Captcha (JAC)");
-            JACController.showDialog(false);
-            System.exit(0);
-        } else if (PARAMETERS.hasCommandSwitch("train") || PARAMETERS.hasCommandSwitch("t")) {
-            Launcher.LOG.info("Train Captcha (JAC)");
-            JACController.showDialog(true);
-            System.exit(0);
-        }
-        boolean instanceStarted = false;
-        SingleAppInstance SINGLE_INSTANCE_CONTROLLER = null;
-        try {
-            SINGLE_INSTANCE_CONTROLLER = new SingleAppInstance("JD", JDUtilities.getJDHomeDirectoryFromEnvironment());
-            SINGLE_INSTANCE_CONTROLLER.setInstanceMessageListener(new InstanceMessageListener() {
-                public void parseMessage(final String[] args) {
-                    ParameterManager.processParameters(args);
-                }
-            });
-            SINGLE_INSTANCE_CONTROLLER.start();
-            instanceStarted = true;
-        } catch (final AnotherInstanceRunningException e) {
-            Launcher.LOG.info("existing jD instance found!");
-            instanceStarted = false;
-        } catch (final Exception e) {
-            Launcher.LOG.log(e);
-            Launcher.LOG.severe("Instance Handling not possible!");
-            instanceStarted = true;
-        }
-
-        if (instanceStarted) {
-            Launcher.start(args);
-        } else if (PARAMETERS.hasCommandSwitch("n")) {
-            Launcher.LOG.severe("Forced to start new instance!");
-            Launcher.start(args);
-        } else if (SINGLE_INSTANCE_CONTROLLER != null) {
-            if (args.length > 0) {
-                Launcher.LOG.info("Send parameters to existing jD instance and exit");
-                SINGLE_INSTANCE_CONTROLLER.sendToRunningInstance(args);
-            } else {
-                Launcher.LOG.info("There is already a running jD instance");
-                SINGLE_INSTANCE_CONTROLLER.sendToRunningInstance(new String[] { "--focus" });
-            }
-            System.exit(0);
-        }
+        Launcher.start(args);
 
     }
 
@@ -412,10 +326,7 @@ public class Launcher {
     private static void start(final String args[]) {
         exitCheck();
         go();
-        for (final String p : args) {
-            Launcher.LOG.finest("Param: " + p);
-        }
-        ParameterManager.processParameters(args);
+
     }
 
     private static void go() {
@@ -555,6 +466,7 @@ public class Launcher {
                             /* load extensions */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Extensions");
                             ExtensionController.getInstance().init();
+                            ;
                             /* init clipboardMonitoring stuff */
                             if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
                                 ClipboardMonitoring.getINSTANCE().startMonitoring();
