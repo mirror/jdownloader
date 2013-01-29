@@ -102,7 +102,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                     if (extract != null) addElement(extract);
                     if (tray != null) addElement(tray);
                     if (extensionManager == null) extensionManager = new ExtensionManager();
-                    if (!Application.isJared(null)) addElement(extensionManager);
+                    if (!Application.isJared(Application.class)) addElement(extensionManager);
                     if (ads == null) ads = new AdvancedSettings();
                     addElement(ads);
                     boolean first = true;
