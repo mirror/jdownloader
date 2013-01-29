@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -51,7 +52,7 @@ public class ChoMikujPl extends PluginForHost {
     private static final String MAINPAGE            = "http://chomikuj.pl/";
     // private static final String FILEIDREGEX = "\\&id=(.*?)\\&";
     private boolean             videolink           = false;
-    private static Object LOCK                = new Object();
+    private static Object       LOCK                = new Object();
     public static final String  DECRYPTFOLDERS      = "DECRYPTFOLDERS";
 
     public ChoMikujPl(PluginWrapper wrapper) {
@@ -106,6 +107,8 @@ public class ChoMikujPl extends PluginForHost {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
+            ai.setStatus("<Login failed/Nieprawidłowe dane>");
+            UserIO.getInstance().requestMessageDialog(0, "Chomikuj.pl Premium Error", "Login failed!\r\nPlease check your Username and Password!");
             return ai;
         }
         account.setValid(true);
@@ -198,7 +201,10 @@ public class ChoMikujPl extends PluginForHost {
             // For some files they ask
             // "Do you really want to download this file", so we have to confirm
             // it with "YES" here ;)
-            br.postPage("http://chomikuj.pl/action/License/acceptLargeTransfer?fileId=" + link.getStringProperty("fileid"), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2) + "&__RequestVerificationToken=" + Encoding.urlEncode(link.getStringProperty("requestverificationtoken")));
+            if (br.containsHTML("Właściciel tego chomika udostępnia darmowy transfer, ale jego ilość jest obecnie zbyt mała, aby można było pobrać plik"))
+                br.postPage("http://chomikuj.pl/action/License/AcceptOwnTransfer?fileId=" + link.getStringProperty("fileid"), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2) + "&__RequestVerificationToken=" + Encoding.urlEncode(link.getStringProperty("requestverificationtoken")));
+            else
+                br.postPage("http://chomikuj.pl/action/License/acceptLargeTransfer?fileId=" + link.getStringProperty("fileid"), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2) + "&__RequestVerificationToken=" + Encoding.urlEncode(link.getStringProperty("requestverificationtoken")));
             DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
             if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
             if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
