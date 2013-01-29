@@ -124,7 +124,6 @@ public class OteUploadCom extends PluginForHost {
         br.setConnectTimeout(2 * 60 * 1000);
     }
 
-    /* NOT working yet */
     public AvailableStatus requestFileInformationAPI(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         prepBrowser(br);
@@ -148,6 +147,7 @@ public class OteUploadCom extends PluginForHost {
         return requestFileInformationAPI(link);
     }
 
+    // not used
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         prepBrowser(br);
@@ -231,6 +231,8 @@ public class OteUploadCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         checkShowFreeDialog();
+        // required when api linkchecking
+        getPage(downloadLink.getDownloadURL());
         doFree(downloadLink, true, 1, "freelink");
     }
 
@@ -466,14 +468,14 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
-     * singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
-     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
-     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
-     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
-     * begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -602,7 +604,7 @@ public class OteUploadCom extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">Please Wait.*?<span id=\".*?\" style=\"font-size:18px;\">(\\d+)</span>").getMatch(0);
+        final String ttt = new Regex(correctedBR, "id=\"countdown_str\"[^>]+>Wait <span[^>]+>(\\d+)</span> seconds</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
