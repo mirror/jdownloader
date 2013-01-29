@@ -72,11 +72,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) br.getPage("http://player.vimeo.com/config/" + ID);
 
         if (br.containsHTML("(Page not found|This video does not exist)")) {
-            br.getPage(parameter);
-            if (br.containsHTML("(Page not found|This video does not exist)")) {
-                logger.info("vimeo.com: File not found for Link: " + parameter);
-                return decryptedLinks;
-            }
+            logger.info("vimeo.com: File not found for Link: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("This is a private video")) {
+            logger.info("vimeo.com: can't decrypt video because it's private: " + parameter);
+            return decryptedLinks;
         }
 
         handlePW(param, br);

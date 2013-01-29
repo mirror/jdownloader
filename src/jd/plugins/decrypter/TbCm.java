@@ -58,7 +58,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|.*?watch.*?v=|.*?watch.*?v%3D|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?(.*?list=[a-z\\-_A-Z0-9]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|watch\\?v=|.*?watch.*?v%3D|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?(.*?list=[a-z\\-_A-Z0-9]+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
     private static AtomicBoolean PLUGIN_DISABLED = new AtomicBoolean(false);
 
@@ -174,7 +174,8 @@ public class TbCm extends PluginForDecrypt {
     }
 
     /**
-     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs
+     * after the completed download.
      * 
      * @param downloadlink
      *            . The finished link to the Google CC subtitle file.
@@ -683,7 +684,8 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the moment
+                         * we do not want to download unknown formats at the
+                         * moment
                          */
                         continue;
                     }
@@ -753,7 +755,8 @@ public class TbCm extends PluginForDecrypt {
                             name = YT_FILENAME + info.desc + convertTo.getExtFirst();
                             thislink.setProperty("name", name);
                         } else {
-                            // because demuxer will fail when mp3 file already exists
+                            // because demuxer will fail when mp3 file already
+                            // exists
                             name = YT_FILENAME + info.desc + ".tmp";
                             thislink.setProperty("name", name);
                         }

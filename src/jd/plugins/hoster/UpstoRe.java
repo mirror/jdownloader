@@ -43,35 +43,39 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upsto.re" }, urls = { "http://(www\\.)?upsto\\.re/(?!faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium)[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upstore.net", "upsto.re" }, urls = { "http://(www\\.)?(upsto\\.re|upstore\\.net)/(?!faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium)[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" }, flags = { 2, 0 })
 public class UpstoRe extends PluginForHost {
 
     public UpstoRe(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://upsto.re/premium/");
+        this.enablePremium("http://upstore.net/premium/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://upsto.re/terms/";
+        return "http://upstore.net/terms/";
     }
 
     private static Object LOCK     = new Object();
-    private final String  MAINPAGE = "http://upsto.re";
+    private final String  MAINPAGE = "http://upstore.net";
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("upsto.re/", "upstore.net/"));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("http://upsto.re/", "lang", "en");
+        br.setCookie("http://upstore.net/", "lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">File not found<|>File was deleted by owner or due to a violation of service rules\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fileInfo = br.getRegex("<h2 style=\"margin:0\">([^<>\"]*?)</h2>[\t\n\r ]+<div class=\"comment\">([^<>\"]*?)</div>");
         String filename = fileInfo.getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Download file ([^<>\"]*?) \\&mdash; Upload, store \\& share your files on Upsto\\.re</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>Download file ([^<>\"]*?) \\&mdash; Upload, store \\& share your files on").getMatch(0);
         String filesize = fileInfo.getMatch(1);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -107,7 +111,7 @@ public class UpstoRe extends PluginForHost {
             // if (wait > 0) sleep(wait * 1000l, downloadLink);
             br.postPage(downloadLink.getDownloadURL(), "free=Get+download+link&hash=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
             dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://d\\d+\\.upsto\\.re/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://d\\d+\\.upstore\\.net/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 final String reconnectWait = br.getRegex("You should wait (\\d+) minutes before downloading next file").getMatch(0);
                 if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
@@ -148,7 +152,7 @@ public class UpstoRe extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://upsto.re/account/login/", "send=Login&url=http%253A%252F%252Fupsto.re%252F&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://upstore.net/account/login/", "url=http%253A%252F%252Fupstore.net%252F&send=Login&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "usid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -176,7 +180,7 @@ public class UpstoRe extends PluginForHost {
             return ai;
         }
         // Make sure that the language is correct
-        br.getPage("http://upsto.re/?lang=en");
+        br.getPage("http://upstore.net/?lang=en");
         ai.setUnlimitedTraffic();
         // Check for never-ending premium accounts
         if (!br.containsHTML("eternal premium")) {
@@ -206,7 +210,7 @@ public class UpstoRe extends PluginForHost {
         br.setFollowRedirects(false);
         // br.getPage(link.getDownloadURL());
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://upsto.re/load/premium/", "hash= " + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        br.postPage("http://upstore.net/load/premium/", "hash= " + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
         String dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");

@@ -49,7 +49,7 @@ public class OkTwoUploadCom extends PluginForHost {
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST         = "http://ok2upload.com";
-    private static final String MAINTENANCE         = "(>This server is in maintenance mode|>404 Not Found<)";
+    private static final String MAINTENANCE         = "(>This server is in maintenance mode|>404 Not Found<|background\\-image:url\\(bg_ok\\.png\\)\")";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
 

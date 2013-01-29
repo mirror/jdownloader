@@ -103,8 +103,7 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     private String getDllink() {
-        String dllink = br.getRegex(">Download this file</h3>[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://f\\d+\\.nowdownload\\.eu/dl/[a-z0-9]+/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
+        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.nowdownload\\.eu/dl/[^<>\"]*?)\"").getMatch(0);
         return dllink;
     }
 

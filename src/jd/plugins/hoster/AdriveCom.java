@@ -56,7 +56,7 @@ public class AdriveCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         String goToLink = br.getRegex("<b>Please go to <a href=\"(/.*?)\"").getMatch(0);
         if (goToLink != null) br.getPage("http://www.adrive.com" + goToLink);
-        if (br.containsHTML("The file you are trying to access is no longer available publicly\\.") || br.getURL().equals("https://www.adrive.com/login")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("The file you are trying to access is no longer available publicly\\.|The public file you are trying to download is associated with a non\\-valid ADrive") || br.getURL().equals("https://www.adrive.com/login")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?)\">here</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser br2 = br.cloneBrowser();

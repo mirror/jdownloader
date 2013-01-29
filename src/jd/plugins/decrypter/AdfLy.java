@@ -74,13 +74,15 @@ public class AdfLy extends PluginForDecrypt {
                     extendedProtectionPage = "http://adf.ly" + extendedProtectionPage;
                 }
             }
+            if (extendedProtectionPage == null && finallink == null) break;
             if (extendedProtectionPage != null) {
                 int wait = 7;
                 String waittime = getWaittime();
                 if (waittime != null && Integer.parseInt(waittime) <= 20) wait = Integer.parseInt(waittime);
                 if (skipWait) {
                     skipWait();
-                    // Wait a seconds. Not waiting can cause zthe skipWait feature to fail
+                    // Wait a seconds. Not waiting can cause zthe skipWait
+                    // feature to fail
                     sleep(1 * 10001l, param);
                 } else {
                     sleep(wait * 1000l, param);

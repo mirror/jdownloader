@@ -64,7 +64,10 @@ public class LetitBitNet extends PluginForHost {
     private static final String  COOKIE_HOST                       = "http://letitbit.net/";
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
-    /* For linkcheck and premium download we're using their API: http://api.letitbit.net/reg/static/api.pdf */
+    /*
+     * For linkcheck and premium download we're using their API:
+     * http://api.letitbit.net/reg/static/api.pdf
+     */
     public static final String   APIKEY                            = "VjR1U3JGUkNx";
     public static final String   APIPAGE                           = "http://api.letitbit.net/";
     private static final String  SPECIALOFFLINE                    = "onclick=\"checkCaptcha\\(\\)\" style=\"";
@@ -169,7 +172,8 @@ public class LetitBitNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        // br.postPage(downloadLink.getDownloadURL(), "en.x=10&en.y=8&vote_cr=en");
+        // br.postPage(downloadLink.getDownloadURL(),
+        // "en.x=10&en.y=8&vote_cr=en");
         String filename = br.getRegex("\"file-info\">File:: <span>(.*?)</span>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
@@ -195,7 +199,8 @@ public class LetitBitNet extends PluginForHost {
             if (br.containsHTML("Forbidden word")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // Their names often differ from other file hosting services. I noticed that when in the filenames from other hosting services there
+        // Their names often differ from other file hosting services. I noticed
+        // that when in the filenames from other hosting services there
         // are "-"'s, letitbit uses "_"'s so let's correct this here ;)
         downloadLink.setFinalFileName(filename.trim().replace("_", "-"));
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
@@ -325,7 +330,8 @@ public class LetitBitNet extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         prepareBrowser(br2);
         /*
-         * this causes issues in 09580 stable, no workaround known, please update to latest jd version
+         * this causes issues in 09580 stable, no workaround known, please
+         * update to latest jd version
          */
         br2.getHeaders().put("Content-Length", "0");
         br2.postPage(ajaxmainurl + "/ajax/download3.php", "");
@@ -379,8 +385,10 @@ public class LetitBitNet extends PluginForHost {
         for (final String finallink : finallinks) {
             if (!finallinksx.contains(finallink) && finallink.startsWith("http")) finallinksx.add(finallink);
         }
-        // Grab last links, this might changes and has to be fixed if users get "server error" in JD while it's working via browser. If this
-        // is changed often we should consider trying the whole list of finallinks.
+        // Grab last links, this might changes and has to be fixed if users get
+        // "server error" in JD while it's working via browser. If this
+        // is changed often we should consider trying the whole list of
+        // finallinks.
         final String url = finallinksx.peekLast();
         if (url == null || url.length() > 1000 || !url.startsWith("http")) {
             if (br2.containsHTML("error_free_download_blocked")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free download blocked", 2 * 60 * 60 * 1000l); }
@@ -433,7 +441,8 @@ public class LetitBitNet extends PluginForHost {
                     }
                 }
                 /*
-                 * we must save the cookies, because letitbit only allows 100 logins per 24hours
+                 * we must save the cookies, because letitbit only allows 100
+                 * logins per 24hours
                  */
                 br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie(COOKIE_HOST, "log");
@@ -507,7 +516,8 @@ public class LetitBitNet extends PluginForHost {
             if (dlUrl == null && br.containsHTML("If you already have a premium")) {
                 if (freshLogin == false) {
                     /*
-                     * no fresh login, ip could have changed, remove cookies and retry with fresh login
+                     * no fresh login, ip could have changed, remove cookies and
+                     * retry with fresh login
                      */
                     synchronized (LOCK) {
                         account.setProperty("cookies", null);
@@ -532,7 +542,8 @@ public class LetitBitNet extends PluginForHost {
             if (br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             if (br.containsHTML("callback_tied_to_another")) {
                 /*
-                 * premium code is bound to a registered account,must login with username/password
+                 * premium code is bound to a registered account,must login with
+                 * username/password
                  */
                 AccountInfo ai = account.getAccountInfo();
                 if (ai != null) ai.setStatus("You must login with username/password!");
@@ -590,7 +601,8 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private String getUrl(final Account account) throws IOException {
-        // This information can only be found before each download so lets set it here
+        // This information can only be found before each download so lets set
+        // it here
         String points = br.getRegex("\">Points:</acronym>(.*?)</li>").getMatch(0);
         String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9\\-]+) \\[<acronym class").getMatch(0);
         if (expireDate == null) expireDate = br.getRegex("\">Period of validity:</acronym>(.*?) \\[<acronym").getMatch(0);
@@ -621,7 +633,8 @@ public class LetitBitNet extends PluginForHost {
 
     private void prepareBrowser(final Browser br) {
         /*
-         * last time they did not block the user-agent, we just need this stuff below ;)
+         * last time they did not block the user-agent, we just need this stuff
+         * below ;)
          */
         if (br == null) { return; }
         br.getHeaders().put("Accept", "*/*");
