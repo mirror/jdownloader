@@ -306,6 +306,7 @@
 			</fileset>
 			<fileset dir="${cls}">
 				<include name="classpath" />
+				<include name="jd/Main.class" />
 				<include name="org/jdownloader/logging/**/*" />
 				<include name="org/jdownloader/updatev2/**/*" />
 				<include name="org/jdownloader/update/**/*.class" />
