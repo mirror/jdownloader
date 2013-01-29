@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(www\\.)?(justin\\.tv|((de|pl)\\.)?(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://((www\\.)?(justin\\.tv)|(www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)" }, flags = { 0 })
 public class JustinTvDecrypt extends PluginForDecrypt {
 
     public JustinTvDecrypt(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // twitchtv belongs to justin.tv
         br.setCookie("http://justin.tv", "fl", "en-us");
-        String parameter = param.toString().replaceAll("((de|pl)\\.)?(twitchtv\\.com|twitch\\.tv)", "twitch.tv");
+        String parameter = param.toString().replaceAll("://(www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)", "://twitch.tv");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Sorry, we couldn\\'t find that stream\\.")) {

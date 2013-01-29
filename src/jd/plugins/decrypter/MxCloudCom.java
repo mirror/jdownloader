@@ -177,7 +177,7 @@ public class MxCloudCom extends PluginForDecrypt {
         }
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(theName);
+        fp.setName(Encoding.htmlDecode(theName));
         fp.addLinks(decryptedLinks);
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter out of date for link: " + parameter);
