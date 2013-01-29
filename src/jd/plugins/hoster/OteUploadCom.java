@@ -20,9 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,8 +32,6 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -57,7 +52,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oteupload.com" }, urls = { "https?://(www\\.)?oteupload\\.com/[a-z0-9]{12}" }, flags = { 2 })
@@ -77,8 +71,6 @@ public class OteUploadCom extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static Object        LOCK                         = new Object();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.0.8
@@ -132,8 +124,31 @@ public class OteUploadCom extends PluginForHost {
         br.setConnectTimeout(2 * 60 * 1000);
     }
 
+    /* NOT working yet */
+    public AvailableStatus requestFileInformationAPI(final DownloadLink link) throws Exception {
+        br.setFollowRedirects(true);
+        prepBrowser(br);
+        br.getPage("http://oteupload.com:8080/cgi-bin/rapi.pl?action=link_check&file_link=" + Encoding.urlEncode(link.getDownloadURL()));
+        String fileSize = br.getRegex("data\"\\s*?:.*?\"fsize\"\\s*?:\\s*?\"(\\d+)\"").getMatch(0);
+        String fileStatus = br.getRegex("data\"\\s*?:.*?\"status_txt\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
+        String fileName = br.getRegex("data\"\\s*?:.*?\"file_name\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
+        if ("Found".equalsIgnoreCase(fileStatus) == false) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (fileSize == null || fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setDownloadSize(Long.parseLong(fileSize));
+        try {
+            link.setVerifiedFileSize(Long.parseLong(fileSize));
+        } catch (final Throwable e) {
+        }
+        link.setFinalFileName(fileName);
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformationAPI(link);
+    }
+
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         prepBrowser(br);
         getPage(link.getDownloadURL());
@@ -215,6 +230,7 @@ public class OteUploadCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        checkShowFreeDialog();
         doFree(downloadLink, true, 1, "freelink");
     }
 
@@ -450,14 +466,14 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
+     * singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
+     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
+     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
+     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
+     * begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -715,171 +731,69 @@ public class OteUploadCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
-        try {
-            login(account, true);
-        } catch (PluginException e) {
+        prepBrowser(br);
+        br.getPage("http://oteupload.com:8080/cgi-bin/rapi.pl?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=auth");
+        String premium = br.getRegex("\"premium\"\\s*?:\\s*?\"(\\d)\"").getMatch(0);
+        String data = br.getRegex("\"data\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
+        String expired = br.getRegex("\"expired\"\\s*?:\\s*?\"(\\d+)\"").getMatch(0);
+        String trafficLeft = br.getRegex("\"trafficLeft\"\\s*?:\\s*?\"(\\d+)\"").getMatch(0);
+        if (data != null && data.contains("does not")) {
+            ai.setStatus("Username/Password wrong?");
             account.setValid(false);
-            return ai;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        final String space[][] = new Regex(br, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getMatches();
-        if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
-            // free users it's provided by default
-            ai.setUsedSpace(space[0][0] + " " + space[0][1]);
-        } else if (space != null && space.length != 0) {
-            // premium users the Mb value isn't provided for some reason...
-            ai.setUsedSpace(space[0][0] + "Mb");
+        if ("0".equals(premium)) {
+            ai.setStatus("Registered Accounts are not supported!");
+            account.setValid(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        account.setValid(true);
-        String availabletraffic = new Regex(br, "Traffic available.*?:</TD></TR>[\r\n\t ]+<TR><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-        if (availabletraffic == null) availabletraffic = new Regex(br, "Traffic available[^\r\n\t]+:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            availabletraffic.trim();
-            // need to set 0 traffic left, as getSize returns a positive result, even when negative value supplied.
-            if (!availabletraffic.startsWith("-")) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-            } else {
-                ai.setTrafficLeft(0);
-            }
-        } else {
-            ai.setUnlimitedTraffic();
+        ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expired) * 1000));
+        ai.setTrafficLeft(Long.parseLong(trafficLeft));
+        try {
+            account.setMaxSimultanDownloads(20);
+            account.setConcurrentUsePossible(true);
+        } catch (final Throwable e) {
+            // not available in old Stable 0.9.581
         }
-        if (account.getBooleanProperty("nopremium")) {
-            ai.setStatus("Registered (free) User");
-            try {
-                maxPrem.set(1);
-                // free accounts can still have captcha.
-                totalMaxSimultanFreeDownload.set(maxPrem.get());
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
-        } else {
-            final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-                try {
-                    maxPrem.set(20);
-                    account.setMaxSimultanDownloads(maxPrem.get());
-                    account.setConcurrentUsePossible(true);
-                } catch (final Throwable e) {
-                    // not available in old Stable 0.9.581
-                }
-            }
-            ai.setStatus("Premium User");
-        }
+        ai.setStatus("Premium User");
         return ai;
-    }
 
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            try {
-                /** Load cookies */
-                br.setCookiesExclusive(true);
-                prepBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
-                }
-                br.setFollowRedirects(true);
-                getPage(COOKIE_HOST.replace("http:", "https:") + "/login.html");
-                final Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!br.getURL().contains("/?op=my_account")) {
-                    getPage("/?op=my_account");
-                }
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
-                    account.setProperty("nopremium", true);
-                } else {
-                    account.setProperty("nopremium", false);
-                }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
-            }
-        }
     }
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        String passCode = null;
-        requestFileInformation(downloadLink);
-        login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
-            requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 1, "freelink2");
-        } else {
-            String dllink = checkDirectLink(downloadLink, "premlink");
-
-            if (dllink == null) {
-                br.setFollowRedirects(false);
-                getPage(downloadLink.getDownloadURL());
-                dllink = getDllink();
-                if (dllink == null) {
-                    checkErrors(downloadLink, true, passCode);
-                    Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, dlform, downloadLink);
-                    sendForm(dlform);
-                    dllink = getDllink();
-                    checkErrors(downloadLink, true, passCode);
-                }
+        prepBrowser(br);
+        br.getPage("http://oteupload.com:8080/cgi-bin/rapi.pl?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=rdownload&file_link=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+        String premium = br.getRegex("\"premium\"\\s*?:\\s*?\"(\\d)\"").getMatch(0);
+        String data = br.getRegex("\"data\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
+        String fileSize = br.getRegex("\"fsize\"\\s*?:\\s*?\"(\\d+)\"").getMatch(0);
+        String fileStatus = br.getRegex("data\"\\s*?:.*?\"status_txt\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
+        if (data != null && data.contains("does not")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if ("0".equals(premium)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if ("Found".equalsIgnoreCase(fileStatus) == false) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String dllink = br.getRegex("\"direct_link\"\\s*?:\\s*?\"(https?.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileSize != null) {
+            downloadLink.setDownloadSize(Long.parseLong(fileSize));
+            try {
+                downloadLink.setVerifiedFileSize(Long.parseLong(fileSize));
+            } catch (final Throwable e) {
             }
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                correctBR();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (passCode != null) downloadLink.setProperty("pass", passCode);
-            fixFilename(downloadLink);
-            downloadLink.setProperty("premlink", dllink);
-            dl.startDownload();
         }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        fixFilename(downloadLink);
+        dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return 20;
     }
 
     @Override
