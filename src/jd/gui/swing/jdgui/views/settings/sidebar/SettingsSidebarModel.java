@@ -20,6 +20,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionController;
@@ -101,7 +102,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                     if (extract != null) addElement(extract);
                     if (tray != null) addElement(tray);
                     if (extensionManager == null) extensionManager = new ExtensionManager();
-                    addElement(extensionManager);
+                    if (!Application.isJared(null)) addElement(extensionManager);
                     if (ads == null) ads = new AdvancedSettings();
                     addElement(ads);
                     boolean first = true;
