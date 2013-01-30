@@ -36,6 +36,7 @@ DIALOG_FILECHOOSER_helpButtonToolTipText=Ajuda del sel·lector d'arxius
 DIALOG_FILECHOOSER_homeFolderAccessibleName=Casa
 DIALOG_FILECHOOSER_listViewButtonAccessibleName=Llista
 DIALOG_FILECHOOSER_lookInLabelText=Vegeu:
+DIALOG_FILECHOOSER_networkfolder=Xarxa
 DIALOG_FILECHOOSER_newFolderAccessibleName=Carpeta nova
 DIALOG_FILECHOOSER_newFolderErrorSeparator=:
 DIALOG_FILECHOOSER_newFolderErrorText=Error creant una nova carpeta
