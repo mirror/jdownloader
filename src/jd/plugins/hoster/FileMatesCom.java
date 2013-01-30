@@ -64,7 +64,10 @@ public class FileMatesCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
+    // primary website url, take note of redirects
     private static final String  COOKIE_HOST                  = "http://filemates.com";
+    // domain names used within download links.
+    private static final String  DOMAINS                      = "(filemates\\.com|files\\-dl\\d+\\.com|filemates\\-srv\\d+\\.com)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -437,7 +440,7 @@ public class FileMatesCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + "|([a-z0-9]+\\.)?files\\-dl\\d+\\.com)(:\\d{1,4})?/(files|d)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
                 dllink = new Regex(correctedBR, "\\'(http://[a-z0-9\\-\\.]+/cgi\\-bin/dl\\.cgi/[^<>\"]*?)\\'").getMatch(0);
                 if (dllink == null) {
