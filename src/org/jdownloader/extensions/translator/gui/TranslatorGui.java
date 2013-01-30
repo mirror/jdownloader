@@ -30,7 +30,6 @@ import javax.swing.text.BadLocationException;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
@@ -1014,6 +1013,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             }.getReturnValue() || isWizard) {
                 Thread.sleep(10);
             }
+
         } finally {
             stopEditing = false;
             Log.L.info("Editing has stopped");
