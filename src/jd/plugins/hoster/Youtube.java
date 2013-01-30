@@ -179,7 +179,7 @@ public class Youtube extends PluginForHost {
 
         /* we now have to get fresh links */
 
-        // narf
+        if (downloadLink.getDownloadURL().contains("sf6")) throw new Exception("Debug");
         downloadLink.setProperty("valid", false);
         this.requestFileInformation(downloadLink);
         this.br.setDebug(true);
