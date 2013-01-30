@@ -42,7 +42,7 @@ public class UMediafireCom extends PluginForDecrypt {
         if (parameter.contains("/index.php?p=")) {
             if (br.containsHTML("Requested page not found\\.")) {
                 logger.info("Link offline: " + parameter);
-                 return decryptedLinks;
+                return decryptedLinks;
             }
             String[] links = br.getRegex("(https?://[^<>]+)</a></div>").getColumn(0);
             if (links != null && links.length > 0) {
@@ -50,14 +50,13 @@ public class UMediafireCom extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(link));
                 }
             }
-            return decryptedLinks;
         } else {
-            // the following string is always present in html, you need js confirmation.
-            //if (br.containsHTML(">Sorry, file is not exist or has been deleted")) {
-            //    logger.info("Link offline: " + parameter);
-            //    return decryptedLinks;
-            //}
-            final String iFrame = br.getRegex("\"(index\\.php\\?get=\\d+)\"").getMatch(0);
+            // the following string is always present in html, you need js confirmation
+            // if (br.containsHTML(">Sorry, file is not exist or has been deleted")) {
+            // logger.info("Link offline: " + parameter);
+            // return decryptedLinks;
+            // }
+            final String iFrame = br.getRegex("\"(index\\.php\\?(page=get_hotlink&r=\\d+|get=\\d+))\"").getMatch(0);
             if (iFrame == null) {
                 if (br.getRedirectLocation() != null) {
                     String link = br.getRedirectLocation();
@@ -69,16 +68,9 @@ public class UMediafireCom extends PluginForDecrypt {
                 return null;
             }
             br.getPage("http://linkhalt.com/" + iFrame);
-            /* <script>
-                var data = 1;
-                var ori = "4it9yibit35i3xt";
-                var type = 2;
-                var restore = 1;
+            // Values are within the above page grab, and definitions of what values mean are
+            // http://linkhalt.com/styles/default/javascript/download.js, just needs JS interp, as it could change!
 
-                </script>
-             * */
-            // required js = http://linkhalt.com/styles/default/javascript/download.js
-            
             if (br.containsHTML("google\\.com/recaptcha")) {
                 if (br.containsHTML("google\\.com/recaptcha")) {
                     for (int i = 0; i <= 5; i++) {
@@ -97,19 +89,25 @@ public class UMediafireCom extends PluginForDecrypt {
                     if (br.containsHTML("google\\.com/recaptcha")) throw new Exception(DecrypterException.CAPTCHA);
                 }
             }
-            final String fastWay = br.getRegex("var check = \\'http://\\d+\\.\\d+\\.\\d+\\.\\d+/[a-z0-9]+/([a-z0-9]+)").getMatch(0);
-            if (fastWay == null) {
-                final String finallink = br.getRegex("var link = \"(http://[^<>\"]*?)\";").getMatch(0);
-                if (finallink == null) {
-                    logger.info("Decrypter broken for link: " + parameter);
+            // old
+            final String fastWay = br.getRegex("var check = (\"|')http://\\d+\\.\\d+\\.\\d+\\.\\d+/[a-z0-9]+/([a-z0-9]+)").getMatch(1);
+            if (fastWay != null) {
+                decryptedLinks.add(createDownloadlink("http://mediafire.com/?" + fastWay));
+            } else {
+                final String finallink = br.getRegex("var link = (\"|')(https?://[^<>\"]*?)(\"|');").getMatch(1);
+                final String type = br.getRegex("var type = (\\d+)").getMatch(0);
+                final String ori = br.getRegex("var ori = (\"|')([0-9a-z]+)").getMatch(1);
+                if (finallink != null) {
+                    decryptedLinks.add(createDownloadlink(finallink));
+                } else if (finallink == null && ori != null) {
+                    decryptedLinks.add(createDownloadlink("http://mediafire.com/?" + ori));
+                } else if (finallink == null || ori == null || type == null) {
+                    logger.info("Possible plugin error: " + parameter);
                     return null;
                 }
-                decryptedLinks.add(createDownloadlink(finallink));
-            } else {
-                decryptedLinks.add(createDownloadlink("http://mediafire.com/?" + fastWay));
             }
-            return decryptedLinks;
         }
+        return decryptedLinks;
     }
 
 }

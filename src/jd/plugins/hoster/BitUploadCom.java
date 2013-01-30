@@ -61,11 +61,11 @@ public class BitUploadCom extends PluginForHost {
     // premium account:
     // protocol: has https but not setup correctly.
     // captchatype: null
-    // other: no redirects
+    // other: HAS redirects
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("hosting/download/index/p/id/", "").replace("file/p/id/", ""));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("https?://(www\\.)?", "http://").replace("hosting/download/index/p/id/", "").replace("file/p/id/", ""));
     }
 
     @Override
