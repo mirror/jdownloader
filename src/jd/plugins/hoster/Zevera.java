@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zevera.com" }, urls = { "http://[\\w\\.]*?zevera\\.com/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zevera.com" }, urls = { "https?://[\\w\\.]*?zevera\\.com/.+" }, flags = { 0 })
 public class Zevera extends PluginForHost {
     // TODO REMOVE WITH JD2 == stable
 

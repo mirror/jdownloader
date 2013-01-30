@@ -861,13 +861,15 @@ public class MediafireCom extends PluginForHost {
                 this.fileID = getID(downloadLink);
                 br.setFollowRedirects(false);
                 br.getPage("http://www.mediafire.com/?" + fileID);
-                handleNonAPIErrors(downloadLink, br);
-                if ((br.containsHTML("Enter Password") && br.containsHTML("display:block;\">This file is"))) {
-                    this.handlePremiumPassword(downloadLink, account);
-                    return;
-                }
                 /* url should be downloadlink when directDownload is enabled */
                 url = getURL(br);
+                if (url == null) {
+                    handleNonAPIErrors(downloadLink, br);
+                    if ((br.containsHTML("Enter Password") && br.containsHTML("display:block;\">This file is"))) {
+                        this.handlePremiumPassword(downloadLink, account);
+                        return;
+                    }
+                }
             }
             if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             this.br.setFollowRedirects(true);

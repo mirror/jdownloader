@@ -30,7 +30,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easyfilesharing.info" }, urls = { "http://(www\\.)?easyfilesharing\\.info/(en|ru|fr|es|de)/file/\\d+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easyfilesharing.info" }, urls = { "http://(www\\.)?easyfilesharing\\.info(/en|ru|fr|es|de)?/file/\\d+/" }, flags = { 0 })
 public class EasyFileSharingCom extends PluginForHost {
 
     public EasyFileSharingCom(PluginWrapper wrapper) {
@@ -47,7 +47,7 @@ public class EasyFileSharingCom extends PluginForHost {
     private static final int    DEFAULTWAITTIME = 60;
 
     // MhfScriptBasic 1.9
-    // FREE limits: 20 * 20
+    // FREE limits: 1 (no resume) * 20
     // PREMIUM limits: Chunks * Maxdls
     // Captchatype: reCaptcha
     // Other notes:
@@ -105,12 +105,11 @@ public class EasyFileSharingCom extends PluginForHost {
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int wait = DEFAULTWAITTIME;
         String waittime = ajaxBR.getRegex("countdown\\((\\d+)\\);").getMatch(0);
-        // Fol older versions it's usually skippable
-        // if (waittime == null) waittime =
-        // br.getRegex("var timeout=\\'(\\d+)\\';").getMatch(0);
+        // For older versions it's usually skippable
+        // if (waittime == null) waittime = br.getRegex("var timeout=\\'(\\d+)\\';").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
 
