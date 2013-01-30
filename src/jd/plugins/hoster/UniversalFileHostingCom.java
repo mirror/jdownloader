@@ -54,7 +54,6 @@ public class UniversalFileHostingCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        link.setProperty("ServerComaptibleForByteRangeRequest", false);
         br.getPage("http://www.universalfilehosting.com/lang/en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Invalid link\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

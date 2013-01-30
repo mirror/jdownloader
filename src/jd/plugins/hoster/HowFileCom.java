@@ -84,8 +84,6 @@ public class HowFileCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setReadTimeout(3 * 60 * 1000);
         br.setCookie(MAINPAGE, "language", "en_us");
-        // Workaround for Range header
-        link.setProperty("ServerComaptibleForByteRangeRequest", false);
         // Workaround for Stable
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");
         // If exception file offline

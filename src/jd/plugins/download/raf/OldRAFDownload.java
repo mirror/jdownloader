@@ -237,6 +237,10 @@ public class OldRAFDownload extends DownloadInterface {
                 logger.finer(".....connectRangeless");
                 /* our connection happens rangeless */
                 request.getHeaders().remove("Range");
+                /* Workaround for rayfile.com */
+                if (this.downloadLink.getBooleanProperty("ServerComaptibleForByteRangeRequest", false)) {
+                    if ("rayfile.com".contains(this.downloadLink.getHost())) request.getHeaders().put("Range", "bytes=" + (0) + "-");
+                }
                 browser.connect(request);
             }
         }
@@ -326,7 +330,7 @@ public class OldRAFDownload extends DownloadInterface {
             /* we only request a single range */
             openRangeRequested = true;
             /* Workaround for server responses != 206 */
-            if (this.downloadLink.getBooleanProperty("ServerComaptibleForByteRangeRequest", true)) request.getHeaders().put("Range", "bytes= " + (0) + "-");
+            if (this.downloadLink.getBooleanProperty("ServerComaptibleForByteRangeRequest", false)) request.getHeaders().put("Range", "bytes=" + (0) + "-");
         } else {
             /* we request multiple ranges */
             openRangeRequested = false;

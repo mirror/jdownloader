@@ -71,15 +71,21 @@ public class RayFileCom extends PluginForHost {
         String downloadUrl = ajax.getRegex("downloads_url = \\['(.*?)'\\]").getMatch(0);
         if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        String cookie = "setCookie\\(\\'(.*?)\\', \\'(.*?)\\', (.*?), \\'(.*?)\\', \\'(.*?)\\'.*?\\)";
+        br.clearCookies("rayfile.com");
+        br.getHeaders().put("Accept-Encoding", null);
+        br.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("Cache-Control", null);
+        br.getHeaders().put("Pragma", null);
+        br.getHeaders().put("Referer", null);
+        br.getHeaders().put("User-Agent", "Grid Service 2.1.10.8366");
+        downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
 
-        String cookie_key = ajax.getRegex(cookie).getMatch(0);
-        String cookie_value = ajax.getRegex(cookie).getMatch(1);
-        String cookie_host = ajax.getRegex(cookie).getMatch(4);
+        // IMPORTANT: resuming must be set to false.
+        // Range: bytes=resuming bytes - filesize -> not work
+        // Range: bytes=resuming bytes - resuming bytes + 5242880 -> work
+        // resuming limitations: 1 chunk @ max 5242880 bytes Range!
 
-        if (cookie_key == null || cookie_value == null || cookie_host == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        br.setCookie(cookie_host, cookie_key, cookie_value);
-        dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadUrl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
