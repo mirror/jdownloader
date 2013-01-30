@@ -7,6 +7,7 @@ jd_plugins_optional_jdchat_JDChat_topic_tooltip=Nachricht des Tages
 jd_plugins_optional_jdchat_closeTab=Tab schließen
 jd_plugins_optional_jdchat_jdchat=Support Chat
 plugins_optional_jdchat_enternick=Dein gewünschter Nickname
+settings_enabled_userlist_colors=Benutzerfarben aktivieren
 settings_nick=Dein Name
 settings_perform=Führe diese Aktion nach dem Beitreten in den Chat aus
 settings_userlist_position=Position der Nutzerliste
