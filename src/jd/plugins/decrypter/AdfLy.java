@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -112,6 +113,16 @@ public class AdfLy extends PluginForDecrypt {
                     finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(http://[^<>\"\\']+)\"").getMatch(0);
                     break;
                 }
+            }
+        }
+        /* 20130130 */
+        if (finallink == null) {
+            String query = br.getRegex("var zzz\\s?=\\s?\'([^\']+)\'").getMatch(0);
+            String path = br.getRegex("url\\s?:\\s?\'([^\']+)\'").getMatch(0);
+            if (path != null && query != null) {
+                br.getPage("http://adf.ly" + path + "?zzz=" + Encoding.urlEncode(query));
+                finallink = br.getRegex("zzz\":\"([^\"]+)\"").getMatch(0);
+                if (finallink != null) finallink = finallink.replace("\\", "");
             }
         }
         if (finallink != null) {
