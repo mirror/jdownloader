@@ -2,7 +2,6 @@ package org.jdownloader.settings.advanced;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.logging.Level;
 
 import jd.controlling.linkchecker.LinkCheckerConfig;
 import jd.controlling.linkcollector.LinkCollectorConfig;
@@ -10,12 +9,10 @@ import jd.controlling.linkcrawler.LinkCrawlerConfig;
 import jd.controlling.reconnect.ReconnectConfig;
 
 import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.synthetica.SyntheticaSettings;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogConfig;
 import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
@@ -63,11 +60,6 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(UpdateSettings.class));
         register(JsonConfig.create(SyntheticaSettings.class));
 
-    }
-
-    public static void main(String[] args) {
-        Log.L.setLevel(Level.OFF);
-        ConfigUtils.printStaticMappings(GraphicalUserInterfaceSettings.class);
     }
 
     public AdvancedConfigEventSender getEventSender() {
