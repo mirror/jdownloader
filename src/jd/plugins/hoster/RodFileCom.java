@@ -153,8 +153,7 @@ public class RodFileCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -342,6 +341,10 @@ public class RodFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+        }
+        if (new Regex(correctedBR, "(class=\"err\">Your Traffic download today has been finished Upgrade your account to unlimited download daily)").matches()) {
+            // one hour wait?
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
         }
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
