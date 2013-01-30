@@ -85,11 +85,11 @@ public class PornHubCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
+        String file_name = br.getRegex("<title>([^<>]*?) \\- Pornhub\\.com</title>").getMatch(0);
+        if (file_name == null) file_name = br.getRegex("\"section_title overflow\\-title overflow\\-title\\-width\">([^<>]*?)</h1>").getMatch(0);
+
         getVideoLink(downloadLink.getDownloadURL());
 
-        String file_name = br.getRegex("class=\"section_bar\"><h1 class=\"section_title\">([^<>]*?)</h1>").getMatch(0);
-        if (file_name == null) file_name = br.getRegex("<title([^<>]*?) \\- Pornhub\\.com</title>").getMatch(0);
-        if (file_name == null) file_name = br.getRegex("<h1 class=\"section_title\">([^<>]*?)</h1>").getMatch(0);
         if (file_name == null || dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setFinalFileName(file_name.replace("\"", "'") + ".mp4");
         return AvailableStatus.TRUE;
@@ -125,7 +125,8 @@ public class PornHubCom extends PluginForHost {
     }
 
     /**
-     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
+     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in
+     * JavaScript by Chris Veness
      * 
      * @see <a
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>

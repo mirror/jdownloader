@@ -75,7 +75,7 @@ public class AbEmPeThreeCom extends PluginForDecrypt {
             break;
         }
         if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String finallink = br.getRegex("Done#\\|#(http://.*?\\.mp3)").getMatch(0);
+        final String finallink = br.getRegex("Done#\\|#(http://.+)").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

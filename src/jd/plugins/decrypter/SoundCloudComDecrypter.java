@@ -92,10 +92,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 // Decrypt all tracks of a user
                 fpName = ((jd.plugins.hoster.SoundcloudCom) hostPlugin).getXML("username", br.toString());
                 if (fpName == null) fpName = getJson("username");
-                final String userID = br.getRegex("\"uri\":\"https://api\\.soundcloud\\.com/users/(\\d+)\"").getMatch(0);
+                final String userID = br.getRegex("\"uri\":\"https://api\\.soundcloud\\.com/users/(\\d+)").getMatch(0);
                 if (userID == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    logger.info("Link probably offline: " + parameter);
+                    return decryptedLinks;
                 }
                 br.getPage("https://api.sndcdn.com/e1/users/" + userID + "/sounds?limit=10000&offset=0&linked_partitioning=1&client_id=" + clientID);
                 final String[] items = br.getRegex("<stream\\-item>(.*?)</stream\\-item>").getColumn(0);
