@@ -7,7 +7,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.JDInitFlags;
 import jd.nutils.Formatter;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
@@ -43,7 +42,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private HostPluginController() {
         this.list = null;
@@ -64,6 +64,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                     try {
                         /* do a fresh scan */
                         plugins = update(logger);
+
                     } catch (Throwable e) {
                         logger.severe("@HostPluginController: update failed!");
                         logger.log(e);
@@ -142,6 +143,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     private List<LazyHostPlugin> update(LogSource logger) throws MalformedURLException {
+
         HashMap<String, AbstractHostPlugin> ret = new HashMap<String, AbstractHostPlugin>();
         HashMap<String, LazyHostPlugin> ret2 = new HashMap<String, LazyHostPlugin>();
         LazyHostPlugin fallBackPlugin = null;
@@ -181,7 +183,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         try {
                             String displayName = new String(names[i]);
                             /*
-                             * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin for each downloadLink
+                             * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin for
+                             * each downloadLink
                              */
                             AbstractHostPlugin existingPlugin = ret.get(displayName);
                             if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
@@ -250,7 +253,22 @@ public class HostPluginController extends PluginController<PluginForHost> {
             /* set fallBackPlugin to all plugins */
             lhp.setFallBackPlugin(fallBackPlugin);
         }
+        validateCache();
         return ret3;
+    }
+
+    private boolean cacheInvalidated = false;
+
+    public boolean isCacheInvalidated() {
+        return cacheInvalidated;
+    }
+
+    public void invalidateCache() {
+        this.cacheInvalidated = true;
+    }
+
+    protected void validateCache() {
+        cacheInvalidated = false;
     }
 
     private void save(List<AbstractHostPlugin> save) {
@@ -281,7 +299,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         if (list != null) return;
         synchronized (this) {
             if (list != null) return;
-            init(JDInitFlags.REFRESH_CACHE);
+            init(isCacheInvalidated());
         }
     }
 

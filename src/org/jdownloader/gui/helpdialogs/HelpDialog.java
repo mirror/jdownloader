@@ -13,6 +13,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.locator.PointOnScreenLocator;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.updatev2.RestartController;
 
 public class HelpDialog {
 
@@ -21,7 +22,7 @@ public class HelpDialog {
     }
 
     public static void show(final Boolean expandToBottom, final Boolean expandToRight, final Point point, final String dontShowAgainKey, int flags, String title, String msg, ImageIcon icon) {
-        final boolean test = jd.Launcher.PARAMETERS.hasCommandSwitch("translatortest");
+        final boolean test = RestartController.getInstance().getParameterParser(null).hasCommandSwitch("translatortest");
         if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isBalloonNotificationEnabled()) return;
 
         try {

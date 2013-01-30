@@ -53,7 +53,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
-import org.appwork.app.launcher.parameterparser.ParameterParser;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.storage.config.JsonConfig;
@@ -82,6 +81,7 @@ import org.jdownloader.gui.uiserio.JDSwingUserIO;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.AutoDownloadStartOption;
 import org.jdownloader.settings.GeneralSettings;
@@ -90,7 +90,6 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.toolbar.ToolbarOffer;
 import org.jdownloader.translate._JDT;
-import org.jdownloader.updatev2.RestartController;
 
 public class Launcher {
     static {
@@ -101,7 +100,6 @@ public class Launcher {
 
     public static SingleReachableState INIT_COMPLETE = new SingleReachableState("INIT_COMPLETE");
     public static SingleReachableState GUI_COMPLETE  = new SingleReachableState("GUI_COMPLETE");
-    public static ParameterParser      PARAMETERS;
 
     private static File                FILE;
     public final static long           startup       = System.currentTimeMillis();
@@ -219,19 +217,7 @@ public class Launcher {
             Launcher.LOG.finer(key + "=" + pr.get(key));
         }
         Launcher.LOG.info("JDownloader");
-        PARAMETERS = RestartController.getInstance().getParameterParser(args);
 
-        PARAMETERS.parse(null);
-
-        if (PARAMETERS.hasCommandSwitch("scanextensions")) {
-            JDInitFlags.REFRESH_CACHE = true;
-
-        }
-
-        if (PARAMETERS.hasCommandSwitch("scanplugins")) {
-            JDInitFlags.REFRESH_CACHE = true;
-
-        }
         // checkSessionInstallLog();
 
         boolean jared = Application.isJared(Launcher.class);
@@ -239,7 +225,8 @@ public class Launcher {
         if (!jared) {
             /* always enable debug and cache refresh in developer version */
             Launcher.LOG.info("Not Jared Version(" + revision + "): RefreshCache=true");
-            JDInitFlags.REFRESH_CACHE = true;
+            HostPluginController.getInstance().invalidateCache();
+            CrawlerPluginController.invalidateCache();
         } else {
             Launcher.LOG.info("Jared Version(" + revision + ")");
         }
@@ -372,10 +359,7 @@ public class Launcher {
                 logger.close();
             }
         });
-        if (!PARAMETERS.hasCommandSwitch("console") && Application.isJared(Launcher.class)) {
-            Launcher.LOG.info("Remove ConsoleHandler");
-            LogController.getInstance().removeConsoleHandler();
-        }
+
         /* these can be initiated without a gui */
         final Thread thread = new Thread() {
             @Override

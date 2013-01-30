@@ -20,7 +20,6 @@ import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.JDInitFlags;
 import jd.Launcher;
 
 import org.appwork.storage.JSonStorage;
@@ -63,12 +62,26 @@ public class ExtensionController {
         return eventSender;
     }
 
+    private boolean cacheInvalidated = false;
+
+    public boolean isCacheInvalidated() {
+        return cacheInvalidated;
+    }
+
+    public void invalidateCache() {
+        this.cacheInvalidated = true;
+    }
+
+    protected void validateCache() {
+        cacheInvalidated = false;
+    }
+
     public void init() {
         synchronized (this) {
             java.util.List<LazyExtension> ret = new ArrayList<LazyExtension>();
             final long t = System.currentTimeMillis();
             try {
-                if (JDInitFlags.REFRESH_CACHE) {
+                if (isCacheInvalidated()) {
                     try {
                         /* do a fresh scan */
                         ret = load();
@@ -156,6 +169,7 @@ public class ExtensionController {
                 ret = loadUnpacked();
             }
             JSonStorage.saveTo(getCache(), ret);
+            validateCache();
         } catch (final Throwable e) {
             Log.exception(e);
         }

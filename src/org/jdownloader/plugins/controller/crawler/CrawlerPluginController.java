@@ -7,7 +7,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
-import jd.JDInitFlags;
 import jd.nutils.Formatter;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.PluginForDecrypt;
@@ -26,10 +25,22 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class CrawlerPluginController extends PluginController<PluginForDecrypt> {
 
-    private static final Object                                  INTSANCELOCK       = new Object();
-    private static final Object                                  INITLOCK           = new Object();
-    private static MinTimeWeakReference<CrawlerPluginController> INSTANCE           = null;
-    private static Boolean                                       FIRSTINIT_UNCACHED = JDInitFlags.REFRESH_CACHE;
+    private static final Object                                  INTSANCELOCK      = new Object();
+    private static final Object                                  INITLOCK          = new Object();
+    private static MinTimeWeakReference<CrawlerPluginController> INSTANCE          = null;
+    private static boolean                                       CACHE_INVALIDATED = false;
+
+    public static boolean isCacheInvalidated() {
+        return CACHE_INVALIDATED;
+    }
+
+    public static void invalidateCache() {
+        CACHE_INVALIDATED = true;
+    }
+
+    protected static void validateCache() {
+        CACHE_INVALIDATED = false;
+    }
 
     /**
      * get the only existing instance of HostPluginController. This is a singleton
@@ -42,12 +53,9 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         synchronized (INTSANCELOCK) {
             if (INSTANCE != null && (ret = INSTANCE.get()) != null) return ret;
             ret = new CrawlerPluginController();
-            if (Boolean.TRUE.equals(FIRSTINIT_UNCACHED)) {
-                ret.init(true);
-            } else {
-                ret.init(false);
-            }
-            FIRSTINIT_UNCACHED = null;
+
+            ret.init(isCacheInvalidated());
+
             INSTANCE = new MinTimeWeakReference<CrawlerPluginController>(ret, 30 * 1000l, "CrawlerPlugin");
         }
         return ret;
@@ -60,7 +68,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {
@@ -245,6 +254,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             saveList.addAll(crawler);
         }
         save(saveList);
+        validateCache();
         return new ArrayList<LazyCrawlerPlugin>(ret2.values());
     }
 
@@ -292,7 +302,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         if (list != null) return;
         synchronized (this) {
             if (list != null) return;
-            init(JDInitFlags.REFRESH_CACHE);
+            init(isCacheInvalidated());
         }
     }
 

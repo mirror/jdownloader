@@ -5,9 +5,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import jd.Launcher;
+
 import org.appwork.app.launcher.parameterparser.CommandSwitch;
 import org.appwork.app.launcher.parameterparser.CommandSwitchListener;
 import org.appwork.app.launcher.parameterparser.ParameterParser;
+import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.jdownloader.logging.LogController;
@@ -120,6 +123,11 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
             startupParameters.parse(null);
         } finally {
             startupParameters.getEventSender().removeListener(list);
+        }
+
+        if (!startupParameters.hasCommandSwitch("console") && Application.isJared(Launcher.class)) {
+            logger.info("Remove ConsoleHandler");
+            LogController.getInstance().removeConsoleHandler();
         }
 
     }

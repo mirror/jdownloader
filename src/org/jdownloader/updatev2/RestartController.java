@@ -137,6 +137,7 @@ public class RestartController {
 
     public synchronized ParameterParser getParameterParser(String[] args) {
         if (startupParameters == null) {
+            if (args == null) throw new IllegalStateException();
             startupParameters = new ParameterParser(args);
         }
         return startupParameters;

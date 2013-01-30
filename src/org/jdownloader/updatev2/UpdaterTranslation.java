@@ -470,7 +470,7 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "A new Update is available. Do you want to download it now?", "Ein neues Update steht zum Download bereit. Soll es jetzt geladen werden?" })
     String confirmdialog_new_update_available_message();
 
-    @Default(lngs = { "en", "de" }, values = { "A new Update is available. To install, a restart is required.\r\nDo you want to restart & install the update now?", "Ein neues Update steht zur Installation bereit. Zur Installation muss ein Neustart durchgeführt werden.\r\nSoll jetzt neu gestartet und installiert werden?\r\n" })
+    @Default(lngs = { "en", "de" }, values = { "A new JDownloader Update is available. To install, a restart is required.\r\nDo you want to restart & install the update now?", "Ein neues JDownloader Update steht zur Installation bereit. Zur Installation muss ein Neustart durchgeführt werden.\r\nSoll jetzt neu gestartet und installiert werden?\r\n" })
     String confirmdialog_new_update_available_for_install_message();
 
     @Default(lngs = { "en", "de" }, values = { "Finalizing Installation...", "Installation wird abgeschlossen..." })
@@ -605,7 +605,7 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Manage Extensions", "Erweiterungen verwalten" })
     String confirmdialog_new_update_available_frametitle_extensions();
 
-    @Default(lngs = { "en", "de" }, values = { "Add %s1 and remove %s2 extension(s)?. We recommend to do this now!\r\nDo you want to continue now?", "%s1 Erweiterungen hinzufügen und %s2 entfernen?. Wir empfehlen das jetzt zu tun!\r\nJetzt fortfahren?" })
+    @Default(lngs = { "en", "de" }, values = { "Add %s1 and remove %s2 JDownloader extension(s)?. We recommend to do this now!\r\nDo you want to continue now?", "%s1 JDownloader Erweiterungen hinzufügen und %s2 entfernen?. Wir empfehlen das jetzt zu tun!\r\nJetzt fortfahren?" })
     String confirmdialog_new_update_available_for_install_message(int install, int uninstall);
 
     @Default(lngs = { "en", "de" }, values = { "An unexpected IO error occured during the update.\r\nPlease try again or contact our support.", "Während dem Update ist ein IO Fehler aufgetreten.\r\nVersuchen Sie es erneut, oder kontaktieren Sie unseren Support." })
