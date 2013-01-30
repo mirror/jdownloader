@@ -265,6 +265,11 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
     public void invalidateCache() {
         this.cacheInvalidated = true;
+        if (list == null) return;
+        synchronized (this) {
+            if (list == null) return;
+            init(isCacheInvalidated());
+        }
     }
 
     protected void validateCache() {

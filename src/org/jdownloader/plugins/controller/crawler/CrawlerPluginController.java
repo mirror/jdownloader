@@ -36,6 +36,13 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     public static void invalidateCache() {
         CACHE_INVALIDATED = true;
+        synchronized (INTSANCELOCK) {
+
+            if (INSTANCE == null || (INSTANCE.get()) == null) return;
+
+            getInstance().init(isCacheInvalidated());
+
+        }
     }
 
     protected static void validateCache() {

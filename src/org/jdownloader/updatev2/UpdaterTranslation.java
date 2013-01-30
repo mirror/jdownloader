@@ -626,4 +626,7 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "JDownloader could not install the latest update.\r\nPlease reinstall JDownloader or contact our support!", "JDownloader kann das aktuelle Update nicht installieren.\r\nBitte installiere JDownloader neu oder kontaktiere unseren Support!" })
     String error_last_chance_message();
 
+    @Default(lngs = { "en", "de" }, values = { "Plugins have been updated.\r\nYou're running the latest JDownloader version now.", "Plugins wurden aktualisiert.\r\nJDownloader ist nun wieder aktuell." })
+    String updatedplugins();
+
 }

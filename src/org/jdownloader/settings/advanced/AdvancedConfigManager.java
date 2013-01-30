@@ -45,7 +45,7 @@ public class AdvancedConfigManager {
         eventSender = new AdvancedConfigEventSender();
         this.register(JsonConfig.create(GeneralSettings.class));
         register(JsonConfig.create(LinkFilterSettings.class));
-        register(JsonConfig.create(InternetConnectionSettings.PATH,InternetConnectionSettings.class));
+        register(JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class));
         register(JsonConfig.create(AccountSettings.class));
         register(JsonConfig.create(GraphicalUserInterfaceSettings.class));
         register(JsonConfig.create(LinkCheckerConfig.class));

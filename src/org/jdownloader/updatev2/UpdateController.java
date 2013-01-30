@@ -36,7 +36,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class UpdateController implements UpdateCallbackInterface {
     private static final UpdateController INSTANCE = new UpdateController();
@@ -82,7 +81,7 @@ public class UpdateController implements UpdateCallbackInterface {
 
     public void setHandler(UpdateHandler handler, ConfigInterface updaterSetup, String appid, String updaterid) {
         this.handler = handler;
-        if (updaterSetup != null) AdvancedConfigManager.getInstance().register(updaterSetup);
+
         handler.runChecker();
         this.appid = appid;
         this.updaterid = updaterid;
@@ -347,8 +346,10 @@ public class UpdateController implements UpdateCallbackInterface {
                 if (settings.isDoNotAskToInstallPlugins()) {
                     // can install direct
                     UpdateController.getInstance().installUpdates(awfoverview);
-                    HostPluginController.getInstance().init(true);
-                    CrawlerPluginController.getInstance().init(true);
+
+                    HostPluginController.getInstance().invalidateCache();
+                    CrawlerPluginController.invalidateCache();
+                    handler.setGuiFinished(_UPDATE._.updatedplugins());
                     return;
                 }
 
