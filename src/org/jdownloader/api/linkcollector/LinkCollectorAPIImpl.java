@@ -15,6 +15,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
+import org.appwork.remoteapi.RemoteAPIRequest;
 
 public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
@@ -72,8 +73,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         } finally {
             lc.readUnlock(b);
         }
-
-        simulateLatency();
 
         return result;
     }
@@ -158,9 +157,27 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     }
 
     @Override
-    public Boolean addLinks(String links) {
+    public Boolean addLinks(String links, String packageName, String extractPassword, String downloadPassword) {
         LinkCollector lc = LinkCollector.getInstance();
-        lc.addCrawlerJob(new LinkCollectingJob(links));
+
+        LinkCollectingJob lcj = new LinkCollectingJob(links);
+        lc.addCrawlerJob(lcj);
+        if (packageName != null) {
+            lcj.setPackageName(packageName);
+        }
+        if (downloadPassword != null) {
+            lcj.setDownloadPassword(downloadPassword);
+        }
+        if (extractPassword != null) {
+            Set<String> passwords = new HashSet<String>();
+            passwords.add(extractPassword);
+            lcj.setExtractPasswords(passwords);
+        }
+        return true;
+    }
+
+    @Override
+    public Boolean uploadLinkContainer(RemoteAPIRequest request) {
         return true;
     }
 

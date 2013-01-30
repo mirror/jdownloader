@@ -18,5 +18,9 @@ public interface DownloadsAPI extends RemoteAPIInterface {
 
     List<DownloadLinkAPIStorable> queryLinks(APIQuery queryParams);
 
+    boolean removeLinks(final List<Long> linkIds);
+
+    boolean forceDownload(final List<Long> linkIds);
+
     int speed();
 }

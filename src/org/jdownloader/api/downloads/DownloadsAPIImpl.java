@@ -7,6 +7,7 @@ import java.util.Set;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -188,5 +189,70 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     public int speed() {
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
         return dwd.getDownloadSpeedManager().getSpeed();
+    }
+
+    @Override
+    public boolean removeLinks(final List<Long> linkIds) {
+        if (linkIds == null) return true;
+
+        DownloadController dlc = DownloadController.getInstance();
+
+        List<DownloadLink> rmv;
+
+        boolean b = dlc.readLock();
+        try {
+            rmv = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                @Override
+                public int returnMaxResults() {
+                    return 0;
+                }
+
+                @Override
+                public boolean isChildrenNodeFiltered(DownloadLink node) {
+                    if (linkIds.contains(node.getUniqueID().getID())) return true;
+                    return false;
+                }
+            });
+        } finally {
+            dlc.readUnlock(b);
+        }
+
+        dlc.writeLock();
+        dlc.removeChildren(rmv);
+        dlc.writeUnlock();
+
+        return true;
+    }
+
+    @Override
+    public boolean forceDownload(final List<Long> linkIds) {
+        if (linkIds == null) return true;
+
+        DownloadController dlc = DownloadController.getInstance();
+
+        List<DownloadLink> rmv;
+
+        boolean b = dlc.readLock();
+        try {
+            rmv = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                @Override
+                public int returnMaxResults() {
+                    return 0;
+                }
+
+                @Override
+                public boolean isChildrenNodeFiltered(DownloadLink node) {
+                    if (linkIds.contains(node.getUniqueID().getID())) return true;
+                    return false;
+                }
+            });
+        } finally {
+            dlc.readUnlock(b);
+        }
+
+        DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        dwd.forceDownload(rmv);
+
+        return true;
     }
 }

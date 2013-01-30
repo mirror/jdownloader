@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -26,6 +27,9 @@ public class PollingAPIImpl implements PollingAPI {
         }
         if (queryParams.containsKey("jdState")) {
             result.add(getJDState());
+        }
+        if (queryParams.containsKey("linkGrabberState")) {
+            result.add(getLinkGrabberState());
         }
 
         return result;
@@ -88,6 +92,26 @@ public class PollingAPIImpl implements PollingAPI {
             status = "PAUSED";
         } else {
             status = "RUNNING";
+        }
+
+        QueryResponseMap eventData = new QueryResponseMap();
+        eventData.put("data", status);
+        prs.setEventData(eventData);
+
+        return prs;
+    }
+
+    private PollingResultAPIStorable getLinkGrabberState() {
+        PollingResultAPIStorable prs = new PollingResultAPIStorable();
+        prs.setEventName("linkGrabberState");
+
+        LinkCollector lc = LinkCollector.getInstance();
+
+        String status = "UNKNOWN";
+        if (lc.getLinkChecker().isRunning()) {
+            status = "RUNNING";
+        } else {
+            status = "IDLE";
         }
 
         QueryResponseMap eventData = new QueryResponseMap();

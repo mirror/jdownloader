@@ -9,4 +9,6 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 public interface ContentAPI extends RemoteAPIInterface {
 
     public void favicon(RemoteAPIRequest request, final RemoteAPIResponse response, String hostername);
+
+    public void fileIcon(RemoteAPIRequest request, final RemoteAPIResponse response, String filename);
 }
