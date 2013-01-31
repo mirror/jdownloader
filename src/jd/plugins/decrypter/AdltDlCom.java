@@ -42,6 +42,10 @@ public class AdltDlCom extends PluginForDecrypt {
         String parameter = param.toString().replace("adultddl.com/", "adultddl.ws/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML(">Sorry, the page could not be found, or has been removed")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex(" title=\"Comment on ([^<>\"\\']+)\"").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>([^<>\"\\']+) \\| AdultDDL</title>").getMatch(0);
         final String streamLink = br.getRegex("\\'(http://(www\\.)?putlocker\\.com/embed/[A-Z0-9]+)\\'").getMatch(0);

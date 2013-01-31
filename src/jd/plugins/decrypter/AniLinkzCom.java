@@ -32,10 +32,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(www\\.)?anilinkz\\.com/(?!get|img|dsa|series|forums|files|category).+/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(www\\.)?anilinkz\\.com/(?!get|img|dsa|series|forums|files|category)[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(youtube\\.com|veoh\\.com)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(youtube\\.com|veoh\\.com|nowvideo\\.eu|videobam\\.com|mp4upload\\.com)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_UNSUPPORTED_HOSTER       = Pattern.compile("(facebook\\.com|google\\.com)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_SUPPORTED_FILE_EXTENSION = Pattern.compile("(\\.mp4|\\.flv|\\.fll)", Pattern.CASE_INSENSITIVE);
 
@@ -81,9 +81,12 @@ public class AniLinkzCom extends PluginForDecrypt {
                 return null;
             }
             unescape.add(Encoding.htmlDecode(escapeAll));
-            dllinks = new Regex(unescape.get(i), "(href|url|file)=\"?(.*?)\"").getColumn(1);
+            dllinks = new Regex(unescape.get(i), "<iframe src=\"(http://[^<>\"]*?)\"").getColumn(0);
             if (dllinks == null || dllinks.length == 0) {
-                dllinks = new Regex(unescape.get(i), "src=\"(.*?)\"").getColumn(0);
+                dllinks = new Regex(unescape.get(i), "(href|url|file)=\"?(.*?)\"").getColumn(1);
+                if (dllinks == null || dllinks.length == 0) {
+                    dllinks = new Regex(unescape.get(i), "src=\"(.*?)\"").getColumn(0);
+                }
             }
             if (dllinks.length > 0) {
                 for (String dllink : dllinks) {
@@ -95,15 +98,13 @@ public class AniLinkzCom extends PluginForDecrypt {
                             } else {
                                 break;
                             }
-                        }
-                        if (dllink.contains("embed.novamov.com")) {
+                        } else if (dllink.contains("embed.novamov.com")) {
                             br2.getPage(dllink);
-                            dllink = br2.getRegex("flashvars.file=\"(.*?)\";").getMatch(0);
+                            dllink = br2.getRegex("flashvars\\.file=\"(.*?)\";").getMatch(0);
                             if (dllink == null) {
                                 break;
                             }
-                        }
-                        if (dllink.contains("upload2.com")) {
+                        } else if (dllink.contains("upload2.com")) {
                             br2.getPage(dllink);
                             dllink = br2.getRegex("video=(.*?)&rating").getMatch(0);
                             if (dllink == null) {
@@ -111,14 +112,20 @@ public class AniLinkzCom extends PluginForDecrypt {
                             }
                             dllink = "directhttp://" + dllink;
                             mirror = "upload2.com";
-                        }
-                        if (dllink.contains("youtube.com")) {
+                        } else if (dllink.contains("youtube.com")) {
                             dllink = new Regex(dllink, "(http://[\\w\\.]*?youtube\\.com/v/\\w+)&").getMatch(0);
                             if (dllink != null) {
                                 dllink = dllink.replace("v/", "watch?v=");
                             } else {
                                 break;
                             }
+                        } else if (dllink.contains("vidzur.com/embed")) {
+                            br.getPage(dllink);
+                            dllink = br.getRegex("url: \\'(http://[a-z0-9]+\\.vidzur\\.com[^<>\"]*?)\\',").getMatch(0);
+                            if (dllink == null) break;
+                            dllink = "directhttp://" + Encoding.htmlDecode(dllink);
+                        } else if (dllink.contains("videobam.com/widget/")) {
+                            dllink = dllink.replace("videobam.com/widget/", "videobam.com/");
                         }
                     } catch (final Exception e) {
                         logger.log(Level.SEVERE, e.getMessage(), e);

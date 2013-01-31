@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxaporn.com" }, urls = { "http://(www\\.)?xxxaporn\\.com/\\d+/.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxaporn.com" }, urls = { "http://(www\\.)?xxxaporn\\.com/\\d+/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
 public class XXXAPornComDecrypter extends PluginForDecrypt {
 
     public XXXAPornComDecrypter(PluginWrapper wrapper) {
@@ -38,14 +38,14 @@ public class XXXAPornComDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("No htmlCode read")) {
-            DownloadLink dl = createDownloadlink(parameter.replace("xxxaporn.com/", "xxxaporndecrypted.com/"));
+            final DownloadLink dl = createDownloadlink(parameter.replace("xxxaporn.com/", "xxxaporndecrypted.com/"));
             dl.setAvailable(false);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         String tempID = br.getRedirectLocation();
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
+            final DownloadLink dl = createDownloadlink(tempID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

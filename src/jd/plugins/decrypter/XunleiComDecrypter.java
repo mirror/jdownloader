@@ -46,6 +46,10 @@ public class XunleiComDecrypter extends PluginForDecrypt {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.getURL().contains("kuai.xunlei.com/invalid")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML("http://verify")) {
             logger.info("xunlei.com decrypter: found captcha...");
             final String fid = new Regex(parameter, "([A-Z]+)$").getMatch(0);

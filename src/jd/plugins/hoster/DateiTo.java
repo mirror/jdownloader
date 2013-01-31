@@ -45,7 +45,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datei.to", "sharebase.to" }, urls = { "http://(www\\.)?datei\\.to/(datei/[A-Za-z0-9]+\\.html|\\?[A-Za-z0-9]+)", "blablablaInvalid_regexbvj54zjhrß96ujß" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datei.to", "sharebase.to" }, urls = { "http://(www\\.)?datei\\.to/(datei/[A-Za-z0-9]+\\.html|\\?[A-Za-z0-9]+)", "blablablaInvalid_regexbvj54zjhrß96ujß" }, flags = { 2, 0 })
 public class DateiTo extends PluginForHost {
 
     private static final String  APIPAGE = "http://datei.to/api/jdownloader/";
@@ -213,7 +213,8 @@ public class DateiTo extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        // to pick up when free account has been picked up from api and throw exception, remove when free account supported.
+        // to pick up when free account has been picked up from api and throw
+        // exception, remove when free account supported.
         account.setProperty("isPremium", true);
         if (useAPI.get() == true) {
             try {
@@ -362,7 +363,8 @@ public class DateiTo extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             String dllink = br.getRedirectLocation();
             if (dllink == null || !dllink.matches("(https?://\\w+\\.datei\\.to/file/[a-z0-9]{32}/[A-Za-z0-9]{8}/[A-Za-z0-9]{10}/[^\"\\']+)")) {
-                // direct download failed to match or disabled feature in users profile
+                // direct download failed to match or disabled feature in users
+                // profile
                 String id = br.getRegex("<button id=\"([^\"]+)\">Download starten<").getMatch(0);
                 if (id == null) {
                     logger.warning("'id' could not be found");

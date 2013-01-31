@@ -31,7 +31,6 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-//Same code as for VideoVeebCom
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidhost.me" }, urls = { "http://(www\\.)?vidhost\\.me/\\?dw?=[A-Z0-9]+" }, flags = { 0 })
 public class VidHostMe extends PluginForHost {
 

@@ -151,16 +151,25 @@ public class DownloadMe extends PluginForHost {
         if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         showMessage(link, "Phase 2/3: Generating downloadlink");
-        br.getPage("https://www.download.me/dlapi/file?id=" + id);
-
-        final int status = Integer.parseInt(getJson("status"));
-        switch (status) {
-        case 0:
-            logger.info("Received status 0, link generation failed!");
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Downloadlink generation failed, please contact the download.me support!");
+        String dllink = null;
+        // Try to get downloadlink for up to 2 minutes
+        for (int i = 1; i <= 24; i++) {
+            logger.info("Trying to find link, try " + i + " / 24");
+            br.getPage("https://www.download.me/dlapi/file?id=" + id);
+            final int status = Integer.parseInt(getJson("status"));
+            switch (status) {
+            case 0:
+                logger.info("Received status 0, link generation failed!");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Downloadlink generation failed, please contact the download.me support!");
+            }
+            dllink = getJson("dlurl");
+            if (dllink != null) {
+                logger.info("Found dllink, continuing...");
+                break;
+            }
+            this.sleep(5000l, link);
         }
 
-        String dllink = getJson("dlurl");
         if (dllink == null) {
             logger.warning("Unhandled download error on download.me:");
             logger.warning(br.toString());

@@ -70,7 +70,7 @@ public class LetitBitNet extends PluginForHost {
      */
     public static final String   APIKEY                            = "VjR1U3JGUkNx";
     public static final String   APIPAGE                           = "http://api.letitbit.net/";
-    private static final String  SPECIALOFFLINE                    = "onclick=\"checkCaptcha\\(\\)\" style=\"";
+    private static final String  TEMPDISABLED                      = "onclick=\"checkCaptcha\\(\\)\" style=\"";
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -296,11 +296,11 @@ public class LetitBitNet extends PluginForHost {
         return res.size() == 1 ? res.get(0) : null;
     }
 
-    private String handleFreeFallback(DownloadLink downloadLink) throws Exception {
+    private String handleFreeFallback(final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML(SPECIALOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        handleNonApiErrors(downloadLink);
         boolean passed = submitFreeForm();
         if (passed) logger.info("Sent free form #1");
         passed = submitFreeForm();
@@ -509,7 +509,7 @@ public class LetitBitNet extends PluginForHost {
             boolean freshLogin = login(account, false);
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML(SPECIALOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            handleNonApiErrors(downloadLink);
             dlUrl = getUrl(account);
             if (dlUrl == null && br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
             // Maybe invalid or free account
@@ -568,7 +568,7 @@ public class LetitBitNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML(SPECIALOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        handleNonApiErrors(downloadLink);
         // Get to the premium zone
         br.postPage(br.getURL(), "way_selection=1&submit_way_selection1=HIGH+Speed+Download");
         /* normal account with only a password */
@@ -624,6 +624,20 @@ public class LetitBitNet extends PluginForHost {
             url = br.getRegex("\"(http://r\\d+\\.letitbit\\.net/f/[a-z0-0]+/[^<>\"\\']+)\"").getMatch(0);
         }
         return url;
+    }
+
+    private void handleNonApiErrors(final DownloadLink dl) throws IOException, PluginException {
+        if (br.containsHTML(TEMPDISABLED)) {
+            br.postPage(APIPAGE, "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/check_link\",{\"link\":\"" + dl.getDownloadURL() + "\"}]]"));
+            final String availableMirrors = br.getRegex("\"data\":\\[(\\d+)\\]").getMatch(0);
+            if (availableMirrors != null) {
+                if (availableMirrors.equals("0")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily not downloaded, " + availableMirrors + " mirrors remaining!");
+                }
+            }
+        }
     }
 
     // do not add @Override here to keep 0.* compatibility

@@ -61,7 +61,7 @@ public class ShareFlareNet extends PluginForHost {
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
     private static final String  APIKEY                            = jd.plugins.hoster.LetitBitNet.APIKEY;
     private static final String  APIPAGE                           = jd.plugins.hoster.LetitBitNet.APIPAGE;
-    private static final String  SPECIALOFFLINE                    = "class=\"wrapper\\-centered\">Code from picture<";
+    private static final String  TEMPDISABLED                      = "class=\"wrapper\\-centered\">Code from picture<";
 
     public ShareFlareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -176,7 +176,8 @@ public class ShareFlareNet extends PluginForHost {
                     }
                 }
                 /*
-                 * we must save the cookies, because shareflare maybe only allows 100 logins per 24hours
+                 * we must save the cookies, because shareflare maybe only
+                 * allows 100 logins per 24hours
                  */
                 br.postPage(COOKIE_HOST, "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie(COOKIE_HOST, "log");
@@ -268,7 +269,7 @@ public class ShareFlareNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML(SPECIALOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        handleNonApiErrors(downloadLink);
         boolean passed = submitFreeForm();
         if (passed) logger.info("Sent free form #1");
         passed = submitFreeForm();
@@ -298,7 +299,8 @@ public class ShareFlareNet extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         prepareBrowser(br2);
         /*
-         * this causes issues in 09580 stable, no workaround known, please update to latest jd version
+         * this causes issues in 09580 stable, no workaround known, please
+         * update to latest jd version
          */
         br2.getHeaders().put("Content-Length", "0");
         br2.postPage(ajaxmainurl + "/ajax/download3.php", "");
@@ -406,7 +408,7 @@ public class ShareFlareNet extends PluginForHost {
             login(account, false);
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML(SPECIALOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            handleNonApiErrors(downloadLink);
             dlUrl = getPremiumDllink();
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 1);
@@ -422,7 +424,7 @@ public class ShareFlareNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML(SPECIALOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        handleNonApiErrors(downloadLink);
         Form premForm = null;
         Form allForms[] = br.getForms();
         if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -472,6 +474,20 @@ public class ShareFlareNet extends PluginForHost {
         return finallink;
     }
 
+    private void handleNonApiErrors(final DownloadLink dl) throws IOException, PluginException {
+        if (br.containsHTML(TEMPDISABLED)) {
+            br.postPage(APIPAGE, "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/check_link\",{\"link\":\"" + dl.getDownloadURL() + "\"}]]"));
+            final String availableMirrors = br.getRegex("\"data\":\\[(\\d+)\\]").getMatch(0);
+            if (availableMirrors != null) {
+                if (availableMirrors.equals("0")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily not downloaded, " + availableMirrors + " mirrors remaining!");
+                }
+            }
+        }
+    }
+
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
@@ -491,7 +507,8 @@ public class ShareFlareNet extends PluginForHost {
 
     private void prepareBrowser(final Browser br) {
         /*
-         * last time they did not block the useragent, we just need this stuff below ;)
+         * last time they did not block the useragent, we just need this stuff
+         * below ;)
          */
         if (br == null) { return; }
         br.getHeaders().put("Accept", "*/*");

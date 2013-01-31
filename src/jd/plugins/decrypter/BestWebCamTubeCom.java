@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bestwebcamtube.com" }, urls = { "http://(www\\.)?bestwebcamtube\\.com/\\?p=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bestwebcamtube.com" }, urls = { "http://(www\\.)?bestwebcamtube\\.com/(\\?p=\\d+|[a-z0-9\\-]+/)" }, flags = { 0 })
 public class BestWebCamTubeCom extends PluginForDecrypt {
 
     public BestWebCamTubeCom(PluginWrapper wrapper) {
@@ -36,36 +36,18 @@ public class BestWebCamTubeCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        String filename = br.getRegex("<title>([^<>\"]*?) \\&laquo;  www\\.bestwebcamtube\\.com</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<h2 class=\"title\">([^<>\"]*?)</h2>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<p><strong>Title:</strong>([^<>\"]*?)</p>").getMatch(0);
-            }
-        }
         String externID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
         if (externID == null) externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
-        if (externID != null) {
-            if (filename == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
-            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
         externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
         if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
         if (externID != null) {
-            DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID));
             return decryptedLinks;
         }
         // pornhub handling number 2
@@ -82,6 +64,42 @@ public class BestWebCamTubeCom extends PluginForDecrypt {
                 return null;
             }
             decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("theamateurzone\\.info/media/player/config_embed\\.php\\?vkey=(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.theamateurzone.info/video/" + externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("(http://media\\.xxxaporn\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            externID = br.getRegex("<share>(http://[^<>\"]*?)</share>").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+
+        // Filename needed for all IDs below
+        String filename = br.getRegex("<title>([^<>\"]*?) \\&laquo;  www\\.bestwebcamtube\\.com</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h2 class=\"title\">([^<>\"]*?)</h2>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<p><strong>Title:</strong>([^<>\"]*?)</p>").getMatch(0);
+            }
+        }
+        if (filename == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
+            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (externID == null) {
