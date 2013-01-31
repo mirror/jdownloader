@@ -468,8 +468,30 @@ public class UnrestrictLi extends PluginForHost {
             } catch (final Throwable e) {
             }
             deleteOutput = false;
-            org.delete();
-            dec.renameTo(org);
+            if (link.getFileOutput().endsWith(".mega")) {
+                // Remove key and .mega suffix from file name
+                String[] fileNameSplit = link.getFileOutput().split("\\.");
+                String[] newFileNameSplit = new String[fileNameSplit.length - 2];
+                System.arraycopy(fileNameSplit, 0, newFileNameSplit, 0, fileNameSplit.length - 2);
+                String newFileName = implodeArray(newFileNameSplit, ".");
+                // Update file names - remove path
+                String[] nameNoPathSplit = newFileName.split("\\\\");
+                String nameNoPath = nameNoPathSplit[nameNoPathSplit.length - 1];
+                link.forceFileName(nameNoPath);
+                link.setFinalFileName(nameNoPath);
+                link.setName(nameNoPath);
+                // Remove any existing files with the same name
+                File finalFile = new File(newFileName);
+                if (finalFile.exists()) {
+                    finalFile.delete();
+                }
+                // Delete original, rename final file
+                org.delete();
+                dec.renameTo(finalFile);
+            } else {
+                org.delete();
+                dec.renameTo(org);
+            }
             link.getLinkStatus().setStatusText("Finished");
         } finally {
             try {
@@ -509,5 +531,25 @@ public class UnrestrictLi extends PluginForHost {
             res[i] = bb.getInt(i * 4);
         }
         return res;
+    }
+
+    private static String implodeArray(String[] inputArray, String glueString) {
+
+        /** Output variable */
+        String output = "";
+
+        if (inputArray.length > 0) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(inputArray[0]);
+
+            for (int i = 1; i < inputArray.length; i++) {
+                sb.append(glueString);
+                sb.append(inputArray[i]);
+            }
+
+            output = sb.toString();
+        }
+
+        return output;
     }
 }
