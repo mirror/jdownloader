@@ -17,12 +17,20 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.crypto.Cipher;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -30,6 +38,7 @@ import jd.gui.UserIO;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -263,7 +272,12 @@ public class UnrestrictLi extends PluginForHost {
         // Chunks is negative to set max number of chunks
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generated, true, -chunks);
         if (dl.getConnection().isContentDisposition()) {
-            dl.startDownload();
+            if (dl.startDownload()) {
+                // Generated download link will end with .mega if it's a mega.co.nz link -> Decrypting required
+                if (link.getLinkStatus().isFinished() && generated.endsWith(".mega")) {
+                    decrypt(link, generated);
+                }
+            }
             return;
         } else {
             br.followConnection();
@@ -403,5 +417,93 @@ public class UnrestrictLi extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private void decrypt(DownloadLink link, String generated) throws Exception {
+        // Split file name
+        String[] fileData = generated.split("\\.");
+        int fileDataLength = fileData.length;
+        // If last elemement was mega, assume previous element = keyString
+        String keyString = fileData[fileDataLength - 2];
+        byte[] b64Dec = b64decode(keyString);
+        int[] intKey = aByte_to_aInt(b64Dec);
+        int[] keyNOnce = new int[] { intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7], intKey[4], intKey[5] };
+        byte[] key = aInt_to_aByte(keyNOnce[0], keyNOnce[1], keyNOnce[2], keyNOnce[3]);
+        int[] iiv = new int[] { keyNOnce[4], keyNOnce[5], 0, 0 };
+        byte[] iv = aInt_to_aByte(iiv);
+        final IvParameterSpec ivSpec = new IvParameterSpec(iv);
+        final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+        File dec = new File(link.getFileOutput() + ".dec");
+        File org = new File(link.getFileOutput());
+        if (dec.exists() && dec.delete() == false) throw new IOException("Could not delete " + dec);
+        FileInputStream fis = null;
+        FileOutputStream fos = null;
+        boolean deleteOutput = true;
+        try {
+            link.getLinkStatus().setStatusText("Decrypting");
+            fis = new FileInputStream(link.getFileOutput());
+            fos = new FileOutputStream(dec);
+
+            Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
+            cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
+            final CipherOutputStream cos = new CipherOutputStream(fos, cipher);
+            int read = 0;
+            final byte[] buffer = new byte[32767];
+            while ((read = fis.read(buffer)) != -1) {
+                if (read > 0) {
+                    cos.write(buffer, 0, read);
+                }
+            }
+            cos.close();
+            try {
+                fos.close();
+            } catch (final Throwable e) {
+            }
+            try {
+                fis.close();
+            } catch (final Throwable e) {
+            }
+            deleteOutput = false;
+            org.delete();
+            dec.renameTo(org);
+            link.getLinkStatus().setStatusText("Finished");
+        } finally {
+            try {
+                fis.close();
+            } catch (final Throwable e) {
+            }
+            try {
+                fos.close();
+            } catch (final Throwable e) {
+            }
+            if (deleteOutput) {
+                dec.delete();
+            }
+        }
+
+    }
+
+    private byte[] b64decode(String data) {
+        data += "==".substring((2 - data.length() * 3) & 3);
+        data = data.replace("-", "+").replace("_", "/").replace(",", "");
+        return Base64.decode(data);
+    }
+
+    private byte[] aInt_to_aByte(int... intKey) {
+        byte[] buffer = new byte[intKey.length * 4];
+        ByteBuffer bb = ByteBuffer.wrap(buffer);
+        for (int i = 0; i < intKey.length; i++) {
+            bb.putInt(intKey[i]);
+        }
+        return bb.array();
+    }
+
+    private int[] aByte_to_aInt(byte[] bytes) {
+        ByteBuffer bb = ByteBuffer.wrap(bytes);
+        int[] res = new int[bytes.length / 4];
+        for (int i = 0; i < res.length; i++) {
+            res[i] = bb.getInt(i * 4);
+        }
+        return res;
     }
 }
