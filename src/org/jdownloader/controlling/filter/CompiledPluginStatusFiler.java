@@ -19,13 +19,16 @@ public class CompiledPluginStatusFiler extends PluginStatusFilter {
             case PREMIUM:
                 if (AccountController.getInstance().hasAccounts(link.getHost())) return true;
                 if (AccountController.getInstance().hasMultiHostAccounts(link.getHost())) return true;
+                return false;
             case AUTOCAPTCHA:
                 return link.hasAutoCaptcha() || !link.hasCaptcha(null);
             }
+            return false;
         case ISNOT:
             switch (getPluginStatus()) {
             case PREMIUM:
                 if (!AccountController.getInstance().hasAccounts(link.getHost()) && !AccountController.getInstance().hasMultiHostAccounts(link.getHost())) return true;
+                return false;
             case AUTOCAPTCHA:
                 return !link.hasAutoCaptcha() && link.hasCaptcha(null);
             }

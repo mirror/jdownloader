@@ -21,6 +21,7 @@ public class CompiledOnlineStatusFiler extends OnlineStatusFilter {
             case UNCHECKABLE:
                 return linkState == LinkState.TEMP_UNKNOWN;
             }
+            return false;
         case ISNOT:
             switch (getOnlineStatus()) {
             case OFFLINE:
