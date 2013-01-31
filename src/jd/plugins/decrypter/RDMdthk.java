@@ -68,9 +68,13 @@ public class RDMdthk extends PluginForDecrypt {
         final String fsk = br.getRegex("(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)").getMatch(0);
         final String realBaseUrl = new Regex(br.getBaseURL(), "(^.*\\.de)").getMatch(0);
 
+        // ardmediathek.de
         String ID = new Regex(parameter, "\\?documentId=(\\d+)").getMatch(0);
+        // mediathek.daserste.de
+        if (ID == null) ID = new Regex(parameter, realBaseUrl + "/[^/]+/[^/]+/(\\d+)").getMatch(0);
+
         String next = br.getRegex("href=\"(/ard/servlet/ajax\\-cache/\\d+/view=switch/documentId=" + ID + "/index.html)").getMatch(0);
-        br.getPage(next);
+        if (next != null) br.getPage(next);
         // Dossiers
         String pages[] = br.getRegex("value=\"(/ard/servlet/ajax\\-cache/\\d+/view=list/documentId=" + ID + "/goto=\\d+/index.html)").getColumn(0);
         if (pages.length < 1) pages = new String[1];
@@ -82,7 +86,7 @@ public class RDMdthk extends PluginForDecrypt {
             for (final String[] s : streams) {
                 progress.increase(1);
                 if ("audio".equalsIgnoreCase(s[0]) && !includeAudio) continue;
-                decryptedLinks.addAll(getDownloadLinks(realBaseUrl + s[1], cfg));
+                decryptedLinks.addAll(getDownloadLinks(cfg, realBaseUrl + s[1], ID));
                 try {
                     if (this.isAbort()) return decryptedLinks;
                 } catch (Throwable e) {
@@ -94,7 +98,7 @@ public class RDMdthk extends PluginForDecrypt {
             br.getPage(pages[i]);
         }
         // Single link
-        if (decryptedLinks == null || decryptedLinks.size() == 0) decryptedLinks.addAll(getDownloadLinks(parameter, cfg));
+        if (decryptedLinks == null || decryptedLinks.size() == 0) decryptedLinks.addAll(getDownloadLinks(cfg, parameter, ID));
 
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             if (notForStable > 0) {
@@ -123,23 +127,17 @@ public class RDMdthk extends PluginForDecrypt {
         return false;
     }
 
-    private ArrayList<DownloadLink> getDownloadLinks(String data, SubConfiguration cfg) {
+    private ArrayList<DownloadLink> getDownloadLinks(SubConfiguration cfg, String... s) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
         try {
-            String ID = new Regex(data, "\\?documentId=(\\d+)").getMatch(0);
-            if (ID != null) {
+            if (s[1] != null) {
                 Browser br = new Browser();
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
-                br.getPage(data);
+                br.getPage(s[0]);
                 if (br.containsHTML("<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>")) return ret;
                 String title = getTitle(br);
-                /*
-                 * little pause needed so the next call does not return trash
-                 */
-                Thread.sleep(1000);
-
                 String url = null, fmt = null;
                 int t = 0;
 
@@ -196,10 +194,10 @@ public class RDMdthk extends PluginForDecrypt {
                     }
 
                     final String name = title + "@" + fmt.toUpperCase(Locale.ENGLISH) + extension;
-                    final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + fmt);
+                    final DownloadLink link = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=" + fmt);
                     if (t == 1 ? false : true) link.setAvailable(true);
                     link.setFinalFileName(name);
-                    link.setBrowserUrl(data);
+                    link.setBrowserUrl(s[0]);
                     link.setProperty("directURL", url);
                     link.setProperty("directName", name);
                     link.setProperty("directQuality", quality[1]);
@@ -249,8 +247,8 @@ public class RDMdthk extends PluginForDecrypt {
     }
 
     private String getTitle(Browser br) {
-        String title = br.getRegex("<div class=\"MainBoxHeadline\">([^<]+)</").getMatch(0);
-        String titleUT = br.getRegex("<span class=\"BoxHeadlineUT\">([^<]+)</").getMatch(0);
+        String title = br.getRegex("<(div|span) class=\"(MainBoxHeadline|BoxHeadline)\">([^<]+)</").getMatch(2);
+        String titleUT = br.getRegex("<span class=\"(BoxHeadlineUT|boxSubHeadline)\">([^<]+)</").getMatch(1);
         if (title == null) title = br.getRegex("<title>ard\\.online \\- Mediathek: ([^<]+)</title>").getMatch(0);
         if (title == null) title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
         if (title != null) title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
