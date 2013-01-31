@@ -116,7 +116,7 @@ public class DrTuberCom extends PluginForHost {
             continueLink = getContinueLink(br.getRegex("(var configPath.*?addVariable\\(\\'config\\',.*?;)").getMatch(0));
             String vKey = new Regex(continueLink, "vkey=([0-9a-z]+)").getMatch(0);
             if (continueLink == null || vKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            continueLink = "http://drtuber.com" + Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("a1hoSjZOYTVHcUR2RjBz"));
+            continueLink = "http://drtuber.com" + Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("UFQ2bDEzdW1xVjhLODI3"));
         }
 
         /* embed v4 */
