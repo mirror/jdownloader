@@ -81,7 +81,6 @@ public class UpdateController implements UpdateCallbackInterface {
 
     public void setHandler(UpdateHandler handler, ConfigInterface updaterSetup, String appid, String updaterid) {
         this.handler = handler;
-
         handler.runChecker();
         this.appid = appid;
         this.updaterid = updaterid;
