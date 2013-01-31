@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -59,7 +60,12 @@ public class FileBoxCom extends PluginForHost {
     private static Object       LOCK                = new Object();
     private String              LINKID              = null;
 
-    // XfileSharingProBasic Version 2.5.2.0, modified filename handling
+    // XfileSharingProBasic Version 2.5.2.0-modified beyond belief
+    // chlog
+    // 31-01-2013 - raztoki
+    // - hacked up the script to support normal linkchecking first, and if that fails reverts to a revised api call.
+    // - download method represents both linkchecking routines, and handlefree/handlepremium download
+
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -87,136 +93,165 @@ public class FileBoxCom extends PluginForHost {
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
-        try {
-            final Browser br = new Browser();
-            br.setCookie(COOKIE_HOST, "lang", "english");
-            br.setCookiesExclusive(true);
-            final StringBuilder sb = new StringBuilder();
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 50 links at once */
-                    if (index == urls.length || links.size() > 50) {
-                        break;
-                    }
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                sb.append("op=checkfiles&process=Check+URLs&list=");
-                for (final DownloadLink dl : links) {
-                    sb.append(dl.getDownloadURL());
-                    sb.append("%0A");
-                }
-                br.postPage(COOKIE_HOST + "/?op=checkfiles", sb.toString());
-                for (final DownloadLink dllink : links) {
-                    final String fid = new Regex(dllink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-                    if (br.containsHTML("filebox\\.com/" + fid + " found</font>")) {
-                        dllink.setAvailable(true);
-                        dllink.setName(fid);
-                    } else if (br.containsHTML("filebox\\.com/" + fid + " not found\\!</font>")) {
-                        dllink.setAvailable(false);
-                    } else {
-                        dllink.setAvailable(false);
-                        dllink.getLinkStatus().setStatusText("Linkchecker is probably broken!");
-                    }
-                }
-                if (index == urls.length) {
-                    break;
-                }
+        java.util.List<DownloadLink> failedLinkCheck = new ArrayList<DownloadLink>();
+        for (DownloadLink url : urls) {
+            try {
+                requestFileInformation(url);
+            } catch (Exception a) {
+                failedLinkCheck.add(url);
             }
-        } catch (final Exception e) {
-            return false;
+        }
+        while (!failedLinkCheck.isEmpty()) {
+            try {
+                // not extensively tested.
+                final Browser br = new Browser();
+                br.setCookie(COOKIE_HOST, "lang", "english");
+                br.setCookiesExclusive(true);
+                final StringBuilder sb = new StringBuilder();
+                final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+                while (!failedLinkCheck.isEmpty()) {
+                    links.clear();
+                    for (DownloadLink link : failedLinkCheck) {
+                        links.add(link);
+                        if (links.size() == 50) break;
+                    }
+                    sb.delete(0, sb.capacity());
+                    sb.append("op=checkfiles&process=Check+URLs&list=");
+                    for (final DownloadLink dl : links) {
+                        sb.append(dl.getDownloadURL());
+                        sb.append("%0A");
+                    }
+                    br.postPage(COOKIE_HOST + "/?op=checkfiles", sb.toString());
+                    for (final DownloadLink dllink : links) {
+                        final String fid = new Regex(dllink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+                        if (br.containsHTML("filebox\\.com/" + fid + " found</font>")) {
+                            dllink.setAvailable(true);
+                            dllink.setName(fid);
+                        } else if (br.containsHTML("filebox\\.com/" + fid + " not found\\!</font>")) {
+                            dllink.setAvailable(false);
+                        } else {
+                            dllink.setAvailable(false);
+                            dllink.getLinkStatus().setStatusText("Linkchecker is probably broken!");
+                        }
+                        failedLinkCheck.remove(dllink);
+                    }
+                }
+            } catch (Exception b) {
+            }
         }
         return true;
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         LINKID = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        br.setFollowRedirects(false);
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(link.getDownloadURL());
-        doSomething();
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (new Regex(correctedBR, Pattern.compile(MAINTENANCE)).matches()) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
+        String directlinkproperty = null;
+        Account acc = AccountController.getInstance().getValidAccount(this);
+        if (acc != null && acc.getBooleanProperty("nopremium")) {
+            // free account
+            directlinkproperty = "freelink2";
+        } else if (acc != null && !acc.getBooleanProperty("nopremium")) {
+            // prem account
+            directlinkproperty = "premlink";
+        } else {
+            // non account
+            directlinkproperty = "freelink";
+        }
+        String dllink = link.getStringProperty(directlinkproperty);
+        if (dllink != null && link.getName() != null) {
+            // lets try to dl without repeating
+            return AvailableStatus.TRUE;
+        } else {
+            // lets reset values
+            String passCode = link.getStringProperty("pass");
+            this.setBrowserExclusive();
+            br.getPage(link.getDownloadURL());
+            doSomething();
+            long timeBefore = System.currentTimeMillis();
+            Form dlForm = br.getFormbyProperty("name", "F1");
+            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            boolean password = false;
+            if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                password = true;
+                logger.info("The downloadlink seems to be password protected.");
+            }
+            if (password) passCode = handlePassword(passCode, dlForm, link);
+            waitTime(timeBefore, link);
+            br.submitForm(dlForm);
+            logger.info("Submitted DLForm");
+            doSomething();
+            checkErrors(link, true, passCode);
+            dllink = getDllink();
+
+            String filename = br.getRegex(">File Name : <span>(.*?)</span></div>").getMatch(0);
+            if (filename == null) filename = br.getRegex(">(.*?)</a></textarea></div>").getMatch(0);
+            if (filename != null) link.setFinalFileName(filename.trim());
+            String filesize = br.getRegex(">Size : <span[^>]+>(\\d+ bytes)</span></div>").getMatch(0);
+            if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink != null) {
+                // finallink url actually contains real filename instead of 'video.extension' from the vidembed- page.
+                link.setProperty(directlinkproperty, dllink);
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = br.getCookies(this.getHost());
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                link.setProperty("cookies", cookies);
+            }
             return AvailableStatus.TRUE;
         }
-        link.setName(LINKID);
-        return AvailableStatus.TRUE;
+
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, true, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean getLinkWithoutLogin, String directlinkproperty) throws Exception, PluginException {
-        String passCode = null;
-        String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-        if (md5hash != null) {
-            md5hash = md5hash.trim();
-            logger.info("Found md5hash: " + md5hash);
-            downloadLink.setMD5Hash(md5hash);
-        }
-        final String linkID = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        String dllink = checkDirectLink(downloadLink, "freelink");
-
-        /**
-         * Videolinks can already be found here, if a link is found here we can
-         * skip waittimes and captchas
-         */
-        dllink = getDllink();
-        if (dllink == null) {
-            checkErrors(downloadLink, false, passCode);
-            br.getPage("http://www.filebox.com/vidembed-" + linkID);
-            dllink = getDllink();
-        }
-        if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final long timeBefore = System.currentTimeMillis();
-            boolean password = false;
-            boolean skipWaittime = false;
-            if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                password = true;
-                logger.info("The downloadlink seems to be password protected.");
+    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+        String passCode = downloadLink.getStringProperty("pass");
+        Browser br2 = br.cloneBrowser();
+        if (downloadLink.getStringProperty(directlinkproperty) != null) {
+            if (downloadLink.getProperty("cookies", null) != null) {
+                br2 = new Browser();
+                br2.setCookiesExclusive(true);
+                final Object ret = downloadLink.getProperty("cookies", null);
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                    final String key = cookieEntry.getKey();
+                    final String value = cookieEntry.getValue();
+                    br2.setCookie(this.getHost(), key, value);
+                }
             }
-            /* Captcha END */
-            if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
-            if (!skipWaittime) waitTime(timeBefore, downloadLink);
-            br.submitForm(dlForm);
-            logger.info("Submitted DLForm");
-            doSomething();
-            checkErrors(downloadLink, true, passCode);
-            dllink = getDllink();
+            String dllink = checkDirectLink(downloadLink, directlinkproperty, br2);
             if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                // revert back to vidembed!
+                br2.getPage("http://www.filebox.com/vidembed-" + LINKID);
+                doSomething();
+                dllink = getDllink();
+                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            String ext = dllink.substring(dllink.lastIndexOf("."));
+            if (ext == null || ext.length() > 5) ext = ".mp4";
+            if (dllink.contains("video.mp4")) downloadLink.setFinalFileName(LINKID + ext);
+            dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, dllink, resumable, maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 415) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+                logger.warning("The final dllink seems not to be a file!");
+                br2.followConnection();
+                doSomething();
+                checkServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            if (passCode != null) downloadLink.setProperty("pass", passCode);
+            if (Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())).equals("video.flv")) downloadLink.setFinalFileName(new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".flv");
+            dl.startDownload();
         }
-        logger.info("Final downloadlink = " + dllink + " starting the download...");
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
-        if (dllink.contains("video.mp4")) downloadLink.setFinalFileName(linkID + ext);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 415) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            doSomething();
-            checkServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (getLinkWithoutLogin) downloadLink.setProperty(directlinkproperty, dllink);
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
-        if (Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())).equals("video.flv")) downloadLink.setFinalFileName(new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".flv");
-        dl.startDownload();
     }
 
     @Override
@@ -435,39 +470,40 @@ public class FileBoxCom extends PluginForHost {
     private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        String passCode = null;
-        requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
-        String dllink = null;
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        String directlinkproperty = null;
+        int chunks;
+        boolean resumes;
         if (account.getBooleanProperty("nopremium")) {
-            br.getPage(link.getDownloadURL());
-            doSomething();
-            doFree(link, true, -2, false, "freelink2");
+            directlinkproperty = "freelink2";
+            chunks = 1;
+            resumes = true;
         } else {
-            dllink = checkDirectLink(link, "premlink");
-            if (dllink == null) {
-                br.getPage(link.getDownloadURL());
-                doSomething();
-                dllink = getDllink();
-                if (dllink == null) {
-                    checkErrors(link, true, passCode);
-                    Form DLForm = br.getFormbyProperty("name", "F1");
-                    if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
-                    br.submitForm(DLForm);
-                    doSomething();
-                    dllink = getDllink();
-                    checkErrors(link, true, passCode);
+            directlinkproperty = "premlink";
+            chunks = -10;
+            resumes = true;
+        }
+
+        if (downloadLink.getStringProperty(directlinkproperty) != null) {
+            if (downloadLink.getProperty("cookies", null) != null) {
+                Browser br = new Browser();
+                br.setCookiesExclusive(true);
+                final Object ret = downloadLink.getProperty("cookies", null);
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                    final String key = cookieEntry.getKey();
+                    final String value = cookieEntry.getValue();
+                    br.setCookie(COOKIE_HOST, key, value);
                 }
             }
+
+            String dllink = checkDirectLink(downloadLink, directlinkproperty, br);
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -475,9 +511,51 @@ public class FileBoxCom extends PluginForHost {
                 checkServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (passCode != null) link.setProperty("pass", passCode);
-            link.setProperty("premlink", dllink);
             dl.startDownload();
+
+        } else {
+            String passCode = null;
+            requestFileInformation(downloadLink);
+            login(account, false);
+            br.setFollowRedirects(false);
+            String dllink = null;
+            if (account.getBooleanProperty("nopremium")) {
+                br.getPage(downloadLink.getDownloadURL());
+                doSomething();
+                doFree(downloadLink, resumes, chunks, directlinkproperty);
+            } else {
+                dllink = checkDirectLink(downloadLink, directlinkproperty, br);
+                if (dllink == null) {
+                    br.getPage(downloadLink.getDownloadURL());
+                    doSomething();
+                    dllink = getDllink();
+                    if (dllink == null) {
+                        checkErrors(downloadLink, true, passCode);
+                        Form DLForm = br.getFormbyProperty("name", "F1");
+                        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, downloadLink);
+                        br.submitForm(DLForm);
+                        doSomething();
+                        dllink = getDllink();
+                        checkErrors(downloadLink, true, passCode);
+                    }
+                }
+                if (dllink == null) {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                logger.info("Final downloadlink = " + dllink + " starting the download...");
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+                if (dl.getConnection().getContentType().contains("html")) {
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    doSomething();
+                    checkServerErrors();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (passCode != null) downloadLink.setProperty("pass", passCode);
+                dl.startDownload();
+            }
         }
     }
 
@@ -532,7 +610,7 @@ public class FileBoxCom extends PluginForHost {
         }
     }
 
-    private String checkDirectLink(DownloadLink downloadLink, String property) {
+    private String checkDirectLink(DownloadLink downloadLink, String property, Browser br) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             try {
@@ -540,11 +618,13 @@ public class FileBoxCom extends PluginForHost {
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
+                    if (downloadLink.getProperty("cookies", null) != null) downloadLink.setProperty("cookies", Property.NULL);
                     dllink = null;
                 }
                 con.disconnect();
             } catch (Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
+                if (downloadLink.getProperty("cookies", null) != null) downloadLink.setProperty("cookies", Property.NULL);
                 dllink = null;
             }
         }
@@ -568,7 +648,7 @@ public class FileBoxCom extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\">([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(1);
+        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<]+<span[^>]+>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(1);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

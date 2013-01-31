@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -40,6 +41,7 @@ public class EuroShareEu extends PluginForHost {
     private static final String  containsPassword         = "ERR: Password protected file \\(wrong password\\)\\.";
     private static final String  TOOMANYSIMULTANDOWNLOADS = "<p>Naraz je z jednej IP adresy možné sťahovať iba jeden súbor";
     private static AtomicInteger maxPrem                  = new AtomicInteger(1);
+    private AtomicBoolean        passSuccess              = new AtomicBoolean(false);
 
     public EuroShareEu(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,7 +64,8 @@ public class EuroShareEu extends PluginForHost {
         // start of password handling crapola
         String pass = downloadLink.getStringProperty("pass");
         if ((pass != null && !pass.equals("")) || downloadLink.getLinkStatus().getStatusText() != null) {
-            if (handlePassword(downloadLink)) {
+            handlePassword(downloadLink);
+            if (passSuccess.get() == true) {
                 logger.info("handlePassword success");
             } else {
                 logger.info("handlePassword failure");
@@ -103,33 +106,35 @@ public class EuroShareEu extends PluginForHost {
 
     }
 
-    boolean handlePassword(DownloadLink downloadLink) throws IOException, PluginException {
-        String pass = downloadLink.getStringProperty("pass");
-        if (pass != null && !pass.equals("")) {
-            br.getPage("http://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&file_password=" + Encoding.urlEncode(pass));
-            if (br.containsHTML(containsPassword)) {
-                // wrong password
-                downloadLink.setProperty("pass", Property.NULL);
-                handlePassword(downloadLink);
-            } else {
-                // password isn't wrong
-                downloadLink.getLinkStatus().setStatusText(null);
-                try {
-                    downloadLink.setComment(null);
-                } catch (final Throwable e) {
-                }
-                return true;
-            }
-        } else {
-            pass = Plugin.getUserInput(downloadLink.getName() + " is password protected!", downloadLink);
+    private void handlePassword(DownloadLink downloadLink) throws IOException, PluginException {
+        if (passSuccess.get() == false) {
+            String pass = downloadLink.getStringProperty("pass");
             if (pass != null && !pass.equals("")) {
-                downloadLink.setProperty("pass", pass);
-                handlePassword(downloadLink);
+                br.getPage("http://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&file_password=" + Encoding.urlEncode(pass));
+                if (br.containsHTML(containsPassword)) {
+                    // wrong password
+                    downloadLink.setProperty("pass", Property.NULL);
+                    handlePassword(downloadLink);
+                } else {
+                    // password isn't wrong
+                    downloadLink.getLinkStatus().setStatusText(null);
+                    try {
+                        downloadLink.setComment(null);
+                    } catch (final Throwable e) {
+                    }
+                    passSuccess.set(true);
+                }
             } else {
-                return false;
+                pass = Plugin.getUserInput(downloadLink.getName() + " is password protected!", downloadLink);
+                if (pass != null && !pass.equals("")) {
+                    downloadLink.setProperty("pass", pass);
+                    handlePassword(downloadLink);
+                } else {
+                    // not sure how stable works, but jd2 never enters here on cancellation of dialog box
+                    passSuccess.set(false);
+                }
             }
         }
-        return true;
     }
 
     @Override
