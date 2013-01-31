@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -28,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -35,6 +37,7 @@ import jd.plugins.PluginForHost;
 public class EuroShareEu extends PluginForHost {
 
     /** API documentation: http://euroshare.eu/euroshare-api/ */
+    private static final String  containsPassword         = "ERR: Password protected file \\(wrong password\\)\\.";
     private static final String  TOOMANYSIMULTANDOWNLOADS = "<p>Naraz je z jednej IP adresy možné sťahovať iba jeden súbor";
     private static AtomicInteger maxPrem                  = new AtomicInteger(1);
 
@@ -55,18 +58,78 @@ public class EuroShareEu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage("http://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
-        if (br.containsHTML("ERR: File does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = getJson("file_name");
+        String filename;
+        // start of password handling crapola
+        String pass = downloadLink.getStringProperty("pass");
+        if ((pass != null && !pass.equals("")) || downloadLink.getLinkStatus().getStatusText() != null) {
+            if (handlePassword(downloadLink)) {
+                logger.info("handlePassword success");
+            } else {
+                logger.info("handlePassword failure");
+                return AvailableStatus.UNCHECKABLE;
+            }
+        } else {
+            br.getPage("http://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+            if (br.containsHTML("ERR: File does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(containsPassword)) {
+                downloadLink.getLinkStatus().setStatusText("Pre-download password protection. Please set password!");
+                try {
+                    downloadLink.setComment("Pre-download password protection. Please set password!");
+                } catch (final Throwable e) {
+                }
+                filename = new Regex(downloadLink.getDownloadURL(), "/([^/]+)$").getMatch(0);
+                if (filename != null) {
+                    Encoding.urlDecode(filename, true);
+                }
+                return AvailableStatus.UNCHECKABLE;
+            }
+        }
+        // end of password handling
+
+        filename = getJson("file_name");
         final String description = getJson("file_description");
-        if (description != null) downloadLink.setComment(description);
+        if (description != null) {
+            try {
+                downloadLink.setComment(description);
+            } catch (final Throwable e) {
+            }
+        }
         final String filesize = getJson("file_size");
         final String md5 = getJson("md5_hash");
         downloadLink.setFinalFileName(filename);
         downloadLink.setDownloadSize(Long.parseLong(filesize));
         downloadLink.setMD5Hash(md5);
-
         return AvailableStatus.TRUE;
+
+    }
+
+    boolean handlePassword(DownloadLink downloadLink) throws IOException, PluginException {
+        String pass = downloadLink.getStringProperty("pass");
+        if (pass != null && !pass.equals("")) {
+            br.getPage("http://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&file_password=" + Encoding.urlEncode(pass));
+            if (br.containsHTML(containsPassword)) {
+                // wrong password
+                downloadLink.setProperty("pass", Property.NULL);
+                handlePassword(downloadLink);
+            } else {
+                // password isn't wrong
+                downloadLink.getLinkStatus().setStatusText(null);
+                try {
+                    downloadLink.setComment(null);
+                } catch (final Throwable e) {
+                }
+                return true;
+            }
+        } else {
+            pass = Plugin.getUserInput(downloadLink.getName() + " is password protected!", downloadLink);
+            if (pass != null && !pass.equals("")) {
+                downloadLink.setProperty("pass", pass);
+                handlePassword(downloadLink);
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

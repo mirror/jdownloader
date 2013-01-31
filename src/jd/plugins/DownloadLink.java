@@ -705,8 +705,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         this.icon = icon;
     }
 
-    /*
+    /**
      * WARNING: DO NOT use in 09581 stable!
+     * 
+     * @since JD2
      */
     public void setComment(String comment) {
         if (comment == null || comment.length() == 0) {
