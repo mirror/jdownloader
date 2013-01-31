@@ -1,0 +1,4 @@
+interaction_batchreconnect_batch=批次腳本
+interaction_batchreconnect_executein=開始於 (應用程式資料夾)
+interaction_batchreconnect_terminal=翻譯程式
+jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName=外部批次重新連接
