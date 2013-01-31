@@ -95,6 +95,16 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 if (queryParams._getQueryParam("comment", Boolean.class, false)) {
                     infomap.put("comment", fp.getComment());
                 }
+                if (queryParams.fieldRequested("enabled")) {
+                    boolean enabled = false;
+                    for (DownloadLink dl : fp.getChildren()) {
+                        if (dl.isEnabled()) {
+                            enabled = true;
+                            break;
+                        }
+                    }
+                    infomap.put("enabled", enabled);
+                }
 
                 fps.setInfoMap(infomap);
                 ret.add(fps);
@@ -175,6 +185,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             if (queryParams._getQueryParam("done", Boolean.class, false)) {
                 infomap.put("done", dl.getDownloadCurrent());
             }
+            if (queryParams.fieldRequested("enabled")) infomap.put("enabled", dl.isEnabled());
 
             infomap.put("packageUUID", dl.getParentNode().getUniqueID().getID());
 
@@ -230,11 +241,11 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
         DownloadController dlc = DownloadController.getInstance();
 
-        List<DownloadLink> rmv;
+        List<DownloadLink> sdl;
 
         boolean b = dlc.readLock();
         try {
-            rmv = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+            sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
                 @Override
                 public int returnMaxResults() {
                     return 0;
@@ -251,7 +262,73 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         }
 
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
-        dwd.forceDownload(rmv);
+        dwd.forceDownload(sdl);
+
+        return true;
+    }
+
+    @Override
+    public boolean enableLinks(final List<Long> linkIds) {
+        if (linkIds == null) return true;
+
+        DownloadController dlc = DownloadController.getInstance();
+
+        List<DownloadLink> sdl;
+
+        boolean b = dlc.readLock();
+        try {
+            sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                @Override
+                public int returnMaxResults() {
+                    return 0;
+                }
+
+                @Override
+                public boolean isChildrenNodeFiltered(DownloadLink node) {
+                    if (linkIds.contains(node.getUniqueID().getID())) return true;
+                    return false;
+                }
+            });
+        } finally {
+            dlc.readUnlock(b);
+        }
+
+        for (DownloadLink dl : sdl) {
+            dl.setEnabled(true);
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean disableLinks(final List<Long> linkIds) {
+        if (linkIds == null) return true;
+
+        DownloadController dlc = DownloadController.getInstance();
+
+        List<DownloadLink> sdl;
+
+        boolean b = dlc.readLock();
+        try {
+            sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                @Override
+                public int returnMaxResults() {
+                    return 0;
+                }
+
+                @Override
+                public boolean isChildrenNodeFiltered(DownloadLink node) {
+                    if (linkIds.contains(node.getUniqueID().getID())) return true;
+                    return false;
+                }
+            });
+        } finally {
+            dlc.readUnlock(b);
+        }
+
+        for (DownloadLink dl : sdl) {
+            dl.setEnabled(false);
+        }
 
         return true;
     }

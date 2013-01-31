@@ -23,4 +23,8 @@ public interface DownloadsAPI extends RemoteAPIInterface {
     boolean forceDownload(final List<Long> linkIds);
 
     int speed();
+
+    boolean enableLinks(List<Long> linkIds);
+
+    boolean disableLinks(List<Long> linkIds);
 }
