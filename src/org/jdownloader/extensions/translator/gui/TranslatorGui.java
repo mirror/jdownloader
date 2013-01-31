@@ -673,7 +673,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                JDRestartController.getInstance().directRestart("-translatortest", getExtension().getLoadedLocale().getId());
+                JDRestartController.getInstance().directAsynchRestart("-translatortest", getExtension().getLoadedLocale().getId());
 
             }
         }));

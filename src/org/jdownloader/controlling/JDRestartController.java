@@ -46,6 +46,14 @@ public class JDRestartController extends RestartController {
 
     }
 
+    public void directAsynchRestart(final String... strings) {
+        new Thread("restarter") {
+            public void run() {
+                directRestart(strings);
+            }
+        }.start();
+    }
+
     // public void bootstrapRestartASAP() {
     //
     // new Thread("Wait For Restart") {

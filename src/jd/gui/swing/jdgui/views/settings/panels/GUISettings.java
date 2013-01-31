@@ -87,7 +87,7 @@ public class GUISettings extends AbstractConfigPanel {
                     try {
                         Dialog.getInstance().showConfirmDialog(0, _GUI._.GUISettings_save_language_changed_restart_required_title(), _GUI._.GUISettings_save_language_changed_restart_required_msg(), NewTheme.getInstance().getIcon("language", 32), null, null);
 
-                        JDRestartController.getInstance().directRestart();
+                        JDRestartController.getInstance().directAsynchRestart();
                     } catch (DialogClosedException e2) {
 
                     } catch (DialogCanceledException e2) {

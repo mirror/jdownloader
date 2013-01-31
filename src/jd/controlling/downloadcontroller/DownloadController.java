@@ -131,6 +131,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
             @Override
             public void delayedrun() {
+                System.out.println("ASYNCH SAVE");
                 saveDownloadLinks();
             }
 

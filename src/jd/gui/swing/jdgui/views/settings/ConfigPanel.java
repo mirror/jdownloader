@@ -40,15 +40,15 @@ import org.jdownloader.images.NewTheme;
 
 public abstract class ConfigPanel extends SwitchPanel {
 
-    private static final long         serialVersionUID = 3383448498625377495L;
+    private static final long              serialVersionUID = 3383448498625377495L;
 
-    public static final int           ICON_SIZE        = 32;
+    public static final int                ICON_SIZE        = 32;
 
     private java.util.List<GUIConfigEntry> entries          = new ArrayList<GUIConfigEntry>();
 
-    protected JPanel                  panel;
+    protected JPanel                       panel;
 
-    private ConfigGroup               currentGroup;
+    private ConfigGroup                    currentGroup;
 
     public ConfigPanel() {
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
@@ -170,7 +170,7 @@ public abstract class ConfigPanel extends SwitchPanel {
             if (!ShutdownController.getInstance().isShutDownRequested()) {
                 int answer = UserIO.getInstance().requestConfirmDialog(0, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title(), _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion(), null, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_ok(), null);
                 if (UserIO.isOK(answer)) {
-                    org.jdownloader.controlling.JDRestartController.getInstance().directRestart();
+                    org.jdownloader.controlling.JDRestartController.getInstance().directAsynchRestart();
                 }
             }
         }
