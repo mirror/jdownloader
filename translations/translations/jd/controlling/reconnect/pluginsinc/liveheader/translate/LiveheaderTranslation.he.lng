@@ -2,7 +2,6 @@ DataCompareDialog_DataCompareDialog_=השווה נתוני נתב
 DataCompareDialog_layoutDialogContent_password=סיסמא
 DataCompareDialog_layoutDialogContent_user=שם משתמש
 GetIPAction_getString_progress=סורק רשת...
-LiveHeaderDetectionWizard_runOnlineScan_notalive=שרות לא זמין. נסה מאוחר יותר.
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=שרות לא זמין
 ReconnectRecorderAction_ReconnectRecorderAction_=צור סקריפט חדש
 RouterSendAction_RouterSendAction_=שתף הגדרות
