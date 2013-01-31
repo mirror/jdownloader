@@ -146,7 +146,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.version")));
 
         contentpane.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_synthetica("(#289416475)")), "gaptop 10, spanx");
-        contentpane.add(new JLabel("© AppWork GmbH 2007-2011"), "spanx");
+        contentpane.add(new JLabel("© AppWork GmbH 2007-2013"), "spanx");
         contentpane.add(links, "gaptop 15, growx, pushx, spanx");
         this.registerEscape(contentpane);
 
