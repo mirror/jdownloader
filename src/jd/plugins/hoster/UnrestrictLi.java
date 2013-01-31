@@ -269,6 +269,8 @@ public class UnrestrictLi extends PluginForHost {
             chunks = link.hasProperty("cons") ? ((Integer) link.getProperty("cons")) : 1;
         } catch (final Throwable e) {
         }
+        // Set JDownloader header
+        br.getHeaders().put("User-Agent", "JDownloader");
         // Chunks is negative to set max number of chunks
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generated, true, -chunks);
         if (dl.getConnection().isContentDisposition()) {
