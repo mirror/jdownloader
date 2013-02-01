@@ -27,6 +27,7 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -103,15 +104,21 @@ public class SockShareCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML("(>You have exceeded the daily stream limit for your country|You can wait until tomorrow, or get a)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have exceeded the daily download limit for your country", 4 * 60 * 60 * 1000l);
         br.setDebug(true);
-        String hash = br.getRegex("<input type=\"hidden\" value=\"([a-z0-9]+)\" name=\"hash\">").getMatch(0);
-        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final Form freeform = getFormByKey("confirm", "Continue+as+Free+User");
+        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (freeform.containsHTML("/include/captcha")) {
+            String captchaIMG = br.getRegex("<img src=\"(/include/captcha.php\\?[^\"]+)\" />").getMatch(0);
+            if (captchaIMG == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), downloadLink);
+            if (captcha != null) freeform.put("captcha_code", Encoding.urlEncode(captcha));
+        }
         /** Can still be skipped */
         // String waittime =
         // br.getRegex("var countdownNum = (\\d+);").getMatch(0);
         // int wait = 5;
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
-        br.postPage(br.getURL(), "hash=" + hash + "&confirm=Continue+as+Free+User");
+        br.submitForm(freeform);
         if (br.containsHTML("This file failed to convert")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Download only works with an account", PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -299,6 +306,29 @@ public class SockShareCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
+    /**
+     * Returns the first form that has a 'key' that equals 'value'.
+     * 
+     * @param key
+     * @param value
+     * @return
+     */
+    private Form getFormByKey(final String key, final String value) {
+        Form[] workaround = br.getForms();
+        if (workaround != null) {
+            for (Form f : workaround) {
+                for (InputField field : f.getInputFields()) {
+                    if (key != null && key.equals(field.getKey())) {
+                        if (value == null && field.getValue() == null) return f;
+                        if (value != null && value.equals(field.getValue())) return f;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
 }

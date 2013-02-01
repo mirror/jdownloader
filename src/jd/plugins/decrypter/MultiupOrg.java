@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -26,86 +26,58 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://(www\\.)?multiup\\.org/(\\?lien=.{2,}|fichiers/download/.{2,})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://(www\\.)?multiup\\.org/(fichiers/download/[a-z0-9]{32}_[^<> \"'&]+|([a-z]{2}/)?(download|miror)/[a-z0-9]{32}/[^<> \"'&]+)" }, flags = { 0 })
 public class MultiupOrg extends PluginForDecrypt {
+
+    // DEV NOTES:
+    // /?lien=842fab872a0a9618f901b9f4ea986d47_bawls_doctorsdiary202.avi = format doesn't exist any longer..
+    // /fichiers/download/d249b81f92d7789a1233e500a0319906_FIQHwASOOL_75_rar = does and redirects to below rule
+    // (/fr)/download/d249b81f92d7789a1233e500a0319906/FIQHwASOOL_75_rar
+    // uid interchangeable, uid and filename are required to be a valid link.
 
     public MultiupOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        br.setFollowRedirects(true);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         String parameter = param.toString();
-        br.getPage(parameter);
-        if (br.containsHTML("The file does not exist any more\\.<")) {
+        String reg = "(org/fichiers/download/([0-9a-z]{32})_([^<> \"'&]+)?|org/([a-z]{2}/)?(download|miror)/([a-z0-9]{32})/([^<> \"'&]+))";
+        String[][] matches = new Regex(parameter, reg).getMatches();
+        String uid = matches[0][1];
+        if (uid == null) {
+            uid = matches[0][5];
+            if (uid == null) {
+                logger.info("URL is invalid, must contain 'uid' to be valid " + parameter);
+                return decryptedLinks;
+            }
+        }
+        String filename = matches[0][2];
+        if (filename == null) {
+            filename = matches[0][6];
+            if (filename == null) {
+                logger.info("URL is invalid, must contain 'filename' to be valid " + parameter);
+                return decryptedLinks;
+            }
+        }
+        parameter = new Regex(parameter, "(https?://[^/]+)").getMatch(0).replace("www.", "") + "/en/download/" + uid + "/" + filename;
+        param.setCryptedUrl(parameter);
+        br.getPage(parameter.replace("/en/download/", "/en/miror/"));
+        if (br.containsHTML("The file does not exist any more\\.<|<h1>The server returned a \"404 Not Found\"\\.</h2>|<h1>Oops! An Error Occurred</h1>")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String quest = br.getRegex("name=\"data\\[Fichier\\]\\[indiceQuestion\\]\" value=\"(.*?)\"").getMatch(0);
-        final Regex additionValues = br.getRegex("What is the result of (\\d+) \\+ (\\d+) :");
-        final Regex multiplyValues = br.getRegex("What is the result of (\\d+) \\* (\\d+) : </th>");
-        if (quest == null || (additionValues.getMatches().length < 1 && multiplyValues.getMatches().length < 1)) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        int result;
-        if (additionValues.getMatches().length > 1) {
-            result = (Integer.parseInt(additionValues.getMatch(0)) + Integer.parseInt(additionValues.getMatch(1)));
-        } else {
-            result = (Integer.parseInt(multiplyValues.getMatch(0)) * Integer.parseInt(multiplyValues.getMatch(1)));
-        }
-        Thread.sleep(1000l);
-        br.postPage(br.getURL(), "_method=POST&data%5BFichier%5D%5Bsecurity_code%5D=" + result + "&data%5BFichier%5D%5BindiceQuestion%5D=" + quest);
-        boolean decrypt = false;
-        String[] links = br.getRegex("<a target=\"_blank\" onMouseDown=\"\" href=\"([^<>\"\\']+)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("href=\"([^<>\"\\']+)\">Download</a>").getColumn(0);
+
+        String[] links = br.getRegex("[\r\n\t ]{3,}href=\"([^\"]+)\"[\r\n\t ]{3,}").getColumn(0);
         if (links == null || links.length == 0) {
-            links = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-            decrypt = true;
+            logger.info("Could not find links, please report this to JDownloader Development Team. " + parameter);
+            return null;
         }
-        if (links == null || links.length == 0) return null;
-        int failCounter = 0;
         for (String singleLink : links) {
-            String finallink = null;
-            if (decrypt) {
-                finallink = decodeLink(singleLink);
-                if (finallink == null) {
-                    failCounter++;
-                    continue;
-                }
-            } else {
-                finallink = singleLink;
-            }
-            if (!finallink.contains("multiup.org/")) decryptedLinks.add(createDownloadlink(finallink));
+            decryptedLinks.add(createDownloadlink(singleLink.trim()));
         }
-        if (failCounter == links.length) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
+
         return decryptedLinks;
-    }
-
-    private String decodeLink(String s) {
-        String decoded = null;
-
-        try {
-            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
-            String p = params.getMatch(0).replaceAll("\\\\", "");
-            int a = Integer.parseInt(params.getMatch(1));
-            int c = Integer.parseInt(params.getMatch(2));
-            String[] k = params.getMatch(3).split("\\|");
-
-            while (c != 0) {
-                c--;
-                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
-            }
-
-            decoded = p;
-        } catch (Exception e) {
-            return null;
-        }
-        return new Regex(decoded, "<a target=\"[^\"\\']+\" href=\"(.*?)\"").getMatch(0);
     }
 }
