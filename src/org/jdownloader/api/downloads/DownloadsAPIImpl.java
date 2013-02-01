@@ -332,4 +332,125 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
         return true;
     }
+
+    @Override
+    public boolean moveTop(List<Long> linkIds) {
+        List<DownloadLink> dls = getDownloadLinks(linkIds);
+        DownloadController dlc = DownloadController.getInstance();
+
+        Set<FilePackage> fpkgs = new HashSet<FilePackage>();
+
+        for (DownloadLink dl : dls) {
+            fpkgs.add(dl.getFilePackage());
+        }
+
+        boolean b = dlc.readLock();
+        try {
+            for (FilePackage fp : fpkgs) {
+                dlc.addmovePackageAt(fp, 0);
+            }
+        } finally {
+            dlc.readUnlock(b);
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean moveBottom(List<Long> linkIds) {
+        List<DownloadLink> dls = getDownloadLinks(linkIds);
+        DownloadController dlc = DownloadController.getInstance();
+
+        Set<FilePackage> fpkgs = new HashSet<FilePackage>();
+
+        for (DownloadLink dl : dls) {
+            fpkgs.add(dl.getFilePackage());
+        }
+        dlc.writeLock();
+        try {
+            for (FilePackage fp : fpkgs) {
+                dlc.addmovePackageAt(fp, dlc.getAllDownloadLinks().size());
+            }
+        } finally {
+            dlc.writeUnlock();
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean moveUp(List<Long> linkIds) {
+        List<DownloadLink> dls = getDownloadLinks(linkIds);
+        DownloadController dlc = DownloadController.getInstance();
+
+        Set<FilePackage> fpkgs = new HashSet<FilePackage>();
+
+        for (DownloadLink dl : dls) {
+            fpkgs.add(dl.getFilePackage());
+        }
+
+        dlc.writeLock();
+        try {
+            for (FilePackage fp : fpkgs) {
+                boolean b = dlc.readLock();
+                int insertIndex = dlc.getPackages().indexOf(fp) - 1;
+                dlc.readUnlock(b);
+                dlc.addmovePackageAt(fp, insertIndex);
+            }
+        } finally {
+            dlc.writeUnlock();
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean moveDown(List<Long> linkIds) {
+        List<DownloadLink> dls = getDownloadLinks(linkIds);
+        DownloadController dlc = DownloadController.getInstance();
+
+        Set<FilePackage> fpkgs = new HashSet<FilePackage>();
+
+        for (DownloadLink dl : dls) {
+            fpkgs.add(dl.getFilePackage());
+        }
+
+        dlc.writeLock();
+        try {
+            for (FilePackage fp : fpkgs) {
+                boolean b = dlc.readLock();
+                int insertIndex = dlc.getPackages().indexOf(fp) + 2;
+                dlc.readUnlock(b);
+                dlc.addmovePackageAt(fp, insertIndex);
+            }
+        } finally {
+            dlc.writeUnlock();
+        }
+
+        return true;
+    }
+
+    private List<DownloadLink> getDownloadLinks(final List<Long> linkIds) {
+        DownloadController dlc = DownloadController.getInstance();
+        List<DownloadLink> sdl;
+
+        dlc.writeLock();
+        try {
+            sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                @Override
+                public int returnMaxResults() {
+                    return 0;
+                }
+
+                @Override
+                public boolean isChildrenNodeFiltered(DownloadLink node) {
+                    if (linkIds.contains(node.getUniqueID().getID())) return true;
+                    return false;
+                }
+            });
+        } finally {
+            dlc.writeUnlock();
+        }
+        return sdl;
+    }
 }
