@@ -140,9 +140,7 @@ public class AboutCom extends PluginForHost {
                 if (amfRes[i + 9] > 13) continue;
                 byte[] amfDouble = new byte[8];
                 System.arraycopy(amfRes, i + 1, amfDouble, 0, 8);
-                /*
-                 * Encoded as 64-bit double precision floating point number IEEE 754 standard
-                 */
+                /* Encoded as 64-bit double precision floating point number IEEE 754 standard */
                 d = Double.longBitsToDouble(new BigInteger(amfDouble).longValue());
                 if (d > 0) decodedAMF.put(keys[t++], String.valueOf((long) d));
                 i += 8;
@@ -152,9 +150,7 @@ public class AboutCom extends PluginForHost {
             /* jd.http.getRequest().getResponseBytes() does not exist in 09581 */
         }
 
-        DLLINK = new Regex(result, "(rtmp[^#]+)#").getMatch(0); // first match
-                                                                // is
-                                                                // FLVFullLengthURL
+        DLLINK = new Regex(result, "(rtmp[^#]+)#").getMatch(0); // first match is FLVFullLengthURL
         if (DLLINK == null || t != 3) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         String urlAppend = "&videoId=" + decodedAMF.get("videoId") + "&lineUpId=&pubId=" + decodedAMF.get("pubId") + "&playerId=" + playerId + "&affiliateId=";
@@ -192,13 +188,7 @@ public class AboutCom extends PluginForHost {
         data += "572457870657269656E6365526571756573741964656C69766572795479706513706C617965724B65791154544C546F6B656E19657870657269656E6365496421636F6E74656E744F76657272696465730755";
         data += "524C057FFFFFFFE000000006010601054223EDAA2F2200000903010A810353636F6D2E627269676874636F76652E657870657269656E63652E436F6E74656E744F7665727269646515636F6E74656E7449647";
         data += "319636F6E74656E7452656649641B666561747572656452656649641B636F6E74656E745265664964730D74617267657417636F6E74656E7454797065156665617475726564496413636F6E74656E74496401";
-        data += "06" + getHexLength(b, true) + JDHexUtils.getHexString(b); // 0x06(String
-                                                                           // marker)
-                                                                           // +
-                                                                           // length
-                                                                           // +
-                                                                           // String
-                                                                           // b
+        data += "06" + getHexLength(b, true) + JDHexUtils.getHexString(b); // 0x06(String marker) + length + String b
         data += "01010617766964656F506C617965720400057FFFFFFFE0000000057FFFFFFFE0000000";
         data += "06" + getHexLength(a, true) + JDHexUtils.getHexString(a);
         return JDHexUtils.getByteArray("0003000000010046636F6D2E627269676874636F76652E657870657269656E63652E457870657269656E636552756E74696D654661636164652E67657444617461466F72457870657269656E636500022F310000" + getHexLength(JDHexUtils.toString(data), false) + data);
