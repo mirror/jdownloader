@@ -28,6 +28,8 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
@@ -61,10 +63,12 @@ public class ShareOnlineBiz extends PluginForHost {
     private boolean                                          hideID               = true;
     private static AtomicInteger                             maxChunksnew         = new AtomicInteger(-2);
     private char[]                                           FILENAMEREPLACES     = new char[] { '_', '&', 'ü' };
+    private final String                                     SHARED_IP_WORKAROUND = "SHARED_IP_WORKAROUND";
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.share-online.biz/service.php?p=31353834353B4A44616363");
+        setConfigElements();
     }
 
     @Override
@@ -137,6 +141,10 @@ public class ShareOnlineBiz extends PluginForHost {
         String id = new Regex(link.getDownloadURL(), "(id\\=|/dl/)([a-zA-Z0-9]+)").getMatch(1);
         link.setUrlDownload("http://www.share-online.biz/dl/" + id);
         if (hideID) link.setName("download.php");
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SHARED_IP_WORKAROUND, JDL.L("plugins.hoster.shareonline.sharedipworkaround", "Enable shared IP workaround?")).setDefaultValue(false));
     }
 
     private void errorHandling(Browser br, DownloadLink downloadLink, Account acc, HashMap<String, String> usedPremiumInfos) throws PluginException {
@@ -225,7 +233,13 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         if (url.contains("failure/precheck")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l); }
         if (url.contains("failure/invalid")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
-        if (url.contains("failure/ip")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already loading", 15 * 60 * 1000l); }
+        if (url.contains("failure/ip")) {
+            if (acc != null && getPluginConfig().getBooleanProperty(SHARED_IP_WORKAROUND, false)) {
+                logger.info("Using SharedIP workaround to avoid disabling the premium account!");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "SharedIPWorkaround", 2 * 60 * 1000l);
+            }
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already loading", 15 * 60 * 1000l);
+        }
         if (url.contains("failure/size")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File too big. Premium needed!"); }
         if (url.contains("failure/expired") || url.contains("failure/session")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait for new ticket", 60 * 1000l); }
         if (url.contains("failure/cookie")) {
