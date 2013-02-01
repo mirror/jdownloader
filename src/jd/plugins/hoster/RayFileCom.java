@@ -16,14 +16,19 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -32,6 +37,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class RayFileCom extends PluginForHost {
 
     private String userAgent = null;
+    protected long fileSize  = -1;
 
     public RayFileCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -40,7 +46,7 @@ public class RayFileCom extends PluginForHost {
     public void prepBrowser(final Browser br) {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie("http://rayfile.com", "lang", "english");
+        // br.setCookie("http://rayfile.com", "lang", "english");
         if (userAgent == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
@@ -54,7 +60,7 @@ public class RayFileCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "http://dyn.www.rayfile.com/en/copyrights/";
     }
 
     @Override
@@ -78,6 +84,8 @@ public class RayFileCom extends PluginForHost {
         br.getHeaders().put("Pragma", null);
         br.getHeaders().put("Referer", null);
         br.getHeaders().put("User-Agent", "Grid Service 2.1.10.8366");
+
+        /* setup Range-Header only available for JD2 */
         downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
 
         // IMPORTANT: resuming must be set to false.
@@ -85,13 +93,100 @@ public class RayFileCom extends PluginForHost {
         // Range: bytes=resuming bytes - resuming bytes + 5242880 -> work
         // resuming limitations: 1 chunk @ max 5242880 bytes Range!
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, false, 1);
+        if (oldStyle()) {
+            /* setup Range-Header for old 09581 stable */
+            dl = createHackedDownloadInterface(br, downloadLink, downloadUrl);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, false, 1);
+        }
+
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         this.dl.startDownload();
+    }
+
+    private boolean oldStyle() {
+        String style = System.getProperty("ftpStyle", null);
+        if ("new".equalsIgnoreCase(style)) return false;
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        int rev = Integer.parseInt(prev);
+        if (rev < 10000) return true;
+        return false;
+    }
+
+    private RAFDownload createHackedDownloadInterface(final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
+        Request r = br.createRequest(url);
+        RAFDownload dl = this.createHackedDownloadInterface2(downloadLink, r);
+        try {
+            dl.connect(br);
+        } catch (final PluginException e) {
+            if (e.getValue() == -1) {
+
+                int maxRedirects = 10;
+                while (maxRedirects-- > 0) {
+                    dl = this.createHackedDownloadInterface2(downloadLink, r = br.createGetRequestRedirectedRequest(r));
+                    try {
+                        dl.connect(br);
+                        break;
+                    } catch (final PluginException e2) {
+                        continue;
+                    }
+                }
+                if (maxRedirects <= 0) { throw new PluginException(LinkStatus.ERROR_FATAL, "Redirectloop"); }
+
+            }
+        }
+        if (downloadLink.getPlugin().getBrowser() == br) {
+            downloadLink.getPlugin().setDownloadInterface(dl);
+        }
+        return dl;
+    }
+
+    private RAFDownload createHackedDownloadInterface2(final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
+        request.getHeaders().put("Range", "bytes=" + (0) + "-");
+        final RAFDownload dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, request) {
+
+            private boolean connected;
+
+            @Override
+            public URLConnectionAdapter connect() throws IOException, PluginException {
+                if (connected) return connection;
+                logger.finer("Connect...");
+                this.connected = true;
+                br.connect(request);
+                if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
+                connection = request.getHttpConnection();
+                if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED);
+                if (connection.getRange() != null) {
+                    // Dateigröße wird aus dem Range-Response gelesen
+                    if (connection.getRange()[2] > 0) {
+                        this.setFilesizeCheck(true);
+                        this.downloadLink.setDownloadSize(connection.getRange()[2]);
+                    }
+                } else {
+                    if (connection.getLongContentLength() > 0) {
+                        this.setFilesizeCheck(true);
+                        this.downloadLink.setDownloadSize(connection.getLongContentLength());
+                    }
+                }
+                fileSize = downloadLink.getDownloadSize();
+                return connection;
+            }
+
+        };
+
+        downloadLink.getPlugin().setDownloadInterface(dl);
+        dl.setResume(false);
+        dl.setChunkNum(1);
+        return dl;
     }
 
     @Override
@@ -118,10 +213,16 @@ public class RayFileCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
+
 }
