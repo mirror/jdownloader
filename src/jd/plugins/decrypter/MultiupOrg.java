@@ -26,11 +26,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://(www\\.)?multiup\\.org/(fichiers/download/[a-z0-9]{32}_[^<> \"'&]+|([a-z]{2}/)?(download|miror)/[a-z0-9]{32}/[^<> \"'&]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://(www\\.)?multiup\\.org/(fichiers/download/[a-z0-9]{32}_[^<> \"'&]+|([a-z]{2}/)?(download|miror)/[a-z0-9]{32}/[^<> \"'&]+|\\?lien=[a-z0-9]{32}_[^<> \"'&]+)" }, flags = { 0 })
 public class MultiupOrg extends PluginForDecrypt {
 
     // DEV NOTES:
-    // /?lien=842fab872a0a9618f901b9f4ea986d47_bawls_doctorsdiary202.avi = format doesn't exist any longer..
+    // /?lien=842fab872a0a9618f901b9f4ea986d47_bawls_doctorsdiary202.avi = url doesn't exist on the provider any longer.. but is still transferable into the new format!
     // /fichiers/download/d249b81f92d7789a1233e500a0319906_FIQHwASOOL_75_rar = does and redirects to below rule
     // (/fr)/download/d249b81f92d7789a1233e500a0319906/FIQHwASOOL_75_rar
     // uid interchangeable, uid and filename are required to be a valid link.
@@ -43,22 +43,28 @@ public class MultiupOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString();
-        String reg = "(org/fichiers/download/([0-9a-z]{32})_([^<> \"'&]+)?|org/([a-z]{2}/)?(download|miror)/([a-z0-9]{32})/([^<> \"'&]+))";
+        String reg = "org/(fichiers/download/([0-9a-z]{32})_([^<> \"'&]+)?|([a-z]{2}/)?(download|miror)/([a-z0-9]{32})/([^<> \"'&]+)|\\?lien=([a-z0-9]{32})_([^<> \"'&]+))";
         String[][] matches = new Regex(parameter, reg).getMatches();
         String uid = matches[0][1];
         if (uid == null) {
             uid = matches[0][5];
             if (uid == null) {
-                logger.info("URL is invalid, must contain 'uid' to be valid " + parameter);
-                return decryptedLinks;
+                uid = matches[0][7];
+                if (uid == null) {
+                    logger.info("URL is invalid, must contain 'uid' to be valid " + parameter);
+                    return decryptedLinks;
+                }
             }
         }
         String filename = matches[0][2];
         if (filename == null) {
             filename = matches[0][6];
             if (filename == null) {
-                logger.info("URL is invalid, must contain 'filename' to be valid " + parameter);
-                return decryptedLinks;
+                filename = matches[0][8];
+                if (filename == null) {
+                    logger.info("URL is invalid, must contain 'filename' to be valid " + parameter);
+                    return decryptedLinks;
+                }
             }
         }
         parameter = new Regex(parameter, "(https?://[^/]+)").getMatch(0).replace("www.", "") + "/en/download/" + uid + "/" + filename;

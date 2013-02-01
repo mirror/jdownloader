@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -17,9 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -42,28 +45,31 @@ public class LibGenInfo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">There are no records to display\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex(">Название</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
-        final String filesize = br.getRegex("class=\"type3\">Размер\\(байт\\)</td>[\t\n\r ]+<td>(\\d+)</td>").getMatch(0);
-        final String ext = br.getRegex(">Тип файла</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null || filesize == null || ext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "." + Encoding.htmlDecode(ext.trim()));
+        String filename = br.getRegex("name=\"hidden0\" type=\"hidden\"\\s+value=\"([^<>\"\\']+)\"").getMatch(0);
+        String filesize = br.getRegex("class=\"type3\">Размер\\(байт\\)</td>[\t\n\r ]+<td>(\\d+)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String var1 = br.getRegex("name=\\'hidden\\' type=\\'hidden\\' value=\"([^<>\\']+)\"").getMatch(0);
-        final String var2 = br.getRegex("name=\"hidden0\" type=\"hidden\" value=\"([^<>\\']+)\"").getMatch(0);
-        if (var1 == null || var2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String dllink = "http://www.libgen.info/noleech1.php?hidden=" + Encoding.urlEncode(var1) + "&hidden0=" + Encoding.urlEncode(var2);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        Form download = br.getFormbyProperty("name", "receive");
+        if (download == null) download = br.getForm(1);
+        if (download == null) {
+            logger.info("Could not find download form");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // they have use multiple quotation marks within form input lines. This returns null values.
+        download = cleanForm(download);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(">Sorry, huge and large files are available to download in local network only, try later")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
@@ -83,6 +89,32 @@ public class LibGenInfo extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    /**
+     * If form contain both " and ' quotation marks within input fields it can return null values, thus submitting wrong data with
+     * submitted, re: InputField parse(final String data). Affects revision 19688 and earlier!
+     * 
+     * TODO: remove after JD2 goes stable!
+     * 
+     * @author raztoki
+     * */
+    private Form cleanForm(Form form) {
+        String data = form.getHtmlCode();
+        ArrayList<String> cleanupRegex = new ArrayList<String>();
+        cleanupRegex.add("(\\w+\\s*=\\s*\"[^\"]+\")");
+        cleanupRegex.add("(\\w+\\s*=\\s*'[^']+')");
+        for (String reg : cleanupRegex) {
+            String results[] = new Regex(data, reg).getColumn(0);
+            if (results != null) {
+                String quote = new Regex(reg, "(\"|')").getMatch(0);
+                for (String result : results) {
+                    String cleanedResult = result.replaceAll(quote, "\\\"");
+                    data = data.replaceAll(result, cleanedResult);
+                }
+            }
+        }
+        return new Form(data);
     }
 
 }
