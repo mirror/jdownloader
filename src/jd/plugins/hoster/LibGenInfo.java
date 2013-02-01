@@ -92,14 +92,15 @@ public class LibGenInfo extends PluginForHost {
     }
 
     /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus submitting wrong data with
-     * submitted, re: InputField parse(final String data). Affects revision 19688 and earlier!
+     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
+     * InputField parse(final String data). Affects revision 19688 and earlier!
      * 
      * TODO: remove after JD2 goes stable!
      * 
      * @author raztoki
      * */
     private Form cleanForm(Form form) {
+        if (form == null) return null;
         String data = form.getHtmlCode();
         ArrayList<String> cleanupRegex = new ArrayList<String>();
         cleanupRegex.add("(\\w+\\s*=\\s*\"[^\"]+\")");
