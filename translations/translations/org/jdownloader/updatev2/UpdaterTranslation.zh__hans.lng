@@ -1,3 +1,10 @@
+UpdateServer_UpdaterGui_onStateChange_download=下载
+UpdateServer_UpdaterGui_onUpdaterModuleStart_download=下载　%s1
 close=关闭
+confirmdialog_new_update_available_answer_now=现在下载
+errordialog_frametitle=发生错误
 exit=关闭
+guiless_downloadfinished=下载完成
+installframe_rlyclosedialog_frametitle=是否确定？
 literally_close=没有实际意义的
+rlyexit=你是否确定要退出？
