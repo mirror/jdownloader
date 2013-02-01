@@ -59,7 +59,8 @@ public class GameOneDeA extends PluginForDecrypt {
          * Replacing & to {@literal &amp;} in InputStreams
          * 
          * @author mhaller
-         * @see <a href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
+         * @see <a
+         *      href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
          */
         public ReplacerInputStream(InputStream in) {
             this.in = in;
@@ -152,7 +153,7 @@ public class GameOneDeA extends PluginForDecrypt {
                     return null;
                 }
                 String[] pictureOrAudio = null;
-                if (br.containsHTML("<div class=\'gallery\' id=\'gallery_\\d+\'")) {
+                if (br.containsHTML("<div class=\\'gallery\\' id=\\'gallery_\\d+\\'")) {
                     pictureOrAudio = br.getRegex("<a href=\"(http://.*?/gallery_pictures/.*?/large/.*?)\"").getColumn(0);
                 } else if (br.containsHTML("class=\"flash_container_audio\"")) {
                     pictureOrAudio = br.getRegex("<a href=\"(http://[^<>]+\\.mp3)").getColumn(0);

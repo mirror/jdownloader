@@ -55,7 +55,7 @@ public class DownloadMe extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         return maxPrem.get();
     }
 
@@ -127,13 +127,19 @@ public class DownloadMe extends PluginForHost {
         return result;
     }
 
+    private String getJson(final String parameter, final String source) {
+        String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        return result;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 0;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
@@ -156,11 +162,11 @@ public class DownloadMe extends PluginForHost {
         for (int i = 1; i <= 24; i++) {
             logger.info("Trying to find link, try " + i + " / 24");
             br.getPage("https://www.download.me/dlapi/file?id=" + id);
-            final int status = Integer.parseInt(getJson("status"));
-            switch (status) {
-            case 0:
+            final String data = br.getRegex("\"data\":\\{(.*?)\\}\\}").getMatch(0);
+            final String status = getJson("status", data);
+            if ("0".equals(status)) {
                 logger.info("Received status 0, link generation failed!");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Downloadlink generation failed, please contact the download.me support!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             dllink = getJson("dlurl");
             if (dllink != null) {
@@ -202,16 +208,16 @@ public class DownloadMe extends PluginForHost {
         }
     }
 
-    private void showMessage(DownloadLink link, String message) {
+    private void showMessage(final DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
+    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -226,7 +232,7 @@ public class DownloadMe extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -247,7 +253,7 @@ public class DownloadMe extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }

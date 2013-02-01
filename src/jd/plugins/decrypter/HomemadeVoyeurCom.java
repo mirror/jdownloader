@@ -39,7 +39,7 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
         br.getPage(parameter);
         String tempID = br.getRedirectLocation();
         // Invalid link
-        if ("http://www.homemade-voyeur.com/".equals(br.getRedirectLocation()) || br.containsHTML(">404 Not Found<")) {
+        if ("http://www.homemade-voyeur.com/".equals(tempID) || br.containsHTML(">404 Not Found<")) {
             logger.info("Invalid link: " + parameter);
             return decryptedLinks;
         }
@@ -63,9 +63,8 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
             logger.warning("Mainlink: " + parameter);
             return null;
         }
-        String filename = br.getRegex("class=\"he2\"><span>(.*?)</span>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Daily Free Homemade and Voyeur Videos - Beach Sex \\- Hidden Sex \\- Public Sex \\- Voyeur Videos  \\- (.*?)</title>").getMatch(0);
-        tempID = br.getRegex("var playlist = \\[ \\{ url: \\'(http://.*?\\.flv)\\'").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?) \\- Voyeur Videos").getMatch(0);
+        tempID = br.getRegex("var playlist = \\[ \\{ url: escape\\(\\'(http://[^<>\"]*?)\\'\\) \\} \\]").getMatch(0);
         if (tempID == null) tempID = br.getRegex("(\\'|\")(http://(hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv|[a-z0-9]+\\.yourvoyeurvideos\\.com/mp4/\\d+\\.mp4))(\\'|\")").getMatch(1);
         if (tempID == null || filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);

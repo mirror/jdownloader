@@ -53,7 +53,7 @@ public class AdfLy extends PluginForDecrypt {
                     br.getPage(br.getRedirectLocation());
                 }
             }
-            if (br.containsHTML("(<b style=\"font\\-size: 20px;\">Sorry the page you are looking for does not exist|>404 Not Found<)")) {
+            if (br.containsHTML("(<b style=\"font\\-size: 20px;\">Sorry the page you are looking for does not exist|>404 Not Found<|>Not Found<|>Sorry, but the requested page was not found)")) {
                 logger.info("adf.ly link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -82,7 +82,8 @@ public class AdfLy extends PluginForDecrypt {
                 if (waittime != null && Integer.parseInt(waittime) <= 20) wait = Integer.parseInt(waittime);
                 if (skipWait) {
                     skipWait();
-                    // Wait a seconds. Not waiting can cause the skipWait feature to fail
+                    // Wait a seconds. Not waiting can cause the skipWait
+                    // feature to fail
                     sleep(1 * 10001l, param);
                 } else {
                     sleep(wait * 1000l, param);
@@ -107,7 +108,8 @@ public class AdfLy extends PluginForDecrypt {
                         break;
                     }
                 } else {
-                    // Everything should have worked correctly, try to get final link
+                    // Everything should have worked correctly, try to get final
+                    // link
                     finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(http://[^<>\"\\']+)\"").getMatch(0);
                     break;
                 }

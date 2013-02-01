@@ -210,7 +210,13 @@ public class FlStbCm extends PluginForDecrypt {
             } else {
                 logger.info("There was no redirect!");
             }
+            // Invalid link
             if (br.containsHTML("(>File no longer available<|>Error 404 \\- Requested)")) {
+                logger.info("Link invalid (error 404): " + parameter);
+                return decryptedLinks;
+            }
+            // Offline link
+            if (br.containsHTML("> File no longer available")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }

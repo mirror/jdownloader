@@ -49,15 +49,15 @@ public class VidsMySpaceCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        if (br.getURL().contains("myspace.com/error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         final String qs = br.getRegex("\"qs\":\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null || qs == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://mediaservices.myspace.com/services/rss.ashx?cb=" + System.currentTimeMillis() + "&type=video&el=http%3A%2F%2Fwww%2Emyspace%2Ecom%2Fmodules%2Fvideos%2Fpages%2Fvideodetail%2Easpx%3F" + Encoding.urlEncode(qs).replace("-", "%2D") + "&videoID=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
         DLLINK = br.getRegex("<media:content url=\"(http://[^<>\"]*?)\"").getMatch(0);
         filename = Encoding.htmlDecode(filename.trim());
-        br.setFollowRedirects(true);
         URLConnectionAdapter con = br.openGetConnection(DLLINK);
         if (!con.getContentType().contains("html")) {
             link.setDownloadSize(con.getLongContentLength());

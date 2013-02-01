@@ -52,7 +52,7 @@ public class GoKuaiCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>该文件不存在或已被取消发布<|<title>够快\\-网盘\\|云存储\\|网络硬盘\\|网络存储\\|我的网盘\\|免费网盘\\|数据备份</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("class=\"error_wrp error_404\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2><i class=\"icon\\_[a-z0-9]+\"></i><span>(.*?)</span></h2>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("filename:\"(.*?)\"").getMatch(0);

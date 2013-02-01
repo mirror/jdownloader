@@ -42,26 +42,27 @@ public class LibGenInfo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">There are no records to display\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("name=\"hidden0\" type=\"hidden\"  value=\"([^<>\"\\']+)\"").getMatch(0);
-        String filesize = br.getRegex("class=\"type3\">Размер\\(байт\\)</td>[\t\n\r ]+<td>(\\d+)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        final String filename = br.getRegex(">Название</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+        final String filesize = br.getRegex("class=\"type3\">Размер\\(байт\\)</td>[\t\n\r ]+<td>(\\d+)</td>").getMatch(0);
+        final String ext = br.getRegex(">Тип файла</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+        if (filename == null || filesize == null || ext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "." + Encoding.htmlDecode(ext.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String var1 = br.getRegex("name=\\'hidden\\'  type=\\'hidden\\'  value=\"([^<>\"\\']+)\"").getMatch(0);
-        String submit = br.getRegex("type=\"submit\" name=\"submit\" value=\"([^<>\"\\']+)\"").getMatch(0);
-        if (var1 == null || submit == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = "http://libgen.info/noleech1.php?hidden=" + Encoding.urlEncode(var1) + "&hidden0=" + Encoding.urlEncode(downloadLink.getName());
+        final String var1 = br.getRegex("name=\\'hidden\\' type=\\'hidden\\' value=\"([^<>\\']+)\"").getMatch(0);
+        final String var2 = br.getRegex("name=\"hidden0\" type=\"hidden\" value=\"([^<>\\']+)\"").getMatch(0);
+        if (var1 == null || var2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String dllink = "http://www.libgen.info/noleech1.php?hidden=" + Encoding.urlEncode(var1) + "&hidden0=" + Encoding.urlEncode(var2);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

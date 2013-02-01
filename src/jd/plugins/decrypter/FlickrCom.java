@@ -25,7 +25,6 @@ import jd.gui.UserIO;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -33,7 +32,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/(photos/([^<>\"/]+/(\\d+|favorites)|[^<>\"/]+(/galleries)?/(page\\d+|sets/\\d+)|[^<>\"/]+)|groups/[^<>\"/]+/(?!members)[^<>\"/]+(/[^<>\"/]+)?)" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
@@ -96,7 +94,8 @@ public class FlickrCom extends PluginForDecrypt {
         final int totalEntries = Integer.parseInt(picCount);
 
         /**
-         * Handling for albums/sets: Only decrypt all pages if user did NOT add a direct page link
+         * Handling for albums/sets: Only decrypt all pages if user did NOT add
+         * a direct page link
          * */
         int lastPageCalculated = 0;
         if (!parameter.contains("/page")) {
@@ -161,9 +160,15 @@ public class FlickrCom extends PluginForDecrypt {
         boolean addAcc = false;
         if (aa == null) {
             String username = UserIO.getInstance().requestInputDialog("Enter Loginname for flickr.com :");
-            if (username == null) throw new DecrypterException(JDL.L("plugins.decrypt.flickrcom.nousername", "Username not entered!"));
+            if (username == null) {
+                logger.info("Username not entered, continuing without account...");
+                return false;
+            }
             String password = UserIO.getInstance().requestInputDialog("Enter password for flickr.com :");
-            if (password == null) throw new DecrypterException(JDL.L("plugins.decrypt.flickrcom.nopassword", "Password not entered!"));
+            if (password == null) {
+                logger.info("Password not entered, continuing without account...");
+                return false;
+            }
             aa = new Account(username, password);
             addAcc = true;
         }

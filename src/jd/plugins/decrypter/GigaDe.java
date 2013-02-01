@@ -44,6 +44,12 @@ public class GigaDe extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex("<h1 class=\"entry\\-title\">([^<>\"/]+)</h1>").getMatch(0);
+        /** Add embedded videos if there are */
+        final String youtubeLink = br.getRegex("<embed src=\"(http://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"").getMatch(0);
+        if (youtubeLink != null) {
+            decryptedLinks.add(createDownloadlink(youtubeLink));
+            return decryptedLinks;
+        }
         final String[][] links = br.getRegex("id=\"NVBPlayer(\\d+\\-\\d+)\">.*?<span property=\"media:title\" content=\"([^<>\"/]+)\".*?<source src=\"(http://video\\.giga\\.de/data/[a-z0-9\\-]+\\-normal\\.mp4)\"").getMatches();
         final String[] otherLinks = br.getRegex("rel=\"media:video\" resource=\"(http://(www\\.)?video\\.giga\\.de/data/[^<>/\"]*?\\.mp4)\"").getColumn(0);
         if ((links == null || links.length == 0) && (otherLinks == null || otherLinks.length == 0) || fpName == null) {

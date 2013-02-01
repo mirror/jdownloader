@@ -51,7 +51,7 @@ public class HardSexTubeCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("?removed=1")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)\\- HardSexTube").getMatch(0);
@@ -69,7 +69,8 @@ public class HardSexTubeCom extends PluginForHost {
             if (name == null || path == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dllink = Encoding.htmlDecode(name + path);
         } else {
-            // Via the embedded video stuff we can get the final link without having to decrypt anything
+            // Via the embedded video stuff we can get the final link without
+            // having to decrypt anything
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0);
             br.getPage("http://vidii.hardsextube.com/video/" + fid + "/confige.xml");
             br.getPage("http://www.hardsextube.com/cdnurl.php?eid=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0) + "&start=0");
@@ -83,7 +84,6 @@ public class HardSexTubeCom extends PluginForHost {
         else if (ext.contains(".mp4")) ext = ".mp4";
         downloadLink.setFinalFileName(filename + ext);
 
-        br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dllink);
