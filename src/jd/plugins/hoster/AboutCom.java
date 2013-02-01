@@ -54,7 +54,7 @@ public class AboutCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
@@ -87,12 +87,13 @@ public class AboutCom extends PluginForHost {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         String[] tmpRtmpUrl = DLLINK.split("@");
         rtmp.setUrl(tmpRtmpUrl[0] + tmpRtmpUrl[1]);
-        rtmp.setApp(tmpRtmpUrl[1] + tmpRtmpUrl[4]);
-        rtmp.setPlayPath(tmpRtmpUrl[2] + tmpRtmpUrl[4]);
-        rtmp.setConn("B:0");
-        rtmp.setConn("S:" + tmpRtmpUrl[2] + tmpRtmpUrl[3]);
+        rtmp.setApp(tmpRtmpUrl[1] + tmpRtmpUrl[3] + tmpRtmpUrl[4]);
+        rtmp.setPlayPath(tmpRtmpUrl[2] + tmpRtmpUrl[3] + tmpRtmpUrl[4]);
+        // rtmp.setConn("B:0");
+        // rtmp.setConn("S:" + tmpRtmpUrl[2] + tmpRtmpUrl[3]);
         rtmp.setSwfVfy("http://admin.brightcove.com/viewer/us20121102.1044/federatedVideo/BrightcovePlayer.swf");
         rtmp.setResume(true);
+        rtmp.setRealTime();
     }
 
     @Override
@@ -145,9 +146,9 @@ public class AboutCom extends PluginForHost {
         DLLINK = new Regex(result, "(rtmp[^#]+)#").getMatch(0); // first match is FLVFullLengthURL
         if (DLLINK == null || t != 3) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        String urlAppend = "?videoId=" + decodedAMF.get("videoId") + "&lineUpId=&pubId=" + decodedAMF.get("pubId") + "&playerId=" + playerId + "&affiliateId=";
+        String urlAppend = "&videoId=" + decodedAMF.get("videoId") + "&lineUpId=&pubId=" + decodedAMF.get("pubId") + "&playerId=" + playerId + "&affiliateId=";
         /* make rtmp url */
-        String[] tmpRtmpUrl = new Regex(DLLINK, "(rtmp://[\\w\\.]+/)([\\w/]+)/\\&([\\w:\\-\\./]+)(\\&[\\w\\&]+)").getRow(0);
+        String[] tmpRtmpUrl = new Regex(DLLINK, "(rtmp://[\\w\\.]+/)([\\w/]+)/\\&([\\w:\\-\\./]+)(\\&|\\?.*?)$").getRow(0);
         if (tmpRtmpUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = tmpRtmpUrl[0] + "@" + tmpRtmpUrl[1] + "@" + tmpRtmpUrl[2] + "@" + tmpRtmpUrl[3] + "@" + urlAppend;
 
