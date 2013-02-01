@@ -56,7 +56,7 @@ public class RDMdthk extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>")) {
+        if (br.containsHTML("(<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>|Die angeforderte Datei existiert leider nicht)")) {
             logger.info("This link might be offline: " + parameter);
             return decryptedLinks;
         }
@@ -136,7 +136,7 @@ public class RDMdthk extends PluginForDecrypt {
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
                 br.getPage(s[0]);
-                if (br.containsHTML("<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>")) return ret;
+                if (br.containsHTML("(<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>|Die angeforderte Datei existiert leider nicht)")) return ret;
                 String title = getTitle(br);
                 String url = null, fmt = null;
                 int t = 0;
