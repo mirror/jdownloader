@@ -166,7 +166,8 @@ public class DownloadMe extends PluginForHost {
             final String status = getJson("status", data);
             if ("0".equals(status)) {
                 logger.info("Received status 0, link generation failed!");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (link.getLinkStatus().getRetryCount() == 2) throw new PluginException(LinkStatus.ERROR_FATAL, "Downloadlink generation failed");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadlink generation failed");
             }
             dllink = getJson("dlurl");
             if (dllink != null) {

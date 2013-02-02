@@ -64,7 +64,7 @@ public class AsFileCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-EN");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<title>ASfile\\.com</title>|>Page not found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>ASfile\\.com</title>|>Page not found<|Delete Reason:|No htmlCode read)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename;
         if (br.getURL().contains("/password/")) {
             filename = br.getRegex("This file ([^<>\"]*?) is password protected.").getMatch(0);
@@ -165,7 +165,8 @@ public class AsFileCom extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(2000, downloadLink);
         /*
-         * resume no longer possible? at least with a given password it does not work
+         * resume no longer possible? at least with a given password it does not
+         * work
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -351,7 +352,8 @@ public class AsFileCom extends PluginForHost {
                         logger.info("You have exceeded the download limit for today");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
-                    // 'extend link' is present on every page! thus disables account constantly when ddlink == null
+                    // 'extend link' is present on every page! thus disables
+                    // account constantly when ddlink == null
                     if (!br.containsHTML("Your account is: PREMIUM<")) {
                         logger.info("Seems the account is no longer 'Premium'");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);

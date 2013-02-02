@@ -207,16 +207,9 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
             return decryptedLinks;
-        } else if (parameter.matches("http://(i\\.imgur\\.com/[A-Za-z0-9]{5,}|(www\\.)?imgur\\.com/(download|gallery)/[A-Za-z0-9]{5,})")) {
-            String imgUID = new Regex(parameter, "https?://i\\.imgur\\.com/([A-Za-z0-9]{5,})").getMatch(0);
-            if (imgUID == null) {
-                imgUID = new Regex(parameter, "https?://(www\\.)?imgur\\.com/(download|gallery)?/([A-Za-z0-9]{5,})").getMatch(2);
-                if (imgUID == null) {
-                    logger.warning("Can't find imgUID");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            DownloadLink dl = createDownloadlink("http://imgurdecrypted/download/" + imgUID);
+        } else if (parameter.matches("http://(((www|i)\\.)?imgur\\.com/[A-Za-z0-9]{5,}|(www\\.)?imgur\\.com/(download|gallery)/[A-Za-z0-9]{5,})")) {
+            String imgUID = new Regex(parameter, "([A-Za-z0-9]{5,})$").getMatch(0);
+            final DownloadLink dl = createDownloadlink("http://imgurdecrypted/download/" + imgUID);
             dl.setProperty("imgUID", imgUID);
             decryptedLinks.add(dl);
             return decryptedLinks;

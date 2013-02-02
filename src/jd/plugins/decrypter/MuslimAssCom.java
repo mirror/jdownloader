@@ -23,13 +23,11 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muslimass.com" }, urls = { "http://(www\\.)?muslimass\\.com/(?!category|feed|wp\\-content|about)[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muslimass.com" }, urls = { "http://(www\\.)?muslimass\\.com/(?!category|feed|wp\\-content|about|login)[a-z0-9\\-]+" }, flags = { 0 })
 public class MuslimAssCom extends PluginForDecrypt {
 
     public MuslimAssCom(PluginWrapper wrapper) {
@@ -43,7 +41,10 @@ public class MuslimAssCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("(>Error 404 \\- Not Found<|<title>Nothing found for)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML(">Error 404 \\- Not Found<|>Nothing found for")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String filename = br.getRegex("<link rel=\"alternate\" type=\"application/rss\\+xml\" title=\"muslimass\\.com \\&raquo; (.*?) Comments Feed\" href=\"").getMatch(0);
         if (filename == null) filename = br.getRegex("title=\"Permanent Link to (.*?)\"").getMatch(0);
         if (filename == null) {

@@ -46,7 +46,11 @@ public class MvWrldNt extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("<h1>Dieses Release ist nur noch bei <a")) {
-            logger.info("Link offline: " + parameter);
+            logger.info("Link offline (offline): " + parameter);
+            return decryptedLinks;
+        }
+        if (br.getURL().contains("mov-world.net/error.html?error=404") || br.containsHTML(">404 Not Found<")) {
+            logger.info("Link offline (error 404): " + parameter);
             return decryptedLinks;
         }
         final String MAINPAGE = "http://" + br.getHost();

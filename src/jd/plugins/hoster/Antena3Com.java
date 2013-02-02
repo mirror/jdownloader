@@ -74,7 +74,8 @@ public class Antena3Com extends PluginForHost {
     }
 
     private String getXML(DownloadLink downloadLink) throws IOException, PluginException {
-        String urlxml = new Regex(br.getPage(downloadLink.getDownloadURL()), "<link rel=\"video_src\" href=\"http://www.antena3.com/static/swf/A3Player.swf\\?xml=(.*?)\"/>").getMatch(0);
+        String urlxml = br.getRegex("<link rel=\"video_src\" href=\"http://www.antena3.com/static/swf/A3Player.swf\\?xml=(.*?)\"/>").getMatch(0);
+        if (urlxml == null) urlxml = br.getRegex("name=\"flashvars\" value=\"xml=(http://[^<>\"]*?)\"").getMatch(0);
         if (urlxml == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return br.getPage(urlxml);
     }

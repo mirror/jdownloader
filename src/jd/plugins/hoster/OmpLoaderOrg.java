@@ -57,6 +57,7 @@ public class OmpLoaderOrg extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(link.getDownloadURL());
+            if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (!con.getContentType().contains("html")) {
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 link.setDownloadSize(con.getLongContentLength());
@@ -71,8 +72,8 @@ public class OmpLoaderOrg extends PluginForHost {
             } catch (final Exception e) {
             }
         }
-        if (br.containsHTML(">Nothing to pee here")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("class=\"container\"><a href=\"[A-Za-z0-9]+\" title=\"([^<>\"]*?)\"").getMatch(0);
+        if (br.containsHTML(">Nothing to pee here") || br.containsHTML("<title>omploader</title>") || !br.containsHTML("omploader")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("class=\"container\"><a href=\"[A-Za-z0-9]+/([^<>\"/]*?)\"").getMatch(0);
         final String filesize = br.getRegex("<strong>Size:</strong></div><div class=\"right\">([^<>\"]*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));

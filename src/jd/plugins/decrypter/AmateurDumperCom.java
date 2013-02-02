@@ -81,7 +81,7 @@ public class AmateurDumperCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("flash\\.serious\\-cash\\.com/flvplayer\\.swf\".*?flashvars=\"\\&file=([^<>\"]*?)\\&").getMatch(0);
+        tempID = br.getRegex("flash\\.serious\\-cash\\.com/flvplayer\\.swf\".*?flashvars=\"file=([^<>\"]*?)\\&").getMatch(0);
         if (tempID != null) {
             DownloadLink dl = createDownloadlink("directhttp://http://flash.serious-cash.com/" + tempID + ".flv");
             decryptedLinks.add(dl);

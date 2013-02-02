@@ -20,12 +20,11 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "topamateurporn.com" }, urls = { "http://(www\\.)?topamateurporn\\.com/[A-Za-z0-9\\-]+/\\d+/.*?\\.html" }, flags = { 0 })
 public class TopAmateurPornComDecrypter extends PluginForDecrypt {
@@ -39,7 +38,10 @@ public class TopAmateurPornComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("No htmlCode read")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String tempID = br.getRedirectLocation();
         if (tempID != null) {
             DownloadLink dl = createDownloadlink(tempID);
@@ -48,12 +50,33 @@ public class TopAmateurPornComDecrypter extends PluginForDecrypt {
         }
         tempID = br.getRegex("\\&url=(http://(www\\.)homesexdaily\\.com/video/.*?\\.html)\\&wm").getMatch(0);
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
+            decryptedLinks.add(createDownloadlink(tempID));
+            return decryptedLinks;
+        }
+
+        // Filename needed for all IDs below
+        String filename = br.getRegex("<h2 class=\"detail\">([^<>\"]*?)</h2>").getMatch(0);
+        if (filename == null) filename = br.getRegex("Viewing Media \\- ([^<>\"]*?)</title>").getMatch(0);
+        if (filename == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        filename = Encoding.htmlDecode(filename.trim());
+        tempID = br.getRegex("\\&settings=(http://(www\\.)?eroxia\\.com/playerConfig\\.php[^<>\"]*?)\"").getMatch(0);
+        if (tempID != null) {
+            br.getPage(Encoding.htmlDecode(tempID));
+            tempID = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
+            if (tempID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(tempID));
+            dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (tempID == null) {
-            logger.warning("Couldn't decrypt link: " + parameter);
+            logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         return decryptedLinks;

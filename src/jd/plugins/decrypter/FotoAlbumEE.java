@@ -39,11 +39,11 @@ public class FotoAlbumEE extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> picLinks = new ArrayList<String>();
         br.setFollowRedirects(true);
-        String parameter = param.toString();
+        final String parameter = param.toString();
         br.getPage(parameter);
 
-        if (br.containsHTML("Sellist albumit ei ole")) {
-            logger.info("Link offline");
+        if (br.containsHTML(">Pilti ei leitud v\\&otilde;i on see kustutatud|\"/img/404\\.png\"")) {
+            logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
 

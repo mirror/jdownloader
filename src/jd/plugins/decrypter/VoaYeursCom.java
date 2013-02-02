@@ -136,13 +136,20 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        // youporn.com handling 1
+        externID = br.getRegex("youporn\\.com/embed/(\\d+)").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("http://www.youporn.com/watch/" + externID + "/" + System.currentTimeMillis());
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         // For all following ids, a filename is needed
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
-        externID = br.getRegex("flashvars=\"enablejs=true\\&autostart=false\\&mediaid=(\\d+)\\&").getMatch(0);
+        externID = br.getRegex("flashvars=\"enablejs=true\\&autostart=(false|true)\\&mediaid=(\\d+)\\&").getMatch(1);
         if (externID != null) {
             br.getPage("http://www.deviantclip.com/playlists/" + externID + "/playlist.xml");
             String finallink = br.getRegex("<location>(http[^<>\"]*?)</location>").getMatch(0);
@@ -205,6 +212,39 @@ public class VoaYeursCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+        }
+        // youporn.com handling 2 (was never needed yet)
+        externID = br.getRegex("flashvars=\"file=(http%3A%2F%2Fdownload\\.youporn\\.com[^<>\"]*?)\\&").getMatch(0);
+        if (externID != null) {
+            br.setCookie("http://youporn.com/", "age_verified", "1");
+            br.setCookie("http://youporn.com/", "is_pc", "1");
+            br.setCookie("http://youporn.com/", "language", "en");
+            br.getPage(Encoding.htmlDecode(externID));
+            if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+                logger.warning("FourSexFourCom -> youporn link invalid, please check browser to confirm: " + parameter);
+                return null;
+            }
+            if (br.containsHTML("download\\.youporn\\.com/agecheck")) {
+                logger.info("Link broken or offline: " + parameter);
+                return decryptedLinks;
+            }
+            externID = br.getRegex("\"(http://(www\\.)?download\\.youporn.com/download/\\d+/\\?xml=1)\"").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            br.getPage(externID);
+            final String finallink = br.getRegex("<location>(http://.*?)</location>").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
+            String type = br.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
+            if (type == null) type = "flv";
+            dl.setFinalFileName(filename + "." + type);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         if (externID == null) {
             logger.warning("Couldn't decrypt link: " + parameter);

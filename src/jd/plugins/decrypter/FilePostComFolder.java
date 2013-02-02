@@ -23,12 +23,10 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepost.com" }, urls = { "https?://(www\\.)?(filepost\\.com|fp\\.io)/folder/[a-z0-9]+" }, flags = { 0 })
 public class FilePostComFolder extends PluginForDecrypt {
@@ -43,7 +41,10 @@ public class FilePostComFolder extends PluginForDecrypt {
         br.setCookie("http://filepost.com", "lang", "english");
         br.getPage(parameter);
         String id = new Regex(parameter, "filepost\\.com/folder/([a-z0-9]+)").getMatch(0);
-        if (br.containsHTML(">This folder is empty<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the folder no longer exists."));
+        if (br.containsHTML(">This folder is empty<")) {
+            logger.info("Link offline (folder empty): " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         parsePage(decryptedLinks, id);
         parseNextPage(decryptedLinks, id);
