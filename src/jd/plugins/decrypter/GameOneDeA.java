@@ -45,7 +45,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "http://(www\\.)?gameone\\.de/(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "http://((www|m)\\.)?gameone\\.de/(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3" }, flags = { 0 })
 public class GameOneDeA extends PluginForDecrypt {
 
     public class ReplacerInputStream extends InputStream {
@@ -59,8 +59,7 @@ public class GameOneDeA extends PluginForDecrypt {
          * Replacing & to {@literal &amp;} in InputStreams
          * 
          * @author mhaller
-         * @see <a
-         *      href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
+         * @see <a href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
          */
         public ReplacerInputStream(InputStream in) {
             this.in = in;
@@ -125,10 +124,12 @@ public class GameOneDeA extends PluginForDecrypt {
                     br.getPage(parameter);
                 }
             }
-            if (!br.containsHTML("\"player_swf\"")) {
-                logger.info("Wrong/Unsupported link: " + parameter);
-                return decryptedLinks;
-            }
+
+            // if (!br.containsHTML("\"player_swf\"")) {
+            // logger.info("Wrong/Unsupported link: " + parameter);
+            // return decryptedLinks;
+            // }
+
             String dllink, filename;
             boolean newEpisode = true;
             final String episode = new Regex(parameter, "http://(www\\.)?gameone\\.de/tv/(\\d+)").getMatch(1);
@@ -136,25 +137,26 @@ public class GameOneDeA extends PluginForDecrypt {
                 newEpisode = false;
             }
 
-            final String[] swfUrl = br.getRegex("SWFObject\\(\"(.*?)\"").getColumn(0);
+            final String[] mrssUrl = br.getRegex("\\.addVariable\\(\"mrss\"\\s?,\\s?\"(http://.*?)\"").getColumn(0);
             String fpName = br.getRegex("<title>(.*?)( \\||</title>)").getMatch(0);
             fpName = fpName == null ? br.getRegex("<h2>\n?(.*?)\n?</h2>").getMatch(0) : fpName;
 
-            if (fpName == null) { return null; }
+            if (fpName == null) return null;
 
             fpName = fpName.replaceAll(" (-|~) Teil \\d+", "");
+            fpName = fpName.replaceAll("\\.", "/");
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
 
             /* audio, pictures */
-            if (swfUrl == null || swfUrl.length == 0) {
+            if (mrssUrl == null || mrssUrl.length == 0) {
                 if (br.containsHTML("><img src=\"/images/dummys/dummy_agerated\\.jpg\"")) {
                     UserIO.getInstance().requestMessageDialog(UserIO.STYLE_HTML, "Link momentan inaktiv", "<b><font color=\"red\">" + parameter + "</font></b><br /><br />Vollstängiger Inhalt zu o.g. Link ist zwischen 22:00 und 06:00 Uhr verfügbar!");
                     return null;
                 }
                 String[] pictureOrAudio = null;
-                if (br.containsHTML("<div class=\\'gallery\\' id=\\'gallery_\\d+\\'")) {
-                    pictureOrAudio = br.getRegex("<a href=\"(http://.*?/gallery_pictures/.*?/large/.*?)\"").getColumn(0);
+                if (br.containsHTML("<div class=\'gallery\' id=\\'gallery_\\d+\'")) {
+                    pictureOrAudio = br.getRegex("<div class=\'gallery_image\'>.*?<a href=\"(http://.*?/gallery_pictures/.*?/large/.*?)\"").getColumn(0);
                 } else if (br.containsHTML("class=\"flash_container_audio\"")) {
                     pictureOrAudio = br.getRegex("<a href=\"(http://[^<>]+\\.mp3)").getColumn(0);
                     if (pictureOrAudio == null || pictureOrAudio.length == 0) {
@@ -180,7 +182,7 @@ public class GameOneDeA extends PluginForDecrypt {
             }
 
             /* video: blog, tv, playtube */
-            for (String startUrl : swfUrl) {
+            for (String startUrl : mrssUrl) {
                 startUrl = startUrl.replaceAll("http://(.*?)/", "http://www.gameone.de/api/mrss/");
 
                 XPath xPath = xmlParser(startUrl);
@@ -190,7 +192,7 @@ public class GameOneDeA extends PluginForDecrypt {
                     filename = xPath.evaluate("/rss/channel/item/title", doc);
                     expr = xPath.compile("/rss/channel/item/group/content[@type='text/xml']/@url");
                     partList = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
-                    if (partList == null || partList.getLength() == 0) { throw new Exception("PartList empty"); }
+                    if (partList == null || partList.getLength() == 0) throw new Exception("PartList empty");
                 } catch (final Throwable e) {
                     return null;
                 }
@@ -198,9 +200,7 @@ public class GameOneDeA extends PluginForDecrypt {
                 for (int i = 0; i < partList.getLength(); ++i) {
                     final Node partNode = partList.item(i);
                     startUrl = partNode.getNodeValue();
-                    if (startUrl == null) {
-                        continue;
-                    }
+                    if (startUrl == null) continue;
                     /* Episode 1 - 101 */
                     startUrl = startUrl.replaceAll("media/mediaGen\\.jhtml\\?uri.*?\\.de:", "flv/flvgen.jhtml?vid=");
 
@@ -208,16 +208,14 @@ public class GameOneDeA extends PluginForDecrypt {
                     try {
                         expr = xPath.compile("/package/video/item/src|//rendition/src");
                         linkList = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
-                        if (linkList == null || linkList.getLength() == 0) { throw new Exception("LinkList empty"); }
+                        if (linkList == null || linkList.getLength() == 0) throw new Exception("LinkList empty");
                     } catch (final Throwable e) {
                         continue;
                     }
                     for (int j = 0; j < linkList.getLength(); ++j) {
                         final Node node = linkList.item(j);
                         dllink = node.getTextContent();
-                        if (dllink == null) {
-                            continue;
-                        }
+                        if (dllink == null) continue;
                         String q = new Regex(dllink, "(\\d+)k_").getMatch(0);
                         q = q == null ? "" : quality(Integer.parseInt(q));
                         String ext = dllink.substring(dllink.lastIndexOf("."));
@@ -231,9 +229,9 @@ public class GameOneDeA extends PluginForDecrypt {
                         dllink = dllink.startsWith("http") ? "directhttp://" + dllink : dllink;
                         final DownloadLink dlLink = createDownloadlink(dllink);
                         if (!newEpisode) {
-                            dlLink.setFinalFileName(filename + q + "_Part_" + df.format(i + 1) + ext);
+                            dlLink.setFinalFileName(filename + "_Part_" + df.format(i + 1) + "@" + q + ext);
                         } else {
-                            dlLink.setFinalFileName(filename + "_" + q + ext);
+                            dlLink.setFinalFileName(filename + "@" + q + ext);
                         }
                         fp.add(dlLink);
                         decryptedLinks.add(dlLink);
