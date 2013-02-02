@@ -72,10 +72,6 @@ public class FileparadoxIn extends PluginForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
-    /**
-     * Script notes: Streaming versions of this script sometimes redirect you to their directlinks when accessing this link + the link ID:
-     * http://somehoster.in/vidembed-
-     * */
     // XfileSharingProBasic Version 2.5.8.7
     // mods:
     // non account: 2 * 1
@@ -114,6 +110,8 @@ public class FileparadoxIn extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        br.setConnectTimeout(3 * 60 * 1000);
+        br.setReadTimeout(3 * 60 * 1000);
     }
 
     @Override

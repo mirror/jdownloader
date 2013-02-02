@@ -110,8 +110,8 @@ public class LibGenInfo extends PluginForHost {
             if (results != null) {
                 String quote = new Regex(reg, "(\"|')").getMatch(0);
                 for (String result : results) {
-                    String cleanedResult = result.replaceAll(quote, "\\\"");
-                    data = data.replaceAll(result, cleanedResult);
+                    String cleanedResult = result.replaceFirst(quote, "\\\"").replaceFirst(quote + "$", "\\\"");
+                    data = data.replace(result, cleanedResult);
                 }
             }
         }

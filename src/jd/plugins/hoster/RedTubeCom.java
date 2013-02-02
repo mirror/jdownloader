@@ -3,6 +3,7 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -43,17 +44,19 @@ public class RedTubeCom extends PluginForHost {
         if (br.containsHTML("is no longer available") || br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Invalid link
         if (br.containsHTML(">Error Page Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String fileName = br.getRegex("<h1 class=\"videoTitle\">(.*?)</h1>").getMatch(0);
-        if (fileName == null) fileName = br.getRegex("<title>(.*?)- RedTube - Free Porn Videos</title>").getMatch(0);
-        if (fileName != null) link.setName(fileName.trim() + ".flv");
+        String fileName = br.getRegex("<h1 class=\"videoTitle[^>]+>(.*?)</h1>").getMatch(0);
+        if (fileName == null) fileName = br.getRegex("<title>(.*?) (-|\\|) RedTube[^<]+</title>").getMatch(0);
         br.setFollowRedirects(true);
         dlink = br.getRegex("html5_vid.*?source src=\"(http.*?)(\"|%3D%22)").getMatch(0);
         if (dlink == null) dlink = br.getRegex("flv_h264_url=(http.*?)(\"|%3D%22)").getMatch(0);
         if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlink = Encoding.urlDecode(dlink, true);
+        String ext = new Regex(dlink, "(\\.flv|\\.mp4).+$").getMatch(0);
+        if (fileName != null || ext != null) link.setName(fileName.trim() + ext);
         try {
             if (!br.openGetConnection(dlink).getContentType().contains("html")) {
                 link.setDownloadSize(br.getHttpConnection().getLongContentLength());
+
                 return AvailableStatus.TRUE;
             }
         } finally {

@@ -92,7 +92,7 @@ public class Keep2ShareCc extends PluginForHost {
             if (br.containsHTML(DOWNLOADPOSSIBLE)) {
                 dllink = getDllink();
             } else {
-                if (br.containsHTML("Traffic limit exceed\\!<br>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+                if (br.containsHTML("Traffic limit exceed\\!<br>|Download count files exceed!<br>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
                 final String uniqueID = br.getRegex("<input type=\"hidden\" value=\"([a-z0-9]+)\" name=\"uniqueId\"").getMatch(0);
                 if (uniqueID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 try {
