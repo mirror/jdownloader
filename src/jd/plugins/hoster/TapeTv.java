@@ -171,8 +171,7 @@ public class TapeTv extends PluginForHost {
                 br.getPage(sourceLink.getDownloadURL());
                 String currentUrl = br.getURL();
 
-                // http://www.tape.tv/musikvideos/Artist/title --> hoster
-                // handling
+                // http://www.tape.tv/musikvideos/Artist/title --> hoster handling
                 // http://www.tape.tv/musikvideos/Artist --> decrypter handling
                 String contentXML = "/tapeMVC/tape/channel/artist;?telly=tapetv&artistId=";
                 if (new Regex(currentUrl, "http://(www\\.)?tape\\.tv/(musikvideos/[\\w\\-]+/[\\w\\-]+|vid/\\d+)").matches()) contentXML = "/tapeMVC/tape/channel/deeplink;?telly=tapetv&videoId=";
@@ -196,7 +195,7 @@ public class TapeTv extends PluginForHost {
                     HashMap<String, HashMap<String, String>> qualitys = new HashMap<String, HashMap<String, String>>();
 
                     NodeList titleList = doc.getElementsByTagName("video");
-                    String title = null;
+                    String fpName = null;
 
                     for (int j = 0; j < titleList.getLength(); ++j) {
                         NodeList titleNode = titleList.item(j).getChildNodes();
@@ -231,9 +230,7 @@ public class TapeTv extends PluginForHost {
                                     if (kk.getFirstChild() != null && kk.getFirstChild().getNodeType() == Node.TEXT_NODE) {
                                         if ("artist".equals(n.getNodeName()) || "title".equals(n.getNodeName())) {
                                             musicVideo.put(kk.getNodeName(), kk.getFirstChild().getNodeValue());
-                                            // System.out.println(kk.getNodeName()
-                                            // + " == " +
-                                            // kk.getFirstChild().getNodeValue());
+                                            // System.out.println(kk.getNodeName() + " == " + kk.getFirstChild().getNodeValue());
                                         }
                                     }
                                 }
@@ -248,7 +245,6 @@ public class TapeTv extends PluginForHost {
 
                         String streamToken = null;
                         boolean bestQuality = this.getPluginConfig().getBooleanProperty(Q_BEST, false);
-                        title = musicVideo.get("artist") + " - " + musicVideo.get("title").replaceAll("\\(|\\)", "--");
 
                         for (String q : qualitys.keySet()) {
                             quality = new HashMap<String, String>(qualitys.get(q));
@@ -299,17 +295,18 @@ public class TapeTv extends PluginForHost {
                             }
                             streamUrl = "rtmpe://cp68509.edgefcs.net:1935/ondemand@ondemand?ovpfv=1.1&auth=" + streamToken + "&aifp=v001@mp4:" + streamUrl.substring(streamUrl.indexOf("tapetv/"));
 
-                            String name = title + "@" + q + ".mp4";
+                            fpName = musicVideo.get("artist");
+                            String title = fpName + " - " + musicVideo.get("title").replaceAll("\\(|\\)", "--") + "@" + q + ".mp4";
 
                             if (musicVideo.get("title").startsWith("Anmoderation")) continue;
 
-                            final DownloadLink link = new DownloadLink(this, name, getHost(), sourceLink.getDownloadURL(), true);
+                            final DownloadLink link = new DownloadLink(this, title, getHost(), sourceLink.getDownloadURL(), true);
                             link.setAvailable(true);
-                            link.setFinalFileName(name);
+                            link.setFinalFileName(title);
                             link.setBrowserUrl(sourceLink.getBrowserUrl());
                             link.setProperty("directURL", streamUrl);
-                            link.setProperty("directName", name);
-                            link.setProperty("LINKDUPEID", "tapetv" + ID + name + q);
+                            link.setProperty("directName", title);
+                            link.setProperty("LINKDUPEID", "tapetv" + ID + title + q);
                             DownloadLink best = bestMap.get(actualQ);
                             if (best == null) {
                                 bestMap.put(actualQ, link);
@@ -342,9 +339,9 @@ public class TapeTv extends PluginForHost {
                         if (fp != null) {
                             fp.addLinks(newTmpRet);
                             fp.remove(sourceLink);
-                        } else if (title != null && newTmpRet.size() > 1) {
+                        } else if (fpName != null && newTmpRet.size() > 1) {
                             fp = FilePackage.getInstance();
-                            fp.setName(title);
+                            fp.setName(fpName);
                             fp.addLinks(newTmpRet);
                         }
                         ret = newTmpRet;
@@ -355,10 +352,6 @@ public class TapeTv extends PluginForHost {
                      */
                 }
             }
-            /*
-             * little pause needed so the next call does not return trash
-             */
-            // Thread.sleep(1000);
         } catch (final Throwable e) {
             logger.severe(e.getMessage());
         }
