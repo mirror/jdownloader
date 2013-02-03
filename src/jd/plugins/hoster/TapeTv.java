@@ -68,8 +68,7 @@ public class TapeTv extends PluginForHost {
          * Replacing & to {@literal &amp;} in InputStreams
          * 
          * @author mhaller
-         * @see <a
-         *      href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
+         * @see <a href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
          */
         public ReplacerInputStream(InputStream in) {
             this.in = in;
@@ -162,8 +161,7 @@ public class TapeTv extends PluginForHost {
         try {
             if (ret != null && ret.size() > 0) {
                 /*
-                 * we make sure only one result is in ret, thats the case for
-                 * svn/next major version
+                 * we make sure only one result is in ret, thats the case for svn/next major version
                  */
                 final DownloadLink sourceLink = ret.get(0);
 
@@ -177,7 +175,7 @@ public class TapeTv extends PluginForHost {
                 // handling
                 // http://www.tape.tv/musikvideos/Artist --> decrypter handling
                 String contentXML = "/tapeMVC/tape/channel/artist;?telly=tapetv&artistId=";
-                if (new Regex(currentUrl, "http://(www\\.)?tape\\.tv/musikvideos/[\\w\\-]+/[\\w\\-]+").matches()) contentXML = "/tapeMVC/tape/channel/deeplink;?telly=tapetv&videoId=";
+                if (new Regex(currentUrl, "http://(www\\.)?tape\\.tv/(musikvideos/[\\w\\-]+/[\\w\\-]+|vid/\\d+)").matches()) contentXML = "/tapeMVC/tape/channel/deeplink;?telly=tapetv&videoId=";
 
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     sourceLink.setAvailable(false);
@@ -339,8 +337,7 @@ public class TapeTv extends PluginForHost {
 
                     if (newTmpRet.size() > 0) {
                         /*
-                         * only replace original found links by new ones, when
-                         * we have some
+                         * only replace original found links by new ones, when we have some
                          */
                         if (fp != null) {
                             fp.addLinks(newTmpRet);
