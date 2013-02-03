@@ -68,7 +68,8 @@ public class TapeTv extends PluginForHost {
          * Replacing & to {@literal &amp;} in InputStreams
          * 
          * @author mhaller
-         * @see <a href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
+         * @see <a
+         *      href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
          */
         public ReplacerInputStream(InputStream in) {
             this.in = in;
@@ -161,7 +162,8 @@ public class TapeTv extends PluginForHost {
         try {
             if (ret != null && ret.size() > 0) {
                 /*
-                 * we make sure only one result is in ret, thats the case for svn/next major version
+                 * we make sure only one result is in ret, thats the case for
+                 * svn/next major version
                  */
                 final DownloadLink sourceLink = ret.get(0);
 
@@ -171,7 +173,8 @@ public class TapeTv extends PluginForHost {
                 br.getPage(sourceLink.getDownloadURL());
                 String currentUrl = br.getURL();
 
-                // http://www.tape.tv/musikvideos/Artist/title --> hoster handling
+                // http://www.tape.tv/musikvideos/Artist/title --> hoster
+                // handling
                 // http://www.tape.tv/musikvideos/Artist --> decrypter handling
                 String contentXML = "/tapeMVC/tape/channel/artist;?telly=tapetv&artistId=";
                 if (new Regex(currentUrl, "http://(www\\.)?tape\\.tv/musikvideos/[\\w\\-]+/[\\w\\-]+").matches()) contentXML = "/tapeMVC/tape/channel/deeplink;?telly=tapetv&videoId=";
@@ -230,7 +233,9 @@ public class TapeTv extends PluginForHost {
                                     if (kk.getFirstChild() != null && kk.getFirstChild().getNodeType() == Node.TEXT_NODE) {
                                         if ("artist".equals(n.getNodeName()) || "title".equals(n.getNodeName())) {
                                             musicVideo.put(kk.getNodeName(), kk.getFirstChild().getNodeValue());
-                                            // System.out.println(kk.getNodeName() + " == " + kk.getFirstChild().getNodeValue());
+                                            // System.out.println(kk.getNodeName()
+                                            // + " == " +
+                                            // kk.getFirstChild().getNodeValue());
                                         }
                                     }
                                 }
@@ -245,6 +250,7 @@ public class TapeTv extends PluginForHost {
 
                         String streamToken = null;
                         boolean bestQuality = this.getPluginConfig().getBooleanProperty(Q_BEST, false);
+                        title = musicVideo.get("artist") + " - " + musicVideo.get("title").replaceAll("\\(|\\)", "--");
 
                         for (String q : qualitys.keySet()) {
                             quality = new HashMap<String, String>(qualitys.get(q));
@@ -295,8 +301,7 @@ public class TapeTv extends PluginForHost {
                             }
                             streamUrl = "rtmpe://cp68509.edgefcs.net:1935/ondemand@ondemand?ovpfv=1.1&auth=" + streamToken + "&aifp=v001@mp4:" + streamUrl.substring(streamUrl.indexOf("tapetv/"));
 
-                            title = musicVideo.get("artist");
-                            String name = title + "__" + musicVideo.get("title").replaceAll("\\(|\\)", "--") + "@" + q + ".mp4";
+                            String name = title + "@" + q + ".mp4";
 
                             if (musicVideo.get("title").startsWith("Anmoderation")) continue;
 
@@ -334,7 +339,8 @@ public class TapeTv extends PluginForHost {
 
                     if (newTmpRet.size() > 0) {
                         /*
-                         * only replace original found links by new ones, when we have some
+                         * only replace original found links by new ones, when
+                         * we have some
                          */
                         if (fp != null) {
                             fp.addLinks(newTmpRet);

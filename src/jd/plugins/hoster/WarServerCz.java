@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -30,6 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -65,7 +67,7 @@ public class WarServerCz extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         String passCode = null;
@@ -78,15 +80,30 @@ public class WarServerCz extends PluginForHost {
             }
             br.getPage("http://www.warserver.cz/api/?action=file-info&fid=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + "&filepass=" + Encoding.urlEncode(passCode));
         }
-        String dllink = parseJson("free-link");
-        if (dllink == null || dllink.startsWith("ERROR")) {
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        final String rcID = br.getRegex("\\?k=([^<>\"]*?)\"").getMatch(0);
+        if (rcID == null) {
             if (br.containsHTML("ERROR: Password protected file")) {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Password wrong");
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = dllink.replace("\\", "");
+        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.setId(rcID);
+        rc.load();
+        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        final String c = getCaptchaCode(cf, downloadLink);
+        br.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+        if (br.containsHTML("google.com/recaptcha/api/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+
+        // http://s01.warserver.cz/dwn-free.php?fid=906338377&h=2cece0eec9f5472fcdf8c706746f9f32
+        final Regex dlinfo = br.getRegex("startFreeDownload\\(this, \"(\\d+\\&h=[a-z0-9]+)\", (\\d+), \"(http://[^<>\"]*?)\"\\)");
+        if (dlinfo.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        final String dllink = dlinfo.getMatch(2) + "/dwn-free.php?fid=" + dlinfo.getMatch(0);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

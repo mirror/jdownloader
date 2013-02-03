@@ -47,7 +47,18 @@ public class GogoanimeCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
+        // Offline
         if (br.containsHTML("Oops\\! Page Not Found<")) {
+            logger.info("This link is offline: " + parameter);
+            return decryptedLinks;
+        }
+        // Offline2
+        if (br.containsHTML(">404 Not Found<")) {
+            logger.info("This link is offline: " + parameter);
+            return decryptedLinks;
+        }
+        // Invalid link
+        if (br.containsHTML("No htmlCode read")) {
             logger.info("This link is invalid: " + parameter);
             return decryptedLinks;
         }

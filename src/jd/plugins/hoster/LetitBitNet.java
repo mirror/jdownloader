@@ -37,7 +37,6 @@ import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -57,7 +56,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.|u\\d+\\.)?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.|u\\d+\\.)?letitbit\\.net/d?download/[^<>\"/]+/[^<>\"/]+\\.html" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
 
     private static Object        LOCK                              = new Object();
@@ -65,8 +64,7 @@ public class LetitBitNet extends PluginForHost {
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
     /*
-     * For linkcheck and premium download we're using their API:
-     * http://api.letitbit.net/reg/static/api.pdf
+     * For linkcheck and premium download we're using their API: http://api.letitbit.net/reg/static/api.pdf
      */
     public static final String   APIKEY                            = "VjR1U3JGUkNx";
     public static final String   APIPAGE                           = "http://api.letitbit.net/";
@@ -146,66 +144,106 @@ public class LetitBitNet extends PluginForHost {
         }
     }
 
+    /** Important: Always sync this code with the vip-file.com and the shareflare.net plugins */
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setDebug(true);
-        br.setCustomCharset("utf-8");
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://letitbit.net/", "lang", "en");
-        br.postPage(APIPAGE, "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/info\",{\"link\":\"" + downloadLink.getDownloadURL() + "\"}]]"));
-        if (br.containsHTML("status\":\"FAIL\",\"data\":\"bad link\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = getJson("name");
-        final String filesize = getJson("size");
-        final String md5 = getJson("md5");
-        if (filename != null && filesize != null) {
-            downloadLink.setFinalFileName(filename);
-            downloadLink.setDownloadSize(Long.parseLong(filesize));
-            if (md5 != null) downloadLink.setMD5Hash(md5);
-            return AvailableStatus.TRUE;
-        } else {
-            return oldAvailableCheck(downloadLink);
-        }
-    }
-
-    private AvailableStatus oldAvailableCheck(final DownloadLink downloadLink) throws IOException, PluginException {
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        br.setFollowRedirects(false);
-        // br.postPage(downloadLink.getDownloadURL(),
-        // "en.x=10&en.y=8&vote_cr=en");
-        String filename = br.getRegex("\"file-info\">File:: <span>(.*?)</span>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("class=\"first\">File:: <span>(.*?)</span></li>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("title>(.*?) download for free").getMatch(0);
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            final Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once (probably we could check even more) */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\""));
+                for (final DownloadLink dl : links) {
+                    sb.append(",[\"download/info\",{\"link\":\"" + dl.getDownloadURL() + "\"}]");
+                }
+                sb.append("]");
+                br.setReadTimeout(2 * 60 * 60);
+                br.setConnectTimeout(2 * 60 * 60);
+                br.postPage(APIPAGE, sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String fid = new Regex(dllink.getDownloadURL(), "download/([^<>\"/]*?)/").getMatch(0);
+                    final Regex fInfo = br.getRegex("\"name\":\"([^<>\"]*?)\",\"size\":\"(\\d+)\",\"uid\":\"" + fid + "\",\"project\":\"((letitbit|shareflare)\\.net|vip\\-file\\.com)\",\"md5\":\"([a-z0-9]{32})\"");
+                    if (br.containsHTML("\"data\":\\[\\[\\]\\]")) {
+                        dllink.setAvailable(false);
+                    } else {
+                        dllink.setFinalFileName(Encoding.htmlDecode(fInfo.getMatch(0)));
+                        dllink.setDownloadSize(Long.parseLong(fInfo.getMatch(1)));
+                        dllink.setMD5Hash(fInfo.getMatch(3));
+                        dllink.setAvailable(true);
+                    }
+                }
+                if (index == urls.length) {
+                    break;
                 }
             }
+        } catch (final Exception e) {
+            return false;
         }
-        String filesize = br.getRegex("name=\"sssize\" value=\"(\\d+)\"").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("<li>Size of file:: <span>(.*?)</span></li>").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex("\\[<span>(.*?)</span>\\]</h1>").getMatch(0);
-            }
-        }
-        if (filesize == null) filesize = br.getRegex("\\[<span>(.*?)</span>\\]</h1>").getMatch(0);
-        if (filename == null || filesize == null) {
-            if (br.containsHTML("(<title>404</title>|>File not found<|Запрашиваемый файл не найден<br>|>Запрашиваемая вами страница не существует\\!<|Request file .*? Deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("<p style=\"color:#000\">File not found</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("Request file.*?Deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("Forbidden word")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // Their names often differ from other file hosting services. I noticed
-        // that when in the filenames from other hosting services there
-        // are "-"'s, letitbit uses "_"'s so let's correct this here ;)
-        downloadLink.setFinalFileName(filename.trim().replace("_", "-"));
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        /** Old linkcheck code can be found in rev 16195 */
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return AvailableStatus.TRUE;
     }
+
+    // private AvailableStatus oldAvailableCheck(final DownloadLink downloadLink) throws IOException, PluginException {
+    // br.setFollowRedirects(true);
+    // br.getPage(downloadLink.getDownloadURL());
+    // br.setFollowRedirects(false);
+    // // br.postPage(downloadLink.getDownloadURL(),
+    // // "en.x=10&en.y=8&vote_cr=en");
+    // String filename = br.getRegex("\"file-info\">File:: <span>(.*?)</span>").getMatch(0);
+    // if (filename == null) {
+    // filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
+    // if (filename == null) {
+    // filename = br.getRegex("class=\"first\">File:: <span>(.*?)</span></li>").getMatch(0);
+    // if (filename == null) {
+    // filename = br.getRegex("title>(.*?) download for free").getMatch(0);
+    // }
+    // }
+    // }
+    // String filesize = br.getRegex("name=\"sssize\" value=\"(\\d+)\"").getMatch(0);
+    // if (filesize == null) {
+    // filesize = br.getRegex("<li>Size of file:: <span>(.*?)</span></li>").getMatch(0);
+    // if (filesize == null) {
+    // filesize = br.getRegex("\\[<span>(.*?)</span>\\]</h1>").getMatch(0);
+    // }
+    // }
+    // if (filesize == null) filesize = br.getRegex("\\[<span>(.*?)</span>\\]</h1>").getMatch(0);
+    // if (filename == null || filesize == null) {
+    // if
+    // (br.containsHTML("(<title>404</title>|>File not found<|Запрашиваемый файл не найден<br>|>Запрашиваемая вами страница не существует\\!<|Request file .*? Deleted)"))
+    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    // if (br.containsHTML("<p style=\"color:#000\">File not found</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    // if (br.containsHTML("Request file.*?Deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    // if (br.containsHTML("Forbidden word")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    // }
+    // // Their names often differ from other file hosting services. I noticed
+    // // that when in the filenames from other hosting services there
+    // // are "-"'s, letitbit uses "_"'s so let's correct this here ;)
+    // downloadLink.setFinalFileName(filename.trim().replace("_", "-"));
+    // if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+    // return AvailableStatus.TRUE;
+    // }
 
     private String getJson(final String parameter) {
         return br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
@@ -330,8 +368,7 @@ public class LetitBitNet extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         prepareBrowser(br2);
         /*
-         * this causes issues in 09580 stable, no workaround known, please
-         * update to latest jd version
+         * this causes issues in 09580 stable, no workaround known, please update to latest jd version
          */
         br2.getHeaders().put("Content-Length", "0");
         br2.postPage(ajaxmainurl + "/ajax/download3.php", "");
@@ -441,8 +478,7 @@ public class LetitBitNet extends PluginForHost {
                     }
                 }
                 /*
-                 * we must save the cookies, because letitbit only allows 100
-                 * logins per 24hours
+                 * we must save the cookies, because letitbit only allows 100 logins per 24hours
                  */
                 br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie(COOKIE_HOST, "log");
@@ -516,8 +552,7 @@ public class LetitBitNet extends PluginForHost {
             if (dlUrl == null && br.containsHTML("If you already have a premium")) {
                 if (freshLogin == false) {
                     /*
-                     * no fresh login, ip could have changed, remove cookies and
-                     * retry with fresh login
+                     * no fresh login, ip could have changed, remove cookies and retry with fresh login
                      */
                     synchronized (LOCK) {
                         account.setProperty("cookies", null);
@@ -542,8 +577,7 @@ public class LetitBitNet extends PluginForHost {
             if (br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             if (br.containsHTML("callback_tied_to_another")) {
                 /*
-                 * premium code is bound to a registered account,must login with
-                 * username/password
+                 * premium code is bound to a registered account,must login with username/password
                  */
                 AccountInfo ai = account.getAccountInfo();
                 if (ai != null) ai.setStatus("You must login with username/password!");
@@ -647,8 +681,7 @@ public class LetitBitNet extends PluginForHost {
 
     private void prepareBrowser(final Browser br) {
         /*
-         * last time they did not block the user-agent, we just need this stuff
-         * below ;)
+         * last time they did not block the user-agent, we just need this stuff below ;)
          */
         if (br == null) { return; }
         br.getHeaders().put("Accept", "*/*");
