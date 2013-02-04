@@ -499,20 +499,13 @@ public class GrooveShark extends PluginForHost {
             url = url.contains("%20") ? url.replace("%20", "+") : url;
 
             br.getPage(url);
-            if (br.containsHTML("not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            if (isGermanyBlocked()) { throw new PluginException(LinkStatus.ERROR_FATAL, BLOCKEDGERMANY); }
-            String[] filenm = br.getRegex("<h1 class=\"song\">(.*?)by\\s+<a href=\".*?\" rel=\"artist parent\" rev=\"child\">(.*?)</a>.*?on.*?<a href=.*? rel=\"album parent\" rev=\"child\">(.*?)</a>.*?</h1>").getRow(0);
-            if (filenm == null || filenm.length != 3) {
-                filenm = br.getRegex("<meta name=\"title\" content=\"(.*?)\\sby\\s(.*?)\\son\\s(.*?)\"").getRow(0);
-                if (filenm == null || filenm.length != 3) {
-                    filenm = br.getRegex("<title>(.*?)\\sby\\s(.*?)\\son\\s(.*?)\\s\\- Free Music Streaming\\, Online Music\\, Videos \\- Grooveshark</title>").getRow(0);
-                }
-            }
-            if (filenm == null || filenm.length != 3) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML("not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (isGermanyBlocked()) throw new PluginException(LinkStatus.ERROR_FATAL, BLOCKEDGERMANY);
+            String[] filenm = br.getRegex("<span itemprop=\"name\">([^<]+)</span>").getColumn(0);
+            if (filenm == null || filenm.length != 3) filenm = br.getRegex("<h1>(.*?)\\sby\\s(.*?)</h1>[\r\n\rb]+<h2>on\\s([^<]+)</h2>").getRow(0);
+            if (filenm == null || filenm.length != 3) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = filenm[1].trim() + " - " + filenm[2].trim() + " - " + filenm[0].trim() + ".mp3";
-            if (filename != null) {
-                downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-            }
+            if (filename != null) downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         }
         return AvailableStatus.TRUE;
     }
