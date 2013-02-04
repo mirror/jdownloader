@@ -33,7 +33,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
 
     // DEV NOTES
     // protocol: no https.
-    // t00y doesnt seem to work as alais but ill addd it anyway.
+    // t00y doesn't seem to work as alais but ill addd it anyway.
 
     private static final String domains = "(ctdisk|400gb|pipipan|t00y)\\.com";
 
@@ -46,7 +46,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
         String parameter = param.toString().replace("https://", "http://").replaceAll(domains + "/", "400gb.com/");
         br.setCookiesExclusive(true);
         br.getPage(parameter);
-        String id = new Regex(parameter, domains + "/u/(\\d+)").getMatch(0);
+        String id = new Regex(parameter, domains + "/u/(\\d+)").getMatch(1);
         if (br.containsHTML("(Due to the limitaion of local laws, this url has been disabled\\!<|该用户还未打开完全共享\\。|您目前无法访问他的资源列表\\。)")) {
             logger.warning("Invalid URL: " + parameter);
             return null;
