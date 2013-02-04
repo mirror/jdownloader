@@ -70,10 +70,6 @@ public class HenchFileCom extends PluginForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
-    /**
-     * Script notes: Streaming versions of this script sometimes redirect you to their directlinks when accessing this link + the link ID:
-     * http://somehoster.in/vidembed-
-     * */
     // XfileSharingProBasic Version 2.5.6.8-raz
     // mods:
     // non account: 1 * 1
@@ -129,8 +125,7 @@ public class HenchFileCom extends PluginForHost {
         String[] fileInfo = new String[3];
         // scan the first page
         scanInfo(fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission
-        // critical
+        // scan the second page. filesize[1] and md5hash[2] are not mission critical
         if (fileInfo[0] == null) {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
@@ -379,13 +374,10 @@ public class HenchFileCom extends PluginForHost {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
-                        // generic fail over for COOKIE_HOST on final link
-                        // format.
+                        // generic fail over for COOKIE_HOST on final link format.
                         if (dllink == null) {
-                            // dllink = new Regex(correctedBR,
-                            // "(https?://[^/]+/cgi\\-bin/dl\\.cgi/[a-z0-9]+/[^\"\\']+)").getMatch(0);
-                            // dllink = new Regex(correctedBR,
-                            // "(https?://[^/]+/files/\\d+/[a-z0-9]+/[^\"\\']+)").getMatch(0);
+                            // dllink = new Regex(correctedBR, "(https?://[^/]+/cgi\\-bin/dl\\.cgi/[a-z0-9]+/[^\"\\']+)").getMatch(0);
+                            // dllink = new Regex(correctedBR, "(https?://[^/]+/files/\\d+/[a-z0-9]+/[^\"\\']+)").getMatch(0);
                             if (dllink == null) {
                                 String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -599,7 +591,7 @@ public class HenchFileCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        final String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
+        final String space[][] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
         account.setValid(true);
         final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);

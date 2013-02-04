@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ public class File4GoCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Arquivo Temporariamente Indisponivel")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<b>Nome do arquivo:</b>([^<>\"]*?)</span>").getMatch(0);
+        final String filename = br.getRegex("<b>Nome( do arquivo)?:</b>([^<>\"]*?)</span>").getMatch(1);
         final String filesize = br.getRegex("<b>Tamanho:</b>([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
@@ -84,14 +84,10 @@ public class File4GoCom extends PluginForHost {
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
         /*
-         * Skip these: br.getHeaders().put("X-Requested-With",
-         * "XMLHttpRequest");
-         * br.postPage("http://www.file4go.com/recebe_id.php",
-         * "acao=cadastrar&id=" + new Regex(downloadLink.getDownloadURL(),
-         * "([a-z0-9]+)$").getMatch(0)); String dllink =
-         * br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0); if (dllink ==
-         * null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-         * dllink = dllUrl + dllink;
+         * Skip these: br.getHeaders().put("X-Requested-With", "XMLHttpRequest"); br.postPage("http://www.file4go.com/recebe_id.php",
+         * "acao=cadastrar&id=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0)); String dllink =
+         * br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0); if (dllink == null) throw new
+         * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); dllink = dllUrl + dllink;
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         /* resume no longer supported */
