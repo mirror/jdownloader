@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +26,7 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -33,6 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -70,11 +73,20 @@ public class File4GoCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        final String reconnectWait = br.getRegex("var time = (\\d+)").getMatch(0);
+        if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 1001l);
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        final String rcID = br.getRegex("\\?k=([^<>\"]*?)\"").getMatch(0);
+        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.setId(rcID);
+        rc.load();
+        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        final String c = getCaptchaCode(cf, downloadLink);
+        br.postPage("http://www.file4go.com/download", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&id=" + fid);
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.setFollowRedirects(false);
-        // String dllUrl =
-        // br.getRegex("'(http://[a-z0-9\\.]*file4go.com/dll\\.php\\?id=)'").getMatch(0);
-        // if (dllink == null) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final String dllink = getDllink();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Waittime can be skipped
@@ -84,10 +96,14 @@ public class File4GoCom extends PluginForHost {
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
         /*
-         * Skip these: br.getHeaders().put("X-Requested-With", "XMLHttpRequest"); br.postPage("http://www.file4go.com/recebe_id.php",
-         * "acao=cadastrar&id=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0)); String dllink =
-         * br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0); if (dllink == null) throw new
-         * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); dllink = dllUrl + dllink;
+         * Skip these: br.getHeaders().put("X-Requested-With",
+         * "XMLHttpRequest");
+         * br.postPage("http://www.file4go.com/recebe_id.php",
+         * "acao=cadastrar&id=" + new Regex(downloadLink.getDownloadURL(),
+         * "([a-z0-9]+)$").getMatch(0)); String dllink =
+         * br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0); if (dllink ==
+         * null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+         * dllink = dllUrl + dllink;
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         /* resume no longer supported */
@@ -183,8 +199,8 @@ public class File4GoCom extends PluginForHost {
     }
 
     private String getDllink() {
-        String dllink = br.getRegex("('|\")(http://([a-z0-9]+\\.)?file4go\\.com//?dll\\.php\\?id=[A-Za-z0-9]+)('|\")").getMatch(1);
-        if (dllink == null) dllink = br.getRegex("\\'(http://[a-z0-9]*\\.file4go\\.com:[0-9]*/dll\\.php\\?id=.*?)\\'").getMatch(0);
+        String dllink = br.getRegex("\"(http://[a-z0-9]+\\.file4go\\.com:\\d+/dll\\.php\\?id=[^<>\"/]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("<span id=\"boton_download\" ><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         return dllink;
     }
 
@@ -199,7 +215,7 @@ public class File4GoCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
     @Override

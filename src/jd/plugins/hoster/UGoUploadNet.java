@@ -26,6 +26,7 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -60,10 +61,15 @@ public class UGoUploadNet extends PluginForHost {
 
     /** Uses same script as filegig.com */
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        if (br.getURL().contains("e=You+must+register+for+a+premium+account+to+download+files+of+this+size")) {
+            link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            link.getLinkStatus().setStatusText("Only downloadable for premium users");
+            return AvailableStatus.TRUE;
+        }
         if (br.getURL().contains("ugoupload.net/index.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String[][] fileInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>[\r\n\t ]+(.+)\\(([\\d\\.]+ (KB|MB|GB))\\)<br/>").getMatches();
         if (fileInfo == null || fileInfo.length == 0) {
@@ -80,8 +86,9 @@ public class UGoUploadNet extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        boolean captcha = false;
         requestFileInformation(downloadLink);
+        if (br.getURL().contains("e=You+must+register+for+a+premium+account+to+download+files+of+this+size")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
+        boolean captcha = false;
         int wait = 420;
         final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
@@ -202,7 +209,8 @@ public class UGoUploadNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        // More possible but it often results in server errors
+        return 1;
     }
 
     @Override
