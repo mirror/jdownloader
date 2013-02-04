@@ -104,7 +104,6 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
             }
         } finally {
 
-            System.out.println(1);
             vlcstreamingAPI = null;
         }
     }
