@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bytesbox.com" }, urls = { "http://(www\\.)?bytesbox\\.com/\\!/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bytesbox.com" }, urls = { "https?://(www\\.)?bytesbox\\.com/\\!/[A-Za-z0-9]+" }, flags = { 2 })
 public class BytesBoxCom extends PluginForHost {
 
     private static AtomicBoolean isWaittimeDetected = new AtomicBoolean(false);
@@ -66,21 +66,27 @@ public class BytesBoxCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Download: ([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>BytesBox\\.com \\- Download ([^<>\"]*?)</title>").getMatch(0);
+        String filename = br.getRegex("<title>BytesBox\\.com \\- Download ([^<>\"]*?)</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("Download: ([^<>\"]*?)</div>").getMatch(0);
         if (filename != null) link.setName(Encoding.htmlDecode(filename.trim()));
+        String filesize = br.getRegex(">Download<span style=\" font\\-weight:normal;\"><br>([^<>\"]*?)</span></a>").getMatch(0);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        }
         isWaittimeDetected.set(false);
         if (br.containsHTML("class=\"inactiveButton\">Wait<span")) isWaittimeDetected.set(true);
         if (isWaittimeDetected.get() == true) return AvailableStatus.TRUE;
-        String filesize = br.getRegex(">Download<span style=\" font\\-weight:normal;\"><br>([^<>\"]*?)</span></a>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("File too big for free users </span>")) {
+            logger.warning("Not possible to download in free mode");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Not possible to download in free mode");
+        }
         /* waittime */
         if (br.containsHTML("class=\"inactiveButton\">Wait<span")) {
             isWaittimeDetected.set(true);
@@ -103,7 +109,7 @@ public class BytesBoxCom extends PluginForHost {
             jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
             final String code = getCaptchaCode(cf, downloadLink);
-            ajaxBR.postPage("http://bytesbox.com/ajax.solvcaptcha.php", "downsess=" + downsess + "&adcopy_challenge=" + sm.getChallenge(code) + "&adcopy_response=" + Encoding.urlEncode(code));
+            ajaxBR.postPage("/ajax.solvcaptcha.php", "downsess=" + downsess + "&adcopy_challenge=" + sm.getChallenge(code) + "&adcopy_response=" + Encoding.urlEncode(code));
             if (ajaxBR.containsHTML("\"status\":\"ERROR\"")) continue;
             break;
         }
@@ -122,7 +128,7 @@ public class BytesBoxCom extends PluginForHost {
 
     private String getFileId(DownloadLink downloadLink) {
         String dllink = downloadLink.getDownloadURL();
-        return new Regex(dllink, "(?i)\\!/([0-9a-z]+)/?$").getMatch(0);
+        return new Regex(dllink, "\\!/([A-Za-z0-9]+)/?$").getMatch(0);
     }
 
     private static final String MAINPAGE = "http://bytesbox.com";
@@ -143,17 +149,17 @@ public class BytesBoxCom extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
+                            this.br.setCookie(this.getHost(), key, value);
                         }
                         return;
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPage("http://www.bytesbox.com/login.php", "remember=on&loginAct=Login+to+your+account&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "bytesbox_pass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage("https://www.bytesbox.com/login.php", "remember=on&loginAct=Login+to+your+account&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(this.getHost(), "bytesbox_pass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
+                final Cookies add = this.br.getCookies(this.getHost());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -176,7 +182,7 @@ public class BytesBoxCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://www.bytesbox.com/settings.php");
+        br.getPage("/settings.php");
         if (!br.containsHTML("<p>Plan Type: <span>Professional Storage</span>")) {
             account.setValid(false);
             ai.setStatus("Unsupported accounttype");
