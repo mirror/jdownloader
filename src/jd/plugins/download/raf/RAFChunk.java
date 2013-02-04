@@ -554,9 +554,13 @@ public class RAFChunk extends Thread {
                          */
                         return;
                     }
-                    logger.severe("ERROR Chunk (range header parse error)" + getID() + connection.toString());
-                    dl.error(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_rangeheaderparseerror() + connection.getHeaderField("Content-Range"));
-                    return;
+                    if (ContentRange == null && startByte == 0 && connection.getLongContentLength() >= endByte) {
+                        /* no contentRange response, but the Content-Length is long enough and startbyte begins at 0, so it might be a rangeless first Request */
+                    } else {
+                        logger.severe("ERROR Chunk (range header parse error)" + getID() + connection.toString());
+                        dl.error(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_rangeheaderparseerror() + connection.getHeaderField("Content-Range"));
+                        return;
+                    }
                 } else {
                     /* only one chunk requested, set correct endByte */
                     endByte = connection.getLongContentLength() - 1;

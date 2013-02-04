@@ -4,6 +4,7 @@ import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.SessionRemoteAPI;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.jdownloader.api.accounts.AccountAPIImpl;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
 import org.jdownloader.api.config.AdvancedConfigManagerAPIImpl;
@@ -75,6 +76,10 @@ public class RemoteAPIController {
         register(new LinkCollectorAPIImpl());
         register(new ContentAPIImpl());
         register(new PollingAPIImpl());
+    }
+
+    public HttpRequestHandler getRequestHandler() {
+        return sessionc;
     }
 
     public synchronized void register(final RemoteAPIInterface x, boolean forceRegister) {
