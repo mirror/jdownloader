@@ -103,6 +103,8 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
                 HttpServer.getInstance().unregisterRequestHandler(streamServerHandler);
             }
         } finally {
+
+            System.out.println(1);
             vlcstreamingAPI = null;
         }
     }
