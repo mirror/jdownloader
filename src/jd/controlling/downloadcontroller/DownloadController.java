@@ -156,6 +156,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     @Override
     protected void _controllerPackageNodeAdded(FilePackage pkg, QueuePriority priority) {
         broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.ADD_CONTENT, pkg));
     }
 
     @Override
@@ -172,6 +173,16 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 link.setEnabled(false);
             }
         }
+    }
+
+    @Override
+    protected void _controllerLinkNodeRemoved(DownloadLink link, QueuePriority priority) {
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REMOVE_CONTENT, link));
+    }
+
+    @Override
+    protected void _controllerLinkNodeAdded(DownloadLink link, QueuePriority priority) {
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.ADD_CONTENT, link));
     }
 
     @Override

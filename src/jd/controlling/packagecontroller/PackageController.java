@@ -46,8 +46,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     private final WriteLock              writeLock = this.lock.writeLock();
 
     /**
-     * add a Package at given position position in this PackageController. in case the Package is already controlled by this PackageController this function
-     * does move it to the given position
+     * add a Package at given position position in this PackageController. in case the Package is already controlled by this
+     * PackageController this function does move it to the given position
      * 
      * @param pkg
      * @param index
@@ -153,6 +153,9 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     if (isNew) {
                         if (pkg.getChildren().size() > 0) childrenChanged.incrementAndGet();
                         _controllerPackageNodeAdded(pkg, this.getQueuePrio());
+                        for (ChildType child : pkg.getChildren()) {
+                            _controllerLinkNodeAdded(child, this.getQueuePrio());
+                        }
                     } else {
                         _controllerStructureChanged(this.getQueuePrio());
                     }
@@ -462,7 +465,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of the children
+     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of
+     * the children
      * 
      * @param pkg
      * @param children
@@ -490,6 +494,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                     /*
                                      * set FilePackage to null if the link was controlled by this FilePackage
                                      */
+                                    controller._controllerLinkNodeRemoved(dl, this.getQueuePrio());
                                     if (dl.getParentNode() == pkg) {
                                         dl.setParentNode(null);
                                     } else {
@@ -498,6 +503,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                 } else {
                                     /* child not part of given package */
                                     it.remove();
+
                                 }
                             }
                         }
@@ -594,6 +600,10 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     abstract protected void _controllerStructureChanged(QueuePriority priority);
 
     abstract protected void _controllerPackageNodeAdded(PackageType pkg, QueuePriority priority);
+
+    abstract protected void _controllerLinkNodeRemoved(ChildType link, QueuePriority priority);
+
+    abstract protected void _controllerLinkNodeAdded(ChildType link, QueuePriority priority);
 
     public boolean readLock() {
         if (!this.writeLock.isHeldByCurrentThread()) {

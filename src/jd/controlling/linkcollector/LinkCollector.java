@@ -271,6 +271,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     @Override
     protected void _controllerPackageNodeAdded(CrawledPackage pkg, QueuePriority priority) {
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE, priority));
+        LinkCollectorApiEventSender.getInstance().fireEvent(new LinkCollectorApiEvent(this, LinkCollectorApiEvent.TYPE.ADD_CONTENT, pkg));
     }
 
     @Override
@@ -279,6 +280,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         String id = getPackageMapID(pkg);
         if (id != null) packageMap.remove(id);
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, pkg, priority));
+        LinkCollectorApiEventSender.getInstance().fireEvent(new LinkCollectorApiEvent(this, LinkCollectorApiEvent.TYPE.REMOVE_CONTENT, pkg));
         java.util.List<CrawledLink> children = null;
         synchronized (pkg) {
             children = new ArrayList<CrawledLink>(pkg.getChildren());
@@ -537,6 +539,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         LinkCollector.this.moveOrAddAt(pkg, add, -1);
                     }
                     eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADDED_LINK, link, QueuePriority.NORM));
+                    _controllerLinkNodeAdded(link, QueuePriority.NORM);
                     return null;
                 } catch (Throwable e) {
                     dupeCheckMap.remove(link.getLinkID());
@@ -1470,6 +1473,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             _controllerStructureChanged(QueuePriority.LOW);
             break;
         }
+    }
+
+    @Override
+    protected void _controllerLinkNodeRemoved(CrawledLink link, QueuePriority priority) {
+        LinkCollectorApiEventSender.getInstance().fireEvent(new LinkCollectorApiEvent(this, LinkCollectorApiEvent.TYPE.REMOVE_CONTENT, link));
+    }
+
+    @Override
+    protected void _controllerLinkNodeAdded(CrawledLink link, QueuePriority priority) {
+        LinkCollectorApiEventSender.getInstance().fireEvent(new LinkCollectorApiEvent(this, LinkCollectorApiEvent.TYPE.ADD_CONTENT, link));
     }
 
 }
