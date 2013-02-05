@@ -120,7 +120,7 @@ public class MegaConz extends PluginForHost {
         br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
         String downloadURL = br.getRegex("\"g\"\\s*?:\\s*?\"(https?.*?)\"").getMatch(0);
         if (downloadURL == null) {
-            String error = br.getRegex("\"e\"\\s*?:\\s*?(-?\\d+)").getMatch(0);
+            String error = getError(br);
             if ("-18".equals(error)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -139,6 +139,11 @@ public class MegaConz extends PluginForHost {
                 decrypt(link, keyString);
             }
         }
+    }
+
+    public String getError(Browser br) {
+        if (br == null) return null;
+        return br.getRegex("\"e\"\\s*?:\\s*?(-?\\d+)").getMatch(0);
     }
 
     private boolean oldStyle() {
