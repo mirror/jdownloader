@@ -18,6 +18,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
@@ -313,21 +314,27 @@ public class UpdateController implements UpdateCallbackInterface {
     @Override
     public void onResults(boolean app, boolean updater, int clientRevision, int clientDestRevision, int selfRevision, int selfDestRevision, File awfFileclient, File awfFileSelf, File selfWOrkingDir, boolean jdlaunched) throws InterruptedException, IOException {
         try {
+            logger.info("onResult");
+            ;
             if (handler.hasPendingSelfupdate()) {
                 if (!isThreadConfirmed()) {
                     if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) return;
+                    logger.info("ASK for installing selfupdate");
                     Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message(), null, _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
 
                     setUpdateConfirmed(true);
                     handler.setGuiVisible(true, true);
                 }
+                logger.info("Run Installing Updates");
                 UpdateController.getInstance().installUpdates(null);
                 return;
             }
 
             // no need to do this if we have a selfupdate pending
             InstallLog awfoverview = handler.createAWFInstallLog();
+            logger.info(JSonStorage.toString(awfoverview));
             if (awfoverview.getSourcePackages().size() == 0) {
+                logger.info("Nothing to install");
                 // Thread.sleep(1000);
                 handler.setGuiFinished(null);
                 if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled()) handler.setGuiVisible(false, false);
@@ -335,25 +342,30 @@ public class UpdateController implements UpdateCallbackInterface {
             }
             if (awfoverview.getModifiedFiles().size() == 0) {
                 // empty package
+                logger.info("Nothing to install2");
                 UpdateController.getInstance().installUpdates(awfoverview);
                 handler.setGuiFinished(null);
                 if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled()) handler.setGuiVisible(false, false);
                 return;
             }
             if (awfoverview.getModifiedRestartRequiredFiles().size() == 0) {
-
+                logger.info("Only directs");
                 // can install direct
                 if (!settings.isDoNotAskToInstallPlugins()) {
+                    logger.info("ask to install plugins");
                     Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message_plugin(), null, _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
 
                 }
+                logger.info("run install");
                 UpdateController.getInstance().installUpdates(awfoverview);
+                logger.info("start scanner");
                 new Thread("PluginScanner") {
                     public void run() {
                         HostPluginController.getInstance().invalidateCache();
                         CrawlerPluginController.invalidateCache();
                     }
                 }.start();
+                logger.info("set gui finished");
                 handler.setGuiFinished(_UPDATE._.updatedplugins());
 
                 if (settings.isAutohideGuiIfSilentUpdatesWereInstalledEnabled()) handler.setGuiVisible(false, false);
