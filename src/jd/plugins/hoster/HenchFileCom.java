@@ -653,7 +653,7 @@ public class HenchFileCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
+                br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login.html");
                 final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -671,7 +671,6 @@ public class HenchFileCom extends PluginForHost {
                 if (!br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }
-                System.out.println(br.toString());
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
                 } else {

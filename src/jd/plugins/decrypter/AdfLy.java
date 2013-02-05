@@ -68,9 +68,9 @@ public class AdfLy extends PluginForDecrypt {
                 finallink = br.getRegex("close_bar.*?self\\.location = \\'(.*?)\\';").getMatch(0);
             }
 
-            String extendedProtectionPage = br.getRegex("\\'(https?://adf\\.ly/go/[^<>\"\\']*?)\\'").getMatch(0);
+            String extendedProtectionPage = br.getRegex("\\'(https?://adf\\.ly/go(/|\\.php\\?)[^<>\"\\']*?)\\'").getMatch(0);
             if (extendedProtectionPage == null) {
-                extendedProtectionPage = br.getRegex("var url = \\'(/go/[^<>\"\\']*?)\\'").getMatch(0);
+                extendedProtectionPage = br.getRegex("var url = \\'(/go(/|\\.php\\?)[^<>\"\\']*?)\\'").getMatch(0);
                 if (extendedProtectionPage != null) {
                     extendedProtectionPage = "http://adf.ly" + extendedProtectionPage;
                 }
@@ -82,8 +82,7 @@ public class AdfLy extends PluginForDecrypt {
                 if (waittime != null && Integer.parseInt(waittime) <= 20) wait = Integer.parseInt(waittime);
                 if (skipWait) {
                     skipWait();
-                    // Wait a seconds. Not waiting can cause the skipWait
-                    // feature to fail
+                    // Wait a seconds. Not waiting can cause the skipWait feature to fail
                     sleep(1 * 10001l, param);
                 } else {
                     sleep(wait * 1000l, param);
@@ -108,8 +107,7 @@ public class AdfLy extends PluginForDecrypt {
                         break;
                     }
                 } else {
-                    // Everything should have worked correctly, try to get final
-                    // link
+                    // Everything should have worked correctly, try to get final link
                     finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(http://[^<>\"\\']+)\"").getMatch(0);
                     break;
                 }
