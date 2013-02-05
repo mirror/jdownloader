@@ -12,6 +12,11 @@ import org.jdownloader.api.content.ContentAPIImpl;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.jd.JDAPIImpl;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
+import org.jdownloader.api.mobile.captcha.CaptchaMobileAPIImpl;
+import org.jdownloader.api.mobile.content.ContentMobileAPIImpl;
+import org.jdownloader.api.mobile.downloads.DownloadsMobileAPIImpl;
+import org.jdownloader.api.mobile.linkcollector.LinkCollectorMobileAPIImpl;
+import org.jdownloader.api.mobile.toolbar.JDownloaderToolBarMobileAPIImpl;
 import org.jdownloader.api.polling.PollingAPIImpl;
 import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
 
@@ -76,6 +81,13 @@ public class RemoteAPIController {
         register(new LinkCollectorAPIImpl());
         register(new ContentAPIImpl());
         register(new PollingAPIImpl());
+
+        // mobileAPI
+        register(new DownloadsMobileAPIImpl());
+        register(new LinkCollectorMobileAPIImpl());
+        register(new CaptchaMobileAPIImpl());
+        register(new ContentMobileAPIImpl());
+        register(new JDownloaderToolBarMobileAPIImpl());
     }
 
     public HttpRequestHandler getRequestHandler() {
