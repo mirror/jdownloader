@@ -156,18 +156,29 @@ public class LinkStatus implements Serializable {
     private static final long  serialVersionUID                                = 3885661829491436448L;
 
     private final DownloadLink downloadLink;
+
     private String             errorMessage;
     private int                lastestStatus                                   = TODO;
     private int                status                                          = TODO;
     private String             statusText                                      = null;
     private long               value                                           = 0;
     private long               waitUntil                                       = 0;
+    private long               initialWaitTime                                 = 0;
     private int                retryCount                                      = 0;
 
     private ImageIcon          statusIcon;
 
     public LinkStatus(final DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
+    }
+
+    /**
+     * For RemoteAPI Events it is necessary to get the downloadLink
+     * 
+     * @return the downloadLink
+     */
+    public DownloadLink getDownloadLink() {
+        return downloadLink;
     }
 
     /**
@@ -348,6 +359,7 @@ public class LinkStatus implements Serializable {
     private void notifyChanges() {
         DownloadLink dl = this.downloadLink;
         if (dl != null) dl.getFilePackage().nodeUpdated(dl, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
+        LinkStatusEventSender.getInstance().fireEvent(new LinkStatusEvent(this));
     }
 
     /**
@@ -377,6 +389,12 @@ public class LinkStatus implements Serializable {
 
     public void setWaitTime(final long milliSeconds) {
         waitUntil = System.currentTimeMillis() + milliSeconds;
+        initialWaitTime = waitUntil;
+    }
+
+    // returns the initial time to wait for this status
+    public long getWaitTime() {
+        return initialWaitTime;
     }
 
     @Override
