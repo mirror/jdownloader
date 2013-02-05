@@ -67,6 +67,7 @@ public class YouPornCom extends PluginForHost {
         if (filename == null) filename = br.getRegex("addthis:title=\"YouPorn - (.*?)\"></a>").getMatch(0);
         DLLINK = br.getRegex("\"(http://[^<>\"\\']+)\">MP4").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\"(http://videos\\-\\d+\\.youporn\\.com/[^<>\"\\'/]+/save/scene_h264[^<>\"\\']+)\"").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("<ul class=\"downloadList\">.*?href=\"(http://[^\"]+)\">.*?</ul>").getMatch(0);
         if (DLLINK == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         parameter.setFinalFileName(Encoding.htmlDecode(filename).trim().replaceAll("   ", "-") + ".mp4");
@@ -104,4 +105,5 @@ public class YouPornCom extends PluginForHost {
 
     public void resetDownloadlink(final DownloadLink link) {
     }
+
 }
