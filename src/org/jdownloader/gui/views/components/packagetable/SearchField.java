@@ -33,6 +33,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
@@ -58,11 +59,18 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     private Image                                          popIcon;
     private int                                            iconGap          = 38;
     private Border                                         orgBorder;
+    private Image                                          close;
+
+    private int                                            closeXPos        = -1;
+    private boolean                                        mouseoverClose   = false;
+    private boolean                                        closeEnabled     = false;
 
     public SearchField(PackageControllerTable<PackageType, ChildType> table2Filter, SearchCat defCategory) {
         super();
         this.table2Filter = table2Filter;
         img = NewTheme.I().getImage("search", SIZE);
+        close = NewTheme.I().getImage("close", -1);
+
         LAFOptions lafo = LookAndFeelController.getInstance().getLAFOptions();
         bgColor = new Color(lafo.getPanelHeaderColor());
         setHelpText(_GUI._.SearchField_SearchField_helptext());
@@ -77,7 +85,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
         };
         orgBorder = getBorder();
-        setBorder(BorderFactory.createCompoundBorder(orgBorder, BorderFactory.createEmptyBorder(0, 28, 0, 0)));
+        setBorder(BorderFactory.createCompoundBorder(orgBorder, BorderFactory.createEmptyBorder(0, 28, 0, 18)));
         addMouseMotionListener(this);
         addMouseListener(this);
     }
@@ -93,6 +101,9 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     @Override
     public void onChanged() {
         delayedFilter.run();
+
+        closeEnabled = StringUtils.isNotEmpty(getText());
+
     }
 
     protected void paintComponent(Graphics g) {
@@ -127,7 +138,12 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
             g2.setComposite(comp);
             g2.drawImage(img, 3, 3, 3 + SIZE, 3 + SIZE, 0, 0, SIZE, SIZE, null);
         }
+        if (closeEnabled) {
 
+            closeXPos = getWidth() - close.getWidth(null) - (getHeight() - close.getHeight(null)) / 2;
+            g2.drawImage(close, closeXPos, (getHeight() - close.getHeight(null)) / 2, close.getWidth(null), close.getHeight(null), null);
+
+        }
         // g2.dispose();
 
     }
@@ -186,10 +202,17 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
             setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
             setCaretColor(getBackground());
             focusLost(null);
+            mouseoverClose = false;
+        } else if (closeXPos > 0 && e.getX() > closeXPos) {
+            mouseoverClose = true;
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            setCaretColor(getBackground());
+            focusLost(null);
         } else {
             setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
             setCaretColor(null);
             focusGained(null);
+            mouseoverClose = false;
         }
     }
 
@@ -199,9 +222,16 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (label != null && e.getX() < labelWidth + 5 + iconGap + 8) {
+        if (mouseoverClose && closeEnabled) {
+            onResetPerformed();
+        } else if (label != null && e.getX() < labelWidth + 5 + iconGap + 8) {
             onCategoryPopup();
         }
+    }
+
+    private void onResetPerformed() {
+        setText(null);
+        onChanged();
     }
 
     private void onCategoryPopup() {
@@ -245,6 +275,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     }
 
     public void mouseExited(MouseEvent e) {
+        mouseoverClose = false;
     }
 
     protected SearchCat selectedCategory = null;

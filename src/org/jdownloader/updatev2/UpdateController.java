@@ -344,10 +344,14 @@ public class UpdateController implements UpdateCallbackInterface {
 
                 if (settings.isDoNotAskToInstallPlugins()) {
                     // can install direct
-                    UpdateController.getInstance().installUpdates(awfoverview);
 
-                    HostPluginController.getInstance().invalidateCache();
-                    CrawlerPluginController.invalidateCache();
+                    UpdateController.getInstance().installUpdates(awfoverview);
+                    new Thread("PluginScanner") {
+                        public void run() {
+                            HostPluginController.getInstance().invalidateCache();
+                            CrawlerPluginController.invalidateCache();
+                        }
+                    }.start();
                     handler.setGuiFinished(_UPDATE._.updatedplugins());
                     return;
                 }
