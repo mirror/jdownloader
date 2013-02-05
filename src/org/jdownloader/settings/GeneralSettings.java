@@ -245,18 +245,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @RequiresRestart
-    @DescriptionForConfigEntry("If true, JDownloader performs updates automatically without user interaction")
-    boolean isSilentUpdateEnabled();
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @RequiresRestart
-    @DescriptionForConfigEntry("If false, JDownloader will autorestart to finish a update silently. Warning: only disable when really needed!")
-    boolean isSilentUpdateWithRestartEnabled();
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Use available Accounts?")
     boolean isUseAvailableAccounts();
 
@@ -364,10 +352,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     @DefaultBooleanValue(false)
     void setSilentRestart(boolean b);
-
-    void setSilentUpdateEnabled(boolean b);
-
-    void setSilentUpdateWithRestartEnabled(boolean b);
 
     void setUseAvailableAccounts(boolean b);
 

@@ -330,31 +330,34 @@ public class UpdateController implements UpdateCallbackInterface {
             if (awfoverview.getSourcePackages().size() == 0) {
                 // Thread.sleep(1000);
                 handler.setGuiFinished(null);
-
+                if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled()) handler.setGuiVisible(false, false);
                 return;
             }
             if (awfoverview.getModifiedFiles().size() == 0) {
                 // empty package
                 UpdateController.getInstance().installUpdates(awfoverview);
-                handler.setGuiFinished(_UPDATE._.installframe_statusmsg_complete());
-
+                handler.setGuiFinished(null);
+                if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled()) handler.setGuiVisible(false, false);
                 return;
             }
             if (awfoverview.getModifiedRestartRequiredFiles().size() == 0) {
 
-                if (settings.isDoNotAskToInstallPlugins()) {
-                    // can install direct
+                // can install direct
+                if (!settings.isDoNotAskToInstallPlugins()) {
+                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message_plugin(), null, _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
 
-                    UpdateController.getInstance().installUpdates(awfoverview);
-                    new Thread("PluginScanner") {
-                        public void run() {
-                            HostPluginController.getInstance().invalidateCache();
-                            CrawlerPluginController.invalidateCache();
-                        }
-                    }.start();
-                    handler.setGuiFinished(_UPDATE._.updatedplugins());
-                    return;
                 }
+                UpdateController.getInstance().installUpdates(awfoverview);
+                new Thread("PluginScanner") {
+                    public void run() {
+                        HostPluginController.getInstance().invalidateCache();
+                        CrawlerPluginController.invalidateCache();
+                    }
+                }.start();
+                handler.setGuiFinished(_UPDATE._.updatedplugins());
+
+                if (settings.isAutohideGuiIfSilentUpdatesWereInstalledEnabled()) handler.setGuiVisible(false, false);
+                return;
 
             }
 

@@ -629,4 +629,7 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Plugins have been updated.\r\nYou're running the latest JDownloader version now.", "Plugins wurden aktualisiert.\r\nJDownloader ist nun wieder aktuell." })
     String updatedplugins();
 
+    @Default(lngs = { "en", "de" }, values = { "A new JDownloader Plugin Update is available.To install, a restart is NOT required!\r\nDo you want to install the update now? ", "Ein neues JDownloader Plugin Update steht zur Installation bereit. Zur Installation muss KEIN Neustart durchgeführt werden.\r\nSoll jetzt installiert werden?" })
+    String confirmdialog_new_update_available_for_install_message_plugin();
+
 }

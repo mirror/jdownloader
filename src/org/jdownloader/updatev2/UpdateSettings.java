@@ -4,7 +4,6 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
-import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 
@@ -45,9 +44,6 @@ public interface UpdateSettings extends ConfigInterface {
 
     void setAutoUpdateCheckEnabled(boolean enabled);
 
-    @DefaultStringValue("jd.Main")
-    String getMainClass();
-
     @DefaultBooleanValue(true)
     @RequiresRestart
     @AboutConfig
@@ -83,4 +79,18 @@ public interface UpdateSettings extends ConfigInterface {
     boolean isDoAskBeforeDownloadingAnUpdate();
 
     void setDoAskBeforeDownloadingAnUpdate(boolean b);
+
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    @DescriptionForConfigEntry("If enabled, JDownloader will close the Updatedialog if silent updates were installed, and there are no further updates. Else, you have to click to close")
+    boolean isAutohideGuiIfSilentUpdatesWereInstalledEnabled();
+
+    void setAutohideGuiIfSilentUpdatesWereInstalledEnabled(boolean b);
+
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    @DescriptionForConfigEntry("If enabled, JDownloader will close the Updatedialog if there are no updates. Else, you have to click to close")
+    boolean isAutohideGuiIfThereAreNoUpdatesEnabled();
+
+    void setAutohideGuiIfThereAreNoUpdatesEnabled(boolean b);
 }
