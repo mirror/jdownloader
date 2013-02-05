@@ -395,7 +395,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     String packageName = null;
                     String packageID = null;
                     String downloadFolder = null;
-                    boolean ignoreSpecialPackages = dpi != null && dpi.isPackagizerRuleMatched();
+                    boolean ignoreSpecialPackages = dpi != null && (dpi.isPackagizerRuleMatched() || dpi.isIgnoreVarious());
                     boolean isMultiArchive = false;
                     if (dpi != null) {
                         packageName = dpi.getName();

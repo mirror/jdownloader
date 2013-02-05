@@ -74,6 +74,7 @@ public class LinkCrawler implements IOPermission {
 
     public static final String          PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
     public static final String          PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
+    public static final String          PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
     public static final UniqueAlltimeID PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
     private boolean                     doDuplicateFinderFinalCheck = true;
     private List<LazyHostPlugin>        pHosts;
@@ -876,10 +877,21 @@ public class LinkCrawler implements IOPermission {
             } else {
                 fpi.setName(LinknameCleaner.cleanFileName(dp.getName(), false, true));
             }
-            if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_ALLOW_MERGE, false))) {
-                fpi.setUniqueId(dp.getUniqueID());
-            }
 
+            if (dp.hasProperty(PACKAGE_ALLOW_MERGE)) {
+                if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_ALLOW_MERGE, false))) {
+                    fpi.setUniqueId(dp.getUniqueID());
+                } else {
+                    fpi.setUniqueId(null);
+                }
+            }
+            if (dp.hasProperty(PACKAGE_IGNORE_VARIOUS)) {
+                if (Boolean.TRUE.equals(dp.getBooleanProperty(PACKAGE_IGNORE_VARIOUS, false))) {
+                    fpi.setIgnoreVarious(true);
+                } else {
+                    fpi.setIgnoreVarious(false);
+                }
+            }
             link.setDesiredPackageInfo(fpi);
             return fpi;
         }
