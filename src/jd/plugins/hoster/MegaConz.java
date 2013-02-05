@@ -119,7 +119,11 @@ public class MegaConz extends PluginForHost {
         if (fileID == null || keyString == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
         String downloadURL = br.getRegex("\"g\"\\s*?:\\s*?\"(https?.*?)\"").getMatch(0);
-        if (downloadURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (downloadURL == null) {
+            String error = br.getRegex("\"e\"\\s*?:\\s*?(-?\\d+)").getMatch(0);
+            if ("-18".equals(error)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (oldStyle()) {
             /* old 09581 stable only */
             dl = createHackedDownloadInterface(br, link, downloadURL);
