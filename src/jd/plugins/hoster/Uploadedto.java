@@ -691,6 +691,7 @@ public class Uploadedto extends PluginForHost {
                 logger.info("Received unknown API response error 500!\nIf this happened during the login process, the account was not accepted!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "API doesn't accept account (error 500).", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 8000:
+                //
 
                 /* traffic exhausted */
                 if (acc != null) {
