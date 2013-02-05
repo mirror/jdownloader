@@ -50,6 +50,7 @@ confirmdialog_new_update_available_answer_now=Preuzmi sada
 confirmdialog_new_update_available_answer_now_install=Instaliraj sada
 confirmdialog_new_update_available_for_install_message=Dodavanje %s1 i uklanjanje %s2 JDownloader dodatka. Preporučamo Vam da to učinite. Želite li nastaviti?
 confirmdialog_new_update_available_for_install_message_launcher=Ažuriranje je spremno za instalaciju. Preporučamo da odmah instalirate. Želite to učiniti odmah?
+confirmdialog_new_update_available_for_install_message_plugin=Dostupno je novo ažuriranje JDownloader dodataka. Za instalaciju NIJE potreban restart aplikacije. Želite li sada instalaciju i ažuriranje?
 confirmdialog_new_update_available_frametitle=Dostupno je novo ažuriranje
 confirmdialog_new_update_available_frametitle_extensions=Uređivanje dodataka
 confirmdialog_new_update_available_message=Dostupno je novo ažuriranje. Želite li ga sada preuzeti?
