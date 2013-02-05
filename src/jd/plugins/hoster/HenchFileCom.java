@@ -58,7 +58,7 @@ public class HenchFileCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://henchfile.com";
+    private final String         COOKIE_HOST                  = "http://www.henchfile.com";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -77,7 +77,7 @@ public class HenchFileCom extends PluginForHost {
     // premium account: untested, set standard limits
     // protocol: no https
     // captchatype: recaptcha
-    // other: no redirects
+    // other: redirects to www.henchfile.com
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -653,15 +653,25 @@ public class HenchFileCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(true);
+                br.setFollowRedirects(false);
                 getPage(COOKIE_HOST + "/login.html");
                 final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // if you do not set this, cookie detection breaks within stable, because form action contains capital letters.
+                // <form method="POST" action="http://www.HenchFile.com/" name="FL">
+                loginform.setAction(COOKIE_HOST);
+                loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                getPage(COOKIE_HOST + "/?op=my_account");
+                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                    // System.out.println("COULD NOT FIND COOKIES");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (!br.getURL().contains("/?op=my_account")) {
+                    getPage("/?op=my_account");
+                }
+                System.out.println(br.toString());
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
