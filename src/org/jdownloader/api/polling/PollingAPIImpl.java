@@ -85,19 +85,10 @@ public class PollingAPIImpl implements PollingAPI {
         PollingResultAPIStorable prs = new PollingResultAPIStorable();
         prs.setEventName("jdState");
 
-        String status = "UNKNOWN";
-        if (dwd.getRunningDownloadLinks() != null && dwd.getRunningDownloadLinks().isEmpty()) {
-            status = "STOPPED";
-        } else if (dwd.isPaused()) {
-            status = "PAUSED";
-        } else {
-            status = "RUNNING";
-        }
-
         QueryResponseMap eventData = new QueryResponseMap();
-        eventData.put("data", status);
-        prs.setEventData(eventData);
+        eventData.put("data", dwd.getStateMachine().getState().getLabel());
 
+        prs.setEventData(eventData);
         return prs;
     }
 
