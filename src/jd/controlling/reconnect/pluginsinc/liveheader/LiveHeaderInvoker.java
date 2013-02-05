@@ -10,7 +10,8 @@ import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.ipcheck.IP;
-import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RecollInterface;
+import jd.controlling.reconnect.ipcheck.IPController;
+import jd.controlling.reconnect.pluginsinc.liveheader.recoll.RecollController;
 import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 import jd.http.Browser;
@@ -23,7 +24,6 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.remotecall.RemoteClient;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -50,44 +50,53 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
     }
 
     @Override
-    public ReconnectResult validate(ReconnectResult ret) throws InterruptedException, ReconnectException {
+    public ReconnectResult validate(ReconnectResult r) throws InterruptedException, ReconnectException {
 
         try {
-            ReconnectResult r = super.validate(ret);
+            if (r instanceof LiveHeaderReconnectResult) {
+                final RouterData rd = ((LiveHeaderReconnectResult) r).getRouterData();
+
+                if (rd != null && rd.getScriptID() != null) {
+
+                    RecollController.getInstance().trackValidateStartAsynch(rd.getScriptID());
+                }
+            }
+
+            r = super.validate(r);
 
             if (r instanceof LiveHeaderReconnectResult) {
                 RouterData rd = ((LiveHeaderReconnectResult) r).getRouterData();
 
                 if (rd != null && rd.getScriptID() != null) {
-                    RecollInterface serverConnector;
-                    try {
-                        serverConnector = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
 
-                        if (r.isSuccess()) {
+                    if (r.isSuccess()) {
 
-                            serverConnector.setWorking(rd.getScriptID(), null, r.getSuccessDuration(), r.getOfflineDuration());
-                        } else {
-                            serverConnector.setNotWorking(rd.getScriptID(), null);
-                        }
-
-                    } catch (Throwable e) {
-                        logger.log(e);
+                        RecollController.getInstance().trackWorking(rd.getScriptID(), r.getSuccessDuration(), r.getOfflineDuration());
+                    } else {
+                        RecollController.getInstance().trackNotWorking(rd.getScriptID());
                     }
+
                 }
             }
             return r;
         } catch (ReconnectException e) {
-            RouterData rd = ((LiveHeaderReconnectResult) ret).getRouterData();
+            RouterData rd = ((LiveHeaderReconnectResult) r).getRouterData();
             if (rd != null && rd.getScriptID() != null) {
-                RecollInterface serverConnector;
-                try {
-                    serverConnector = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
-                    serverConnector.setNotWorking(rd.getScriptID(), null);
-                } catch (Throwable e1) {
-                    logger.log(e);
-                }
+
+                RecollController.getInstance().trackNotWorking(rd.getScriptID());
+
             }
             throw e;
+        } finally {
+            if (!IPController.getInstance().getIpState().isOffline()) {
+                if (r instanceof LiveHeaderReconnectResult) {
+                    final RouterData rd = ((LiveHeaderReconnectResult) r).getRouterData();
+
+                    if (rd != null && rd.getScriptID() != null) {
+                        RecollController.getInstance().trackValidateEnd(rd.getScriptID());
+                    }
+                }
+            }
         }
 
     }

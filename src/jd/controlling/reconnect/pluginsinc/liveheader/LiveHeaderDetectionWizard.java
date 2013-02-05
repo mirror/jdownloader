@@ -24,7 +24,7 @@ import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPController;
-import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RecollInterface;
+import jd.controlling.reconnect.pluginsinc.liveheader.recoll.RecollController;
 import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
@@ -34,7 +34,6 @@ import jd.http.URLConnectionAdapter;
 import jd.utils.JDUtilities;
 
 import org.appwork.remotecall.client.RemoteCallCommunicationException;
-import org.appwork.remotecall.server.ParsingException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
@@ -49,15 +48,9 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.remotecall.RemoteClient;
 
 public class LiveHeaderDetectionWizard {
-    // "update3.jdownloader.org/recoll";
-    // ;
-    static String                   UPDATE3_JDOWNLOADER_ORG_RECOLL = "update3.jdownloader.org/recoll"; // "update3.jdownloader.org/recoll";
-    static {
-        // UPDATE3_JDOWNLOADER_ORG_RECOLL = "192.168.2.250/thomas/fcgi";
-    }
+
     private String                  mac;
 
     private String                  manufactor;
@@ -102,41 +95,33 @@ public class LiveHeaderDetectionWizard {
 
     private HashMap<String, String> responseHeaders;
 
-    private RecollInterface         recoll;
-
     private String                  sslTagFootprint;
 
     private String                  tagFootprint;
 
     public LiveHeaderDetectionWizard() {
 
-        try {
-            recoll = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException(e);
-        } catch (ParsingException e) {
-            throw new RuntimeException(e);
-        }
     }
 
-    public static void main(String[] args) {
-
-        try {
-            RecollInterface r = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
-
-            r.isAlive();
-
-            System.out.println(r.isReconnectPossible(null));
-            // System.out.println(rd.getAvgScD());
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (ParsingException e) {
-            e.printStackTrace();
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-    }
+    // public static void main(String[] args) {
+    //
+    // try {
+    // RecollInterface r = new
+    // RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
+    //
+    // r.isAlive();
+    //
+    // System.out.println(r.isReconnectPossible(null));
+    // // System.out.println(rd.getAvgScD());
+    // } catch (IllegalArgumentException e) {
+    // e.printStackTrace();
+    // } catch (ParsingException e) {
+    // e.printStackTrace();
+    // } catch (Throwable e) {
+    // e.printStackTrace();
+    // }
+    //
+    // }
 
     private LiveHeaderReconnect getPlugin() {
         return (LiveHeaderReconnect) ReconnectPluginController.getInstance().getPluginByID(LiveHeaderReconnect.ID);
@@ -409,7 +394,7 @@ public class LiveHeaderDetectionWizard {
             IPController.getInstance().waitUntilWeAreOnline();
             processCallBack.setStatusString(getPlugin(), T._.LiveHeaderDetectionWizard_runOnlineScan_collect());
 
-            recoll.isAlive();
+            RecollController.getInstance().isAlive();
 
             collectInfo();
             specialCollectInfo();
@@ -645,7 +630,7 @@ public class LiveHeaderDetectionWizard {
         // debug
         // rd.setMac(null);
 
-        java.util.List<RouterData> scripts = recoll.findRouter(rd, null);
+        java.util.List<RouterData> scripts = RecollController.getInstance().findRouter(rd);
 
         final java.util.List<RouterData> unique = toUnique(scripts);
 
@@ -775,7 +760,7 @@ public class LiveHeaderDetectionWizard {
         try {
             mac = RouterUtils.getMacAddress(gatewayAdress).replace(":", "").toUpperCase(Locale.ENGLISH);
 
-            manufactor = recoll.getManufactor(mac);
+            manufactor = RecollController.getInstance().getManufactor(mac);
         } catch (final InterruptedException e) {
             throw e;
         } catch (final Exception e) {
@@ -823,7 +808,7 @@ public class LiveHeaderDetectionWizard {
             processCallBack.setProgress(this, -1);
             processCallBack.setStatusString(this, _GUI._.LiveaheaderDetection_wait_for_online());
             IPController.getInstance().waitUntilWeAreOnline();
-            recoll.isAlive();
+            RecollController.getInstance().isAlive();
 
             if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() < 3) {
                 // we have to validate the script first
@@ -886,7 +871,7 @@ public class LiveHeaderDetectionWizard {
 
         RouterData rd = getRouterData();
         rd.setScript(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript());
-        if (recoll.addRouter(rd, null)) {
+        if (RecollController.getInstance().addRouter(rd)) {
             NewUIO.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_ok());
         } else {
             NewUIO.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_failed());

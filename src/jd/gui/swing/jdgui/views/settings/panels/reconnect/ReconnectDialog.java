@@ -118,9 +118,39 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
                     ReconnectInvoker plg = ReconnectPluginController.getInstance().getActivePlugin().getReconnectInvoker();
                     if (plg == null) throw new ReconnectException(_GUI._.ReconnectDialog_run_failed_not_setup_());
                     plg.setLogger(logger);
+
+                    // if (IPController.getInstance().getIpState().isOffline()) {
+                    // ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.GRAY);
+                    // ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.RED);
+                    // progress.setValue(0);
+                    // Dialog.getInstance().showMessageDialog(_GUI._.reconnect_test_offline());
+                    // new EDTRunner() {
+                    //
+                    // @Override
+                    // protected void runInEDT() {
+                    // dispose();
+                    // }
+                    // };
+                    // return;
+                    // }
                     ReconnectResult result = plg.validate();
                     if (result.isSuccess()) {
                         logger.clear();
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+                                state.setText(_GUI._.ReconnectDialog_onIPValidated_());
+                            }
+                        };
+                    } else {
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+                                state.setText(_GUI._.ReconnectDialog_failed());
+                            }
+                        };
                     }
                     progress.setIndeterminate(false);
                     if (IPController.getInstance().isInvalidated()) {
@@ -139,11 +169,24 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
                     } else {
                         Dialog.getInstance().showErrorDialog(_GUI._.ReconnectDialog_layoutDialogContent_error());
                     }
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            dispose();
+                        }
+                    };
                 } catch (Throwable e) {
                     logger.log(e);
                 } finally {
                     logger.close();
+                    new EDTRunner() {
 
+                        @Override
+                        protected void runInEDT() {
+                            updateTimer.stop();
+                        }
+                    };
                 }
 
             }
@@ -154,10 +197,10 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
 
             public void actionPerformed(ActionEvent e) {
                 duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
-                if (!IPController.getInstance().isInvalidated()) {
-                    newIP.setText(IPController.getInstance().getIP().toString());
-                    updateTimer.stop();
-                }
+                // if (!IPController.getInstance().isInvalidated()) {
+                newIP.setText(IPController.getInstance().getIP().toString());
+                // updateTimer.stop();
+                // }
 
             }
         });

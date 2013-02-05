@@ -8,6 +8,7 @@ import jd.controlling.reconnect.ipcheck.IPController;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.ProcessCallBackAdapter;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 
 public abstract class ReconnectInvoker {
@@ -38,14 +39,18 @@ public abstract class ReconnectInvoker {
         ret.setInvoker(this);
 
         // Make sure that we are online
-        while (IPController.getInstance().getIpState().isOffline()) {
+
+        if (IPController.getInstance().getIpState().isOffline()) {
             IPController.getInstance().invalidate();
-            Thread.sleep(5000);
+            Thread.sleep(1000);
             IPController.getInstance().validate();
+            if (IPController.getInstance().getIpState().isOffline()) { throw new ReconnectException(_GUI._.ReconnectInvoker_validate_offline_()); }
+
         }
         logger.info("IP BEFORE=" + IPController.getInstance().getIP());
 
         try {
+
             BalancedWebIPCheck.getInstance().setOnlyUseWorkingServices(true);
             IPController.getInstance().invalidate();
             ret.setStartTime(System.currentTimeMillis());

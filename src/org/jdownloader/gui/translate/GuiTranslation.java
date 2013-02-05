@@ -2168,4 +2168,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please wait..." })
     String lit_please_wait();
 
+    @Default(lngs = { "en" }, values = { "No Internet Connection!\r\nYou need to be online to perform a reconnect test." })
+    String reconnect_test_offline();
+
+    @Default(lngs = { "en" }, values = { "Cannot reconnect: You are offline!" })
+    String ReconnectInvoker_validate_offline_();
+
+    @Default(lngs = { "en" }, values = { "Reconnect Failed" })
+    String ReconnectDialog_failed();
+
 }

@@ -23,4 +23,8 @@ public interface RecollInterface extends RemoteCallInterface {
     public boolean isReconnectPossible(Requestor request);
 
     public String getManufactor(String mac);
+
+    public void incTestStart(String scriptID, Requestor request) throws ScriptNotFoundExeption, FailedException;
+
+    public void incTestEnd(String scriptID, Requestor request) throws ScriptNotFoundExeption, FailedException;
 }

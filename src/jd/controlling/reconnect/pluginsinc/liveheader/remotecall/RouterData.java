@@ -97,6 +97,25 @@ public class RouterData implements Storable {
         this.failed = failed;
     }
 
+    private int testStart;
+
+    public int getTestStart() {
+        return testStart;
+    }
+
+    public void setTestStart(int testStart) {
+        this.testStart = testStart;
+    }
+
+    public int getTestEnd() {
+        return testEnd;
+    }
+
+    public void setTestEnd(int testEnd) {
+        this.testEnd = testEnd;
+    }
+
+    private int                     testEnd;
     private int                     success;
     private int                     failed;
     private String                  firmware;
