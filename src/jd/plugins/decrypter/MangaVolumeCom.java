@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangavolume.com" }, urls = { "http://(www\\.)?mangavolume\\.com/(?!manga\\-archive|serie\\-archive|sort|forums)[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangavolume.com" }, urls = { "http://(www\\.)?mangavolume\\.com/(?!manga\\-archive|serie\\-archive|sort|forums|tag/)[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0 })
 public class MangaVolumeCom extends PluginForDecrypt {
 
     public MangaVolumeCom(PluginWrapper wrapper) {

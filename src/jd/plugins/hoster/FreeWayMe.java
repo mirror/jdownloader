@@ -70,19 +70,18 @@ public class FreeWayMe extends PluginForHost {
         br.setReadTimeout(60 * 1000);
         String username = Encoding.urlEncode(account.getUser());
         String pass = Encoding.urlEncode(account.getPass());
-        String page = null;
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        page = br.getPage("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + pass);
+        br.getPage("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + pass);
         // "Invalid login" / "Banned" / "Valid login"
-        if (page.equalsIgnoreCase("Valid login")) {
+        if (br.toString().equalsIgnoreCase("Valid login")) {
             account.setValid(true);
-        } else if (page.equalsIgnoreCase("Invalid login")) {
+        } else if (br.toString().equalsIgnoreCase("Invalid login")) {
             ac.setStatus("invalid login. Wrong password?");
             account.setValid(false);
             return ac;
-        } else if (page.equalsIgnoreCase("Banned")) {
+        } else if (br.toString().equalsIgnoreCase("Banned")) {
             ac.setStatus("account banned");
             account.setValid(true);
             account.setEnabled(false);
@@ -94,9 +93,9 @@ public class FreeWayMe extends PluginForHost {
             return ac;
         }
         // account should be valid now, let's get account information:
-        page = br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username);
+        br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username);
 
-        if (page.contains("API deaktiviert")) {
+        if (br.toString().contains("API deaktiviert")) {
             showApiDisabledDialog();
             ac.setStatus("API disabled");
             account.setTempDisabled(true);
@@ -107,7 +106,7 @@ public class FreeWayMe extends PluginForHost {
         final String maxPremApi = getJson("parallel", br.toString());
         if (maxPremApi != null) maxPremi = Integer.parseInt(maxPremApi);
         maxPrem.set(maxPremi);
-        Long guthaben = Long.parseLong(getRegexTag(page, "guthaben").getMatch(0));
+        Long guthaben = Long.parseLong(getRegexTag(br.toString(), "guthaben").getMatch(0));
         ac.setTrafficLeft(guthaben * 1024 * 1024);
         try {
             account.setMaxSimultanDownloads(maxPrem.get());
@@ -115,17 +114,17 @@ public class FreeWayMe extends PluginForHost {
         } catch (final Throwable e) {
             // not available in old Stable 0.9.581
         }
-        String accountType = getRegexTag(page, "premium").getMatch(0);
+        String accountType = getRegexTag(br.toString(), "premium").getMatch(0);
         ac.setValidUntil(-1);
         if (accountType.equalsIgnoreCase("Flatrate")) {
             ac.setUnlimitedTraffic();
-            long validUntil = Long.parseLong(getRegexTag(page, "Flatrate").getMatch(0));
+            long validUntil = Long.parseLong(getRegexTag(br.toString(), "Flatrate").getMatch(0));
             ac.setValidUntil(validUntil * 1000);
         } else if (accountType.equalsIgnoreCase("Spender")) {
             ac.setUnlimitedTraffic();
         }
         // now let's get a list of all supported hosts:
-        page = br.getPage("https://www.free-way.me/ajax/jd.php?id=3");
+        br.getPage("https://www.free-way.me/ajax/jd.php?id=3");
         hosts = br.getRegex("\"([^\"]*)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
@@ -196,7 +195,8 @@ public class FreeWayMe extends PluginForHost {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
                 /*
-                 * after x retries we disable this host and retry with normal plugin
+                 * after x retries we disable this host and retry with normal
+                 * plugin
                  */
                 if (link.getLinkStatus().getRetryCount() >= 3) {
                     /* reset retrycounter */

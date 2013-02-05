@@ -32,7 +32,6 @@ import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -52,7 +51,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://(www\\.)?(u\\d+\\.)?shareflare\\.net/download/.*?/.*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://(www\\.|u\\d+\\.)?shareflare\\.net/download/[^<>\"/]+/[^<>\"/]+\\.html" }, flags = { 2 })
 public class ShareFlareNet extends PluginForHost {
 
     private static Object        LOCK                              = new Object();
@@ -80,47 +79,100 @@ public class ShareFlareNet extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\?", "%3F"));
     }
 
+    /**
+     * Important: Always sync this code with the vip-file.com, shareflare.net
+     * and letitbit.net plugins Limits: 4 * 50 = 200 links per 2 minutes
+     * */
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setDebug(true);
-        br.setCustomCharset("utf-8");
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://shareflare.net/", "lang", "en");
-        br.postPage(APIPAGE, "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/info\",{\"link\":\"" + downloadLink.getDownloadURL() + "\"}]]"));
-        if (br.containsHTML("status\":\"FAIL\",\"data\":\"bad link\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = getJson("name");
-        final String filesize = getJson("size");
-        final String md5 = getJson("md5");
-        if (filename != null && filesize != null) {
-            downloadLink.setFinalFileName(filename);
-            downloadLink.setDownloadSize(Long.parseLong(filesize));
-            if (md5 != null) downloadLink.setMD5Hash(md5);
-            return AvailableStatus.TRUE;
-        } else {
-            return oldAvailableCheck(downloadLink);
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            final Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /*
+                     * we test 50 links at once (probably we could check even
+                     * more)
+                     */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\""));
+                for (final DownloadLink dl : links) {
+                    sb.append(",[\"download/info\",{\"link\":\"" + dl.getDownloadURL() + "\"}]");
+                }
+                sb.append("]");
+                br.setReadTimeout(2 * 60 * 60);
+                br.setConnectTimeout(2 * 60 * 60);
+                br.postPage(APIPAGE, sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String fid = new Regex(dllink.getDownloadURL(), "/(\\d+\\-)?([^<>\"/]*?)/[^<>\"/]*?\\.html").getMatch(1);
+                    final Regex fInfo = br.getRegex("\"name\":\"([^<>\"]*?)\",\"size\":\"(\\d+)\",\"uid\":\"" + fid + "\",\"project\":\"(letitbit\\.net|shareflare\\.net|vip\\-file\\.com)\",\"md5\":\"([a-z0-9]{32}|0)\"");
+                    if (br.containsHTML("\"data\":\\[\\[\\]\\]")) {
+                        dllink.setAvailable(false);
+                    } else {
+                        final String md5 = fInfo.getMatch(3);
+                        dllink.setFinalFileName(Encoding.htmlDecode(fInfo.getMatch(0)));
+                        dllink.setDownloadSize(Long.parseLong(fInfo.getMatch(1)));
+                        dllink.setAvailable(true);
+                        if (!md5.equals("0")) dllink.setMD5Hash(md5);
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
         }
+        return true;
     }
 
-    private AvailableStatus oldAvailableCheck(final DownloadLink downloadLink) throws IOException, PluginException {
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        br.setFollowRedirects(false);
-        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        if (br.containsHTML("(File not found|deleted for abuse or something like this|\"http://up\\-file\\.com/find/)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("id=\"file-info\">(.*?)<small").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("name=\"name\" value=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(filename.trim());
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return AvailableStatus.TRUE;
     }
+
+    // private AvailableStatus oldAvailableCheck(final DownloadLink
+    // downloadLink) throws IOException, PluginException {
+    // br.setFollowRedirects(true);
+    // br.getPage(downloadLink.getDownloadURL());
+    // br.setFollowRedirects(false);
+    // if (br.containsHTML("No htmlCode read")) throw new
+    // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
+    // "Server error");
+    // if
+    // (br.containsHTML("(File not found|deleted for abuse or something like this|\"http://up\\-file\\.com/find/)"))
+    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    // String filename =
+    // br.getRegex("id=\"file-info\">(.*?)<small").getMatch(0);
+    // if (filename == null) {
+    // filename = br.getRegex("name=\"name\" value=\"(.*?)\"").getMatch(0);
+    // if (filename == null) {
+    // filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
+    // }
+    // }
+    // String filesize =
+    // br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
+    // if (filename == null) throw new
+    // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    // downloadLink.setName(filename.trim());
+    // if (filesize != null)
+    // downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+    // return AvailableStatus.TRUE;
+    // }
 
     private String getJson(final String parameter) {
         return br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);

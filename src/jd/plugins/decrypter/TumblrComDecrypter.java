@@ -162,8 +162,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 if (!nextPage.equals("1")) br.getPage(parameter + nextPage);
                 final String[] allPosts = br.getRegex("\"(http://(www\\.)?[\\w\\.\\-]*?\\.tumblr\\.com/post/\\d+)").getColumn(0);
                 if (allPosts == null || allPosts.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    logger.info("Found nothing here so the decrypter is either broken or there isn't anything to decrypt. Link: " + parameter);
+                    return decryptedLinks;
                 }
                 for (final String post : allPosts) {
                     final DownloadLink fpost = createDownloadlink(post);

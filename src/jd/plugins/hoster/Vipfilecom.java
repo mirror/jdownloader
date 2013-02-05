@@ -22,9 +22,9 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -39,7 +39,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip-file.com" }, urls = { "http://(u\\d+.)?vip\\-file\\.com/download(lib)?/.*?/.*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip-file.com" }, urls = { "http://(u\\d+\\.)?vip\\-file\\.com/download(lib)?/[^<>\"/]*?/[^<>\"/]*?\\.html" }, flags = { 2 })
 public class Vipfilecom extends PluginForHost {
 
     public static final String  FREELINKREGEX = "\"(http://vip\\-file\\.com/download([0-9]+)/.*?)\"";
@@ -64,46 +64,99 @@ public class Vipfilecom extends PluginForHost {
         return -1;
     }
 
+    /**
+     * Important: Always sync this code with the vip-file.com, shareflare.net
+     * and letitbit.net plugins Limits: 4 * 50 = 200 links per 2 minutes
+     * */
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-        this.setBrowserExclusive();
-        br.setDebug(true);
-        br.setCustomCharset("utf-8");
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://vip-file.com/", "lang", "en");
-        br.postPage(APIPAGE, "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/info\",{\"link\":\"" + downloadLink.getDownloadURL() + "\"}]]"));
-        if (br.containsHTML("status\":\"FAIL\",\"data\":\"bad link\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = getJson("name");
-        final String filesize = getJson("size");
-        final String md5 = getJson("md5");
-        if (filename != null && filesize != null) {
-            downloadLink.setFinalFileName(filename);
-            downloadLink.setDownloadSize(Long.parseLong(filesize));
-            if (md5 != null) downloadLink.setMD5Hash(md5);
-            return AvailableStatus.TRUE;
-        } else {
-            return oldAvailableCheck(downloadLink);
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            final Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /*
+                     * we test 50 links at once (probably we could check even
+                     * more)
+                     */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\""));
+                for (final DownloadLink dl : links) {
+                    sb.append(",[\"download/info\",{\"link\":\"" + dl.getDownloadURL() + "\"}]");
+                }
+                sb.append("]");
+                br.setReadTimeout(2 * 60 * 60);
+                br.setConnectTimeout(2 * 60 * 60);
+                br.postPage(APIPAGE, sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String fid = new Regex(dllink.getDownloadURL(), "/(\\d+\\-)?([^<>\"/]*?)/[^<>\"/]*?\\.html").getMatch(1);
+                    final Regex fInfo = br.getRegex("\"name\":\"([^<>\"]*?)\",\"size\":\"(\\d+)\",\"uid\":\"" + fid + "\",\"project\":\"(letitbit\\.net|shareflare\\.net|vip\\-file\\.com)\",\"md5\":\"([a-z0-9]{32}|0)\"");
+                    if (br.containsHTML("\"data\":\\[\\[\\]\\]")) {
+                        dllink.setAvailable(false);
+                    } else {
+                        final String md5 = fInfo.getMatch(3);
+                        dllink.setFinalFileName(Encoding.htmlDecode(fInfo.getMatch(0)));
+                        dllink.setDownloadSize(Long.parseLong(fInfo.getMatch(1)));
+                        dllink.setAvailable(true);
+                        if (!md5.equals("0")) dllink.setMD5Hash(md5);
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
         }
+        return true;
     }
 
-    private AvailableStatus oldAvailableCheck(final DownloadLink downloadLink) throws IOException, PluginException {
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        br.setFollowRedirects(false);
-        if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String fileSize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
-        if (fileSize == null) fileSize = br.getRegex("<p>Size of file: <span>(.*?)</span>").getMatch(0);
-        String fileName = br.getRegex("<input type=\"hidden\" name=\"realname\" value=\"(.*?)\" />").getMatch(0);
-        if (fileSize == null || fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
-        downloadLink.setName(fileName);
-        String link = Encoding.htmlDecode(br.getRegex(Pattern.compile(FREELINKREGEX, Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (link == null) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
-            return AvailableStatus.TRUE;
-        }
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return AvailableStatus.TRUE;
     }
+
+    // private AvailableStatus oldAvailableCheck(final DownloadLink
+    // downloadLink) throws IOException, PluginException {
+    // br.setFollowRedirects(true);
+    // br.getPage(downloadLink.getDownloadURL());
+    // br.setFollowRedirects(false);
+    // if (br.containsHTML(FILEOFFLINE)) throw new
+    // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    // String fileSize =
+    // br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
+    // if (fileSize == null) fileSize =
+    // br.getRegex("<p>Size of file: <span>(.*?)</span>").getMatch(0);
+    // String fileName =
+    // br.getRegex("<input type=\"hidden\" name=\"realname\" value=\"(.*?)\" />").getMatch(0);
+    // if (fileSize == null || fileName == null) throw new
+    // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    // downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
+    // downloadLink.setName(fileName);
+    // String link =
+    // Encoding.htmlDecode(br.getRegex(Pattern.compile(FREELINKREGEX,
+    // Pattern.CASE_INSENSITIVE)).getMatch(0));
+    // if (link == null) {
+    // downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink",
+    // "No free download link for this file"));
+    // return AvailableStatus.TRUE;
+    // }
+    // return AvailableStatus.TRUE;
+    // }
 
     private String getJson(final String parameter) {
         return br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);

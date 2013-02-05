@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stolenvideos.net" }, urls = { "http://(www\\.)?stolenvideos\\.net/\\d+/.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stolenvideos.net" }, urls = { "http://(www\\.)?stolenvideos\\.net/\\d+/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
 public class StolenVideosNet extends PluginForDecrypt {
 
     public StolenVideosNet(PluginWrapper wrapper) {
@@ -46,18 +46,9 @@ public class StolenVideosNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (tempID != null) {
-            String ext = tempID.substring(tempID.lastIndexOf("."));
-            if (ext != null) {
-                if (ext.length() > 10) {
-                    br.getPage(tempID);
-                    tempID = br.getRegex("url:\'(http://[^<>]+)\'").getMatch(0);
-                }
-            }
-            if (tempID != null) {
-                DownloadLink dl = createDownloadlink(tempID);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
+            final DownloadLink dl = createDownloadlink(tempID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         tempID = br.getRegex("\"file=(http://hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv)\\&").getMatch(0);
         if (tempID != null) {
