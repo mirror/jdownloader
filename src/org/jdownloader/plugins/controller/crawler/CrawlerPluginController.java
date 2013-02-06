@@ -37,9 +37,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     public static void invalidateCache() {
         CACHE_INVALIDATED = true;
         synchronized (INTSANCELOCK) {
-
             if (INSTANCE == null || (INSTANCE.get()) == null) return;
-
             getInstance().init(isCacheInvalidated());
 
         }
@@ -75,8 +73,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {

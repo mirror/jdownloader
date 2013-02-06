@@ -1,4 +1,4 @@
-package org.jdownloader.api.mobile.linkcollector;
+package org.jdownloader.extensions.oliverremoteapi.api.linkcollector;
 
 import java.util.ArrayList;
 import java.util.HashMap;

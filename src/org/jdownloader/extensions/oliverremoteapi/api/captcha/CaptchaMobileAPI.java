@@ -1,4 +1,4 @@
-package org.jdownloader.api.mobile.captcha;
+package org.jdownloader.extensions.oliverremoteapi.api.captcha;
 
 import java.util.List;
 

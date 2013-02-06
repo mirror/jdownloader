@@ -1,4 +1,4 @@
-package org.jdownloader.api.mobile.content;
+package org.jdownloader.extensions.oliverremoteapi.api.content;
 
 import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.RemoteAPIInterface;

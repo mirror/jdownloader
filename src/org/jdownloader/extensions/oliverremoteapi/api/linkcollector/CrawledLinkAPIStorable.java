@@ -1,4 +1,4 @@
-package org.jdownloader.api.mobile.linkcollector;
+package org.jdownloader.extensions.oliverremoteapi.api.linkcollector;
 
 import jd.controlling.linkcrawler.CrawledLink;
 

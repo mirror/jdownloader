@@ -225,8 +225,6 @@ public class Launcher {
         if (!jared) {
             /* always enable debug and cache refresh in developer version */
             Launcher.LOG.info("Not Jared Version(" + revision + "): RefreshCache=true");
-            HostPluginController.getInstance().invalidateCache();
-            CrawlerPluginController.invalidateCache();
         } else {
             Launcher.LOG.info("Jared Version(" + revision + ")");
         }
@@ -438,8 +436,13 @@ public class Launcher {
                     @Override
                     public void run() {
                         try {
+                            boolean jared = Application.isJared(Launcher.class);
                             ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipTimeout());
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
+                            if (!jared) {
+                                HostPluginController.getInstance().invalidateCache();
+                                CrawlerPluginController.invalidateCache();
+                            }
                             HostPluginController.getInstance().ensureLoaded();
                             /* load links */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init DownloadLinks");
@@ -454,8 +457,10 @@ public class Launcher {
                             // GarbageController.getInstance();
                             /* load extensions */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Extensions");
+                            if (!jared) {
+                                ExtensionController.getInstance().invalidateCache();
+                            }
                             ExtensionController.getInstance().init();
-                            ;
                             /* init clipboardMonitoring stuff */
                             if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
                                 ClipboardMonitoring.getINSTANCE().startMonitoring();

@@ -1,4 +1,4 @@
-package org.jdownloader.api.mobile.downloads;
+package org.jdownloader.extensions.oliverremoteapi.api.downloads;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
