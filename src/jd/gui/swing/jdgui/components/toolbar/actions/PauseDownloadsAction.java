@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
+import org.appwork.controlling.State;
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.storage.config.JsonConfig;
@@ -36,7 +37,8 @@ public class PauseDownloadsAction extends AbstractToolbarAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        DownloadWatchDog.getInstance().pauseDownloadWatchDog(isSelected());
+        boolean isPaused = DownloadWatchDog.getInstance().getStateMachine().getState() == DownloadWatchDog.PAUSE_STATE;
+        DownloadWatchDog.getInstance().pauseDownloadWatchDog(!isPaused);
     }
 
     @Override
@@ -58,7 +60,7 @@ public class PauseDownloadsAction extends AbstractToolbarAction {
     protected void doInit() {
 
         this.setEnabled(false);
-        setSelected(false);
+
         setTooltipText(_GUI._.gui_menu_action_break2_desc(JsonConfig.create(GeneralSettings.class).getPauseSpeed()));
 
         DownloadWatchDog.getInstance().getStateMachine().addListener(new StateEventListener() {
@@ -67,16 +69,7 @@ public class PauseDownloadsAction extends AbstractToolbarAction {
             }
 
             public void onStateChange(StateEvent event) {
-                if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
-                    setEnabled(false);
-                    setSelected(false);
-                } else if (DownloadWatchDog.RUNNING_STATE == event.getNewState()) {
-                    setEnabled(true);
-                    setSelected(false);
-                } else if (DownloadWatchDog.PAUSE_STATE == event.getNewState()) {
-                    setEnabled(true);
-                    setSelected(true);
-                }
+                update(event.getNewState());
             }
         });
 
@@ -98,6 +91,21 @@ public class PauseDownloadsAction extends AbstractToolbarAction {
             }
 
         });
+        update(DownloadWatchDog.getInstance().getStateMachine().getState());
+    }
+
+    protected void update(State newState) {
+        if (DownloadWatchDog.IDLE_STATE == newState || DownloadWatchDog.STOPPED_STATE == newState) {
+            setEnabled(false);
+            setSelected(false);
+        } else if (DownloadWatchDog.RUNNING_STATE == newState) {
+            setEnabled(true);
+            setSelected(false);
+        } else if (DownloadWatchDog.PAUSE_STATE == newState) {
+            setEnabled(true);
+            setSelected(true);
+        }
+        System.out.println("Paused: " + isSelected());
     }
 
 }

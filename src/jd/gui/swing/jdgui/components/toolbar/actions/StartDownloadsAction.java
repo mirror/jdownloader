@@ -77,6 +77,7 @@ public class StartDownloadsAction extends AbstractToolbarAction {
             }
 
             public void onStateChange(StateEvent event) {
+
                 if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
                     setEnabled(true);
                 } else if (DownloadWatchDog.RUNNING_STATE == event.getNewState()) {
