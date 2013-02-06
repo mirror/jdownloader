@@ -1,41 +1,42 @@
 package jd.gui.swing.jdgui.views.settings.components;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 
-import javax.swing.JButton;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
+import javax.swing.JPopupMenu;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 
-import net.miginfocom.swing.MigLayout;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 
+import org.appwork.app.gui.copycutpaste.CopyAction;
+import org.appwork.app.gui.copycutpaste.CutAction;
+import org.appwork.app.gui.copycutpaste.DeleteAction;
+import org.appwork.app.gui.copycutpaste.PasteAction;
+import org.appwork.app.gui.copycutpaste.SelectAction;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
+import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
 import org.jdownloader.translate._JDT;
 
-public class FolderChooser extends JPanel implements SettingsComponent, ActionListener {
+public class FolderChooser extends PathChooser implements SettingsComponent {
     /**
      * 
      */
     private static final long                     serialVersionUID = 1L;
-    private JTextField                            txt;
-    private JButton                               btn;
 
     private StateUpdateEventSender<FolderChooser> eventSender;
     private boolean                               setting;
 
     public FolderChooser() {
-        super(new MigLayout("ins 0", "[grow,fill][]", "[26!,fill]"));
+        super("FolderChooser", true);
 
-        txt = new JTextField();
-        btn = new JButton(_JDT._.basics_browser_folder());
-        btn.addActionListener(this);
-        add(txt);
-        add(btn);
         eventSender = new StateUpdateEventSender<FolderChooser>();
 
         this.txt.getDocument().addDocumentListener(new DocumentListener() {
@@ -52,20 +53,32 @@ public class FolderChooser extends JPanel implements SettingsComponent, ActionLi
                 if (!setting) eventSender.fireEvent(new StateUpdateEvent<FolderChooser>(FolderChooser.this));
             }
         });
-    }
+        this.destination.addPopupMenuListener(new PopupMenuListener() {
 
-    public JButton getBtn() {
-        return btn;
-    }
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                destination.setList(DownloadPath.loadList(getPath()));
+            }
 
-    public JTextField getTxt() {
-        return txt;
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+            }
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {
+
+            }
+        });
+        // CFG_LINKGRABBER.DOWNLOAD_DESTINATION_HISTORY.getEventSender().addListener(, true);
     }
 
     @Override
-    public void setEnabled(boolean enabled) {
-        txt.setEnabled(enabled);
-        btn.setEnabled(enabled);
+    public JPopupMenu getPopupMenu(ExtTextField txt, CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+        JPopupMenu menu = new JPopupMenu();
+        menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
+        menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
+
+        return menu;
     }
 
     public String getConstraints() {
@@ -79,28 +92,25 @@ public class FolderChooser extends JPanel implements SettingsComponent, ActionLi
     public void setText(String t) {
         setting = true;
         try {
-            txt.setText(t);
+            super.setPath(t);
+
         } finally {
             setting = false;
         }
     }
 
-    public void actionPerformed(ActionEvent e) {
+    @Override
+    public File doFileChooser() {
+        File ret;
         try {
-
-            File ret = DownloadFolderChooserDialog.open(new File(txt.getText()), getPackageSubFolderEnabled(), _JDT._.gui_setting_folderchooser_title());
-            txt.setText(ret.getAbsolutePath());
-
-        } catch (DialogCanceledException e1) {
-            e1.printStackTrace();
-        } catch (DialogClosedException e1) {
-            e1.printStackTrace();
+            ret = DownloadFolderChooserDialog.open(new File(txt.getText()), true, _JDT._.gui_setting_folderchooser_title());
+            return ret;
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
         }
-
-    }
-
-    protected boolean getPackageSubFolderEnabled() {
-        return false;
+        return null;
     }
 
     public boolean isMultiline() {
@@ -108,7 +118,14 @@ public class FolderChooser extends JPanel implements SettingsComponent, ActionLi
     }
 
     public String getText() {
-        return txt.getText();
+        File file = getFile();
+        if (file.getParentFile() != null && !file.getParentFile().exists() && !file.exists()) {
+            DownloadFolderChooserDialog.handleNonExistingFolders(file);
+        }
+        if (!DownloadFolderChooserDialog.isDownloadFolderValid(file)) return null;
+        DownloadPath.saveList(file.getAbsolutePath());
+
+        return file.getAbsolutePath();
     }
 
 }

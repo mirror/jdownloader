@@ -212,7 +212,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         return dest[0];
     }
 
-    private static void handleNonExistingFolders(File file) {
+    public static void handleNonExistingFolders(File file) {
         try {
 
             Dialog.getInstance().showConfirmDialog(0, _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_title_(), _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_msg_(file.getAbsolutePath()));

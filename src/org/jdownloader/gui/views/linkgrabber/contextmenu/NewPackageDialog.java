@@ -78,14 +78,7 @@ public class NewPackageDialog extends AbstractDialog<Object> {
         p.add(tf);
 
         p.add(new JLabel(_GUI._.NewPackageDialog_layoutDialogContent_saveto()));
-        fc = new FolderChooser() {
-
-            @Override
-            protected boolean getPackageSubFolderEnabled() {
-                return true;
-            }
-
-        };
+        fc = new FolderChooser();
 
         File path = LinkTreeUtils.getRawDownloadDirectory(selection.getContextPackage());
         fc.setText(path.getAbsolutePath());

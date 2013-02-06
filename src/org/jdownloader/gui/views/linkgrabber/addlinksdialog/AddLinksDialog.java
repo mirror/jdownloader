@@ -23,6 +23,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
 import javax.swing.ListCellRenderer;
@@ -33,10 +34,16 @@ import jd.controlling.ClipboardMonitoring;
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.parser.html.HTMLParser;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.app.gui.copycutpaste.CopyAction;
+import org.appwork.app.gui.copycutpaste.CutAction;
+import org.appwork.app.gui.copycutpaste.DeleteAction;
+import org.appwork.app.gui.copycutpaste.PasteAction;
+import org.appwork.app.gui.copycutpaste.SelectAction;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -58,6 +65,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
@@ -212,6 +220,15 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         destination = new PathChooser("ADDLinks", true) {
             protected void onChanged(ExtTextField txt2) {
                 delayedValidate.run();
+            }
+
+            @Override
+            public JPopupMenu getPopupMenu(ExtTextField txt, CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+                JPopupMenu menu = new JPopupMenu();
+                menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
+                menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
+
+                return menu;
             }
 
             public File doFileChooser() {
