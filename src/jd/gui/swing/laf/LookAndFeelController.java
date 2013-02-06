@@ -76,6 +76,7 @@ public class LookAndFeelController implements LAFManagerInterface {
 
             if (laf.contains("Synthetica") || laf.equals(DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL)) {
 
+                //
                 try {
 
                     ExtTooltip.createConfig(ExtTooltip.DEFAULT).setForegroundColor(getLAFOptions().getTooltipForegroundColor());
