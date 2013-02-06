@@ -24,6 +24,7 @@ import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.RtmpdumpSettings;
+import org.jdownloader.settings.SoundSettings;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.UpdateSettings;
 
@@ -59,6 +60,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(RtmpdumpSettings.class));
         register(JsonConfig.create(UpdateSettings.class));
         register(JsonConfig.create(SyntheticaSettings.class));
+        register(JsonConfig.create(SoundSettings.class));
 
     }
 

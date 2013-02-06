@@ -25,6 +25,7 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -37,6 +38,7 @@ import jd.Launcher;
 import jd.controlling.captcha.CaptchaResult;
 import jd.gui.swing.laf.LookAndFeelController;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Application;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -46,6 +48,8 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.SoundSettings;
 
 /**
  * This Dialog is used to display a Inputdialog for the captchas
@@ -100,8 +104,9 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
 
             }
         });
-        final File captchasound = Application.getResource("captcha.wav");
-        if (captchasound.exists()) {
+        final URL soundUrl = NewTheme.I().getURL("sounds/", "captcha", ".wav");
+
+        if (soundUrl != null && JsonConfig.create(SoundSettings.class).isCaptchaSoundEnabled()) {
             new Thread("Captcha Sound") {
                 public void run() {
                     AudioInputStream stream = null;
@@ -111,7 +116,7 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
                         DataLine.Info info;
                         Clip clip;
 
-                        stream = AudioSystem.getAudioInputStream(captchasound);
+                        stream = AudioSystem.getAudioInputStream(soundUrl);
                         format = stream.getFormat();
                         info = new DataLine.Info(Clip.class, format);
                         clip = (Clip) AudioSystem.getLine(info);
