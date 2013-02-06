@@ -153,7 +153,7 @@ public interface UpdaterTranslation extends TranslateInterface {
     String confirmdialog_new_update_available_frametitle_extensions();
 
     @Default(lngs = { "en", "de" }, values = { "Add %s1 and remove %s2 JDownloader extension(s)?. We recommend to do this now!\r\nDo you want to continue now?", "%s1 JDownloader Erweiterungen hinzufügen und %s2 entfernen?. Wir empfehlen das jetzt zu tun!\r\nJetzt fortfahren?" })
-    String confirmdialog_new_update_available_for_install_message(int install, int uninstall);
+    String confirmdialog_new_update_available_for_install_message_extensions(int install, int uninstall);
 
     @Default(lngs = { "en", "de" }, values = { "An unexpected IO error occured during the update.\r\nPlease try again or contact our support.", "Während dem Update ist ein IO Fehler aufgetreten.\r\nVersuchen Sie es erneut, oder kontaktieren Sie unseren Support." })
     String errordialog_defaultio();
