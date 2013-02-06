@@ -444,4 +444,13 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
         };
     }
+
+    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorContentModified(LinkCollectorEvent event) {
+    }
 }
