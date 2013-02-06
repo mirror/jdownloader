@@ -179,7 +179,6 @@ public class Youtube extends PluginForHost {
 
         /* we now have to get fresh links */
 
-        if (downloadLink.toString().contains("aquarium tank")) throw new Exception("Debug");
         downloadLink.setProperty("valid", false);
         this.requestFileInformation(downloadLink);
         this.br.setDebug(true);
