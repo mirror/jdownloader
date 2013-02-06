@@ -732,29 +732,35 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     /* we can only pause downloads when downloads are running */
                     return;
                 }
-                if (value) {
-                    /* set pause settings */
-                    speedLimitBeforePause = config.getDownloadSpeedLimit();
-                    speedLimitedBeforePause = config.isDownloadSpeedLimitEnabled();
-                    config.setDownloadSpeedLimit(config.getPauseSpeed());
-                    config.setDownloadSpeedLimitEnabled(true);
-                    logger.info("Pause enabled: Reducing downloadspeed to " + config.getPauseSpeed() + " KiB/s");
-                    /* pause downloads */
-                    DownloadWatchDog.this.getStateMachine().setStatus(PAUSE_STATE);
-                } else {
-                    /* revert pause settings if available */
-                    if (speedLimitBeforePause != null) {
-                        logger.info("Pause disabled: Switch back to old downloadspeed");
-                        config.setDownloadSpeedLimit(speedLimitBeforePause);
+                try {
+                    if (value) {
+                        /* set pause settings */
+                        speedLimitBeforePause = config.getDownloadSpeedLimit();
+                        speedLimitedBeforePause = config.isDownloadSpeedLimitEnabled();
+                        config.setDownloadSpeedLimit(config.getPauseSpeed());
+                        config.setDownloadSpeedLimitEnabled(true);
+                        logger.info("Pause enabled: Reducing downloadspeed to " + config.getPauseSpeed() + " KiB/s");
+                        /* pause downloads */
+                        DownloadWatchDog.this.getStateMachine().setStatus(PAUSE_STATE);
+                    } else {
+                        /* revert pause settings if available */
+                        if (speedLimitBeforePause != null) {
+                            logger.info("Pause disabled: Switch back to old downloadspeed");
+                            config.setDownloadSpeedLimit(speedLimitBeforePause);
+                        }
+                        if (speedLimitedBeforePause != null) config.setDownloadSpeedLimitEnabled(speedLimitedBeforePause);
+                        speedLimitBeforePause = null;
+                        speedLimitedBeforePause = null;
+                        if (DownloadWatchDog.this.getStateMachine().isState(DownloadWatchDog.PAUSE_STATE)) {
+                            /* we revert pause to running state */
+                            DownloadWatchDog.this.getStateMachine().setStatus(RUNNING_STATE);
+                        }
                     }
-                    if (speedLimitedBeforePause != null) config.setDownloadSpeedLimitEnabled(speedLimitedBeforePause);
-                    speedLimitBeforePause = null;
-                    speedLimitedBeforePause = null;
-                    if (DownloadWatchDog.this.getStateMachine().isState(DownloadWatchDog.PAUSE_STATE)) {
-                        /* we revert pause to running state */
-                        DownloadWatchDog.this.getStateMachine().setStatus(RUNNING_STATE);
+                } finally {
+                    synchronized (WATCHDOGWAITLOOP) {
+                        WATCHDOGWAITLOOP.incrementAndGet();
+                        WATCHDOGWAITLOOP.notifyAll();
                     }
-
                 }
             }
         }, true);

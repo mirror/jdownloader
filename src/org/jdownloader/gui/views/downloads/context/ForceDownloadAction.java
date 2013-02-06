@@ -31,7 +31,7 @@ public class ForceDownloadAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        return !si.isEmpty() && DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPED_STATE);
+        return !si.isEmpty() && DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE, DownloadWatchDog.STOPPED_STATE);
     }
 
     public void actionPerformed(ActionEvent e) {
