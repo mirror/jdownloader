@@ -29,8 +29,7 @@ public class PauseDownloadsAction extends AbstractToolbarAction {
     }
 
     /**
-     * Create a new instance of PauseDownloadsAction. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of PauseDownloadsAction. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private PauseDownloadsAction() {
 
