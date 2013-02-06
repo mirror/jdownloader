@@ -80,6 +80,7 @@ public interface UpdateSettings extends ConfigInterface {
 
     void setDoAskBeforeDownloadingAnUpdate(boolean b);
 
+    //
     @DefaultBooleanValue(false)
     @AboutConfig
     @DescriptionForConfigEntry("If enabled, JDownloader will close the Updatedialog if silent updates were installed, and there are no further updates. Else, you have to click to close")
