@@ -20,8 +20,6 @@ import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.LinkStatusEventListener;
-import jd.plugins.LinkStatusEventSender;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.APIQuery;
@@ -37,7 +35,7 @@ import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.polling.PollingAPIImpl;
 import org.jdownloader.api.polling.PollingResultAPIStorable;
 
-public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, LinkStatusEventListener, DownloadControllerListener {
+public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadControllerListener {
 
     DownloadsAPIImpl dlAPI = new DownloadsAPIImpl();
     PollingAPIImpl   plAPI = new PollingAPIImpl();
@@ -94,8 +92,8 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, LinkStatusEve
                 FilePackageAPIStorable pkg;
                 ret.add(pkg = new FilePackageAPIStorable(fpkg));
                 /*
-                 * synchronized (fpkg) { List<DownloadLinkAPIStorable> links = new ArrayList<DownloadLinkAPIStorable>(fpkg.size()); for
-                 * (DownloadLink link : fpkg.getChildren()) { links.add(new DownloadLinkAPIStorable(link)); } pkg.setLinks(links); }
+                 * synchronized (fpkg) { List<DownloadLinkAPIStorable> links = new ArrayList<DownloadLinkAPIStorable>(fpkg.size()); for (DownloadLink link :
+                 * fpkg.getChildren()) { links.add(new DownloadLinkAPIStorable(link)); } pkg.setLinks(links); }
                  */
             }
             return ret;
@@ -178,33 +176,6 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, LinkStatusEve
         return DownloadWatchDog.getInstance().getDownloadSpeedManager().getTraffic();
     }
 
-    @Override
-    public void LinkStatusChanged(LinkStatus linkStatus) {
-        DownloadLink dl = linkStatus.getDownloadLink();
-        if (dl != null) {
-            LinkStatusJob job = new LinkStatusJob();
-            job.setActive(linkStatus.isPluginActive());
-            job.setFinished(linkStatus.isFinished());
-            job.setInProgress(linkStatus.isPluginInProgress());
-
-            job.setLinkID(dl.getUniqueID().toString());
-            job.setStatus(linkStatus.getStatus());
-            String messageText = linkStatus.getMessage(false);
-            if (messageText != null) {
-                job.setStatusText(messageText);
-            } else {
-                job.setStatusText("");
-            }
-
-            if (isNewLinkStatusJob(job)) {
-                HashMap<String, Object> data = new HashMap<String, Object>();
-                data.put("message", dl.getName());
-                data.put("data", job);
-                RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkstatus", data), null);
-            }
-        }
-    }
-
     private Boolean isNewLinkStatusJob(LinkStatusJob job) {
         Boolean returnValue = false;
         if (lastJobEvent != null) {
@@ -234,8 +205,7 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, LinkStatusEve
     public static LinkStatusJob lastJobEvent = null;
 
     public DownloadsMobileAPIImpl() {
-        LinkStatusEventSender.getInstance().addListener(this);
-        DownloadController.getInstance().addListener(this);
+        DownloadController.getInstance().addListener(this, true);
     }
 
     // public List<FilePackageAPIStorable> list() {
@@ -378,22 +348,51 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, LinkStatusEve
     @Override
     public void onDownloadControllerEvent(DownloadControllerEvent event) {
         switch (event.getType()) {
-        case REMOVE_CONTENT:
+        case REFRESH_CONTENT:
             if (event.getParameter() instanceof DownloadLink) {
-                downloadApiLinkRemoved((DownloadLink) event.getParameter());
-            } else if (event.getParameter() instanceof FilePackage) {
-                downloadApiPackageRemoved((FilePackage) event.getParameter());
+                DownloadLink dl = (DownloadLink) event.getParameter();
+                if (dl != null) {
+                    LinkStatusJob job = new LinkStatusJob();
+                    LinkStatus linkStatus = dl.getLinkStatus();
+                    job.setActive(linkStatus.isPluginActive());
+                    job.setFinished(linkStatus.isFinished());
+                    job.setInProgress(linkStatus.isPluginInProgress());
+
+                    job.setLinkID(dl.getUniqueID().toString());
+                    job.setStatus(linkStatus.getStatus());
+                    String messageText = linkStatus.getMessage(false);
+                    if (messageText != null) {
+                        job.setStatusText(messageText);
+                    } else {
+                        job.setStatusText("");
+                    }
+
+                    if (isNewLinkStatusJob(job)) {
+                        HashMap<String, Object> data = new HashMap<String, Object>();
+                        data.put("message", dl.getName());
+                        data.put("data", job);
+                        RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkstatus", data), null);
+                    }
+                }
+
+            }
+            break;
+        case REMOVE_CONTENT:
+            if (event.getParameters() != null) {
+                for (Object link : (Object[]) event.getParameters()) {
+                    if (link instanceof DownloadLink) downloadApiLinkRemoved((DownloadLink) link);
+                    if (link instanceof FilePackage) downloadApiPackageRemoved((FilePackage) link);
+                }
             }
             break;
         case ADD_CONTENT:
-            if (event.getParameter() instanceof DownloadLink) {
-                downloadApiLinkAdded((DownloadLink) event.getParameter());
-            } else if (event.getParameter() instanceof FilePackage) {
-                downloadApiPackageAdded((FilePackage) event.getParameter());
+            if (event.getParameters() != null) {
+                for (Object link : (Object[]) event.getParameters()) {
+                    if (link instanceof DownloadLink) downloadApiLinkAdded((DownloadLink) link);
+                    if (link instanceof FilePackage) downloadApiPackageAdded((FilePackage) link);
+                }
             }
             break;
-        default:
-            System.out.println("Unhandled Event: " + event);
         }
     }
 

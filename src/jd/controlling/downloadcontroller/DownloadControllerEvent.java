@@ -37,6 +37,7 @@ public class DownloadControllerEvent extends SimpleEvent<DownloadController, Obj
         REFRESH_STRUCTURE,
         REMOVE_CONTENT,
         ADD_CONTENT,
+        REFRESH_CONTENT
     }
 
 }

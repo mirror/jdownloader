@@ -48,8 +48,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
 /**
- * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
- * dargestellt
+ * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle dargestellt
  * 
  * @author astaldo
  */
@@ -62,88 +61,88 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         TRUE;
     }
 
-    private static final String                                         PROPERTY_MD5              = "MD5";
-    private static final String                                         PROPERTY_SHA1             = "SHA1";
-    private static final String                                         PROPERTY_PASS             = "pass";
-    private static final String                                         PROPERTY_FINALFILENAME    = "FINAL_FILENAME";
-    private static final String                                         PROPERTY_FORCEDFILENAME   = "FORCED_FILENAME";
-    private static final String                                         PROPERTY_COMMENT          = "COMMENT";
-    private static final String                                         PROPERTY_PRIORITY         = "PRIORITY";
-    private static final String                                         PROPERTY_FINISHTIME       = "FINISHTIME";
-    private static final String                                         PROPERTY_ENABLED          = "ENABLED";
-    private static final String                                         PROPERTY_PWLIST           = "PWLIST";
-    private static final String                                         PROPERTY_LINKDUPEID       = "LINKDUPEID";
-    private static final String                                         PROPERTY_SPEEDLIMIT       = "SPEEDLIMIT";
-    private static final String                                         PROPERTY_VERIFIEDFILESIZE = "VERIFIEDFILESIZE";
-    public static final String                                          PROPERTY_RESUMEABLE       = "PROPERTY_RESUMEABLE";
-    public static final String                                          PROPERTY_FINALLOCATION    = "FINALLOCATION";
-    public static final String                                          PROPERTY_LASTFPNAME       = "LASTFPNAME";
+    private static final String                PROPERTY_MD5              = "MD5";
+    private static final String                PROPERTY_SHA1             = "SHA1";
+    private static final String                PROPERTY_PASS             = "pass";
+    private static final String                PROPERTY_FINALFILENAME    = "FINAL_FILENAME";
+    private static final String                PROPERTY_FORCEDFILENAME   = "FORCED_FILENAME";
+    private static final String                PROPERTY_COMMENT          = "COMMENT";
+    private static final String                PROPERTY_PRIORITY         = "PRIORITY";
+    private static final String                PROPERTY_FINISHTIME       = "FINISHTIME";
+    private static final String                PROPERTY_ENABLED          = "ENABLED";
+    private static final String                PROPERTY_PWLIST           = "PWLIST";
+    private static final String                PROPERTY_LINKDUPEID       = "LINKDUPEID";
+    private static final String                PROPERTY_SPEEDLIMIT       = "SPEEDLIMIT";
+    private static final String                PROPERTY_VERIFIEDFILESIZE = "VERIFIEDFILESIZE";
+    public static final String                 PROPERTY_RESUMEABLE       = "PROPERTY_RESUMEABLE";
+    public static final String                 PROPERTY_FINALLOCATION    = "FINALLOCATION";
+    public static final String                 PROPERTY_LASTFPNAME       = "LASTFPNAME";
 
-    public static final int                                             LINKTYPE_CONTAINER        = 1;
+    public static final int                    LINKTYPE_CONTAINER        = 1;
 
-    public static final int                                             LINKTYPE_NORMAL           = 0;
+    public static final int                    LINKTYPE_NORMAL           = 0;
 
-    private static final long                                           serialVersionUID          = 1981079856214268373L;
+    private static final long                  serialVersionUID          = 1981079856214268373L;
 
-    private static final String                                         UNKNOWN_FILE_NAME         = "unknownFileName";
-    private static final String                                         PROPERTY_CHUNKS           = "CHUNKS";
+    private static final String                UNKNOWN_FILE_NAME         = "unknownFileName";
+    private static final String                PROPERTY_CHUNKS           = "CHUNKS";
 
-    private transient AvailableStatus                                   availableStatus           = AvailableStatus.UNCHECKED;
+    private transient AvailableStatus          availableStatus           = AvailableStatus.UNCHECKED;
 
-    private long[]                                                      chunksProgress            = null;
+    private long[]                             chunksProgress            = null;
 
     /** Aktuell heruntergeladene Bytes der Datei */
-    private long                                                        downloadCurrent           = 0;
+    private long                               downloadCurrent           = 0;
 
-    private transient DownloadInterface                                 downloadInstance;
+    private transient DownloadInterface        downloadInstance;
 
-    private transient SingleDownloadController                          downloadLinkController;
+    private transient SingleDownloadController downloadLinkController;
 
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
-    private long                                                        downloadMax               = 0;
+    private long                               downloadMax               = 0;
 
-    private String                                                      browserurl                = null;
+    private String                             browserurl                = null;
 
-    private FilePackage                                                 filePackage;
+    private FilePackage                        filePackage;
 
     /** Hoster des Downloads */
-    private String                                                      host;
+    private String                             host;
 
     /** Zeigt an, ob dieser Downloadlink aktiviert ist */
-    private boolean                                                     isEnabled;
+    private boolean                            isEnabled;
 
-    private LinkStatus                                                  linkStatus;
+    private LinkStatus                         linkStatus;
 
-    private int                                                         linkType                  = LINKTYPE_NORMAL;
+    private int                                linkType                  = LINKTYPE_NORMAL;
 
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
-    private String                                                      name;
+    private String                             name;
 
-    private transient PluginForHost                                     defaultplugin;
+    private transient PluginForHost            defaultplugin;
 
-    private transient PluginForHost                                     liveplugin;
+    private transient PluginForHost            liveplugin;
 
     /*
      * we need to keep this some time to perfom conversion from variable to property
      */
-    private String                                                      finalFileName;
+    private String                             finalFileName;
 
     /**
      * /** Von hier soll der Download stattfinden
      */
-    private String                                                      urlDownload;
+    private String                             urlDownload;
 
-    private transient PluginProgress                                    pluginProgress;
+    private transient PluginProgress           pluginProgress;
 
-    private transient ImageIcon                                         icon                      = null;
+    private transient ImageIcon                icon                      = null;
 
-    private long                                                        created                   = -1l;
+    private long                               created                   = -1l;
 
-    private transient UniqueAlltimeID                                   uniqueID                  = new UniqueAlltimeID();
-    transient private AbstractNodeNotifier<AbstractPackageChildrenNode> propertyListener;
-    transient DomainInfo                                                domainInfo                = null;
-    transient Boolean                                                   resumeable                = null;
+    private transient UniqueAlltimeID          uniqueID                  = new UniqueAlltimeID();
+    transient private AbstractNodeNotifier     propertyListener;
+    transient DomainInfo                       domainInfo                = null;
+    transient Boolean                          resumeable                = null;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -370,8 +369,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Liefert den Datei Namen dieses Downloads zurueck. Wurde der Name mit setfinalFileName(String) festgelegt wird dieser Name
-     * zurueckgegeben
+     * Liefert den Datei Namen dieses Downloads zurueck. Wurde der Name mit setfinalFileName(String) festgelegt wird dieser Name zurueckgegeben
      * 
      * @return Name des Downloads
      */
@@ -419,8 +417,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch
-     * ermittelt.
+     * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch ermittelt.
      * 
      * @return Statischer Dateiname
      */
@@ -463,8 +460,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * this will abort an ongoing download of this DownloadLink, the abortDownload method of the SingleDownloadController will start a new
-     * Thread for terminating of the download, so you will have to check manually when the download finally has stopped
+     * this will abort an ongoing download of this DownloadLink, the abortDownload method of the SingleDownloadController will start a new Thread for
+     * terminating of the download, so you will have to check manually when the download finally has stopped
      */
     public void abort() {
         SingleDownloadController dlc = getDownloadLinkController();
@@ -472,8 +469,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
-     * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
+     * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob schon geprueft worden
+     * ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
      * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
@@ -500,13 +497,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     private void notifyChanges(AbstractNodeNotifier.NOTIFY notify) {
-        AbstractNodeNotifier<AbstractPackageChildrenNode> pl = propertyListener;
+        AbstractNodeNotifier pl = propertyListener;
         if (pl != null) {
-            pl.nodeUpdated(this, notify);
+            pl.nodeUpdated(this, notify, null);
             return;
         }
-        AbstractNodeNotifier<DownloadLink> pl2 = filePackage;
-        if (pl2 != null) pl2.nodeUpdated(this, notify);
+        AbstractNodeNotifier pl2 = filePackage;
+        if (pl2 != null) pl2.nodeUpdated(this, notify, null);
     }
 
     /**
@@ -544,8 +541,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * deletes the final downloaded file if finalfile is true deletes the partfile if partfile is true deletes the downloadfolder if its
-     * emptry and NOT equal to default downloadfolder
+     * deletes the final downloaded file if finalfile is true deletes the partfile if partfile is true deletes the downloadfolder if its emptry and NOT equal to
+     * default downloadfolder
      */
     public void deleteFile(boolean partfile, boolean finalfile) {
         int maxtries = 5;
@@ -729,10 +726,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum Speichern der Datei verwendet. ist er == null, so wird der
-     * dateiName im Plugin automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist endgueltig. Diese Funktion sollte nach Moeglichkeit
-     * nicht von Plugins verwendet werden. Sie gibt der Gui die Moeglichkeit unabhaengig von den Plugins einen Downloadnamen festzulegen.
-     * Userinputs>Automatische Erkennung - Plugins sollten {@link #setName(String)} verwenden um den Speichernamen anzugeben.
+     * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum Speichern der Datei verwendet. ist er == null, so wird der dateiName im Plugin
+     * automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist endgueltig. Diese Funktion sollte nach Moeglichkeit nicht von Plugins verwendet werden. Sie
+     * gibt der Gui die Moeglichkeit unabhaengig von den Plugins einen Downloadnamen festzulegen. Userinputs>Automatische Erkennung - Plugins sollten
+     * {@link #setName(String)} verwenden um den Speichernamen anzugeben.
      */
     public void setFinalFileName(String newfinalFileName) {
         if (!StringUtils.isEmpty(newfinalFileName)) {
@@ -765,8 +762,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Diese Methhode fragt das eigene Plugin welche Informationen ueber die File bereit gestellt werden. Der String eignet Sich zur
-     * Darstellung in der UI
+     * Diese Methhode fragt das eigene Plugin welche Informationen ueber die File bereit gestellt werden. Der String eignet Sich zur Darstellung in der UI
      */
     @Override
     public String toString() {
@@ -954,7 +950,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return this;
     }
 
-    public void setNodeChangeListener(AbstractNodeNotifier<AbstractPackageChildrenNode> propertyListener) {
+    public void setNodeChangeListener(AbstractNodeNotifier propertyListener) {
         this.propertyListener = propertyListener;
     }
 

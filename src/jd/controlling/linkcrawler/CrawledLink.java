@@ -7,6 +7,7 @@ import javax.swing.ImageIcon;
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.http.Browser;
@@ -22,7 +23,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 
-public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier<AbstractPackageChildrenNode> {
+public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier {
 
     public static enum LinkState {
         ONLINE,
@@ -283,7 +284,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public void setEnabled(boolean b) {
         if (b == enabledState) return;
         enabledState = b;
-        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE);
+        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE, null);
     }
 
     public long getCreated() {
@@ -435,9 +436,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     @Override
-    public void nodeUpdated(AbstractPackageChildrenNode source, AbstractNodeNotifier.NOTIFY notify) {
+    public void nodeUpdated(AbstractNode source, NOTIFY notify, Object param) {
         CrawledPackage lparent = parent;
-        if (lparent != null) lparent.nodeUpdated(this, notify);
+        AbstractNode lsource = source;
+        if (lsource == null) lsource = this;
+        if (lparent != null) lparent.nodeUpdated(lsource, notify, param);
     }
 
 }

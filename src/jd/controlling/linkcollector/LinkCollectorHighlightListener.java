@@ -38,6 +38,14 @@ public abstract class LinkCollectorHighlightListener implements LinkCollectorLis
     }
 
     @Override
+    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorContentModified(LinkCollectorEvent event) {
+    }
+
+    @Override
     public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
     }
 
@@ -54,7 +62,7 @@ public abstract class LinkCollectorHighlightListener implements LinkCollectorLis
     }
 
     @Override
-    public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
+    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
         if (LinkCollector.getInstance().getPackages().size() == 0) {
             delayedCleanup.resetAndStart();
         }

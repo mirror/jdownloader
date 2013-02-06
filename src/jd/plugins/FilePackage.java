@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 
 import jd.config.Property;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.ChildComparator;
 import jd.controlling.packagecontroller.PackageController;
@@ -458,9 +459,9 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     @Override
-    public void nodeUpdated(DownloadLink source, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY notify) {
+    public void nodeUpdated(AbstractNode source, NOTIFY notify, Object param) {
         PackageController<FilePackage, DownloadLink> n = getControlledBy();
-        if (fpInfo != null) {
+        if (fpInfo != null && source != null && source instanceof DownloadLink) {
             switch (notify) {
             case STRUCTURE_CHANCE:
                 fpInfo.changeStructure();
@@ -471,8 +472,9 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             }
         }
         if (n != null) {
-            n.nodeUpdated(this, notify);
+            AbstractNode lsource = source;
+            if (lsource == null) lsource = this;
+            n.nodeUpdated(lsource, notify, param);
         }
     }
-
 }

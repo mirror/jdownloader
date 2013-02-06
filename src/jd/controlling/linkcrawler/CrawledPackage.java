@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.ChildComparator;
 import jd.controlling.packagecontroller.PackageController;
@@ -259,9 +260,11 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     @Override
-    public void nodeUpdated(CrawledLink source, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY notify) {
+    public void nodeUpdated(AbstractNode source, NOTIFY notify, Object param) {
         PackageController<CrawledPackage, CrawledLink> n = getControlledBy();
-        if (n != null) n.nodeUpdated(this, notify);
+        AbstractNode lsource = source;
+        if (lsource == null) lsource = this;
+        if (n != null) n.nodeUpdated(lsource, notify, param);
     }
 
 }

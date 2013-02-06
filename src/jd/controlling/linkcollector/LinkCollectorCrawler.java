@@ -25,14 +25,23 @@ public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorLi
     public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
     }
 
-    public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
-    }
-
     public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
     }
 
     @Override
     public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
+    @Override
+    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorContentModified(LinkCollectorEvent event) {
     }
 
 }

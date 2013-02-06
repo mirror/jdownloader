@@ -1,11 +1,12 @@
 package jd.controlling.packagecontroller;
 
-public interface AbstractNodeNotifier<E extends AbstractNode> {
+public interface AbstractNodeNotifier {
 
     public static enum NOTIFY {
         STRUCTURE_CHANCE,
         PROPERTY_CHANCE
     }
 
-    void nodeUpdated(E source, NOTIFY notify);
+    void nodeUpdated(AbstractNode source, NOTIFY notify, Object param);
+
 }

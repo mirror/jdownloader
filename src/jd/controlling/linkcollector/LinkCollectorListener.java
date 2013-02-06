@@ -45,7 +45,21 @@ public interface LinkCollectorListener extends EventListener {
      * 
      * @param event
      */
-    void onLinkCollectorLinksRemoved(LinkCollectorEvent event);
+    void onLinkCollectorContentRemoved(LinkCollectorEvent event);
+
+    /**
+     * content got added
+     * 
+     * @param event
+     */
+    void onLinkCollectorContentAdded(LinkCollectorEvent event);
+
+    /**
+     * content got modified
+     * 
+     * @param event
+     */
+    void onLinkCollectorContentModified(LinkCollectorEvent event);
 
     /**
      * New link has been added and grouped.<br>

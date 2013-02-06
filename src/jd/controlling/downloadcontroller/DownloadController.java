@@ -31,6 +31,7 @@ import java.util.zip.ZipEntry;
 
 import jd.config.NoOldJDDataBaseFoundException;
 import jd.controlling.IOEQ;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -62,17 +63,6 @@ import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
-
-    public static enum MOVE {
-        BEFORE,
-        AFTER,
-        BEGIN,
-        END,
-        TOP,
-        BOTTOM,
-        UP,
-        DOWN
-    }
 
     private transient Eventsender<DownloadControllerListener, DownloadControllerEvent> broadcaster  = new Eventsender<DownloadControllerListener, DownloadControllerEvent>() {
 
@@ -166,23 +156,13 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     @Override
     protected void _controllerParentlessLinks(final List<DownloadLink> links, QueuePriority priority) {
-        broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REMOVE_CONTENT, links));
+        broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REMOVE_CONTENT, links.toArray()));
         if (links != null) {
             for (DownloadLink link : links) {
                 /* disabling the link will also abort an ongoing download */
                 link.setEnabled(false);
             }
         }
-    }
-
-    @Override
-    protected void _controllerLinkNodeRemoved(DownloadLink link, QueuePriority priority) {
-        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REMOVE_CONTENT, link));
-    }
-
-    @Override
-    protected void _controllerLinkNodeAdded(DownloadLink link, QueuePriority priority) {
-        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.ADD_CONTENT, link));
     }
 
     @Override
@@ -225,6 +205,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     public void addListener(final DownloadControllerListener l) {
         broadcaster.addListener(l);
+    }
+
+    public void addListener(final DownloadControllerListener l, boolean weak) {
+        broadcaster.addListener(l, weak);
     }
 
     /**
@@ -772,6 +756,26 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     public void setSaveAllowed(boolean allowSave) {
         this.allowSave = allowSave;
+    }
+
+    @Override
+    public void nodeUpdated(AbstractNode source, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY notify, Object param) {
+        super.nodeUpdated(source, notify, param);
+        if (source instanceof DownloadLink) {
+            switch (notify) {
+            case STRUCTURE_CHANCE:
+                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE, source));
+                break;
+            case PROPERTY_CHANCE:
+                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_CONTENT, source));
+                break;
+            }
+        }
+    }
+
+    @Override
+    protected void _controllerPackageNodeStructureChanged(FilePackage pkg, QueuePriority priority) {
+        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE, pkg));
     }
 
 }

@@ -27,6 +27,7 @@ import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerFilter;
 import jd.controlling.linkcrawler.LinkCrawlerHandler;
 import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -250,16 +251,25 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 asyncSaving.run();
             }
 
-            public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
-                asyncSaving.run();
-            }
-
             public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
                 asyncCacheCleanup.run();
             }
 
             @Override
             public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
+            }
+
+            @Override
+            public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+                asyncSaving.run();
+            }
+
+            @Override
+            public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorContentModified(LinkCollectorEvent event) {
             }
         });
     }
@@ -271,7 +281,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     @Override
     protected void _controllerPackageNodeAdded(CrawledPackage pkg, QueuePriority priority) {
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE, priority));
-        LinkCollectorApiEventSender.getInstance().fireEvent(new LinkCollectorApiEvent(this, LinkCollectorApiEvent.TYPE.ADD_CONTENT, pkg));
+        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADD_CONTENT, pkg, priority));
     }
 
     @Override
@@ -280,7 +290,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         String id = getPackageMapID(pkg);
         if (id != null) packageMap.remove(id);
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, pkg, priority));
-        LinkCollectorApiEventSender.getInstance().fireEvent(new LinkCollectorApiEvent(this, LinkCollectorApiEvent.TYPE.REMOVE_CONTENT, pkg));
         java.util.List<CrawledLink> children = null;
         synchronized (pkg) {
             children = new ArrayList<CrawledLink>(pkg.getChildren());
@@ -316,7 +325,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     protected void autoFileNameCorrection(List<CrawledLink> pkgchildren) {
-        long t = System.currentTimeMillis();
+        // long t = System.currentTimeMillis();
         // if we have only one single hoster, we can hardly learn anything
         if (CFG_LINKGRABBER.AUTO_FILENAME_CORRECTION_ENABLED.isEnabled() && hosterMap.size() > 1) {
             ArrayList<DownloadLink> dlinks = new ArrayList<DownloadLink>();
@@ -539,7 +548,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         LinkCollector.this.moveOrAddAt(pkg, add, -1);
                     }
                     eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADDED_LINK, link, QueuePriority.NORM));
-                    _controllerLinkNodeAdded(link, QueuePriority.NORM);
                     return null;
                 } catch (Throwable e) {
                     dupeCheckMap.remove(link.getLinkID());
@@ -1463,8 +1471,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     @Override
-    public void nodeUpdated(CrawledPackage source, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY notify) {
-        super.nodeUpdated(source, notify);
+    public void nodeUpdated(AbstractNode source, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY notify, Object param) {
+        super.nodeUpdated(source, notify, param);
         switch (notify) {
         case PROPERTY_CHANCE:
             refreshData();
@@ -1476,13 +1484,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     @Override
-    protected void _controllerLinkNodeRemoved(CrawledLink link, QueuePriority priority) {
-        LinkCollectorApiEventSender.getInstance().fireEvent(new LinkCollectorApiEvent(this, LinkCollectorApiEvent.TYPE.REMOVE_CONTENT, link));
-    }
-
-    @Override
-    protected void _controllerLinkNodeAdded(CrawledLink link, QueuePriority priority) {
-        LinkCollectorApiEventSender.getInstance().fireEvent(new LinkCollectorApiEvent(this, LinkCollectorApiEvent.TYPE.ADD_CONTENT, link));
+    protected void _controllerPackageNodeStructureChanged(CrawledPackage pkg, QueuePriority priority) {
+        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_CONTENT, pkg, priority));
     }
 
 }

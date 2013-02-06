@@ -6,9 +6,8 @@ import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorApiEvent;
-import jd.controlling.linkcollector.LinkCollectorApiEventListener;
-import jd.controlling.linkcollector.LinkCollectorApiEventSender;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.FilePackage;
@@ -17,12 +16,12 @@ import org.appwork.remoteapi.EventsAPIEvent;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
 
-public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkCollectorApiEventListener {
+public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkCollectorListener {
 
     LinkCollectorAPIImpl lcAPI = new LinkCollectorAPIImpl();
 
     public LinkCollectorMobileAPIImpl() {
-        LinkCollectorApiEventSender.getInstance().addListener(this);
+        LinkCollector.getInstance().getEventsender().addListener(this, true);
     }
 
     public List<CrawledPackageAPIStorable> list() {
@@ -163,28 +162,6 @@ public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkC
         return lcAPI.addLinks(URL, "", "", "");
     }
 
-    @Override
-    public void onLinkCollectorApiEvent(LinkCollectorApiEvent event) {
-        switch (event.getType()) {
-        case REMOVE_CONTENT:
-            if (event.getParameter() instanceof CrawledLink) {
-                linkCollectorApiLinkRemoved((CrawledLink) event.getParameter());
-            } else if (event.getParameter() instanceof CrawledPackage) {
-                linkCollectorApiPackageRemoved((CrawledPackage) event.getParameter());
-            }
-            break;
-        case ADD_CONTENT:
-            if (event.getParameter() instanceof CrawledLink) {
-                linkCollectorApiLinkAdded((CrawledLink) event.getParameter());
-            } else if (event.getParameter() instanceof CrawledPackage) {
-                linkCollectorApiPackageAdded((CrawledPackage) event.getParameter());
-            }
-            break;
-        default:
-            System.out.println("Unhandled Event: " + event);
-        }
-    }
-
     private void linkCollectorApiLinkAdded(CrawledLink link) {
         HashMap<String, Object> data = new HashMap<String, Object>();
         data.put("action", "linkCollectorLinkAdded");
@@ -215,5 +192,57 @@ public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkC
         data.put("message", cpkg.getName());
         data.put("data", cpkg.getUniqueID().toString());
         RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorPackageRemoved", data), null);
+    }
+
+    @Override
+    public void onLinkCollectorAbort(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+        if (event.getParameters() != null) {
+            for (Object object : event.getParameters()) {
+                if (object instanceof CrawledLink) linkCollectorApiLinkRemoved((CrawledLink) object);
+                if (object instanceof CrawledPackage) linkCollectorApiPackageRemoved((CrawledPackage) event.getParameter());
+            }
+        }
+    }
+
+    @Override
+    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+        if (event.getParameters() != null) {
+            for (Object object : event.getParameters()) {
+                if (object instanceof CrawledLink) linkCollectorApiLinkAdded((CrawledLink) object);
+                if (object instanceof CrawledPackage) linkCollectorApiPackageAdded((CrawledPackage) event.getParameter());
+            }
+        }
+    }
+
+    @Override
+    public void onLinkCollectorContentModified(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
+    @Override
+    public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
     }
 }

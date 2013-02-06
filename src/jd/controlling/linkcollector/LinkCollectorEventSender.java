@@ -25,7 +25,13 @@ public class LinkCollectorEventSender extends Eventsender<LinkCollectorListener,
             listener.onLinkCollectorStructureRefresh(event);
             break;
         case REMOVE_CONTENT:
-            listener.onLinkCollectorLinksRemoved(event);
+            listener.onLinkCollectorContentRemoved(event);
+            break;
+        case ADD_CONTENT:
+            listener.onLinkCollectorContentAdded(event);
+            break;
+        case REFRESH_CONTENT:
+            listener.onLinkCollectorContentModified(event);
             break;
         case ADDED_LINK:
             listener.onLinkCollectorLinkAdded(event, (CrawledLink) event.getParameter());
