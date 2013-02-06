@@ -392,7 +392,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         if (!newValue && keyHandler == org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE) {
             JDGui.help(_GUI._.LinkGrabberPanel_onConfigValueModified_title_(), _GUI._.LinkGrabberPanel_onConfigValueModified_msg_(), NewTheme.I().getIcon("warning_green", 32));
-
         }
         new EDTRunner() {
 
