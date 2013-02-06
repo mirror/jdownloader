@@ -104,7 +104,7 @@ public class PauseDownloadsAction extends AbstractToolbarAction {
             setEnabled(true);
             setSelected(true);
         }
-        System.out.println("Paused: " + isSelected());
+
     }
 
 }

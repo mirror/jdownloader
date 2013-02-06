@@ -1,0 +1,1711 @@
+<synth>
+
+<!-- 
+*******************************************************************************
+Defaults
+*******************************************************************************
+-->
+  <style id="default">
+    <object id="syntheticaGraphicsUtils" class="de.javasoft.plaf.synthetica.GraphicsUtils"/>
+    <graphicsUtils idref="syntheticaGraphicsUtils" />
+    
+    <object id="syntheticaPainter" class="de.javasoft.plaf.synthetica.painter.SyntheticaPainter" />
+
+    <state>
+      <font id="SyntheticaDefaultFont" name="Tahoma" size="11"/>
+      <color type="FOREGROUND" value="#202020" />
+  	</state>
+
+  	<state value="DISABLED">
+  	  <color type="TEXT_FOREGROUND" value="#A0A0A0"/>
+  	</state>
+
+    <defaultsProperty key="Synthetica.window.decoration" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.font.disabled" type="boolean" value="false"/>
+    <defaultsProperty key="Synthetica.cache.enabled" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.2D.subtractStrokeEnabled" type="boolean" value="false"/>
+  </style>
+  <bind style="default" type="region" key=".*" />
+
+<!-- 
+*******************************************************************************
+ArrowButton
+*******************************************************************************
+-->
+  <style id="arrowButton">
+    <property key="ArrowButton.size" type="integer" value="14"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.ArrowButtonPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.ArrowButtonPainter" type="idref" value="painter"/>
+    <painter method="arrowButtonBackground" idref="syntheticaPainter" />
+    <painter method="arrowButtonForeground" idref="syntheticaPainter" />
+
+    <string id="arrowUpIcon">de.javasoft.plaf.synthetica.simple2D.iconPainter.ArrowUpIconPainter</string>
+    <defaultsProperty key="Synthetica.arrow.up" type="idref" value="arrowUpIcon"/>
+
+    <string id="arrowDownIcon">de.javasoft.plaf.synthetica.simple2D.iconPainter.ArrowDownIconPainter</string>
+    <defaultsProperty key="Synthetica.arrow.down" type="idref" value="arrowDownIcon"/>
+
+    <state>
+    </state>
+
+    <state value="MOUSE_OVER">
+    </state>
+
+    <state value="PRESSED">
+    </state>
+
+    <state value="DISABLED">
+    </state>
+
+  </style>
+  <bind style="arrowButton" type="region" key="ArrowButton"/>
+
+  <style id="comboBoxArrowButton">
+    <property key="Button.margin" type="insets" value="0 0 0 0"/>
+  </style>
+  <bind style="comboBoxArrowButton" type="name" key="ComboBox.arrowButton"/>  
+
+<!-- 
+*******************************************************************************
+Button
+*******************************************************************************
+-->
+  <style id="button">
+    <property key="Button.textShiftOffset" type="integer" value="1"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.ButtonPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.ButtonPainter" type="idref" value="painter"/>
+    <painter method="buttonBackground" idref="syntheticaPainter" />
+	<painter method="buttonBorder" idref="syntheticaPainter" />
+
+    <state>
+      <insets top="4" left="4" bottom="4" right="4"/>
+      <property key="Button.margin" type="insets" value="0 10 0 10"/>
+      <color type="FOREGROUND" value="#202020" /> 
+    </state>
+
+    <state value="MOUSE_OVER">
+    </state>
+
+    <state value="FOCUSED">
+    </state>
+
+    <state value="PRESSED">
+    </state>
+
+    <state value="DEFAULT">
+    </state>
+
+    <state value="DISABLED">
+    </state>
+
+    <state value="FOCUSED AND MOUSE_OVER">
+    </state>
+
+    <state value="FOCUSED AND PRESSED">
+    </state>
+
+    <!-- needed for Java 6 -->
+    <state value="FOCUSED AND PRESSED AND MOUSE_OVER">
+    </state>
+
+    <state value="DEFAULT AND FOCUSED">
+    </state>
+
+    <state value="DEFAULT AND PRESSED">
+    </state>
+
+    <state value="DEFAULT AND MOUSE_OVER">
+    </state> 
+
+    <state value="DEFAULT AND DISABLED">
+    </state>
+
+    <state value="DEFAULT AND PRESSED AND FOCUSED">
+    </state>
+
+    <state value="DEFAULT AND MOUSE_OVER AND FOCUSED">
+    </state>
+
+    <state value="DISABLED AND PRESSED">
+    </state>
+
+  </style>
+  <bind style="button" type="region" key="Button"/>
+
+
+<!-- 
+*******************************************************************************
+CheckBox
+*******************************************************************************
+-->
+  <style id="checkBox">
+    <insets top="4" left="4" bottom="4" right="4"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.CheckBoxPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.CheckBoxPainter" type="idref" value="painter"/>
+    <painter method="checkBoxBackground" idref="syntheticaPainter" />
+	<painter method="checkBoxBorder" idref="syntheticaPainter" />
+
+    <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.CheckBoxIconPainter" id="checkBoxIcon"/>
+    <property key="CheckBox.icon" value="checkBoxIcon"/>
+
+    <defaultsProperty key="Synthetica.checkBox.emulatedPressedState.enabled" type="boolean" value="false"/>
+
+    <state>
+      <opaque value="false"/>
+    </state>
+
+    <state value="SELECTED">
+	</state>
+
+    <state value="PRESSED">
+	</state>
+
+    <state value="MOUSE_OVER">
+	</state>
+
+    <state value="MOUSE_OVER AND SELECTED">
+	</state>
+
+    <state value="FOCUSED">
+    </state>
+
+    <state value="DISABLED">
+      <color type="TEXT_FOREGROUND" value="#A0A0A0" /> 
+	</state>
+
+    <state value="DISABLED AND SELECTED">
+      <color type="TEXT_FOREGROUND" value="#A0A0A0" /> 
+	</state>
+
+  </style>
+  <bind style="checkBox" type="region" key="CheckBox"/>	 
+
+
+<!-- 
+*******************************************************************************
+ComboBox
+Note: editable ComboBox contains TextField and ArrowButton
+      non editable ComboBox contains Label and ArrowButton
+*******************************************************************************
+-->
+  <style id="comboBox">
+    <insets top="3" left="4" bottom="3" right="4"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.ComboBoxPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.ComboBoxPainter" type="idref" value="painter"/>
+    <painter method="comboBoxBackground" idref="syntheticaPainter" />
+	<painter method="comboBoxBorder" idref="syntheticaPainter" />
+ 
+    <string id="lmcn">de.javasoft.plaf.synthetica.SyntheticaComboBoxLayoutManager</string>
+    <defaultsProperty key="Synthetica.comboBox.layoutManager.className" type="idref" value="lmcn"/>    
+    <string id="drcn">de.javasoft.plaf.synthetica.simple2D.DefaultComboListCellRenderer</string>
+    <defaultsProperty key="Synthetica.comboBox.defaultRenderer.className" type="idref" value="drcn"/>    
+    <defaultsProperty key="Synthetica.comboBox.hoverAndPressed.enabled" type="boolean" value="true"/>    
+    <defaultsProperty key="Synthetica.comboBox.viewport.border.insets" type="insets" value="4 4 4 4" />
+ 
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+       <object class="javax.swing.plaf.ColorUIResource" id="lockedTextColor">
+        <!-- #202020 -->
+        <int>32</int>
+        <int>32</int>
+        <int>32</int>
+      </object>
+      <defaultsProperty key="Synthetica.comboBox.locked.textColor" type="idref" value="lockedTextColor"/>
+    </state>
+
+    <state value="FOCUSED">
+      <object class="javax.swing.plaf.ColorUIResource" id="focusedTextColor">
+        <!-- #202020 -->
+        <int>32</int>
+        <int>32</int>
+        <int>32</int>
+      </object>
+      <defaultsProperty key="Synthetica.comboBox.focused.textColor" type="idref" value="focusedTextColor"/>
+    </state>
+
+    <state value="DISABLED">
+      <object class="javax.swing.plaf.ColorUIResource" id="disabledTextColor">
+        <!-- #A0A0A0 -->
+        <int>160</int>
+        <int>160</int>
+        <int>160</int>
+      </object>
+      <defaultsProperty key="Synthetica.comboBox.disabled.textColor" type="idref" value="disabledTextColor"/>
+    </state>
+  </style>
+  <bind style="comboBox" type="region" key="ComboBox"/>
+
+
+<!-- 
+*******************************************************************************
+DesktopIcon
+*******************************************************************************
+-->
+  <style id="desktopIcon">
+    <state>
+      <color type="BACKGROUND" value="#EEEDE5" />
+      <color type="TEXT_FOREGROUND" value="#EE0000" />
+    </state>
+  </style>
+  <bind style="desktopIcon" type="region" key="DesktopIcon"/>
+
+
+<!-- 
+*******************************************************************************
+DesktopPane
+*******************************************************************************
+-->
+  <style id="desktopPane">
+    <object class="de.javasoft.plaf.synthetica.simple2D.DesktopPanePainter" id="painter"/>
+    <defaultsProperty key="Synthetica.DesktopPanePainter" type="idref" value="painter"/>
+    <painter method="desktopPaneBackground" idref="syntheticaPainter" />
+    <painter method="desktopPaneBorder" idref="syntheticaPainter" />
+    <state>
+      <opaque value="true" />
+    </state>
+  </style>
+  <bind style="desktopPane" type="region" key="DesktopPane"/>
+
+
+<!-- 
+*******************************************************************************
+EditorPane
+*******************************************************************************
+-->
+  <style id="editorPane">
+    <object class="de.javasoft.plaf.synthetica.simple2D.EditorPanePainter" id="painter"/>
+    <defaultsProperty key="Synthetica.EditorPanePainter" type="idref" value="painter"/>
+    <painter method="editorPaneBackground" idref="syntheticaPainter" />
+    <painter method="editorPaneBorder" idref="syntheticaPainter" />
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_BACKGROUND" value="#707070" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+  	</state>
+
+    <state value="DISABLED">
+      <color value="#F3F3F3" type="BACKGROUND"/>
+    </state>
+  </style>
+  <bind style="editorPane" type="region" key="EditorPane"/>
+
+
+<!-- 
+*******************************************************************************
+FileChooser
+*******************************************************************************
+-->
+  <style id="fileChooser">
+    <insets top="10" left="10" bottom="10" right="10"/>
+    <imageIcon id="directoryIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/folderClosedIcon.png"/>
+    <imageIcon id="fileIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/treeLeafIcon.png"/>
+    <imageIcon id="computerIcon" path="standard/images/computerIcon.png"/>
+    <imageIcon id="hardDriveIcon" path="standard/images/hardDriveIcon.png"/>
+    <imageIcon id="floppyDriveIcon" path="standard/images/floppyDriveIcon.png"/>
+    <imageIcon id="newFolderIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/newFolderIcon.png"/>
+    <imageIcon id="upFolderIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/upFolderIcon.png"/>
+    <imageIcon id="homeFolderIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/homeFolderIcon.png"/>
+    <imageIcon id="detailsViewIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/detailsViewIcon.png"/>
+    <imageIcon id="listViewIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/listViewIcon.png"/>
+    <defaultsProperty key="FileView.directoryIcon" type="idref" value="directoryIcon"/>
+    <defaultsProperty key="FileView.fileIcon" type="idref" value="fileIcon"/>
+    <defaultsProperty key="FileView.computerIcon" type="idref" value="computerIcon"/>
+    <defaultsProperty key="FileView.hardDriveIcon" type="idref" value="hardDriveIcon"/>
+    <defaultsProperty key="FileView.floppyDriveIcon" type="idref" value="floppyDriveIcon"/>
+    <defaultsProperty key="FileChooser.newFolderIcon" type="idref" value="newFolderIcon"/>
+    <defaultsProperty key="FileChooser.upFolderIcon" type="idref" value="upFolderIcon"/>
+    <defaultsProperty key="FileChooser.homeFolderIcon" type="idref" value="homeFolderIcon"/>
+    <defaultsProperty key="FileChooser.detailsViewIcon" type="idref" value="detailsViewIcon"/>
+    <defaultsProperty key="FileChooser.listViewIcon" type="idref" value="listViewIcon"/>
+
+    <defaultsProperty key="Synthetica.extendedFileChooser.enabled" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.extendedFileChooser.rememberPreferences" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.extendedFileChooser.useSystemFileIcons" type="boolean" value="true"/>
+
+    <string id="arrowUp">de.javasoft.plaf.synthetica.simple2D.iconPainter.ArrowUpIconPainter</string>
+    <defaultsProperty key="Synthetica.fileChooser.tableView.arrowUp" type="idref" value="arrowUp"/>
+
+    <string id="arrowDown">de.javasoft.plaf.synthetica.simple2D.iconPainter.ArrowDownIconPainter</string>
+    <defaultsProperty key="Synthetica.fileChooser.tableView.arrowDown" type="idref" value="arrowDown"/>
+
+    <object class="javax.swing.plaf.ColorUIResource" id="sortColumnColor">
+      <!-- #F5FCFF -->
+      <int>240</int>
+      <int>247</int>
+      <int>250</int>
+    </object>
+    <defaultsProperty key="Synthetica.fileChooser.tableView.sortColumnColor" type="idref" value="sortColumnColor"/>
+
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.size" type="integer" value="20"/>
+    <object class="javax.swing.plaf.ColorUIResource" id="titleColor">
+      <!-- #505050 -->
+      <int>80</int>
+      <int>80</int>
+      <int>80</int>
+    </object>
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.color" type="idref" value="titleColor"/>
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.xPos" type="integer" value="10"/>
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.yPos" type="integer" value="30"/>
+
+    <string id="copyBackground">/de/javasoft/plaf/synthetica/simple2D/icons/copyOperationDialog.png</string>
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.copyBackground" type="idref" value="copyBackground"/>
+
+    <string id="moveBackground">/de/javasoft/plaf/synthetica/simple2D/icons/moveOperationDialog.png</string>
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.moveBackground" type="idref" value="moveBackground"/>
+
+    <string id="deleteBackground">/de/javasoft/plaf/synthetica/simple2D/icons/deleteOperationDialog.png</string>
+    <defaultsProperty key="Synthetica.fileOperationDialog.title.deleteBackground" type="idref" value="deleteBackground"/>
+
+    <defaultsProperty key="Synthetica.filePropertiesDialog.title.size" type="integer" value="20"/>
+    <object class="javax.swing.plaf.ColorUIResource" id="propertiesTitleColor">
+      <!-- #505050 -->
+      <int>80</int>
+      <int>80</int>
+      <int>80</int>
+    </object>
+    <defaultsProperty key="Synthetica.filePropertiesDialog.title.color" type="idref" value="propertiesTitleColor"/>
+    <defaultsProperty key="Synthetica.filePropertiesDialog.title.xPos" type="integer" value="10"/>
+    <defaultsProperty key="Synthetica.filePropertiesDialog.title.yPos" type="integer" value="27"/>
+
+    <string id="propertiesBackground">/de/javasoft/plaf/synthetica/simple2D/icons/filePropertiesDialog.png</string>
+    <defaultsProperty key="Synthetica.filePropertiesDialog.title.background" type="idref" value="propertiesBackground"/>
+
+  </style>
+  <bind style="fileChooser" type="region" key="FileChooser"/>
+
+
+<!-- 
+*******************************************************************************
+Focus
+*******************************************************************************
+-->
+  <!-- default focus -->
+
+
+<!-- 
+*******************************************************************************
+FormattedTextField
+*******************************************************************************
+-->
+  <style id="formattedTextField">
+    <insets top="4" left="4" bottom="4" right="2"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.FormattedTextFieldPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.FormattedTextFieldPainter" type="idref" value="painter"/>
+    <painter method="formattedTextFieldBackground" idref="syntheticaPainter" />
+    <painter method="formattedTextFieldBorder" idref="syntheticaPainter" />
+
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_BACKGROUND" value="#707070" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+  	</state>
+
+    <state value="DISABLED">
+      <color value="#F3F3F3" type="BACKGROUND"/>
+    </state>
+  </style>
+  <bind style="formattedTextField" type="region" key="FormattedTextField"/>
+
+
+<!-- 
+*******************************************************************************
+InternalFrame
+*******************************************************************************
+-->
+  <style id="internalFrame">
+    <insets top="3" left="3" bottom="3" right="3"/>
+
+    <object class="de.javasoft.plaf.synthetica.simple2D.InternalFramePainter" id="painter"/>
+    <defaultsProperty key="Synthetica.InternalFramePainter" type="idref" value="painter"/>
+    <painter method="internalFrameBackground" idref="syntheticaPainter" />
+    <painter method="internalFrameBorder" idref="syntheticaPainter" />
+
+    <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.RootPaneIconPainter" id="menuIcon"/>
+    <property key="InternalFrame.icon" value="menuIcon"/>
+
+    <defaultsProperty key="Synthetica.internalFrame.titlePane.buttons.paintBorder" type="boolean" value="false"/>
+    <defaultsProperty key="Synthetica.internalFrame.titlePane.title.center" type="boolean" value="true"/>
+
+    <state>
+      <opaque value="false"/>
+      <color type="BACKGROUND" value="#E7E7E7" />
+    </state>
+  </style>
+  <bind style="internalFrame" type="region" key="InternalFrame"/>  
+
+  <style id="internalFrameTitlePane">
+    <painter method="internalFrameTitlePaneBackground" idref="syntheticaPainter" />
+    <painter method="internalFrameTitlePaneBorder" idref="syntheticaPainter" />
+    <state>
+      <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.RootPaneMinimizeIconPainter" id="minimizeIconInactive"/>
+      <property key="InternalFrameTitlePane.minimizeIcon" value="minimizeIconInactive"/>
+      <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.RootPaneMaximizeIconPainter" id="maximizeIconInactive"/>
+      <property key="InternalFrameTitlePane.maximizeIcon" value="maximizeIconInactive"/>
+      <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.RootPaneIconifyIconPainter" id="iconifyIconInactive"/>
+      <property key="InternalFrameTitlePane.iconifyIcon" value="iconifyIconInactive"/>
+      <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.RootPaneCloseIconPainter" id="closeIconInactive"/>
+      <property key="InternalFrameTitlePane.closeIcon" value="closeIconInactive"/>
+
+      <opaque value="true"/>
+      <font name="Tahoma" size="11" style="BOLD" />
+      <insets top="2" left="2" bottom="2" right="2"/>
+      <color type="FOREGROUND" value="#AAAAAA" />
+      <color type="BACKGROUND" value="#E7E7E7" />
+      <defaultsProperty key="Synthetica.internalFrame.titlePane.title.etchedBottom" type="boolean" value="true"/>
+    </state>
+
+    <state value="SELECTED">
+      <color type="FOREGROUND" value="#575757" />
+      <color type="TEXT_FOREGROUND" value="#575757" />
+    </state>
+
+    <state value="MOUSE_OVER">
+    </state>
+
+    <state value="PRESSED">
+    </state>
+
+  </style>
+  <bind style="internalFrameTitlePane" type="region" key="InternalFrameTitlePane"/>  
+
+  <style id="internalFrameMenuButton">
+    <insets top="0" left="0" bottom="0" right="0"/>
+  </style>
+  <bind style="internalFrameMenuButton" type="name" key="InternalFrameTitlePane.menuButton"/>  
+  
+  <style id="internalFrameIconifyButton">
+    <insets top="0" left="0" bottom="0" right="0"/>
+  </style>
+  <bind style="internalFrameIconifyButton" type="name" key="InternalFrameTitlePane.iconifyButton"/>  
+
+  <style id="internalFrameMaximizeButton">
+    <insets top="0" left="0" bottom="0" right="0"/>
+  </style>
+  <bind style="internalFrameMaximizeButton" type="name" key="InternalFrameTitlePane.maximizeButton"/>  
+
+  <style id="internalFrameCloseButton">
+    <insets top="0" left="0" bottom="0" right="0"/>
+  </style>
+  <bind style="internalFrameCloseButton" type="name" key="InternalFrameTitlePane.closeButton"/>  
+
+
+<!-- 
+*******************************************************************************
+Label
+*******************************************************************************
+-->
+  <style id="label">
+    <insets top="1" left="1" bottom="1" right="1"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.LabelPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.LabelPainter" type="idref" value="painter"/>
+    <painter method="labelBackground" idref="syntheticaPainter" />
+    <painter method="labelBorder" idref="syntheticaPainter" />
+
+    <state>
+    </state>
+  </style>
+  <bind style="label" type="region" key="Label"/>
+  
+
+<!-- 
+*******************************************************************************
+List
+*******************************************************************************
+-->
+  <style id="list">
+    <property key="List.rendererUseListColors" type="boolean" value="false"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.ListPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.ListPainter" type="idref" value="painter"/>
+    <painter method="listBackground" idref="syntheticaPainter" />
+    <painter method="listBorder" idref="syntheticaPainter" />
+
+    <object class="javax.swing.plaf.ColorUIResource" id="hlBorderColor">
+      <!-- #3680A3 -->
+      <int>54</int>
+      <int>128</int>
+      <int>163</int>
+    </object>
+    <defaultsProperty key="Synthetica.list.focusCellHighlightBorder.color" type="idref" value="hlBorderColor" />
+
+    <state>
+      <color type="BACKGROUND" value="#FFFFFF" /> 
+      <color type="FOREGROUND" value="#202020" /> 
+    </state>
+
+    <!-- Note: Opaque has to be set to true for region Label.selected -->
+    <state value="SELECTED">
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+      <color type="TEXT_BACKGROUND" value="#707070" /> 
+    </state>
+  </style>
+  <bind style="list" type="region" key="List"/>
+
+
+<!-- 
+*******************************************************************************
+Menu
+*******************************************************************************
+-->
+  <style id="menu">
+    <insets top="3" left="0" bottom="3" right="0"/>
+    <property key="Menu.textIconGap" type="integer" value="8"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.MenuPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.MenuPainter" type="idref" value="painter"/>
+    <painter method="menuBackground" idref="syntheticaPainter" />
+    <painter method="menuBorder" idref="syntheticaPainter" />
+
+    <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.MenuArrowIconPainter" id="arrowIcon"/>
+    <property key="Menu.arrowIcon" value="arrowIcon"/>
+
+    <object class="javax.swing.plaf.ColorUIResource" id="topLevelMenuColor">
+      <!-- #000000 -->
+      <int>0</int>
+      <int>0</int>
+      <int>0</int>
+    </object>
+    <defaultsProperty key="Synthetica.menu.toplevel.textColor.selected" type="idref" value="topLevelMenuColor"/>
+
+    <object class="javax.swing.plaf.ColorUIResource" id="topLevelMenuColor">
+      <!-- #C4C4C4 -->
+      <int>196</int>
+      <int>196</int>
+      <int>196</int>
+    </object>
+    <defaultsProperty key="Synthetica.menu.toplevel.textColor.inactive" type="idref" value="topLevelMenuColor"/>
+    
+    <state>
+      <opaque value="false" />
+      <color type="FOREGROUND" value="#202020" />
+      <color type="TEXT_FOREGROUND" value="#202020" />
+      <!-- <property key="Menu.arrowIcon" value="arrowIcon"/> -->
+
+    </state>
+
+    <state value="SELECTED">
+      <opaque value="true" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" />
+      <!-- <property key="Menu.arrowIcon" value="arrowIconSelected"/> -->
+
+    </state>
+
+    <state value="DISABLED">
+      <!-- <property key="Menu.arrowIcon" value="arrowIconDisabled"/> -->
+    </state>
+
+  </style>
+  <bind style="menu" type="region" key="Menu"/>
+
+
+<!-- 
+*******************************************************************************
+MenuBar
+*******************************************************************************
+-->
+  <style id="menuBar">
+    <insets top="0" left="0" bottom="0" right="0"/>
+    <painter method="menuBarBackground" idref="syntheticaPainter" />
+    <painter method="menuBarBorder" idref="syntheticaPainter" />
+    <state>
+      <opaque value="true" />
+      <color type="BACKGROUND" value="#EFEFEF" />
+    </state>
+
+  </style>
+  <bind style="menuBar" type="region" key="MenuBar"/>
+
+
+<!-- 
+*******************************************************************************
+MenuItem
+*******************************************************************************
+-->
+  <style id="menuItem">
+    <insets top="3" left="0" bottom="3" right="0"/>
+    <property key="MenuItem.textIconGap" type="integer" value="8"/>
+    <defaultsProperty key="Synthetica.menuItem.icon.width" type="integer" value="16"/>
+    <defaultsProperty key="Synthetica.menuItem.checkRadioIcon.width" type="integer" value="16"/>
+
+    <painter method="menuItemBackground" idref="syntheticaPainter" />
+    <painter method="menuItemBorder" idref="syntheticaPainter" />
+    <painter method="checkBoxMenuItemBackground" idref="syntheticaPainter" />
+    <painter method="checkBoxMenuItemBorder" idref="syntheticaPainter" />
+    <painter method="radioButtonMenuItemBackground" idref="syntheticaPainter" />
+    <painter method="radioButtonMenuItemBorder" idref="syntheticaPainter" />
+
+    <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.RadioButtonMenuItemIconPainter" id="radioButtonIcon"/>
+    <property key="RadioButtonMenuItem.checkIcon" value="radioButtonIcon"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.CheckBoxMenuItemIconPainter" id="checkBoxIcon"/>
+    <property key="CheckBoxMenuItem.checkIcon" value="checkBoxIcon"/>
+    
+    <state>
+      <color type="FOREGROUND" value="#202020" />
+      <color type="TEXT_FOREGROUND" value="#202020" />
+    </state>
+
+    <state value="MOUSE_OVER">
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" />
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_FOREGROUND" value="#202020" />
+    </state>
+
+    <state value="MOUSE_OVER AND SELECTED">
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" />
+    </state>
+
+    <state value="DISABLED">
+    </state>
+
+    <state value="DISABLED AND SELECTED">
+  	  <color type="TEXT_FOREGROUND" value="#AAAAAA" /> 
+    </state>
+
+  </style>
+  <bind style="menuItem" type="region" key="MenuItem"/>
+  <bind style="menuItem" type="region" key="RadioButtonMenuItem"/>
+  <bind style="menuItem" type="region" key="CheckBoxMenuItem"/>
+  
+
+<!-- 
+*******************************************************************************
+MenuItemAccelerator
+*******************************************************************************
+-->
+  <style id="menuItemAccelerator">
+    <state>
+      <opaque value="true" />
+      <color type="TEXT_FOREGROUND" value="#808080" />
+    </state>
+    <state value="MOUSE_OVER">
+      <opaque value="true" />
+      <color type="TEXT_FOREGROUND" value="#E0E0E0" />
+    </state>
+  </style>
+  <bind style="menuItemAccelerator" type="region" key="MenuItemAccelerator"/>
+
+
+<!-- 
+*******************************************************************************
+OptionPane
+*******************************************************************************
+-->
+  <style id="optionPane">
+    <insets top="3" left="3" bottom="6" right="3"/>
+    <state>
+      <imageIcon id="infoIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/infoIcon.png"/>
+      <imageIcon id="questionIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/questionIcon.png"/>
+      <imageIcon id="warningIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/warningIcon.png"/>
+      <imageIcon id="errorIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/errorIcon.png"/>
+      <imageIcon id="stopIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/stopIcon.png"/>
+      <property key="OptionPane.informationIcon" value="infoIcon"/>
+      <property key="OptionPane.questionIcon" value="questionIcon"/>
+      <property key="OptionPane.warningIcon" value="warningIcon"/>
+      <property key="OptionPane.errorIcon" value="errorIcon"/>
+      <property key="OptionPane.stopIcon" value="stopIcon"/>
+
+<!--
+     <opaque value="true"/>      
+     <color type="BACKGROUND" value="#E60000" />
+-->
+  
+      <defaultsProperty key="OptionPane.buttonPadding" type="integer" value="8"/>      
+    </state>
+  </style>
+  <bind style="optionPane" type="region" key="OptionPane"/>
+
+  <style id="optionPaneButton">
+    <insets top="2" left="10" bottom="2" right="10"/>
+  </style>
+  <bind style="optionPaneButton" type="name" key="OptionPane.button"/>
+
+<!-- 
+*******************************************************************************
+Panel
+*******************************************************************************
+-->
+  <style id="panel">    
+    <object class="de.javasoft.plaf.synthetica.simple2D.PanelPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.PanelPainter" type="idref" value="painter"/>
+    <painter method="panelBackground" idref="syntheticaPainter" />
+    <painter method="panelBorder" idref="syntheticaPainter" />
+    
+    <state>
+      <!-- <font name="Tahoma" size="11" style="BOLD" /> -->
+      <!-- <color type="FOREGROUND" value="#202020" /> -->
+      <color type="BACKGROUND" value="#EFEFEF" />
+      <opaque value="true"/>      
+    </state>
+  </style>
+  <bind style="panel" type="region" key="Panel"/>  
+
+<!-- 
+*******************************************************************************
+PasswordField
+*******************************************************************************
+-->
+  <style id="passwordField">
+    <insets top="4" left="4" bottom="4" right="4"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.PasswordFieldPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.PasswordFieldPainter" type="idref" value="painter"/>
+    <painter method="passwordFieldBackground" idref="syntheticaPainter" />
+    <painter method="passwordFieldBorder" idref="syntheticaPainter" />
+
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_BACKGROUND" value="#707070" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+  	</state>
+
+    <state value="DISABLED">
+      <color value="#F3F3F3" type="BACKGROUND"/>
+    </state>
+  </style>
+  <bind style="passwordField" type="region" key="PasswordField"/>
+
+
+<!-- 
+*******************************************************************************
+PopupMenu
+*******************************************************************************
+-->
+  <style id="popupMenu">
+    <insets top="4" left="7" bottom="9" right="7"/>
+    <painter method="popupMenuBackground" idref="syntheticaPainter" />
+    <painter method="popupMenuBorder" idref="syntheticaPainter" />
+    
+    <defaultsProperty key="Synthetica.comboPopup.insets" type="insets" value="0 3 5 3"/>
+
+    <state>
+    </state>
+  </style>
+  <bind style="popupMenu" type="region" key="PopupMenu"/>
+
+
+<!-- 
+*******************************************************************************
+PopupMenuSeparator
+*******************************************************************************
+-->
+  <style id="popupMenuSeparator">
+    <insets top="3" left="0" bottom="3" right="0"/>
+    <property key="Separator.thickness" type="integer" value="2"/>     
+    <painter method="separatorBackground" idref="syntheticaPainter" />
+
+    <state>
+      <opaque value="false" />
+    </state>
+  </style>
+  <bind style="popupMenuSeparator" type="region" key="PopupMenuSeparator"/>
+
+
+<!-- 
+*******************************************************************************
+ProgressBar
+*******************************************************************************
+-->
+  <style id="progressBar">
+    <insets top="0" left="0" bottom="0" right="0" />
+    <object class="de.javasoft.plaf.synthetica.simple2D.ProgressBarPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.ProgressBarPainter" type="idref" value="painter"/>
+    <painter method="progressBarBackground" idref="syntheticaPainter" />
+    <painter method="progressBarBorder" idref="syntheticaPainter" />
+    <painter method="progressBarForeground" idref="syntheticaPainter" />
+
+    <object class="java.awt.Dimension" id="hPrefSize">
+      <int>146</int>
+      <int>12</int>
+    </object>
+    <defaultsProperty key="ProgressBar.horizontalSize" type="idref" value="hPrefSize"/>
+    <object class="java.awt.Dimension" id="vPrefSize">
+      <int>12</int>
+      <int>146</int>
+    </object>
+    <defaultsProperty key="ProgressBar.verticalSize" type="idref" value="vPrefSize"/>
+
+    <state>
+    </state>
+
+    <state value="DISABLED">
+    </state>
+
+  </style>
+  <bind style="progressBar" type="region" key="ProgressBar"/>
+
+
+<!-- 
+*******************************************************************************
+RadioButton
+*******************************************************************************
+-->
+  <style id="radioButton">
+    <insets top="4" left="4" bottom="4" right="4"/>
+
+    <object class="de.javasoft.plaf.synthetica.simple2D.RadioButtonPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.RadioButtonPainter" type="idref" value="painter"/>
+    <painter method="radioButtonBackground" idref="syntheticaPainter" />
+    <painter method="radioButtonBorder" idref="syntheticaPainter" />
+
+    <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.RadioButtonIconPainter" id="radioButtonIcon"/>
+    <property key="RadioButton.icon" value="radioButtonIcon"/>
+
+    <defaultsProperty key="Synthetica.radioButton.emulatedPressedState.enabled" type="boolean" value="false"/>
+
+    <state>
+      <opaque value="false"/>
+    </state>
+
+    <state value="SELECTED">   
+	</state>
+
+    <state value="PRESSED">
+	</state>
+
+    <state value="MOUSE_OVER">   
+	</state>
+
+    <state value="MOUSE_OVER AND SELECTED">
+	</state>
+
+    <state value="FOCUSED">
+    </state>
+
+    <state value="DISABLED">
+      <color type="TEXT_FOREGROUND" value="#A0A0A0" /> 
+	</state>
+
+    <state value="DISABLED AND SELECTED">
+      <color type="TEXT_FOREGROUND" value="#A0A0A0" /> 
+	</state>
+
+  </style>
+  <bind style="radioButton" type="region" key="RadioButton"/>
+
+
+<!-- 
+*******************************************************************************
+RootPane
+*******************************************************************************
+-->
+  <style id="rootPane">
+    <object class="de.javasoft.plaf.synthetica.simple2D.RootPanePainter" id="painter"/>
+    <defaultsProperty key="Synthetica.RootPanePainter" type="idref" value="painter"/>
+    <defaultsProperty key="Synthetica.rootPane.border.insets" type="insets" value="4 4 4 4"/>
+    <defaultsProperty key="Synthetica.rootPane.resizeInsets" type="insets" value="6 6 6 6"/>
+    <!-- <defaultsProperty key="Synthetica.rootPane.minimumWindowSize" type="dimension" value="50 50"/>  -->
+
+    <defaultsProperty key="Synthetica.rootPane.titlePane.buttons.paintBorder" type="boolean" value="false"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.title.center" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.iconifyButton.gap" type="integer" value="4"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.toggleButton.gap" type="integer" value="4"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.opaque" type="boolean" value="false"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.title.etchedBottom" type="boolean" value="true"/>
+    
+    <!-- 
+    <defaultsProperty key="Synthetica.rootPane.titlePane.dropShadow" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.dropShadow.distance" type="integer" value="-5"/>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.dropShadow.highQuality" type="boolean" value="false"/>
+    <object class="javax.swing.plaf.ColorUIResource" id="dropShadowColor">
+      <int>160</int>
+      <int>160</int>
+      <int>160</int>
+    </object>
+    <defaultsProperty key="Synthetica.rootPane.titlePane.dropShadow.color" type="idref" value="dropShadowColor"/>
+     -->
+
+    <!-- <imageIcon id="rootPaneIcon" path="standard/images/icon.png"/> -->    
+    <!-- <imageIcon id="rootPaneCloseIcon" path="standard/images/closeIcon.png"/> -->
+
+    <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.RootPaneIconPainter" id="rootPaneIcon"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.RootPaneMinimizeIconPainter" id="rootPaneMinimizeIcon"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.RootPaneMaximizeIconPainter" id="rootPaneMaximizeIcon"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.RootPaneIconifyIconPainter" id="rootPaneIconifyIcon"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.RootPaneCloseIconPainter" id="rootPaneCloseIcon"/>
+
+    <state>
+      <property key="RootPane.icon" value="rootPaneIcon"/>
+      <property key="RootPane.minimizeIcon" value="rootPaneMinimizeIcon"/>
+      <property key="RootPane.maximizeIcon" value="rootPaneMaximizeIcon"/>
+      <property key="RootPane.iconifyIcon" value="rootPaneIconifyIcon"/>
+      <property key="RootPane.closeIcon" value="rootPaneCloseIcon"/>
+    </state>
+
+    <state value="MOUSE_OVER">
+    </state>
+
+    <state value="PRESSED">
+    </state>
+
+  </style>
+  <bind style="rootPane" type="region" key="RootPane"/>
+
+
+<!-- 
+*******************************************************************************
+ScrollBar
+*******************************************************************************
+-->
+  <style id="scrollBar">
+    <object class="org.jdownloader.gui.laf.jddefault.CustomScrollbarPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.ScrollBarPainter" type="idref" value="painter"/>
+    <painter method="scrollBarBackground" idref="syntheticaPainter" />
+    <painter method="scrollBarBorder" idref="syntheticaPainter" />
+
+    <object class="java.awt.Rectangle" id="hBounds">
+      <int>-4</int>
+      <int>3</int>
+      <int>7</int>
+      <int>0</int>
+    </object>
+    <defaultsProperty key="Synthetica.scrollBar.horizontal.relativeBounds" type="idref" value="hBounds"/>
+
+    <object class="java.awt.Rectangle" id="vBounds">
+      <int>3</int>
+      <int>-4</int>
+      <int>0</int>
+      <int>7</int>
+    </object>
+    <defaultsProperty key="Synthetica.scrollBar.vertical.relativeBounds" type="idref" value="vBounds"/>
+
+    <object class="java.awt.Rectangle" id="tbHBounds">
+      <int>-5</int>
+      <int>5</int>
+      <int>10</int>
+      <int>0</int>
+    </object>
+    <defaultsProperty key="Synthetica.scrollBar.titledBorder.horizontal.relativeBounds" type="idref" value="tbHBounds"/>
+
+    <object class="java.awt.Rectangle" id="tbVBounds">
+      <int>5</int>
+      <int>-5</int>
+      <int>0</int>
+      <int>10</int>
+    </object>
+    <defaultsProperty key="Synthetica.scrollBar.titledBorder.vertical.relativeBounds" type="idref" value="tbVBounds"/>
+
+    <object class="java.awt.Rectangle" id="tcHBounds">
+      <int>-4</int>
+      <int>3</int>
+      <int>7</int>
+      <int>0</int>
+    </object>
+    <defaultsProperty key="Synthetica.scrollBar.textComponent.horizontal.relativeBounds" type="idref" value="tcHBounds"/>
+
+    <object class="java.awt.Rectangle" id="tcVBounds">
+      <int>3</int>
+      <int>-4</int>
+      <int>0</int>
+      <int>7</int>
+    </object>
+    <defaultsProperty key="Synthetica.scrollBar.textComponent.vertical.relativeBounds" type="idref" value="tcVBounds"/>
+
+    <state>
+      <opaque value="false" />
+      <property key="ScrollBar.squareButtons" type="boolean" value="true"/>
+      <property key="ScrollBar.thumbHeight" type="integer" value="13"/>
+      <property key="ScrollBar.minimumThumbSize" type="dimension" value="30 30" />
+    </state>
+  </style>
+  <bind style="scrollBar" type="region" key="ScrollBar"/>
+
+  <style id="scrollBarThumb">
+    <painter method="scrollBarThumbBackground" idref="syntheticaPainter" />
+    <painter method="scrollBarThumbBorder" idref="syntheticaPainter" />
+    <state>
+    </state>
+  </style>
+  <bind style="scrollBarThumb" type="region" key="ScrollBarThumb"/>
+
+  <style id="scrollBarTrack">
+    <painter method="scrollBarTrackBackground" idref="syntheticaPainter" />
+    <painter method="scrollBarTrackBorder" idref="syntheticaPainter" />
+    <state>
+    </state>
+  </style>
+  <bind style="scrollBarTrack" type="region" key="ScrollBarTrack"/>
+
+
+<!-- 
+*******************************************************************************
+ScrollPane
+*******************************************************************************
+-->
+  <style id="scrollPane">
+    <insets top="4" left="4" bottom="4" right="4"/>
+    <property key="ScrollPane.viewportBorderInsets" type="insets" value="0 0 0 0" />
+    <object class="de.javasoft.plaf.synthetica.simple2D.ScrollPanePainter" id="painter"/>
+    <defaultsProperty key="Synthetica.ScrollPanePainter" type="idref" value="painter"/>
+    <painter method="scrollPaneBackground" idref="syntheticaPainter" />
+    <painter method="scrollPaneBorder" idref="syntheticaPainter" />
+    <defaultsProperty key="Synthetica.scrollPane.nonOpaque" type="boolean" value="true"/>
+
+    <string id="lmcn">de.javasoft.plaf.synthetica.SyntheticaScrollPaneLayoutManager</string>
+    <defaultsProperty key="Synthetica.scrollPane.layoutManager.className" type="idref" value="lmcn"/>    
+
+    <state>
+    </state>
+    
+  </style>
+  <bind style="scrollPane" type="region" key="ScrollPane"/>
+
+
+<!-- 
+*******************************************************************************
+Separator
+*******************************************************************************
+-->
+  <style id="separator">
+    <property key="Separator.thickness" type="integer" value="2"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.SeparatorPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.SeparatorPainter" type="idref" value="painter"/>
+    <painter method="separatorBackground" idref="syntheticaPainter" />
+    <painter method="separatorBorder" idref="syntheticaPainter" />
+    <painter method="separatorForeground" idref="syntheticaPainter" />
+
+    <state>
+      <opaque value="false" />
+      <color type="BACKGROUND" value="#E2E2E2" />
+    </state>
+  </style>
+  <bind style="separator" type="region" key="Separator"/>
+
+  <!-- disable option pane separator -->
+  <style id="optionPaneSeparator">
+    <property key="Separator.thickness" type="integer" value="0"/>
+  </style>
+  <bind style="optionPaneSeparator" type="name" key="OptionPane.separator"/>
+
+<!-- 
+*******************************************************************************
+Slider
+*******************************************************************************
+-->
+  <style id="slider">
+    <insets top="6" left="6" bottom="6" right="6"/>
+    <property key="Slider.thumbWidth" type="integer" value="28"/>
+    <property key="Slider.thumbHeight" type="integer" value="16"/>
+    <property key="Slider.trackBorder" type="integer" value="-5"/>
+    <property key="Slider.paintValue" type="boolean" value="false"/>
+
+    <object class="de.javasoft.plaf.synthetica.simple2D.SliderPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.SliderPainter" type="idref" value="painter"/>
+    <painter method="sliderBackground" idref="syntheticaPainter" />
+    <painter method="sliderBorder" idref="syntheticaPainter" />
+
+    <state>
+    </state>  
+
+    <state value="FOCUSED">
+    </state>
+
+  </style>
+  <bind style="slider" type="region" key="Slider"/>
+
+  <style id="sliderTrack">
+    <painter method="sliderTrackBackground" idref="syntheticaPainter" />
+    <painter method="sliderTrackBorder" idref="syntheticaPainter" />
+    <state>
+    </state>
+
+    <state value="MOUSE_OVER">
+    </state>
+
+    <state value="DISABLED">
+    </state>
+  </style>
+  <bind style="sliderTrack" type="region" key="SliderTrack"/>
+
+  <style id="sliderThumb">
+    <painter method="sliderThumbBackground" idref="syntheticaPainter" />
+    <painter method="sliderThumbBorder" idref="syntheticaPainter" />
+    <state>
+    </state>
+
+    <state value="MOUSE_OVER">
+    </state>
+
+    <state value="DISABLED">
+    </state>
+  </style>
+  <bind style="sliderThumb" type="region" key="SliderThumb"/>
+
+
+<!--
+*******************************************************************************
+Spinner
+*******************************************************************************
+-->
+  <style id="spinner">
+    <insets top="4" left="4" bottom="4" right="4"/>
+    <defaultsProperty key="Synthetica.spinner.arrowButton.width" type="integer" value="12" />
+    <object class="de.javasoft.plaf.synthetica.simple2D.SpinnerPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.SpinnerPainter" type="idref" value="painter"/>
+    <painter method="spinnerBackground" idref="syntheticaPainter" />
+    <painter method="spinnerBorder" idref="syntheticaPainter" />
+
+    <state>
+      <color type="BACKGROUND" value="#FFFFFF"/>
+    </state>
+
+    <state value="DISABLED">
+    </state>
+  </style>
+  <bind style="spinner" type="region" key="Spinner"/>
+
+  <!-- <style id="spinnerEditor">
+    <insets top="0" left="6" bottom="0" right="-10"/>
+    <opaque value="false"/>
+  </style>
+  <bind style="spinnerEditor" type="name" key="Spinner.editor"/>  -->
+
+  <!-- <style id="spinnerFormattedTextField">
+    <insets top="3" left="12" bottom="3" right="4"/>
+    <opaque value="false"/>
+  </style>
+  <bind style="spinnerFormattedTextField" type="name" key="Spinner.formattedTextField"/>  -->  
+
+<!-- 
+*******************************************************************************
+SplitPane
+*******************************************************************************
+-->
+  <style id="splitPane">
+    <property key="SplitPane.size" type="integer" value="10"/>
+    <property key="SplitPane.oneTouchButtonSize" type="integer" value="10"/>
+    <property key="SplitPane.oneTouchButtonOffset" type="integer" value="0"/>
+    <property key="SplitPane.oneTouchExpandable" type="boolean" value="true"/>
+    <property key="SplitPane.centerOneTouchButtons" type="boolean" value="true"/>
+
+    <object class="de.javasoft.plaf.synthetica.simple2D.SplitPanePainter" id="painter"/>
+    <defaultsProperty key="Synthetica.SplitPanePainter" type="idref" value="painter"/>
+    <painter method="splitPaneBackground" idref="syntheticaPainter" />
+    <painter method="splitPaneBorder" idref="syntheticaPainter" />
+
+    <state>
+      <opaque value="false"/>
+      <color type="BACKGROUND" value="#EFEFEF" />
+    </state>
+  </style>
+  <bind style="splitPane" type="region" key="SplitPane"/>
+
+  <style id="splitPaneDivider">
+    <painter method="splitPaneDividerBackground" idref="syntheticaPainter" />
+    <painter method="splitPaneDividerForeground" idref="syntheticaPainter" />
+    <painter method="splitPaneDividerBorder" idref="syntheticaPainter" />
+    <painter method="splitPaneDragDivider" idref="syntheticaPainter" />
+    <state>
+    </state>
+  </style>
+  <bind style="splitPaneDivider" type="region" key="SplitPaneDivider"/>
+
+
+<!-- 
+*******************************************************************************
+TabbedPane
+*******************************************************************************
+-->
+  <style id="tabbedPane">
+    <insets top="0" left="0" bottom="0" right="0"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.TabbedPanePainter" id="painter"/>
+    <defaultsProperty key="Synthetica.TabbedPanePainter" type="idref" value="painter"/>
+    <painter method="tabbedPaneBackground" idref="syntheticaPainter" />
+    <painter method="tabbedPaneBorder" idref="syntheticaPainter" />
+
+    <state>
+      <color type="FOREGROUND" value="#202020"/>
+    </state>
+  </style>
+  <bind style="tabbedPane" type="region" key="TabbedPane"/>
+
+  <style id="tabbedPaneContent">
+    <insets top="3" left="3" bottom="3" right="3"/>
+    <painter method="tabbedPaneContentBackground" idref="syntheticaPainter" />
+    <painter method="tabbedPaneContentBorder" idref="syntheticaPainter" />
+    <state>
+    </state>
+  </style>
+  <bind style="tabbedPaneContent" type="region" key="TabbedPaneContent"/>
+
+  <style id="tabbedPaneTabArea">
+    <insets top="2" left="6" bottom="0" right="6"/>
+    <painter method="tabbedPaneTabAreaBackground" idref="syntheticaPainter" />
+    <painter method="tabbedPaneTabAreaBorder" idref="syntheticaPainter" />
+    <state>
+    </state>
+  </style>
+  <bind style="tabbedPaneTabArea" type="region" key="TabbedPaneTabArea"/>
+
+  <style id="tabbedPaneTab">
+    <insets top="2" left="6" bottom="2" right="6"/>
+    <painter method="tabbedPaneTabBackground" idref="syntheticaPainter" />
+    <painter method="tabbedPaneTabBorder" idref="syntheticaPainter" />
+    <defaultsProperty key="Synthetica.tabbedPane.tab.selected.bold" type="boolean" value="true"/>
+
+    <state>
+    </state>
+
+    <state value="FOCUSED">
+      <color type="TEXT_FOREGROUND" value="#474747"/>
+    </state>
+
+    <state value="MOUSE_OVER">
+      <color type="TEXT_FOREGROUND" value="#202020"/>
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_FOREGROUND" value="#474747"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.selected.insets" type="insets" value="4 4 4 4"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.selected.text.insets" type="insets" value="2 0 2 0"/>
+      <defaultsProperty key="Synthetica.tabbedPane.tab.selected.icon.insets" type="insets" value="2 0 2 0"/>
+    </state>
+
+    <state value="DISABLED">
+      <color type="TEXT_FOREGROUND" value="#A0A0A0"/>
+    </state>
+
+  </style>
+  <bind style="tabbedPaneTab" type="region" key="TabbedPaneTab"/>
+
+
+<!-- 
+*******************************************************************************
+Table
+*******************************************************************************
+-->
+  <style id="table">
+    <object class="de.javasoft.plaf.synthetica.simple2D.TablePainter" id="painter"/>
+    <defaultsProperty key="Synthetica.TablePainter" type="idref" value="painter"/>
+    <painter method="tableBackground" idref="syntheticaPainter" />
+    <painter method="tableBorder" idref="syntheticaPainter" />
+    <property key="Table.rowHeight" type="integer" value="21"/>
+    <!-- set to false to respect table cell renderer insets defined by "cellRenderer" style -->
+    <property key="Table.rendererUseUIBorder" type="boolean" value="false"/>
+    <!-- disable vertical grid -->
+    <defaultsProperty key="Synthetica.table.columnMargin" type="integer" value="0" />
+    <defaultsProperty key="Synthetica.table.rowMargin" type="integer" value="1" />
+    <defaultsProperty key="Synthetica.table.useScrollPaneBorder" type="boolean" value="true" />     
+
+    <string id="decn">de.javasoft.plaf.synthetica.simple2D.DefaultTableCellEditor</string>
+    <defaultsProperty key="Synthetica.table.defaultEditor.className" type="idref" value="decn"/>    
+    <defaultsProperty key="Synthetica.table.cellEditor.opaque" type="boolean" value="false"/>
+    <defaultsProperty key="Synthetica.table.cellEditor.focus.size" type="integer" value="2"/>
+
+    <object class="javax.swing.plaf.ColorUIResource" id="hlBorderColor">
+      <int>64</int>
+      <int>64</int>
+      <int>64</int>
+    </object>
+    <defaultsProperty key="Synthetica.table.focusCellHighlightBorder.color" type="idref" value="hlBorderColor" />
+
+    <object class="javax.swing.plaf.ColorUIResource" id="scrollPaneBorderColor">
+      <!-- #AAAAAA -->
+      <int>170</int>
+      <int>170</int>
+      <int>170</int>
+    </object>
+    <defaultsProperty key="Synthetica.table.scrollPane.border.color" type="idref" value="scrollPaneBorderColor" />
+
+    <object class="javax.swing.plaf.ColorUIResource" id="gridColor">
+      <int>210</int>
+      <int>230</int>
+      <int>244</int>
+    </object>
+    <property key="Table.gridColor" type="idref" value="gridColor"/>
+
+    <!-- <object class="javax.swing.plaf.ColorUIResource" id="alternateRowColor">
+      <int>237</int>
+      <int>247</int>
+      <int>252</int>
+    </object>
+    <property key="Table.alternateRowColor" type="idref" value="alternateRowColor"/>  -->  
+
+    <state>
+      <insets top="3" left="1" bottom="3" right="1"/>
+      <color type="BACKGROUND" value="#F5FCFF" />
+      <color type="FOREGROUND" value="#202020" />
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_BACKGROUND" value="#707070" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" />
+    </state>    
+  </style>
+  <bind style="table" type="region" key="Table"/>
+
+  <style id="tableHeader">
+    <painter method="tableHeaderBackground" idref="syntheticaPainter" />
+    <painter method="tableHeaderBorder" idref="syntheticaPainter" />
+    <insets top="3" left="10" bottom="3" right="10"/>
+    <state>
+      <color type="FOREGROUND" value="#202020" /> 
+      <color type="BACKGROUND" value="#D7E7F0" />
+      <object class="javax.swing.plaf.ColorUIResource" id="gridColor">
+        <int>196</int>
+        <int>196</int>
+        <int>196</int>
+      </object>
+      <defaultsProperty key="Synthetica.tableHeader.gridColor" type="idref" value="gridColor"/>
+    </state>
+  </style>
+  <bind style="tableHeader" type="region" key="TableHeader"/>
+  <!-- avoids plain header text with Java SE 6 on MOUSE_OVER -->
+  <bind style="tableHeader" type="name" key="TableHeader.renderer"/>
+
+  <style id="cellRenderer">
+    <state>
+      <opaque value="true"/>
+      <insets top="3" left="10" bottom="3" right="10"/>
+      <object class="javax.swing.plaf.ColorUIResource" id="selectedCellRendererArrowColor">
+        <!-- #E0E0E0 -->
+        <int>224</int>
+        <int>224</int>
+        <int>224</int>
+      </object>
+      <defaultsProperty key="Synthetica.table.cellRenderer.selected.arrowButton.foreground" type="idref" value="selectedCellRendererArrowColor"/>      
+    </state>
+  </style>  
+  <bind style="cellRenderer" type="name" key="Table.cellRenderer"/>
+
+  <!-- <style id="tableEditor">
+    <state>
+      <opaque value="true"/>
+      <insets top="3" left="10" bottom="3" right="10"/>
+    </state>
+  </style>  
+  <bind style="tableEditor" type="name" key="Table.editor"/>  -->
+
+
+<!-- 
+*******************************************************************************
+TextArea
+*******************************************************************************
+-->
+  <style id="textArea">
+    <object class="de.javasoft.plaf.synthetica.simple2D.TextAreaPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.TextAreaPainter" type="idref" value="painter"/>
+    <painter method="textAreaBackground" idref="syntheticaPainter" />
+    <painter method="textAreaBorder" idref="syntheticaPainter" />
+
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_BACKGROUND" value="#707070" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+  	</state>
+
+    <state value="DISABLED">
+      <color value="#F3F3F3" type="BACKGROUND"/>
+    </state>
+  </style>
+  <bind style="textArea" type="region" key="TextArea"/>
+
+
+<!-- 
+*******************************************************************************
+TextField
+*******************************************************************************
+-->
+  <style id="textField">
+    <insets top="4" left="4" bottom="4" right="4"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.TextFieldPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.TextFieldPainter" type="idref" value="painter"/>
+    <painter method="textFieldBackground" idref="syntheticaPainter" />
+    <painter method="textFieldBorder" idref="syntheticaPainter" />
+
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_BACKGROUND" value="#707070" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+  	</state>
+
+    <state value="DISABLED">
+      <color value="#F3F3F3" type="BACKGROUND"/>
+    </state>
+  </style>
+  <bind style="textField" type="region" key="TextField"/>
+
+
+<!-- 
+*******************************************************************************
+TextPane
+*******************************************************************************
+-->
+  <style id="textPane">
+    <object class="de.javasoft.plaf.synthetica.simple2D.TextPanePainter" id="painter"/>
+    <defaultsProperty key="Synthetica.TextPanePainter" type="idref" value="painter"/>
+    <painter method="textPaneBackground" idref="syntheticaPainter" />
+    <painter method="textPaneBorder" idref="syntheticaPainter" />
+
+    <state>
+      <color value="#FFFFFF" type="BACKGROUND"/>
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_BACKGROUND" value="#707070" />
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" /> 
+  	</state>
+
+    <state value="DISABLED">
+      <color value="#F3F3F3" type="BACKGROUND"/>
+    </state>
+  </style>
+  <bind style="textPane" type="region" key="TextPane"/>
+
+
+<!--
+*******************************************************************************
+TitledBorder
+*******************************************************************************
+-->
+  <object class="de.javasoft.plaf.synthetica.simple2D.TitledBorderPainter" id="titledBorderPainter"/>
+  <defaultsProperty key="Synthetica.TitledBorderPainter" type="idref" value="titledBorderPainter"/>
+  <defaultsProperty key="Synthetica.titledBorder.insets" type="insets" value="4 4 4 4"/>
+  <!--  <defaultsProperty key="Synthetica.titledBorder.title.fontSize" type="integer" value="10"/>  -->
+  <defaultsProperty key="Synthetica.titledBorder.title.position" type="integer" value="1"/>  
+
+  <object class="javax.swing.plaf.ColorUIResource" id="titledBorderTitleColor">
+    <!-- #007FCC -->
+    <int>0</int>
+    <int>127</int>
+    <int>196</int>
+  </object>
+  <defaultsProperty key="TitledBorder.titleColor" type="idref" value="titledBorderTitleColor"/>
+
+
+<!--
+*******************************************************************************
+ToggleButton
+*******************************************************************************
+-->
+  <style id="toggleButton">
+    <insets top="4" left="4" bottom="4" right="4"/>
+    <property key="ToggleButton.margin" type="insets" value="0 0 0 0"/>
+    <property key="ToggleButton.textShiftOffset" type="integer" value="1"/>
+
+    <object class="de.javasoft.plaf.synthetica.simple2D.ToggleButtonPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.ToggleButtonPainter" type="idref" value="painter"/>
+    <painter method="toggleButtonBackground" idref="syntheticaPainter" />
+    <painter method="toggleButtonBorder" idref="syntheticaPainter" />
+
+    <state>
+      <color type="FOREGROUND" value="#202020" /> 
+    </state>
+
+    <state value="MOUSE_OVER">
+    </state>
+
+    <state value="FOCUSED">
+    </state>
+
+    <state value="SELECTED">
+      <color type="TEXT_FOREGROUND" value="#000000" /> 
+    </state>
+
+    <state value="SELECTED AND MOUSE_OVER">
+      <color type="TEXT_FOREGROUND" value="#000000" /> 
+    </state>
+
+    <state value="DISABLED">
+    </state>
+
+    <state value="FOCUSED AND PRESSED">
+      <color type="TEXT_FOREGROUND" value="#000000" /> 
+    </state>
+
+    <state value="FOCUSED AND SELECTED">
+      <color type="TEXT_FOREGROUND" value="#000000" /> 
+    </state>
+
+    <state value="FOCUSED AND MOUSE_OVER">
+    </state>
+
+    <state value="FOCUSED AND SELECTED AND MOUSE_OVER">
+      <color type="TEXT_FOREGROUND" value="#000000" /> 
+    </state>
+
+    <state value="DISABLED AND SELECTED">
+  	  <color type="TEXT_FOREGROUND" value="#A0A0A0" /> 
+    </state>
+
+  </style>
+  <bind style="toggleButton" type="region" key="ToggleButton"/>
+
+
+<!-- 
+*******************************************************************************
+ToolBar
+*******************************************************************************
+-->
+  <style id="toolBar">
+    <object class="de.javasoft.plaf.synthetica.painter.ToolBarHandle" id="toolBarHandle" />
+    <property key="ToolBar.handleIcon" type="idref" value="toolBarHandle"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.ToolBarHandlePainter" id="handlePainter"/>
+    <defaultsProperty key="Synthetica.ToolBarHandlePainter" type="idref" value="handlePainter"/>
+
+    <object class="de.javasoft.plaf.synthetica.simple2D.ToolBarPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.ToolBarPainter" type="idref" value="painter"/>
+    <painter method="toolBarBackground" idref="syntheticaPainter" />
+    <painter method="toolBarBorder" idref="syntheticaPainter" />
+
+    <defaultsProperty key="Synthetica.toolBar.handle.size" type="integer" value="9"/>
+    <defaultsProperty key="Synthetica.toolBar.button.pressed.paintBorder" type="boolean" value="true"/>
+    <defaultsProperty key="Synthetica.toolBar.buttons.paintBorder" type="boolean" value="false"/>
+    <defaultsProperty key="Synthetica.toolBar.margin.horizontal" type="insets" value="2 0 4 0"/>
+    <defaultsProperty key="Synthetica.toolBar.margin.vertical" type="insets" value="2 2 0 2"/>
+    <state>
+      <color type="BACKGROUND" value="#EFEFEF" />
+      <color type="FOREGROUND" value="#F4F4F4" />
+    </state>
+  </style>
+  <bind style="toolBar" type="region" key="ToolBar"/>
+
+  <style id="toolBarSeparator">
+    <property key="ToolBar.separatorSize" type="dimension" value="8 8"/>
+
+    <state>
+      <opaque value="false"/>
+      <color type="BACKGROUND" value="#808080" />
+    </state>
+  </style>
+  <bind style="toolBarSeparator" type="region" key="ToolBarSeparator"/>
+
+  <style id="toolBarContent">
+    <painter method="toolBarContentBackground" idref="syntheticaPainter" />
+    <painter method="toolBarContentBorder" idref="syntheticaPainter" />
+    <state>
+      <color type="BACKGROUND" value="#EFEFEF" />
+    </state>
+  </style>
+  <bind style="toolBarContent" type="region" key="ToolBarContent"/>
+
+  <style id="toolBarDragWindow">
+    <state>
+      <opaque value="true"/>
+      <color type="BACKGROUND" value="#EFEFEF" />
+    </state>
+  </style>
+  <bind style="toolBarDragWindow" type="region" key="ToolBarDragWindow"/>
+
+
+<!-- 
+*******************************************************************************
+ToolTip
+*******************************************************************************
+-->
+  <style id="toolTip">
+    <insets top="4" left="8" bottom="4" right="8"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.ToolTipPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.ToolTipPainter" type="idref" value="painter"/>
+    <painter method="toolTipBackground" idref="syntheticaPainter" />
+    <painter method="toolTipBorder" idref="syntheticaPainter" />
+    <state>
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" />
+      <color type="FOREGROUND" value="#FFFFFF" />
+      <color type="BACKGROUND" value="#000000" />
+    </state>
+    <state value="DISABLED">
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" />
+    </state>
+  </style>
+  <bind style="toolTip" type="region" key="ToolTip"/>
+
+  <!-- SystemMonitor popup is a ToolTip instance - use different insets for the popup -->
+  <style id="systemMonitorPopup">
+    <insets top="2" left="2" bottom="2" right="2"/>
+  </style>
+  <bind style="systemMonitorPopup" type="name" key="SystemMonitor.monitorPopup"/>
+
+
+<!-- 
+*******************************************************************************
+Tree
+*******************************************************************************
+-->
+  <style id="tree">
+    <object class="de.javasoft.plaf.synthetica.simple2D.TreePainter" id="painter"/>
+    <defaultsProperty key="Synthetica.TreePainter" type="idref" value="painter"/>
+    <painter method="treeBackground" idref="syntheticaPainter" />
+    <painter method="treeBorder" idref="syntheticaPainter" />
+
+    <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.TreeExpandedIconPainter" id="treeExpandedIcon"/>
+    <object class="de.javasoft.plaf.synthetica.simple2D.iconPainter.TreeCollapsedIconPainter" id="treeCollapsedIcon"/>
+    <!-- <imageIcon id="treeExpandedIcon" path="standard/images/treeExpandedIcon.png"/>-->
+    <!-- <imageIcon id="treeCollapsedIcon" path="standard/images/treeCollapsedIcon.png"/>  -->
+    <imageIcon id="treeLeafIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/treeLeafIcon.png" />
+    <imageIcon id="treeOpenIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/folderOpenIcon.png" />
+    <imageIcon id="treeClosedIcon" path="/de/javasoft/plaf/synthetica/simple2D/icons/folderClosedIcon.png" />
+
+    <property key="Tree.leftChildIndent" type="integer" value="4"/>
+    <property key="Tree.rightChildIndent" type="integer" value="12"/>
+    <property key="Tree.scrollsHorizontallyAndVertically" type="boolean" value="true"/>
+    <property key="Tree.rowHeight" type="integer" value="-1"/>
+
+    <state>
+      <property key="Tree.expandedIcon" value="treeExpandedIcon"/>
+      <property key="Tree.collapsedIcon" value="treeCollapsedIcon"/>
+      <defaultsProperty key="Tree.leafIcon" type="idref" value="treeLeafIcon"/>
+      <defaultsProperty key="Tree.openIcon" type="idref" value="treeOpenIcon"/>
+      <defaultsProperty key="Tree.closedIcon" type="idref" value="treeClosedIcon"/>
+
+      <!-- 
+      Unfortunately Synth uses the FOREGROUND color for painting lines (BasicKey: "Tree.hash").
+      Thus Synthetica defines default properties for the GraphicUtilsPainter which is
+      responsable for drawing TreeLines.
+      -->
+      <opaque value="true"/>
+      <color type="BACKGROUND" value="#CDCDCD" />
+      <!-- Text color can be separately set through "TreeCell-Section" (TEXT_FOREGROUND) -->
+      <color type="FOREGROUND" value="#202020" />
+    </state>
+  </style>
+  <bind style="tree" type="region" key="Tree"/>
+
+  <style id="treeCell">
+    <state>
+      <!-- 
+      <color type="TEXT_FOREGROUND" value="#F00000" /> 
+      -->
+    </state>
+    <state value="SELECTED">
+      <opaque value="true"/>
+      <color type="TEXT_FOREGROUND" value="#FFFFFF" />
+      <color type="BACKGROUND" value="#707070" />
+      <color type="TEXT_BACKGROUND" value="#707070" />
+    </state>
+  </style>
+  <bind style="treeCell" type="region" key="TreeCell"/>
+
+
+<!-- 
+*******************************************************************************
+Viewport
+*******************************************************************************
+-->
+  <style id="viewport">
+    <object class="de.javasoft.plaf.synthetica.simple2D.ViewportPainter" id="painter"/>
+    <defaultsProperty key="Synthetica.ViewportPainter" type="idref" value="painter"/>
+    <painter method="viewportBackground" idref="syntheticaPainter" />
+    <painter method="viewportBorder" idref="syntheticaPainter" />
+    <defaultsProperty key="Synthetica.viewport.dynamicBackgroundColorEnabled" type="boolean" value="true"/>
+    <state>
+    </state>
+  </style>    
+  <bind style="viewport" type="region" key="Viewport"/>
+
+
+</synth>

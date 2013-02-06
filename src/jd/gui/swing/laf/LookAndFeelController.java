@@ -23,12 +23,13 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.synthetica.SyntheticaHelper;
 import org.appwork.utils.swing.dialog.LAFManagerInterface;
+import org.jdownloader.gui.laf.JDDefaultLookAndFeel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LookAndFeelController implements LAFManagerInterface {
-    private static final String                DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = "de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel";
+    private static final String                DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = JDDefaultLookAndFeel.class.getName();
     private static final LookAndFeelController INSTANCE                                                      = new LookAndFeelController();
 
     /**
@@ -73,7 +74,7 @@ public class LookAndFeelController implements LAFManagerInterface {
             laf = DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL;
             LogController.GL.info("Use Look & Feel: " + laf);
 
-            if (laf.contains("Synthetica")) {
+            if (laf.contains("Synthetica") || laf.equals(DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL)) {
 
                 try {
 
@@ -102,7 +103,7 @@ public class LookAndFeelController implements LAFManagerInterface {
             if (lafOptions != null) return lafOptions;
             String str = null;
             try {
-                if (laf != null) str = NewTheme.I().getText("lafoptions/" + laf + ".json");
+                if (laf != null) str = NewTheme.I().getText("laf/" + laf + "/options.json");
             } catch (final Throwable e) {
                 LogController.CL().log(e);
             }

@@ -63,19 +63,19 @@ import org.jdownloader.images.NewTheme;
 //see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
 public final class TrayIconPopup extends JFrame implements MouseListener {
 
-    private static final long         serialVersionUID  = 2623190748929934409L;
+    private static final long              serialVersionUID  = 2623190748929934409L;
 
-    private JPanel                    entryPanel;
-    private JPanel                    quickConfigPanel;
-    private JPanel                    bottomPanel;
-    private boolean                   enteredPopup;
+    private JPanel                         entryPanel;
+    private JPanel                         quickConfigPanel;
+    private JPanel                         bottomPanel;
+    private boolean                        enteredPopup;
 
-    private boolean                   hideThreadrunning = false;
+    private boolean                        hideThreadrunning = false;
 
-    private JPanel                    exitPanel;
+    private JPanel                         exitPanel;
     private java.util.List<AbstractButton> resizecomps;
 
-    private transient Thread          hideThread;
+    private transient Thread               hideThread;
 
     public TrayIconPopup() {
         super();
@@ -110,8 +110,7 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
         pack();
         hideThread = new Thread() {
             /*
-             * this thread handles closing of popup because enter/exit/move
-             * events are too slow and can miss the exitevent
+             * this thread handles closing of popup because enter/exit/move events are too slow and can miss the exitevent
              */
             public void run() {
                 while (true && hideThreadrunning) {
@@ -164,14 +163,14 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
 
     private void initEntryPanel() {
         entryPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]"));
-        if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE)) {
+        if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
             addMenuEntry(entryPanel, new TrayAction(StopDownloadsAction.getInstance().init()));
             addMenuEntry(entryPanel, new TrayAction(PauseDownloadsAction.getInstance().init(), T._.popup_pause()));
         } else if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
             addMenuEntry(entryPanel, new TrayAction(StartDownloadsAction.getInstance().init()));
-            addMenuEntry(entryPanel, new TrayAction(PauseDownloadsAction.getInstance().init(), T._.popup_pause()));
-        }
 
+        }
+        // addMenuEntry(entryPanel, new TrayAction(PauseDownloadsAction.getInstance().init(), T._.popup_pause()));
         // addMenuEntry(entryPanel, "action.addurl");
         // addMenuEntry(entryPanel, "action.load");
         addMenuEntry(entryPanel, new TrayAction(UpdateAction.getInstance().init(), T._.popup_update()));

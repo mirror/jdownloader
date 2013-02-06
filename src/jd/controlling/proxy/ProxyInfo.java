@@ -49,7 +49,7 @@ public class ProxyInfo extends HTTPProxy {
         ret.setProxy(HTTPProxy.getStorable(this));
         ret.setID(this.ID);
         ret.setPermitDenyList(getPermitDenyList());
-        ret.setResumeIsAllowed(this.resumeIsAllowed);
+        ret.setRangeRequestsSupported(isResumeAllowed());
         return ret;
     }
 
@@ -59,7 +59,7 @@ public class ProxyInfo extends HTTPProxy {
         this.ID = proxyData.getID();
         this.setPermitDenyList(proxyData.getPermitDenyList());
         this.setConnectMethodPrefered(proxyData.getProxy().isConnectMethodPrefered());
-        this.setResumeAllowed(proxyData.isResumeAllowed());
+        this.setResumeAllowed(proxyData.isRangeRequestsSupported());
         if (ID == null) {
             if (isNone()) {
                 this.ID = "NONE";

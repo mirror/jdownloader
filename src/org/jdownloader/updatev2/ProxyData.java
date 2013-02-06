@@ -12,12 +12,16 @@ public class ProxyData implements Storable {
         // required by Storable
     }
 
-    private boolean           proxyRotationEnabled = true;
-    private boolean           defaultProxy         = false;
-    private HTTPProxyStorable proxy                = null;
-    private String            ID                   = null;
-    private List<String>      permitDenyList       = null;
-    private boolean           resumeIsAllowed      = false;
+    private boolean           proxyRotationEnabled   = true;
+    private boolean           defaultProxy           = false;
+    private HTTPProxyStorable proxy                  = null;
+    private String            ID                     = null;
+    private List<String>      permitDenyList         = null;
+    private boolean           rangeRequestsSupported = true;
+
+    public boolean isRangeRequestsSupported() {
+        return rangeRequestsSupported;
+    }
 
     public String getID() {
         return ID;
@@ -73,12 +77,8 @@ public class ProxyData implements Storable {
         return proxy;
     }
 
-    public void setResumeIsAllowed(boolean b) {
-        resumeIsAllowed = b;
-    }
-
-    public boolean isResumeAllowed() {
-        return resumeIsAllowed;
+    public void setRangeRequestsSupported(boolean b) {
+        rangeRequestsSupported = b;
     }
 
 }
