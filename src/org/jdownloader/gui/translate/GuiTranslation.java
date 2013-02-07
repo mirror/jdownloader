@@ -2177,4 +2177,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reconnect Failed" })
     String ReconnectDialog_failed();
 
+    @Default(lngs = { "en" }, values = { "Launcher" })
+    String jd_gui_swing_components_AboutDialog_launcher();
+
 }

@@ -718,6 +718,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     this.addToQueue(archive);
                 }
                 //
+
+                //
             } else if (caller instanceof ExtractionController && getSettings().isDeepExtractionEnabled()) {
                 try {
                     for (File archiveStartFile : fileList) {

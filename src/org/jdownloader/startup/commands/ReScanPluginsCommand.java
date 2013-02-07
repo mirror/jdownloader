@@ -14,6 +14,7 @@ public class ReScanPluginsCommand extends AbstractStartupCommand {
 
     @Override
     public void run(String command, String... parameters) {
+        logger.info("Rescan Plugins and Extensions");
         HostPluginController.getInstance().invalidateCache();
         ExtensionController.getInstance().invalidateCache();
         CrawlerPluginController.invalidateCache();

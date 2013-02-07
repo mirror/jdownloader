@@ -128,6 +128,10 @@ public class AboutDialog extends AbstractDialog<Integer> {
             stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_sourcerevisions()), "spanx");
             stats.add(new JLabel("   " + _GUI._.jd_gui_swing_components_AboutDialog_core()), "");
             stats.add(disable("#" + map.get("JDownloaderRevision")));
+
+            stats.add(new JLabel("   " + _GUI._.jd_gui_swing_components_AboutDialog_launcher()), "");
+            stats.add(disable("#" + map.get("JDownloaderUpdaterRevision")));
+
             stats.add(new JLabel("   " + _GUI._.jd_gui_swing_components_AboutDialog_appworkutilities()), "");
 
             stats.add(disable("#" + map.get("AppWorkUtilsRevision")));
@@ -137,7 +141,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
             stats.add(disable("#" + map.get("JDBrowserRevision")));
             stats.add(new JLabel("   " + _GUI._.jd_gui_swing_components_AboutDialog_updater()), "");
 
-            stats.add(disable("#" + map.get("UpdateClientRevision")));
+            stats.add(disable("#" + map.get("UpdateClientV2Revision")));
         } catch (Throwable t) {
             Log.exception(t);
 
