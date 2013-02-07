@@ -179,4 +179,16 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "A new JDownloader Plugin Update is available.To install, a restart is NOT required!\r\nDo you want to install the update now? ", "Ein neues JDownloader Plugin Update steht zur Installation bereit. Zur Installation muss KEIN Neustart durchgeführt werden.\r\nSoll jetzt installiert werden?" })
     String confirmdialog_new_update_available_for_install_message_plugin();
 
+    @Default(lngs = { "en", "de" }, values = { "Waiting for Application!", "Auf Anwendung warten!" })
+    String installframe_statusmsg_waitingforapplication();
+
+    @Default(lngs = { "en", "de" }, values = { "Insufficient permissions to write %s1.\r\nTry to close all running JDownloader & Java processes and try again afterwards!\r\nPlease contact our support if this problem still occures after a system reboot.", "Fehlende Schreibrechte zur Installation von %s1.\r\nBitte beende alle laufenden JDownloader & Java Prozesse und versuche es erneut!\r\nKontaktiere unseren Support falls das Problem selbst nach einem Systemneustart besteht." })
+    String close_jd(String path);
+
+    @Default(lngs = { "en", "de" }, values = { "Skip installation", "Installation überspringen" })
+    String lit_cancel_install();
+
+    @Default(lngs = { "en", "de" }, values = { "Waiting for Application!\r\nCheck Write permissions: %s1", "Auf Anwendung warten!\r\nPrüfe Schreibrechte: %s1" })
+    String installframe_statusmsg_waitingforapplication2(String absolutePath);
+
 }
