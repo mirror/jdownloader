@@ -717,6 +717,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     if (archive.isActive() || archive.getArchiveFiles().size() < 1 || !archive.isComplete() || !isAutoExtractEnabled(archive)) return;
                     this.addToQueue(archive);
                 }
+                //
             } else if (caller instanceof ExtractionController && getSettings().isDeepExtractionEnabled()) {
                 try {
                     for (File archiveStartFile : fileList) {
