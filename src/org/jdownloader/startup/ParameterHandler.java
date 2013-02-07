@@ -23,6 +23,7 @@ import org.jdownloader.startup.commands.GuiFocusCommand;
 import org.jdownloader.startup.commands.GuiMinimizeCommand;
 import org.jdownloader.startup.commands.HelpCommand;
 import org.jdownloader.startup.commands.JACShowCommand;
+import org.jdownloader.startup.commands.ReScanPluginsCommand;
 import org.jdownloader.startup.commands.ReconnectCommand;
 import org.jdownloader.updatev2.RestartController;
 
@@ -45,6 +46,7 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
         addCommand(new JACShowCommand());
         addCommand(new ReconnectCommand());
         addCommand(new BRDebugCommand());
+        addCommand(new ReScanPluginsCommand());
         addCommand(new AbstractStartupCommand("n") {
 
             @Override
