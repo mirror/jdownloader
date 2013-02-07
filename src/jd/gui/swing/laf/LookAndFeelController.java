@@ -104,7 +104,11 @@ public class LookAndFeelController implements LAFManagerInterface {
             if (lafOptions != null) return lafOptions;
             String str = null;
             try {
-                if (laf != null) str = NewTheme.I().getText("laf/" + laf + "/options.json");
+                if (laf != null) {
+                    int i = laf.lastIndexOf(".");
+                    String path = "laf/" + (i >= 0 ? laf.substring(i + 1) : laf) + "/options.json";
+                    str = NewTheme.I().getText(path);
+                }
             } catch (final Throwable e) {
                 LogController.CL().log(e);
             }
