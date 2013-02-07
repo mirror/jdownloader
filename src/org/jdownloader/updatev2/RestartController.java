@@ -140,6 +140,9 @@ public class RestartController {
             if (args == null) throw new IllegalStateException();
             startupParameters = new ParameterParser(args);
         }
+        if (args != null) {
+            startupParameters.setRawArguments(args);
+        }
         return startupParameters;
     }
 
