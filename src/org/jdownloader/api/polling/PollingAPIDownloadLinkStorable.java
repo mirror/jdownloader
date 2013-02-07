@@ -27,4 +27,12 @@ public class PollingAPIDownloadLinkStorable implements Storable {
     public Long getSize() {
         return link.getDownloadSize();
     }
+
+    public Long getSpeed() {
+        return link.getDownloadSpeed();
+    }
+
+    public Long getEta() {
+        return link.getFinishedDate();
+    }
 }

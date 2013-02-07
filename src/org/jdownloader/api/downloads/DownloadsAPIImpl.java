@@ -10,6 +10,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
@@ -34,7 +35,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     @Override
     public List<FilePackageAPIStorable> queryPackages(APIQuery queryParams) {
         DownloadController dlc = DownloadController.getInstance();
-        // DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        DownloadWatchDog dwd = DownloadWatchDog.getInstance();
 
         boolean b = dlc.readLock();
         try {
@@ -77,10 +78,13 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                     infomap.put("activeTask", "N/A");
                 }
                 if (queryParams._getQueryParam("speed", Boolean.class, false)) {
-                    infomap.put("speed", -1);
+                    infomap.put("speed", dwd.getDownloadSpeedbyFilePackage(fp));
+                }
+                if (queryParams._getQueryParam("finished", Boolean.class, false)) {
+                    infomap.put("finished", fp.getView().isFinished());
                 }
                 if (queryParams._getQueryParam("eta", Boolean.class, false)) {
-                    infomap.put("eta", -1);
+                    infomap.put("eta", fp.getView().getETA());
                 }
                 if (queryParams._getQueryParam("done", Boolean.class, false)) {
                     Long done = 0l;
@@ -105,6 +109,9 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                     }
                     infomap.put("enabled", enabled);
                 }
+                if (queryParams._getQueryParam("running", Boolean.class, false)) {
+                    infomap.put("running", dwd.getRunningFilePackages().contains(fp));
+                }
 
                 fps.setInfoMap(infomap);
                 ret.add(fps);
@@ -121,7 +128,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         List<DownloadLinkAPIStorable> result = new ArrayList<DownloadLinkAPIStorable>();
 
         DownloadController dlc = DownloadController.getInstance();
-        // DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        DownloadWatchDog dwd = DownloadWatchDog.getInstance();
 
         // retrieve packageUUIDs from queryParams
         List<Long> packageUUIDs = new ArrayList<Long>();
@@ -184,6 +191,18 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             }
             if (queryParams._getQueryParam("done", Boolean.class, false)) {
                 infomap.put("done", dl.getDownloadCurrent());
+            }
+            if (queryParams._getQueryParam("speed", Boolean.class, false)) {
+                infomap.put("speed", dl.getDownloadSpeed());
+            }
+            if (queryParams._getQueryParam("eta", Boolean.class, false)) {
+                infomap.put("eta", -1);
+            }
+            if (queryParams._getQueryParam("finished", Boolean.class, false)) {
+                infomap.put("finished", (dl.getLinkStatus().getLatestStatus() == LinkStatus.FINISHED));
+            }
+            if (queryParams._getQueryParam("running", Boolean.class, false)) {
+                infomap.put("running", dwd.getRunningDownloadLinks().contains(dl));
             }
             if (queryParams.fieldRequested("enabled")) infomap.put("enabled", dl.isEnabled());
 
@@ -334,99 +353,31 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     }
 
     @Override
-    public boolean moveTop(List<Long> linkIds) {
-        List<DownloadLink> dls = getDownloadLinks(linkIds);
+    @SuppressWarnings("unchecked")
+    public boolean movePackages(APIQuery query) {
+        List<Long> packageUUIDs = query._getQueryParam("packageUUIDs", List.class, new ArrayList<Long>());
+        Long afterDestPackageUUID = query._getQueryParam("afterDestPackageUUID", Long.class, null);
+
         DownloadController dlc = DownloadController.getInstance();
 
-        Set<FilePackage> fpkgs = new HashSet<FilePackage>();
-
-        for (DownloadLink dl : dls) {
-            fpkgs.add(dl.getFilePackage());
-        }
+        List<FilePackage> selectedPackages = new ArrayList<FilePackage>();
+        FilePackage afterDestPackage = null;
 
         boolean b = dlc.readLock();
         try {
-            for (FilePackage fp : fpkgs) {
-                dlc.addmovePackageAt(fp, 0);
+            for (FilePackage fp : dlc.getPackages()) {
+                if (packageUUIDs.contains(fp.getUniqueID().getID())) {
+                    selectedPackages.add(fp);
+                }
+                if (afterDestPackageUUID != null && afterDestPackageUUID.equals(fp.getUniqueID().getID())) {
+                    afterDestPackage = fp;
+                }
             }
         } finally {
             dlc.readUnlock(b);
         }
 
-        return true;
-    }
-
-    @Override
-    public boolean moveBottom(List<Long> linkIds) {
-        List<DownloadLink> dls = getDownloadLinks(linkIds);
-        DownloadController dlc = DownloadController.getInstance();
-
-        Set<FilePackage> fpkgs = new HashSet<FilePackage>();
-
-        for (DownloadLink dl : dls) {
-            fpkgs.add(dl.getFilePackage());
-        }
-        dlc.writeLock();
-        try {
-            for (FilePackage fp : fpkgs) {
-                dlc.addmovePackageAt(fp, dlc.getAllDownloadLinks().size());
-            }
-        } finally {
-            dlc.writeUnlock();
-        }
-
-        return true;
-    }
-
-    @Override
-    public boolean moveUp(List<Long> linkIds) {
-        List<DownloadLink> dls = getDownloadLinks(linkIds);
-        DownloadController dlc = DownloadController.getInstance();
-
-        Set<FilePackage> fpkgs = new HashSet<FilePackage>();
-
-        for (DownloadLink dl : dls) {
-            fpkgs.add(dl.getFilePackage());
-        }
-
-        dlc.writeLock();
-        try {
-            for (FilePackage fp : fpkgs) {
-                boolean b = dlc.readLock();
-                int insertIndex = dlc.getPackages().indexOf(fp) - 1;
-                dlc.readUnlock(b);
-                dlc.addmovePackageAt(fp, insertIndex);
-            }
-        } finally {
-            dlc.writeUnlock();
-        }
-
-        return true;
-    }
-
-    @Override
-    public boolean moveDown(List<Long> linkIds) {
-        List<DownloadLink> dls = getDownloadLinks(linkIds);
-        DownloadController dlc = DownloadController.getInstance();
-
-        Set<FilePackage> fpkgs = new HashSet<FilePackage>();
-
-        for (DownloadLink dl : dls) {
-            fpkgs.add(dl.getFilePackage());
-        }
-
-        dlc.writeLock();
-        try {
-            for (FilePackage fp : fpkgs) {
-                boolean b = dlc.readLock();
-                int insertIndex = dlc.getPackages().indexOf(fp) + 2;
-                dlc.readUnlock(b);
-                dlc.addmovePackageAt(fp, insertIndex);
-            }
-        } finally {
-            dlc.writeUnlock();
-        }
-
+        dlc.move(selectedPackages, afterDestPackage);
         return true;
     }
 
@@ -434,7 +385,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         DownloadController dlc = DownloadController.getInstance();
         List<DownloadLink> sdl;
 
-        dlc.writeLock();
+        dlc.readLock();
         try {
             sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
                 @Override
@@ -449,7 +400,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 }
             });
         } finally {
-            dlc.writeUnlock();
+            dlc.readUnlock();
         }
         return sdl;
     }

@@ -10,6 +10,7 @@ import org.appwork.storage.Storable;
 public class PollingAPIFilePackageStorable implements Storable {
 
     private FilePackage                          fp;
+    private Long                                 speed;
     private List<PollingAPIDownloadLinkStorable> downloadLinks = new ArrayList<PollingAPIDownloadLinkStorable>();
 
     public PollingAPIFilePackageStorable(/* Storable */) {
@@ -30,6 +31,18 @@ public class PollingAPIFilePackageStorable implements Storable {
 
     public Long getSize() {
         return fp.getView().getSize();
+    }
+
+    public void setSpeed(Long speed) {
+        this.speed = speed;
+    }
+
+    public Long getSpeed() {
+        return speed;
+    }
+
+    public Long getETA() {
+        return fp.getView().getETA();
     }
 
     public List<PollingAPIDownloadLinkStorable> getLinks() {

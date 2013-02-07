@@ -16,6 +16,8 @@ import jd.plugins.FilePackage;
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
 import org.appwork.remoteapi.RemoteAPIRequest;
+import org.appwork.remoteapi.RemoteAPIRequest.REQUESTTYPE;
+import org.appwork.utils.net.httpserver.requests.PostRequest;
 
 public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
@@ -178,7 +180,10 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public Boolean uploadLinkContainer(RemoteAPIRequest request) {
-        return true;
+        if (request.getRequestType() == REQUESTTYPE.POST) {
+            PostRequest post = (PostRequest) request.getHttpRequest();
+        }
+        return false;
     }
 
     @Override
