@@ -16,7 +16,12 @@ public class WindowsRestarter extends Restarter {
         if (Application.getResource("JDownloader.exe").exists()) {
             lst.add(Application.getResource("JDownloader.exe").getAbsolutePath());
             return lst;
-
+        } else if (Application.getResource("JDownloader2.exe").exists()) {
+            lst.add(Application.getResource("JDownloader2.exe").getAbsolutePath());
+            return lst;
+        } else if (Application.getResource("JDownloader 2.exe").exists()) {
+            lst.add(Application.getResource("JDownloader 2.exe").getAbsolutePath());
+            return lst;
         } else {
             lst.addAll(getJVMApplicationStartCommands());
             return lst;
