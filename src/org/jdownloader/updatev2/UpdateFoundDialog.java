@@ -18,6 +18,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
 
 public class UpdateFoundDialog extends ConfirmDialog {
@@ -63,8 +64,8 @@ public class UpdateFoundDialog extends ConfirmDialog {
     }
 
     @Override
-    protected JPanel getDefaultButtonPanel() {
-        final JPanel ret = new JPanel(new MigLayout("ins 0", "[]", "0[]0"));
+    protected DefaultButtonPanel getDefaultButtonPanel() {
+        final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[]", "0[]0");
 
         if (this.laterAction != null) {
             ret.add(new JButton(this.laterAction), "alignx right,tag ok,sizegroup confirms,growx,pushx");

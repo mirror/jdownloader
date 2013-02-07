@@ -22,7 +22,6 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
@@ -37,7 +36,6 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.parser.html.HTMLParser;
-import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.copycutpaste.CopyAction;
 import org.appwork.app.gui.copycutpaste.CutAction;
@@ -59,6 +57,7 @@ import org.appwork.utils.Lists;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -128,8 +127,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     }
 
     @Override
-    protected JPanel getDefaultButtonPanel() {
-        final JPanel ret = new JPanel(new MigLayout("ins 0 0 0 0", "[grow,fill][]0[][]", "0[fill]0"));
+    protected DefaultButtonPanel getDefaultButtonPanel() {
+        final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0 0 0 0", "[grow,fill][]0[][]", "0[fill]0");
 
         confirmOptions = new JButton(new ConfirmOptionsAction(okButton, this)) {
             public void setBounds(int x, int y, int width, int height) {

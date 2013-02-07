@@ -191,4 +191,7 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Waiting for Application!\r\nCheck Write permissions: %s1", "Auf Anwendung warten!\r\nPrüfe Schreibrechte: %s1" })
     String installframe_statusmsg_waitingforapplication2(String absolutePath);
 
+    @Default(lngs = { "en", "de" }, values = { "Do not ask again until next restart", "Bis zum nächsten Neustart nicht mehr fragen" })
+    String update_in_next_session();
+
 }

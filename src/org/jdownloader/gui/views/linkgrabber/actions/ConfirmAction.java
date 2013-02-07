@@ -7,7 +7,6 @@ import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JPanel;
 
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -19,13 +18,13 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.FilePackage;
-import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -89,9 +88,9 @@ public class ConfirmAction extends AppAction {
                         if (!da.isComplete()) {
 
                             ConfirmDialog d = new ConfirmDialog(0, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), NewTheme.I().getIcon("stop", 32), _GUI._.ConfirmAction_run_incomplete_archive_continue(), null) {
-                                protected JPanel createBottomButtonPanel() {
+                                protected DefaultButtonPanel createBottomButtonPanel() {
 
-                                    JPanel ret = new JPanel(new MigLayout("ins 0", "[]", "0[]0"));
+                                    DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[]", "0[]0");
                                     ret.add(new JButton(new AppAction() {
                                         {
                                             setName(_GUI._.ConfirmAction_run_incomplete_archive_details());

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 
 import jd.gui.swing.jdgui.JDGui;
@@ -28,6 +29,8 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -272,7 +275,7 @@ public class UpdateController implements UpdateCallbackInterface {
         if (isThreadConfirmed()) return true;
         try {
             if (app && appDownloadSize < 0 || updater && updaterDownloadSize < 0) {
-                Dialog.getInstance().showConfirmDialog(0, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_message(), null, _UPDATE._.confirmdialog_new_update_available_answer_now(), _UPDATE._.confirmdialog_new_update_available_answer_later());
+                confirm(0, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_message(), _UPDATE._.confirmdialog_new_update_available_answer_now(), _UPDATE._.confirmdialog_new_update_available_answer_later());
 
             } else {
 
@@ -284,7 +287,7 @@ public class UpdateController implements UpdateCallbackInterface {
                 if (updater) {
                     download += updaterDownloadSize;
                 }
-                Dialog.getInstance().showConfirmDialog(0, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_message_sized(SizeFormatter.formatBytes(download)), null, _UPDATE._.confirmdialog_new_update_available_answer_now(), _UPDATE._.confirmdialog_new_update_available_answer_later());
+                confirm(0, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_message_sized(SizeFormatter.formatBytes(download)), _UPDATE._.confirmdialog_new_update_available_answer_now(), _UPDATE._.confirmdialog_new_update_available_answer_later());
 
             }
 
@@ -320,7 +323,8 @@ public class UpdateController implements UpdateCallbackInterface {
                 if (!isThreadConfirmed()) {
                     if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) return;
                     logger.info("ASK for installing selfupdate");
-                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message(), null, _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
+
+                    confirm(Dialog.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message(), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
 
                     setUpdateConfirmed(true);
                     handler.setGuiVisible(true, true);
@@ -353,7 +357,7 @@ public class UpdateController implements UpdateCallbackInterface {
                 // can install direct
                 if (!settings.isDoNotAskToInstallPlugins()) {
                     logger.info("ask to install plugins");
-                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message_plugin(), null, _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
+                    confirm(Dialog.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message_plugin(), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
 
                 }
                 logger.info("run install");
@@ -383,10 +387,10 @@ public class UpdateController implements UpdateCallbackInterface {
                     List<String> rInstalls = handler.getRequestedInstalls();
                     List<String> ruInstalls = handler.getRequestedUnInstalls();
                     if (rInstalls.size() > 0 || ruInstalls.size() > 0) {
-                        Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle_extensions(), _UPDATE._.confirmdialog_new_update_available_for_install_message_extensions(rInstalls.size(), ruInstalls.size()), null, _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
+                        confirm(Dialog.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle_extensions(), _UPDATE._.confirmdialog_new_update_available_for_install_message_extensions(rInstalls.size(), ruInstalls.size()), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
 
                     } else {
-                        Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message(), null, _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
+                        confirm(Dialog.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message(), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
                     }
                     setUpdateConfirmed(true);
                     handler.setGuiVisible(true, true);
@@ -406,6 +410,67 @@ public class UpdateController implements UpdateCallbackInterface {
     // public static final String AFTER_SELF_UPDATE = "afterupdate";
 
     // public static final String OK = "OK";
+
+    private void confirm(int flags, String title, String message, String ok, String no) throws DialogCanceledException, DialogClosedException {
+
+        ConfirmDialog cd = new ConfirmDialog(flags, title, message, null, ok, no) {
+            protected DefaultButtonPanel createBottomButtonPanel() {
+                // TODO Auto-generated method stub
+
+                return new DefaultButtonPanel("ins 0", "[]", "0[grow,fill]0") {
+
+                    @Override
+                    public void addCancelButton(final JButton cancelButton) {
+                        super.addCancelButton(cancelButton);
+
+                        // super.add(new JButton(new AbstractAction() {
+                        // {
+                        // putValue(SMALL_ICON, NewTheme.I().getIcon("popdownButton", -1));
+                        // }
+                        //
+                        // @Override
+                        // public void actionPerformed(ActionEvent e) {
+                        // JPopupMenu popup = new JPopupMenu();
+                        // JMenuItem mi = new JMenuItem(new AppAction() {
+                        // {
+                        // setName(_UPDATE._.update_in_next_session());
+                        // }
+                        //
+                        // @Override
+                        // public void actionPerformed(ActionEvent e) {
+                        // }
+                        //
+                        // });
+                        //
+                        // popup.add(mi);
+                        //
+                        // int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                        //
+                        // Dimension pref = popup.getPreferredSize();
+                        // pref.height = 24 + insets[0] + insets[2];
+                        //
+                        // popup.setPreferredSize(pref);
+                        // popup.show(cancelButton, +insets[1] - pref.width + cancelButton.getWidth() + 8 + 5, +cancelButton.getHeight());
+                        //
+                        // }
+                        // }) {
+                        //
+                        // public void setBounds(int x, int y, int width, int height) {
+                        // int delta = 5;
+                        // super.setBounds(x - delta, y, width + delta, height);
+                        // }
+                        //
+                        // }, "gapleft 0,width 8!");
+                    }
+
+                };
+
+            }
+        };
+
+        Dialog.getInstance().showDialog(cd);
+
+    }
 
     public boolean hasPendingUpdates() {
         return handler.hasPendingUpdates();

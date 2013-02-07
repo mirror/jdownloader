@@ -46,6 +46,7 @@ import org.appwork.utils.images.Interpolation;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -191,8 +192,8 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> imple
     }
 
     @Override
-    protected JPanel getDefaultButtonPanel() {
-        final JPanel ret = new JPanel(new MigLayout("ins 0", "[]", "0[fill,grow]0"));
+    protected DefaultButtonPanel getDefaultButtonPanel() {
+        final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[]", "0[fill,grow]0");
         ret.setOpaque(false);
         ExtButton premium = new ExtButton(new AppAction() {
             /**
