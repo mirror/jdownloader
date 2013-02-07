@@ -719,7 +719,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 }
                 //
 
-                //
             } else if (caller instanceof ExtractionController && getSettings().isDeepExtractionEnabled()) {
                 try {
                     for (File archiveStartFile : fileList) {

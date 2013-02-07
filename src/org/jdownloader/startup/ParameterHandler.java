@@ -83,6 +83,7 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
 
     @Override
     public void parseMessage(String[] args) {
+        logger.info("Sent: " + Arrays.toString(args));
         ParameterParser pp = new ParameterParser(args);
         pp.getEventSender().addListener(this);
         pp.parse(null);
@@ -90,6 +91,7 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
 
     @Override
     public void executeCommandSwitch(CommandSwitch event) {
+
         StartupCommand command = commandMap.get(event.getSwitchCommand());
         if (command != null && command.isRunningInstanceEnabled()) {
             command.run(event.getSwitchCommand(), event.getParameters());
@@ -103,6 +105,7 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
     }
 
     public void onStartup(String[] args) {
+        logger.info("Startup: " + Arrays.toString(args));
         startupParameters = RestartController.getInstance().getParameterParser(args);
 
         CommandSwitchListener list = new CommandSwitchListener() {
