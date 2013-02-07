@@ -88,7 +88,7 @@
 		<copy todir="${dist}/libs">
 			<fileset dir="${dep.awu}/libs" includes="**/*.jar">
 				<!-- -->
- 
+
 				<exclude name="miglayout.jar" />
 			</fileset>
 		</copy>
@@ -200,6 +200,27 @@
 			</fileset>
 		</jar>
 
+		<!--laf-->
+
+		<jar file="${dist}/libs/laf/syntheticaJDCustom.jar" manifest="${dist}/Manifest.MF">
+
+			<fileset dir="${cls}">
+
+				<include name="org/jdownloader/gui/laf/**/*" />
+
+			</fileset>
+
+			<fileset dir="src">
+
+				<include name="org/jdownloader/gui/laf/**/*" />
+				<exclude name="**/*.java" />
+			</fileset>
+
+		</jar>
+
+
+
+
 
 		<delete file="${dist}/Manifest.MF" failonerror="true" />
 		<pathconvert pathsep=" " dirsep="/" property="class-path">
@@ -234,6 +255,7 @@
 				<exclude name="jd/controlling/reconnect/plugins/*/**/*" />
 				<exclude name="jd/captcha/**" />
 				<exclude name="org/appwork/**/*" />
+				<exclude name="org/jdownloader/gui/laf/**/*" />
 				<exclude name="org/jdownloader/update/**/*" />
 				<exclude name="org/jdownloader/dynamic/**/*" />
 				<exclude name="jd/dynamics/**" />
