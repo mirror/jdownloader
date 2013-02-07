@@ -23,7 +23,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.synthetica.SyntheticaHelper;
 import org.appwork.utils.swing.dialog.LAFManagerInterface;
-import org.jdownloader.gui.laf.JDDefaultLookAndFeel;
+import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;

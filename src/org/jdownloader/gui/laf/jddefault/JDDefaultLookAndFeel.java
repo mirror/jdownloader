@@ -1,4 +1,4 @@
-package org.jdownloader.gui.laf;
+package org.jdownloader.gui.laf.jddefault;
 
 import de.javasoft.plaf.synthetica.SyntheticaLookAndFeel;
 import de.javasoft.util.OS;
@@ -10,7 +10,7 @@ public class JDDefaultLookAndFeel extends SyntheticaLookAndFeel {
     // Construtor
     public JDDefaultLookAndFeel() throws java.text.ParseException {
         // load synth.xml from custom package
-        super("/themes/standard/org/jdownloader/laf/org.jdownloader.gui.laf.JDDefaultLookAndFeel/synthetica/xml/synth.xml");
+        super("/org/jdownloader/gui/laf/jddefault/synth.xml");
         OS.getCurrentOS();
     }
 
