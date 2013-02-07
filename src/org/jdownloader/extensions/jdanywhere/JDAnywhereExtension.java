@@ -2,6 +2,7 @@ package org.jdownloader.extensions.jdanywhere;
 
 import jd.plugins.AddonPanel;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslateInterface;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.AbstractExtension;
@@ -22,6 +23,9 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
     private CaptchaMobileAPIImpl            cma;
     private ContentMobileAPIImpl            coma;
     private JDownloaderToolBarMobileAPIImpl tma;
+
+    private JDAnywhereConfig                config;
+    private JDAnywhereConfigPanel           configPanel;
 
     @Override
     public boolean isDefaultEnabled() {
@@ -60,12 +64,14 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
 
     @Override
     protected void initExtension() throws StartException {
-        setTitle("oliverremoteapi");
+        setTitle("JDAnywhere");
+        config = JsonConfig.create(JDAnywhereConfig.class);
+        configPanel = new JDAnywhereConfigPanel(this, config);
     }
 
     @Override
-    public ExtensionConfigPanel<?> getConfigPanel() {
-        return new JDAnywhereConfigPanel(this);
+    public ExtensionConfigPanel<JDAnywhereExtension> getConfigPanel() {
+        return configPanel;
     }
 
     @Override
@@ -75,12 +81,28 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
 
     @Override
     public String getDescription() {
-        return "RemoteAPI by Oliver";
+        return "JDAnywhere";
     }
 
     @Override
     public AddonPanel<? extends AbstractExtension<JDAnywhereConfig, TranslateInterface>> getGUI() {
         return null;
+    }
+
+    public String getUsername() {
+        return getSettings().getUsername();
+    }
+
+    void setUsername(String username) {
+        getSettings().setUsername(username);
+    }
+
+    public String getPassword() {
+        return getSettings().getPassword();
+    }
+
+    void setPassword(String password) {
+        getSettings().setPassword(password);
     }
 
 }
