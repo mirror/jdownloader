@@ -1,3 +1,4 @@
+close_jd=Permissões insuficientes para escrever %s1.\r\nTente fechar todos os processos JDownloader & Java em execução e tente novamente em seguida!\r\nPor favor, entre em contato com o suporte se o problema persistir após o sistema ser reiniciado.
 confirmdialog_new_update_available_answer_later=Mais tarde
 confirmdialog_new_update_available_answer_later_install=Mais tarde
 confirmdialog_new_update_available_answer_now=Baixar agora
@@ -41,6 +42,9 @@ installframe_statusmsg_preparing_eta=Tempo restante estimado: %s1
 installframe_statusmsg_reverting=Revertendo as Alterações...\r\nPor favor, aguarde até todas as alterações serem revertidas.
 installframe_statusmsg_selfupdate=Nova Versão do JDownloader encontrada...
 installframe_statusmsg_selfupdate_validating=Validando instalação. Isto pode levar até 5 minutos...
+installframe_statusmsg_waitingforapplication=Aguardando pelo Aplicativo!
+installframe_statusmsg_waitingforapplication2=Aguardando pelo Aplicativo!\r\nVerifique as permissões de escrita: %s1
+lit_cancel_install=Ignorar instalação
 literally_cancel=Cancelar
 literally_close=Fechar
 literally_unknown=desconhecido
