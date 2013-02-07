@@ -2,6 +2,7 @@ package org.jdownloader.startup.commands;
 
 import jd.Launcher;
 
+import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
@@ -14,6 +15,7 @@ public class ReScanPluginsCommand extends AbstractStartupCommand {
     @Override
     public void run(String command, String... parameters) {
         HostPluginController.getInstance().invalidateCache();
+        ExtensionController.getInstance().invalidateCache();
         CrawlerPluginController.invalidateCache();
         Launcher.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
