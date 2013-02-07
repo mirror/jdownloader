@@ -700,7 +700,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     public void onNewFile(Object caller, File[] fileList) {
-
+        System.out.println(1);
         try {
             logger.info("New File by " + caller);
             if (caller instanceof SingleDownloadController) {
