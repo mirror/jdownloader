@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.oliverremoteapi.api.content;
+package org.jdownloader.extensions.jdanywhere.api.content;
 
 import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.RemoteAPIInterface;

@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.oliverremoteapi.api.toolbar;
+package org.jdownloader.extensions.jdanywhere.api.toolbar;
 
 import java.util.HashMap;
 

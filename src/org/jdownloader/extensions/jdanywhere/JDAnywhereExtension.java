@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.oliverremoteapi;
+package org.jdownloader.extensions.jdanywhere;
 
 import jd.plugins.AddonPanel;
 
@@ -8,14 +8,14 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.oliverremoteapi.api.captcha.CaptchaMobileAPIImpl;
-import org.jdownloader.extensions.oliverremoteapi.api.content.ContentMobileAPIImpl;
-import org.jdownloader.extensions.oliverremoteapi.api.downloads.DownloadsMobileAPIImpl;
-import org.jdownloader.extensions.oliverremoteapi.api.linkcollector.LinkCollectorMobileAPIImpl;
-import org.jdownloader.extensions.oliverremoteapi.api.toolbar.JDownloaderToolBarMobileAPIImpl;
+import org.jdownloader.extensions.jdanywhere.api.captcha.CaptchaMobileAPIImpl;
+import org.jdownloader.extensions.jdanywhere.api.content.ContentMobileAPIImpl;
+import org.jdownloader.extensions.jdanywhere.api.downloads.DownloadsMobileAPIImpl;
+import org.jdownloader.extensions.jdanywhere.api.linkcollector.LinkCollectorMobileAPIImpl;
+import org.jdownloader.extensions.jdanywhere.api.toolbar.JDownloaderToolBarMobileAPIImpl;
 import org.jdownloader.logging.LogController;
 
-public class OliverRemoteAPIExtension extends AbstractExtension<OliverRemoteAPIConfig, TranslateInterface> {
+public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, TranslateInterface> {
 
     private DownloadsMobileAPIImpl          dma;
     private LinkCollectorMobileAPIImpl      lca;
@@ -65,7 +65,7 @@ public class OliverRemoteAPIExtension extends AbstractExtension<OliverRemoteAPIC
 
     @Override
     public ExtensionConfigPanel<?> getConfigPanel() {
-        return new OliverRemoteAPIConfigPanel(this);
+        return new JDAnywhereConfigPanel(this);
     }
 
     @Override
@@ -79,7 +79,7 @@ public class OliverRemoteAPIExtension extends AbstractExtension<OliverRemoteAPIC
     }
 
     @Override
-    public AddonPanel<? extends AbstractExtension<OliverRemoteAPIConfig, TranslateInterface>> getGUI() {
+    public AddonPanel<? extends AbstractExtension<JDAnywhereConfig, TranslateInterface>> getGUI() {
         return null;
     }
 

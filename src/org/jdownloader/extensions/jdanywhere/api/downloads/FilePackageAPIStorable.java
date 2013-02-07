@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.oliverremoteapi.api.downloads;
+package org.jdownloader.extensions.jdanywhere.api.downloads;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;

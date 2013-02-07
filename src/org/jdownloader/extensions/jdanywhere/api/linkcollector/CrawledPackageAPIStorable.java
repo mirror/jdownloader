@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.oliverremoteapi.api.linkcollector;
+package org.jdownloader.extensions.jdanywhere.api.linkcollector;
 
 import java.util.List;
 
