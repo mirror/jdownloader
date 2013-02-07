@@ -119,6 +119,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         setTitle(_.name());
         INSTANCE = this;
         logger = LogController.getInstance().getLogger("ExtractionExtension");
+        System.out.println(1);
     }
 
     @Override
