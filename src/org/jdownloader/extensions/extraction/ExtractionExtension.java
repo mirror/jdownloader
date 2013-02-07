@@ -1129,6 +1129,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     @Override
     public void onRemoveFile(Object caller, File[] fileList) {
+        //
     }
 
     public Archive getArchiveByFactory(ArchiveFactory clf) {
