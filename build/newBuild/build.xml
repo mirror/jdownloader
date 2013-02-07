@@ -135,22 +135,7 @@
 			<fileset dir="translations" includes="**/*.lng" />
 
 		</copy>
-		<loadfile property="svn.revision" srcFile=".svn/entries">
-			<filterchain>
-				<headfilter lines="1" skip="3" />
-				<striplinebreaks />
-			</filterchain>
-		</loadfile>
-
-		<loadfile property="updateclient.revision" srcFile="${dep.updateclient}/.svn/entries">
-			<filterchain>
-				<headfilter lines="1" skip="3" />
-				<striplinebreaks />
-			</filterchain>
-		</loadfile>
-		<echo file="${working}/version.nfo">${svn.revision}.${updateclient.revision}</echo>
-		<echo file="${working}/cfg/version.cfg">${svn.revision}</echo>
-
+	
 	</target>
 
 	<!-- Make the default jar -->
@@ -380,14 +365,6 @@
 			<echo message="Creating @{package}" />
 			<mkdir dir="${dist}/extensions" />
 
-			<loadfile property="@{include}.revision" srcFile="src/org/jdownloader/extensions/@{include}/.svn/entries">
-				<filterchain>
-					<headfilter lines="1" skip="10" />
-					<striplinebreaks />
-				</filterchain>
-			</loadfile>
-			<echo message="src/org/jdownloader/extensions/@{include}/.svn/entries Revision ${@{include}.revision}" />
-			<echo file="${cls}/org/jdownloader/extensions/@{include}/version.dat">${extension.revision}</echo>
 			<jar jarfile="${dist}/extensions/@{package}.jar" manifest="${dist}/Manifest.MF">
 				<fileset dir="${cls}">
 					<include name="org/jdownloader/extensions/@{include}/**/*" />
