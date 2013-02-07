@@ -113,6 +113,19 @@ public class VidaruCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        externID = br.getRegex("mediaservices\\.myspace\\.com/services/media/embed\\.aspx/m=(\\d+)").getMatch(0);
+        if (externID != null) {
+            br.getPage("http://mediaservices.myspace.com/services/rss.ashx?videoID=" + externID + "&type=video&el=");
+            final String finallink = br.getRegex("<media:player url=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         logger.warning("Decrypter broken for link: " + parameter);
         return null;
     }

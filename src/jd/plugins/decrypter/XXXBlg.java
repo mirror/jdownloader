@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site-rips|image-sets|games)/.+/|[a-z0-9\\-_]+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx\\-blog\\.to/(?!livecams|download|feed|trade|contact|faq|webmasters|a\\-z\\-index|link\\-us|\\d{4}/)((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)" }, flags = { 0 })
 public class XXXBlg extends PluginForDecrypt {
 
     private static ArrayList<String> pwList = new ArrayList<String>();
@@ -51,8 +51,8 @@ public class XXXBlg extends PluginForDecrypt {
 
         parameter = parameter.substring(parameter.lastIndexOf("http://"));
         br.getPage(parameter);
-        if (br.containsHTML("Fehler 404 \\- Seite nicht gefunden")) {
-            logger.warning("Link offline: " + parameter);
+        if (br.containsHTML("Fehler 404 \\- Seite nicht gefunden") || br.containsHTML(">403 Forbidden<") || br.containsHTML("No htmlCode read")) {
+            logger.warning("Link offline or invalid: " + parameter);
             return decryptedLinks;
         }
         if (parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html)")) {

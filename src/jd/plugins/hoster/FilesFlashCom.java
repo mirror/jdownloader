@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -28,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -98,11 +100,23 @@ public class FilesFlashCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String token = br.getRegex("<input type=\"hidden\" name=\"token\" value=\"(.*?)\"/>").getMatch(0);
+        final String token = br.getRegex("<input type=\"hidden\" name=\"token\" value=\"(.*?)\"/>").getMatch(0);
         if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage("http://filesflash.com/freedownload.php", "token=" + token + "&freedl=+Free+Download+");
+        br.postPage("http://filesflash.com/freedownload.php", "token=" + token + "&freedl=+Start+free+download+");
         if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP already downloading", 10 * 60 * 1000l);
         if (br.containsHTML("(>That file is too big for free downloading.| Max allowed size for free downloads is)")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesflashcom.only4premium", "Only downloadable for premium users"));
+        final String rcID = br.getRegex("google\\.com/recaptcha/api/challenge\\?\\?rand=\\d+\\&amp;k=([^<>\"]*?)\"").getMatch(0);
+        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.setId(rcID);
+        rc.load();
+        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        final String c = getCaptchaCode(cf, downloadLink);
+        br.postPage("http://filesflash.com/freedownload.php", "token=" + token + "&submit=Submit&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+        if (br.containsHTML("google.com/recaptcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        // Should never happen
+        if (br.containsHTML(">Your link has expired")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error (link expired)");
         String dllink = br.getRegex("<div id=\"link\" style=\"display:none\"><a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.filesflash\\.com/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

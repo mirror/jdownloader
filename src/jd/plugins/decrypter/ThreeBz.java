@@ -51,7 +51,7 @@ public class ThreeBz extends PluginForDecrypt {
         if (parameter.matches("http://(www\\.)?drei\\.bz/(index\\.php)?\\?a=Download&dlid=\\d+")) {
             secondLink = "http://drei.bz/?a=Download&dlid=" + new Regex(parameter, "dlid=(\\d+)").getMatch(0);
         } else if (parameter.matches("http://(www\\.)?(xxx\\.)?drei\\.bz/(index\\.php)?\\?id=\\d+")) {
-            secondLink = "http://drei.bz/?a=Download&dlid=" + new Regex(parameter, "drei\\.bz/\\?id=(\\d+)").getMatch(0);
+            secondLink = "http://drei.bz/?a=Download&dlid=" + new Regex(parameter, "\\?id=(\\d+)$").getMatch(0);
         }
         if (secondLink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -59,28 +59,31 @@ public class ThreeBz extends PluginForDecrypt {
         }
         br.getPage(secondLink);
         correctBR();
+        if (!correctedBR.contains("<div class=\"contenthead_inner\">Download")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String fpName = new Regex(correctedBR, "div class=\"contenthead_inner\">Download von ([^<>]+)</div>").getMatch(0);
         if (!br.containsHTML(CAPTCHATEXT)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         boolean failed = true;
-        if (correctedBR.contains(CAPTCHATEXT)) {
-            for (int i = 0; i <= 3; i++) {
-                File file = this.getLocalCaptchaFile();
-                Browser.download(file, br.cloneBrowser().openGetConnection("http://drei.bz/captcha/imagecreate.php"));
-                Point p = UserIO.getInstance().requestClickPositionDialog(file, "drei.bz", "Click on open Circle");
-                /* anticaptcha does not work good enough */
-                // int[] p = new jd.captcha.specials.GmdMscCm(file).getResult();
-                if (p == null) continue;
-                br.postPage(secondLink, "button.x=" + p.x + "&button.y=" + p.y);
-                correctBR();
-                if (correctedBR.contains(CAPTCHATEXT) || correctedBR.contains(">Du hast den Captach falsch eingegeben")) continue;
-                failed = false;
-                break;
-            }
-            if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
+
+        for (int i = 0; i <= 3; i++) {
+            final File file = this.getLocalCaptchaFile();
+            Browser.download(file, br.cloneBrowser().openGetConnection("http://drei.bz/captcha/imagecreate.php"));
+            Point p = UserIO.getInstance().requestClickPositionDialog(file, "drei.bz", "Click on open Circle");
+            /* anticaptcha does not work good enough */
+            // int[] p = new jd.captcha.specials.GmdMscCm(file).getResult();
+            if (p == null) continue;
+            br.postPage(secondLink, "button.x=" + p.x + "&button.y=" + p.y);
+            correctBR();
+            if (new Regex(correctedBR, CAPTCHATEXT).matches() || correctedBR.contains(">Du hast den Captach falsch eingegeben")) continue;
+            failed = false;
+            break;
         }
+        if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
         String[] links = new Regex(correctedBR, "window\\.open\\(\\'(.*?)\\'").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

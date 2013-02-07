@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -40,23 +41,24 @@ public class AbloadDeGallery extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("Ein Bild mit diesem Dateinamen existiert nicht\\.")) {
-            logger.warning("Wrong URL or The content been removed from provider. -> " + parameter);
+        if (br.containsHTML("Ein Bild mit diesem Dateinamen existiert nicht\\.") || br.containsHTML(">Dieses Bild wurde gelöscht")) {
+            logger.warning("Link offline: " + parameter);
             return decryptedLinks;
         }
         if (!parameter.contains("browseGallery.php?gal=") && !parameter.contains("image.php")) {
-            String[] links = br.getRegex("class=\"image\"><a href=\"(/.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) links = br.getRegex("\"(/browseGallery\\.php\\?gal=.*img=.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) return null;
-            progress.setRange(links.length);
+            final String galID = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+            final String[] links = br.getRegex("imageurls\\[\\d+\\] = \"([^<>\"]*?)\"").getColumn(0);
+            if (links == null || links.length == 0 || galID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             for (String singlePictureLink : links) {
-                singlePictureLink = "http://www.abload.de" + Encoding.htmlDecode(singlePictureLink);
+                singlePictureLink = "http://www.abload.de/browseGallery.php?gal=" + galID + "&img=" + Encoding.htmlDecode(singlePictureLink);
                 br.getPage(singlePictureLink);
                 String finallink = br.getRegex(DIRECTLINKREGEX).getMatch(0);
                 if (finallink == null) finallink = br.getRegex(DIRECTLINKREGEX2).getMatch(0);
                 if (finallink == null) return null;
                 decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-                progress.increase(1);
             }
         } else {
             String finallink = br.getRegex(DIRECTLINKREGEX).getMatch(0);
