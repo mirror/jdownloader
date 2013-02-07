@@ -128,7 +128,8 @@ public class MegaConz extends PluginForHost {
             /* old 09581 stable only */
             dl = createHackedDownloadInterface(br, link, downloadURL);
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, 0);
+            /* mega does not like much connections! */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);
         }
         if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
