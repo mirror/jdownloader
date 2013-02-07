@@ -194,4 +194,7 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Do not ask again until next restart", "Bis zum nächsten Neustart nicht mehr fragen" })
     String update_in_next_session();
 
+    @Default(lngs = { "en", "de" }, values = { "Contact Server...", "Server kontaktieren..." })
+    String installframe_statusmsg_checkselfupdate();
+
 }
