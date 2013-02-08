@@ -734,7 +734,7 @@ public class TbCm extends PluginForDecrypt {
                     if (filePackage == null) {
                         filePackage = FilePackage.getInstance();
                         filePackage.setProperty("ALLOW_MERGE", true);
-                        if (multiple_videos)
+                        if (multiple_videos || cfg.getBooleanProperty("GROUP_FORMAT", false))
                             filePackage.setName("YouTube " + convertTo.getText());
                         else
                             filePackage.setName(YT_FILENAME + " " + convertTo.getText());

@@ -66,6 +66,7 @@ public class Youtube extends PluginForHost {
     private static final String ALLOW_ORIGINAL          = "ALLOW_ORIGINAL_V2";
     private static final String ALLOW_BEST              = "ALLOW_BEST2";
     private static final String ALLOW_SUBTITLES         = "ALLOW_SUBTITLES_V2";
+    private static final String GROUP_FORMAT            = "GROUP_FORMAT";
     private static final String ALLOW_THUMBNAIL_MAX     = "ALLOW_THUMBNAIL_MAX";
     private static final String ALLOW_THUMBNAIL_HQ      = "ALLOW_THUMBNAIL_HQ";
     private static final String ALLOW_THUMBNAIL_MQ      = "ALLOW_THUMBNAIL_MQ";
@@ -421,6 +422,7 @@ public class Youtube extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDINFILENAME, JDL.L("plugins.hoster.youtube.idinfilename", "Use Video-ID additionally in filename?")).setDefaultValue(false).setEnabledCondidtion(id, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USEUPLOADERINNAME, JDL.L("plugins.hoster.youtube.useuploaderinname", "Use uploader name in filename?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SUBTITLES, JDL.L("plugins.hoster.youtube.grabsubtitles", "Grab subtitles?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GROUP_FORMAT, JDL.L("plugins.hoster.youtube.groupbyformat", "Group by format?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.youtube.checkbest", "Only grab best available resolution")).setDefaultValue(false);
         getConfig().addEntry(hq);
