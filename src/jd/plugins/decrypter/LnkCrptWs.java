@@ -252,7 +252,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 prev = prev.replaceAll(",|\\.", "");
             }
             final int rev = Integer.parseInt(prev);
-            if (rev < 10000) { return true; }
+            if (rev < 10000) return true;
             return false;
         }
 
@@ -1305,7 +1305,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 }
             }
         }
-        if (!valid) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+        if (!valid) throw new DecrypterException(DecrypterException.CAPTCHA);
         // check for a password. Store latest password in DB
         Form password = br.getForm(0);
         if (password != null && password.hasInputFieldByName("password")) {
@@ -1332,7 +1332,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 break;
             }
         }
-        if (password != null && password.hasInputFieldByName("password")) { throw new DecrypterException(DecrypterException.PASSWORD); }
+        if (password != null && password.hasInputFieldByName("password")) throw new DecrypterException(DecrypterException.PASSWORD);
         // Look for containers
         String[] containers = br.getRegex("eval(.*?)[\r\n]+").getColumn(0);
         final String tmpc = br.getRegex("<div id=\"containerfiles\"(.*?)</script>").getMatch(0);
@@ -1342,10 +1342,16 @@ public class LnkCrptWs extends PluginForDecrypt {
         String decryptedJS = null;
         for (String c : containers) {
             decryptedJS = JavaScriptUnpacker.decode(c);
-            String[] row = new Regex(decryptedJS, "href=\"(http.*?)\".*?(dlc|ccf|rsdf)").getRow(0);
-            if (row == null) row = new Regex(decryptedJS, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
-            if (row == null) row = new Regex(decryptedJS, "(http://linkcrypt\\.ws/container/[^\"]+)\".*?http://linkcrypt\\.ws/image/([a-z]+)\\.").getRow(0);
-            if (row != null) map.put(row[1], row[0]);
+            String[] row = new Regex(decryptedJS, "href=\"(http.*?)\".*?(dlc|ccf|rsdf)").getRow(0);// all container
+            if (row == null) row = new Regex(decryptedJS, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0); // cnl
+            if (row == null) row = new Regex(decryptedJS, "(http://linkcrypt\\.ws/container/[^\"]+)\".*?http://linkcrypt\\.ws/image/([a-z]+)\\.").getRow(0); // fallback
+            if (row != null) {
+                if ("cnl".equalsIgnoreCase(row[1])) {
+                    row[1] = "cnl";
+                    row[0] = decryptedJS;
+                }
+                if (!map.containsKey(row[1])) map.put(row[1], row[0]);
+            }
         }
 
         final Form preRequest = br.getForm(0);
@@ -1371,7 +1377,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         // CNL
         if (isCnlAvailable) {
             final Browser cnlbr = br.cloneBrowser();
-            decryptedJS = decryptedJS.replaceAll("\\\\", "");
+            decryptedJS = map.get("cnl").replaceAll("\\\\", "");
 
             /* Workaround for the stable and parseInputFields method */
             String jk = new Regex(decryptedJS, "(?i)NAME=\"jk\" VALUE=\"([^\"]+)\">").getMatch(0);
