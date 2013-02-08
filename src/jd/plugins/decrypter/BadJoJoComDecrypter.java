@@ -261,6 +261,11 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink)));
             return decryptedLinks;
         }
+        externID = br.getRegex("MoviesAnd\\.com/embedded/(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.moviesand.com/videos/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            return decryptedLinks;
+        }
         decrypted = parameter.replace("badjojo.com", "decryptedbadjojo.com");
         decryptedLinks.add(createDownloadlink(decrypted));
         return decryptedLinks;

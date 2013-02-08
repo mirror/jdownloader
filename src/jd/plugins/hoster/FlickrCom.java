@@ -60,7 +60,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         br.clearCookies(MAINPAGE);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
@@ -74,6 +74,7 @@ public class FlickrCom extends PluginForHost {
         if (br.containsHTML("div class=\"Four04Case\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = getFilename();
         if (filename == null) {
+            downloadLink.getLinkStatus().setStatusText("Only downloadable for registered users [Add a flickt account to download such links!]");
             logger.warning("Filename not found, plugin must be broken...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -130,7 +131,12 @@ public class FlickrCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) throw (PluginException) e;
+        }
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users [Add a flickt account to download such links!]");
     }
 
     @Override

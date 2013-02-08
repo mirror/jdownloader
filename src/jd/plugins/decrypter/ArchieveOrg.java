@@ -43,8 +43,8 @@ public class ArchieveOrg extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (!br.containsHTML("/download/")) {
-            logger.info("Maybe invalid link: " + parameter);
+        if (!br.containsHTML("\"/download/")) {
+            logger.info("Maybe invalid link or nothing there to download: " + parameter);
             return decryptedLinks;
         }
         String[] links = null;

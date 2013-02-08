@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,21 +30,16 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetrip.net" }, urls = { "https?://(www\\.)?filetrip.net/dl\\?[A-Za-z0-9]+" }, flags = { 0 })
-public class FileTripNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4players.de" }, urls = { "http://(www\\.)?4players\\.de/4players\\.php/download_info/Downloads/Download/\\d+/[^<>\"]*?\\.html" }, flags = { 0 })
+public class FourPlayersDe extends PluginForHost {
 
-    public FileTripNet(PluginWrapper wrapper) {
+    public FourPlayersDe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "https://filetrip.net/document.php?id=1";
-    }
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+        return "http://www.4players.de/4players.php/agb/Allgemein/index.html";
     }
 
     @Override
@@ -53,10 +47,9 @@ public class FileTripNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">You might want to check that URL<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fileInfo = br.getRegex("<h3><b>([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]{1,5})\\)</b></h3>");
-        String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
+        if (br.containsHTML("download_start/Downloads/Download/\\.html\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("<label>Dateiname:</label>[\t\n\r ]+<div class=\"infoval filename\">([^<>\"]*?)</div>").getMatch(0);
+        final String filesize = br.getRegex("<label>Dateigröße:</label>[\t\n\r ]+<div class=\"infoval\">([^<>\"]*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -66,9 +59,8 @@ public class FileTripNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final Form dlform = br.getFormbyProperty("target", "hidframe");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 0);
+        final String dllink = "http://www.4players.de/services/downloadmanager/download.php?action=start_now&DOWNLOADID=" + new Regex(downloadLink.getDownloadURL(), "Download/(\\d+)/").getMatch(0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -82,7 +74,8 @@ public class FileTripNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        // Or 1 download with 3 chunks
+        return 3;
     }
 
     @Override

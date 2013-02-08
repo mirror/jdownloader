@@ -190,29 +190,20 @@ public class JumboFilesCom extends PluginForHost {
                 break;
             }
         }
-        boolean resume = true;
         int chunks = -5;
-        if (downloadLink.getBooleanProperty(JumboFilesCom.NOCHUNKS, false) || resume == false) {
+        if (downloadLink.getBooleanProperty(JumboFilesCom.NOCHUNKS, false)) {
             chunks = 1;
         }
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, chunks);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (!this.dl.startDownload()) {
             try {
                 if (dl.externalDownloadStop()) return;
             } catch (final Throwable e) {
             }
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && (downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Unexpected rangeheader")))) {
-                if (downloadLink.getBooleanProperty(JumboFilesCom.NORESUME, false) == false) {
-                    downloadLink.setChunksProgress(null);
-                    downloadLink.setProperty(JumboFilesCom.NORESUME, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            } else {
-                /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(JumboFilesCom.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(JumboFilesCom.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
+            /* unknown error, we disable multiple chunks */
+            if (downloadLink.getBooleanProperty(JumboFilesCom.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(JumboFilesCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
     }

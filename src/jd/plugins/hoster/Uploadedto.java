@@ -67,7 +67,8 @@ import org.appwork.utils.os.CrossSystem;
 public class Uploadedto extends PluginForHost {
 
     // DEV NOTES:
-    // other: respects https in download methods, even though final download link isn't https (free tested).
+    // other: respects https in download methods, even though final download
+    // link isn't https (free tested).
 
     public static class StringContainer {
         //
@@ -257,7 +258,8 @@ public class Uploadedto extends PluginForHost {
                 int retry = 0;
                 while (true) {
                     /*
-                     * workaround for api issues, retry 5 times when content length is only 20 bytes
+                     * workaround for api issues, retry 5 times when content
+                     * length is only 20 bytes
                      */
                     if (retry == 5) return false;
                     br.postPage("http://uploaded.net/api/filemultiple", sb.toString());
@@ -494,7 +496,8 @@ public class Uploadedto extends PluginForHost {
             prepBrowser();
 
             /**
-             * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting if a limit is reached
+             * Free-Account Errorhandling: This allows users to switch between
+             * free accounts instead of reconnecting if a limit is reached
              */
             if (this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, false) && account != null) {
                 final String lastdownloadString = account.getStringProperty("LASTDOWNLOAD2");
@@ -509,7 +512,8 @@ public class Uploadedto extends PluginForHost {
                 }
             } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false)) {
                 /**
-                 * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
+                 * Experimental reconnect handling to prevent having to enter a
+                 * captcha just to see that a limit has been reached
                  */
                 logger.info("New Download: currentIP = " + currentIP);
                 if (hasDled.get() && ipChanged(currentIP, downloadLink) == false) {
@@ -628,6 +632,14 @@ public class Uploadedto extends PluginForHost {
 
     private void generalFreeErrorhandling(final Account account) throws PluginException {
         if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+        if (br.containsHTML("\"err\":\"This file exceeds the max")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
+        }
         if (br.containsHTML("You have reached the max\\. number of possible free downloads|err\":\"limit\\-dl\"")) {
             if (account == null) {
                 logger.info("Limit reached, throwing reconnect exception");
@@ -655,7 +667,8 @@ public class Uploadedto extends PluginForHost {
             switch (code) {
             case 1:
                 // {"err":{"code":1,"message":"Benutzer nicht vorhanden: e74ac48bef744497c56efaf45072579fbc945b45"}}
-                // user does not exist, when random username entered into login field.
+                // user does not exist, when random username entered into login
+                // field.
             case 2:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "User does not exist!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 3:
@@ -674,14 +687,19 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Disabled because of flood protection", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 18:
                 // {"err":{"code":18,"message":"Das \u00fcbergebene Passwort ist vom Typ sha1, erwartet wurde md5"}}
-                // messaged unescaped: Das übergebene Passwort ist vom Typ sha1, erwartet wurde md5 effectively they are saying wrong hash
+                // messaged unescaped: Das übergebene Passwort ist vom Typ sha1,
+                // erwartet wurde md5 effectively they are saying wrong hash
                 // value provided, sha1 provided and expected md5.
-                // been reported by users, seems random for some users and not others, when sha1 was used
+                // been reported by users, seems random for some users and not
+                // others, when sha1 was used
             case 19:
                 // {"err":{"code":19,"message":"Das \u00fcbergebene Passwort ist vom Typ md5, erwartet wurde sha1"}}
-                // message unescaped: Das übergebene Passwort ist vom Typ md5, erwartet wurde sha1
-                // effectively they are saying wrong hash value provided, md5 provided and expected sha1. It also seems to throws this been
-                // given randomly for some users and not others, when md5 was used (only used for a day to test)
+                // message unescaped: Das übergebene Passwort ist vom Typ md5,
+                // erwartet wurde sha1
+                // effectively they are saying wrong hash value provided, md5
+                // provided and expected sha1. It also seems to throws this been
+                // given randomly for some users and not others, when md5 was
+                // used (only used for a day to test)
             case 20:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Locked account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 404:
@@ -726,7 +744,8 @@ public class Uploadedto extends PluginForHost {
     private String api_getAccessToken(Account account, boolean liveToken) throws Exception {
         synchronized (account) {
             try {
-                // DANGER: Even after user changed password this token is still valid->Uploaded.to was contacted by psp but no response!
+                // DANGER: Even after user changed password this token is still
+                // valid->Uploaded.to was contacted by psp but no response!
                 String token = account.getStringProperty("token", null);
                 if (token != null && liveToken == false) return token;
                 br.postPage("http://api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getSHA1(URLDecoder.decode(account.getPass(), "UTF-8").toLowerCase(Locale.ENGLISH)) + "&ishash=1&app=JDownloader");

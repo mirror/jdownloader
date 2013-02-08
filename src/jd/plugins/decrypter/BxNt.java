@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -56,7 +55,8 @@ public class BxNt extends PluginForDecrypt {
                 logger.warning("Invalid URL or URL no longer exists : " + cryptedlink);
             }
         } else {
-            // String alllinks[] = br.getRegex(",\"shared_link\":\"(.*?)\"").getColumn(0);
+            // String alllinks[] =
+            // br.getRegex(",\"shared_link\":\"(.*?)\"").getColumn(0);
             // if it's not a rss feed, check if an rss feed exists
             String baseUrl = new Regex(cryptedlink, BASE_URL_PATTERN).getMatch(0);
             String feedUrl = baseUrl + "/rss.xml";
@@ -67,7 +67,7 @@ public class BxNt extends PluginForDecrypt {
             }
             if (decryptedLinks.size() == 0) {
                 logger.info("Haven't found any links to decrypt, now trying decryptSingleDLPage");
-                decryptSingleDLPage(cryptedlink);
+                decryptedLinks.add(createDownloadlink(parameter.toString().replaceAll("box\\.(net|com)/s", "boxdecrypted.com/s")));
             }
         }
         return decryptedLinks;
@@ -78,29 +78,18 @@ public class BxNt extends PluginForDecrypt {
      * 
      * @param cryptedUrl
      *            the url of the download page
-     * @return a list that contains the extracted download link, null if the download link couldn't be extracted.
+     * @return a list that contains the extracted download link, null if the
+     *         download link couldn't be extracted.
      * @throws IOException
      */
-    private ArrayList<DownloadLink> decryptSingleDLPage(String cryptedUrl) throws IOException {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        br.getPage(cryptedUrl);
-        String decryptedLink = br.getRegex(SINGLE_DOWNLOAD_LINK_PATTERN).getMatch(0);
-        if (decryptedLink == null) {
-            logger.warning("Couldn't find any single links to decrypt. " + cryptedUrl);
-            return null;
-        }
-        decryptedLink = Encoding.htmlDecode(decryptedLink);
-        decryptedLinks.add(createDownloadlink(decryptedLink.replaceAll("box\\.(net|com)/s", "boxdecrypted.com/s")));
-        return decryptedLinks;
-    }
 
     /**
      * Extracts download links from a box.net rss feed.
      * 
      * @param feedUrl
      *            the url of the rss feed
-     * @return a list of decrypted links, null if the links could not be extracted.
+     * @return a list of decrypted links, null if the links could not be
+     *         extracted.
      * @throws IOException
      */
     private ArrayList<DownloadLink> decryptFeed(String feedUrl) throws IOException {
@@ -130,29 +119,35 @@ public class BxNt extends PluginForDecrypt {
     }
 
     /** Maybe useful in the future */
-    // private ArrayList<DownloadLink> decryptFolderAndSingleLink(String cryptedUrl) throws IOException {
+    // private ArrayList<DownloadLink> decryptFolderAndSingleLink(String
+    // cryptedUrl) throws IOException {
     // ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     // br.getPage(cryptedUrl);
     // /**
-    // * If it's a folder, decrypt all links, if it's a file just return the link for the hosterplugin
+    // * If it's a folder, decrypt all links, if it's a file just return the
+    // link for the hosterplugin
     // */
     // if
     // (br.containsHTML("(Folder Shared from Box|flash_folder = \\'/static/flash/|page = \\'folder\\'|\"type\":\"folder\"|\"is_network_folder\")"))
     // {
     // final String correctedBR = br.toString().replace("\\", "");
-    // String[] fileIDs = new Regex(correctedBR, "\"shared_link\":\"http://www\\.box\\.com/file/(\\d+)/encoded").getColumn(0);
+    // String[] fileIDs = new Regex(correctedBR,
+    // "\"shared_link\":\"http://www\\.box\\.com/file/(\\d+)/encoded").getColumn(0);
     // if (fileIDs == null || fileIDs.length == 0) {
     // fileIDs = new Regex(correctedBR, "\"link_info_(\\d+)\"").getColumn(0);
     // if (fileIDs == null || fileIDs.length == 0) {
     // fileIDs = new Regex(correctedBR, "\"id\":\"(\\d+)\"").getColumn(0);
     // }
     // }
-    // final String folderID = new Regex(cryptedUrl, "box\\.com/s/(.+)").getMatch(0);
-    // String folderID2 = new Regex(correctedBR, "start_item = \\'d_(\\d+)\\'").getMatch(0);
+    // final String folderID = new Regex(cryptedUrl,
+    // "box\\.com/s/(.+)").getMatch(0);
+    // String folderID2 = new Regex(correctedBR,
+    // "start_item = \\'d_(\\d+)\\'").getMatch(0);
     // if (folderID2 == null) {
     // folderID2 = new Regex(correctedBR, "\\{\"p_(\\d+)\"").getMatch(0);
     // if (folderID2 == null) {
-    // folderID2 = new Regex(correctedBR, "\"shared_item\":\"(\\d+)\"").getMatch(0);
+    // folderID2 = new Regex(correctedBR,
+    // "\"shared_item\":\"(\\d+)\"").getMatch(0);
     // }
     // }
     // if (folderID == null || folderID2 == null || (fileIDs == null ||
@@ -161,10 +156,12 @@ public class BxNt extends PluginForDecrypt {
     // return null;
     // }
     // for (String fileID : fileIDs) {
-    // decryptedLinks.add(createDownloadlink("http://www.box.com/shared/" + folderID + "/1/" + folderID2 + "/" + fileID));
+    // decryptedLinks.add(createDownloadlink("http://www.box.com/shared/" +
+    // folderID + "/1/" + folderID2 + "/" + fileID));
     // }
     // } else {
-    // decryptedLinks.add(createDownloadlink(cryptedUrl.replace("box.net/s/", "boxdecrypted.net/s/")));
+    // decryptedLinks.add(createDownloadlink(cryptedUrl.replace("box.net/s/",
+    // "boxdecrypted.net/s/")));
     // }
     // return decryptedLinks;
     // }

@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,23 +27,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileswappr.com" }, urls = { "http://(www\\.)?download\\.fileswappr\\.com/\\?id=\\d+" }, flags = { 0 })
+public class FileSwapprCom extends PluginForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetrip.net" }, urls = { "https?://(www\\.)?filetrip.net/dl\\?[A-Za-z0-9]+" }, flags = { 0 })
-public class FileTripNet extends PluginForHost {
-
-    public FileTripNet(PluginWrapper wrapper) {
+    public FileSwapprCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "https://filetrip.net/document.php?id=1";
-    }
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+        return "http://earn.fileswappr.com/tos.php";
     }
 
     @Override
@@ -53,22 +44,18 @@ public class FileTripNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">You might want to check that URL<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fileInfo = br.getRegex("<h3><b>([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]{1,5})\\)</b></h3>");
-        String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.getURL().equals("http://download.fileswappr.com/404.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>Fileswappr \\- Download: ([^<>\"]*?)</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("name: \\'Download: ([^<>\"]*?)\\'").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final Form dlform = br.getFormbyProperty("target", "hidframe");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getURL(), "dl=Click+here%2C+to+start+the+download%21", false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

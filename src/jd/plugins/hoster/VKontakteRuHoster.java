@@ -43,13 +43,14 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?|audiolink/\\d+)" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN         = "http://vk.com";
     private static Object       LOCK           = new Object();
     private String              FINALLINK      = null;
     private final String        USECOOKIELOGIN = "USECOOKIELOGIN";
+    private static final String AUDIOLINK      = "http://vkontaktedecrypted\\.ru/audiolink/\\d+";
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,7 +63,7 @@ public class VKontakteRuHoster extends PluginForHost {
         return "http://vk.com/help.php?page=terms";
     }
 
-    private boolean linkOk(final DownloadLink downloadLink) throws IOException {
+    private boolean linkOk(final DownloadLink downloadLink, String finallink) throws IOException {
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -71,7 +72,7 @@ public class VKontakteRuHoster extends PluginForHost {
             con = br2.openGetConnection(FINALLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                if (finallink == null) downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
             } else {
                 return false;
             }
@@ -96,7 +97,8 @@ public class VKontakteRuHoster extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         /**
-         * Chunks disabled because (till now) this plugin only exists to download pictures
+         * Chunks disabled because (till now) this plugin only exists to
+         * download pictures
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, FINALLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -115,47 +117,62 @@ public class VKontakteRuHoster extends PluginForHost {
 
         br.setFollowRedirects(false);
         // Login required to check/download
-        Account aa = AccountController.getInstance().getValidAccount(this);
+        final Account aa = AccountController.getInstance().getValidAccount(this);
         // This shouldn't happen
         if (aa == null) {
             link.getLinkStatus().setStatusText("Only downlodable via account!");
             return AvailableStatus.UNCHECKABLE;
         }
         login(br, aa, false);
-        String albumID = link.getStringProperty("albumid");
-        String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
-        if (albumID == null || photoID == null) {
-            // This should never happen
-            logger.warning("A property couldn't be found!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getPage("http://vk.com/photo" + photoID);
-        /* seems we have to refesh the login process */
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-        br.postPage("http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
-        final String correctedBR = br.toString().replace("\\", "");
-        /**
-         * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others
-         * are online
-         */
-        String[] qs = { "w_", "z_", "y_", "x_", "m_" };
-        for (String q : qs) {
-            /* large image */
-            if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
-                String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
-                if (base == null) base = "";
-                String section = new Regex(correctedBR, "(\\{\"id\":\"" + photoID + "\",\"base\":\"" + base + ".*?)((,\\{)|$)").getMatch(0);
-                if (base != null) FINALLINK = new Regex(section, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"" + q + "src\":\"(" + base + ".*?)\"").getMatch(0);
-            } else {
-                break;
+        if (link.getDownloadURL().matches(AUDIOLINK)) {
+            String finalFilename = link.getFinalFileName();
+            if (finalFilename == null) finalFilename = link.getName();
+            final String audioID = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+            FINALLINK = link.getStringProperty("directlink", null);
+            if (!linkOk(link, finalFilename)) {
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("http://vk.com/audio", link.getStringProperty("postdata", null));
+                FINALLINK = br.getRegex("\\'" + audioID + "\\',\\'(http://cs\\d+\\.(vk\\.com|userapi\\.com)/u\\d+/audios?/[a-z0-9]+\\.mp3)\\'").getMatch(0);
+                if (FINALLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (!linkOk(link, finalFilename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        }
-        if (FINALLINK == null) {
-            logger.warning("Finallink is null for photoID: " + photoID);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            String albumID = link.getStringProperty("albumid");
+            String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
+            if (albumID == null || photoID == null) {
+                // This should never happen
+                logger.warning("A property couldn't be found!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage("http://vk.com/photo" + photoID);
+            /* seems we have to refesh the login process */
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            br.postPage("http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
+            final String correctedBR = br.toString().replace("\\", "");
+            /**
+             * Try to get best quality and test links till a working link is
+             * found as it can happen that the found link is offline but others
+             * are online
+             */
+            String[] qs = { "w_", "z_", "y_", "x_", "m_" };
+            for (String q : qs) {
+                /* large image */
+                if (FINALLINK == null || (FINALLINK != null && !linkOk(link, null))) {
+                    String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
+                    if (base == null) base = "";
+                    String section = new Regex(correctedBR, "(\\{\"id\":\"" + photoID + "\",\"base\":\"" + base + ".*?)((,\\{)|$)").getMatch(0);
+                    if (base != null) FINALLINK = new Regex(section, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"" + q + "src\":\"(" + base + ".*?)\"").getMatch(0);
+                } else {
+                    break;
+                }
+            }
+            if (FINALLINK == null) {
+                logger.warning("Finallink is null!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         return AvailableStatus.TRUE;
 

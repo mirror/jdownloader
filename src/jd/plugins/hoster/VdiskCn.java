@@ -40,7 +40,8 @@ public class VdiskCn extends PluginForHost {
     // other: they keep changing final download links url structure, best to use
     // regex only on finallink static info and not html
 
-    private static String UA = RandomUserAgent.generate();
+    private static String       UA       = RandomUserAgent.generate();
+    private static final String NOCHUNKS = "NOCHUNKS";
 
     public VdiskCn(PluginWrapper wrapper) {
         super(wrapper);
@@ -93,14 +94,28 @@ public class VdiskCn extends PluginForHost {
             dllink = br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/[^/]+/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}[^\"\\>]+)").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (startDL == false) dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        int chunks = 0;
+        if (downloadLink.getBooleanProperty(VdiskCn.NOCHUNKS, false)) {
+            chunks = 1;
+        }
+        if (startDL == false) dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("freelink", dllink);
         if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            /* unknown error, we disable multiple chunks */
+            if (downloadLink.getBooleanProperty(VdiskCn.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(VdiskCn.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override

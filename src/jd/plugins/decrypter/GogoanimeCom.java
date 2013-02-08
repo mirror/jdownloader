@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.com" }, urls = { "http://(www\\.)?gogoanime\\.com/(?!category|thumbs|sitemap|img)[a-z0-9\\-]+(/\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.com" }, urls = { "http://(www\\.)?gogoanime\\.com/(?!category|thumbs|sitemap|img)[a-z0-9\\-_]+(/\\d+)?" }, flags = { 0 })
 public class GogoanimeCom extends PluginForDecrypt {
 
     public GogoanimeCom(PluginWrapper wrapper) {

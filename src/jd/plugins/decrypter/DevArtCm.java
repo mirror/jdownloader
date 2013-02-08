@@ -49,14 +49,19 @@ public class DevArtCm extends PluginForDecrypt {
      */
 
     /*
-     * This plugin grabs range of content depending on parameter. profile.devart.com/gallery/uid* profile.devart.com/favorites/uid* profile.devart.com/gallery/*
-     * profile.devart.com/favorites/* = ?offset=\\d+
+     * This plugin grabs range of content depending on parameter.
+     * profile.devart.com/gallery/uid* profile.devart.com/favorites/uid*
+     * profile.devart.com/gallery/* profile.devart.com/favorites/* =
+     * ?offset=\\d+
      * 
-     * All of the above formats should support spanning pages, but when parameter contains '?offset=x' it will not span.
+     * All of the above formats should support spanning pages, but when
+     * parameter contains '?offset=x' it will not span.
      * 
-     * profilename.deviantart.com/art/uid/ == grabs the 'download image' (best quality available).
+     * profilename.deviantart.com/art/uid/ == grabs the 'download image' (best
+     * quality available).
      * 
-     * I've created the plugin this way to allow users to grab as little or as much, content as they wish. Hopefully this wont create any issues.
+     * I've created the plugin this way to allow users to grab as little or as
+     * much, content as they wish. Hopefully this wont create any issues.
      */
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -76,7 +81,7 @@ public class DevArtCm extends PluginForDecrypt {
         // only non /art/ requires packagename
         if (parameter.contains("/gallery/") || parameter.contains("/favourites/")) {
             // find and set username
-            String username = br.getRegex("<h1>\\*<a class=\"u\" href=\"" + host + "\">(.*?)</a></h1>").getMatch(0);
+            String username = br.getRegex("name=\"username\" value=\"([^<>\"]*?)\"").getMatch(0);
             // find and set page type
             String pagetype = "";
             if (parameter.contains("/favourites/")) pagetype = "Favourites";
@@ -138,7 +143,7 @@ public class DevArtCm extends PluginForDecrypt {
     }
 
     private void parsePage(ArrayList<DownloadLink> ret, String host, String parameter) throws Exception {
-        String grab = br.getRegex("<div class=\"folderview\\-art\">(.*?)</div><div class=\"pagination\\-wrapper full\">").getMatch(0);
+        String grab = br.getRegex("<smoothie q=(.*?)class=\"folderview\\-bottom\"></div>").getMatch(0);
         String[] artlinks = new Regex(grab, "<a class=\"thumb([\\s\\w]+)?\" href=\"(https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+)\"").getColumn(1);
         String nextPage = br.getRegex("<div class=\"pagination\\-wrapper full\">.*?<li class=\"next\"><a class=\"away\" href=\"(/(gallery|favourites)/(\\d+)?\\?offset=\\d+)\">Next</a>").getMatch(0);
         if (artlinks == null || artlinks.length == 0) {

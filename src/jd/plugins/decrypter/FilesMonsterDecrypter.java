@@ -42,7 +42,6 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
     public static final String FILESIZEREGEX = "\">File size:</td>[\t\n\r ]+<td>(.*?)</td>";
     private static String      FAILED        = null;
 
-    /** Handling similar to BitBonusComDecrypt */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setReadTimeout(3 * 60 * 1000);

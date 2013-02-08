@@ -54,7 +54,7 @@ public class CraMitIn extends PluginForHost {
     public String               brbefore     = "";
     private static final String COOKIE_HOST  = "http://cramit.in";
     public boolean              nopremium    = false;
-    private static Object LOCK         = new Object();
+    private static Object       LOCK         = new Object();
     private static final String UA           = RandomUserAgent.generate();
 
     public CraMitIn(PluginWrapper wrapper) {
@@ -127,7 +127,7 @@ public class CraMitIn extends PluginForHost {
         int maxchunks = 1;
         Form freeform = new Form();
         freeform.setMethod(MethodType.POST);
-        freeform.put("method_free", "Continue to Download");
+        freeform.put("method_free", "FREE+DOWNLOAD");
         freeform.put("op", "download1");
         freeform.put("fname", downloadLink.getName());
         freeform.put("id", new Regex(downloadLink.getDownloadURL(), "cramit\\.in/([a-z0-9]{12})").getMatch(0));

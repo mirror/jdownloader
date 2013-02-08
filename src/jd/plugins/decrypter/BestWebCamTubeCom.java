@@ -38,6 +38,10 @@ public class BestWebCamTubeCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML(">Error 404 \\- Not Found<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String externID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
         if (externID == null) externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         if (externID != null) {
@@ -99,6 +103,19 @@ public class BestWebCamTubeCom extends PluginForDecrypt {
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
             dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("(http://(www\\.)?gasxxx\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            externID = br.getRegex("<src>(http://[^<>\"]*?\\.flv)</src>").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

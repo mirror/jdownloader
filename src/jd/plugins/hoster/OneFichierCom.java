@@ -209,6 +209,7 @@ public class OneFichierCom extends PluginForHost {
             } else {
                 /* resume download */
                 dl.startDownload();
+                downloadLink.setProperty(FREELINK, Property.NULL);
                 return;
             }
         }
@@ -218,7 +219,11 @@ public class OneFichierCom extends PluginForHost {
         while (true) {
             br.getPage(downloadLink.getDownloadURL() + "/en/index.html");
             if (br.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-            if (br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", 90 * 1000l);
+            if (br.containsHTML(IPBLOCKEDTEXTS)) {
+                final String waittime = br.getRegex("you can download only one file at a time and you must wait at least (\\d+) minutes between each downloads").getMatch(0);
+                if (waittime != null) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", Integer.parseInt(waittime) * 60 * 1001l);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", 90 * 1000l);
+            }
             if (br.containsHTML(PASSWORDTEXT) || pwProtected) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", downloadLink);
@@ -234,8 +239,11 @@ public class OneFichierCom extends PluginForHost {
                     if (passCode != null) downloadLink.setProperty("pass", passCode);
                 }
             } else {
-                // ddlink is within the ?e=1 page request! but it seems you need to do the following posts to be able to use the link
-                // dllink = br.getRegex("(http.+/get/" + new Regex(downloadLink.getDownloadURL(), "https?://([^\\.]+)").getMatch(0) + "[^;]+)").getMatch(0);
+                // ddlink is within the ?e=1 page request! but it seems you need
+                // to do the following posts to be able to use the link
+                // dllink = br.getRegex("(http.+/get/" + new
+                // Regex(downloadLink.getDownloadURL(),
+                // "https?://([^\\.]+)").getMatch(0) + "[^;]+)").getMatch(0);
                 br.postPage(downloadLink.getDownloadURL() + "/en/", "a=1&submit=Download+the+file");
             }
             if (dllink == null) dllink = br.getRedirectLocation();
@@ -251,7 +259,7 @@ public class OneFichierCom extends PluginForHost {
             break;
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -273,7 +281,8 @@ public class OneFichierCom extends PluginForHost {
         // that there are no credits available
         if ("error".equalsIgnoreCase(timeStamp) || ("0".equals(timeStamp) && freeCredits == null)) {
             /**
-             * Only used if the API fails and is wrong but that usually doesn't happen!
+             * Only used if the API fails and is wrong but that usually doesn't
+             * happen!
              */
             logger.info("Using site login because API is either wrong or no free credits...");
             br.postPage("https://www.1fichier.com/en/login.pl", "lt=on&Login=Login&secure=on&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + account.getPass());
@@ -398,7 +407,8 @@ public class OneFichierCom extends PluginForHost {
         }
         if ("FREE".equals(account.getStringProperty("type")) && account.getBooleanProperty("freeAPIdisabled")) {
             /**
-             * Only used if the API fails and is wrong but that usually doesn't happen!
+             * Only used if the API fails and is wrong but that usually doesn't
+             * happen!
              */
             doFree(link);
         } else {

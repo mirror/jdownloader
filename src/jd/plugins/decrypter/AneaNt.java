@@ -73,7 +73,11 @@ public class AneaNt extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", agent);
         br.getPage(parameter);
         if (br.containsHTML("> 404 Not Found") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains("manga.animea.net/browse.html"))) {
-            logger.warning("Chapter doesn't exist, or URL doesn't exist: " + parameter);
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(">This episode has been licensed, downloading is not possible")) {
+            logger.info("Not downloadable: " + parameter);
             return decryptedLinks;
         }
         // manga reader
