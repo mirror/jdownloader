@@ -188,7 +188,7 @@ public class FileFactory extends PluginForHost {
             return ai;
         }
         this.br.getPage(COOKIE_HOST + "/member/");
-        if (!br.containsHTML("\"greenText\">(Premium member until<|Lifetime Member<)")) {
+        if (!br.containsHTML("\"greenText\">(Premium (member )?until|Lifetime Member)")) {
             ai.setStatus("Registered (free) User");
             ai.setUnlimitedTraffic();
             account.setProperty("freeAcc", "yes");
@@ -203,7 +203,7 @@ public class FileFactory extends PluginForHost {
             if (br.containsHTML("\"greenText\">Lifetime Member<")) {
                 ai.setValidUntil(-1);
             } else {
-                String expire = this.br.getMatch("Premium member until.*?datetime=\"(.*?)\"");
+                String expire = this.br.getRegex("Premium (member )?until.*?datetime=\"(.*?)\"").getMatch(1);
                 if (expire == null) {
                     account.setValid(false);
                     return ai;
@@ -437,8 +437,8 @@ public class FileFactory extends PluginForHost {
 
     public void handleTrafficShare(final DownloadLink downloadLink) throws Exception {
         /*
-         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl,
-         * Unknown until proven otherwise.
+         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl, Unknown until proven
+         * otherwise.
          */
         logger.finer("Traffic sharing link - Free Premium Donwload");
         String finalLink = this.br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/[^\"]+)\"([^>]+)?>Download").getMatch(0);

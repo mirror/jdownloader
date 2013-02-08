@@ -280,7 +280,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     @Override
     protected void _controllerPackageNodeAdded(CrawledPackage pkg, QueuePriority priority) {
-        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE, priority));
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADD_CONTENT, pkg, priority));
     }
 

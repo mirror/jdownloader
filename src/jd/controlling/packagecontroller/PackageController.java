@@ -155,8 +155,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         _controllerPackageNodeAdded(pkg, this.getQueuePrio());
                     } else {
                         _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
-                        _controllerStructureChanged(this.getQueuePrio());
                     }
+                    _controllerStructureChanged(this.getQueuePrio());
                     return null;
                 }
             });
@@ -206,6 +206,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     if (removed) {
                         controller.structureChanged.incrementAndGet();
                         controller._controllerPackageNodeRemoved(pkg, this.getQueuePrio());
+                        _controllerStructureChanged(this.getQueuePrio());
                     }
                     return null;
                 }
