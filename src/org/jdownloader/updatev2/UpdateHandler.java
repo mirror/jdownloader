@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface UpdateHandler {
 
-    void runChecker();
+    void startIntervalChecker();
 
     void runUpdateCheck(boolean manually);
 
@@ -45,5 +45,7 @@ public interface UpdateHandler {
     List<String> getRequestedInstalls();
 
     List<String> getRequestedUnInstalls();
+
+    void stopIntervalChecker();
 
 }

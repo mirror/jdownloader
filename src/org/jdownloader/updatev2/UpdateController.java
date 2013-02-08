@@ -82,7 +82,7 @@ public class UpdateController implements UpdateCallbackInterface {
 
     public void setHandler(UpdateHandler handler, ConfigInterface updaterSetup, String appid, String updaterid) {
         this.handler = handler;
-        handler.runChecker();
+        handler.startIntervalChecker();
         this.appid = appid;
         this.updaterid = updaterid;
         UpdateAction.getInstance().setEnabled(true);
@@ -414,8 +414,9 @@ public class UpdateController implements UpdateCallbackInterface {
 
         Dialog.getInstance().showDialog(cd);
         if (cd.isClosedBySkipUntilNextRestart()) {
-
-        throw new DialogCanceledException(0); }
+            handler.stopIntervalChecker();
+            throw new DialogCanceledException(0);
+        }
         System.out.println(1);
 
     }

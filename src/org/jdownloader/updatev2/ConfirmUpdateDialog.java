@@ -39,7 +39,7 @@ public class ConfirmUpdateDialog extends org.appwork.utils.swing.dialog.ConfirmD
                     }
 
                 };
-                bt.setEnabled(false);
+
                 bt.addActionListener(new ActionListener() {
 
                     @Override
