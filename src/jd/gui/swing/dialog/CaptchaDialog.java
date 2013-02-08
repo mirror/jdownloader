@@ -30,8 +30,10 @@ import java.net.URL;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.BooleanControl;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
+import javax.sound.sampled.FloatControl;
 import javax.swing.JComponent;
 
 import jd.Launcher;
@@ -63,6 +65,7 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
         try {
             Application.setApplication(".jd_home");
             Launcher.statics();
+            JsonConfig.create(SoundSettings.class).setCaptchaSoundVolume(100);
             // getGifImages(new
             // File("C:/Users/Thomas/.BuildServ/applications/beta/sources/JDownloader/src/org/jdownloader/extensions/webinterface/webinterface/themes/main/images/core/load.gif").toURI().toURL())
             cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), ImageProvider.read(new File("C:\\Users\\Thomas\\.jd_home\\captchas\\rusfolder.ru_10.07.2012_11.36.41.860.png")), null, "Enter both words...");
@@ -121,7 +124,21 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
                         info = new DataLine.Info(Clip.class, format);
                         clip = (Clip) AudioSystem.getLine(info);
                         clip.open(stream);
+                        try {
+                            FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+
+                            float db = (20f * (float) Math.log(JsonConfig.create(SoundSettings.class).getCaptchaSoundVolume() / 100f));
+
+                            gainControl.setValue(Math.max(-80f, db));
+                            BooleanControl muteControl = (BooleanControl) clip.getControl(BooleanControl.Type.MUTE);
+                            muteControl.setValue(true);
+
+                            muteControl.setValue(false);
+                        } catch (Exception e) {
+                            Log.exception(e);
+                        }
                         clip.start();
+
                     } catch (Exception e) {
                         Log.exception(e);
                     } finally {
