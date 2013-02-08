@@ -45,4 +45,5 @@ public interface UpdateHandler {
     List<String> getRequestedInstalls();
 
     List<String> getRequestedUnInstalls();
+
 }

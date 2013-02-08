@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.logging.Level;
 
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JFrame;
 
 import jd.gui.swing.jdgui.JDGui;
@@ -29,8 +28,6 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -413,62 +410,13 @@ public class UpdateController implements UpdateCallbackInterface {
 
     private void confirm(int flags, String title, String message, String ok, String no) throws DialogCanceledException, DialogClosedException {
 
-        ConfirmDialog cd = new ConfirmDialog(flags, title, message, null, ok, no) {
-            protected DefaultButtonPanel createBottomButtonPanel() {
-                // TODO Auto-generated method stub
-
-                return new DefaultButtonPanel("ins 0", "[]", "0[grow,fill]0") {
-
-                    @Override
-                    public void addCancelButton(final JButton cancelButton) {
-                        super.addCancelButton(cancelButton);
-
-                        // super.add(new JButton(new AbstractAction() {
-                        // {
-                        // putValue(SMALL_ICON, NewTheme.I().getIcon("popdownButton", -1));
-                        // }
-                        //
-                        // @Override
-                        // public void actionPerformed(ActionEvent e) {
-                        // JPopupMenu popup = new JPopupMenu();
-                        // JMenuItem mi = new JMenuItem(new AppAction() {
-                        // {
-                        // setName(_UPDATE._.update_in_next_session());
-                        // }
-                        //
-                        // @Override
-                        // public void actionPerformed(ActionEvent e) {
-                        // }
-                        //
-                        // });
-                        //
-                        // popup.add(mi);
-                        //
-                        // int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
-                        //
-                        // Dimension pref = popup.getPreferredSize();
-                        // pref.height = 24 + insets[0] + insets[2];
-                        //
-                        // popup.setPreferredSize(pref);
-                        // popup.show(cancelButton, +insets[1] - pref.width + cancelButton.getWidth() + 8 + 5, +cancelButton.getHeight());
-                        //
-                        // }
-                        // }) {
-                        //
-                        // public void setBounds(int x, int y, int width, int height) {
-                        // int delta = 5;
-                        // super.setBounds(x - delta, y, width + delta, height);
-                        // }
-                        //
-                        // }, "gapleft 0,width 8!");
-                    }
-
-                };
-
-            }
-        };
+        final ConfirmUpdateDialog cd = new ConfirmUpdateDialog(flags, title, message, null, ok, no);
 
         Dialog.getInstance().showDialog(cd);
+        if (cd.isClosedBySkipUntilNextRestart()) {
+
+        throw new DialogCanceledException(0); }
+        System.out.println(1);
 
     }
 
