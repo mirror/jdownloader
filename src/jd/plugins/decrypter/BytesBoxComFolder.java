@@ -43,7 +43,10 @@ public class BytesBoxComFolder extends PluginForDecrypt {
         br.getPage(parameter);
         String protocol = new Regex(parameter, "(https?)://").getMatch(0);
         String id = new Regex(parameter, "bytesbox\\.com/\\!{2}/([A-Za-z0-9]+)").getMatch(0);
-        if (br.containsHTML("Folder doesn't exist\\!")) return null;
+        if (br.containsHTML("Folder doesn't exist\\!")) {
+            logger.info("Folder invalid or does not exist any longer. " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<h3[^>]+>(.*?)</h3>").getMatch(0);
         String reg = "(<div[^>]+><span[^>]+>(\\d+(\\.\\d+)? ?(KB|MB|GB))[^\r\n\t]+<a href=\"(/\\!/[a-zA-Z0-9]+/?)\"> ([^\r\n\t]+) </a></div>)";
         String[] results = br.getRegex(reg).getColumn(0);

@@ -212,10 +212,10 @@ public class FileBoxCom extends PluginForHost {
         if (downloadLink.getStringProperty(directlinkproperty) == null) {
             requestFileInformation(downloadLink);
         }
-        doFree(downloadLink, true, chunks, directlinkproperty);
+        doFree(downloadLink);
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         String passCode = downloadLink.getStringProperty("pass");
         Browser br2 = br.cloneBrowser();
         if (downloadLink.getStringProperty(directlinkproperty) != null) {
@@ -223,7 +223,7 @@ public class FileBoxCom extends PluginForHost {
             br2.setCookiesExclusive(true);
             loadDownloadSession(downloadLink, br2);
         }
-        String dllink = checkDirectLink(downloadLink, directlinkproperty, br2);
+        String dllink = checkDirectLink(downloadLink, br2);
         if (dllink == null) {
             // revert back to vidembed!
             br2.getPage("http://www.filebox.com/vidembed-" + LINKID);
@@ -235,7 +235,7 @@ public class FileBoxCom extends PluginForHost {
         String ext = dllink.substring(dllink.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".mp4";
         if (dllink.contains("video.mp4")) downloadLink.setFinalFileName(LINKID + ext);
-        dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, dllink, resumes, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 415) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             logger.warning("The final dllink seems not to be a file!");
@@ -473,7 +473,7 @@ public class FileBoxCom extends PluginForHost {
             Browser br = new Browser();
             br.setCookiesExclusive(true);
             loadDownloadSession(downloadLink, br);
-            String dllink = checkDirectLink(downloadLink, directlinkproperty, br);
+            String dllink = checkDirectLink(downloadLink, br);
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -500,9 +500,9 @@ public class FileBoxCom extends PluginForHost {
             if (account.getBooleanProperty("nopremium")) {
                 br.getPage(downloadLink.getDownloadURL());
                 doSomething();
-                doFree(downloadLink, resumes, chunks, directlinkproperty);
+                doFree(downloadLink);
             } else {
-                dllink = checkDirectLink(downloadLink, directlinkproperty, br);
+                dllink = checkDirectLink(downloadLink, br);
                 if (dllink == null) {
                     br.getPage(downloadLink.getDownloadURL());
                     doSomething();
@@ -531,7 +531,7 @@ public class FileBoxCom extends PluginForHost {
                     checkServerErrors();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                downloadLink.setProperty("premlink", dllink);
+                downloadLink.setProperty(directlinkproperty, dllink);
                 saveDownloadSession(downloadLink, br);
                 if (passCode != null) downloadLink.setProperty("pass", passCode);
                 dl.startDownload();
@@ -590,20 +590,20 @@ public class FileBoxCom extends PluginForHost {
         }
     }
 
-    private String checkDirectLink(DownloadLink downloadLink, String property, Browser br) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(DownloadLink downloadLink, Browser br) {
+        String dllink = downloadLink.getStringProperty(directlinkproperty);
         if (dllink != null) {
             try {
                 Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
+                    downloadLink.setProperty(directlinkproperty, Property.NULL);
                     if (downloadLink.getProperty("cookies", null) != null) downloadLink.setProperty("cookies", Property.NULL);
                     dllink = null;
                 }
                 con.disconnect();
             } catch (Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
+                downloadLink.setProperty(directlinkproperty, Property.NULL);
                 if (downloadLink.getProperty("cookies", null) != null) downloadLink.setProperty("cookies", Property.NULL);
                 dllink = null;
             }
