@@ -69,7 +69,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     private List<LazyCrawlerPlugin> list;
 
     private String getCache() {
-        return "tmp/crawler.json";
+        return "tmp/crawler.ejson";
     }
 
     /**
