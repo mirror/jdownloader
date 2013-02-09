@@ -25,7 +25,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 import jd.controlling.IOEQ;
-import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
@@ -57,7 +56,7 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
         JMenu windows = new JMenu(_GUI._.AddonsMenu_updateMenu_windows_());
         windows.setIcon(NewTheme.I().getIcon("tab", 22));
         add(windows);
-        windows.add(new LogAction());
+        // windows.add(new LogAction());
         java.util.List<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         java.util.List<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
         java.util.List<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
