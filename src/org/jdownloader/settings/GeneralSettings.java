@@ -380,6 +380,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setShowFileNameInCaptchaDialogEnabled(boolean b);
 
+    //
     @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("If Enabled, JDownloader will save the linkgrabber list when you exit jd, and restore it on next startup")
