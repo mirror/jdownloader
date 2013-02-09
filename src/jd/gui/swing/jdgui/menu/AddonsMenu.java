@@ -54,7 +54,9 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
     private void updateMenu() {
 
         JMenu windows = new JMenu(_GUI._.AddonsMenu_updateMenu_windows_());
+
         windows.setIcon(NewTheme.I().getIcon("tab", 22));
+
         add(windows);
         // windows.add(new LogAction());
         java.util.List<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
@@ -128,6 +130,11 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
                 pre = true;
             }
             add(jmi);
+        }
+        if (windows.getItemCount() == 0) {
+            windows.setEnabled(false);
+        } else {
+            windows.setEnabled(true);
         }
     }
 
