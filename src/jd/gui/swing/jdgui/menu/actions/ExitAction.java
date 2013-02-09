@@ -32,7 +32,9 @@ public class ExitAction extends ActionAdapter {
 
     @Override
     public void onAction(ActionEvent e) {
+
         RestartController.getInstance().exitAsynch();
+
     }
 
     @Override

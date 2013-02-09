@@ -10,10 +10,17 @@ import org.appwork.app.launcher.parameterparser.CommandSwitch;
 import org.appwork.app.launcher.parameterparser.ParameterParser;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.uiserio.NewUIO;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.restart.Restarter;
 
-public class RestartController {
+public class RestartController implements ShutdownVetoListener {
     private static final RestartController INSTANCE                = new RestartController();
     private final static HashSet<String>   IGNORE_COMMAND_SWITCHES = new HashSet<String>();
     static {
@@ -69,6 +76,7 @@ public class RestartController {
                 finalHook();
             }
         });
+        ShutdownController.getInstance().addShutdownVetoListener(this);
         restarter = Restarter.getInstance(this);
 
     }
@@ -144,6 +152,36 @@ public class RestartController {
             startupParameters.setRawArguments(args);
         }
         return startupParameters;
+    }
+
+    @Override
+    public void onShutdown(boolean silent) {
+    }
+
+    @Override
+    public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
+    }
+
+    @Override
+    public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+        if (shutdownVetoExceptions.length > 0) { return; }
+        try {
+
+            NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.RestartController_confirmToExit_(), _GUI._.RestartController_confirmToExit_msg(), NewTheme.I().getIcon("exit", 32), null, null);
+
+        } catch (DialogNoAnswerException e) {
+            throw new ShutdownVetoException("Really Exit question denied", this);
+        }
+
+    }
+
+    @Override
+    public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+    }
+
+    @Override
+    public long getShutdownVetoPriority() {
+        return 0;
     }
 
     // public String getRestartCommandLine() {

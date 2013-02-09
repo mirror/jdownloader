@@ -338,4 +338,16 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isSpeedmeterAntiAliasingEnabled();
 
     void setSpeedmeterAntiAliasingEnabled(boolean b);
+
+    public static enum ClearAction {
+        CLEAR_LIST,
+        RESET_PANEL
+    }
+
+    @DefaultEnumValue("CLEAR_LIST")
+    @AboutConfig
+    @RequiresRestart
+    ClearAction getLinkgrabberDefaultClearAction();
+
+    void setLinkgrabberDefaultClearAction(ClearAction action);
 }
