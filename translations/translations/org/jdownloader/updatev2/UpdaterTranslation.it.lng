@@ -1,9 +1,12 @@
+close_jd=Permessi insufficienti per scrivere %s1.\r\nProva a chiudere i processi in esecuzione JDownloader & Java e riprova!\r\nRiavvia il sistema e se il problema si verifica ancora contatta il nostro supporto tecnico.
 confirmdialog_new_update_available_answer_later=Più tardi
 confirmdialog_new_update_available_answer_later_install=Più tardi
 confirmdialog_new_update_available_answer_now=Scarica ora
 confirmdialog_new_update_available_answer_now_install=Installa ora
 confirmdialog_new_update_available_for_install_message=E' disponibile un aggiornamento JDownloader. Per installarlo, è richiesto il riavvio. \r\nVuoi riavvaire e installare l'aggiornamento ora?
+confirmdialog_new_update_available_for_install_message_extensions=Aggiungere %s1 e rimuovere le estesioni %s2 JDownloader? Ti raccomandiamo di non farlo ora! Vuoi continuare?
 confirmdialog_new_update_available_for_install_message_launcher=E' pronto un aggiornamento per l'installazione. Ti raccomandiamo di installarlo ora!\nVuoi installarlo ora?
+confirmdialog_new_update_available_for_install_message_plugin=E' disponibile un nuovo aggiornamento dei plugin di JDownlaoder.\r\nPer installarli NON è richiesto unr iavvio.\r\nVuoi installare gli aggiornamenti ora?
 confirmdialog_new_update_available_frametitle=Nuovi aggiornamenti disponibili...
 confirmdialog_new_update_available_frametitle_extensions=Gestione estensioni
 confirmdialog_new_update_available_message=E' disponibile un nuovo aggiornamento. \r\nScaricarlo ora?
