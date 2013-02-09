@@ -394,6 +394,7 @@
 		<buildAddon package="AntiShutdown" include="antistandby" />
 
 		<buildAddon package="Streaming" include="streaming" />
+	<buildAddon package="JDAnywhere" include="jdanywhere" />
 
 		<buildAddon package="Extraction" include="extraction" />
 
