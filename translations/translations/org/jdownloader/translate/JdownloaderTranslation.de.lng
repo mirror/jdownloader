@@ -104,6 +104,7 @@ gui_settings_extensions_show_now=%s1 jetzt anzeigen?\r\n%s1 kann jederzeit über
 gui_settings_filewriting_description=Über den automatischen Hashcheck kann JDownloader die geladenen Dateien automatisch auf Korrektheit überprüfen.
 gui_settings_general_title=Allgemein
 gui_settings_linkgrabber_filter_description=The linkfilter is used to filter links. Use it to ignore links, adresses, urls or files based on their properties. Add Exceptions to accept special links. Exceptions will be available as a Custom View in the Linkgrabber Sidebar.
+gui_settings_linkgrabber_packagizer_description=Die Packagizer-Regeln stellen automatisch anhand deiner Datei-Einstellungen die Download-Einstellungen ein.
 gui_settings_linkgrabber_title=Linkgrabber Filter
 gui_settings_plugins_description=JDownloader benutzt "Plugins" für %s1 Webseiten um den Download zu automatisieren, der ohne JDownloader sehr lange dauern würde.\nEinige dieser Plugins haben Einstellungen um ihr Verhalten regeln zu können.
 gui_settings_plugins_title=Plugin Einstellungen
@@ -120,6 +121,7 @@ gui_warning_reconnectunknown=Reconnect unbekannt
 jd_controlling_SingleDownloadController_askexists=Die Datei '%s1' im Paket %s2 existiert bereits. Was möchtest du tun ?
 jd_controlling_SingleDownloadController_askexists_title=File existiert bereits
 jd_controlling_reconnect_Reconnector_progress_failed2=Reconnect ist zu oft fehlgeschlagen! Autoreconnect ist nun deaktiviert! Bitte überprüfe deine Reconnect Einstellungen!
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Kein Reconnect ausgewählt</u></b><br/><p>Reconnection ist eine fortgeschrittene Methode lange Wartezeiten, die manche Hoster an Free-Usern verhängen zu überspringen. <br>Beim Benutzen eines Premium-Accounts hilft diese Methode nicht.</p><p>Lese mehr über Reconnect <a href='http://support.jdownloader.org/index.php?/Knowledgebase/Article/View/1/0/why-should-i-set-up-my-reconnect'>hier</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Kein Reconnect
 jd_plugins_PluginUtils_askPassword=Bitte gib das Passwort für %s1 ein
 literally_offline=Offline

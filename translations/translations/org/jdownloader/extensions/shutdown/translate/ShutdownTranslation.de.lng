@@ -9,6 +9,7 @@ gui_config_jdshutdown_mode=Modus:
 gui_config_jdshutdown_shutdown=Herunterfahren
 gui_config_jdshutdown_standby=Standby (Nur einige OS)
 install_force=Installiere erzwungenes Herunterfahren
+install_msg=Möchtest du dein System auf das "Herunterfahren-Erzwingen" Feature vorbereiten?
 install_title=Installiere erzwungenes Herunterfahren
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader wird beendet!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">System wird in den Energiesparmodus versetzt!</font></h2>
