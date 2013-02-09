@@ -28,6 +28,7 @@ public class ClearAction extends AppAction {
 
                 public void run() {
                     LinkCollector.getInstance().clear();
+
                 }
 
             }, true);
