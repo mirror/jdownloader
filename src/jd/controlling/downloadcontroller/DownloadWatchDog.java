@@ -1013,8 +1013,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         break;
                     case INVALIDFOLDER:
                         logger.info("Could not start " + dci + ": invalid downloadfolder->" + dlFolder);
-                        dci.link.getLinkStatus().setStatus(LinkStatus.TEMP_IGNORE);
-                        dci.link.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION);
+                        dci.link.getLinkStatus().setStatus(LinkStatus.ERROR_FATAL);
+                        dci.link.getLinkStatus().setErrorMessage(_JDT._.downloadlink_status_error_invalid_dest());
+
+                        // dci.link.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION);
                         break;
                     }
                 }
