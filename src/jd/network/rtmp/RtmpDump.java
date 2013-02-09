@@ -142,7 +142,7 @@ public class RtmpDump extends RTMPDownload {
      */
     public synchronized String getRtmpDumpVersion() throws Exception {
         if (RTMPVERSION != null) return RTMPVERSION;
-        if (!findRtmpDump()) throw new PluginException(LinkStatus.ERROR_FATAL, "rtmpdump executable not found!");
+        if (!findRtmpDump()) throw new PluginException(LinkStatus.ERROR_FATAL, "Error: rtmpdump executable not found!");
         final String arg = " -h";
         NativeProcess verNP = null;
         Process verP = null;
@@ -221,20 +221,25 @@ public class RtmpDump extends RTMPDownload {
         if (!fixedFile.exists()) {
             logger.severe("File " + fixedFile.getAbsolutePath() + " not found!");
             error(LinkStatus.ERROR_LOCAL_IO, _JDT._.downloadlink_status_error_file_not_found());
+            return false;
         }
         if (!tmpFile.delete()) {
             logger.severe("Could not delete part file " + tmpFile);
             error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotdelete());
+            fixedFile.delete();
+            return false;
         }
         if (!fixedFile.renameTo(tmpFile)) {
             logger.severe("Could not rename file " + fixedFile.getName() + " to " + tmpFile.getName());
             error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
+            fixedFile.delete();
+            return false;
         }
         return true;
     }
 
     public boolean start(final RtmpUrlConnection rtmpConnection) throws Exception {
-        if (!findRtmpDump()) throw new PluginException(LinkStatus.ERROR_FATAL, "Error rtmpdump not found!");
+        if (!findRtmpDump()) throw new PluginException(LinkStatus.ERROR_FATAL, "Error: rtmpdump executable not found!");
 
         boolean debug = config.isRtmpDumpDebugModeEnabled();
         if (debug) rtmpConnection.setVerbose();

@@ -23,6 +23,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -83,6 +84,7 @@ public class ProSevenDe extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         clipUrl = clipUrl.replace("mp4:", "");
+        clipUrl = clipUrl.replaceAll("\\\\", "");
         String[] stream = new Regex(clipUrl, "(rtmp.?://[0-9a-z]+\\.fplive\\.net/)([0-9a-z]+/[\\w\\-]+/\\d+)/(.*?)$").getRow(0);
         if (clipUrl.startsWith("rtmp")) {
             if (stream != null && stream.length == 3) {
@@ -153,13 +155,13 @@ public class ProSevenDe extends PluginForHost {
                 }
             } else {
                 br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + fileDesc.get("id") + "&app=moveplayer&method=2&callback=SIMVideoPlayer.FlashPlayer.jsonpCallback");
-                clipUrl = br.getRegex("\"VideoURL\":\\s+\"(rtmp[^\"]+)").getMatch(0);
+                clipUrl = br.getRegex("\"VideoURL\"\\s?:\\s?\"(rtmp[^\"]+)").getMatch(0);
             }
         }
         if (clipUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String ext = new Regex(clipUrl, "(\\.\\w{3})$").getMatch(0);
         ext = ext == null ? ".mp4" : ext;
-        downloadLink.setName((fileDesc.get("show_artist") + "_" + fileDesc.get("title")).trim() + ext);
+        downloadLink.setName(Encoding.htmlDecode((fileDesc.get("show_artist") + "_" + fileDesc.get("title")).trim()) + ext);
         return AvailableStatus.TRUE;
     }
 

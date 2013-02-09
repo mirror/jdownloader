@@ -10,7 +10,7 @@ import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import jd.utils.JDUtilities;
+import org.appwork.utils.Application;
 
 public class NativeProcess {
 
@@ -29,12 +29,12 @@ public class NativeProcess {
     static {
         /* these libs are 32bit */
         try {
-            System.load(JDUtilities.getResourceFile("tools/Windows/rtmpdump/NativeProcessx86.dll").getAbsolutePath());
+            System.load(Application.getResource("tools/Windows/rtmpdump/NativeProcessx86.dll").getAbsolutePath());
         } catch (final Throwable e) {
             System.out.println("Error loading 32bit: " + e);
             /* these libs are 64bit */
             try {
-                System.load(JDUtilities.getResourceFile("tools/Windows/rtmpdump/NativeProcessx64.dll").getAbsolutePath());
+                System.load(Application.getResource("tools/Windows/rtmpdump/NativeProcessx64.dll").getAbsolutePath());
             } catch (final Throwable e2) {
                 System.out.println("Error loading 64bit: " + e2);
             }
@@ -97,8 +97,9 @@ public class NativeProcess {
     public void sendCtrlCSignal() {
         if (pid >= 0) {
             try {
-                Runtime.getRuntime().exec(".\\tools\\Windows\\rtmpdump\\SendSignal.exe " + String.valueOf(pid));
+                Runtime.getRuntime().exec(Application.getResource("tools/Windows/rtmpdump/SendSignal.exe").getAbsolutePath() + " " + String.valueOf(pid));
             } catch (final Exception e) {
+                e.printStackTrace();
             }
 
         }
@@ -135,4 +136,5 @@ public class NativeProcess {
         } catch (final Throwable e) {
         }
     }
+
 }
