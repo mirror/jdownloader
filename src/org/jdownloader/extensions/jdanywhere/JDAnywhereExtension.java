@@ -29,7 +29,7 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
 
     @Override
     public boolean isDefaultEnabled() {
-        return true;
+        return false;
     }
 
     @Override
