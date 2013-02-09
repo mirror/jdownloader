@@ -1,7 +1,7 @@
 JDGui_windowClosing_try_answer_totaskbar=Riduci nella barra delle applicazioni
 JDGui_windowClosing_try_answer_tray=Nascondi nella barra di sistema
 JDGui_windowClosing_try_asnwer_close=Esci da JDownloader
-JDGui_windowClosing_try_msg_2=Scegli una delle opzioni\n  - Esci da JDownloader (Interrompi ogni processo in corso)\n  - Riduci a icona (I download resteranno attivi)\n  - Nascondi nella barra delle applicazioni (I download resteranno attivi in background)
+JDGui_windowClosing_try_msg_2=Scegli una delle opzioni\n  - Esci da JDownloader (Interrompi ogni processo in corso)\n  - Riduci a icona (I download resteranno attivi)\r\n  - Nascondi nella barra delle applicazioni (I download resteranno attivi in background)
 JDGui_windowClosing_try_title_=Chiudi nella barra di sistema
 OnCloseAction_exit=Esci dall'applicazione
 OnCloseAction_totaskbar=Riduci nella barra delle applicazioni
@@ -17,7 +17,7 @@ plugins_optional_JDLightTray_linkgrabberresults=Visualizza la finestra del Cattu
 plugins_optional_JDLightTray_minimized=Solo quando JD è minimizzato
 plugins_optional_JDLightTray_minimizetotray=Azione al clic su 'Minimizza <_>'
 plugins_optional_JDLightTray_never=Mai
-plugins_optional_JDLightTray_passwordRequired=Password per aprire JD dalla taskbar
+plugins_optional_JDLightTray_passwordRequired=Password per aprire JD dalla barra di sistema
 plugins_optional_JDLightTray_singleClick=Mostra finestra con un solo click
 plugins_optional_JDLightTray_startMinimized=Avvio minimizzato
 plugins_optional_JDLightTray_tooltip=Mostra descrizione comandi
