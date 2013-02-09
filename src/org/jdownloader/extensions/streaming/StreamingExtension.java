@@ -71,7 +71,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     }
 
     public StreamingExtension() {
-        // System.out.println(1);
+        System.out.println(1);
         logger = LogController.getInstance().getLogger("streaming");
 
     }
