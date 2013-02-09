@@ -2189,4 +2189,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Could not create Folder %s1" })
     String DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(String folder);
 
+    @Default(lngs = { "en" }, values = { "Reset selected entries to default values" })
+    String AdvancedTable_onContextMenu_reset_selection();
+
+    @Default(lngs = { "en" }, values = { "Are you sure?" })
+    String lit_are_you_sure();
+
+    @Default(lngs = { "en" }, values = { "Do you really want to reset %s1 advanced config entry/ies to their default values?" })
+    String AdvancedTablecontextmenu_reset(int size);
+
 }

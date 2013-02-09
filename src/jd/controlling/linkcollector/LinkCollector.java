@@ -193,6 +193,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                     @Override
                     protected Void run() throws RuntimeException {
+                        if (!JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled()) {
+                            clear();
+                        }
                         saveLinkCollectorLinks();
                         LinkCollector.this.setSaveAllowed(false);
                         return null;
