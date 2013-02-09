@@ -49,27 +49,6 @@ public class AdvancedTable extends BasicJDTable<AdvancedConfigEntry> {
             }
         });
 
-        p.add(new AppAction() {
-            {
-                setSmallIcon(NewTheme.I().getIcon("reset", 20));
-                setName(_GUI._.AdvancedTable_onContextMenu_reset_all());
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    NewUIO.I().showConfirmDialog(0, _GUI._.lit_are_you_sure(), _GUI._.AdvancedTablecontextmenu_reset(selection.size()));
-                    for (AdvancedConfigEntry ce : selection) {
-                        ce.setValue(ce.getDefault());
-                    }
-                    repaint();
-                } catch (DialogClosedException e1) {
-                    e1.printStackTrace();
-                } catch (DialogCanceledException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        });
         return p;
     }
 
