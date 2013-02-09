@@ -26,7 +26,8 @@ public class MacAntiStandBy extends Thread {
 
                 switch (extension.getMode()) {
                 case DOWNLOADING:
-                    if (DownloadWatchDog.getInstance().getStateMachine().hasPassed(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
+                    if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.PAUSE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
+
                         if (!processIsRunning()) {
 
                             logger.fine("JDAntiStandby: Start");
@@ -80,6 +81,8 @@ public class MacAntiStandBy extends Thread {
     public void doit() {
         try {
             String[] command = { "pmset", "noidle" };
+            // windows debug
+            // command = new String[] { "calc.exe" };
             ProcessBuilder probuilder = ProcessBuilderFactory.create(command);
             logger.info("Call pmset nodile");
             process = probuilder.start();
