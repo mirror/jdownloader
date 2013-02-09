@@ -59,6 +59,7 @@ import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.premium.PremiumInfoDialog;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 import sun.swing.SwingUtilities2;
@@ -147,7 +148,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> imple
     }
 
     public String getFilename() {
-
+        if (!JsonConfig.create(GeneralSettings.class).isShowFileNameInCaptchaDialogEnabled()) return null;
         switch (type) {
         case HOSTER:
             if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return null;

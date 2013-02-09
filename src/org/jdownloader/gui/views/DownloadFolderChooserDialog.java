@@ -27,6 +27,7 @@ import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.HomeFolder;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -207,7 +208,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         if (dest[0].getParentFile() != null && !dest[0].getParentFile().exists() && !dest[0].exists()) {
             handleNonExistingFolders(dest[0]);
         }
-        if (!isDownloadFolderValid(dest[0])) return null;
+        if (!isDownloadFolderValid(dest[0])) { return null; }
         DownloadPath.saveList(dest[0].getAbsolutePath());
         return dest[0];
     }
@@ -216,7 +217,9 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         try {
 
             Dialog.getInstance().showConfirmDialog(0, _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_title_(), _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_msg_(file.getAbsolutePath()));
-            file.mkdirs();
+            if (!file.mkdirs()) {
+                NewUIO.I().showErrorMessage(_GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(file.getAbsolutePath()));
+            }
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {

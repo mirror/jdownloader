@@ -373,4 +373,11 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setSubfolderThreshold(int i);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Disable this option if you do not want to see the filename in a captchadialog")
+    boolean isShowFileNameInCaptchaDialogEnabled();
+
+    void setShowFileNameInCaptchaDialogEnabled(boolean b);
+
 }
