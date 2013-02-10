@@ -2198,4 +2198,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you really want to reset %s1 advanced config entry/ies to their default values?" })
     String AdvancedTablecontextmenu_reset(int size);
 
+    @Default(lngs = { "en" }, values = { "Description" })
+    String AdvancedTableModel_initColumns_desc_();
+
 }

@@ -26,12 +26,24 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
     static class InfoAction extends AbstractAction {
         private static final long   serialVersionUID = 1L;
         private AdvancedConfigEntry value;
+        private ImageIcon           iconEnabled      = NewTheme.I().getIcon("help", 16);
+        private ImageIcon           iconDisabled     = new ImageIcon(GrayFilter.createDisabledImage(NewTheme.I().getIcon("help", 16).getImage()));
 
         public InfoAction() {
-            super("Info", NewTheme.I().getIcon("info", 16));
+            super("Help", NewTheme.I().getIcon("help", 16));
+        }
+
+        @Override
+        public boolean isEnabled() {
+            if (value == null) return false;
+            if (value.getDescription() != null) { return true; }
+            if (value.getDefault() != null) { return true; }
+            if (value.getValidator() != null) { return true; }
+            return false;
         }
 
         public void actionPerformed(ActionEvent e) {
+            if (!isEnabled()) return;
             StringBuilder sb = new StringBuilder();
 
             if (value.getDescription() != null) {
@@ -51,6 +63,11 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
         public void setEntry(AdvancedConfigEntry value) {
 
             this.value = value;
+            if (isEnabled()) {
+                putValue(Action.SMALL_ICON, iconEnabled);
+            } else {
+                putValue(Action.SMALL_ICON, iconDisabled);
+            }
         }
 
     }
@@ -58,8 +75,8 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
     class ResetAction extends AbstractAction {
         private static final long   serialVersionUID = 1L;
         private AdvancedConfigEntry value;
-        private ImageIcon           reset_no         = NewTheme.I().getIcon("reset", 16);
-        private ImageIcon           reset_yes        = new ImageIcon(GrayFilter.createDisabledImage(NewTheme.I().getIcon("reset", 16).getImage()));
+        private ImageIcon           reset_no         = NewTheme.I().getIcon("stop", 16);
+        private ImageIcon           reset_yes        = new ImageIcon(GrayFilter.createDisabledImage(NewTheme.I().getIcon("stop", 16).getImage()));
         private boolean             resetable        = false;
 
         public ResetAction() {
@@ -128,8 +145,8 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
 
         editorReset = new ResetAction();
         rendererReset = new ResetAction();
-        // renderer.add(getButton(rendererInfo), "width 18!,height 18!");
-        // editor.add(getButton(editorInfo), "width 18!,height 18!");
+        renderer.add(getButton(rendererInfo), "width 18!,height 18!");
+        editor.add(getButton(editorInfo), "width 18!,height 18!");
         renderer.add(getButton(rendererReset), "width 18!,height 18!");
         editor.add(reset = getButton(editorReset), "width 18!,height 18!");
         // add(info);
@@ -171,7 +188,7 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
 
     @Override
     public int getMinWidth() {
-        return 30;
+        return 45;
     }
 
     @Override

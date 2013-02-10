@@ -1,6 +1,5 @@
 package jd.gui.swing.jdgui.views.settings.panels.advanced;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.appwork.swing.exttable.ExtTableModel;
@@ -52,6 +51,11 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> {
             }
 
             @Override
+            public boolean isEditable(AdvancedConfigEntry obj) {
+                return true;
+            }
+
+            @Override
             public int getDefaultWidth() {
                 return 200;
             }
@@ -61,6 +65,35 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> {
                 return false;
             }
         });
+        addColumn(new ExtTextColumn<AdvancedConfigEntry>(_GUI._.AdvancedTableModel_initColumns_desc_()) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            protected String getTooltipText(AdvancedConfigEntry obj) {
+                return obj.getDescription();
+            }
+
+            @Override
+            public String getStringValue(AdvancedConfigEntry value) {
+                return value.getDescription();
+            }
+
+            @Override
+            public boolean isEditable(AdvancedConfigEntry obj) {
+                return true;
+            }
+
+            @Override
+            public int getDefaultWidth() {
+                return 200;
+            }
+
+            @Override
+            public boolean isHidable() {
+                return true;
+            }
+        });
+
         addColumn(new AdvancedValueColumn());
         addColumn(new ExtTextColumn<AdvancedConfigEntry>(_GUI._.AdvancedTableModel_initColumns_type_()) {
             private static final long serialVersionUID = 1L;
