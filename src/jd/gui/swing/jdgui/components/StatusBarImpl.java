@@ -125,6 +125,7 @@ public class StatusBarImpl extends JPanel {
         // "\"></img>Waiting for new IP - Reconnect in progress</html>");
 
         linkGrabberIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("linkgrabber", 16));
+
         linkGrabberIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_linkgrabber());
         linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
         linkGrabberIndicator.setIndeterminate(false);
@@ -132,27 +133,29 @@ public class StatusBarImpl extends JPanel {
         linkGrabberIndicator.addMouseListener(new MouseListener() {
 
             public void mouseReleased(MouseEvent e) {
-                final JPopupMenu popup = new JPopupMenu();
+                if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+                    final JPopupMenu popup = new JPopupMenu();
 
-                popup.add(new AppAction() {
-                    /**
+                    popup.add(new AppAction() {
+                        /**
                      * 
                      */
-                    private static final long serialVersionUID = -968768342263254431L;
+                        private static final long serialVersionUID = -968768342263254431L;
 
-                    {
-                        this.setIconKey("cancel");
-                        this.setName(_GUI._.StatusBarImpl_initGUI_abort_linkgrabber());
-                        this.setEnabled(linkGrabberIndicator.isEnabled());
-                    }
+                        {
+                            this.setIconKey("cancel");
+                            this.setName(_GUI._.StatusBarImpl_initGUI_abort_linkgrabber());
+                            this.setEnabled(linkGrabberIndicator.isEnabled());
+                        }
 
-                    public void actionPerformed(ActionEvent e) {
-                        LinkCollector.getInstance().abort();
-                    }
+                        public void actionPerformed(ActionEvent e) {
+                            LinkCollector.getInstance().abort();
+                        }
 
-                });
+                    });
 
-                popup.show(linkGrabberIndicator, e.getPoint().x, 0 - popup.getPreferredSize().height);
+                    popup.show(linkGrabberIndicator, e.getPoint().x, 0 - popup.getPreferredSize().height);
+                }
             }
 
             public void mousePressed(MouseEvent e) {

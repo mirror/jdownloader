@@ -173,7 +173,14 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
     }
 
     public void mouseClicked(MouseEvent e) {
-        ToolTipController.getInstance().show(this);
+        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+
+            ToolTipController.getInstance().hideTooltip();
+
+        } else {
+            ToolTipController.getInstance().show(this);
+        }
+
     }
 
     public void mousePressed(MouseEvent e) {

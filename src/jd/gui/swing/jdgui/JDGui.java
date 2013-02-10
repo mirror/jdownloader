@@ -32,7 +32,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
@@ -67,6 +69,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -247,8 +250,29 @@ public class JDGui extends SwingGui {
                     }
                 }.start();
 
+                new Thread() {
+                    public void run() {
+                        if (Application.getResource("JDownloader.jar").lastModified() < new Date(2013 - 1900, 1, 10, 10, 0).getTime()) {
+                            try {
+                                Files.deleteRecursiv(Application.getResource("cfg/versioninfo/JDU"));
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+
+                            Dialog.getInstance().showMessageDialog("This is a very important Update. You should run this NOW!");
+                            // runUpdateChecker is synchronized and may block
+                            UpdateController.getInstance().setGuiVisible(true);
+                            UpdateController.getInstance().runUpdateChecker(true);
+                        }
+                    }
+                }.start();
+
             }
         });
+    }
+
+    public static void main(String[] args) {
+        System.out.println(System.currentTimeMillis());
     }
 
     protected void showStatsDialog() {
