@@ -68,7 +68,6 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         // we need a testcommit 9
         // we need to load the profiles
         Profile.init();
-        //
     }
 
     public StreamingExtension() {
