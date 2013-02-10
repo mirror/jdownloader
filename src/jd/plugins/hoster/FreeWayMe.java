@@ -47,7 +47,7 @@ public class FreeWayMe extends PluginForHost {
 
     public FreeWayMe(PluginWrapper wrapper) {
         super(wrapper);
-        setStartIntervall(4 * 1000l);
+        setStartIntervall(1 * 1000l);
         this.enablePremium("https://www.free-way.me/premium");
     }
 
@@ -195,8 +195,7 @@ public class FreeWayMe extends PluginForHost {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
                 /*
-                 * after x retries we disable this host and retry with normal
-                 * plugin
+                 * after x retries we disable this host and retry with normal plugin
                  */
                 if (link.getLinkStatus().getRetryCount() >= 3) {
                     /* reset retrycounter */
