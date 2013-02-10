@@ -28,27 +28,38 @@ import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
-import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.polling.PollingAPIImpl;
 import org.jdownloader.api.polling.PollingResultAPIStorable;
+import org.jdownloader.extensions.jdanywhere.CheckUser;
+import org.jdownloader.extensions.jdanywhere.JDAnywhereAPI;
+import org.jdownloader.extensions.jdanywhere.JDAnywhereController;
 
-public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadControllerListener {
+public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadControllerListener, JDAnywhereAPI {
 
-    DownloadsAPIImpl dlAPI = new DownloadsAPIImpl();
-    PollingAPIImpl   plAPI = new PollingAPIImpl();
+    DownloadsAPIImpl  dlAPI = new DownloadsAPIImpl();
+    PollingAPIImpl    plAPI = new PollingAPIImpl();
+    private String    user;
+    private String    pass;
+    private CheckUser checkUser;
 
-    public boolean start() {
+    public boolean start(final String username, final String password) {
+        if (!checkUser.check(username, password)) return false;
         return dlAPI.start();
     }
 
-    public boolean stop() {
+    public boolean stop(final String username, final String password) {
+        if (!checkUser.check(username, password)) return false;
         return dlAPI.stop();
     }
 
-    public boolean pause(Boolean value) {
+    public boolean pause(Boolean value, final String username, final String password) {
+        if (!checkUser.check(username, password)) return false;
         return dlAPI.pause(value);
     }
 
@@ -56,7 +67,8 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
     // paused = 1
     // stopped = 2
     // running = 0
-    public String getState() {
+    public String getState(final String username, final String password) {
+        if (!checkUser.check(username, password)) return null;
         APIQuery queryParams = new APIQuery();
         queryParams.put("jdState", "");
         List<PollingResultAPIStorable> result = plAPI.poll(queryParams);
@@ -67,7 +79,8 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
         // return dlAPI.getState();
     }
 
-    public List<DownloadLinkAPIStorable> listDownloadLinks(long ID) {
+    public List<DownloadLinkAPIStorable> listDownloadLinks(long ID, final String username, final String password) {
+        if (!checkUser.check(username, password)) return null;
         DownloadController dlc = DownloadController.getInstance();
         for (FilePackage fpkg : dlc.getPackages()) {
             if (fpkg.getUniqueID().getID() == ID) {
@@ -83,7 +96,8 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
         return null;
     }
 
-    public List<FilePackageAPIStorable> listPackages() {
+    public List<FilePackageAPIStorable> listPackages(final String username, final String password) {
+        if (!checkUser.check(username, password)) return null;
         DownloadController dlc = DownloadController.getInstance();
         boolean b = dlc.readLock();
         try {
@@ -92,8 +106,8 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
                 FilePackageAPIStorable pkg;
                 ret.add(pkg = new FilePackageAPIStorable(fpkg));
                 /*
-                 * synchronized (fpkg) { List<DownloadLinkAPIStorable> links = new ArrayList<DownloadLinkAPIStorable>(fpkg.size()); for (DownloadLink link :
-                 * fpkg.getChildren()) { links.add(new DownloadLinkAPIStorable(link)); } pkg.setLinks(links); }
+                 * synchronized (fpkg) { List<DownloadLinkAPIStorable> links = new ArrayList<DownloadLinkAPIStorable>(fpkg.size()); for
+                 * (DownloadLink link : fpkg.getChildren()) { links.add(new DownloadLinkAPIStorable(link)); } pkg.setLinks(links); }
                  */
             }
             return ret;
@@ -102,7 +116,8 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
         }
     }
 
-    public List<RunningObjectAPIStorable> runningLinks() {
+    public List<RunningObjectAPIStorable> runningLinks(final String username, final String password) {
+        if (!checkUser.check(username, password)) return null;
         DownloadController dlc = DownloadController.getInstance();
         List<RunningObjectAPIStorable> ret = new ArrayList<RunningObjectAPIStorable>(dlc.getAllDownloadLinks().size());
         boolean b = dlc.readLock();
@@ -127,52 +142,24 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
         return ret;
     }
 
-    // // returns a list of all running downloads
-    // // used in iPhone-App
-    // private List<FilePackageAPIStorable> running() {
-    // DownloadController dlc = DownloadController.getInstance();
-    // boolean b = dlc.readLock();
-    // try {
-    // java.util.List<FilePackageAPIStorable> ret = new ArrayList<FilePackageAPIStorable>(dlc.size());
-    // for (FilePackage fpkg : dlc.getPackages()) {
-    // FilePackageAPIStorable pkg;
-    // ret.add(pkg = new FilePackageAPIStorable(fpkg));
-    // boolean hasRunningLinks = false;
-    // synchronized (fpkg) {
-    // List<DownloadLinkAPIStorable> links = new ArrayList<DownloadLinkAPIStorable>(fpkg.size());
-    // for (DownloadLink link : fpkg.getChildren()) {
-    // DownloadLinkAPIStorable apiLink = new DownloadLinkAPIStorable(link);
-    // if (apiLink.getSpeed() > 0) {
-    // hasRunningLinks = true;
-    // links.add(new DownloadLinkAPIStorable(link)); }
-    // }
-    // pkg.setLinks(links);
-    // }
-    // if (!hasRunningLinks) {
-    // ret.remove(pkg);
-    // }
-    // }
-    // return ret;
-    // } finally {
-    // dlc.readUnlock(b);
-    // }
-    // }
-
     // returns the current downloadspeed
     // used in iPhone-App
-    public int speed() {
+    public int speed(final String username, final String password) {
+        if (!checkUser.check(username, password)) return 0;
         return DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
     }
 
     // returns the current downloadlimit
     // used in iPhone-App
-    public int limit() {
+    public int limit(final String username, final String password) {
+        if (!checkUser.check(username, password)) return 0;
         return DownloadWatchDog.getInstance().getDownloadSpeedManager().getLimit();
     }
 
     // returns the current traffic
     // used in iPhone-App
-    public long traffic() {
+    public long traffic(final String username, final String password) {
+        if (!checkUser.check(username, password)) return 0;
         return DownloadWatchDog.getInstance().getDownloadSpeedManager().getTraffic();
     }
 
@@ -191,26 +178,58 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
     }
 
     @Override
-    public DownloadLinkAPIStorable getDownloadLink(long ID) {
+    public DownloadLinkAPIStorable getDownloadLink(long ID, final String username, final String password) {
+        if (!checkUser.check(username, password)) return null;
         DownloadLink link = getDownloadLinkFromID(ID);
         return new DownloadLinkAPIStorable(link);
     }
 
     @Override
-    public FilePackageAPIStorable getFilePackage(long ID) {
+    public FilePackageAPIStorable getFilePackage(long ID, final String username, final String password) {
+        if (!checkUser.check(username, password)) return null;
         FilePackage fpkg = getFilePackageFromID(ID);
         return new FilePackageAPIStorable(fpkg);
     }
 
     public static LinkStatusJob lastJobEvent = null;
 
-    public DownloadsMobileAPIImpl() {
+    public DownloadsMobileAPIImpl(String user, String pass) {
         DownloadController.getInstance().addListener(this, true);
+        this.user = user;
+        this.pass = pass;
+        checkUser = new CheckUser(user, pass);
+
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
+
+            public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+                HashMap<String, Object> data = new HashMap<String, Object>();
+                data.put("message", "LimitspeedChanged");
+                data.put("data", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
+                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LimitspeedChanged", data), null);
+            }
+
+            public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+            }
+        }, false);
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                HashMap<String, Object> data = new HashMap<String, Object>();
+                data.put("message", "LimitspeedActivated");
+                data.put("data", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
+                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LimitspeedActivated", data), null);
+            }
+        }, false);
+
     }
 
     // public List<FilePackageAPIStorable> list() {
 
-    public String getPackageIDFromLinkID(long ID) {
+    public String getPackageIDFromLinkID(long ID, final String username, final String password) {
+        if (!checkUser.check(username, password)) return null;
         DownloadLink dl = getDownloadLinkFromID(ID);
         FilePackage fpk = dl.getFilePackage();
         return fpk.getUniqueID().toString();
@@ -250,7 +269,8 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
         return null;
     }
 
-    public boolean removeDownloadLink(String ID) {
+    public boolean removeDownloadLink(String ID, final String username, final String password) {
+        if (!checkUser.check(username, password)) return false;
         DownloadController dlc = DownloadController.getInstance();
         boolean b = dlc.readLock();
         long id = Long.valueOf(ID);
@@ -273,7 +293,8 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
         return true;
     }
 
-    public boolean removeDownloadPackage(String ID) {
+    public boolean removeDownloadPackage(String ID, final String username, final String password) {
+        if (!checkUser.check(username, password)) return false;
         long id = Long.valueOf(ID);
         FilePackage fpkg = getFilePackageFromID(id);
         if (fpkg != null) {
@@ -284,7 +305,8 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
 
     // Sets the enabled flag of a downloadlink
     // used in iPhone-App
-    public boolean downloadLinkEnabled(String ID, boolean enabled) {
+    public boolean downloadLinkEnabled(String ID, boolean enabled, final String username, final String password) {
+        if (!checkUser.check(username, password)) return false;
         DownloadLink link = getDownloadLinkFromID(Long.valueOf(ID));
         link.setEnabled(enabled);
         return true;
@@ -292,7 +314,8 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
 
     // Sets the enabled flag of a downloadPackage
     // used in iPhone-App
-    public boolean downloadPackageEnabled(String ID, boolean enabled) {
+    public boolean downloadPackageEnabled(String ID, boolean enabled, final String username, final String password) {
+        if (!checkUser.check(username, password)) return false;
         DownloadController dlc = DownloadController.getInstance();
         boolean b = dlc.readLock();
         long id = Long.valueOf(ID);
@@ -311,9 +334,49 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
         return true;
     }
 
+    public boolean resetPackage(String ID, final String username, final String password) {
+        if (!checkUser.check(username, password)) return false;
+        DownloadController dlc = DownloadController.getInstance();
+        boolean b = dlc.readLock();
+        long id = Long.valueOf(ID);
+        try {
+            for (FilePackage fpkg : dlc.getPackages()) {
+                if (fpkg.getUniqueID().getID() == id) synchronized (fpkg) {
+                    for (DownloadLink link : fpkg.getChildren()) {
+                        link.reset();
+                    }
+                    return true;
+                }
+            }
+        } finally {
+            dlc.readUnlock(b);
+        }
+        return true;
+    }
+
+    public boolean resetDownloadLink(String ID, final String username, final String password) {
+        if (!checkUser.check(username, password)) return false;
+        DownloadLink link = getDownloadLinkFromID(Long.valueOf(ID));
+        link.reset();
+        return true;
+    }
+
+    public boolean setLimitspeed(int speed, final String username, final String password) {
+        if (!checkUser.check(username, password)) return false;
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.setValue(speed);
+        return true;
+    }
+
+    public boolean activateLimitspeed(boolean activate, final String username, final String password) {
+        if (!checkUser.check(username, password)) return false;
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(activate);
+        return true;
+    }
+
     // returns the SpeedMeter from UI without the DownloadSpeed / AverageSpeed Text as an PNG
     // used in iPhone-App
-    public void speedMeter(RemoteAPIRequest request, RemoteAPIResponse response) {
+    public void speedMeter(RemoteAPIRequest request, RemoteAPIResponse response, final String username, final String password) {
+        if (!checkUser.check(username, password)) return;
 
         OutputStream out = null;
         try {
@@ -349,6 +412,7 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
     public void onDownloadControllerEvent(DownloadControllerEvent event) {
         switch (event.getType()) {
         case REFRESH_CONTENT:
+        case REFRESH_STRUCTURE:
             if (event.getParameter() instanceof DownloadLink) {
                 DownloadLink dl = (DownloadLink) event.getParameter();
                 if (dl != null) {
@@ -371,7 +435,7 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
                         HashMap<String, Object> data = new HashMap<String, Object>();
                         data.put("message", dl.getName());
                         data.put("data", job);
-                        RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkstatus", data), null);
+                        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkstatus", data), null);
                     }
                 }
 
@@ -401,7 +465,7 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
         data.put("action", "downloadLinkAdded");
         data.put("message", link.getName());
         data.put("data", link.getUniqueID().toString());
-        RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadLinkAdded", data), null);
+        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadLinkAdded", data), null);
     }
 
     private void downloadApiLinkRemoved(DownloadLink link) {
@@ -409,7 +473,7 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
         data.put("action", "downloadLinkRemoved");
         data.put("message", link.getName());
         data.put("data", link.getUniqueID().toString());
-        RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadLinkRemoved", data), null);
+        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadLinkRemoved", data), null);
     }
 
     private void downloadApiPackageAdded(FilePackage fpkg) {
@@ -417,7 +481,7 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
         data.put("action", "downloadPackageAdded");
         data.put("message", fpkg.getName());
         data.put("data", fpkg.getUniqueID().toString());
-        RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadPackageAdded", data), null);
+        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadPackageAdded", data), null);
     }
 
     private void downloadApiPackageRemoved(FilePackage fpkg) {
@@ -425,7 +489,15 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
         data.put("action", "downloadPackageRemoved");
         data.put("message", fpkg.getName());
         data.put("data", fpkg.getUniqueID().toString());
-        RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadPackageRemoved", data), null);
+        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadPackageRemoved", data), null);
+    }
+
+    public String getUsername() {
+        return user;
+    }
+
+    public String getPassword() {
+        return pass;
     }
 
 }

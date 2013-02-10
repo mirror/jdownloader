@@ -8,7 +8,7 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 @ApiNamespace("mobile/content")
 public interface ContentMobileAPI extends RemoteAPIInterface {
 
-    public void favicon(RemoteAPIRequest request, final RemoteAPIResponse response, String hostername);
+    public void favicon(RemoteAPIRequest request, final RemoteAPIResponse response, String hostername, final String username, final String password);
 
-    public void fileIcon(RemoteAPIRequest request, final RemoteAPIResponse response, String filename);
+    public void fileIcon(RemoteAPIRequest request, final RemoteAPIResponse response, String filename, final String username, final String password);
 }

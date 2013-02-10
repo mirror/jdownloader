@@ -16,4 +16,9 @@ public interface JDAnywhereConfig extends ExtensionConfigInterface {
 
     void setPassword(String password);
 
+    @DescriptionForConfigEntry("Port")
+    int getPort();
+
+    void setPort(int port);
+
 }

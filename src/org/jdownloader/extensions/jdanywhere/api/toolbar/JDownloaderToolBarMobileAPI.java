@@ -8,14 +8,14 @@ import org.appwork.storage.config.annotations.AllowStorage;
 public interface JDownloaderToolBarMobileAPI extends RemoteAPIInterface {
 
     @AllowStorage(value = { Object.class })
-    public Object getStatus();
+    public Object getStatus(final String username, final String password);
 
-    public boolean startDownloads();
+    public boolean startDownloads(final String username, final String password);
 
-    public boolean stopDownloads();
+    public boolean stopDownloads(final String username, final String password);
 
     // pauses a download
     // used in iPhone-App
-    public boolean pauseDownloads();
+    public boolean pauseDownloads(final String username, final String password);
 
 }

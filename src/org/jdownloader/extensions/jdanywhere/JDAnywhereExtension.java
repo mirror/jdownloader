@@ -4,7 +4,9 @@ import jd.plugins.AddonPanel;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslateInterface;
-import org.jdownloader.api.RemoteAPIController;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -15,6 +17,8 @@ import org.jdownloader.extensions.jdanywhere.api.downloads.DownloadsMobileAPIImp
 import org.jdownloader.extensions.jdanywhere.api.linkcollector.LinkCollectorMobileAPIImpl;
 import org.jdownloader.extensions.jdanywhere.api.toolbar.JDownloaderToolBarMobileAPIImpl;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.RestartController;
 
 public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, TranslateInterface> {
 
@@ -35,7 +39,7 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
     @Override
     protected void stop() throws StopException {
         try {
-            RemoteAPIController remoteAPI = RemoteAPIController.getInstance();
+            JDAnywhereController remoteAPI = JDAnywhereController.getInstance();
             remoteAPI.unregister(dma);
             remoteAPI.unregister(lca);
             remoteAPI.unregister(cma);
@@ -45,17 +49,30 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
             LogController.CL().log(e);
             throw new StopException(e.getMessage());
         }
+        showRestartRequiredMessage();
+    }
+
+    protected void showRestartRequiredMessage() {
+        try {
+            Dialog.getInstance().showConfirmDialog(0, _JDT._.dialog_optional_showRestartRequiredMessage_title(), _JDT._.dialog_optional_showRestartRequiredMessage_msg(), null, _JDT._.basics_yes(), _JDT._.basics_no());
+            RestartController.getInstance().exitAsynch();
+        } catch (DialogClosedException e) {
+        } catch (DialogCanceledException e) {
+        }
     }
 
     @Override
     protected void start() throws StartException {
         try {
-            RemoteAPIController remoteAPI = RemoteAPIController.getInstance();
-            remoteAPI.register(dma = new DownloadsMobileAPIImpl());
-            remoteAPI.register(lca = new LinkCollectorMobileAPIImpl());
-            remoteAPI.register(cma = new CaptchaMobileAPIImpl());
-            remoteAPI.register(coma = new ContentMobileAPIImpl());
-            remoteAPI.register(tma = new JDownloaderToolBarMobileAPIImpl());
+            JDAnywhereController remoteAPI = JDAnywhereController.getInstance();
+            int port = config.getPort();
+            String user = config.getUsername();
+            String pass = config.getPassword();
+            remoteAPI.register(dma = new DownloadsMobileAPIImpl(user, pass), port);
+            remoteAPI.register(lca = new LinkCollectorMobileAPIImpl(user, pass), port);
+            remoteAPI.register(cma = new CaptchaMobileAPIImpl(user, pass), port);
+            remoteAPI.register(coma = new ContentMobileAPIImpl(user, pass), port);
+            remoteAPI.register(tma = new JDownloaderToolBarMobileAPIImpl(user, pass), port);
         } catch (final Throwable e) {
             LogController.CL().log(e);
             throw new StartException(e);
@@ -89,6 +106,10 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
         return null;
     }
 
+    public JDAnywhereConfig getConfig() {
+        return config;
+    }
+
     public String getUsername() {
         return getSettings().getUsername();
     }
@@ -103,6 +124,14 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
 
     void setPassword(String password) {
         getSettings().setPassword(password);
+    }
+
+    public int getPort() {
+        return getSettings().getPort();
+    }
+
+    void setPort(int port) {
+        getSettings().setPort(port);
     }
 
 }

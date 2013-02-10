@@ -1,7 +1,11 @@
 package org.jdownloader.extensions.jdanywhere;
 
+import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
+import org.appwork.storage.config.handler.IntegerKeyHandler;
+import org.appwork.storage.config.handler.StringKeyHandler;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 
 public class JDAnywhereConfigPanel extends ExtensionConfigPanel<JDAnywhereExtension> {
@@ -18,32 +22,28 @@ public class JDAnywhereConfigPanel extends ExtensionConfigPanel<JDAnywhereExtens
     private final JDAnywhereConfig config;
 
     private TextInput              username;
-    private TextInput              password;
+    private PasswordInput          password;
+    private Spinner                port;
 
     private void initComponents() {
-        username = new TextInput();
-        password = new TextInput();
+        username = new TextInput(config.getStorageHandler().getKeyHandler("Username", StringKeyHandler.class));
+        password = new PasswordInput(config.getStorageHandler().getKeyHandler("Password", StringKeyHandler.class));
+        port = new Spinner(config.getStorageHandler().getKeyHandler("Port", IntegerKeyHandler.class));
     }
 
     protected void layoutPanel() {
         addPair("Username:", null, username);
         addPair("Password:", null, password);
+        addPair("Port:", null, port);
     }
 
     @Override
     public void save() {
-        if (!username.getText().equals(config.getUsername())) {
-            config.setUsername(username.getText());
-        }
-        if (!password.getText().equals(config.getPassword())) {
-            config.setPassword(password.getText());
-        }
+        showRestartRequiredMessage();
     }
 
     @Override
     public void updateContents() {
-        username.setText(config.getUsername());
-        password.setText(config.getPassword());
     }
 
 }
