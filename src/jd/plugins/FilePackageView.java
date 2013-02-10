@@ -31,7 +31,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     protected AtomicLong        statusVersion       = new AtomicLong(0);
     protected AtomicLong        structureVersion    = new AtomicLong(0);
 
-    protected boolean           isEnabled           = false;
     protected boolean           lastRunningState    = false;
     protected long              finishedDate        = -1;
     protected long              estimatedETA        = -1;
@@ -49,7 +48,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                 }
             }
         }
-        return isEnabled;
+        return enabledCount > 0;
     }
 
     public FilePackageView(FilePackage fp) {
@@ -59,6 +58,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     private DomainInfo[] infos = new DomainInfo[0];
     private long         size  = 0;
     private long         done  = 0;
+
+    private int          enabledCount;
 
     public DomainInfo[] getDomainInfos() {
         if (isStructureUpdateAvailable(lastIconVersion)) {
@@ -150,8 +151,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         long newFinishedDate = -1;
         int newOffline = 0;
         int newOnline = 0;
-        boolean newEnabled = false;
 
+        int newEnabledCount = 0;
         long fpETA = -1;
         long fpTODO = 0;
         long fpSPEED = 0;
@@ -172,7 +173,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     /*
                      * we still have enabled links, so package must be enabled too
                      */
-                    newEnabled = true;
+
+                    newEnabledCount++;
                 }
                 if (names.add(link.getName())) {
                     /* only counts unique filenames */
@@ -230,7 +232,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         }
         size = newSize;
         done = newDone;
-        isEnabled = newEnabled;
+        this.enabledCount = newEnabledCount;
+
         if (allFinished) {
             /* all links have reached finished state */
             finishedDate = newFinishedDate;
@@ -264,6 +267,17 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             }
         }
         return finishedDate > 0;
+    }
+
+    public int getDisabledCount() {
+        if (isStatusUpdateRequired()) {
+            synchronized (this) {
+                if (isStatusUpdateRequired()) {
+                    updateStatus();
+                }
+            }
+        }
+        return getItems().size() - enabledCount;
     }
 
     public long getFinishedDate() {

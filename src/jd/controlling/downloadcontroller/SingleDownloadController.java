@@ -571,8 +571,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         }
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
-         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss
+         * in ms. value==0 macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());
@@ -727,9 +727,13 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                         DownloadController.getInstance().removeChildren(remove);
                     } else if (CleanAfterDownloadAction.CLEANUP_AFTER_PACKAGE_HAS_FINISHED.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction())) {
                         FilePackage fp = downloadLink.getFilePackage();
-                        if (new FilePackageView(fp).isFinished()) {
+                        FilePackageView fpv = new FilePackageView(fp);
+                        if (fpv.isFinished() && fpv.getDisabledCount() == 0) {
+
                             LogController.GL.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
                             DownloadController.getInstance().removePackage(fp);
+                        } else if (fpv.isFinished()) {
+                            LogController.GL.info("Did NOT remove Package " + fp.getName() + " because Finished and Disabled Links found!");
                         }
                     }
                 }
