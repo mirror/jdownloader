@@ -258,6 +258,11 @@ public class JDGui extends SwingGui {
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
+                            try {
+                                Files.deleteRecursiv(Application.getResource("tmp/extensioncache"));
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
 
                             Dialog.getInstance().showMessageDialog("This is a very important Update. You should run this NOW!");
                             // runUpdateChecker is synchronized and may block
