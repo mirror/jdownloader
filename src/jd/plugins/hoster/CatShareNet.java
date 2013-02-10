@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2012  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -48,9 +48,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "catshare.net" }, urls = { "http://(www\\.)?catshare\\.net/[A-Za-z0-9]{16}" }, flags = { 2 })
 public class CatShareNet extends PluginForHost {
 
-    private String        BRBEFORE = "";
-    private String        HOSTER   = "http://catshare.net";
-    private static Object LOCK     = new Object();
+    private String        BRBEFORE      = "";
+    private String        HOSTER        = "http://catshare.net";
+    private static Object LOCK          = new Object();
+    private static long   DAILYLIMITMAX = SizeFormatter.getSize("20 GB");
 
     // DEV NOTES
     // captchatype: recaptcha
@@ -246,7 +247,12 @@ public class CatShareNet extends PluginForHost {
         }
         ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
         account.setValid(true);
-        ai.setUnlimitedTraffic();
+        final String dailyLimitLeft = br.getRegex("<li><a href=\"/premium\">([^<>\"\\']+)</a></li>").getMatch(0);
+        if (dailyLimitLeft != null) {
+            ai.setTrafficMax(DAILYLIMITMAX);
+            ai.setTrafficLeft(SizeFormatter.getSize(dailyLimitLeft));
+        } else
+            ai.setUnlimitedTraffic();
         try {
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
