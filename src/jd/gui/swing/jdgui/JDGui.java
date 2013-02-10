@@ -32,6 +32,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -70,6 +71,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
+import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -263,7 +265,15 @@ public class JDGui extends SwingGui {
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
-
+                            File rev = Application.getResource("/tmp/update/self/JDU/rev");
+                            if (!rev.exists()) {
+                                rev.getParentFile().mkdirs();
+                                try {
+                                    IO.writeStringToFile(rev, "0");
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
                             Dialog.getInstance().showMessageDialog("This is a very important Update. You should run this NOW!");
                             // runUpdateChecker is synchronized and may block
                             UpdateController.getInstance().setGuiVisible(true);
