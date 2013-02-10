@@ -69,7 +69,7 @@ public class CraMitIn extends PluginForHost {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-            String tmpmin = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpmin = new Regex(brbefore, "You have to wait.*?(\\d+) minutes?").getMatch(0);
             if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
             String tmpsec = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
             if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
@@ -125,11 +125,15 @@ public class CraMitIn extends PluginForHost {
         }
         boolean resumable = true;
         int maxchunks = 1;
-        Form freeform = new Form();
+        final Form freeform = new Form();
+        freeform.setAction(br.getURL());
         freeform.setMethod(MethodType.POST);
         freeform.put("method_free", "FREE+DOWNLOAD");
         freeform.put("op", "download1");
         freeform.put("fname", downloadLink.getName());
+        freeform.put("usr_login", "");
+        freeform.put("referer", "");
+        freeform.put("rand_input", "");
         freeform.put("id", new Regex(downloadLink.getDownloadURL(), "cramit\\.in/([a-z0-9]{12})").getMatch(0));
         br.submitForm(freeform);
         doSomething();
@@ -169,8 +173,8 @@ public class CraMitIn extends PluginForHost {
             if (ttt != null && Integer.parseInt(ttt) < 180) {
                 logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
                 tt = Integer.parseInt(ttt);
+                sleep((tt + 2) * 1001, downloadLink);
             }
-            sleep((tt + 2) * 1001, downloadLink);
             String passCode = null;
             boolean password = false;
             boolean recaptcha = false;
@@ -405,6 +409,7 @@ public class CraMitIn extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
+    /** Old code, only use for premium handling or update */
     public String getDllink() {
         String dllink = br.getRegex("name=\"dl_link\" onclick=\"this\\.focus\\(\\);this\\.select\\(\\);\">(http://.*?)</textarea").getMatch(0);
         if (dllink == null) {
@@ -505,7 +510,8 @@ public class CraMitIn extends PluginForHost {
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
                     checkErrors(link);
-                    dllink = getDllink();
+                    dllink = br.getRegex("\"(http://(www\\.)?cramit\\.in/file_download/[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null) dllink = br.getRegex("<tr> <td align=center><span class=t1><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
                 }
             }
             if (dllink == null) {

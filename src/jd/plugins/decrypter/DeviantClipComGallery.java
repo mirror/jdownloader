@@ -40,7 +40,12 @@ public class DeviantClipComGallery extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final Exception e) {
+            decryptedLinks.add(createDownloadlink(parameter.replace("deviantclip.com", "deviantclipdecrypted.com")));
+            return decryptedLinks;
+        }
         if (br.containsHTML(">PICTURE GALLERY<")) {
             String fpName = getfpName();
             if (fpName == null) {

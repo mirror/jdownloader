@@ -71,6 +71,7 @@ public class HardSexTubeCom extends PluginForHost {
         } else {
             // Via the embedded video stuff we can get the final link without
             // having to decrypt anything
+            br.setFollowRedirects(false);
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0);
             br.getPage("http://vidii.hardsextube.com/video/" + fid + "/confige.xml");
             br.getPage("http://www.hardsextube.com/cdnurl.php?eid=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0) + "&start=0");

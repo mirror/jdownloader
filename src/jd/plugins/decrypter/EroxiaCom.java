@@ -77,12 +77,14 @@ public class EroxiaCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        // Assume that we can hand it over to the host plugin
         if (tempID == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            final DownloadLink dl = createDownloadlink(parameter.replace("eroxia.com/", "eroxiadecrypted.com/"));
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         if (dh) tempID = "directhttp://" + tempID;
-        DownloadLink dl = createDownloadlink(tempID);
+        final DownloadLink dl = createDownloadlink(tempID);
         if (filename != null) dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         decryptedLinks.add(dl);
         return decryptedLinks;

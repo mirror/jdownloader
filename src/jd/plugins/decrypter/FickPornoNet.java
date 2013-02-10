@@ -49,6 +49,10 @@ public class FickPornoNet extends PluginForDecrypt {
         String externID = br.getRegex("value=\"options=(http://.*?)\"").getMatch(0);
         if (externID != null) {
             br.getPage(externID);
+            if (br.containsHTML("No htmlCode read")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String finallink = br.getRegex("<flv_url>(http://.*?)</flv_url>").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("<video_url>(<\\!\\[CDATA\\[)?(.*?)(\\]\\])?></video_url>").getMatch(1);
@@ -58,7 +62,7 @@ public class FickPornoNet extends PluginForDecrypt {
                 }
             }
 
-            DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;

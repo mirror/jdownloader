@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -61,7 +62,11 @@ public class DeviantClipCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String thelink = downloadLink.getDownloadURL();
-        br.getPage(thelink);
+        try {
+            br.getPage(thelink);
+        } catch (final BrowserException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (downloadLink.getDownloadURL().matches(PICTURELINK)) {
             dllink = br.getRegex("<img  \\d+ src=\"(http://[^<>\"]*?)\"").getMatch(0);
         } else {

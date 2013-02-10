@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -51,7 +52,7 @@ public class ExGfUploadsCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        filename = filename.trim();
+        filename = Encoding.htmlDecode(filename.trim());
         tempID = br.getRegex("settings=(http://(www\\.)?.{3,20}/playerConfig\\.php\\?.*?)(\\&overlay|\")").getMatch(0);
         if (tempID != null) {
             br.getPage(tempID);
@@ -60,9 +61,16 @@ public class ExGfUploadsCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
             decryptedLinks.add(dl);
             dl.setFinalFileName(filename + finallink.substring(finallink.length() - 4, finallink.length()));
+            return decryptedLinks;
+        }
+        tempID = br.getRegex("flashvars=\"\\&file=(.*?)\\&link").getMatch(0);
+        if (tempID != null) {
+            DownloadLink dl = createDownloadlink("directhttp://http://flash.serious-cash.com/" + tempID + ".flv");
+            decryptedLinks.add(dl);
+            dl.setFinalFileName(filename + ".flv");
             return decryptedLinks;
         }
         if (tempID == null) {

@@ -54,20 +54,20 @@ public class FilthDumpCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         tempID = br.getRegex("dump1\\.com/flv_player/data/playerConfig(Embed)?/(\\d+)").getMatch(1);
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink("http://www.dump1.com/media/" + tempID + "/");
+            final DownloadLink dl = createDownloadlink("http://www.dump1.com/media/" + tempID + "/");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         tempID = br.getRegex("addParam\\(\\'flashvars\\',\\'\\&file=(http://video\\.teensexmovs\\.com/.*?)\\&").getMatch(0);
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -79,7 +79,20 @@ public class FilthDumpCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        tempID = br.getRegex("(http://(www\\.)?mygirlfriendporn\\.com/playerConfig\\.php\\?[^<>\"/\\&]*?)\"").getMatch(0);
+        if (tempID != null) {
+            br.getPage(Encoding.htmlDecode(tempID));
+            tempID = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
+            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            if (tempID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;

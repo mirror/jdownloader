@@ -29,23 +29,22 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornbanana.com" }, urls = { "http://(www\\.)?pornbanana\\.com/video\\.aspx\\?(\\&)?id=\\d+" }, flags = { 0 })
-public class PornBananaCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroxia.com" }, urls = { "http://(www\\.)?eroxiadecrypted.com/[A-Za-z0-9_\\-]+/\\d+/.*?\\.html" }, flags = { 0 })
+public class EroxiaCom extends PluginForHost {
 
-    private String DLLINK = null;
-
-    public PornBananaCom(PluginWrapper wrapper) {
+    public EroxiaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://www.pornbanana.com/staticpages/Terms.aspx";
-    }
+    private String DLLINK = null;
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public String getAGBLink() {
+        return "http://www.eroxia.com/contact.php";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("eroxiadecrypted.com/", "eroxia.com/"));
     }
 
     @Override
@@ -53,23 +52,20 @@ public class PornBananaCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.pornbanana.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("VideoTitleSpan\">(.*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>[\r\n\t ]+(.*?)[\r\n\t ]+</title>").getMatch(0);
+        if (br.getURL().equals("http://www.eroxia.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1 class=\"detail\\-title\">([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- Eroxia\\.com</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = Encoding.htmlDecode(filename.trim());
-        if (br.containsHTML("var _regularVideoUrl = \\'\\';")) {
-            downloadLink.getLinkStatus().setStatusText("This video can only be watched/downloaded for registered users!");
-            downloadLink.setName(filename);
-            return AvailableStatus.TRUE;
-        }
-        DLLINK = br.getRegex("var _regularVideoUrl = \\'(http://.*?)\\';").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'(http://media\\.pornbanana\\.com/s/\\d+/\\d+/.*?)\\'").getMatch(0);
+        DLLINK = br.getRegex("(http://(www\\.)?eroxia\\.com/playerConfig\\.php\\?[^<>\"/\\&]*?)\"").getMatch(0);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(Encoding.htmlDecode(DLLINK));
+        DLLINK = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
+        filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
-        downloadLink.setFinalFileName(filename + ext);
+        if (ext == null || ext.length() > 5) ext = ".flv";
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -90,9 +86,8 @@ public class PornBananaCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("var _regularVideoUrl = \\'\\';")) throw new PluginException(LinkStatus.ERROR_FATAL, "This video can only be watched/downloaded for registered users!");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -102,14 +97,19 @@ public class PornBananaCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 }
