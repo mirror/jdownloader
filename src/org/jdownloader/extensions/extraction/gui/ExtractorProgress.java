@@ -4,7 +4,6 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -174,15 +173,23 @@ public class ExtractorProgress extends IconedProcessIndicator {
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (table.isEditing()) table.getCellEditor().stopCellEditing();
-        tModel.getTableData().clear();
-        java.util.List<ExtractionController> jpobs = extension.getJobQueue().getJobs();
-        if (jpobs.size() > 0) {
-            tModel.addAllElements(jpobs);
-            ToolTipController.getInstance().unregister(this);
-            Dimension psize = pu.getPreferredSize();
-            pu.show(this, -psize.width + getWidth(), -psize.height);
+        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+
+            if (table.isEditing()) table.getCellEditor().stopCellEditing();
+            tModel.getTableData().clear();
+            java.util.List<ExtractionController> jpobs = extension.getJobQueue().getJobs();
+            if (jpobs.size() > 0) {
+                tModel.addAllElements(jpobs);
+                ToolTipController.getInstance().unregister(this);
+                Dimension psize = pu.getPreferredSize();
+                pu.show(this, -psize.width + getWidth(), -psize.height);
+            } else {
+                ToolTipController.getInstance().show(this);
+            }
+        } else {
+            ToolTipController.getInstance().show(this);
         }
+
     }
 
     public void update(Type type, ExtractionController con) {
