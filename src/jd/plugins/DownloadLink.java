@@ -113,6 +113,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public static final String                 PROPERTY_RESUMEABLE       = "PROPERTY_RESUMEABLE";
     public static final String                 PROPERTY_FINALLOCATION    = "FINALLOCATION";
     public static final String                 PROPERTY_LASTFPNAME       = "LASTFPNAME";
+    public static final String                 PROPERTY_DOWNLOADTIME     = "DOWNLOADTIME";
 
     public static final int                    LINKTYPE_CONTAINER        = 1;
 
@@ -224,6 +225,18 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             this.setProperty(PROPERTY_FINISHTIME, finishedDate);
         }
+    }
+
+    public void addDownloadTime(long time) {
+        if (time < 0) {
+            setProperty(PROPERTY_DOWNLOADTIME, Property.NULL);
+        } else {
+            setProperty(PROPERTY_DOWNLOADTIME, time + getDownloadTime());
+        }
+    }
+
+    public long getDownloadTime() {
+        return getLongProperty(PROPERTY_DOWNLOADTIME, 0);
     }
 
     public long getCreated() {
@@ -561,6 +574,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         downloadCurrent = 0;
         this.setFinishedDate(-1l);
         linkStatus.reset();
+        addDownloadTime(-1);
         this.availableStatus = AvailableStatus.UNCHECKED;
         this.setEnabled(true);
         deleteFile(true, true);

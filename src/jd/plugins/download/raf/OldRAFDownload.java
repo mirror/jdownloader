@@ -583,6 +583,10 @@ public class OldRAFDownload extends DownloadInterface {
             return false;
         } finally {
             try {
+                downloadLink.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
+            } catch (final Throwable e) {
+            }
+            try {
                 downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(this.getManagedConnetionHandler());
             } catch (final Throwable e) {
             }
