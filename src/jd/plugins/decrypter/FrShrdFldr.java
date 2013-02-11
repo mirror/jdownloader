@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://(www\\.)?4shared(\\-china)?\\.com/(dir|folder|minifolder)/[^\"' /]+(/[^\"' ]+\\?sID=[a-zA-z0-9]{16})?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(dir|folder|minifolder)/[^\"' /]+(/[^\"' ]+\\?sID=[a-zA-z0-9]{16})?" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
 
     public FrShrdFldr(final PluginWrapper wrapper) {
@@ -48,17 +48,18 @@ public class FrShrdFldr extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceFirst(".com/(dir|folder|minifolder)/", ".com/folder/");
+        String uid = new Regex(param.toString(), "\\.com/(dir|folder|minifolder)/([^/#]+)").getMatch(1);
+        String parameter = new Regex(param.toString(), "(https?://(www\\.)?4shared(\\-china)?\\.com/)").getMatch(0);
+        parameter = parameter + "folder/" + uid;
         br.setFollowRedirects(true);
         try {
-            br.setCookie(getHost(), "4langcookie", "en");
+            br.setCookie(this.getHost(), "4langcookie", "en");
         } catch (final Throwable e) {
         }
         String pass = "";
 
         // check the folder/ page for password stuff and validity of url
         br.getPage(parameter);
-        String uid = new Regex(param.toString(), "\\.com/(folder|dir)/([^/]+)").getMatch(1);
 
         // **needs checking**, all new html most likely needs fixing
         if (br.containsHTML("The file link that you requested is not valid")) return decryptedLinks;
@@ -92,11 +93,17 @@ public class FrShrdFldr extends PluginForDecrypt {
         do {
             // get minifolder page, contains all files and subfolders in one page
             br.getPage(parameter.replace(".com/folder", ".com/minifolder") + "?firstFileToShow=" + currentFirstLink);
-
             filter = br.getRegex("<tr valign=\"top\">[\r\n\t ]+<td width=\"\\d+\"(.*?)</td>[\r\n\t ]+</tr>").getColumn(0);
             if (filter == null) {
                 logger.warning("Couldn't filter /minifolder/ page!");
-                return null;
+                if (decryptedLinks.size() > 0) {
+                    // might be caused because of filter.lenght = 99
+                    logger.warning("Possible empty page");
+                    break;
+                } else {
+                    logger.warning("Possible error");
+                    return null;
+                }
             }
             if (filter != null && filter.length > 0) {
                 for (final String entry : filter) {
@@ -119,34 +126,31 @@ public class FrShrdFldr extends PluginForDecrypt {
                     if (fileSize != null) dlink.setDownloadSize(SizeFormatter.getSize(fileSize.replace(",", "")));
                     dlink.setAvailable(true);
                     fp.add(dlink);
-                    try {
-                        distribute(dlink);
-                    } catch (final Throwable e) {
-                        /* does not exist in 09581 */
-                    }
                     decryptedLinks.add(dlink);
+                }
+            }
+
+            // lets just add them back into the decrypter...
+            if (filter != null && filter.length > 0) {
+                for (String entry : filter) {
+                    // sync folders share same uid but have ?sID=UID at the end, but this is done by JS from the main /folder/uid page...
+                    String subDir = new Regex(entry, "\"(https?://(www\\.)?4shared(\\-china)?\\.com/(dir|folder)/[^\"' ]+/[^\"' ]+(\\?sID=[a-zA-z0-9]{16}))\"").getMatch(0);
+                    // prevent the UID from showing up in another url format structure
+                    if (subDir != null) {
+                        if (subDir.contains("?sID=") || !new Regex(subDir, "\\.com/(folder|dir)/([^/]+)").getMatch(1).equals(uid)) {
+                            decryptedLinks.add(createDownloadlink(subDir));
+                        }
+                    }
                 }
             }
             if (currentFirstLink >= 10000) {
                 logger.info("Fail safe triggered, quitting...");
                 break;
             }
-            currentFirstLink += 100;
-        } while (filter != null && filter.length == 100);
 
-        // lets just add them back into the decrypter...
-        if (filter != null && filter.length > 0) {
-            for (String entry : filter) {
-                // sync folders share same uid but have ?sID=UID at the end, but this is done by JS from the main /folder/uid page...
-                String subDir = new Regex(entry, "\"(https?://(www\\.)?4shared(\\-china)?\\.com/(dir|folder)/[^\"' ]+/[^\"' ]+(\\?sID=[a-zA-z0-9]{16}))\"").getMatch(0);
-                // prevent the UID from showing up in another url format structure
-                if (subDir != null) {
-                    if (subDir.contains("?sID=") || !new Regex(subDir, "\\.com/(folder|dir)/([^/]+)").getMatch(1).equals(uid)) {
-                        decryptedLinks.add(createDownloadlink(subDir));
-                    }
-                }
-            }
-        }
+            currentFirstLink += 100;
+            // they only show 99 results on the first page now.. 11/02/2013
+        } while (filter != null && (filter.length == 100 | filter.length == 99));
         if (decryptedLinks.size() == 0) {
             logger.warning("Possible empty folder, or plugin out of date for link: " + parameter);
         }

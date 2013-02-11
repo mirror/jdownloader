@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie2k.to" }, urls = { "http://(www\\.)?movie2k\\.to/(?!movies\\-(all|genre)|tvshows\\-season)(\\d+\\-[^<>\"/]*?|tvshows\\-\\d+\\-[^<>\"/]*?|[^<>\"/]*?\\-\\d+)(\\.html)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie2k.to" }, urls = { "http://(www\\.)?movie2k\\.to/(?!movies\\-(all|genre)|tvshows\\-season)(\\d+\\-[^<>\"/]*?|tvshows\\-\\d+\\-[^<>\"/]*?|[^<>\"/]*\\-\\d+)(\\.html)?" }, flags = { 0 })
 public class Mv2kTo extends PluginForDecrypt {
 
     public Mv2kTo(PluginWrapper wrapper) {
@@ -45,7 +45,12 @@ public class Mv2kTo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         String initalMirror = parameter.substring(parameter.lastIndexOf("/") + 1);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.getURL().endsWith("/error404.php")) {
+            logger.info("Invalid URL, or the URL doesn't exist any longer");
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online \\- Watch Movies Online, Full Movies, Download</title>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>(.*?) online").getMatch(0);
         Browser br2 = br.cloneBrowser();
