@@ -1,4 +1,4 @@
-package org.jdownloader.gui.uiserio;
+package org.jdownloader.gui.userio;
 
 
 

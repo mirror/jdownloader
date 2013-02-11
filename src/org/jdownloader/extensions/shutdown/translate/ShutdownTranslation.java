@@ -81,4 +81,7 @@ public interface ShutdownTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Administrator Rights are required to setup JDownloader for Hibernate or Standby Mode" })
     String show_admin();
+
+    @Default(lngs = { "en" }, values = { "Keep Shutdown enabled" })
+    String config_active_by_default();
 }

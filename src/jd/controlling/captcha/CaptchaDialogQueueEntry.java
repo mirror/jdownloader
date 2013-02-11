@@ -25,7 +25,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.gui.uiserio.NewUIO;
+import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 

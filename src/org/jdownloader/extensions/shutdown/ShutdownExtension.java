@@ -28,7 +28,6 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.UserIO;
 import jd.gui.swing.jdgui.components.toolbar.ToolbarManager;
 import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarToggleAction;
@@ -44,6 +43,8 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.StartException;
@@ -52,7 +53,9 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
 import org.jdownloader.extensions.shutdown.translate.T;
 import org.jdownloader.gui.shortcuts.ShortcutController;
-import org.jdownloader.gui.uiserio.NewUIO;
+import org.jdownloader.gui.userio.MessageDialogImpl;
+import org.jdownloader.gui.userio.MessageDialogInterface;
+import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.RestartController;
 
@@ -458,6 +461,10 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     @Override
     protected void start() throws StartException {
+
+        if (!getSettings().isShutdownActiveByDefaultEnabled()) {
+            CFG_SHUTDOWN.SHUTDOWN_ACTIVE.setValue(false);
+        }
         if (menuAction == null) {
             menuAction = new AbstractToolbarToggleAction(CFG_SHUTDOWN.SHUTDOWN_ACTIVE) {
 
@@ -471,10 +478,19 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
                 public void actionPerformed(ActionEvent e) {
                     super.actionPerformed(e);
-                    if (isSelected()) {
-                        UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, _.addons_jdshutdown_statusmessage_enabled());
-                    } else {
-                        UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, _.addons_jdshutdown_statusmessage_disabled());
+                    try {
+                        if (isSelected()) {
+
+                            NewUIO.I().show(MessageDialogInterface.class, new MessageDialogImpl(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _.addons_jdshutdown_statusmessage_enabled()));
+
+                        } else {
+                            NewUIO.I().show(MessageDialogInterface.class, new MessageDialogImpl(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _.addons_jdshutdown_statusmessage_disabled()));
+
+                        }
+                    } catch (DialogClosedException e1) {
+                        e1.printStackTrace();
+                    } catch (DialogCanceledException e1) {
+                        e1.printStackTrace();
                     }
                 }
 
