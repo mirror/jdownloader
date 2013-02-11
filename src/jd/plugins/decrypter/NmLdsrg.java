@@ -88,10 +88,18 @@ public class NmLdsrg extends PluginForDecrypt {
                 String cnl2post = "jk=" + Encoding.urlEncode(jk) + "&crypted=" + Encoding.urlEncode(crypted);
                 if (passwrds != null) cnl2post += "&passwords=" + Encoding.urlEncode(source);
                 if (source != null) cnl2post += "&source=" + Encoding.urlEncode(source);
-                br.postPage("http://127.0.0.1:9666/flash/addcrypted2", cnl2post);
-                if (br.containsHTML("success")) {
-                    logger.info("CNL2 = works!");
-                    continue;
+                try {
+                    br.postPage("http://127.0.0.1:9666/flash/addcrypted2", cnl2post);
+                    if (br.containsHTML("success")) {
+                        logger.info("CNL2 = works!");
+                        continue;
+                    }
+                    if (br.containsHTML("^failed")) {
+                        logger.warning("anime-loads.org: CNL2 Postrequest was failed! Please upload now a logfile, contact our support and add this loglink to your bugreport!");
+                        logger.warning("anime-loads.org: CNL2 Message: " + br.toString());
+                    }
+                } catch (Throwable e) {
+                    logger.info("anime-loads.org: ExternInterface(CNL2) is disabled!");
                 }
                 br.getPage(link);
             }
@@ -120,7 +128,7 @@ public class NmLdsrg extends PluginForDecrypt {
                 logger.info("Captcha wrong, stopping...");
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
-            String dllink = ajax.getRegex("\"response\":(\\[)?\"(http[^<>\"]*?)\"").getMatch(0);
+            String dllink = ajax.getRegex("\"response\":(\\[)?\"(http[^<>\"]*?)\"").getMatch(1);
             // Links can fail for multiple reasons so let's skip them
             if (dllink == null) {
                 logger.info("Found a dead link: " + link);
