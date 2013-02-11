@@ -97,7 +97,7 @@ public class RapidStoneCom extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 0;
+            chunks = 1;
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
