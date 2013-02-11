@@ -1,6 +1,7 @@
 action_tooltip=Ενεργοποιήστε για Τερματισμό του Συστήματος μετά την ολοκλήρωση των Λήψεων
 addons_jdshutdown_statusmessage_disabled=Το σύστημα ΔΕΝ θα τερματιστεί από τον JDownloader
 addons_jdshutdown_statusmessage_enabled=Το σύστημα θα τερματιστεί από τον JDownloader όταν ολοκληρωθούν οι λήψεις!
+config_active_by_default=Διατήρηση του Τερματισμού Ενεργοποιημένου
 config_toolbarbutton=Εμφάνιση στη Γραμμή Εργαλείων
 gui_config_jdshutdown_close=Κλείσιμο του JD
 gui_config_jdshutdown_forceshutdown=Κλείσιμο (όχι σε όλα τα λειτουργικά)
