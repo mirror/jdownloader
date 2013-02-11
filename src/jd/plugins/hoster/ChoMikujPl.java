@@ -132,7 +132,7 @@ public class ChoMikujPl extends PluginForHost {
         if (savedLink != null && savedPost != null) br.postPage(savedLink, savedPost);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // Premium users can always download the original file
-        if (theLink.getStringProperty("video") != null && !premium) {
+        if (theLink.getBooleanProperty("video") && !premium) {
             br.setFollowRedirects(true);
             videolink = true;
             br.getPage("http://chomikuj.pl/ShowVideo.aspx?id=" + fid);

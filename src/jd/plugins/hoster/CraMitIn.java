@@ -304,7 +304,8 @@ public class CraMitIn extends PluginForHost {
                         logger.warning("Wrong captcha or wrong password!");
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    dllink = getDllink();
+                    dllink = br.getRegex("\"(http://(www\\.)?cramit\\.in/file_download/[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null) dllink = br.getRegex("<tr> <td align=center><span class=t1><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
                 }
                 if (dllink == null) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -510,8 +511,7 @@ public class CraMitIn extends PluginForHost {
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
                     checkErrors(link);
-                    dllink = br.getRegex("\"(http://(www\\.)?cramit\\.in/file_download/[^<>\"]*?)\"").getMatch(0);
-                    if (dllink == null) dllink = br.getRegex("<tr> <td align=center><span class=t1><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    dllink = getDllink();
                 }
             }
             if (dllink == null) {

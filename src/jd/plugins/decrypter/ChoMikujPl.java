@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -38,7 +39,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl/(?!action|powiemto|page)[^<>\"/]+/.+|chomikujpagedecrypt\\.pl/.*?,\\d+$)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl(?!action|powiemto|page)//?[^<>\"/]+/.+|/chomikujpagedecrypt\\.pl/.*?,\\d+$)" }, flags = { 0 })
 public class ChoMikujPl extends PluginForDecrypt {
 
     public ChoMikujPl(PluginWrapper wrapper) {
@@ -52,28 +53,53 @@ public class ChoMikujPl extends PluginForDecrypt {
     private String              REQUESTVERIFICATIONTOKEN = null;
     private static final String PAGEDECRYPTLINK          = "http://chomikujpagedecrypt\\.pl/.*?\\d+";
     private static final String ENDINGS                  = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip)";
+    private static final String VIDEOENDINGS             = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("chomikujpagedecrypt.pl/", "chomikuj.pl/");
+        String parameter = param.toString().replace("chomikujpagedecrypt.pl/", "chomikuj.pl/").replace("chomikuj.pl//", "chomikuj.pl/");
         String linkending = null;
-        try {
-            linkending = parameter.substring(parameter.lastIndexOf(","));
-        } catch (Exception e) {
-        }
+        if (parameter.contains(",")) linkending = parameter.substring(parameter.lastIndexOf(","));
+        if (linkending == null) linkending = parameter.substring(parameter.lastIndexOf("/") + 1);
         /** Correct added link */
         parameter = parameter.replace("www.", "");
         br.setFollowRedirects(false);
 
         /** Handle single links */
         if (linkending != null) {
-            // It's a file: Get all important information out of the url and
-            // hand it over to the hosterplugin
-            if (linkending.matches(",\\d+\\.[a-z0-9]{1,5}")) {
+            String tempExt = null;
+            if (linkending.contains(".")) tempExt = linkending.substring(linkending.lastIndexOf("."));
+            final boolean isLinkendingWithoutID = (!linkending.contains(",") && tempExt != null && new Regex(tempExt, Pattern.compile(ENDINGS, Pattern.CASE_INSENSITIVE)).matches());
+            if (linkending.matches(",\\d+\\.[A-Za-z0-9]{1,5}") || isLinkendingWithoutID) {
+                /**
+                 * If the ID is missing but it's a single link we have to access
+                 * the link to get it's read link and it's download ID.
+                 */
+                if (isLinkendingWithoutID) {
+                    br.getPage(parameter);
+                    final String orgLink = br.getRegex("property=\"og:url\" content=\"(http://(www\\.)?chomikuj\\.pl/[^<>\"]*?)\"").getMatch(0);
+                    if (orgLink != null && orgLink.contains(",")) {
+                        linkending = orgLink.substring(orgLink.lastIndexOf(","));
+                        if (!linkending.matches(",\\d+\\.[A-Za-z0-9]{1,5}")) {
+                            logger.warning("SingleLink handling failed for link: " + parameter);
+                            return null;
+                        }
+                        parameter = orgLink;
+                    } else {
+                        logger.warning("SingleLink handling failed for link: " + parameter);
+                        return null;
+                    }
+                }
                 final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
                 final Regex info = new Regex(parameter, "/([^<>\"/]*?),(\\d+)(\\..+)$");
-                dl.setProperty("fileid", info.getMatch(1));
-                dl.setName(Encoding.htmlDecode(info.getMatch(0)) + info.getMatch(2));
+                final String filename = Encoding.htmlDecode(info.getMatch(0)) + info.getMatch(2);
+                final String fileid = info.getMatch(1);
+                String ext = null;
+                if (filename.contains(".")) ext = filename.substring(filename.lastIndexOf("."));
+
+                dl.setProperty("fileid", fileid);
+                dl.setName(filename);
+                if ((ext != null && ext.length() <= 5) && ext.matches(VIDEOENDINGS)) dl.setProperty("video", true);
                 try {
                     distribute(dl);
                 } catch (final Throwable e) {
@@ -295,7 +321,10 @@ public class ChoMikujPl extends PluginForDecrypt {
             String[][] fileIds = tempBr.getRegex("<div class=\"left\">[\t\n\r ]+<p class=\"filename\">[\t\n\r ]+<a class=\"downloadAction\" href=\"[^<>\"\\']+\"> +<span class=\"bold\">(.{1,300})</span>(\\..{1,20})</a>[\t\n\r ]+</p>[\t\n\r ]+<div class=\"thumbnail\">.*?title=\"([^<>\"]*?)\".*?</div>[\t\n\r ]+<div class=\"smallTab\">[\t\n\r ]+<ul class=\"tabGradientBg borderRadius\">[\t\n\r ]+<li>([^<>\"\\'/]+)</li>.*?class=\"galeryActionButtons visibleOpt fileIdContainer\" rel=\"(\\d+)\"").getMatches();
             addRegexInt(0, 1, 3, 4, 2);
             if (fileIds == null || fileIds.length == 0) {
-                /** Specified for videos (also works for mp3s, maybe also for other types) */
+                /**
+                 * Specified for videos (also works for mp3s, maybe also for
+                 * other types)
+                 */
                 fileIds = tempBr.getRegex("<ul class=\"borderRadius tabGradientBg\">[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">([^<>\"\\']*?(<span class=\"e\"> </span>[^<>\"\\']*?)?)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
                 addRegexInt(2, 4, 0, 1, 0);
                 /**
@@ -327,9 +356,10 @@ public class ChoMikujPl extends PluginForDecrypt {
                         dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
                         dl.setAvailable(true);
                         /**
-                         * If the link is a video it needs other download handling
+                         * If the link is a video it needs other download
+                         * handling
                          */
-                        if (id[REGEXSORT.get(1)].trim().matches("\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)")) dl.setProperty("video", "true");
+                        if (id[REGEXSORT.get(1)].trim().matches(VIDEOENDINGS)) dl.setProperty("video", true);
                     } else {
                         dl.setName(String.valueOf(new Random().nextInt(1000000)));
                     }
