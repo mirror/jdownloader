@@ -38,6 +38,10 @@ public class IShareMyBitchComGallery extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.getURL().equals("http://www.isharemybitch.com/404.php") || br.containsHTML("The file you have requested was not found on this server")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<div id=\"v_header\">([^<>\"]*?)</div>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?) at IShareMyBitch\\.com Naked Girls in Homemade Porn Sextapes and Amateur Pictures</title>").getMatch(0);
         String galleryID = br.getRegex("isharemybitch\\-gallery\\-(\\d+)\"").getMatch(0);
@@ -48,7 +52,7 @@ public class IShareMyBitchComGallery extends PluginForDecrypt {
         }
         fpName = Encoding.htmlDecode(fpName.trim());
         br.getPage("http://www.isharemybitch.com/gallery-widget/widget.php?id=" + galleryID);
-        final String[] links = br.getRegex("\"(http://media\\.isharemybitch\\.com:\\d+/galleries/[a-z0-9]+/[a-z0-9\\-_]+\\.jpg)\"").getColumn(0);
+        final String[] links = br.getRegex("\"(http://media\\.isharemybitch\\.com:\\d+/galleries/[a-z0-9]+/[^<>\"/]+\\.jpg)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

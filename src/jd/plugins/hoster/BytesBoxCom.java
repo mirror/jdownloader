@@ -190,7 +190,7 @@ public class BytesBoxCom extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         final String usedSpace = br.getRegex("<span>(\\d+)</span>MB<span>/\\d+</span>GB").getMatch(0);
-        if (usedSpace != null) ai.setUsedSpace(Long.parseLong(usedSpace + " MB"));
+        if (usedSpace != null) ai.setUsedSpace(SizeFormatter.getSize(usedSpace + " MB"));
         final String expire = br.getRegex("<p>Next Due Date: <span>([^<>\"]*?)</span>").getMatch(0);
         if (expire == null) {
             account.setValid(false);

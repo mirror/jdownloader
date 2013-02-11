@@ -40,9 +40,13 @@ public class KndGrlsCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        String parameter = param.toString();
-        String page = br.getPage(parameter);
+        final String parameter = param.toString();
+        final String page = br.getPage(parameter);
         if (parameter.contains("com/gallery")) { // it's a gallery
+            if (br.containsHTML(">Sorry, gallery not found")) {
+                logger.info("Link offline: " + parameter);
+                return new ArrayList<DownloadLink>();
+            }
             return decryptGalleryLinks(br);
         } else if (parameter.contains("com/girls")) { // it's a girl's gallery
                                                       // collection
@@ -75,7 +79,7 @@ public class KndGrlsCom extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptVideoLinks(Browser br) throws PluginException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String link = br.getRegex("\\'flashvars\\',\\'\\&amp;file=(http://[^<>\"]*?\\.m4v)").getMatch(0);
+        final String link = br.getRegex("\"(http://vids\\.kindgirls\\.com/[^<>\"]*?)\"").getMatch(0);
         if (link == null || link.length() == 0) {
             logger.severe("Variable 'link' not found, Please report issue to JDownloader Developement.");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

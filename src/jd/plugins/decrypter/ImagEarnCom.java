@@ -40,7 +40,12 @@ public class ImagEarnCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.getURL().equals("http://imagearn.com/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<h3 class=\"page\\-title\"><strong>([^<>\"/]+)</strong>").getMatch(0);
         if (parameter.contains("imagearn.com//gallery.php?id=")) {
             if (fpName == null) fpName = br.getRegex("<title>(.*?) \\- Image Earn</title>").getMatch(0);
