@@ -254,6 +254,7 @@ public class JDGui extends SwingGui {
                 Application.getResource("/tmp/update/self/JDU").mkdirs();
                 new Thread() {
                     public void run() {
+                        if (UpdateController.getInstance().getHandler() == null) return;
                         if (Application.getResource("JDownloader.jar").lastModified() < new Date(2013 - 1900, 1, 10, 10, 0).getTime()) {
                             try {
                                 Files.deleteRecursiv(Application.getResource("cfg/versioninfo/JDU"));
