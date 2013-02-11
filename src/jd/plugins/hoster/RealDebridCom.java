@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -49,10 +50,12 @@ public class RealDebridCom extends PluginForHost {
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
 
-    private static final String mName    = "real-debrid.com";
-    private static final String mProt    = "http://";
-    private static Object       LOCK     = new Object();
-    private static final String DIRECTRD = "directRD";
+    private static final String  mName             = "real-debrid.com";
+    private static final String  mProt             = "http://";
+    private static Object        LOCK              = new Object();
+    private static final String  DIRECTRD          = "directRD";
+    private static AtomicInteger RUNNING_DOWNLOADS = new AtomicInteger(0);
+    private static AtomicInteger MAX_DOWNLOADS     = new AtomicInteger(-1);
 
     public RealDebridCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -120,7 +123,12 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return MAX_DOWNLOADS.get();
+    }
+
+    @Override
+    public int getMaxSimultanDownload(DownloadLink link, final Account account) {
+        return MAX_DOWNLOADS.get();
     }
 
     @Override
@@ -137,20 +145,27 @@ public class RealDebridCom extends PluginForHost {
         if (dllink.startsWith("https")) {
             dllink = dllink.replace("https://", "http://");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().isContentDisposition()) {
-            /* contentdisposition, lets download it */
-            dl.startDownload();
-            return;
-        } else {
-            /*
-             * download is not contentdisposition, so remove this host from premiumHosts list
-             */
-            br.followConnection();
-        }
+        RUNNING_DOWNLOADS.incrementAndGet();
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().isContentDisposition()) {
+                /* contentdisposition, lets download it */
+                dl.startDownload();
+                return;
+            } else {
+                /*
+                 * download is not contentdisposition, so remove this host from premiumHosts list
+                 */
+                br.followConnection();
+            }
 
-        /* temp disabled the host */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* temp disabled the host */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } finally {
+            if (RUNNING_DOWNLOADS.decrementAndGet() == 0) {
+                MAX_DOWNLOADS.set(-1);
+            }
+        }
     }
 
     private void removeHostFromMultiHost(DownloadLink link, Account acc) throws PluginException {
@@ -186,6 +201,11 @@ public class RealDebridCom extends PluginForHost {
             if (br.containsHTML("error\":11")) {
                 logger.info("Host seems buggy, remove it from list");
                 removeHostFromMultiHost(link, acc);
+            }
+            if (br.containsHTML("error\":12")) {
+                /* You have too many simultenous downloads */
+                MAX_DOWNLOADS.set(RUNNING_DOWNLOADS.get());
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 12: You have too many simultenous downloads", 20 * 1000l);
             }
             if (br.containsHTML("error\":13")) { // TODO
                 logger.info("Unknown error 13");
