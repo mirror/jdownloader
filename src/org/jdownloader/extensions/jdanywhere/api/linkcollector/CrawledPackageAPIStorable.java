@@ -66,6 +66,7 @@ public class CrawledPackageAPIStorable implements Storable {
     private List<CrawledLinkAPIStorable> links;
     private CrawledPackage               pkg;
 
+    @SuppressWarnings("unused")
     private CrawledPackageAPIStorable() {
     }
 

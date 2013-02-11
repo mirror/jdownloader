@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.jdanywhere.api.downloads;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -35,33 +36,15 @@ public class FilePackageAPIStorable implements Storable {
     }
 
     public long getSpeed() {
-        long speed = 0;
-        synchronized (pkg) {
-            for (DownloadLink link : pkg.getChildren()) {
-                speed += link.getDownloadSpeed();
-            }
-        }
-        return speed;
+        return DownloadWatchDog.getInstance().getDownloadSpeedbyFilePackage(pkg);
     }
 
     public long getDone() {
-        long done = 0;
-        synchronized (pkg) {
-            for (DownloadLink link : pkg.getChildren()) {
-                done += link.getDownloadCurrent();
-            }
-        }
-        return done;
+        return pkg.getView().getDone();
     }
 
     public long getSize() {
-        long size = 0;
-        synchronized (pkg) {
-            for (DownloadLink link : pkg.getChildren()) {
-                size += link.getDownloadSize();
-            }
-        }
-        return size;
+        return pkg.getView().getSize();
     }
 
     public int getEnabled() {

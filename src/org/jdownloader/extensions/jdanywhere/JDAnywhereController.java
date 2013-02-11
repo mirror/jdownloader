@@ -36,13 +36,13 @@ public class JDAnywhereController {
         return sessionc;
     }
 
-    public synchronized void register(final RemoteAPIInterface x, int port, boolean forceRegister) {
+    public synchronized void register(final RemoteAPIInterface x, int port, String user, String pass, boolean forceRegister) {
         try {
             if (!isIntialized) {
                 apiPort = port;
                 rapi = new SessionRemoteAPI<JDAnywhereSession>();
 
-                sessionc = new JDAnywhereSessionControllerImp(((JDAnywhereAPI) x).getUsername(), ((JDAnywhereAPI) x).getPassword());
+                sessionc = new JDAnywhereSessionControllerImp(user, pass);
                 eventsapi = new JDAnywhereEventsImpl();
                 try {
                     sessionc.registerSessionRequestHandler(rapi);
@@ -64,9 +64,9 @@ public class JDAnywhereController {
         }
     }
 
-    public synchronized void register(final RemoteAPIInterface x, int port) {
+    public synchronized void register(final RemoteAPIInterface x, int port, String user, String pass) {
         if (x == null) return;
-        register(x, port, false);
+        register(x, port, user, pass, false);
     }
 
     public synchronized void unregister(final RemoteAPIInterface x) {

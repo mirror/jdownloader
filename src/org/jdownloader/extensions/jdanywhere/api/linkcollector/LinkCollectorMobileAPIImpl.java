@@ -14,26 +14,17 @@ import jd.plugins.FilePackage;
 
 import org.appwork.remoteapi.EventsAPIEvent;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
-import org.jdownloader.extensions.jdanywhere.CheckUser;
-import org.jdownloader.extensions.jdanywhere.JDAnywhereAPI;
 import org.jdownloader.extensions.jdanywhere.JDAnywhereController;
 
-public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkCollectorListener, JDAnywhereAPI {
+public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkCollectorListener {
 
     LinkCollectorAPIImpl lcAPI = new LinkCollectorAPIImpl();
-    private String       user;
-    private String       pass;
-    private CheckUser    checkUser;
 
-    public LinkCollectorMobileAPIImpl(String user, String pass) {
+    public LinkCollectorMobileAPIImpl() {
         LinkCollector.getInstance().getEventsender().addListener(this, true);
-        this.user = user;
-        this.pass = pass;
-        checkUser = new CheckUser(user, pass);
     }
 
-    public List<CrawledPackageAPIStorable> list(final String username, final String password) {
-        if (!checkUser.check(username, password)) return null;
+    public List<CrawledPackageAPIStorable> list() {
         LinkCollector lc = LinkCollector.getInstance();
         boolean b = lc.readLock();
         try {
@@ -55,8 +46,7 @@ public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkC
         }
     }
 
-    public CrawledPackageAPIStorable getCrawledPackage(long crawledPackageID, final String username, final String password) {
-        if (!checkUser.check(username, password)) return null;
+    public CrawledPackageAPIStorable getCrawledPackage(long crawledPackageID) {
         CrawledPackage cpkg = getCrawledPackageFromID(crawledPackageID);
         CrawledPackageAPIStorable pkg = new CrawledPackageAPIStorable(cpkg);
         List<CrawledLinkAPIStorable> links = new ArrayList<CrawledLinkAPIStorable>(0);
@@ -64,21 +54,18 @@ public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkC
         return pkg;
     }
 
-    public String getPackageIDFromLinkID(long ID, final String username, final String password) {
-        if (!checkUser.check(username, password)) return null;
+    public String getPackageIDFromLinkID(long ID) {
         CrawledLink dl = getCrawledLinkFromID(ID);
         CrawledPackage fpk = dl.getParentNode();
         return fpk.getUniqueID().toString();
     }
 
-    public CrawledLinkAPIStorable getCrawledLink(long crawledLinkID, final String username, final String password) {
-        if (!checkUser.check(username, password)) return null;
+    public CrawledLinkAPIStorable getCrawledLink(long crawledLinkID) {
         CrawledLink link = getCrawledLinkFromID(crawledLinkID);
         return new CrawledLinkAPIStorable(link);
     }
 
-    public boolean AddCrawledPackageToDownloads(long crawledPackageID, final String username, final String password) {
-        if (!checkUser.check(username, password)) return false;
+    public boolean AddCrawledPackageToDownloads(long crawledPackageID) {
         CrawledPackage cp = getCrawledPackageFromID(crawledPackageID);
         if (cp != null) {
             java.util.List<FilePackage> fpkgs = new ArrayList<FilePackage>();
@@ -91,15 +78,13 @@ public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkC
         return true;
     }
 
-    public boolean AddCrawledLinkToDownloads(long crawledLinkID, final String username, final String password) {
-        if (!checkUser.check(username, password)) return false;
+    public boolean AddCrawledLinkToDownloads(long crawledLinkID) {
         List<Long> crawledLinks = new ArrayList<Long>();
         crawledLinks.add(crawledLinkID);
         return lcAPI.startDownloads(crawledLinks);
     }
 
-    public boolean removeCrawledLink(String ID, final String username, final String password) {
-        if (!checkUser.check(username, password)) return false;
+    public boolean removeCrawledLink(String ID) {
         LinkCollector lc = LinkCollector.getInstance();
         boolean b = lc.readLock();
         long id = Long.valueOf(ID);
@@ -122,8 +107,7 @@ public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkC
         }
     }
 
-    public boolean removeCrawledPackage(String ID, final String username, final String password) {
-        if (!checkUser.check(username, password)) return false;
+    public boolean removeCrawledPackage(String ID) {
         long id = Long.valueOf(ID);
         CrawledPackage cpkg = getCrawledPackageFromID(id);
         if (cpkg != null) {
@@ -162,8 +146,7 @@ public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkC
         }
     }
 
-    public boolean CrawlLink(String URL, final String username, final String password) {
-        if (!checkUser.check(username, password)) return false;
+    public boolean CrawlLink(String URL) {
         return lcAPI.addLinks(URL, "", "", "");
     }
 
@@ -249,13 +232,5 @@ public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkC
 
     @Override
     public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
-    }
-
-    public String getUsername() {
-        return user;
-    }
-
-    public String getPassword() {
-        return pass;
     }
 }

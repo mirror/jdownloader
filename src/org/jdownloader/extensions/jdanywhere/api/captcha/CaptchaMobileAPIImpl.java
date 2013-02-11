@@ -15,46 +15,33 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
 import org.jdownloader.api.captcha.CaptchaJob;
-import org.jdownloader.extensions.jdanywhere.CheckUser;
-import org.jdownloader.extensions.jdanywhere.JDAnywhereAPI;
 import org.jdownloader.extensions.jdanywhere.JDAnywhereController;
 
-public class CaptchaMobileAPIImpl implements CaptchaMobileAPI, CaptchaEventListener, JDAnywhereAPI {
+public class CaptchaMobileAPIImpl implements CaptchaMobileAPI, CaptchaEventListener {
 
-    CaptchaAPIImpl    cpAPI = new CaptchaAPIImpl();
-    private String    user;
-    private String    pass;
-    private CheckUser checkUser;
+    CaptchaAPIImpl cpAPI = new CaptchaAPIImpl();
 
-    public CaptchaMobileAPIImpl(String user, String pass) {
+    public CaptchaMobileAPIImpl() {
         CaptchaEventSender.getInstance().addListener(this);
-        this.user = user;
-        this.pass = pass;
-        checkUser = new CheckUser(user, pass);
     }
 
-    public List<CaptchaJob> list(final String username, final String password) {
-        if (!checkUser.check(username, password)) return null;
+    public List<CaptchaJob> list() {
         return cpAPI.list();
     }
 
-    public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id, final boolean returnAsDataURL, final String username, final String password) {
-        if (!checkUser.check(username, password)) return;
+    public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id, final boolean returnAsDataURL) {
         cpAPI.get(request, response, id, returnAsDataURL);
     }
 
-    public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id, final String username, final String password) {
-        if (!checkUser.check(username, password)) return;
+    public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id) {
         cpAPI.get(request, response, id, false);
     }
 
-    public boolean solve(long id, CaptchaResult result, final String username, final String password) {
-        if (!checkUser.check(username, password)) return false;
+    public boolean solve(long id, CaptchaResult result) {
         return cpAPI.solve(id, result);
     }
 
-    public boolean abort(long id, IOPermission.CAPTCHA what, final String username, final String password) {
-        if (!checkUser.check(username, password)) return false;
+    public boolean abort(long id, IOPermission.CAPTCHA what) {
         return cpAPI.abort(id, what);
     }
 
@@ -79,14 +66,6 @@ public class CaptchaMobileAPIImpl implements CaptchaMobileAPI, CaptchaEventListe
             JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("captcha", data), null);
         }
 
-    }
-
-    public String getUsername() {
-        return user;
-    }
-
-    public String getPassword() {
-        return pass;
     }
 
 }

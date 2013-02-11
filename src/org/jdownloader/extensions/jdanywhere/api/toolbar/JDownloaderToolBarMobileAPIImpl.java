@@ -8,41 +8,30 @@ import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.remoteapi.EventsAPIEvent;
 import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
-import org.jdownloader.extensions.jdanywhere.CheckUser;
 import org.jdownloader.extensions.jdanywhere.JDAnywhereController;
 
 public class JDownloaderToolBarMobileAPIImpl implements JDownloaderToolBarMobileAPI, StateEventListener {
 
     JDownloaderToolBarAPIImpl tbAPI = new JDownloaderToolBarAPIImpl();
-    private String            user;
-    private String            pass;
-    private CheckUser         checkUser;
 
-    public JDownloaderToolBarMobileAPIImpl(String user, String pass) {
+    public JDownloaderToolBarMobileAPIImpl() {
         DownloadWatchDog.getInstance().getStateMachine().addListener(this);
-        this.user = user;
-        this.pass = pass;
-        checkUser = new CheckUser(user, pass);
     }
 
-    public synchronized Object getStatus(final String username, final String password) {
-        if (!checkUser.check(username, password)) return null;
+    public synchronized Object getStatus() {
         return tbAPI.getStatus();
     }
 
-    public boolean startDownloads(final String username, final String password) {
-        if (!checkUser.check(username, password)) return false;
+    public boolean startDownloads() {
         return tbAPI.startDownloads();
     }
 
-    public boolean stopDownloads(final String username, final String password) {
-        if (!checkUser.check(username, password)) return false;
+    public boolean stopDownloads() {
         return tbAPI.stopDownloads();
     }
 
     // pauses a download
-    public boolean pauseDownloads(final String username, final String password) {
-        if (!checkUser.check(username, password)) return false;
+    public boolean pauseDownloads() {
         DownloadWatchDog.getInstance().pauseDownloadWatchDog(!DownloadWatchDog.getInstance().isPaused());
         return true;
     }
@@ -55,14 +44,6 @@ public class JDownloaderToolBarMobileAPIImpl implements JDownloaderToolBarMobile
     }
 
     public void onStateUpdate(StateEvent event) {
-    }
-
-    public String getUsername() {
-        return user;
-    }
-
-    public String getPassword() {
-        return pass;
     }
 
 }

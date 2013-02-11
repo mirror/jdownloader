@@ -68,11 +68,11 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
             int port = config.getPort();
             String user = config.getUsername();
             String pass = config.getPassword();
-            remoteAPI.register(dma = new DownloadsMobileAPIImpl(user, pass), port);
-            remoteAPI.register(lca = new LinkCollectorMobileAPIImpl(user, pass), port);
-            remoteAPI.register(cma = new CaptchaMobileAPIImpl(user, pass), port);
-            remoteAPI.register(coma = new ContentMobileAPIImpl(user, pass), port);
-            remoteAPI.register(tma = new JDownloaderToolBarMobileAPIImpl(user, pass), port);
+            remoteAPI.register(dma = new DownloadsMobileAPIImpl(), port, user, pass);
+            remoteAPI.register(lca = new LinkCollectorMobileAPIImpl(), port, user, pass);
+            remoteAPI.register(cma = new CaptchaMobileAPIImpl(), port, user, pass);
+            remoteAPI.register(coma = new ContentMobileAPIImpl(), port, user, pass);
+            remoteAPI.register(tma = new JDownloaderToolBarMobileAPIImpl(), port, user, pass);
         } catch (final Throwable e) {
             LogController.CL().log(e);
             throw new StartException(e);

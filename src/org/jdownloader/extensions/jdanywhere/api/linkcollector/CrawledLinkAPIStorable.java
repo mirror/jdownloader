@@ -125,6 +125,7 @@ public class CrawledLinkAPIStorable implements Storable {
 
     private CrawledLink link;
 
+    @SuppressWarnings("unused")
     private CrawledLinkAPIStorable() {
         this.link = null;
     }
