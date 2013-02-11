@@ -72,42 +72,15 @@ public class SubeMe extends PluginForHost {
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
-    // how many connections you can make to a given 'host' file server (not dynamic), this assumes each server is setup identically.
-    private static final AtomicInteger maxNonAccSimDlPerHost        = new AtomicInteger(20);
-    private static final AtomicInteger maxFreeAccSimDlPerHost       = new AtomicInteger(20);
-    private static final AtomicInteger maxPremAccSimDlPerHost       = new AtomicInteger(20);
     // set true if the hoster allows every 'account type' (non account|free account|paid account) allow own connection threshold.
     private static final boolean       allowConcurrent              = true;
 
     // DEV NOTES
-    // XfileShare Version 3.0.1.0
+    // XfileShare Version 3.0.2.0
     // mods:
-    // non account: 1 (no resume) * 20
-    // free account: 1 (no resume) * 20
-    // premium account: not tested
     // protocol: no https
     // captchatype: recaptcha, but never used as of vidembed
     // other: no redirects
-
-    /**
-     * @author raztoki
-     * 
-     * @category 'Experimental', Mods written July 2012
-     * */
-    public SubeMe(PluginWrapper wrapper) {
-        super(wrapper);
-        this.enablePremium(COOKIE_HOST + "/premium.html");
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasAutoCaptcha() {
-        return true;
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
 
     private void setConstants(Account account) {
         if (account != null && account.getBooleanProperty("nopremium")) {
@@ -129,6 +102,26 @@ public class SubeMe extends PluginForHost {
             acctype = "Non Account";
             directlinkproperty = "freelink";
         }
+    }
+
+    /**
+     * @author raztoki
+     * 
+     * @category 'Experimental', Mods written July 2012 - 2013
+     * */
+    public SubeMe(PluginWrapper wrapper) {
+        super(wrapper);
+        this.enablePremium(COOKIE_HOST + "/premium.html");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return true;
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
@@ -223,7 +216,7 @@ public class SubeMe extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, Account account) throws Exception, PluginException {
         passCode = downloadLink.getStringProperty("pass");
         // First, bring up saved final links
-        String dllink = checkDirectLink(downloadLink);
+        dllink = checkDirectLink(downloadLink);
         // Second, check for streaming links on the first page
         if (dllink == null) dllink = getDllink();
         // Third, do they provide video hosting?
@@ -350,32 +343,42 @@ public class SubeMe extends PluginForHost {
                 }
             }
         }
-        // Process usedHost within hostMap
-        controlHost(account, downloadLink, true, dllink);
+        // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
+        controlHost(account, downloadLink, true);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
-                setSimHost(-1);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Max Sim Per Host, Connection limit reached!");
+                controlSimHost(account);
+                controlHost(account, downloadLink, false);
+            } else {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                correctBR();
+                checkServerErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            correctBR();
-            checkServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        fixFilename(downloadLink);
-        try {
-            // add a download slot
-            controlFree(+1);
-            // start the dl
-            dl.startDownload();
-        } finally {
-            // remove usedHost slot from hostMap
-            controlHost(account, downloadLink, false, dllink);
-            // remove download slot
-            controlFree(-1);
+        } else {
+            fixFilename(downloadLink);
+            try {
+                // add a download slot
+                if (account == null) {
+                    controlFree(+1);
+                } else {
+                    controlPrem(+1);
+                }
+                // start the dl
+                dl.startDownload();
+            } finally {
+                // remove usedHost slot from hostMap
+                controlHost(account, downloadLink, false);
+                // remove download slot
+                if (account == null) {
+                    controlFree(-1);
+                } else {
+                    controlPrem(-1);
+                }
+            }
         }
     }
 
@@ -402,7 +405,7 @@ public class SubeMe extends PluginForHost {
     }
 
     private String getDllink() {
-        String dllink = br.getRedirectLocation();
+        dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
@@ -529,7 +532,8 @@ public class SubeMe extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        if (ttt == null) ttt = new Regex(correctedBR, "id=\"countdown_str\"[^>]+>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
@@ -653,7 +657,6 @@ public class SubeMe extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account, false);
         br.setFollowRedirects(false);
-        String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(downloadLink.getDownloadURL());
             doFree(downloadLink, account);
@@ -677,32 +680,34 @@ public class SubeMe extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // Check against usedHost within hostMap
-            controlHost(account, downloadLink, true, dllink);
+            // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
+            controlHost(account, downloadLink, true);
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
-                    setSimHost(-1);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Max Sim Per Host, Connection limit reached!");
+                    controlSimHost(account);
+                    controlHost(account, downloadLink, false);
+                } else {
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    correctBR();
+                    checkServerErrors();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                correctBR();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            fixFilename(downloadLink);
-            try {
-                // add a download slot
-                controlPrem(+1);
-                // start the dl
-                dl.startDownload();
-            } finally {
-                // remove usedHost slot from hostMap
-                controlHost(account, downloadLink, false, dllink);
-                // remove download slot
-                controlPrem(-1);
+            } else {
+                fixFilename(downloadLink);
+                try {
+                    // add a download slot
+                    controlPrem(+1);
+                    // start the dl
+                    dl.startDownload();
+                } finally {
+                    // remove usedHost slot from hostMap
+                    controlHost(account, downloadLink, false);
+                    // remove download slot
+                    controlPrem(-1);
+                }
             }
         }
     }
@@ -713,6 +718,8 @@ public class SubeMe extends PluginForHost {
     private String                                            correctedBR                  = "";
     private String                                            passCode                     = null;
     private String                                            directlinkproperty           = null;
+    private String                                            dllink                       = null;
+    private String                                            usedHost                     = null;
     private String                                            acctype                      = null;
     private int                                               chunks                       = 1;
     private boolean                                           resumes                      = false;
@@ -724,6 +731,10 @@ public class SubeMe extends PluginForHost {
     private static AtomicInteger                              totalMaxSimultanPremDownload = new AtomicInteger(1);
     private static AtomicInteger                              maxFree                      = new AtomicInteger(1);
     private static AtomicInteger                              maxPrem                      = new AtomicInteger(1);
+    // connections you can make to a given 'host' file server (not dynamic), this assumes each server is setup identically.
+    private static AtomicInteger                              maxNonAccSimDlPerHost        = new AtomicInteger(20);
+    private static AtomicInteger                              maxFreeAccSimDlPerHost       = new AtomicInteger(20);
+    private static AtomicInteger                              maxPremAccSimDlPerHost       = new AtomicInteger(20);
     private static HashMap<Account, HashMap<String, Integer>> hostMap                      = new HashMap<Account, HashMap<String, Integer>>();
     private static final Object                               LOCK                         = new Object();
 
@@ -813,7 +824,7 @@ public class SubeMe extends PluginForHost {
     }
 
     private String checkDirectLink(DownloadLink downloadLink) {
-        String dllink = downloadLink.getStringProperty(directlinkproperty);
+        dllink = downloadLink.getStringProperty(directlinkproperty);
         if (dllink != null) {
             try {
                 Browser br2 = br.cloneBrowser();
@@ -831,12 +842,12 @@ public class SubeMe extends PluginForHost {
         return dllink;
     }
 
-    private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
-        if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
+    private String handlePassword(final Form pwform, final DownloadLink downloadLink) throws PluginException {
+        if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
         if (passCode == null || passCode.equals("")) {
             logger.info("User has entered blank password, exiting handlePassword");
             passCode = null;
-            thelink.setProperty("pass", Property.NULL);
+            downloadLink.setProperty("pass", Property.NULL);
             return null;
         }
         if (pwform == null) {
@@ -846,7 +857,7 @@ public class SubeMe extends PluginForHost {
             logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
             pwform.put("password", Encoding.urlEncode(passCode));
         }
-        thelink.setProperty("pass", passCode);
+        downloadLink.setProperty("pass", passCode);
         return passCode;
     }
 
@@ -862,7 +873,7 @@ public class SubeMe extends PluginForHost {
      * 
      * @param controlFree
      *            (+1|-1)
-     */
+     * */
     private synchronized void controlFree(int num) {
         int was = maxFree.get();
         maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
@@ -876,21 +887,36 @@ public class SubeMe extends PluginForHost {
     }
 
     /**
-     * On error it will set the upper mark for 'max sim dl per host', same setting for all host server farms
-     */
-    private synchronized void setSimHost(int num) {
-        if (directlinkproperty.equals("freelink")) {
-            int was = maxNonAccSimDlPerHost.get();
-            maxNonAccSimDlPerHost.set(Math.min(Math.max(1, maxNonAccSimDlPerHost.addAndGet(num)), maxNonAccSimDlPerHost.get()));
-            logger.info(acctype + " maxSimPerHost was" + was + " && now = " + maxNonAccSimDlPerHost.get());
-        } else if (directlinkproperty.equals("freelink2")) {
-            int was = maxFreeAccSimDlPerHost.get();
-            maxFreeAccSimDlPerHost.set(Math.min(Math.max(1, maxFreeAccSimDlPerHost.addAndGet(num)), maxFreeAccSimDlPerHost.get()));
-            logger.info(acctype + " maxSimPerHost was" + was + " && now = " + maxFreeAccSimDlPerHost.get());
-        } else if (directlinkproperty.equals("premlink")) {
-            int was = maxPremAccSimDlPerHost.get();
-            maxPremAccSimDlPerHost.set(Math.min(Math.max(1, maxPremAccSimDlPerHost.addAndGet(num)), maxPremAccSimDlPerHost.get()));
-            logger.info(acctype + " maxSimPerHost was" + was + " && now = " + maxPremAccSimDlPerHost.get());
+     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
+     * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
+     * 
+     * @param account
+     * 
+     * @category 'Experimental', Mod written February 2013
+     * */
+    private synchronized void controlSimHost(Account account) {
+        if (usedHost == null) return;
+        int was, current;
+        if (account != null && account.getBooleanProperty("nopremium")) {
+            // free account
+            was = maxFreeAccSimDlPerHost.get();
+            maxFreeAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
+            current = maxFreeAccSimDlPerHost.get();
+        } else if (account != null && !account.getBooleanProperty("nopremium")) {
+            // premium account
+            was = maxPremAccSimDlPerHost.get();
+            maxPremAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
+            current = maxPremAccSimDlPerHost.get();
+        } else {
+            // non account
+            was = maxNonAccSimDlPerHost.get();
+            maxNonAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
+            current = maxNonAccSimDlPerHost.get();
+        }
+        if (account == null) {
+            logger.info("maxSimPerHost = Guest @ " + acctype + " -> was = " + was + " && new upper limit = " + current);
+        } else {
+            logger.info("maxSimPerHost = " + account.getUser() + " @ " + acctype + " -> was = " + was + " && new upper limit = " + current);
         }
 
     }
@@ -902,19 +928,15 @@ public class SubeMe extends PluginForHost {
      * 
      * @param Account
      *            Account that's been used, can be null
-     * @param DownloadLinnk
+     * @param DownloadLink
      * @param action
      *            To add or remove slot, true == adds, false == removes
-     * @param dllink
-     *            String of finallink host. Can not contain any further redirects
-     * @param directlinkproperty
-     *            Save finallink type within downloadLink. This saves on having to enter captchas.
      * @throws Exception
      * */
-    private synchronized void controlHost(Account account, DownloadLink downloadLink, boolean action, String dllink) throws Exception {
+    private synchronized void controlHost(Account account, DownloadLink downloadLink, boolean action) throws Exception {
 
         // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
-        String usedHost = new Regex(dllink, "https?://([^/\\:]+)").getMatch(0);
+        usedHost = new Regex(dllink, "https?://([^/\\:]+)").getMatch(0);
         if (dllink == null || usedHost == null) {
             if (dllink == null)
                 logger.warning("Invalid URL given to controlHost");
@@ -928,32 +950,34 @@ public class SubeMe extends PluginForHost {
         if (!allowConcurrent) account = null;
 
         String user = null;
-        Integer premSimHost = null;
+        Integer simHost;
         if (accHolder != null) {
             user = accHolder.getUser();
             if (accHolder.getBooleanProperty("nopremium")) {
                 // free account
-                premSimHost = maxFreeAccSimDlPerHost.get();
+                simHost = maxFreeAccSimDlPerHost.get();
             } else {
                 // normal account
-                premSimHost = maxPremAccSimDlPerHost.get();
+                simHost = maxPremAccSimDlPerHost.get();
             }
         } else {
-            user = acctype;
+            user = "Guest";
+            simHost = maxNonAccSimDlPerHost.get();
         }
+        user = user + " @ " + acctype;
 
         // save finallink and use it for later, this script can determine if it's usable at a later stage. (more for dev purposes)
         downloadLink.setProperty(directlinkproperty, dllink);
 
         if (!action) {
             // download finished (completed, failed, etc), check for value and remove a value
-            Integer usedSlots = getHashedHashedValue(account, usedHost);
+            Integer usedSlots = getHashedHashedValue(account);
             if (usedSlots == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            setHashedHashKeyValue(account, usedHost, -1);
+            setHashedHashKeyValue(account, -1);
             if (usedSlots.equals(1)) {
-                logger.info("controlHost = " + user + " @ " + usedHost + " :: No longer used!");
+                logger.info("controlHost = " + user + " -> " + usedHost + " :: No longer used!");
             } else {
-                logger.info("controlHost = " + user + " @ " + usedHost + " :: " + getHashedHashedValue(account, usedHost) + " simulatious connection(s)");
+                logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
             }
         } else {
             // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
@@ -964,23 +988,23 @@ public class SubeMe extends PluginForHost {
              * the count. Highly dependent on how fast or slow the users connections is.
              */
             if (isHashedHashedKey(account, usedHost)) {
-                Integer usedSlots = getHashedHashedValue(account, usedHost);
+                Integer usedSlots = getHashedHashedValue(account);
                 if (usedSlots == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (!usedSlots.equals(maxNonAccSimDlPerHost.get()) || !usedSlots.equals(premSimHost)) {
-                    setHashedHashKeyValue(account, usedHost, 1);
-                    logger.info("controlHost = " + user + " @ " + usedHost + " :: " + getHashedHashedValue(account, usedHost) + " simulatious connection(s)");
+                if (!usedSlots.equals(simHost)) {
+                    setHashedHashKeyValue(account, 1);
+                    logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
                 } else {
-                    logger.info("controlHost = " + user + " @ " + usedHost + " :: Too many concurrent connectons. We will try again when next possible.");
+                    logger.info("controlHost = " + user + " -> " + usedHost + " :: Too many concurrent connectons. We will try again when next possible.");
                     if (accHolder == null)
                         controlFree(-1);
                     else
                         controlPrem(-1);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many concurrent connectons. We will try again when next possible.", 10 * 1000);
                 }
             } else {
                 // virgin download for given usedHost.
-                setHashedHashKeyValue(account, usedHost, 1);
-                logger.info("controlHost = " + user + " @ " + usedHost + " :: " + getHashedHashedValue(account, usedHost) + " simulatious connection(s)");
+                setHashedHashKeyValue(account, 1);
+                logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
             }
         }
     }
@@ -990,13 +1014,10 @@ public class SubeMe extends PluginForHost {
      * 
      * @param account
      *            Account that's been used, can be null
-     * @param usedHost
-     *            String of '(subdomain)?.blah.com'
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
-     * 
      * */
-    private void setHashedHashKeyValue(Account account, String usedHost, Integer x) {
+    private void setHashedHashKeyValue(Account account, Integer x) {
         if (usedHost == null || x == null) return;
         HashMap<String, Integer> holder = new HashMap<String, Integer>();
         if (!hostMap.isEmpty()) {
@@ -1005,8 +1026,8 @@ public class SubeMe extends PluginForHost {
             // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
             if (holder.containsKey(account)) hostMap.remove(account);
         }
-        String currentKey = getHashedHashedKey(account, usedHost);
-        Integer currentValue = getHashedHashedValue(account, usedHost);
+        String currentKey = getHashedHashedKey(account);
+        Integer currentValue = getHashedHashedValue(account);
         if (currentKey == null) {
             // virgin entry
             holder.put(usedHost, 1);
@@ -1034,10 +1055,8 @@ public class SubeMe extends PluginForHost {
      * 
      * @param account
      *            Account that's been used, can be null
-     * @param usedHost
-     *            String of '(subdomain)?.blah.com'
      * */
-    private String getHashedHashedKey(Account account, String usedHost) {
+    private String getHashedHashedKey(Account account) {
         if (usedHost == null) return null;
         if (hostMap.containsKey(account)) {
             final HashMap<String, Integer> accKeyValue = hostMap.get(account);
@@ -1056,11 +1075,8 @@ public class SubeMe extends PluginForHost {
      * 
      * @param account
      *            Account that's been used, can be null
-     * @param usedHost
-     *            String of '(subdomain)?.blah.com'
-     * 
      * */
-    private Integer getHashedHashedValue(Account account, String usedHost) {
+    private Integer getHashedHashedValue(Account account) {
         if (usedHost == null) return null;
         if (hostMap.containsKey(account)) {
             final HashMap<String, Integer> accKeyValue = hostMap.get(account);
@@ -1081,7 +1097,6 @@ public class SubeMe extends PluginForHost {
      *            Account that's been used, can be null
      * @param key
      *            String of what ever you want to find
-     * 
      * */
     private boolean isHashedHashedKey(Account account, String key) {
         if (key == null) return false;
@@ -1103,7 +1118,7 @@ public class SubeMe extends PluginForHost {
      * @param key
      * @param value
      * @return
-     */
+     * */
     private Form getFormByKey(final String key, final String value) {
         Form[] workaround = br.getForms();
         if (workaround != null) {

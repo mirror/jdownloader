@@ -55,17 +55,17 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "lalata.com" }, urls = { "https?://(www\\.)?lalata\\.info/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class LalataInfo extends PluginForHost {
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "mightyupload.com" }, urls = { "https?://(www\\.)?mightyupload\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class MightyUploadCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private static final String        COOKIE_HOST                  = "http://lalata.info";
+    private static final String        COOKIE_HOST                  = "http://mightyupload.com";
     // domain names used within download links.
-    private static final String        DOMAINS                      = "(lalata\\.info)";
+    private static final String        DOMAINS                      = "(mightyupload\\.com)";
     private static final String        PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private static final String        MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final boolean       videoHoster                  = false;
+    private static final boolean       videoHoster                  = true;
     private static final boolean       supportsHTTPS                = false;
     private static final boolean       useRUA                       = false;
 
@@ -79,25 +79,25 @@ public class LalataInfo extends PluginForHost {
     // XfileShare Version 3.0.2.0
     // mods:
     // protocol: no https
-    // captchatype: null
+    // captchatype: null 4dignum solvemedia recaptcha
     // other: no redirects
 
     private void setConstants(Account account) {
         if (account != null && account.getBooleanProperty("nopremium")) {
             // free account
-            chunks = 1;
+            chunks = -2;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("nopremium")) {
             // prem account
-            chunks = -10;
+            chunks = 0;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 1;
+            chunks = -2;
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -109,19 +109,19 @@ public class LalataInfo extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public LalataInfo(PluginWrapper wrapper) {
+    public MightyUploadCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
-        return false;
+        return true;
     }
 
     @Override
@@ -173,7 +173,7 @@ public class LalataInfo extends PluginForHost {
             if (fileInfo[0] == null) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (fileInfo[0] == null) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                    fileInfo[0] = new Regex(correctedBR, "<h3>(.*?)</h3>").getMatch(0);
                     if (fileInfo[0] == null) {
                         // can cause new line finds, so check if it matches.
                         // fileInfo[0] = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);

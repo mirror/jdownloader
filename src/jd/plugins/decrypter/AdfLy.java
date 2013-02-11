@@ -63,6 +63,7 @@ public class AdfLy extends PluginForDecrypt {
             }
             if (finallink == null) {
                 finallink = br.getRegex("window\\.location = ('|\")(.*?)('|\");").getMatch(1);
+                if (finallink.contains("/noscript.php")) finallink = null;
             }
             if (finallink == null) {
                 finallink = br.getRegex("close_bar.*?self\\.location = \\'(.*?)\\';").getMatch(0);

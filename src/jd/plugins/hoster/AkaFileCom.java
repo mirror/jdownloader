@@ -55,14 +55,14 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "lalata.com" }, urls = { "https?://(www\\.)?lalata\\.info/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class LalataInfo extends PluginForHost {
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "akafile.com" }, urls = { "https?://(www\\.)?akafile\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class AkaFileCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private static final String        COOKIE_HOST                  = "http://lalata.info";
+    private static final String        COOKIE_HOST                  = "http://akafile.com";
     // domain names used within download links.
-    private static final String        DOMAINS                      = "(lalata\\.info)";
+    private static final String        DOMAINS                      = "(akafile\\.com)";
     private static final String        PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private static final String        MAINTENANCE                  = ">This server is in maintenance mode";
     private static final boolean       videoHoster                  = false;
@@ -78,26 +78,26 @@ public class LalataInfo extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.2.0
     // mods:
-    // protocol: no https
+    // protocol: has https but, not setup correctly
     // captchatype: null
     // other: no redirects
 
     private void setConstants(Account account) {
         if (account != null && account.getBooleanProperty("nopremium")) {
             // free account
-            chunks = 1;
+            chunks = -2;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("nopremium")) {
             // prem account
-            chunks = -10;
+            chunks = 0;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 1;
+            chunks = -2;
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -109,7 +109,7 @@ public class LalataInfo extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public LalataInfo(PluginWrapper wrapper) {
+    public AkaFileCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
