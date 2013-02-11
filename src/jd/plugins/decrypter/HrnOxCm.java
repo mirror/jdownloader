@@ -47,8 +47,7 @@ public class HrnOxCm extends PluginForDecrypt {
         String image = br.getRegex("image\":\"(https?://(www\\.)hornoxe\\.com/wp\\-content/images/\\d+[^\"]+)").getMatch(0);
 
         if (file == null || pageName == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            return decryptedLinks;
         } else {
             pageName = Encoding.htmlDecode(pageName.trim());
             if (image != null && image.length() > 0) {
@@ -56,8 +55,9 @@ public class HrnOxCm extends PluginForDecrypt {
                 img.setFinalFileName(pageName + image.substring(image.lastIndexOf(".")));
                 decryptedLinks.add(img);
             }
-            DownloadLink vid = createDownloadlink(parameter.replace("hornoxe.com", "hornoxedecrypted"));
+            DownloadLink vid = createDownloadlink(file.replace("hornoxe.com", "hornoxedecrypted.com"));
             vid.setFinalFileName(pageName + file.substring(file.lastIndexOf(".")));
+            vid.setProperty("Referer", parameter);
             decryptedLinks.add(vid);
         }
 

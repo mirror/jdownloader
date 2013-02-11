@@ -11,7 +11,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision: 18671 $", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "https?://(www\\.)hornoxedecrypted/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 18671 $", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "https?://\\w+\\.hornoxedecrypted\\.com/.+" }, flags = { 0 })
 public class HornOxeCom extends PluginForHost {
 
     public HornOxeCom(PluginWrapper wrapper) {
@@ -29,7 +29,7 @@ public class HornOxeCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("hornoxedecrypted", "hornoxe.com"));
+        link.setUrlDownload(link.getDownloadURL().replace("hornoxedecrypted.com", "hornoxe.com"));
     }
 
     @Override
@@ -63,12 +63,11 @@ public class HornOxeCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        String file = br.getRegex("file\":\"(https?://videos\\.hornoxe\\.com/[^\"]+)").getMatch(0);
-        if (file == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+
         URLConnectionAdapter con = null;
         br.setConnectTimeout(3 * 60 * 1000);
         br.setReadTimeout(3 * 60 * 1000);
+        br.getHeaders().put("Referer", link.getStringProperty("Referer"));
 
         // stupid site doesn't always accept connection
         boolean worked = false;
@@ -76,9 +75,9 @@ public class HornOxeCom extends PluginForHost {
         for (int i = 0; i <= repeat; i++) {
             if (worked) break;
             Browser br2 = br.cloneBrowser();
-            br2.getHeaders().put("Referer", link.getDownloadURL());
+
             try {
-                con = br2.openGetConnection(file);
+                con = br2.openGetConnection(link.getDownloadURL());
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setProperty("DDLink", br2.getURL());
