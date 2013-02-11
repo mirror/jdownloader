@@ -543,7 +543,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setAvailableStatus(AvailableStatus availableStatus) {
         this.availableStatus = availableStatus;
-        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, availableStatus);
+        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.AVAILABILITY, availableStatus));
     }
 
     private void notifyChanges(AbstractNodeNotifier.NOTIFY notify, Object param) {
@@ -632,8 +632,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setAvailable(boolean available) {
-        this.availableStatus = available ? AvailableStatus.TRUE : AvailableStatus.FALSE;
-        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, availableStatus);
+        setAvailableStatus(available ? AvailableStatus.TRUE : AvailableStatus.FALSE);
     }
 
     /**
