@@ -54,6 +54,42 @@ import org.jdownloader.settings.GeneralSettings;
  */
 public class DownloadLink extends Property implements Serializable, AbstractPackageChildrenNode<FilePackage>, CheckableLink {
 
+    public static class DownloadLinkProperty {
+        public static enum Property {
+            NAME,
+            PRIORITY,
+            ENABLED,
+            AVAILABILITY
+        }
+
+        private final Object                                          value;
+        private final DownloadLink                                    link;
+        private jd.plugins.DownloadLink.DownloadLinkProperty.Property property;
+
+        public DownloadLinkProperty(DownloadLink link, Property property, Object value) {
+            this.value = value;
+            this.link = link;
+            this.property = property;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        public DownloadLink getDownloadLink() {
+            return link;
+        }
+
+        @Override
+        public String toString() {
+            return link + ":" + property + "=" + value;
+        }
+
+        public jd.plugins.DownloadLink.DownloadLinkProperty.Property getProperty() {
+            return property;
+        }
+    }
+
     public static enum AvailableStatus {
         UNCHECKED,
         FALSE,
@@ -240,6 +276,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setPriority(int pr) {
+        int oldPrio = getPriority();
         int priority = 0;
         if (pr >= -1 && pr < 4) {
             priority = pr;
@@ -249,7 +286,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             this.setProperty(PROPERTY_PRIORITY, priority);
         }
-        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
+        if (oldPrio != priority) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PRIORITY, priority));
     }
 
     /**
@@ -493,17 +530,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setAvailableStatus(AvailableStatus availableStatus) {
         this.availableStatus = availableStatus;
-        notifyChanges(AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE);
+        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, availableStatus);
     }
 
-    private void notifyChanges(AbstractNodeNotifier.NOTIFY notify) {
+    private void notifyChanges(AbstractNodeNotifier.NOTIFY notify, Object param) {
         AbstractNodeNotifier pl = propertyListener;
         if (pl != null) {
-            pl.nodeUpdated(this, notify, null);
+            pl.nodeUpdated(this, notify, param);
             return;
         }
         AbstractNodeNotifier pl2 = filePackage;
-        if (pl2 != null) pl2.nodeUpdated(this, notify, null);
+        if (pl2 != null) pl2.nodeUpdated(this, notify, param);
     }
 
     /**
@@ -582,7 +619,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setAvailable(boolean available) {
         this.availableStatus = available ? AvailableStatus.TRUE : AvailableStatus.FALSE;
-        notifyChanges(AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE);
+        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, availableStatus);
     }
 
     /**
@@ -602,7 +639,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setDownloadCurrent(long downloadedCurrent) {
         downloadCurrent = downloadedCurrent;
-        if (this.getDownloadInstance() == null) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
+        if (this.getDownloadInstance() == null) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, null);
     }
 
     public void setDownloadInstance(DownloadInterface downloadInterface) {
@@ -621,7 +658,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setDownloadSize(long downloadMax) {
         this.downloadMax = downloadMax;
-        if (this.getDownloadInstance() == null) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
+        if (this.getDownloadInstance() == null) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, null);
     }
 
     /*
@@ -629,6 +666,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setEnabled(boolean isEnabled) {
         this.getLinkStatus().removeStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        boolean changed = this.isEnabled != isEnabled;
         this.isEnabled = isEnabled;
         if (isEnabled == false) {
             abort();
@@ -638,7 +676,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             setProperty(PROPERTY_ENABLED, isEnabled);
         }
-        notifyChanges(AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE);
+        if (changed) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.ENABLED, isEnabled));
     }
 
     public void setLinkType(int linktypeContainer) {
@@ -674,6 +712,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      *            Neuer Name des Downloads
      */
     public void setName(String name) {
+        String oldName = getName();
         if (StringUtils.isEmpty(name)) name = Plugin.extractFileNameFromURL(getDownloadURL());
         if (!StringUtils.isEmpty(name)) {
             name = CrossSystem.alleviatePathParts(name);
@@ -681,21 +720,23 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (StringUtils.isEmpty(name)) name = UNKNOWN_FILE_NAME;
         this.name = name;
         this.setIcon(null);
-        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
+        if (!oldName.equals(getName())) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, getName()));
     }
 
     /*
      * use this function to force a name, it has highest priority
      */
     public void forceFileName(String name) {
+        String oldName = getName();
         if (StringUtils.isEmpty(name)) {
             this.setProperty(PROPERTY_FORCEDFILENAME, Property.NULL);
+            oldName = getName();
         } else {
             name = CrossSystem.alleviatePathParts(name);
             this.setProperty(PROPERTY_FORCEDFILENAME, name);
         }
         setIcon(null);
-        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
+        if (!oldName.equals(getName())) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, getName()));
     }
 
     private void setIcon(ImageIcon icon) {
@@ -732,6 +773,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * {@link #setName(String)} verwenden um den Speichernamen anzugeben.
      */
     public void setFinalFileName(String newfinalFileName) {
+        String oldName = null;
         if (!StringUtils.isEmpty(newfinalFileName)) {
             if (new Regex(newfinalFileName, Pattern.compile("r..\\.htm.?$", Pattern.CASE_INSENSITIVE)).matches()) {
                 System.out.println("Use Workaround for stupid >>rar.html<< uploaders!");
@@ -739,12 +781,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             }
             this.setProperty(PROPERTY_FINALFILENAME, newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName));
             setName(newfinalFileName);
+            oldName = getName();
         } else {
             this.setProperty(PROPERTY_FINALFILENAME, Property.NULL);
+            oldName = getName();
         }
         finalFileName = null;
         setIcon(null);
-        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
+        if (!oldName.equals(getName())) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, getName()));
     }
 
     /**

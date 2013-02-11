@@ -18,6 +18,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
@@ -106,8 +107,8 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
                 FilePackageAPIStorable pkg;
                 ret.add(pkg = new FilePackageAPIStorable(fpkg));
                 /*
-                 * synchronized (fpkg) { List<DownloadLinkAPIStorable> links = new ArrayList<DownloadLinkAPIStorable>(fpkg.size()); for
-                 * (DownloadLink link : fpkg.getChildren()) { links.add(new DownloadLinkAPIStorable(link)); } pkg.setLinks(links); }
+                 * synchronized (fpkg) { List<DownloadLinkAPIStorable> links = new ArrayList<DownloadLinkAPIStorable>(fpkg.size()); for (DownloadLink link :
+                 * fpkg.getChildren()) { links.add(new DownloadLinkAPIStorable(link)); } pkg.setLinks(links); }
                  */
             }
             return ret;
@@ -416,6 +417,10 @@ public class DownloadsMobileAPIImpl implements DownloadsMobileAPI, DownloadContr
             if (event.getParameter() instanceof DownloadLink) {
                 DownloadLink dl = (DownloadLink) event.getParameter();
                 if (dl != null) {
+                    Object param = event.getParameter(1);
+                    if (param instanceof DownloadLinkProperty) {
+                        /* put your code here */
+                    }
                     LinkStatusJob job = new LinkStatusJob();
                     LinkStatus linkStatus = dl.getLinkStatus();
                     job.setActive(linkStatus.isPluginActive());

@@ -764,10 +764,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         if (source instanceof DownloadLink) {
             switch (notify) {
             case STRUCTURE_CHANCE:
-                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE, source));
+                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE, new Object[] { source, param }));
                 break;
             case PROPERTY_CHANCE:
-                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_CONTENT, source));
+                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_CONTENT, new Object[] { source, param }));
                 break;
             }
         }
