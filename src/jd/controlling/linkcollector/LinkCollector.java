@@ -193,9 +193,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        if (!JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled()) {
-                            clear();
-                        }
                         saveLinkCollectorLinks();
                         LinkCollector.this.setSaveAllowed(false);
                         return null;
@@ -924,10 +921,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public boolean isLoadAllowed() {
+        if (!JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled()) return false;
         return allowLoad;
     }
 
     public boolean isSaveAllowed() {
+        if (!JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled()) return false;
         return allowSave;
     }
 

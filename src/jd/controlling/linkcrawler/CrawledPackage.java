@@ -141,7 +141,6 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public String getDownloadFolder() {
-
         // replace variables in downloadfolder
         int limit = JsonConfig.create(GeneralSettings.class).getSubfolderThreshold();
         if (limit > getChildren().size()) {

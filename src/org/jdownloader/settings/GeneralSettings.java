@@ -7,6 +7,8 @@ import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
+import org.appwork.storage.config.annotations.CustomValueGetter;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultFactory;
@@ -40,18 +42,29 @@ public interface GeneralSettings extends ConfigInterface {
                 File file = new File(old);
                 if (file.exists() && file.isDirectory()) return old;
             }
-            File home = new File(System.getProperty("user.home"));
-            if (home.exists() && home.isDirectory()) {
+            String home = System.getProperty("user.home");
+            if (home != null && new File(home).exists() && new File(home).isDirectory()) {
                 // new File(home, "downloads").mkdirs();
                 return new File(home, "downloads").getAbsolutePath();
-
             } else {
                 return Application.getResource("downloads").getAbsolutePath();
-
             }
         }
-
     }
+
+    class CustomDownloadFolderGetter extends AbstractCustomValueGetter<String> {
+        String defaultFolder = null;
+
+        @Override
+        public String getValue(String value) {
+            if (StringUtils.isEmpty(value)) {
+                if (defaultFolder != null) return defaultFolder;
+                defaultFolder = new DefaultDownloadFolder().getDefaultValue();
+                return defaultFolder;
+            }
+            return value;
+        }
+    };
 
     @DefaultIntValue(10)
     @AboutConfig
@@ -69,6 +82,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultFactory(DefaultDownloadFolder.class)
+    @CustomValueGetter(CustomDownloadFolderGetter.class)
     String getDefaultDownloadFolder();
 
     ArrayList<String[]> getDownloadFolderHistory();
