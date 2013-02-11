@@ -43,8 +43,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class Vipfilecom extends PluginForHost {
 
     public static final String  FREELINKREGEX = "\"(http://vip\\-file\\.com/download([0-9]+)/.*?)\"";
-    private static final String APIKEY        = jd.plugins.hoster.LetitBitNet.APIKEY;
-    private static final String APIPAGE       = jd.plugins.hoster.LetitBitNet.APIPAGE;
+    private static final String APIKEY        = "VjR1U3JGUkNx";
+    private static final String APIPAGE       = "http://api.letitbit.net/";
     private static final String FILEOFFLINE   = "(This file not found|\">File not found)";
     private static Object       LOCK          = new Object();
 
@@ -65,8 +65,7 @@ public class Vipfilecom extends PluginForHost {
     }
 
     /**
-     * Important: Always sync this code with the vip-file.com, shareflare.net
-     * and letitbit.net plugins Limits: 20 * 50 = 1000 links per minute
+     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per minute
      * */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -81,8 +80,7 @@ public class Vipfilecom extends PluginForHost {
                 links.clear();
                 while (true) {
                     /*
-                     * we test 50 links at once (probably we could check even
-                     * more)
+                     * we test 50 links at once (probably we could check even more)
                      */
                     if (index == urls.length || links.size() > 50) {
                         break;

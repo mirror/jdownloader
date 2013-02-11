@@ -58,8 +58,8 @@ public class ShareFlareNet extends PluginForHost {
     private static final String  COOKIE_HOST                       = "http://shareflare.net";
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
-    private static final String  APIKEY                            = jd.plugins.hoster.LetitBitNet.APIKEY;
-    private static final String  APIPAGE                           = jd.plugins.hoster.LetitBitNet.APIPAGE;
+    private static final String  APIKEY                            = "VjR1U3JGUkNx";
+    private static final String  APIPAGE                           = "http://api.letitbit.net/";
     private static final String  TEMPDISABLED                      = "class=\"wrapper\\-centered\">Code from picture<";
 
     public ShareFlareNet(PluginWrapper wrapper) {
@@ -80,8 +80,7 @@ public class ShareFlareNet extends PluginForHost {
     }
 
     /**
-     * Important: Always sync this code with the vip-file.com, shareflare.net
-     * and letitbit.net plugins Limits: 20 * 50 = 1000 links per minute
+     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per minute
      * */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -96,8 +95,7 @@ public class ShareFlareNet extends PluginForHost {
                 links.clear();
                 while (true) {
                     /*
-                     * we test 50 links at once (probably we could check even
-                     * more)
+                     * we test 50 links at once (probably we could check even more)
                      */
                     if (index == urls.length || links.size() > 50) {
                         break;
@@ -228,8 +226,7 @@ public class ShareFlareNet extends PluginForHost {
                     }
                 }
                 /*
-                 * we must save the cookies, because shareflare maybe only
-                 * allows 100 logins per 24hours
+                 * we must save the cookies, because shareflare maybe only allows 100 logins per 24hours
                  */
                 br.postPage(COOKIE_HOST, "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie(COOKIE_HOST, "log");
@@ -351,8 +348,7 @@ public class ShareFlareNet extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         prepareBrowser(br2);
         /*
-         * this causes issues in 09580 stable, no workaround known, please
-         * update to latest jd version
+         * this causes issues in 09580 stable, no workaround known, please update to latest jd version
          */
         br2.getHeaders().put("Content-Length", "0");
         br2.postPage(ajaxmainurl + "/ajax/download3.php", "");
@@ -559,8 +555,7 @@ public class ShareFlareNet extends PluginForHost {
 
     private void prepareBrowser(final Browser br) {
         /*
-         * last time they did not block the useragent, we just need this stuff
-         * below ;)
+         * last time they did not block the useragent, we just need this stuff below ;)
          */
         if (br == null) { return; }
         br.getHeaders().put("Accept", "*/*");
