@@ -302,7 +302,7 @@
 			<attribute name="Created-By" value="AppWork GmbH" />
 			<attribute name="Main-Class" value="org.jdownloader.update.launcher.JDLauncher" />
 			<!-- plugins that serialize own classes have to be put in the classpath -->
-			<attribute name="Class-Path" value="" />
+			<!--<attribute name="Class-Path" value="" />-->
 
 		</manifest>
 		<jar file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">
