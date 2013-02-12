@@ -26,6 +26,7 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.exttable.ExtTableTranslation;
 import org.appwork.swing.synthetica.LanguageFileSetup;
+import org.appwork.swing.synthetica.SyntheticaHelper;
 import org.appwork.txtresource.DynamicResourcePath;
 import org.appwork.txtresource.TranslateData;
 import org.appwork.txtresource.TranslateInterface;
@@ -356,7 +357,14 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             LanguageFileSetup guiInterface = TranslationFactory.create(LanguageFileSetup.class);
 
             fontname = guiInterface.config_fontname();
-            if (fontname.equalsIgnoreCase("default")) fontname = "Tahoma";
+            //
+            if (fontname.equalsIgnoreCase("default")) {
+
+                fontname = SyntheticaHelper.getDefaultFont();
+                if (fontname == null) fontname = "Tahoma";
+
+            }
+
             load(tmp, locale, JdownloaderTranslation.class);
             load(tmp, locale, LiveheaderTranslation.class);
             load(tmp, locale, UpdaterTranslation.class);
