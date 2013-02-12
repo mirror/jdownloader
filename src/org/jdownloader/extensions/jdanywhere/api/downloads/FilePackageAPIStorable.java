@@ -36,7 +36,8 @@ public class FilePackageAPIStorable implements Storable {
     }
 
     public long getSpeed() {
-        return DownloadWatchDog.getInstance().getDownloadSpeedbyFilePackage(pkg);
+        long speed = DownloadWatchDog.getInstance().getDownloadSpeedbyFilePackage(pkg);
+        return Math.max(speed, 0);
     }
 
     public long getDone() {
