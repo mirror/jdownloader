@@ -55,7 +55,7 @@ public class RealDebridCom extends PluginForHost {
     private static Object        LOCK              = new Object();
     private static final String  DIRECTRD          = "directRD";
     private static AtomicInteger RUNNING_DOWNLOADS = new AtomicInteger(0);
-    private static AtomicInteger MAX_DOWNLOADS     = new AtomicInteger(-1);
+    private static AtomicInteger MAX_DOWNLOADS     = new AtomicInteger(Integer.MAX_VALUE);
 
     public RealDebridCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -163,7 +163,7 @@ public class RealDebridCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } finally {
             if (RUNNING_DOWNLOADS.decrementAndGet() == 0) {
-                MAX_DOWNLOADS.set(-1);
+                MAX_DOWNLOADS.set(Integer.MAX_VALUE);
             }
         }
     }
