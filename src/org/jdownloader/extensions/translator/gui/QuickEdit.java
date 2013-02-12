@@ -187,4 +187,9 @@ public class QuickEdit extends MigPanel implements ListSelectionListener {
         }
     }
 
+    public void setTable(TranslateTable table2) {
+        this.table = table2;
+        table.getSelectionModel().addListSelectionListener(this);
+    }
+
 }
