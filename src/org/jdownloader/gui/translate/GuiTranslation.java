@@ -2201,4 +2201,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Description" })
     String AdvancedTableModel_initColumns_desc_();
 
+    @Default(lngs = { "en" }, values = { "Duration" })
+    String DurationColumn_DurationColumn_object_();
+
 }
