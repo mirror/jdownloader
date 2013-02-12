@@ -51,7 +51,6 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     protected PluginConfigPanel configPanel;
     protected List<Pattern>     filter;
     private Header              rightHeader;
-    protected int               maxWidth         = -1;
 
     public void addStateUpdateListener(StateUpdateListener listener) {
         throw new IllegalStateException("Not implemented");
@@ -63,21 +62,16 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     }
 
     public PluginSettingsPanel() {
-        super(new MigLayout("ins 0,wrap 2", "[]10[grow,fill]", "[grow,fill][26!,grow,fill]"));
+        super(new MigLayout("ins 0,wrap 2", "[150!]10[grow,fill]", "[grow,fill][26!,grow,fill]"));
         decryterIcon = NewTheme.I().getIcon("linkgrabber", 16);
 
         selector = new JList() {
             private Dimension dim;
             {
-                dim = new Dimension(200, 20000);
+                dim = new Dimension(150, 20000);
             }
 
             public Dimension getPreferredScrollableViewportSize() {
-                if (maxWidth > 0) {
-                    dim.width = maxWidth + 28;
-                } else {
-                    dim.width = selector.getPreferredSize().width + 28;
-                }
 
                 return dim;
             }
@@ -218,13 +212,12 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     private void fill() {
         // java.util.List<LazyPlugin<?>> list = new ArrayList<LazyPlugin<?>>();
         DefaultListModel<LazyPlugin<?>> list = new DefaultListModel<LazyPlugin<?>>();
-        boolean unfiltered = true;
-        unfiltered = fillModel(list, true);
+
+        fillModel(list, true);
         if (list.size() == 0) {
-            unfiltered = fillModel(list, false);
+            fillModel(list, false);
         }
         selector.setModel(list);
-        if (unfiltered) maxWidth = selector.getPreferredSize().width;
 
     }
 
@@ -296,9 +289,11 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     public void actionPerformed(ActionEvent e) {
         LazyPlugin<?> selected = (LazyPlugin<?>) selector.getSelectedValue();
 
-        JsonConfig.create(GraphicalUserInterfaceSettings.class).setActivePluginConfigPanel(selected.getClassname());
+        if (selected != null) {
+            JsonConfig.create(GraphicalUserInterfaceSettings.class).setActivePluginConfigPanel(selected.getClassname());
 
-        show(selected);
+            show(selected);
+        }
     }
 
     private void show(final LazyPlugin<?> selectedItem) {

@@ -16,6 +16,7 @@
 
 package jd.gui.swing.components;
 
+import java.awt.Dimension;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 
@@ -25,7 +26,7 @@ import jd.gui.swing.JUndoManager;
 
 public class JDTextArea extends JTextArea implements FocusListener {
 
-    private boolean autoselect = false;
+    private boolean           autoselect       = false;
 
     private static final long serialVersionUID = -4013847546677327448L;
 
@@ -37,6 +38,11 @@ public class JDTextArea extends JTextArea implements FocusListener {
     public JDTextArea(int a, int b) {
         super(a, b);
         addFocusAndUndo();
+    }
+
+    public Dimension getPreferredScrollableViewportSize() {
+
+        return new Dimension(100, super.getPreferredScrollableViewportSize().height);
     }
 
     private void addFocusAndUndo() {

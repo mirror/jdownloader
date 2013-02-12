@@ -50,7 +50,8 @@ import net.miginfocom.swing.MigLayout;
 import org.jdownloader.logging.LogController;
 
 /**
- * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und schreiben einheitlich. Es lassen sich so Dialogelemente Automatisiert einfügen.
+ * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und schreiben einheitlich. Es lassen sich so Dialogelemente
+ * Automatisiert einfügen.
  */
 public class GUIConfigEntry implements GuiConfigListener, ActionListener, ChangeListener, DocumentListener {
 
@@ -90,12 +91,16 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             break;
         case ConfigContainer.TYPE_TEXTFIELD:
             input = new JDTextField();
+
             ((JDTextField) input).setHorizontalAlignment(JDTextField.RIGHT);
             doc = ((JDTextField) input).getDocument();
             doc.addDocumentListener(this);
             break;
         case ConfigContainer.TYPE_TEXTAREA:
             input = new JDTextArea();
+
+            ((JDTextArea) input).setLineWrap(true);
+            ((JDTextArea) input).setWrapStyleWord(true);
             doc = ((JDTextArea) input).getDocument();
             doc.addDocumentListener(this);
             break;
