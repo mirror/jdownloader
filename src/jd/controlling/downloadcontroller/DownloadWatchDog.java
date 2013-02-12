@@ -1630,4 +1630,44 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return 0;
     }
 
+    public int getNonResumableRunningCount() {
+        int i = 0;
+
+        if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
+
+            synchronized (this.downloadControllers) {
+                for (final SingleDownloadController con : downloadControllers) {
+                    DownloadLink link = con.getDownloadLink();
+                    if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                        DownloadInterface dl = link.getDownloadInstance();
+                        if (dl != null && !dl.isResumable()) {
+                            i++;
+                        }
+                    }
+                }
+            }
+        }
+        return i;
+
+    }
+
+    public long getNonResumableBytes() {
+        long i = 0;
+
+        if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
+            synchronized (this.downloadControllers) {
+                for (final SingleDownloadController con : downloadControllers) {
+                    DownloadLink link = con.getDownloadLink();
+                    if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                        DownloadInterface dl = link.getDownloadInstance();
+                        if (dl != null && !dl.isResumable()) {
+                            i += link.getDownloadCurrent();
+                        }
+                    }
+                }
+            }
+        }
+        return i;
+    }
+
 }

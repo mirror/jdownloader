@@ -2204,4 +2204,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Duration" })
     String DurationColumn_DurationColumn_object_();
 
+    @Default(lngs = { "en" }, values = { "Do you want to stop all running downloads?\r\nYou would loose %s1 due to %s2 non resumable Download/s!" })
+    String StopDownloadsAction_run_msg_(String bytes, int i);
+
+    @Default(lngs = { "en" }, values = { "No" })
+    String lit_no();
+
+    @Default(lngs = { "en" }, values = { "Yes" })
+    String lit_yes();
+
 }
