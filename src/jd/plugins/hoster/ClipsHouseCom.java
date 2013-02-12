@@ -85,7 +85,7 @@ public class ClipsHouseCom extends PluginForHost {
             }
         }
         if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fInfo = br.getRegex("padding\\-bottom:14px;font\\-size:20px;\\'>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)</h2>");
+        final Regex fInfo = br.getRegex("/><span ?> ?([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)</span></h2>");
         final String filename = fInfo.getMatch(0);
         final String filesize = fInfo.getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
