@@ -243,6 +243,7 @@
 				<exclude name="org/jdownloader/gui/laf/**/*" />
 				<exclude name="org/jdownloader/update/**/*" />
 				<exclude name="org/jdownloader/uninstaller/**/*" />
+				<exclude name="org/jdownloader/installer/**/*" />
 				<exclude name="org/jdownloader/dynamic/**/*" />
 				<exclude name="jd/dynamics/**" />
 				<exclude name="jd/gui/**" />
@@ -319,6 +320,7 @@
 				<include name="org/jdownloader/updatev2/**/*" />
 				<include name="org/jdownloader/update/**/*.class" />
 				<include name="org/jdownloader/uninstaller/**/*.class" />
+				<include name="org/jdownloader/installer/**/*.class" />
 				
 				<include name="org/appwork/**/*" />
 				<exclude name="org/appwork/update/server/**/*" />
