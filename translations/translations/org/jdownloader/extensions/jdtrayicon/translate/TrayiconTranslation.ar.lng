@@ -1,7 +1,6 @@
 jd_plugins_optional_jdtrayicon_jdlighttray=قائمة مخففه
 jd_plugins_optional_jdtrayicon_jdlighttray_description=دائما اغلاق او تصغير البرنامج بجوار الساعة
 plugins_optional_JDLightTray_always=دائما
-plugins_optional_JDLightTray_closetotray=اغلاق للنافذه الجانبية
 plugins_optional_JDLightTray_linkgrabberresults=اظهار البرنامج عند جلب روابط جديدة
 plugins_optional_JDLightTray_minimized=فقط عند تصغير النافذة
 plugins_optional_JDLightTray_never=أبدا
