@@ -180,7 +180,10 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                         /* interfaceVersion 2 is for Stable/Nightly */
                         logger.log(new WTFException("PLUGIN STABLE ISSUE!! names.length(" + names.length + ")!= flags.length(" + flags.length + ")->" + simpleName));
                     }
-                    if (names.length == 0) { throw new WTFException("names.length=0"); }
+                    if (names.length == 0) {
+                        //
+                        throw new WTFException("names.length=0");
+                    }
                     for (int i = 0; i < names.length; i++) {
                         PluginClassLoaderChild classLoader = null;
                         LazyCrawlerPlugin l = null;

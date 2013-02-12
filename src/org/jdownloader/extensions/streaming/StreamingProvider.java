@@ -19,8 +19,8 @@ import jd.plugins.download.DownloadInterfaceFactory;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.Application;
+import org.appwork.utils.ReusableByteArrayOutputStream;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool;
-import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import org.appwork.utils.io.streamingio.Streaming;
 import org.appwork.utils.io.streamingio.StreamingInputStream;
 import org.appwork.utils.io.streamingio.StreamingOutputStream;

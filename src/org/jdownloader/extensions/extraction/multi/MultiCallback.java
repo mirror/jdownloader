@@ -25,8 +25,8 @@ import java.io.IOException;
 import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.SevenZipException;
 
+import org.appwork.utils.ReusableByteArrayOutputStream;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool;
-import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import org.jdownloader.extensions.extraction.CPUPriority;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionController;

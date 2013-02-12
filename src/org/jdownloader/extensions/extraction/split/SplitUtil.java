@@ -30,8 +30,8 @@ import java.util.regex.Pattern;
 import jd.utils.JDHexUtils;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.ReusableByteArrayOutputStream;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool;
-import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
