@@ -44,7 +44,7 @@ public class DurationColumn extends ExtTextColumn<AbstractNode> {
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
             long time = ((DownloadLink) value).getDownloadTime();
-            if (time > 0) { return TimeFormatter.formatMilliSeconds(time * 200, 0); }
+            if (time > 0) { return TimeFormatter.formatMilliSeconds(time, 0); }
         }
         return null;
     }
