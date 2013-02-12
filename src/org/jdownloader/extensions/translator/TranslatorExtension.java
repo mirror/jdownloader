@@ -353,7 +353,8 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             load(tmp, locale, ExternTranslation.class);
             load(tmp, locale, ExtTableTranslation.class);
 
-            LanguageFileSetup guiInterface = load(tmp, locale, LanguageFileSetup.class);
+            LanguageFileSetup guiInterface = TranslationFactory.create(LanguageFileSetup.class);
+
             fontname = guiInterface.config_fontname();
             if (fontname.equalsIgnoreCase("default")) fontname = "Tahoma";
             load(tmp, locale, JdownloaderTranslation.class);
