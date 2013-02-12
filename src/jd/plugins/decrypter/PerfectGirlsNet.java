@@ -41,6 +41,10 @@ public class PerfectGirlsNet extends PluginForDecrypt {
         String parameter = param.toString().replaceAll("(ipad|m)\\.perfectgirls\\.net/gal/", "perfectgirls.net/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String filename = br.getRegex("<title>([^<>\"]*?) ::: PERFECT GIRLS</title>").getMatch(0);
         String externID = br.getRegex("\"perfectgirls\\.url\", \"(http://(www\\.)xvideos\\.com/video[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {

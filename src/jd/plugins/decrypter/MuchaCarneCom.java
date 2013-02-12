@@ -39,7 +39,7 @@ public class MuchaCarneCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        String filename = br.getRegex("<title>([^<>\"]*?) at MuchaCarne.com</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?) at MuchaCarne\\.com</title>").getMatch(0);
         String tempID = br.getRedirectLocation();
         if (tempID != null) {
             DownloadLink dl = createDownloadlink(tempID);
@@ -90,6 +90,11 @@ public class MuchaCarneCom extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        tempID = br.getRegex("xhamster\\.com/xembed\\.php\\?video=(\\d+)\"").getMatch(0);
+        if (tempID != null) {
+            decryptedLinks.add(createDownloadlink("http://xhamster.com/movies/" + tempID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
         if (tempID == null) {

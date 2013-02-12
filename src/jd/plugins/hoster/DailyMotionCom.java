@@ -45,6 +45,7 @@ public class DailyMotionCom extends PluginForHost {
     private static final String COUNTRYBLOCK           = "(Dein Land nicht abrufbar|this content is not available for your country|This video has not been made available in your country by the owner)";
     private static final String COUNTRYBLOCKUSERTEXT   = "This video is not available for your country";
     private String[]            subtitles              = null;
+    private String              VIDEOSOURCE            = "";
 
     public DailyMotionCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,9 +78,9 @@ public class DailyMotionCom extends PluginForHost {
         if (br.containsHTML("class=\"forbidden\">Access forbidden</h3>|>You don\\'t have permission to access the requested URL")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // We can't download livestreams
         if (br.containsHTML("DMSTREAMMODE=live")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String source = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
-        if (source != null) source = Encoding.htmlDecode(source).replace("\\", "");
-        if (source != null) subtitles = new Regex(source, "\"(http://static\\d+\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt\\?\\d+)\"").getColumn(0);
+        VIDEOSOURCE = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
+        if (VIDEOSOURCE != null) VIDEOSOURCE = Encoding.htmlDecode(VIDEOSOURCE).replace("\\", "");
+        if (VIDEOSOURCE != null) subtitles = new Regex(VIDEOSOURCE, "\"(http://static\\d+\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt\\?\\d+)\"").getColumn(0);
         String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
@@ -88,10 +89,10 @@ public class DailyMotionCom extends PluginForHost {
             logger.warning("filename is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = Encoding.htmlDecode(filename.trim() + ".mp4");
+        filename = Encoding.htmlDecode(filename.trim()).replace(":", " - ").replaceAll("/|<|>", "") + ".mp4";
         filename = correctFilename(filename);
-        if (source != null) {
-            String allLinks = Encoding.htmlDecode(source).replace("\\", "");
+        if (VIDEOSOURCE != null) {
+            String allLinks = Encoding.htmlDecode(VIDEOSOURCE).replace("\\", "");
             logger.info("sourcetext: " + allLinks);
             if (new Regex(allLinks, COUNTRYBLOCK).matches()) {
                 // Video not available for your country, let's get the
@@ -119,6 +120,14 @@ public class DailyMotionCom extends PluginForHost {
                         getQuality("sdURL", allLinks);
                         if (dllink == null) {
                             getQuality("ldURL", allLinks);
+                            if (dllink == null) {
+                                getQuality("autoURL", allLinks);
+                                if (dllink != null) {
+                                    downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.segmentstream", "Segment streams aren't downloadable yet!"));
+                                    downloadLink.setName(filename);
+                                    return AvailableStatus.TRUE;
+                                }
+                            }
                         }
                     }
                 }
@@ -146,6 +155,7 @@ public class DailyMotionCom extends PluginForHost {
             setupRTMPConnection(stream, dl);
             ((RTMPDownload) dl).startDownload();
         } else {
+            if (dllink.contains("/manifest/")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.dailymotioncom.segmentstream", "Segment streams aren't downloadable yet!"));
             // They do allow resume and unlimited chunks but resuming or using
             // more
             // than 1 chunk causes problems, the file will then b corrupted!

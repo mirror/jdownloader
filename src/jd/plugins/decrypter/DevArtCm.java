@@ -25,7 +25,6 @@ import jd.gui.UserIO;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -33,7 +32,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(art/[\\w\\-]+|((gallery|favourites)/\\d+(\\?offset=\\d+)?|(gallery|favourites)/(\\?offset=\\d+)?))" }, flags = { 0 })
 public class DevArtCm extends PluginForDecrypt {
@@ -120,7 +118,7 @@ public class DevArtCm extends PluginForDecrypt {
         // login if required, else don't
         if (br.containsHTML(">Mature Content Filter</a>")) {
             String artPageURL = br.getURL();
-            login();
+            if (!login()) { return; }
             br.getPage(artPageURL);
         }
         // define page as mature content
@@ -163,16 +161,16 @@ public class DevArtCm extends PluginForDecrypt {
         }
     }
 
-    private void login() throws Exception {
+    private boolean login() throws Exception {
         boolean isNew = false;
         PluginForHost DeviantArtPlugin = JDUtilities.getPluginForHost("deviantart.com");
         Account aa = AccountController.getInstance().getValidAccount(DeviantArtPlugin);
         if (aa == null) {
             isNew = true;
             String username = UserIO.getInstance().requestInputDialog("Enter Loginname for deviantart.com :");
-            if (username == null) throw new DecrypterException(JDL.L("plugins.decrypt.deviantart.nousername", "Username not entered!"));
+            if (username == null) return false;
             String password = UserIO.getInstance().requestInputDialog("Enter password for deviantart.com :");
-            if (password == null) throw new DecrypterException(JDL.L("plugins.decrypt.deviantart.nopassword", "Password not entered!"));
+            if (password == null) return false;
             aa = new Account(username, password);
         }
         try {
@@ -180,9 +178,11 @@ public class DevArtCm extends PluginForDecrypt {
         } catch (final PluginException e) {
             aa.setEnabled(false);
             aa.setValid(false);
-            throw new DecrypterException(JDL.L("plugins.decrypt.deviantart.invalidaccount", "Account is invalid!"));
+            logger.info("Account is invalid!");
+            return false;
         }
         if (isNew == true) AccountController.getInstance().addAccount(DeviantArtPlugin, aa);
+        return true;
     }
 
 }

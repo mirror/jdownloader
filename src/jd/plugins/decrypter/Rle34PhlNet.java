@@ -35,13 +35,20 @@ public class Rle34PhlNet extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML(">No Images Found<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String[] links = br.getRegex("<br><a href=\\'(http://.*?)\\'>").getColumn(0);
         if (links == null || links.length == 0) links = br.getRegex("\\'(http://rule34\\-images\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\'").getColumn(0);
         if (links == null || links.length == 0) links = br.getRegex("('|\")(http://rule34\\-[a-zA-Z0-9\\-]*?\\.paheal\\.net/_images/[a-z0-9]+/.*?)('|\")").getColumn(1);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String dl : links)
             decryptedLinks.add(createDownloadlink("directhttp://" + dl));
         FilePackage fp = FilePackage.getInstance();

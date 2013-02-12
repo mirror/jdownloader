@@ -58,13 +58,7 @@ public class PornHostCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<label>title</label><b>([^<>\"]*?)</b><BR><label>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<h1 style=\"color: #A4002F; margin\\-right:220px;\">([^<>\"]*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>pornhost\\.com \\- ([^<>\"]*?)</title>").getMatch(0);
-            }
-        }
+        String filename = br.getRegex("<title>pornhost\\.com  \\- ([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (filename.equals("")) filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         downloadLink.setFinalFileName(filename.trim() + ".flv");

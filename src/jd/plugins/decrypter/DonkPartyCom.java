@@ -81,6 +81,10 @@ public class DonkPartyCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
+        if (br.containsHTML("megaporn.com/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (tempID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
