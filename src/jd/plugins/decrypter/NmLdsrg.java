@@ -128,7 +128,7 @@ public class NmLdsrg extends PluginForDecrypt {
                 logger.info("Captcha wrong, stopping...");
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
-            String dllink = ajax.getRegex("\"response\":(\\[)?\"(http[^<>\"]*?)\"").getMatch(1);
+            String dllink = ajax.getRegex("\"response\":\\[?\"(http[^<>\"]*?)\"").getMatch(0);
             // Links can fail for multiple reasons so let's skip them
             if (dllink == null) {
                 logger.info("Found a dead link: " + link);
