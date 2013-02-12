@@ -169,14 +169,14 @@ public class IFilezCom extends PluginForHost {
                     return;
                 }
             }
-            br.postPage(MAINPAGE, "login=login&loginemail=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
+            br.postPage("https://depfile.com/", "login=login&loginemail=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
             // Language not English? Change setting and go on!
             if (!"2".equals(br.getCookie(MAINPAGE, "sdlanguageid"))) {
                 br.setCookie(MAINPAGE, "sdlanguageid", "2");
                 br.getPage(MAINPAGE);
             }
 
-            if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null || (!br.containsHTML("(>Premium until|<a href='/uploads/logout'>\\✖ \\(" + account.getUser() + "\\)<)")) && !br.containsHTML("href=\\'/myspace/space/premium\\'>(\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2})</a></div")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null || !br.containsHTML("class=\\'user_info\\'>Premium:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(MAINPAGE);

@@ -227,7 +227,8 @@ public class CloudzerNet extends PluginForHost {
                 int retry = 0;
                 while (true) {
                     /*
-                     * workaround for api issues, retry 5 times when content length is only 20 bytes
+                     * workaround for api issues, retry 5 times when content
+                     * length is only 20 bytes
                      */
                     if (retry == 5) return false;
                     br.postPage("http://cloudzer.net/api/filemultiple", sb.toString());
@@ -383,7 +384,8 @@ public class CloudzerNet extends PluginForHost {
             if (br.containsHTML("<title>[^<].*?\\- Wartungsarbeiten</title>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerMaintenance", 10 * 60 * 1000);
 
             /**
-             * Reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
+             * Reconnect handling to prevent having to enter a captcha just to
+             * see that a limit has been reached
              */
             logger.info("New Download: currentIP = " + currentIP);
             if (hasDled.get() && ipChanged(currentIP, downloadLink) == false) {
@@ -442,6 +444,7 @@ public class CloudzerNet extends PluginForHost {
             if (br.containsHTML("err\":\"Leider sind derzeit all unsere")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free Downloadslots available", 15 * 60 * 1000l);
             if (br.containsHTML("limit\\-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You're already downloading", RECONNECTWAIT);
             if (br.containsHTML("welche von Free\\-Usern gedownloadet werden kann")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium users are allowed to download files lager than 1,00 GB.");
+            if (br.containsHTML("\"err\":\"Das Verteilen dieser Datei ist vermutlich nicht erlaubt")) throw new PluginException(LinkStatus.ERROR_FATAL, "Link abused, download not possible!");
             String url = br.getRegex("\"url\":\\s*?\"(.*?dl\\\\/.*?)\"").getMatch(0);
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             url = url.replaceAll("\\\\/", "/");
@@ -472,7 +475,8 @@ public class CloudzerNet extends PluginForHost {
                 if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
                 if (br.containsHTML("Datei herunterladen")) {
                     /*
-                     * we get fresh entry page after clicking download, means we have to start from beginning
+                     * we get fresh entry page after clicking download, means we
+                     * have to start from beginning
                      */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverproblem", 5 * 60 * 1000l);
                 }
@@ -728,17 +732,21 @@ public class CloudzerNet extends PluginForHost {
     // br.setCookie("http://cloudzer.net", "lang", "en");
     // br.getPage("http://cloudzer.net");
     // br.getPage("http://cloudzer.net/language/en");
-    // br.postPage("http://cloudzer.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" +
+    // br.postPage("http://cloudzer.net/io/login", "id=" +
+    // Encoding.urlEncode(account.getUser()) + "&pw=" +
     // Encoding.urlEncode(account.getPass()));
-    // if (br.containsHTML("<title>[^<].*?- Wartungsarbeiten</title>")) throw new
+    // if (br.containsHTML("<title>[^<].*?- Wartungsarbeiten</title>")) throw
+    // new
     // PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE,
     // "ServerMaintenance", 10 * 60 * 1000);
     // if (br.containsHTML("User and password do not match")) {
     // AccountInfo ai = account.getAccountInfo();
     // if (ai != null) ai.setStatus("User and password do not match");
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+    // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
-    // if (br.getCookie("http://cloudzer.net", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM,
+    // if (br.getCookie("http://cloudzer.net", "auth") == null) throw new
+    // PluginException(LinkStatus.ERROR_PREMIUM,
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
 

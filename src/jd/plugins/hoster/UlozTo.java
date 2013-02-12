@@ -144,6 +144,7 @@ public class UlozTo extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);
         boolean failed = true;
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         for (int i = 0; i <= 5; i++) {
             String captchaUrl = br.getRegex(Pattern.compile("\"(http://img\\.uloz\\.to/captcha/\\d+\\.png)\"")).getMatch(0);
             Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
@@ -182,14 +183,15 @@ public class UlozTo extends PluginForHost {
             captchaForm.put("captcha_value", code);
             captchaForm.put("captcha_key", captchaKey);
             captchaForm.remove(null);
+            captchaForm.remove("freeDownload");
             if (ts != null) captchaForm.put("ts", ts);
             if (cid != null) captchaForm.put("cid", cid);
             if (sign != null) captchaForm.put("sign", sign);
             br.submitForm(captchaForm);
 
-            // If captcha fails, throws exception
+            // If captcha fails, throrotws exception
             // If in automatic mode, clears saved data
-            if (br.containsHTML(">Error rewriting the text")) {
+            if (br.containsHTML("\"errors\":\\[\"Error rewriting the text")) {
                 if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
                     getPluginConfig().setProperty(CAPTCHA_ID, Property.NULL);
                     getPluginConfig().setProperty(CAPTCHA_TEXT, Property.NULL);
@@ -201,8 +203,9 @@ public class UlozTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
 
-            dllink = br.getRedirectLocation();
+            dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) break;
+            dllink = dllink.replace("\\", "");
             URLConnectionAdapter con = null;
             try {
                 br2.setDebug(true);
@@ -213,6 +216,7 @@ public class UlozTo extends PluginForHost {
                 } else {
                     br2.followConnection();
                     if (br2.containsHTML("Stránka nenalezena")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    if (br2.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
                     br.clearCookies("http://www.ulozto.net/");
                     handleDownloadUrl(downloadLink);
                     continue;

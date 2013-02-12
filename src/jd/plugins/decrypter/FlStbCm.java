@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|advanced_search\\.html|search|look_for\\.html.+|sponsored_go\\.html.+|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback|privacy\\.html|terms\\.html|trends/|last_added_files\\.html|add_contact\\.html|apidoc\\.html|submit\\.html)|video\\.filestube\\.com/watch,[a-z0-9]+/).+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|advanced_search\\.html|search|look_for\\.html.+|sponsored_go\\.html.+|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback|privacy\\.html|terms\\.html|trends/|last_added_files\\.html|add_contact\\.html|apidoc\\.html|submit\\.html)(.+\\.html|[A-Za-z0-9]+)|video\\.filestube\\.com/watch,[a-z0-9]+/.+\\.html)" }, flags = { 0 })
 public class FlStbCm extends PluginForDecrypt {
 
     public FlStbCm(PluginWrapper wrapper) {

@@ -122,8 +122,15 @@ public class SharedBitNet extends PluginForHost {
 
         final long timeBefore = System.currentTimeMillis();
 
+        // final String scaptchaLink =
+        // br.getRegex("\"(/captcha/\\d+/authmini)\"").getMatch(0);
+        // try {
+        // br.cloneBrowser().openGetConnection("https://sharedbit.net" +
+        // scaptchaLink);
+        // } catch (final Exception e) {
+        // }
         for (int i = 0; i <= 3; i++) {
-            final String captchaLink = br.getRegex("\"(/captcha/\\d+/dl)\"").getMatch(0);
+            final String captchaLink = br.getRegex("\"(/captcha/\\d+/dl[^<>\"]*?)\"").getMatch(0);
             if (captchaLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final String code = getCaptchaCode("https://sharedbit.net" + captchaLink, downloadLink);
             if (i == 0) waitTime(timeBefore, downloadLink);

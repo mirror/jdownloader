@@ -65,7 +65,8 @@ public class GigaBaseCom extends PluginForHost {
             dllink = dllink.replaceAll("http:\\/", "http://");
 
             br.getPage(dllink);
-            // some coutries (Poland, Germany) are redirected by one more page with possibility of SMS-payment
+            // some coutries (Poland, Germany) are redirected by one more page
+            // with possibility of SMS-payment
             dllink = br.getRegex("id=\"noThanxDiv\"><a href=\"(/getfile/[^\"<>]*?/link\\?step=[^\"<>]*?)&referer=\"").getMatch(0);
             if (dllink != null) {
                 dllink = downloadLink.getDownloadURL() + dllink;
@@ -89,7 +90,7 @@ public class GigaBaseCom extends PluginForHost {
             if (dllink == null) dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^\"<>]+)").getMatch(0);
             if (dllink == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Cannot download, maybe your country is blocked?!"); }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("HTTP Status 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

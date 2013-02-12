@@ -79,14 +79,14 @@ public class XXXBlg extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final String[] links = new Regex(pagepiece, "<a href=\"(http[^<>\"]*?)\"").getColumn(0);
+            final String[] links = new Regex(pagepiece, "\"http://xxx\\-blog\\.to/download/\\?(http[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (String link : links) {
-                if (link.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/)")) continue;
-                final DownloadLink dlink = createDownloadlink(link.replace("http://xxx-blog.to/../download/?", ""));
+                if (link.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)")) continue;
+                final DownloadLink dlink = createDownloadlink(link);
                 dlink.setSourcePluginPasswordList(pwList);
                 decryptedLinks.add(dlink);
             }

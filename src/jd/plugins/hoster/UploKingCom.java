@@ -46,6 +46,8 @@ public class UploKingCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        // Skip shitty redirector
+        if (!br.getURL().contains("uploking.com/")) br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Page not found|<title>UploKing\\.com \\- </title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filter = "(fileDownload\">)?<a href=\"https?://uploking\\.com/file/[A-Za-z0-9_\\-]+/[^\"]+\">(.*?)</a><span[^>]+>\\((\\d+(\\.\\d+) (B|KB|MB|GB))\\) <";
         String filename = br.getRegex(filter).getMatch(1);
@@ -81,14 +83,18 @@ public class UploKingCom extends PluginForHost {
         sleep(wait * 1001, downloadLink);
         br.getHeaders().put("Referer", referer);
         br.getPage("http://uploking.com/ajax.php?mode=element&function=fses&fk=" + fk + "&free=1");
-        // http://uploking.com/download.php?k=29c160f389e135b658421524391378d7 == "http://uploking.com/download.php?k=" + fk
+        // http://uploking.com/download.php?k=29c160f389e135b658421524391378d7
+        // == "http://uploking.com/download.php?k=" + fk
         String dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replace("\\", "");
         // Skip captcha
-        // final String code = getCaptchaCode("http://uploking.com/captcha.php?" + new Random().nextInt(1000), downloadLink);
-        // br.getPage("http://uploking.com/ajax.php?mode=check&function=captcha&code=" + Encoding.urlEncode(code));
-        // if(br.containsHTML("status\":\"err\""))throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        // final String code = getCaptchaCode("http://uploking.com/captcha.php?"
+        // + new Random().nextInt(1000), downloadLink);
+        // br.getPage("http://uploking.com/ajax.php?mode=check&function=captcha&code="
+        // + Encoding.urlEncode(code));
+        // if(br.containsHTML("status\":\"err\""))throw new
+        // PluginException(LinkStatus.ERROR_CAPTCHA);
         br.getHeaders().put("Referer", referer);
         br.getHeaders().put("X-Requested-With", null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);

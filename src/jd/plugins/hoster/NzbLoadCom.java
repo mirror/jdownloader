@@ -79,6 +79,7 @@ public class NzbLoadCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (true) throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin broken, sorry, we can't do anything right now...");
         final Regex params = new Regex(downloadLink.getDownloadURL(), "http://(www\\.)?nzbload\\.com/en/download/([a-z0-9]+)/(\\d+)");
         final Browser br2 = br.cloneBrowser();
         br2.getPage("http://www.nzbload.com/tpl/download/" + params.getMatch(1) + ".js?version=1.050");
