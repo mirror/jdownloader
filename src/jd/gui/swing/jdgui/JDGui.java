@@ -72,6 +72,7 @@ import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -131,6 +132,8 @@ public class JDGui extends SwingGui {
 
     private MainFrameClosingHandler closingHandler;
 
+    private LogSource               logger;
+
     public MainFrameClosingHandler getClosingHandler() {
         return closingHandler;
     }
@@ -143,6 +146,7 @@ public class JDGui extends SwingGui {
         super("JDownloader");
         // Important for unittests
         this.mainFrame.setName("MAINFRAME");
+        logger = LogController.getInstance().getLogger("Gui");
         this.setWindowTitle("JDownloader");
         this.initDefaults();
         this.initComponents();
@@ -254,6 +258,9 @@ public class JDGui extends SwingGui {
                 Application.getResource("/tmp/update/self/JDU").mkdirs();
                 new Thread() {
                     public void run() {
+                        logger.info("Update bug Finder");
+                        logger.info("last Mod: " + Application.getResource("JDownloader.jar").lastModified() + " < " + (new Date(2013 - 1900, 1, 10, 10, 0).getTime()));
+
                         if (UpdateController.getInstance().getHandler() == null) return;
                         if (Application.getResource("JDownloader.jar").lastModified() < new Date(2013 - 1900, 1, 10, 10, 0).getTime()) {
                             try {
