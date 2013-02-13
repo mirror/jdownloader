@@ -24,7 +24,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.AccountController;
@@ -144,7 +143,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private HashSet<String>                                                 captchaBlockedHoster   = new HashSet<String>();
 
     private final static DownloadWatchDog                                   INSTANCE               = new DownloadWatchDog();
-    private final AtomicInteger                                             shutdownRequests       = new AtomicInteger(0);
+
     private final LogSource                                                 logger;
     private final AtomicLong                                                WATCHDOGWAITLOOP       = new AtomicLong(0);
 
@@ -680,7 +679,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
              */
             return false;
         }
-        if (shutdownRequests.get() > 0) {
+        if (ShutdownController.getInstance().isShutDownRequested()) {
             /* shutdown is requested, we do not start new downloads */
             return false;
         }
@@ -725,6 +724,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      */
     private Integer speedLimitBeforePause   = null;
     private Boolean speedLimitedBeforePause = null;
+    private Object  shutdownLock            = new Object();
 
     public void pauseDownloadWatchDog(final boolean value) {
         IOEQ.add(new Runnable() {
@@ -997,8 +997,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             DownloadLink dlLink = dci.link;
             String dlFolder = dlLink.getFilePackage().getDownloadDirectory();
             DISKSPACECHECK check = this.checkFreeDiskSpace(new File(dlFolder), (dlLink.getDownloadSize() - dlLink.getDownloadCurrent()));
-            synchronized (shutdownRequests) {
-                if (shutdownRequests.get() == 0) {
+            synchronized (shutdownLock) {
+                if (!ShutdownController.getInstance().isShutDownRequested()) {
                     switch (check) {
                     case OK:
                     case UNKNOWN:
@@ -1543,9 +1543,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             /* no need to increment the shutdownRequests because it wont happen */
             return;
         }
-        synchronized (shutdownRequests) {
+        synchronized (this.shutdownLock) {
             /*
-             * we sync on shutdownRequests to make sure that no new downloads get started meanwhile
+             * we sync to make sure that no new downloads get started meanwhile
              */
             if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
                 synchronized (this.downloadControllers) {
@@ -1560,7 +1560,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
 
             }
-            shutdownRequests.incrementAndGet();
+
         }
     }
 
@@ -1574,7 +1574,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
              */
             throw new ShutdownVetoException("Shutdown already cancelled!", this);
         }
-        synchronized (shutdownRequests) {
+        synchronized (this.shutdownLock) {
             /*
              * we sync on shutdownRequests to make sure that no new downloads get started meanwhile
              */
@@ -1597,7 +1597,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, dialogTitle, _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null);
                     /* downloadWatchDog was running */
 
-                    shutdownRequests.incrementAndGet();
                     return;
                 } catch (DialogNoAnswerException e) {
                 }
@@ -1605,20 +1604,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             } else {
                 /* downloadWatchDog was not running */
 
-                shutdownRequests.incrementAndGet();
             }
         }
     }
 
     @Override
     public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
-        for (ShutdownVetoException ex : shutdownVetoExceptions) {
-            if (this == ex.getSource()) return;
-        }
-        /*
-         * none of the exceptions belong to us, so we can decrement the shutdownRequests
-         */
-        shutdownRequests.decrementAndGet();
+
     }
 
     @Override

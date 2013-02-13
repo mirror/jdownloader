@@ -34,8 +34,12 @@ import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarToggleAction
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
+import org.appwork.controlling.State;
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
+import org.appwork.controlling.StateMachine;
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
@@ -547,20 +551,61 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     public void onStateChange(StateEvent event) {
+        final StateMachine sm = DownloadWatchDog.getInstance().getStateMachine();
         if (!getSettings().isShutdownActive()) return;
-        if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
-            // if (DownloadWatchDog.getInstance().getDownloadssincelastStart() >
-            // 0) {
-            if (shutdown != null) {
-                if (!shutdown.isAlive()) {
-                    shutdown = new ShutDown();
-                    shutdown.start();
-                }
+        State state = sm.getState();
+
+        if (event.getNewState() == DownloadWatchDog.STOPPED_STATE) {
+            List<ShutdownVetoException> vetos = ShutdownController.getInstance().collectVetos(true);
+            if (vetos.size() > 0) {
+                logger.info("Vetos: " + vetos + " Wait until there is no veto");
+                new Thread("Wait to Shutdown") {
+                    public void run() {
+
+                        while (true) {
+
+                            if (sm.isState(DownloadWatchDog.PAUSE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
+                                logger.info("Cancel Shutdown.");
+                                return;
+                            }
+                            List<ShutdownVetoException> vetos = ShutdownController.getInstance().collectVetos(true);
+
+                            if (vetos.size() == 0) {
+                                logger.info("No Vetos");
+                                if (sm.isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
+
+                                    doShutdown();
+                                    return;
+                                }
+                            }
+                            logger.info("Vetos: " + vetos + " Wait until there is no veto");
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                return;
+                            }
+
+                        }
+                    }
+                }.start();
             } else {
+                // We cannot use getDownloadsincelastStart...it probably is already resetted here
+                // if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) {
+                doShutdown();
+            }
+            // }
+        }
+    }
+
+    protected void doShutdown() {
+        if (shutdown != null) {
+            if (!shutdown.isAlive()) {
                 shutdown = new ShutDown();
                 shutdown.start();
             }
-            // }
+        } else {
+            shutdown = new ShutDown();
+            shutdown.start();
         }
     }
 
