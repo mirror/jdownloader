@@ -2213,4 +2213,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Yes" })
     String lit_yes();
 
+    @Default(lngs = { "en" }, values = { "dd.MM.yy" })
+    String PremiumAccountTableModel_getDateFormatString_();
+
 }

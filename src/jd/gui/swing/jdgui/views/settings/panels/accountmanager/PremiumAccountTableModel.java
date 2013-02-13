@@ -288,7 +288,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
 
             @Override
             protected String getDateFormatString() {
-                return "dd.MM.yy";
+                return _GUI._.PremiumAccountTableModel_getDateFormatString_();
             }
 
             @Override
