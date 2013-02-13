@@ -31,7 +31,6 @@ import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
@@ -77,8 +76,11 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
 
     private transient Thread               hideThread;
 
-    public TrayIconPopup() {
+    private TrayExtension                  extension;
+
+    public TrayIconPopup(TrayExtension trayExtension) {
         super();
+        this.extension = trayExtension;
         resizecomps = new ArrayList<AbstractButton>();
         setVisible(false);
         setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
@@ -90,7 +92,17 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
         initExitPanel();
         JPanel content = new JPanel(new MigLayout("ins 5, wrap 1", "[]", "[]5[]5[]5[]5[]"));
         add(content);
-        content.add(new JLabel("<html><b>" + JDUtilities.getJDTitle(0) + "</b></html>"), "align center");
+        JButton header;
+        content.add(header = new JButton("<html><b>" + JDUtilities.getJDTitle(0) + "</b></html>"), "align center");
+        header.setBorderPainted(false);
+        header.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                extension.miniIt(false);
+                dispose();
+            }
+        });
         content.add(new JSeparator(), "growx, spanx");
         content.add(entryPanel);
         content.add(new JSeparator(), "growx, spanx");

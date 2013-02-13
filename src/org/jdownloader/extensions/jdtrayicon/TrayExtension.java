@@ -337,7 +337,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         trayIconPopup = null;
                     } else if (SwingUtilities.isRightMouseButton(e)) {
                         if (!checkPassword()) return;
-                        trayIconPopup = new TrayIconPopup();
+                        trayIconPopup = new TrayIconPopup(this);
                         calcLocation(trayIconPopup, e.getPoint());
                         trayIconPopup.setVisible(true);
                         trayIconPopup.startAutoHide();
@@ -352,7 +352,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         trayIconPopup = null;
                     } else if (SwingUtilities.isLeftMouseButton(e)) {
                         if (!checkPassword()) return;
-                        trayIconPopup = new TrayIconPopup();
+                        trayIconPopup = new TrayIconPopup(this);
                         Point pointOnScreen = e.getLocationOnScreen();
                         if (e.getX() > 0) pointOnScreen.x -= e.getPoint().x;
                         calcLocation(trayIconPopup, pointOnScreen);
