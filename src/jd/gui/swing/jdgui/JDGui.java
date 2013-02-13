@@ -259,21 +259,24 @@ public class JDGui extends SwingGui {
                 new Thread() {
                     public void run() {
                         logger.info("Update bug Finder");
-                        logger.info("last Mod: " + Application.getResource("JDownloader.jar").lastModified() + " < " + (new Date(2013 - 1900, 1, 10, 10, 0).getTime()));
+                        logger.info("last Mod: " + Application.getResource("JDownloader.jar").lastModified() + " < " + (new Date(2013 - 1900, 1, 10, 10, 0).getTime()) + " -> " + (Application.getResource("JDownloader.jar").lastModified() < new Date(2013 - 1900, 1, 10, 10, 0).getTime()));
 
                         if (UpdateController.getInstance().getHandler() == null) return;
                         if (Application.getResource("JDownloader.jar").lastModified() < new Date(2013 - 1900, 1, 10, 10, 0).getTime()) {
                             try {
+                                logger.info("Delete jdu");
                                 Files.deleteRecursiv(Application.getResource("cfg/versioninfo/JDU"));
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
                             try {
+                                logger.info("Delete extensioncache");
                                 Files.deleteRecursiv(Application.getResource("tmp/extensioncache"));
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
                             File rev = Application.getResource("/tmp/update/self/JDU/rev");
+                            logger.info("create dummy rev");
                             if (!rev.exists()) {
                                 rev.getParentFile().mkdirs();
                                 try {
@@ -282,8 +285,10 @@ public class JDGui extends SwingGui {
                                     e.printStackTrace();
                                 }
                             }
+                            logger.info("Show Message");
                             Dialog.getInstance().showMessageDialog("This is a very important Update. You should run this NOW!");
                             // runUpdateChecker is synchronized and may block
+                            logger.info("Init update");
                             UpdateController.getInstance().setGuiVisible(true);
                             UpdateController.getInstance().runUpdateChecker(true);
                         }
