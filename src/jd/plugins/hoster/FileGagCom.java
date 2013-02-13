@@ -124,6 +124,7 @@ public class FileGagCom extends PluginForHost {
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        link.setProperty("plainfilename", fileInfo[0]);
         link.setFinalFileName(fileInfo[0].trim());
         if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         return AvailableStatus.TRUE;
@@ -181,12 +182,13 @@ public class FileGagCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can
+         * skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
-                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
+                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Slower+Download");
                 checkErrors(downloadLink, false, passCode);
             }
             dllink = getDllink();
@@ -297,7 +299,8 @@ public class FileGagCom extends PluginForHost {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
-        // remove custom rules first!!! As html can change because of generic cleanup rules.
+        // remove custom rules first!!! As html can change because of generic
+        // cleanup rules.
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");

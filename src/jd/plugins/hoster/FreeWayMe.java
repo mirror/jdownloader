@@ -57,12 +57,12 @@ public class FreeWayMe extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         return maxPrem.get();
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ac = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
@@ -158,16 +158,16 @@ public class FreeWayMe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
-        String user = Encoding.urlEncode(acc.getUser());
-        String pw = Encoding.urlEncode(acc.getPass());
-        String url = Encoding.urlEncode(link.getDownloadURL());
-        String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url;
+    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        final String user = Encoding.urlEncode(acc.getUser());
+        final String pw = Encoding.urlEncode(acc.getPass());
+        final String url = Encoding.urlEncode(link.getDownloadURL());
+        final String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -195,7 +195,8 @@ public class FreeWayMe extends PluginForHost {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
                 /*
-                 * after x retries we disable this host and retry with normal plugin
+                 * after x retries we disable this host and retry with normal
+                 * plugin
                  */
                 if (link.getLinkStatus().getRetryCount() >= 3) {
                     /* reset retrycounter */
@@ -215,11 +216,11 @@ public class FreeWayMe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
+    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, long timeout) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -234,7 +235,7 @@ public class FreeWayMe extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {

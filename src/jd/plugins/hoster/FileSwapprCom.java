@@ -44,7 +44,10 @@ public class FileSwapprCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        // Offline1
         if (br.getURL().equals("http://download.fileswappr.com/404.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Offline2
+        if (br.containsHTML("Duplicate entry \\'")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Fileswappr \\- Download: ([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("name: \\'Download: ([^<>\"]*?)\\'").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

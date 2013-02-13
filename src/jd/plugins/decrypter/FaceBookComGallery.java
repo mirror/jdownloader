@@ -67,6 +67,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 br.getPage(parameter);
                 final String finallink = br.getRegex("id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
                 if (finallink == null) {
+                    if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar")) {
+                        logger.info("Link offline: " + parameter);
+                        return decryptedLinks;
+                    }
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }

@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "http://(www\\.)?liveleakdecrypted\\.com/view\\?i=[a-z0-9]+_\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "http://(www\\.)?liveleakvideodecrypted\\.com/[a-z0-9]+" }, flags = { 0 })
 public class LiveLeakCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -48,39 +49,32 @@ public class LiveLeakCom extends PluginForHost {
         return -1;
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("liveleakdecrypted.com/", "liveleak.com/"));
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://liveleak.com/", "liveleak_safe_mode", "0");
-        br.getPage(downloadLink.getDownloadURL());
-        // Offline
-        if (br.containsHTML("(>Item not found|<title>LiveLeak\\.com \\- </title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // Abused
-        if (br.containsHTML(">This item has been deleted because of a possible violation of our terms of service")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>LiveLeak\\.com \\- (.*?)</title>").getMatch(0);
-        String ext = null;
-        // Differ between pictures and videos
-        if (br.containsHTML("player\\.swf\"")) {
-            ext = ".mp4";
-            DLLINK = br.getRegex("hd_file_url=(http[^<>\"]+)\\&preview_image_url=").getMatch(0);
-            if (DLLINK == null) {
-                ext = ".flv";
-                DLLINK = br.getRegex("file_url=(http[^<>\"]+)\\&").getMatch(0);
-            }
-        } else {
-            ext = ".jpg";
-            DLLINK = br.getRegex("<div id=\"body_text\"><p><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        String filename = downloadLink.getName();
+        // This should never happen
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://www.liveleak.com/ll_embed?f=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        if (br.containsHTML("File not found or deleted\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String ext = ".mp4";
+        DLLINK = br.getRegex("hd_file_url=(http[^<>\"]+)\\&preview_image_url=").getMatch(0);
+        if (DLLINK == null) {
+            ext = ".flv";
+            filename = filename.replace(".mp4", "");
+            DLLINK = br.getRegex("file_url=(http[^<>\"]+)\\&").getMatch(0);
+        }
+        if (filename.contains(".")) {
+            String oldExt = filename.substring(filename.lastIndexOf("."));
+            if (oldExt != null && oldExt.length() <= 5) filename = filename.replace(oldExt, "");
         }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;

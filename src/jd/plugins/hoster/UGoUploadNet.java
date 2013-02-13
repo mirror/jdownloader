@@ -54,10 +54,14 @@ public class UGoUploadNet extends PluginForHost {
     }
 
     // Captcha type: reCaptcha
-    private static Object LOCK      = new Object();
-    private final String  MAINPAGE  = "http://ugoupload.net";
-    private final boolean RESUME    = false;
-    private final int     MAXCHUNKS = 1;
+    private static Object       LOCK                     = new Object();
+    private final String        MAINPAGE                 = "http://ugoupload.net";
+    private final boolean       RESUME                   = false;
+    private final int           MAXCHUNKS                = 1;
+    private static final String PREMIUMONLY              = "?e=You+must+register+for+a+premium+account+to+download+files+of+this+size";
+    private static final String PREMIUMONLYUSERTEXT      = "Only downloadable for premium users";
+    private static final String SIMULTANDLSLIMIT         = "?e=You+have+reached+the+maximum+concurrent+downloads";
+    private static final String SIMULTANDLSLIMITUSERTEXT = "Max. simultan downloads limit reached, wait to start more downloads from this host";
 
     /** Uses same script as filegig.com */
     @Override
@@ -65,9 +69,14 @@ public class UGoUploadNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("e=You+must+register+for+a+premium+account+to+download+files+of+this+size")) {
+        if (br.getURL().contains(PREMIUMONLY)) {
             link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
-            link.getLinkStatus().setStatusText("Only downloadable for premium users");
+            link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
+            return AvailableStatus.TRUE;
+        }
+        if (br.getURL().contains(SIMULTANDLSLIMIT)) {
+            link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            link.getLinkStatus().setStatusText(SIMULTANDLSLIMITUSERTEXT);
             return AvailableStatus.TRUE;
         }
         if (br.getURL().contains("ugoupload.net/index.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -87,7 +96,8 @@ public class UGoUploadNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.getURL().contains("e=You+must+register+for+a+premium+account+to+download+files+of+this+size")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
+        if (br.getURL().contains(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        if (br.getURL().contains(SIMULTANDLSLIMIT)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
         boolean captcha = false;
         int wait = 420;
         final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);

@@ -57,6 +57,7 @@ public class SharecashDotOrg2 extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         this.setBrowserExclusive();
         try {
+            br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             if (downloadLink.getDownloadURL().contains("sharecash.org/")) {
                 if (br.containsHTML("(>File Does Not Exist|<title>ShareCash\\.Org - Make Money Uploading Files\\! - </title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -69,6 +70,7 @@ public class SharecashDotOrg2 extends PluginForHost {
                 downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
             } else {
                 if (br.containsHTML("<title>Download \\.</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (br.getURL().equals("http://jafiles.net/doesnt_exist.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 String filename = br.getRegex("<strong>Name:</strong> (.*?)<br").getMatch(0);
                 if (filename == null) filename = br.getRegex("<title>Download (.*?)\\.</title>").getMatch(0);
                 String filesize = br.getRegex("<strong>Size:</strong>(.*?)</p>").getMatch(0);

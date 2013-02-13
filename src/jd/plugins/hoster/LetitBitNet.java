@@ -56,7 +56,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.|u\\d+\\.)?letitbit\\.net/d?download/[^<>\"/]+/[^<>\"/]+\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.|u\\d+\\.)?letitbit\\.net/d?download/.*?\\.html" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
 
     private static Object        LOCK                              = new Object();
@@ -181,7 +181,7 @@ public class LetitBitNet extends PluginForHost {
                 br.setConnectTimeout(2 * 60 * 60);
                 br.postPage(APIPAGE, sb.toString());
                 for (final DownloadLink dllink : links) {
-                    final String fid = new Regex(dllink.getDownloadURL(), "/(\\d+\\-)?([^<>\"/]*?)/[^<>\"/]*?\\.html").getMatch(1);
+                    final String fid = getFID(dllink);
                     final Regex fInfo = br.getRegex("\"name\":\"([^<>\"]*?)\",\"size\":\"(\\d+)\",\"uid\":\"" + fid + "\",\"project\":\"(letitbit\\.net|shareflare\\.net|vip\\-file\\.com)\",\"md5\":\"([a-z0-9]{32}|0)\"");
                     if (br.containsHTML("\"data\":\\[\\[\\]\\]")) {
                         dllink.setAvailable(false);
@@ -209,6 +209,10 @@ public class LetitBitNet extends PluginForHost {
         if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
         if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return AvailableStatus.TRUE;
+    }
+
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([^<>\"/]*?)/[^<>\"/]+\\.html").getMatch(0);
     }
 
     // private AvailableStatus oldAvailableCheck(final DownloadLink

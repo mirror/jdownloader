@@ -16,14 +16,17 @@
 
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 //Decrypts embedded videos from liveleak.com
@@ -67,7 +70,51 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        decryptedLinks.add(createDownloadlink(parameter.replace("liveleak.com/", "liveleakdecrypted.com/")));
+        String filename = br.getRegex("class=\"section_title\" style=\"vertical\\-align:top; padding\\-right:10px\">([^<>\"]*?)<img").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>LiveLeak\\.com \\- ([^<>\"]*?)</title>").getMatch(0);
+        if (filename == null) filename = new Regex(parameter, "([a-z0-9_]+)$").getMatch(0);
+        filename = Encoding.htmlDecode(filename.trim());
+        // There can also be multiple videos on one page
+        final String[] allEmbedcodes = br.getRegex("generate_embed_code_generator_html\\(\\'([a-z0-9]+)\\'\\)\\)").getColumn(0);
+        if (allEmbedcodes != null && allEmbedcodes.length != 0) {
+            int counter = 1;
+            final DecimalFormat df = new DecimalFormat("000");
+            for (final String embedID : allEmbedcodes) {
+                final DownloadLink dl = createDownloadlink("http://liveleakvideodecrypted.com/" + embedID);
+                if (allEmbedcodes.length > 1) {
+                    dl.setName(filename + "_" + df.format(counter) + ".mp4");
+                } else {
+                    dl.setName(filename + ".mp4");
+                }
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+                counter++;
+            }
+        }
+        // ...or do we have (multiple) pixtures?
+        final String[] allPics = br.getRegex("\"(http://[a-z0-9\\-_]+\\.liveleak\\.com/[^<>\"]*?)\" target=\"_blank\"><img").getColumn(0);
+        if (allPics != null && allPics.length != 0) {
+            int counter = 1;
+            final DecimalFormat df = new DecimalFormat("000");
+            for (final String pictureLink : allPics) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + pictureLink);
+                if (allPics.length > 1) {
+                    dl.setName(filename + "_" + df.format(counter) + ".jpg");
+                } else {
+                    dl.setName(filename + ".jpg");
+                }
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+                counter++;
+            }
+        }
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return decryptedLinks;
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(filename);
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
