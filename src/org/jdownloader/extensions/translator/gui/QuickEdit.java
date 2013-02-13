@@ -139,6 +139,8 @@ public class QuickEdit extends MigPanel implements ListSelectionListener {
     @Override
     public void valueChanged(ListSelectionEvent e) {
         index = table.getSelectionModel().getLeadSelectionIndex();
+        // System.out.println(index);
+        TranslateEntry obj = table.getExtTableModel().getObjectbyRow(index);
         if (table.getSelectionModel().isSelectedIndex(index)) {
             set(table.getExtTableModel().getObjectbyRow(index));
         } else {
@@ -159,11 +161,13 @@ public class QuickEdit extends MigPanel implements ListSelectionListener {
             return;
         }
         this.entry = e;
-
+        System.out.println(index);
         desc.setText(e.getDescription());
         org.setText(e.getDefault());
-        translation.setText(e.isMissing() ? "" : e.getTranslation().replace("\\r", "\r").replace("\\n", "\n"));
+        System.out.println("Please translate: \r\n" + e.getDirect());
         translation.setHelpText("Please translate: \r\n" + e.getDirect());
+        translation.setText(e.isMissing() ? "" : e.getTranslation().replace("\\r", "\r").replace("\\n", "\n"));
+
         if (translation.getText().length() == 0) {
             translation.selectAll();
         }
