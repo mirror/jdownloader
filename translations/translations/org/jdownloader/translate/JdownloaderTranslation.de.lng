@@ -1,3 +1,5 @@
+AddContainerAction_delete_container_msg=Soll %s1 gelöscht werden nachdem alle Links hinzugefügt wurden?
+AddContainerAction_delete_container_title=Container Dateien löschen?
 DownloadWatchDog_onShutdownRequest_=Downloads werden geladen!
 DownloadWatchDog_onShutdownRequest_msg=Möchtest du die laufenden Downloads wirklich abbrechen um JDownloader zu beenden ?
 DownloadWatchDog_onShutdownRequest_nonresumable=Nicht wiederaufnehmbare Downloads weden geladen !
