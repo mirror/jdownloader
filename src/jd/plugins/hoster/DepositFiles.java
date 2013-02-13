@@ -624,9 +624,11 @@ public class DepositFiles extends PluginForHost {
                     br.getPage(MAINPAGE.string + "/login.php?return=%2Fde%2F");
                     String captchaJs = br.getRegex("(http[^\"']+js/base2\\.js)").getMatch(0);
                     Browser br2 = br.cloneBrowser();
-                    br2.getPage(captchaJs);
-                    String cid = br2.getRegex("window\\.recaptcha_public_key = '([^']+)").getMatch(0);
-
+                    String cid = null;
+                    if (captchaJs != null) {
+                        br2.getPage(captchaJs);
+                        cid = br2.getRegex("window\\.recaptcha_public_key = '([^']+)").getMatch(0);
+                    }
                     Thread.sleep(2000);
                     final Form login = br.getFormBySubmitvalue("Eingeben");
                     if (login == null) {
@@ -639,7 +641,10 @@ public class DepositFiles extends PluginForHost {
                     br2 = br.cloneBrowser();
                     br2.submitForm(login);
 
-                    if (br2.containsHTML("\"error\":\"CaptchaRequired\"") && cid != null) {
+                    if (br2.containsHTML("\"error\":\"CaptchaRequired\"") && cid == null) {
+                        logger.warning("cid = null, captcha is required to login");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else if (br2.containsHTML("\"error\":\"CaptchaRequired\"") && cid != null) {
                         DownloadLink dummy = new DownloadLink(null, null, null, null, true);
                         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -649,6 +654,7 @@ public class DepositFiles extends PluginForHost {
                         String c = getCaptchaCode(cf, dummy);
                         login.put("recaptcha_challenge_field", rc.getChallenge());
                         login.put("recaptcha_response_field", Encoding.urlEncode(c));
+                        br2 = br.cloneBrowser();
                         br2.submitForm(login);
                         if (br2.containsHTML("\"error\":\"CaptchaRequired\"")) {
                             logger.info("Invalid account or wrong captcha!");
