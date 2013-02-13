@@ -259,9 +259,17 @@ public class JDGui extends SwingGui {
                 new Thread() {
                     public void run() {
                         logger.info("Update bug Finder");
+                        try {
+                            Thread.sleep(10000);
+                        } catch (InterruptedException e1) {
+                            e1.printStackTrace();
+                        }
                         logger.info("last Mod: " + Application.getResource("JDownloader.jar").lastModified() + " < " + (new Date(2013 - 1900, 1, 10, 10, 0).getTime()) + " -> " + (Application.getResource("JDownloader.jar").lastModified() < new Date(2013 - 1900, 1, 10, 10, 0).getTime()));
 
-                        if (UpdateController.getInstance().getHandler() == null) return;
+                        if (UpdateController.getInstance().getHandler() == null) {
+                            logger.info("Handler null");
+                            return;
+                        }
                         if (Application.getResource("JDownloader.jar").lastModified() < new Date(2013 - 1900, 1, 10, 10, 0).getTime()) {
                             try {
                                 logger.info("Delete jdu");
