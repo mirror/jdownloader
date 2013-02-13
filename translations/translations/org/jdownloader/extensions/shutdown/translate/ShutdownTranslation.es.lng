@@ -1,6 +1,7 @@
 action_tooltip=Habilita el apagado automático del sistema cuando hayan terminado las Descargas
 addons_jdshutdown_statusmessage_disabled=JDownloader ya NO apagará su sistema.
 addons_jdshutdown_statusmessage_enabled=JDownloader apagará su sistema cuando todas las descargas hayan finalizado!
+config_active_by_default=Mantener el Apagado Automatico habilitado
 config_toolbarbutton=Mostrar botón en la barra principal
 gui_config_jdshutdown_close=Cerrar JDownloader
 gui_config_jdshutdown_forceshutdown=Forzar Apagado (No para todos los SO)
