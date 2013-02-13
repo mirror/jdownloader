@@ -556,44 +556,44 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         State state = sm.getState();
 
         if (event.getNewState() == DownloadWatchDog.STOPPED_STATE) {
-            List<ShutdownVetoException> vetos = ShutdownController.getInstance().collectVetos(true);
-            if (vetos.size() > 0) {
-                logger.info("Vetos: " + vetos + " Wait until there is no veto");
-                new Thread("Wait to Shutdown") {
-                    public void run() {
+            if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) {
+                List<ShutdownVetoException> vetos = ShutdownController.getInstance().collectVetos(true);
+                if (vetos.size() > 0) {
+                    logger.info("Vetos: " + vetos + " Wait until there is no veto");
+                    new Thread("Wait to Shutdown") {
+                        public void run() {
 
-                        while (true) {
+                            while (true) {
 
-                            if (sm.isState(DownloadWatchDog.PAUSE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
-                                logger.info("Cancel Shutdown.");
-                                return;
-                            }
-                            List<ShutdownVetoException> vetos = ShutdownController.getInstance().collectVetos(true);
-
-                            if (vetos.size() == 0) {
-                                logger.info("No Vetos");
-                                if (sm.isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
-
-                                    doShutdown();
+                                if (sm.isState(DownloadWatchDog.PAUSE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
+                                    logger.info("Cancel Shutdown.");
                                     return;
                                 }
-                            }
-                            logger.info("Vetos: " + vetos + " Wait until there is no veto");
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
-                                return;
-                            }
+                                List<ShutdownVetoException> vetos = ShutdownController.getInstance().collectVetos(true);
 
+                                if (vetos.size() == 0) {
+                                    logger.info("No Vetos");
+                                    if (sm.isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
+
+                                        doShutdown();
+                                        return;
+                                    }
+                                }
+                                logger.info("Vetos: " + vetos + " Wait until there is no veto");
+                                try {
+                                    Thread.sleep(1000);
+                                } catch (InterruptedException e) {
+                                    return;
+                                }
+
+                            }
                         }
-                    }
-                }.start();
-            } else {
-                // We cannot use getDownloadsincelastStart...it probably is already resetted here
-                // if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) {
-                doShutdown();
+                    }.start();
+                } else {
+                    doShutdown();
+                }
             }
-            // }
+
         }
     }
 

@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.AccountController;
@@ -130,6 +131,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     private final HashMap<String, java.util.List<SingleDownloadController>> activeDownloadsbyHost  = new HashMap<String, java.util.List<SingleDownloadController>>();
     private final HashMap<DownloadLink, DownloadControlHistory>             downloadControlHistory = new HashMap<DownloadLink, DownloadControlHistory>();
+    private final AtomicInteger                                             sessionDownloads       = new AtomicInteger(0);
 
     private Object                                                          currentstopMark        = STOPMARK.NONE;
 
@@ -193,6 +195,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (this.downloadControllers.contains(con)) { throw new WTFException("SingleDownloadController already registered"); }
             this.downloadControllers.add(con);
         }
+        sessionDownloads.incrementAndGet();
         synchronized (activeDownloadsbyHost) {
             String host = con.getDownloadLink().getHost();
             /* increase active counter for this hoster */
@@ -304,8 +307,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 synchronized (filePackage) {
                     for (final DownloadLink link : filePackage.getChildren()) {
                         /*
-                         * do not reset if link is offline, finished , already exist or pluginerror (because only plugin updates can fix
-                         * this)
+                         * do not reset if link is offline, finished , already exist or pluginerror (because only plugin updates can fix this)
                          */
                         link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFECT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
                     }
@@ -378,8 +380,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
-                     * link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
                      */
                     DownloadWatchDog.this.setStopMark(linksForce.get(0));
                     DownloadWatchDog.this.startDownloads();
@@ -420,7 +421,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * @return
      */
     public int getDownloadssincelastStart() {
-        return downloadControlHistory.size();
+        return sessionDownloads.get();
     }
 
     /**
@@ -1083,6 +1084,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 synchronized (downloadControlHistory) {
                     downloadControlHistory.clear();
                 }
+                sessionDownloads.set(0);
                 /* throw start event */
                 logger.info("DownloadWatchDog: start");
                 /* start watchdogthread */
@@ -1165,8 +1167,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                         /*
                                          * create a map holding all possible links sorted by their position in list and their priority
                                          * 
-                                         * by doing this we don't have to walk through possible links multiple times to find next download
-                                         * link, as the list itself will already be correct sorted
+                                         * by doing this we don't have to walk through possible links multiple times to find next download link, as the list
+                                         * itself will already be correct sorted
                                          */
                                         HashMap<Long, java.util.List<DownloadLink>> optimizedList = new HashMap<Long, java.util.List<DownloadLink>>();
                                         /*
@@ -1241,9 +1243,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                          */
                                                         if (DownloadWatchDog.this.activeDownloadsbyHosts(link.getHost()) == 0) {
                                                             /*
-                                                             * do not reconnect if the request comes from host with active downloads, this
-                                                             * will prevent reconnect loops for plugins that allow resume and parallel
-                                                             * downloads
+                                                             * do not reconnect if the request comes from host with active downloads, this will prevent
+                                                             * reconnect loops for plugins that allow resume and parallel downloads
                                                              */
                                                             waitingNewIP = true;
                                                             IPController.getInstance().invalidate();
@@ -1260,8 +1261,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                      */
                                                     if (DownloadWatchDog.this.activeDownloadsbyHosts(link.getHost()) == 0) {
                                                         /*
-                                                         * do not reconnect if the request comes from host with active downloads, this will
-                                                         * prevent reconnect loops for plugins that allow resume and parallel downloads
+                                                         * do not reconnect if the request comes from host with active downloads, this will prevent reconnect
+                                                         * loops for plugins that allow resume and parallel downloads
                                                          */
                                                         waitingNewIP = true;
                                                         IPController.getInstance().invalidate();
@@ -1282,8 +1283,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                          */
                                         if (!hasTempDisabledLinks && !hasInProgressLinks && !waitingNewIP && DownloadWatchDog.this.getActiveDownloads() == 0) {
                                             /*
-                                             * no tempdisabled, no in progress, no reconnect and no next download waiting and no active
-                                             * downloads
+                                             * no tempdisabled, no in progress, no reconnect and no next download waiting and no active downloads
                                              */
                                             if (DownloadWatchDog.this.newDLStartAllowed(forcedLinksWaiting())) {
                                                 /*
