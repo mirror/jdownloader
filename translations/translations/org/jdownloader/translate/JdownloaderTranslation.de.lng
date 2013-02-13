@@ -1,5 +1,3 @@
-AddContainerAction_delete_container_msg=Soll %s1 gelöscht werden nachdem alle Links hinzugefügt wurden?
-AddContainerAction_delete_container_title=Container Dateien löschen?
 DownloadWatchDog_onShutdownRequest_=Downloads werden geladen!
 DownloadWatchDog_onShutdownRequest_msg=Möchtest du die laufenden Downloads wirklich abbrechen um JDownloader zu beenden ?
 DownloadWatchDog_onShutdownRequest_nonresumable=Nicht wiederaufnehmbare Downloads weden geladen !
@@ -105,7 +103,7 @@ gui_settings_extensions_description=Erweiterungsmodule
 gui_settings_extensions_show_now=%s1 jetzt anzeigen?\r\n%s1 kann jederzeit über Hauptmenü -> Fenster angezeigt werden.
 gui_settings_filewriting_description=Über den automatischen Hashcheck kann JDownloader die geladenen Dateien automatisch auf Korrektheit überprüfen.
 gui_settings_general_title=Allgemein
-gui_settings_linkgrabber_filter_description=The linkfilter is used to filter links. Use it to ignore links, adresses, urls or files based on their properties. Add Exceptions to accept special links. Exceptions will be available as a Custom View in the Linkgrabber Sidebar.
+gui_settings_linkgrabber_filter_description=Der Linkfilter filtert Links. Benutze ihn, um Adressen, URLs oder Dateien anhand der jeweiligen Einstellungen zu ignorieren. Füge Ausnahmen hinzu, um bestimmte Links nicht zu ignorieren. Ausnahmen werden als benutzerdefinierte Sicht in der Linkgrabber-Seitenleiste vorhanden sein.
 gui_settings_linkgrabber_packagizer_description=Die Packagizer-Regeln stellen automatisch anhand deiner Datei-Einstellungen die Download-Einstellungen ein.
 gui_settings_linkgrabber_title=Linkgrabber Filter
 gui_settings_plugins_description=JDownloader benutzt "Plugins" für %s1 Webseiten um den Download zu automatisieren, der ohne JDownloader sehr lange dauern würde.\nEinige dieser Plugins haben Einstellungen um ihr Verhalten regeln zu können.

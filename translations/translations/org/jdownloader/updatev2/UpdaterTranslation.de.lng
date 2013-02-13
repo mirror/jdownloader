@@ -1,3 +1,4 @@
+close_jd=Fehlende Rechte um %s1 zu schreiben.\nVersuche alle momentan laufende JDownloader & Java-Prozesse zu beenden und versuche es anschließend erneut!\nBitte kontaktiere unseren Support, falls dieses Problem nach einen Neustart weiterhin besteht.
 confirmdialog_new_update_available_answer_later=Später
 confirmdialog_new_update_available_answer_later_install=Später
 confirmdialog_new_update_available_answer_now=Jetzt herunterladen
