@@ -353,7 +353,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             load(tmp, locale, ExternInterfaceTranslation.class);
             load(tmp, locale, ExternTranslation.class);
             load(tmp, locale, ExtTableTranslation.class);
-
+            load(tmp, locale, GuiTranslation.class);
             LanguageFileSetup guiInterface = TranslationFactory.create(LanguageFileSetup.class);
 
             fontname = guiInterface.config_fontname();
