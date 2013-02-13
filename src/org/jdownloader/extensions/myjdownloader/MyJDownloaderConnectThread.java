@@ -61,8 +61,7 @@ public class MyJDownloaderConnectThread extends Thread {
                     /* fetch new jdToken if needed */
                     if (jdToken == null) {
                         HashMap<String, Object> jdTokenResponse = getJDToken();
-                        ((MyJDownloaderConfigPanel) myJDownloaderExtension.getConfigPanel()).setCurrentIP(parseJDTokenResponse(jdTokenResponse, "ip"));
-                        if ("OK".equalsIgnoreCase(parseJDTokenResponse(jdTokenResponse, "responseCode"))) {
+                        if ("OK".equalsIgnoreCase(parseJDTokenResponse(jdTokenResponse, "status"))) {
                             jdToken = parseJDTokenResponse(jdTokenResponse, "token");
                             loginError = 0;
                         }

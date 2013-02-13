@@ -14,7 +14,7 @@ public interface MyDownloaderExtensionConfig extends ExtensionConfigInterface {
 
     public void setAPIURL(String url);
 
-    @DefaultIntValue(80)
+    @DefaultIntValue(10101)
     @AboutConfig
     public int getAPIPort();
 
