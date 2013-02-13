@@ -1,3 +1,5 @@
+AddContainerAction_delete_container_msg=Möchtest du %s1 löschen, nachdem du die Link bei JDownloader eingefügt hast?
+AddContainerAction_delete_container_title=Lösche Container-Dateien?
 DownloadWatchDog_onShutdownRequest_=Downloads werden geladen!
 DownloadWatchDog_onShutdownRequest_msg=Möchtest du die laufenden Downloads wirklich abbrechen um JDownloader zu beenden ?
 DownloadWatchDog_onShutdownRequest_nonresumable=Nicht wiederaufnehmbare Downloads weden geladen !
