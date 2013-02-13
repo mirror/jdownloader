@@ -494,7 +494,6 @@ buyaction_message=La mayoria de los hosts ofrecen un servicio Premium. Utilizar 
 buyaction_title=Comprar cuenta Premium
 buyaction_title_buy_account=Continuar
 checksumcolumnmd5=Checksum
-config_fontname=default
 downloadview_all=Todas las descargas
 downloadview_failed=Descargas fallidas
 downloadview_running=Descargas en curso
