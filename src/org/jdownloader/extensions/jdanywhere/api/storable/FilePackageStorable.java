@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.jdanywhere.api.downloads;
+package org.jdownloader.extensions.jdanywhere.api.storable;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
@@ -6,7 +6,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.storage.Storable;
 
-public class FilePackageAPIStorable implements Storable {
+public class FilePackageStorable implements Storable {
     public String getName() {
         return pkg.getName();
     }
@@ -36,8 +36,7 @@ public class FilePackageAPIStorable implements Storable {
     }
 
     public long getSpeed() {
-        long speed = DownloadWatchDog.getInstance().getDownloadSpeedbyFilePackage(pkg);
-        return Math.max(speed, 0);
+        return DownloadWatchDog.getInstance().getDownloadSpeedbyFilePackage(pkg);
     }
 
     public long getDone() {
@@ -86,10 +85,10 @@ public class FilePackageAPIStorable implements Storable {
     private FilePackage pkg;
 
     @SuppressWarnings("unused")
-    private FilePackageAPIStorable() {
+    private FilePackageStorable() {
     }
 
-    public FilePackageAPIStorable(FilePackage pkg) {
+    public FilePackageStorable(FilePackage pkg) {
         this.pkg = pkg;
     }
 }

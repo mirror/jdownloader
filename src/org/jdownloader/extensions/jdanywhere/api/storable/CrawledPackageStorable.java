@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.jdanywhere.api.linkcollector;
+package org.jdownloader.extensions.jdanywhere.api.storable;
 
 import java.util.List;
 
@@ -6,7 +6,7 @@ import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.appwork.storage.Storable;
 
-public class CrawledPackageAPIStorable implements Storable {
+public class CrawledPackageStorable implements Storable {
 
     public String getName() {
         return pkg.getName();
@@ -51,7 +51,7 @@ public class CrawledPackageAPIStorable implements Storable {
     /**
      * @return the links
      */
-    public List<CrawledLinkAPIStorable> getLinks() {
+    public List<CrawledLinkStoreable> getLinks() {
         return links;
     }
 
@@ -59,18 +59,18 @@ public class CrawledPackageAPIStorable implements Storable {
      * @param links
      *            the links to set
      */
-    public void setLinks(List<CrawledLinkAPIStorable> links) {
+    public void setLinks(List<CrawledLinkStoreable> links) {
         this.links = links;
     }
 
-    private List<CrawledLinkAPIStorable> links;
+    private List<CrawledLinkStoreable> links;
     private CrawledPackage               pkg;
 
     @SuppressWarnings("unused")
-    private CrawledPackageAPIStorable() {
+    private CrawledPackageStorable() {
     }
 
-    public CrawledPackageAPIStorable(CrawledPackage pkg) {
+    public CrawledPackageStorable(CrawledPackage pkg) {
         this.pkg = pkg;
     }
 }

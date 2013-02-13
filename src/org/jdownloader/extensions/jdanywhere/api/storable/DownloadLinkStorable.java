@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.jdanywhere.api.downloads;
+package org.jdownloader.extensions.jdanywhere.api.storable;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -6,7 +6,7 @@ import jd.plugins.LinkStatus;
 import org.appwork.remoteapi.QueryResponseMap;
 import org.appwork.storage.Storable;
 
-public class DownloadLinkAPIStorable implements Storable {
+public class DownloadLinkStorable implements Storable {
 
     // mobile
     public long getId() {
@@ -61,7 +61,7 @@ public class DownloadLinkAPIStorable implements Storable {
     public void setHost(String hoster) {
     }
 
-    public DownloadLinkAPIStorable(/* Storable */) {
+    public DownloadLinkStorable(/* Storable */) {
         this.link = null;
     }
 
@@ -146,11 +146,11 @@ public class DownloadLinkAPIStorable implements Storable {
     public void setBrowserurl(String browserurl) {
     }
 
-    public LinkStatusJob getLinkStatus() {
+    public LinkStatusJobStorable getLinkStatus() {
         if (link == null) return null;
 
         LinkStatus ls = link.getLinkStatus();
-        LinkStatusJob lsj = new LinkStatusJob();
+        LinkStatusJobStorable lsj = new LinkStatusJobStorable();
 
         lsj.setActive(ls.isPluginActive());
         lsj.setFinished(ls.isFinished());
@@ -161,7 +161,7 @@ public class DownloadLinkAPIStorable implements Storable {
         return lsj;
     }
 
-    public DownloadLinkAPIStorable(DownloadLink link) {
+    public DownloadLinkStorable(DownloadLink link) {
         this.link = link;
     }
 }

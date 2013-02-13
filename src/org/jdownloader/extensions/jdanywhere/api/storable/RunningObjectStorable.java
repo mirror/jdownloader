@@ -1,8 +1,8 @@
-package org.jdownloader.extensions.jdanywhere.api.downloads;
+package org.jdownloader.extensions.jdanywhere.api.storable;
 
 import org.appwork.storage.Storable;
 
-public class RunningObjectAPIStorable implements Storable {
+public class RunningObjectStorable implements Storable {
 
     private long packageID;
     private long linkID;

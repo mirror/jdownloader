@@ -1,10 +1,11 @@
-package org.jdownloader.extensions.jdanywhere.api.content;
+package org.jdownloader.extensions.jdanywhere.api;
 
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.jdownloader.api.content.ContentAPIImpl;
+import org.jdownloader.extensions.jdanywhere.api.interfaces.IContentApi;
 
-public class ContentMobileAPIImpl implements ContentMobileAPI {
+public class ContentApi implements IContentApi {
 
     ContentAPIImpl ctAPI = new ContentAPIImpl();
 

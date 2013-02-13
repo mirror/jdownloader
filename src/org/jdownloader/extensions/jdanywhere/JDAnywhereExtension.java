@@ -11,25 +11,30 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.jdanywhere.api.captcha.CaptchaMobileAPIImpl;
-import org.jdownloader.extensions.jdanywhere.api.content.ContentMobileAPIImpl;
-import org.jdownloader.extensions.jdanywhere.api.downloads.DownloadsMobileAPIImpl;
-import org.jdownloader.extensions.jdanywhere.api.linkcollector.LinkCollectorMobileAPIImpl;
-import org.jdownloader.extensions.jdanywhere.api.toolbar.JDownloaderToolBarMobileAPIImpl;
+import org.jdownloader.extensions.jdanywhere.api.CaptchaApi;
+import org.jdownloader.extensions.jdanywhere.api.ContentApi;
+import org.jdownloader.extensions.jdanywhere.api.DashboardApi;
+import org.jdownloader.extensions.jdanywhere.api.DownloadLinkApi;
+import org.jdownloader.extensions.jdanywhere.api.EventsAPI;
+import org.jdownloader.extensions.jdanywhere.api.FilePackageApi;
+import org.jdownloader.extensions.jdanywhere.api.LinkCrawlerApi;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.RestartController;
 
 public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, TranslateInterface> {
 
-    private DownloadsMobileAPIImpl          dma;
-    private LinkCollectorMobileAPIImpl      lca;
-    private CaptchaMobileAPIImpl            cma;
-    private ContentMobileAPIImpl            coma;
-    private JDownloaderToolBarMobileAPIImpl tma;
+    private CaptchaApi            cma;
+    private ContentApi            coma;
+    private DashboardApi          dba;
+    private DownloadLinkApi       dla;
+    private FilePackageApi        fpa;
+    private LinkCrawlerApi        lca;
 
-    private JDAnywhereConfig                config;
-    private JDAnywhereConfigPanel           configPanel;
+    private EventsAPI             eva;
+
+    private JDAnywhereConfig      config;
+    private JDAnywhereConfigPanel configPanel;
 
     @Override
     public boolean isDefaultEnabled() {
@@ -40,11 +45,13 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
     protected void stop() throws StopException {
         try {
             JDAnywhereController remoteAPI = JDAnywhereController.getInstance();
-            remoteAPI.unregister(dma);
-            remoteAPI.unregister(lca);
             remoteAPI.unregister(cma);
             remoteAPI.unregister(coma);
-            remoteAPI.unregister(tma);
+            remoteAPI.unregister(dba);
+            remoteAPI.unregister(dla);
+            remoteAPI.unregister(fpa);
+            remoteAPI.unregister(lca);
+            eva = null;
         } catch (final Throwable e) {
             LogController.CL().log(e);
             throw new StopException(e.getMessage());
@@ -68,11 +75,13 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
             int port = config.getPort();
             String user = config.getUsername();
             String pass = config.getPassword();
-            remoteAPI.register(dma = new DownloadsMobileAPIImpl(), port, user, pass);
-            remoteAPI.register(lca = new LinkCollectorMobileAPIImpl(), port, user, pass);
-            remoteAPI.register(cma = new CaptchaMobileAPIImpl(), port, user, pass);
-            remoteAPI.register(coma = new ContentMobileAPIImpl(), port, user, pass);
-            remoteAPI.register(tma = new JDownloaderToolBarMobileAPIImpl(), port, user, pass);
+            remoteAPI.register(cma = new CaptchaApi(), port, user, pass);
+            remoteAPI.register(coma = new ContentApi(), port, user, pass);
+            remoteAPI.register(dba = new DashboardApi(), port, user, pass);
+            remoteAPI.register(dla = new DownloadLinkApi(), port, user, pass);
+            remoteAPI.register(fpa = new FilePackageApi(), port, user, pass);
+            remoteAPI.register(lca = new LinkCrawlerApi(), port, user, pass);
+            eva = new EventsAPI();
         } catch (final Throwable e) {
             LogController.CL().log(e);
             throw new StartException(e);

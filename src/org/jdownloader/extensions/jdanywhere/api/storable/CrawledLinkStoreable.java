@@ -1,10 +1,10 @@
-package org.jdownloader.extensions.jdanywhere.api.linkcollector;
+package org.jdownloader.extensions.jdanywhere.api.storable;
 
 import jd.controlling.linkcrawler.CrawledLink;
 
 import org.appwork.storage.Storable;
 
-public class CrawledLinkAPIStorable implements Storable {
+public class CrawledLinkStoreable implements Storable {
 
     public long getId() {
         if (link == null) return 0;
@@ -126,11 +126,11 @@ public class CrawledLinkAPIStorable implements Storable {
     private CrawledLink link;
 
     @SuppressWarnings("unused")
-    private CrawledLinkAPIStorable() {
+    private CrawledLinkStoreable() {
         this.link = null;
     }
 
-    public CrawledLinkAPIStorable(CrawledLink link) {
+    public CrawledLinkStoreable(CrawledLink link) {
         this.link = link;
     }
 }

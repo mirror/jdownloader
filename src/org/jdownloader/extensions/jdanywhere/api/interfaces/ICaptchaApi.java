@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.jdanywhere.api.captcha;
+package org.jdownloader.extensions.jdanywhere.api.interfaces;
 
 import java.util.List;
 
@@ -13,9 +13,9 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.jdownloader.api.captcha.CaptchaJob;
 
-@ApiNamespace("mobile/captcha")
+@ApiNamespace("jdanywhere/captcha")
 @ApiSessionRequired
-public interface CaptchaMobileAPI extends RemoteAPIInterface {
+public interface ICaptchaApi extends RemoteAPIInterface {
     public static enum ABORT {
         SINGLE,
         HOSTER,

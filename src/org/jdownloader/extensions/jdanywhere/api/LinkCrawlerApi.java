@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.jdanywhere.api.linkcollector;
+package org.jdownloader.extensions.jdanywhere.api;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,27 +15,30 @@ import jd.plugins.FilePackage;
 import org.appwork.remoteapi.EventsAPIEvent;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
 import org.jdownloader.extensions.jdanywhere.JDAnywhereController;
+import org.jdownloader.extensions.jdanywhere.api.interfaces.ILinkCrawlerApi;
+import org.jdownloader.extensions.jdanywhere.api.storable.CrawledLinkStoreable;
+import org.jdownloader.extensions.jdanywhere.api.storable.CrawledPackageStorable;
 
-public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkCollectorListener {
+public class LinkCrawlerApi implements ILinkCrawlerApi, LinkCollectorListener {
 
     LinkCollectorAPIImpl lcAPI = new LinkCollectorAPIImpl();
 
-    public LinkCollectorMobileAPIImpl() {
+    public LinkCrawlerApi() {
         LinkCollector.getInstance().getEventsender().addListener(this, true);
     }
 
-    public List<CrawledPackageAPIStorable> list() {
+    public List<CrawledPackageStorable> list() {
         LinkCollector lc = LinkCollector.getInstance();
         boolean b = lc.readLock();
         try {
-            java.util.List<CrawledPackageAPIStorable> ret = new ArrayList<CrawledPackageAPIStorable>(lc.size());
+            java.util.List<CrawledPackageStorable> ret = new ArrayList<CrawledPackageStorable>(lc.size());
             for (CrawledPackage cpkg : lc.getPackages()) {
-                CrawledPackageAPIStorable pkg;
-                ret.add(pkg = new CrawledPackageAPIStorable(cpkg));
+                CrawledPackageStorable pkg;
+                ret.add(pkg = new CrawledPackageStorable(cpkg));
                 synchronized (cpkg) {
-                    List<CrawledLinkAPIStorable> links = new ArrayList<CrawledLinkAPIStorable>(cpkg.getChildren().size());
+                    List<CrawledLinkStoreable> links = new ArrayList<CrawledLinkStoreable>(cpkg.getChildren().size());
                     for (CrawledLink link : cpkg.getChildren()) {
-                        links.add(new CrawledLinkAPIStorable(link));
+                        links.add(new CrawledLinkStoreable(link));
                     }
                     pkg.setLinks(links);
                 }
@@ -46,10 +49,10 @@ public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkC
         }
     }
 
-    public CrawledPackageAPIStorable getCrawledPackage(long crawledPackageID) {
+    public CrawledPackageStorable getCrawledPackage(long crawledPackageID) {
         CrawledPackage cpkg = getCrawledPackageFromID(crawledPackageID);
-        CrawledPackageAPIStorable pkg = new CrawledPackageAPIStorable(cpkg);
-        List<CrawledLinkAPIStorable> links = new ArrayList<CrawledLinkAPIStorable>(0);
+        CrawledPackageStorable pkg = new CrawledPackageStorable(cpkg);
+        List<CrawledLinkStoreable> links = new ArrayList<CrawledLinkStoreable>(0);
         pkg.setLinks(links);
         return pkg;
     }
@@ -60,9 +63,9 @@ public class LinkCollectorMobileAPIImpl implements LinkCollectorMobileAPI, LinkC
         return fpk.getUniqueID().toString();
     }
 
-    public CrawledLinkAPIStorable getCrawledLink(long crawledLinkID) {
+    public CrawledLinkStoreable getCrawledLink(long crawledLinkID) {
         CrawledLink link = getCrawledLinkFromID(crawledLinkID);
-        return new CrawledLinkAPIStorable(link);
+        return new CrawledLinkStoreable(link);
     }
 
     public boolean AddCrawledPackageToDownloads(long crawledPackageID) {
