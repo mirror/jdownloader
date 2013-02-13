@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -73,6 +73,29 @@ public class Share4WebCom extends PluginForHost {
             if (dllink == null) {
                 // "Normal" Downloadlink
                 dllink = br.getRegex("\"(http://[a-z0-9]+\\.share4web\\.com/getf/[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("href=\"/get/[^\"<>]*?(/timer/free\\?step=[^\"<>]*?)&referer=").getMatch(0);
+                    dllink = downloadLink.getDownloadURL() + dllink;
+
+                    /* workaround for old stable bug */
+                    dllink = dllink.replaceAll("\\/\\/", "/");
+                    dllink = dllink.replaceAll("http:\\/", "http://");
+
+                    br.getPage(dllink);
+                    // some coutries (Poland, Germany) are redirected by one more page
+                    // with possibility of SMS-payment
+                    dllink = br.getRegex("id=\"noThanxDiv\"><a href=\"(/get/[^\"<>]*?/timer/link\\?step=[^\"<>]*?)&referer=\"").getMatch(0);
+                    if (dllink != null) {
+                        dllink = downloadLink.getDownloadURL() + dllink;
+
+                        /* workaround for old stable bug */
+                        dllink = dllink.replaceAll("\\/\\/", "/");
+                        dllink = dllink.replaceAll("http:\\/", "http://");
+
+                        br.getPage(dllink);
+                    }
+                    dllink = br.getRegex("\"(http://st\\d+\\.share4web\\.com/getf/[^\"<>]+)").getMatch(0);
+                }
             }
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
