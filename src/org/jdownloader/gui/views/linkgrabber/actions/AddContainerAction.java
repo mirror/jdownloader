@@ -5,6 +5,7 @@ import java.io.File;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.io.JDFileFilter;
 
 import org.appwork.utils.swing.dialog.Dialog;
@@ -44,13 +45,19 @@ public class AddContainerAction extends AppAction {
             File[] filterFiles = d.getSelection();
             if (filterFiles == null) return;
 
-            StringBuilder sb = new StringBuilder();
+            final StringBuilder sb = new StringBuilder();
+            final StringBuilder list = new StringBuilder();
             for (File r : filterFiles) {
-                if (sb.length() > 0) sb.append("\r\n");
+                if (sb.length() > 0) {
+                    sb.append("\r\n");
+                    list.append("\r\n");
+                }
                 sb.append("file://");
+                list.append(r.getAbsolutePath());
                 sb.append(r.getAbsolutePath());
             }
-            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
+            LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
+
         } catch (DialogNoAnswerException e1) {
         }
     }

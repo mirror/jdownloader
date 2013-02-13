@@ -402,4 +402,17 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setSaveLinkgrabberListEnabled(boolean b);
 
+    public static enum DeleteContainerAction {
+        ASK_FOR_DELETE,
+        DELETE,
+        DONT_DELETE
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("ASK_FOR_DELETE")
+    @DescriptionForConfigEntry("What Action should be performed after adding a container (DLC RSDF,METALINK,CCF,...)")
+    DeleteContainerAction getDeleteContainerFilesAfterAddingThemAction();
+
+    void setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction action);
+
 }

@@ -24,15 +24,22 @@ import java.util.regex.Pattern;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
-import jd.utils.JDUtilities;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
-import org.appwork.utils.IO;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.userio.NewUIO;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.GeneralSettings.DeleteContainerAction;
+import org.jdownloader.translate._JDT;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
@@ -107,41 +114,6 @@ public abstract class PluginsC {
         return true;
     }
 
-    /**
-     * Erstellt eine Kopie des Containers im Homedir.
-     * 
-     * @throws IOException
-     */
-    private synchronized void doDecryption(final String parameter) throws IOException {
-        logger.info("DO STEP");
-        final String file = parameter;
-        if (status == STATUS_ERROR_EXTRACTING) {
-            logger.severe("Expired JD Version. Could not extract links");
-            return;
-        }
-        if (file == null) {
-            logger.severe("Containerfile == null");
-            return;
-        }
-        final File f = JDUtilities.getResourceFile(file);
-        if (md5 == null) {
-            md5 = Hash.getMD5(f);
-        }
-
-        final String extension = Files.getExtension(f.getAbsolutePath());
-        if (f.exists()) {
-            final File res = JDUtilities.getResourceFile("container/" + md5 + "." + extension, true);
-            if (!res.exists()) {
-                IO.copyFile(f, res);
-            }
-            if (!res.exists()) {
-                logger.severe("Could not copy file to homedir");
-            }
-            callDecryption(res);
-        }
-        return;
-    }
-
     public abstract String[] encrypt(String plain);
 
     /**
@@ -167,26 +139,45 @@ public abstract class PluginsC {
     }
 
     public synchronized void initContainer(String filename, final byte[] bs) throws IOException {
-        if (filename == null) return;
-        final File rel = JDUtilities.getResourceFile(filename);
-        final File ab = new File(filename);
-        final String md;
-
-        if (!rel.exists() && ab.exists()) {
-            final String extension = Files.getExtension(filename);
-            md = Hash.getMD5(ab);
-            final File newFile = JDUtilities.getResourceFile("container/" + md + "." + extension, true);
-            if (!newFile.exists()) {
-                IO.copyFile(ab, newFile);
-            }
-            filename = "container/" + md + "." + extension;
-        }
+        File file = new File(filename);
+        if (filename == null || !file.exists() || !file.isFile()) return;
 
         if (cls == null || cls.size() == 0) {
             logger.info("Init Container");
             if (bs != null) k = bs;
             try {
-                doDecryption(filename);
+                callDecryption(file);
+                if (cls.size() > 0) {
+                    switch (JsonConfig.create(GeneralSettings.class).getDeleteContainerFilesAfterAddingThemAction()) {
+                    case ASK_FOR_DELETE:
+
+                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.AddContainerAction_delete_container_title(), _JDT._.AddContainerAction_delete_container_msg(file.toString()), NewTheme.I().getIcon("help", 32), _GUI._.lit_yes(), _GUI._.lit_no()) {
+                            protected void writeDontShowAgainFlag() {
+
+                            }
+                        };
+                        try {
+
+                            NewUIO.I().show(ConfirmDialogInterface.class, d);
+
+                            file.delete();
+                            if (d.isDontShowAgainSelected()) {
+                                JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DELETE);
+                            }
+                        } catch (DialogNoAnswerException e) {
+                            if (d.isDontShowAgainSelected()) {
+                                JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DONT_DELETE);
+                            }
+                        }
+                        break;
+                    case DELETE:
+                        file.delete();
+                        break;
+                    case DONT_DELETE:
+
+                    }
+                }
+                // doDecryption(filename);
             } catch (Throwable e) {
                 logger.log(e);
             }
