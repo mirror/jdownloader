@@ -17,11 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -41,7 +39,6 @@ public class EuroShareEu extends PluginForHost {
     private static final String  containsPassword         = "ERR: Password protected file \\(wrong password\\)\\.";
     private static final String  TOOMANYSIMULTANDOWNLOADS = "<p>Naraz je z jednej IP adresy možné sťahovať iba jeden súbor";
     private static AtomicInteger maxPrem                  = new AtomicInteger(1);
-    private AtomicBoolean        passSuccess              = new AtomicBoolean(false);
 
     public EuroShareEu(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,9 +60,10 @@ public class EuroShareEu extends PluginForHost {
         String filename;
         // start of password handling crapola
         String pass = downloadLink.getStringProperty("pass");
-        if ((pass != null && !pass.equals("")) || downloadLink.getLinkStatus().getStatusText() != null) {
+        if (pass != null) {
             handlePassword(downloadLink);
-            if (passSuccess.get() == true) {
+            pass = downloadLink.getStringProperty("pass");
+            if (!pass.equals("")) {
                 logger.info("handlePassword success");
             } else {
                 logger.info("handlePassword failure");
@@ -84,6 +82,7 @@ public class EuroShareEu extends PluginForHost {
                 if (filename != null) {
                     Encoding.urlDecode(filename, true);
                 }
+                downloadLink.setProperty("pass", "");
                 return AvailableStatus.UNCHECKABLE;
             }
         }
@@ -107,32 +106,29 @@ public class EuroShareEu extends PluginForHost {
     }
 
     private void handlePassword(DownloadLink downloadLink) throws IOException, PluginException {
-        if (passSuccess.get() == false) {
-            String pass = downloadLink.getStringProperty("pass");
-            if (pass != null && !pass.equals("")) {
-                br.getPage("http://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&file_password=" + Encoding.urlEncode(pass));
-                if (br.containsHTML(containsPassword)) {
-                    // wrong password
-                    downloadLink.setProperty("pass", Property.NULL);
-                    handlePassword(downloadLink);
-                } else {
-                    // password isn't wrong
-                    downloadLink.getLinkStatus().setStatusText(null);
-                    try {
-                        downloadLink.setComment(null);
-                    } catch (final Throwable e) {
-                    }
-                    passSuccess.set(true);
-                }
+        String pass = downloadLink.getStringProperty("pass");
+        if (pass != null && !pass.equals("")) {
+            br.getPage("http://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&file_password=" + Encoding.urlEncode(pass));
+            if (br.containsHTML(containsPassword)) {
+                // wrong password
+                downloadLink.setProperty("pass", "");
+                handlePassword(downloadLink);
             } else {
-                pass = Plugin.getUserInput(downloadLink.getName() + " is password protected!", downloadLink);
-                if (pass != null && !pass.equals("")) {
-                    downloadLink.setProperty("pass", pass);
-                    handlePassword(downloadLink);
-                } else {
-                    // not sure how stable works, but jd2 never enters here on cancellation of dialog box
-                    passSuccess.set(false);
+                // password isn't wrong
+                downloadLink.getLinkStatus().setStatusText(null);
+                try {
+                    downloadLink.setComment(null);
+                } catch (final Throwable e) {
                 }
+            }
+        } else {
+            pass = Plugin.getUserInput(downloadLink.getName() + " is password protected!", downloadLink);
+            if (pass != null && !pass.equals("")) {
+                downloadLink.setProperty("pass", pass);
+                handlePassword(downloadLink);
+            } else {
+                // not sure how stable works, but jd2 never enters here on cancellation of dialog box
+                downloadLink.setProperty("pass", "");
             }
         }
     }
@@ -194,6 +190,7 @@ public class EuroShareEu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(containsPassword)) throw new PluginException(LinkStatus.ERROR_FATAL);
         doFree(downloadLink);
     }
 
@@ -213,6 +210,7 @@ public class EuroShareEu extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        if (br.containsHTML(containsPassword)) throw new PluginException(LinkStatus.ERROR_FATAL);
         if (account.getBooleanProperty("FREE")) {
             doFree(link);
         } else {

@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com", "depfile.com" }, urls = { "UNUSED_REGEX_BHAHAHHAHAHAHA", "http://(www\\.)?depfiledecrypted\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" }, flags = { 0, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com", "depfile.com" }, urls = { "UNUSED_REGEX_BHAHAHHAHAHAHA", "https?://(www\\.)?depfiledecrypted\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" }, flags = { 0, 2 })
 public class IFilezCom extends PluginForHost {
 
     private static final String CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
@@ -70,6 +70,7 @@ public class IFilezCom extends PluginForHost {
         // Set English language
         br.setCookie(MAINPAGE, "sdlanguageid", "2");
         br.setCustomCharset("utf-8");
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         handleErrors();
         String filename = new Regex(link.getDownloadURL(), "depfile\\.com/downloads/i/\\d+/f/(.+)").getMatch(0);

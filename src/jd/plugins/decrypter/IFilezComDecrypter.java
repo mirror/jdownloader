@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 //This decrypter is there to seperate folder- and hosterlinks as hosterlinks look the same as folderlinks
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com", "depfile.com" }, urls = { "rfh5ujnthUNUSED_REGEX_HAHHAHAHAHAdcj43z8hgto9vhr", "http://(www\\.)?(i\\-filez|depfile)\\.com/(downloads/i/\\d+/f/[^\"\\']+|[a-zA-Z0-9]+)" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com", "depfile.com" }, urls = { "rfh5ujnthUNUSED_REGEX_HAHHAHAHAHAdcj43z8hgto9vhr", "https?://(www\\.)?(i\\-filez|depfile)\\.com/(downloads/i/\\d+/f/[^\"\\']+|[a-zA-Z0-9]+)" }, flags = { 0, 0 })
 public class IFilezComDecrypter extends PluginForDecrypt {
 
     public IFilezComDecrypter(PluginWrapper wrapper) {
@@ -42,11 +42,11 @@ public class IFilezComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("i-filez", "depfile");
         // Set English language
-        br.setCookie("http://depfile.com/", "sdlanguageid", "2");
+        br.setCookie(this.getHost(), "sdlanguageid", "2");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         handleErrors();
-        String[] links = br.getRegex("onClick=\"window\\.open\\(\\'(https?://depfile\\.com/downloads/i/\\d+/f/.*?|https?://(www\\.)?depfile\\.com/[a-zA-Z0-9]{8}\\?cid=[a-z0-9]{32})\\'\\);").getColumn(0);
+        String[] links = br.getRegex("(https?://(www\\.)?depfile\\.com/downloads/i/\\d+/f/[^\"' ><]+|https?://(www\\.)?depfile\\.com/[a-zA-Z0-9]{8}\\?cid=[a-z0-9]{32})").getColumn(0);
         if (links != null && links.length != 0) {
             for (String dl : links)
                 decryptedLinks.add(createDownloadlink(dl.replace("depfile.com/", DEPFILEDECRYPTED)));
