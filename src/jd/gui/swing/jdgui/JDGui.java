@@ -259,17 +259,21 @@ public class JDGui extends SwingGui {
                 new Thread() {
                     public void run() {
                         logger.info("Update bug Finder");
-                        try {
-                            Thread.sleep(10000);
-                        } catch (InterruptedException e1) {
-                            e1.printStackTrace();
-                        }
-                        logger.info("last Mod: " + Application.getResource("JDownloader.jar").lastModified() + " < " + (new Date(2013 - 1900, 1, 10, 10, 0).getTime()) + " -> " + (Application.getResource("JDownloader.jar").lastModified() < new Date(2013 - 1900, 1, 10, 10, 0).getTime()));
 
-                        if (UpdateController.getInstance().getHandler() == null) {
-                            logger.info("Handler null");
-                            return;
+                        logger.info("last Mod: " + Application.getResource("JDownloader.jar").lastModified() + " < " + (new Date(2013 - 1900, 1, 10, 10, 0).getTime()) + " -> " + (Application.getResource("JDownloader.jar").lastModified() < new Date(2013 - 1900, 1, 10, 10, 0).getTime()));
+                        long start = System.currentTimeMillis();
+                        while (UpdateController.getInstance().getHandler() == null) {
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            if (System.currentTimeMillis() - start > 30000) {
+                                logger.info("Handler null");
+                                return;
+                            }
                         }
+                        logger.info("Gogogo");
                         if (Application.getResource("JDownloader.jar").lastModified() < new Date(2013 - 1900, 1, 10, 10, 0).getTime()) {
                             try {
                                 logger.info("Delete jdu");
