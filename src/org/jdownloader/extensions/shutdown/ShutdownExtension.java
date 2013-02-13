@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -96,6 +96,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         case CrossSystem.OS_WINDOWS_VISTA:
         case CrossSystem.OS_WINDOWS_XP:
         case CrossSystem.OS_WINDOWS_7:
+        case CrossSystem.OS_WINDOWS_8:
             /* modern windows versions */
         case CrossSystem.OS_WINDOWS_2000:
         case CrossSystem.OS_WINDOWS_NT:
@@ -229,6 +230,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         case CrossSystem.OS_WINDOWS_VISTA:
         case CrossSystem.OS_WINDOWS_XP:
         case CrossSystem.OS_WINDOWS_7:
+        case CrossSystem.OS_WINDOWS_8:
             /* modern windows versions */
         case CrossSystem.OS_WINDOWS_2000:
         case CrossSystem.OS_WINDOWS_NT:
@@ -291,6 +293,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         case CrossSystem.OS_WINDOWS_VISTA:
         case CrossSystem.OS_WINDOWS_XP:
         case CrossSystem.OS_WINDOWS_7:
+        case CrossSystem.OS_WINDOWS_8:
             /* modern windows versions */
         case CrossSystem.OS_WINDOWS_2000:
         case CrossSystem.OS_WINDOWS_NT:
