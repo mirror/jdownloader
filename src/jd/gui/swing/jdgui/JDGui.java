@@ -262,7 +262,9 @@ public class JDGui extends SwingGui {
                         try {
                             logger.info("Find Counter");
                             counter = org.appwork.Counter.VALUE;
-                            logger.info("Done: " + 1);
+
+                            System.out.println(Application.getJarFile(org.appwork.Counter.class));
+                            logger.info("Done: " + counter);
                         } catch (Throwable e) {
                             logger.log(e);
 
