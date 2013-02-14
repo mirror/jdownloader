@@ -332,7 +332,7 @@ public class Uploadedto extends PluginForHost {
                     long max = 100 * 1024 * 1024 * 1024l;
                     long current = Long.parseLong(traffic);
                     ai.setTrafficMax(Math.max(max, current));
-                    ai.setTrafficLeft(-1 * current);
+                    ai.setTrafficLeft(current);
                     String expireDate = br.getRegex("account_premium\":\\s*?\"?(\\d+)").getMatch(0);
                     ai.setValidUntil(Long.parseLong(expireDate) * 1000);
                     if (current <= 0 || br.containsHTML("download_available\":false")) {
