@@ -260,8 +260,11 @@ public class JDGui extends SwingGui {
                         logger.info("Update bug Finder");
                         int counter = -1;
                         try {
+                            logger.info("Find Counter");
                             counter = org.appwork.Counter.VALUE;
+                            logger.info("Done: " + 1);
                         } catch (Throwable e) {
+                            logger.log(e);
 
                         }
                         long start = System.currentTimeMillis();
@@ -276,7 +279,7 @@ public class JDGui extends SwingGui {
                                 return;
                             }
                         }
-                        logger.info("Gogogo");
+                        logger.info("Gogogo " + counter);
                         if (counter != 1) {
                             try {
                                 logger.info("Delete jdu");
