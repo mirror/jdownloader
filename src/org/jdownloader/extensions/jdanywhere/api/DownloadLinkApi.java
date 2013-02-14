@@ -15,7 +15,9 @@ public class DownloadLinkApi implements IDownloadLinkApi {
 
     DownloadsAPIImpl dlAPI = new DownloadsAPIImpl();
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.jdownloader.extensions.jdanywhere.api.IDownloadLink#list(long)
      */
     @Override
@@ -35,9 +37,6 @@ public class DownloadLinkApi implements IDownloadLinkApi {
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see org.jdownloader.extensions.jdanywhere.api.IDownloadLink#remove(java.util.List)
-     */
     @Override
     public boolean remove(final List<Long> linkIds) {
         return dlAPI.removeLinks(linkIds);
@@ -45,9 +44,6 @@ public class DownloadLinkApi implements IDownloadLinkApi {
 
     // Sets the enabled flag of a downloadlink
     // used in iPhone-App
-    /* (non-Javadoc)
-     * @see org.jdownloader.extensions.jdanywhere.api.IDownloadLink#setEnabled(java.util.List, boolean)
-     */
     @Override
     public boolean setEnabled(final List<Long> linkIds, boolean enabled) {
         if (enabled) {
@@ -57,9 +53,6 @@ public class DownloadLinkApi implements IDownloadLinkApi {
         }
     }
 
-    /* (non-Javadoc)
-     * @see org.jdownloader.extensions.jdanywhere.api.IDownloadLink#reset(java.util.List)
-     */
     @Override
     public boolean reset(final List<Long> linkIds) {
         List<DownloadLink> list = Helper.getFilteredDownloadLinks(linkIds);
@@ -71,13 +64,26 @@ public class DownloadLinkApi implements IDownloadLinkApi {
         return true;
     }
 
-    /* (non-Javadoc)
-     * @see org.jdownloader.extensions.jdanywhere.api.IDownloadLink#getDownloadLink(long)
-     */
     @Override
     public DownloadLinkStorable getDownloadLink(long ID) {
         DownloadLink link = Helper.getDownloadLinkFromID(ID);
         return new DownloadLinkStorable(link);
+    }
+
+    @Override
+    public boolean setPriority(final List<Long> linkIds, int priority) {
+        List<DownloadLink> list = Helper.getFilteredDownloadLinks(linkIds);
+        if (list != null && !list.isEmpty()) {
+            for (DownloadLink dl : list) {
+                dl.setPriority(priority);
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean forceDownload(final List<Long> linkIds) {
+        return dlAPI.forceDownload(linkIds);
     }
 
 }

@@ -23,4 +23,8 @@ public interface IDownloadLinkApi extends RemoteAPIInterface {
 
     public abstract DownloadLinkStorable getDownloadLink(long ID);
 
+    public abstract boolean setPriority(final List<Long> linkIds, int priority);
+
+    public abstract boolean forceDownload(final List<Long> linkIds);
+
 }

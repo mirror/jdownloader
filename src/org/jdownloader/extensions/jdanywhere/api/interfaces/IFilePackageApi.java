@@ -15,7 +15,7 @@ public interface IFilePackageApi extends RemoteAPIInterface {
 
     public abstract String getIDFromLinkID(long ID);
 
-    public abstract boolean removeDownloadPackage(long ID);
+    public abstract boolean remove(long ID);
 
     // Sets the enabled flag of a downloadPackage
     // used in iPhone-App

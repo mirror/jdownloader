@@ -52,7 +52,7 @@ public class FilePackageApi implements IFilePackageApi {
      * @see org.jdownloader.extensions.jdanywhere.api.IFilePackageApi#removeDownloadPackage(long)
      */
     @Override
-    public boolean removeDownloadPackage(long ID) {
+    public boolean remove(long ID) {
         FilePackage fpkg = Helper.getFilePackageFromID(ID);
         if (fpkg != null) {
             DownloadController.getInstance().removePackage(fpkg);
