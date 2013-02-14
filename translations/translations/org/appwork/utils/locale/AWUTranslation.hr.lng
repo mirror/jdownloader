@@ -99,6 +99,7 @@ connecting=Povezivanje...
 crossSystem_open_url_failed_msg=Molimo otvorite ovaj link u Vašem pregledniku:
 download_msg=Preuzimanje datoteke
 download_title=Preuzimanje
+extdatecolumn_dateandtimeformat=dd.MM.gg HH:mm
 extpasswordeditorcolumn_tooltip=Vaša lozinka
 extttable_disable_all=Onemogući sve
 extttable_enabled_all=Omogući sve
