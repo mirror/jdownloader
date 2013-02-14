@@ -639,7 +639,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             try {
                 uid = IO.readFileToString(Application.getResource("cfg/uid"));
                 if (!StringUtils.isEmpty(uid)) {
-                    user = uid.substring(uid.length() - 9);
+                    user = "jd" + uid.substring(uid.length() - 7);
                     name = user;
                 }
             } catch (Exception e2) {
