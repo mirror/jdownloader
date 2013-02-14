@@ -896,8 +896,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This Wizard will scan your Network configuration, and try to find Reconnect Scripts from our online Database.\r\nThis may take between a few seconds, and several minutes.\r\nOnly Dynamic IP DSL Connections via a Router can be autodetected." })
     String AutoSetupAction_tt();
 
-    @Default(lngs = { "en" }, values = { "Current External IP: %s1\r\n\r\nClick here do a Reconnect and get a new External IP." })
-    String ReconnectTestAction_tt_(String ip);
+    @Default(lngs = { "en" }, values = { "Click here do a Reconnect and get a new External IP." })
+    String ReconnectTestAction_tt_2();
 
     @Default(lngs = { "en" }, values = { "Validating your Reconnect Script..." })
     String LiveHeaderDetectionWizard_sendRouter_havetovalidate();

@@ -2,8 +2,6 @@ package jd.gui.swing.jdgui.views.settings.panels.reconnect;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.reconnect.ipcheck.IPController;
-
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.tooltips.BasicTooltipFactory;
 import org.appwork.swing.components.tooltips.TooltipFactory;
@@ -26,7 +24,7 @@ public class ReconnectTestAction extends BasicAction {
     }
 
     public TooltipFactory getTooltipFactory() {
-        return new BasicTooltipFactory(getName(), _GUI._.ReconnectTestAction_tt_(IPController.getInstance().getIpState().toString()), NewTheme.I().getIcon("test", 32));
+        return new BasicTooltipFactory(getName(), _GUI._.ReconnectTestAction_tt_2(), NewTheme.I().getIcon("test", 32));
     }
 
     public void actionPerformed(ActionEvent e) {
