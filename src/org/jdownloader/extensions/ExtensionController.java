@@ -45,7 +45,8 @@ public class ExtensionController {
     private ExtensionControllerEventSender eventSender;
 
     /**
-     * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private ExtensionController() {
         eventSender = new ExtensionControllerEventSender();
@@ -148,6 +149,7 @@ public class ExtensionController {
 
             LazyExtension l = it.next();
             if (l.getJarPath() == null || !new File(l.getJarPath()).exists()) { throw new InstantiationException("Jar Path " + l.getJarPath() + " is invalid"); }
+            l.validateCache();
             if (l._isEnabled()) {
                 // if exception occures here, we do a complete rescan. cache
                 // might be out of date

@@ -387,4 +387,9 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         return jarPath;
     }
 
+    public void validateCache() throws InstantiationException {
+
+        if (Application.getRessourceURL(iconPath) == null) { throw new InstantiationException("Cache of " + jarPath + " is invalid. " + iconPath + " is missing"); }
+    }
+
 }
