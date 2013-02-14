@@ -62,6 +62,14 @@ public interface LinkCollectorAPI extends RemoteAPIInterface {
      */
     List<CrawledLinkAPIStorable> queryLinks(APIQuery queryParams);
 
+    /** Example: http://localhost:3128/linkcollector/addLinks?"STRING_WITH_URLS"&""&""&""
+     * 
+     * @param link
+     * @param packageName
+     * @param archivePassword
+     * @param linkPassword
+     * @return
+     */
     Boolean addLinks(String link, String packageName, String archivePassword, String linkPassword);
 
     Boolean uploadLinkContainer(RemoteAPIRequest request);

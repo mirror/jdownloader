@@ -10,7 +10,7 @@ public class AccountAPIStorable implements Storable {
     private Account          acc;
     private QueryResponseMap infoMap = null;
 
-    public long getId() {
+    public long getUUID() {
         return acc.getID().getID();
     }
 
