@@ -35,7 +35,6 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
@@ -259,8 +258,12 @@ public class JDGui extends SwingGui {
                 new Thread() {
                     public void run() {
                         logger.info("Update bug Finder");
+                        int counter = -1;
+                        try {
+                            counter = org.appwork.Counter.VALUE;
+                        } catch (Throwable e) {
 
-                        logger.info("last Mod: " + Application.getResource("JDownloader.jar").lastModified() + " < " + (new Date(2013 - 1900, 1, 10, 10, 0).getTime()) + " -> " + (Application.getResource("JDownloader.jar").lastModified() < new Date(2013 - 1900, 1, 10, 10, 0).getTime()));
+                        }
                         long start = System.currentTimeMillis();
                         while (UpdateController.getInstance().getHandler() == null) {
                             try {
@@ -274,7 +277,7 @@ public class JDGui extends SwingGui {
                             }
                         }
                         logger.info("Gogogo");
-                        if (Application.getResource("JDownloader.jar").lastModified() < new Date(2013 - 1900, 1, 10, 10, 0).getTime()) {
+                        if (counter != 1) {
                             try {
                                 logger.info("Delete jdu");
                                 Files.deleteRecursiv(Application.getResource("cfg/versioninfo/JDU"));
