@@ -18,7 +18,7 @@ public interface IDashboardApi extends RemoteAPIInterface {
 
     public abstract boolean stop();
 
-    public abstract boolean pause(Boolean value);
+    public abstract boolean pause();
 
     // paused = 1
     // stopped = 2

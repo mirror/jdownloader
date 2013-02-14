@@ -172,7 +172,6 @@ public class EventsAPI implements DownloadControllerListener, CaptchaEventListen
 
     private void downloadApiLinkAdded(DownloadLink link) {
         HashMap<String, Object> data = new HashMap<String, Object>();
-        data.put("action", "downloadLinkAdded");
         data.put("linkID", link.getUniqueID().toString());
         data.put("packageID", link.getFilePackage().getUniqueID().toString());
         JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadLinkAdded", data), null);
@@ -180,7 +179,6 @@ public class EventsAPI implements DownloadControllerListener, CaptchaEventListen
 
     private void downloadApiLinkRemoved(DownloadLink link) {
         HashMap<String, Object> data = new HashMap<String, Object>();
-        data.put("action", "downloadLinkRemoved");
         data.put("linkID", link.getUniqueID().toString());
         data.put("packageID", link.getFilePackage().getUniqueID().toString());
         JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadLinkRemoved", data), null);
@@ -188,14 +186,12 @@ public class EventsAPI implements DownloadControllerListener, CaptchaEventListen
 
     private void downloadApiPackageAdded(FilePackage fpkg) {
         HashMap<String, Object> data = new HashMap<String, Object>();
-        data.put("action", "downloadPackageAdded");
         data.put("packageID", fpkg.getUniqueID().toString());
         JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadPackageAdded", data), null);
     }
 
     private void downloadApiPackageRemoved(FilePackage fpkg) {
         HashMap<String, Object> data = new HashMap<String, Object>();
-        data.put("action", "downloadPackageRemoved");
         data.put("packageID", fpkg.getUniqueID().toString());
         JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadPackageRemoved", data), null);
     }

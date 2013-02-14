@@ -63,8 +63,9 @@ public class DashboardApi implements IDashboardApi {
      * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#pause(java.lang.Boolean)
      */
     @Override
-    public boolean pause(Boolean value) {
-        return dlAPI.pause(value);
+    public boolean pause() {
+        DownloadWatchDog.getInstance().pauseDownloadWatchDog(!DownloadWatchDog.getInstance().isPaused());
+        return true;
     }
 
     // paused = 1
