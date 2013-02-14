@@ -69,7 +69,7 @@ public class VidearnCom extends PluginForHost {
             }
         }
         if (playpath == null || url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (oldStyle()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Not supported yet!"); }
+        if (oldStyle()) throw new PluginException(LinkStatus.ERROR_FATAL, "This host only works in the JDownloader 2 BETA version.");
         dl = new RTMPDownload(this, downloadLink, url + playpath);
         final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 

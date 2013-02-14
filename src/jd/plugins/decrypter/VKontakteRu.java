@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -359,7 +360,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private DownloadLink findVideolink(String parameter) throws IOException {
+    private DownloadLink findVideolink(final String parameter) throws IOException {
         final String userID = new Regex(parameter, "(\\d+)_\\d+$").getMatch(0);
         final String vidID = new Regex(parameter, "(\\d+)$").getMatch(0);
         String correctedBR = br.toString().replace("\\", "");
@@ -396,69 +397,39 @@ public class VKontakteRu extends PluginForDecrypt {
             embeddedVideo = br.getRegex("<media:content url=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (embeddedVideo != null) return createDownloadlink("directhttp://" + Encoding.htmlDecode(embeddedVideo));
         }
+        /** This doesn't work yet */
+        embeddedVideo = new Regex(correctedBR, "url: \\'(//myvi\\.ru[^<>\"]*?)\\'").getMatch(0);
+        if (embeddedVideo != null) { return createDownloadlink(embeddedVideo); }
 
-        final Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.postPage("https://vk.com/al_video.php", "act=load_videos_silent&al=1&offset=12&oid=" + userID);
-
-        // No external video found, try finding a hosted video
-        String additionalStuff = "videos/";
-        String urlPart = br2.getRegex(vidID + ", \\'(https?://[a-z0-9\\.]+/[a-z0-9]+(/[a-z0-9]+)?)/video/").getMatch(0);
-        // Try to get it via normal html
-        if (urlPart == null) urlPart = br.getRegex(vidID + ", \\'(https?://[a-z0-9\\.]+/[a-z0-9]+(/[a-z0-9]+)?)/video/").getMatch(0);
-        if (urlPart == null) urlPart = new Regex(correctedBR, "\"host\":\"(.*?)\"").getMatch(0);
-        String vtag = new Regex(correctedBR, "\"vtag\":\"(.*?)\"").getMatch(0);
-        String videoID = new Regex(correctedBR, "\"vkid\":\"(.*?)\"").getMatch(0);
-        if (videoID == null) videoID = new Regex(parameter, ".*?vk\\.com/video(\\-)?\\d+_(\\d+)").getMatch(1);
-        if (videoID == null || urlPart == null || vtag == null) return null;
         /**
-         * Find the highest possible quality, also every video is only available
-         * in 1-2 formats so we HAVE to use the highest one, if we don't do that
-         * we get wrong links
+         * We couldn't find any external videos so it must be on their servers
+         * -> send it to the hosterplugin
          */
-        String quality = ".vk.flv";
-        if (correctedBR.contains("\"hd\":1")) {
-            quality = ".360.mov";
-            videoID = "";
-        } else if (correctedBR.contains("\"hd\":2")) {
-            quality = ".480.mov";
-            videoID = "";
-        } else if (correctedBR.contains("\"hd\":3")) {
-            quality = ".720.mov";
-            videoID = "";
-        } else if (correctedBR.contains("\"no_flv\":1")) {
-            quality = ".240.mov";
-            videoID = "";
-        }
-        if (correctedBR.contains("\"hd\":3") && correctedBR.contains("\"no_flv\":0")) {
-            quality = ".720.mp4";
-            videoID = "";
-        } else if (correctedBR.contains("\"no_flv\":0")) {
-            /** Last big change done here on 07.11.2011 */
-            if (urlPart.contains("vkadre.ru")) {
-                additionalStuff = "assets/videos/";
-            } else {
-                quality = ".flv";
-                videoID = "";
+        final String embedHash = br.getRegex("\\\\\"hash2\\\\\":\\\\\"([a-z0-9]+)\\\\\"").getMatch(0);
+        if (embedHash == null) {
+            if (!br.containsHTML("VideoPlayer4_0\\.swf\\?")) {
+                logger.info("Link must be offline: " + parameter);
+                return createDownloadlink("http://vkoffline.ru/offline/" + System.currentTimeMillis());
             }
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
-        String videoName = new Regex(correctedBR, "\"md_title\":\"(.*?)\"").getMatch(0);
+        String videoName = new Regex(correctedBR, "\\\\\"md_title\\\\\":\\\\\"(.*?)\\\\\"").getMatch(0);
         if (videoName == null) {
-            videoName = new Regex(correctedBR, "\\{\"title\":\"(.*?)\"").getMatch(0);
+            videoName = new Regex(correctedBR, "\\{\\\\\"title\\\\\":\\\\\"(.*?)\\\\\"").getMatch(0);
         }
 
-        // Workaround
-        if (urlPart.contains("userapi")) quality = quality.replace(".mov", ".mp4");
-
-        final String completeLink = urlPart + "/" + additionalStuff + vtag + videoID + quality;
-        final DownloadLink dl = createDownloadlink(completeLink);
+        final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(1000000));
         // Set filename so we have nice filenames here ;)
         if (videoName != null) {
             if (videoName.length() > 100) {
                 videoName = videoName.substring(0, 100);
             }
-            dl.setFinalFileName(Encoding.htmlDecode(videoName).replaceAll("(»|\")", "").trim() + quality.substring(quality.length() - 4, quality.length()));
+            dl.setName(Encoding.htmlDecode(videoName).replaceAll("(»|\")", "").trim() + ".mp4");
         }
+        dl.setProperty("userid", userID);
+        dl.setProperty("videoid", vidID);
+        dl.setProperty("embedhash", embedHash);
         return dl;
     }
 
@@ -501,6 +472,11 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             if (addedLinks < increase || decryptedData.size() == Integer.parseInt(numberOfEntries)) {
                 logger.info("Fail safe activated, stopping page parsing at page " + i + " of " + maxLoops);
+                break;
+            }
+            if (decryptedData.size() > Integer.parseInt(numberOfEntries)) {
+                logger.warning("Somehow this decrypter got more than the total number of video -> Maybe a bug -> Please report: " + parameter);
+                logger.info("Decrypter " + decryptedData.size() + "entries...");
                 break;
             }
             logger.info("Parsing page " + i + " of " + maxLoops);

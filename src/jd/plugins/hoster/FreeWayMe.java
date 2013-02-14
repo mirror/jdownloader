@@ -171,10 +171,13 @@ public class FreeWayMe extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            String page = br.toString();
+            if (br.containsHTML(">Es ist ein unbekannter Fehler aufgetreten")) {
+                if (link.getLinkStatus().getRetryCount() >= 2) throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown error");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error -> Retry");
+            }
             String error = "";
             try {
-                error = (new Regex(page, "<p id=\\'error\\'>([^<]*)</p>")).getMatch(0);
+                error = (new Regex(br.toString(), "<p id=\\'error\\'>([^<]*)</p>")).getMatch(0);
             } catch (Exception e) {
                 // we handle this few lines later
             }
@@ -208,7 +211,7 @@ public class FreeWayMe extends PluginForHost {
             } else if (error.startsWith("Die Datei darf maximal")) {
                 tempUnavailableHoster(acc, link, 2 * 60 * 1000l);
             }
-            logger.info("Unhandled download error on free-way.me: " + page);
+            logger.info("Unhandled download error on free-way.me: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         }

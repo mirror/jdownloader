@@ -167,14 +167,15 @@ public class GigaPetaCom extends PluginForHost {
         br.setDebug(true);
         br.getPage("http://gigapeta.com/");
         br.postPage("http://gigapeta.com/", "auth_login=" + Encoding.urlEncode(account.getUser()) + "&auth_passwd=" + Encoding.urlEncode(account.getPass()));
-        String accType = br.getRegex("You have <b>([^<>\"]*?)</b> account till").getMatch(0);
-        if (accType == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (accType.equals("basic")) nopremium = true;
         if (br.getCookie("http://gigapeta.com/", "sess") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!nopremium) {
+        if (br.containsHTML("You have <b>basic</b> account")) {
+            nopremium = true;
+            simultanpremium.set(1);
+        } else if (br.getRegex("You have <b>([^<>\"]*?)</b> account till").getMatch(0) != null) {
             simultanpremium.set(-1);
         } else {
-            simultanpremium.set(1);
+            logger.warning("Unknown accounttype, disabling it...");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 

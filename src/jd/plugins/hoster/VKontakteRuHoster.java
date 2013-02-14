@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?|audiolink/\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?|audiolink/\\d+|videolink/\\d+)" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN         = "http://vk.com";
@@ -51,6 +51,8 @@ public class VKontakteRuHoster extends PluginForHost {
     private String              FINALLINK      = null;
     private final String        USECOOKIELOGIN = "USECOOKIELOGIN";
     private static final String AUDIOLINK      = "http://vkontaktedecrypted\\.ru/audiolink/\\d+";
+    private static final String VIDEOLINK      = "http://vkontaktedecrypted\\.ru/videolink/\\d+";
+    private int                 MAXCHUNKS      = 1;
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,52 +63,6 @@ public class VKontakteRuHoster extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://vk.com/help.php?page=terms";
-    }
-
-    private boolean linkOk(final DownloadLink downloadLink, String finallink) throws IOException {
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(FINALLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                if (finallink == null) downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-            } else {
-                return false;
-            }
-            return true;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible with account!");
-    }
-
-    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        /**
-         * Chunks disabled because (till now) this plugin only exists to
-         * download pictures
-         */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, FINALLINK, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
-        dl.startDownload();
     }
 
     @SuppressWarnings("unchecked")
@@ -136,6 +92,39 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (FINALLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (!linkOk(link, finalFilename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+        } else if (link.getDownloadURL().matches(VIDEOLINK)) {
+            MAXCHUNKS = 0;
+
+            br.getPage("http://vk.com/video_ext.php?oid=" + link.getStringProperty("userid", null) + "&id=" + link.getStringProperty("videoid", null) + "&hash=" + link.getStringProperty("embedhash", null));
+            final String brReplaced = br.toString().replace("\\", "");
+            final String server = br.getRegex("var video_host = \\'(http://)?([^<>\"]*?)(/)?\\'").getMatch(1);
+            final String uid = br.getRegex("var video_uid = \\'(\\d+)\\'").getMatch(0);
+            final String vtag = br.getRegex("var video_vtag = \\'([a-z0-9\\-]+)\\'").getMatch(0);
+            final String vkid = br.getRegex("\"vkid\":(\\d+)").getMatch(0);
+            String filename = br.getRegex("var video_title = \\'([^<>\"]*?)\\';").getMatch(0);
+            if (filename == null || server == null || uid == null || vtag == null || vkid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /**
+             * Example max 480p:
+             * http://vk.com/video_ext.php?oid=98473820&id=161498981
+             * &hash=54de03caea4e60d4&hd=1 Only flv link:
+             * http://vk.com/video_ext
+             * .php?oid=98473820&id=162869788&hash=43ea1d4351a0ec1f
+             */
+            String quality = null;
+            String inbetween = "u" + uid + "/videos/" + vtag;
+            if (br.containsHTML("\"hd\":3")) {
+                quality = ".720.mp4";
+            } else if (br.containsHTML("\"hd\":1")) {
+                quality = ".360.mp4";
+            } else if (br.containsHTML("\"hd\":2")) {
+                quality = ".480.mp4";
+            } else if (br.containsHTML("\"hd\":0")) {
+                quality = ".vk.flv";
+                inbetween = "assets/video/" + vtag + vkid;
+            }
+            filename = Encoding.htmlDecode(filename) + quality;
+            FINALLINK = "http://" + server + "/" + inbetween + quality;
+            if (!linkOk(link, filename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             String albumID = link.getStringProperty("albumid");
             String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
@@ -157,7 +146,7 @@ public class VKontakteRuHoster extends PluginForHost {
              * found as it can happen that the found link is offline but others
              * are online
              */
-            String[] qs = { "w_", "z_", "y_", "x_", "m_" };
+            final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
             for (String q : qs) {
                 /* large image */
                 if (FINALLINK == null || (FINALLINK != null && !linkOk(link, null))) {
@@ -176,6 +165,54 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         return AvailableStatus.TRUE;
 
+    }
+
+    private boolean linkOk(final DownloadLink downloadLink, final String finalfilename) throws IOException {
+        Browser br2 = br.cloneBrowser();
+        // In case the link redirects to the finallink
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br2.openGetConnection(FINALLINK);
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                if (finalfilename == null)
+                    downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                else
+                    downloadLink.setFinalFileName(finalfilename);
+            } else {
+                return false;
+            }
+            return true;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible with account!");
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        /**
+         * Chunks disabled because (till now) this plugin only exists to
+         * download pictures
+         */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, FINALLINK, true, MAXCHUNKS);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

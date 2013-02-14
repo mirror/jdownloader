@@ -71,12 +71,17 @@ public class PornTo extends PluginForHost {
         Regex theRegex = br.getRegex("createPlayer\\(\\'(http://.*?)\\',\\'http://.*?\\',\\'(.*?)\\',\\'(\\d+)\\'\\)");
         String token = theRegex.getMatch(1);
         String anID = theRegex.getMatch(2);
+        boolean embeddedLink = false;
         DLLINK = theRegex.getMatch(0);
-        if (filename == null || DLLINK == null || token == null || anID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\\&file=(http://embed\\.kickassratios\\.com/[^<>\"]*?)\\&").getMatch(0);
+            embeddedLink = true;
+        }
+        if (filename == null || (DLLINK == null && token == null && !embeddedLink && anID == null)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.substring(DLLINK.length() - 4, DLLINK.length()));
-        DLLINK += "?start=0&id=videoplayer&client=FLASH%20WIN%2010," + anID + ",181,26&version=4.2.95&width=664&token=" + token;
+        if (!embeddedLink) DLLINK += "?start=0&id=videoplayer&client=FLASH%20WIN%2010," + anID + ",181,26&version=4.2.95&width=664&token=" + token;
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

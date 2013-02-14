@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/(get/|thankyou/)?\\w+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://(www\\.)?uploading\\.com/files/(get/|thankyou/)?\\w+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
 
     private static AtomicInteger simultanpremium = new AtomicInteger(1);
@@ -121,7 +121,8 @@ public class UploadingCom extends PluginForHost {
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
-                     * append fake filename , because api will not report anything else
+                     * append fake filename , because api will not report
+                     * anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
@@ -134,15 +135,20 @@ public class UploadingCom extends PluginForHost {
                 br.setDebug(true);
                 br.postPage("http://uploading.com/filechecker/?ajax", sb.toString());
                 String correctedHTML = br.toString().replaceAll("\\\\/", "/").replaceAll("\\\\(r|n|t)", "").replaceAll("\\\\\"", Encoding.htmlDecode("&#34;"));
-                for (DownloadLink dl : links) {
-                    String fileid = new Regex(dl.getDownloadURL(), "uploading\\.com/files/(get/)?([a-z0-9]+)").getMatch(1);
+                for (final DownloadLink dl : links) {
+                    final String fileid = new Regex(dl.getDownloadURL(), "uploading\\.com/files/(get/)?([a-z0-9]+)").getMatch(1);
                     if (fileid == null) {
                         logger.warning("Uploading.com availablecheck is broken!");
                         return false;
                     }
-                    Regex allMatches = new Regex(correctedHTML, "<div class=\"result clearfix (failed|ok)\">.+http://uploading\\.com/(files/)?(get/)?" + fileid + "/([^/\"]+).*?</a><span class=\"size\">([\\d\\.]+ (B(ytes)|KB|MB|GB))</span></div></div>");
-                    String status = allMatches.getMatch(0);
+                    final Regex allMatches = new Regex(correctedHTML, "<div class=\"result clearfix (failed|ok)\">.+http://uploading\\.com/(files/)?(get/)?" + fileid + "/([^/\"]+).*?</a><span class=\"size\">([\\d\\.]+ (B(ytes)|KB|MB|GB))</span></div></div>");
+                    final String status = allMatches.getMatch(0);
                     String filename = allMatches.getMatch(3);
+                    filename = filename.replaceAll("<|>", "");
+                    if (!filename.contains(".") && filename.contains("-")) {
+                        final String ext = filename.substring(filename.lastIndexOf("-"));
+                        if (ext.length() <= 5) filename = filename.replace(ext, ext.replace("-", "."));
+                    }
                     String filesize = allMatches.getMatch(4);
                     if (filename == null || filesize == null) {
                         logger.warning("Uploading.com availablecheck is broken!");
@@ -436,7 +442,8 @@ public class UploadingCom extends PluginForHost {
     }
 
     /**
-     * TODO: remove with next major update, DownloadWatchDog/AccountController handle blocked accounts now
+     * TODO: remove with next major update, DownloadWatchDog/AccountController
+     * handle blocked accounts now
      */
     @SuppressWarnings("deprecation")
     @Override

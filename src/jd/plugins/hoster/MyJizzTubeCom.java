@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -47,11 +48,9 @@ public class MyJizzTubeCom extends PluginForHost {
         final String nextReq = br.getRegex("\"settings=(http.*?)\"\\)").getMatch(0);
         if (nextReq != null) {
             br.getPage(nextReq);
-            if (br.getRegex("flvMask\\:http.*?;\r\n").matches()) {
-                DLLINK = br.getRegex("flvMask\\:(http.*?);\r\n").getMatch(0);
-            }
-            if (DLLINK == null && br.getRegex("defaultVideo\\:http.*?;\r\n").matches()) {
-                DLLINK = br.getRegex("defaultVideo\\:(http.*?);\r\n").getMatch(0);
+            final Regex dllinkInfo = br.getRegex("flvMask:http://:(/videos/[^<>\"]*?)%26(media\\d+\\.myjizztube\\.com)%268080([^<>\"]*?);");
+            if (dllinkInfo.getMatches().length != 0) {
+                DLLINK = "http://" + dllinkInfo.getMatch(1) + ":8080" + dllinkInfo.getMatch(0) + dllinkInfo.getMatch(2);
             }
             /* rtmp */
             // if (DLLINK == null && br.getRegex("conn\\:.*?;\r\n").matches()) {
