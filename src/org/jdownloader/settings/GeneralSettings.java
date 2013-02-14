@@ -243,7 +243,8 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    boolean isInterruptResumeableDownloadsEnable();
+    @DescriptionForConfigEntry("If disabled, No Reconnects will be done while Resumable Downloads (Premium Downloads) are running")
+    boolean isReconnectAllowedToInterruptResumableDownloads();
 
     @AboutConfig
     @DefaultBooleanValue(true)
@@ -339,7 +340,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setIfFileExistsAction(IfFileExistsAction action);
 
-    void setInterruptResumeableDownloadsEnable(boolean b);
+    void setReconnectAllowedToInterruptResumableDownloads(boolean b);
 
     void setLinkcheckEnabled(boolean b);
 

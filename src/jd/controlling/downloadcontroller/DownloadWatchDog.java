@@ -614,7 +614,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * @return
      */
     public int getForbiddenReconnectDownloadNum() {
-        final boolean allowinterrupt = config.isInterruptResumeableDownloadsEnable();
+        final boolean allowinterrupt = config.isReconnectAllowedToInterruptResumableDownloads();
 
         int ret = 0;
         synchronized (this.downloadControllers) {
