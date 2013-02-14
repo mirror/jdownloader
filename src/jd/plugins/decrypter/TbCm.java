@@ -913,6 +913,16 @@ public class TbCm extends PluginForDecrypt {
                 return null;
             }
         }
+        Form forms[] = br.getForms();
+        if (forms != null) {
+            for (Form form : forms) {
+                if (form.getAction() != null && form.getAction().contains("verify_age")) {
+                    logger.info("Verify Age");
+                    br.submitForm(form);
+                    break;
+                }
+            }
+        }
         /* html5_fmt_map */
         if (br.getRegex(TbCm.YT_FILENAME_PATTERN).count() != 0 && fileNameFound == false) {
             YT_FILENAME = Encoding.htmlDecode(br.getRegex(TbCm.YT_FILENAME_PATTERN).getMatch(0).trim());
