@@ -341,6 +341,7 @@ public class TbCm extends PluginForDecrypt {
         this.br.setFollowRedirects(true);
         this.br.setCookiesExclusive(true);
         this.br.clearCookies("youtube.com");
+        br.setCookie("http://youtube.com", "PREF", "hl=en-GB");
         if (parameter.contains("watch#")) {
             parameter = parameter.replace("watch#", "watch?");
         }
