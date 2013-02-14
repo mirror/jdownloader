@@ -99,6 +99,7 @@ connecting=Conectando...
 crossSystem_open_url_failed_msg=Por favor abra este enlace en su navegador:
 download_msg=Descargando archivo
 download_title=Descargar
+extdatecolumn_dateandtimeformat=dd.MM.aa HH:mm
 extpasswordeditorcolumn_tooltip=Tu contraseña
 extttable_disable_all=Deshabilitar todos
 extttable_enabled_all=Habilitar todos
