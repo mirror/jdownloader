@@ -258,8 +258,7 @@ public class Uploadedto extends PluginForHost {
                 int retry = 0;
                 while (true) {
                     /*
-                     * workaround for api issues, retry 5 times when content
-                     * length is only 20 bytes
+                     * workaround for api issues, retry 5 times when content length is only 20 bytes
                      */
                     if (retry == 5) return false;
                     br.postPage("http://uploaded.net/api/filemultiple", sb.toString());
@@ -333,7 +332,7 @@ public class Uploadedto extends PluginForHost {
                     long max = 100 * 1024 * 1024 * 1024l;
                     long current = Long.parseLong(traffic);
                     ai.setTrafficMax(Math.max(max, current));
-                    ai.setTrafficLeft(current);
+                    ai.setTrafficLeft(-1 * current);
                     String expireDate = br.getRegex("account_premium\":\\s*?\"?(\\d+)").getMatch(0);
                     ai.setValidUntil(Long.parseLong(expireDate) * 1000);
                     if (current <= 0 || br.containsHTML("download_available\":false")) {
@@ -496,8 +495,7 @@ public class Uploadedto extends PluginForHost {
             prepBrowser();
 
             /**
-             * Free-Account Errorhandling: This allows users to switch between
-             * free accounts instead of reconnecting if a limit is reached
+             * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting if a limit is reached
              */
             if (this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, false) && account != null) {
                 final String lastdownloadString = account.getStringProperty("LASTDOWNLOAD2");
@@ -512,8 +510,7 @@ public class Uploadedto extends PluginForHost {
                 }
             } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false)) {
                 /**
-                 * Experimental reconnect handling to prevent having to enter a
-                 * captcha just to see that a limit has been reached
+                 * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
                  */
                 logger.info("New Download: currentIP = " + currentIP);
                 if (hasDled.get() && ipChanged(currentIP, downloadLink) == false) {
