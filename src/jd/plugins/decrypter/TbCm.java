@@ -871,7 +871,7 @@ public class TbCm extends PluginForDecrypt {
         }
         br.setFollowRedirects(true);
         /* this cookie makes html5 available and skip controversy check */
-        br.setCookie("youtube.com", "PREF", "f2=40100000");
+        br.setCookie("youtube.com", "PREF", "f2=40100000&hl=en-GB");
         br.getHeaders().put("User-Agent", "Wget/1.12");
         br.getPage(video);
         if (br.containsHTML("id=\"unavailable-submessage\" class=\"watch-unavailable-submessage\"")) { return null; }
