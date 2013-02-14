@@ -1,4 +1,4 @@
 interaction_externreconnect_command=Εντολή (χρησιμοποιήστε απόλυτες διαδρομές καταλόγου)
 interaction_externreconnect_dummybat=Χρήση ειδικού εκτελεστή για Windows
-interaction_externreconnect_parameter=Παράμετρος (1 παράμετρος ανά γραμμή):
+interaction_externreconnect_parameter=Παράμετρος (μία παράμετρος ανά γραμμή):
 jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Εξωτερικό Εργαλείο Επανασύνδεσης
