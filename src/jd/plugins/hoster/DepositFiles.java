@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -84,6 +85,7 @@ public class DepositFiles extends PluginForHost {
     private static Object         LOCK                     = new Object();
 
     private static AtomicInteger  simultanpremium          = new AtomicInteger(1);
+    private static AtomicBoolean  useWebLogin              = new AtomicBoolean(false);
 
     static {
         if (MAINPAGE == null) {
@@ -615,8 +617,26 @@ public class DepositFiles extends PluginForHost {
                     }
                 }
                 String dmVersion = getDonloadManagerVersion();
-                if (dmVersion == null) {
+                if (dmVersion != null) {
+                    // depositfiles download program login method.
+                    logger.info("Depositfiles download program login method!");
+                    br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 5.1; ru; rv:1.8.1.20) DepositFiles/FileManager " + dmVersion);
+                    br.setFollowRedirects(true);
+                    Thread.sleep(2000);
+                    br.postPage(MAINPAGE.string + "/de/login.php", "go=1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    if (br.getCookie(MAINPAGE.string, "autologin") == null && br.containsHTML(">Ihr Passwort oder Login ist falsch<")) {
+                        logger.info("Invalid login criteria");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if (br.getCookie(MAINPAGE.string, "autologin") == null && !br.containsHTML(">Ihr Passwort oder Login ist falsch<")) {
+                        logger.info("Depositfiles download program login method  == failed! Possible plugin error, please report this to JDownloader Development Team");
+                        useWebLogin.set(true);
+                    } else {
+                        logger.info("Depositfiles download program login method  == success!");
+                    }
+                }
+                if (dmVersion == null || useWebLogin.get() == true) {
                     // web fail over method
+                    logger.info("Depositfiles website login method!");
                     String uprand = account.getStringProperty("uprand", null);
                     if (uprand != null) br.setCookie(MAINPAGE.string, "uprand", uprand);
                     br.setReadTimeout(3 * 60 * 1000);
@@ -654,27 +674,25 @@ public class DepositFiles extends PluginForHost {
                         String c = getCaptchaCode(cf, dummy);
                         login.put("recaptcha_challenge_field", rc.getChallenge());
                         login.put("recaptcha_response_field", Encoding.urlEncode(c));
-                        br2 = br.cloneBrowser();
                         br2.submitForm(login);
-                        if (br2.containsHTML("\"error\":\"CaptchaRequired\"")) {
-                            logger.info("Invalid account or wrong captcha!");
+                        if (br2.containsHTML("\"error\":\"CaptchaInvalid\"")) {
+                            logger.info("Invalid Captcha response!");
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
                     br = br2.cloneBrowser();
-                } else {
-                    // depositfiles download program login method.
-                    br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 5.1; ru; rv:1.8.1.20) DepositFiles/FileManager " + dmVersion);
-                    br.setFollowRedirects(true);
-                    Thread.sleep(2000);
-                    br.postPage(MAINPAGE.string + "/de/login.php", "go=1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    if (br.getCookie(MAINPAGE.string, "autologin") == null && br.containsHTML("\"error\":\"InvalidLogIn\"")) {
+                        logger.info("Invalid login criteria");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if (br.getCookie(MAINPAGE.string, "autologin") == null && !br.containsHTML("\"error\":\"InvalidLogIn\"")) {
+                        logger.info("Depositfiles website login method  == failed! Possible plugin error, please report this to JDownloader Development Team");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        logger.info("Depositfiles website login method == success!");
+                    }
                 }
                 br.setFollowRedirects(false);
-                final String cookie = br.getCookie(MAINPAGE.string, "autologin");
-                if (cookie == null || br.containsHTML("Benutzername\\-Passwort\\-Kombination")) {
-                    logger.info("invalid password/username or captcha required!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE.string);
@@ -692,6 +710,7 @@ public class DepositFiles extends PluginForHost {
                 account.setProperty("cookies", Property.NULL);
                 account.setProperty("UA", Property.NULL);
                 account.setProperty("uprand", Property.NULL);
+                useWebLogin.set(false);
                 throw e;
             }
         }
