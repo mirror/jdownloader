@@ -3,6 +3,7 @@ package org.jdownloader.container.sft;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 public class DelphiFormBinLoader {
@@ -75,7 +76,7 @@ public class DelphiFormBinLoader {
             propertyValue = this.inputStream.readInt() & 0xffffffff;
             break;
         case 8:
-            propertyValue = this.inputStream.readLong();
+            propertyValue = bigToLittleEndian(this.inputStream.readLong()) & 0x7fffffffffffffffL;
             break;
         default:
             throw new UnsupportedOperationException("unsupported integer size");
@@ -193,12 +194,14 @@ public class DelphiFormBinLoader {
             case 11:
                 new DelphiFormEntrySet(parent, propertyName, readSet());
                 break;
-
             case 12:
                 new DelphiFormEntryBinary(parent, propertyName, readBinary());
                 break;
             case 14:
                 readCollection(new DelphiFormEntryCollection(parent, propertyName));
+                break;
+            case 19:
+                new DelphiFormEntryNumber(parent, propertyName, readNumber(8), propertyType);
                 break;
             case 20:
                 new DelphiFormEntryString(parent, propertyName, readUTFString());
@@ -211,5 +214,15 @@ public class DelphiFormBinLoader {
 
     public DelphiFormEntry getRoot() {
         return this.root;
+    }
+
+    public static long bigToLittleEndian(long bigendian) {
+        ByteBuffer buf = ByteBuffer.allocate(8);
+
+        buf.order(ByteOrder.BIG_ENDIAN);
+        buf.putLong(bigendian);
+
+        buf.order(ByteOrder.LITTLE_ENDIAN);
+        return buf.getLong(0);
     }
 }
