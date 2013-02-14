@@ -1,6 +1,7 @@
 action_tooltip=Habilita o Desligamento do Sistema após finalizar os Downloads
 addons_jdshutdown_statusmessage_disabled=O Sistema não será desligado após o término dos downloads
 addons_jdshutdown_statusmessage_enabled=O Sistema será desligado após o término dos downloads
+config_active_by_default=Manter Desligamento habilitado
 config_toolbarbutton=Botão da Barra de Ferramentas visível
 gui_config_jdshutdown_close=Fechar o JDownloader
 gui_config_jdshutdown_forceshutdown=Forçar saída (Não disponível em todos os Sistemas Operacionais)

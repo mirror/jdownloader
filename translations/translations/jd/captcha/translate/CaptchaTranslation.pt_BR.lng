@@ -1,5 +1,5 @@
 easycaptcha_add=adicionar
-easycaptcha_addbackgroundimagedialog_deletecolor=Apagar cor
+easycaptcha_addbackgroundimagedialog_deletecolor=Exluir cor
 easycaptcha_addbackgroundimagedialog_generate=Gerar Filtro de fundo
 easycaptcha_addbackgroundimagedialog_imagepreview=Visualizar
 easycaptcha_addbackgroundimagedialog_loadimage=Carregar a Imagem de fundo
@@ -46,7 +46,7 @@ gui_btn_cancel=Cancelar
 gui_btn_ok=OK
 gui_btn_save=Salvar
 gui_column_host=Host
-gui_component_textarea_context_delete=Apagar
+gui_component_textarea_context_delete=Excluir
 gui_config_jac_column_author=Autor
 gui_menu_add=Adicionar
 jd_plugins_optional_schedule_maingui_edit=Editar
