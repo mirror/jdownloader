@@ -15,6 +15,7 @@
 
 package jd.gui.swing.laf;
 
+import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
 
 import org.appwork.storage.JSonStorage;
@@ -22,6 +23,8 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.synthetica.SyntheticaHelper;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.LAFManagerInterface;
 import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
 import org.jdownloader.images.NewTheme;
@@ -44,6 +47,7 @@ public class LookAndFeelController implements LAFManagerInterface {
     private LAFOptions                     lafOptions;
     private GraphicalUserInterfaceSettings config;
     private String                         laf = null;
+    private LogSource                      logger;
 
     /**
      * Create a new instance of LookAndFeelController. This is a singleton class. Access the only existing instance by using
@@ -51,6 +55,7 @@ public class LookAndFeelController implements LAFManagerInterface {
      */
     private LookAndFeelController() {
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
+        logger = LogController.getInstance().getLogger(getClass().getName());
     }
 
     /**
@@ -73,6 +78,21 @@ public class LookAndFeelController implements LAFManagerInterface {
 
             laf = DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL;
             LogController.GL.info("Use Look & Feel: " + laf);
+            try {
+                if (!StringUtils.isEmpty(config.getLookAndFeel())) {
+                    logger.info("Try Custom Look And Feel: " + config.getLookAndFeel());
+                    Class<?> cl = Class.forName(config.getLookAndFeel());
+                    logger.info("Class: " + cl);
+                    if (LookAndFeel.class.isAssignableFrom(cl)) {
+                        logger.info("Custom LAF is a LookAndFeelClass");
+                        laf = config.getLookAndFeel();
+
+                    }
+                }
+
+            } catch (Throwable e) {
+                logger.log(e);
+            }
 
             if (laf.contains("Synthetica") || laf.equals(DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL)) {
 

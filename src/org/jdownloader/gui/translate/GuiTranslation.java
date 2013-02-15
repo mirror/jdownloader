@@ -2216,4 +2216,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "dd.MM.yy" })
     String PremiumAccountTableModel_getDateFormatString_();
 
+    @Default(lngs = { "en" }, values = { "Download Overview" })
+    String OverViewHeader_OverViewHeader_();
+
 }

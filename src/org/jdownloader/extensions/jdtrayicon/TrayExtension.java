@@ -439,6 +439,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 /* set visible state */
                 guiFrame.setVisible(!minimize);
                 if (minimize == false) {
+
                     if (guiFrame.isVisible()) {
                         /* workaround for : toFront() */
                         new EDTHelper<Object>() {

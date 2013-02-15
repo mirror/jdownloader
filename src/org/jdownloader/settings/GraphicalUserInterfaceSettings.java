@@ -139,6 +139,14 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isLinkgrabberSidebarEnabled();
 
     @AboutConfig
+    @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Sidebar")
+    @DefaultBooleanValue(false)
+    @RequiresRestart
+    boolean isDownloadPanelOverviewVisible();
+
+    void setDownloadPanelOverviewVisible(boolean b);
+
+    @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Sidebar QuicktoggleButton")
     @DefaultBooleanValue(true)
     @RequiresRestart
@@ -350,4 +358,5 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     ClearAction getLinkgrabberDefaultClearAction();
 
     void setLinkgrabberDefaultClearAction(ClearAction action);
+
 }

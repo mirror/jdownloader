@@ -4,18 +4,25 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.views.components.HeaderScrollPane;
+import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverview;
+import org.jdownloader.gui.views.downloads.overviewpanel.OverViewHeader;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadsPanel extends SwitchPanel implements DownloadControllerListener, GenericConfigEventListener<Boolean> {
 
@@ -28,16 +35,53 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     private DownloadsTableModel tableModel;
     private ScheduledFuture<?>  timer            = null;
     private BottomBar           bottomBar;
+    private DownloadOverview    overView;
+    private HeaderScrollPane    overViewScrollBar;
 
     public DownloadsPanel() {
-        super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
+        super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]2[]"));
         tableModel = DownloadsTableModel.getInstance();
         table = new DownloadsTable(tableModel);
         tableScrollPane = new JScrollPane(table);
         tableScrollPane.setBorder(null);
+        overView = new DownloadOverview(table);
         bottomBar = new BottomBar(table);
+        overViewScrollBar = new HeaderScrollPane(overView);
+
+        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(overViewScrollBar);
+
+        overViewScrollBar.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        overViewScrollBar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        overViewScrollBar.setColumnHeaderView(new OverViewHeader() {
+
+            @Override
+            protected void onCloseAction() {
+                setOverViewVisible(false);
+
+            }
+
+        });
         layoutComponents();
 
+        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        removeAll();
+                        layoutComponents();
+                    }
+                };
+            }
+        });
         // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_ENABLED.getEventSender().addListener(this);
         //
         // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
@@ -46,23 +90,23 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     }
 
     private void layoutComponents() {
-        // if
-        // (org.jdownloader.settings.statics.GUI.CFG.isDownloadViewSidebarEnabled()
-        // &&
-        // org.jdownloader.settings.statics.GUI.CFG.isDownloadViewSidebarVisible())
-        // {
-        //
-        // if (sidebarScrollPane == null) {
-        // createSidebar();
-        // }
-        // this.add(tableScrollPane, "pushx,growx");
-        // add(sidebarScrollPane, "width 240!");
-        // } else {
-        this.add(tableScrollPane, "pushx,growx,spanx");
-        //
-        // }
 
-        add(bottomBar, "spanx,height 24!");
+        if (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled()) {
+            setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]2[]"));
+            this.add(tableScrollPane, "pushx,growx,spanx");
+            add(overViewScrollBar, "spanx,height 64!");
+            add(bottomBar, "spanx,height 24!");
+        } else {
+            setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
+            this.add(tableScrollPane, "pushx,growx,spanx");
+            add(bottomBar, "spanx,height 24!");
+        }
+
+    }
+
+    protected void setOverViewVisible(final boolean b) {
+        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.setValue(b);
+
     }
 
     // private void createSidebar() {
@@ -145,10 +189,8 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     long contentChanges = DownloadController.getInstance().getContentChanges();
                     if (lastContentChanges != contentChanges && tableModel.isFilteredView()) {
                         /*
-                         * in case we have content changes(eg downloads started)
-                         * and an active filteredView, we need to recreate the
-                         * tablemodel to reflect possible status changes in
-                         * filtered view
+                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the
+                         * tablemodel to reflect possible status changes in filtered view
                          */
                         tableModel.recreateModel();
                     } else {

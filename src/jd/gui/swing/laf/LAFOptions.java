@@ -2,6 +2,7 @@ package jd.gui.swing.laf;
 
 import java.awt.Color;
 
+import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
@@ -71,8 +72,7 @@ public class LAFOptions implements Storable {
     }
 
     /**
-     * @return true if the gui should paint a horizontal top border above the
-     *         Statusbar. Default is true.
+     * @return true if the gui should paint a horizontal top border above the Statusbar. Default is true.
      */
     public boolean isPaintStatusbarTopBorder() {
         return paintStatusbarTopBorder;
@@ -104,5 +104,15 @@ public class LAFOptions implements Storable {
 
     public int getHighlightColor1() {
         return highlightColor1;
+    }
+
+    public void applyPanelBackgroundColor(JComponent overViewScrollBar) {
+
+        int c = getPanelBackgroundColor();
+        if (c >= 0) {
+            overViewScrollBar.setBackground(new Color(c));
+            overViewScrollBar.setOpaque(true);
+
+        }
     }
 }

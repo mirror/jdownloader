@@ -76,11 +76,18 @@ public class CFG_GUI {
      * If true, TaskColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.
      **/
     public static final BooleanKeyHandler                              PREMIUM_ALERT_TASK_COLUMN_ENABLED                = SH.getKeyHandler("PremiumAlertTaskColumnEnabled", BooleanKeyHandler.class);
+    // CLEAR_LIST
+    public static final EnumKeyHandler                                 LINKGRABBER_DEFAULT_CLEAR_ACTION                 = SH.getKeyHandler("LinkgrabberDefaultClearAction", EnumKeyHandler.class);
     // true
     /**
      * Highlight Column in Downloadview if table is not in downloadsortorder
      **/
     public static final BooleanKeyHandler                              SORT_COLUMN_HIGHLIGHT_ENABLED                    = SH.getKeyHandler("SortColumnHighlightEnabled", BooleanKeyHandler.class);
+    // true
+    /**
+     * Enable/Disable the Linkgrabber Sidebar
+     **/
+    public static final BooleanKeyHandler                              DOWNLOAD_PANEL_OVERVIEW_VISIBLE                  = SH.getKeyHandler("DownloadPanelOverviewVisible", BooleanKeyHandler.class);
     // true
     /**
      * True if move button should be visible in downloadview

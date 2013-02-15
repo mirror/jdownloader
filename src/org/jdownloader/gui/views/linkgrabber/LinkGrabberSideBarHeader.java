@@ -21,7 +21,7 @@ public class LinkGrabberSideBarHeader extends MigPanel {
         // setOpaque(true);
         JLabel lbl = new JLabel(_GUI._.LinkGrabberSideBarHeader_LinkGrabberSideBarHeader());
 
-        add(lbl, "height 18!");
+        add(lbl, "height 17!,gapleft 10");
         add(Box.createHorizontalGlue());
         setOpaque(true);
         SwingUtils.setOpaque(lbl, false);

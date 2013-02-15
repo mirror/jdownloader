@@ -7,12 +7,16 @@ import java.awt.event.KeyListener;
 import java.util.regex.Pattern;
 
 import javax.swing.JButton;
+import javax.swing.JToggleButton;
 
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
@@ -30,14 +34,14 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class BottomBar extends MigPanel {
 
-    private GraphicalUserInterfaceSettings                         config;
-    private JButton                                                addLinks;
+    private GraphicalUserInterfaceSettings                                   config;
+    private JButton                                                          addLinks;
 
-    private JButton                                                clearAll;
-    private JButton                                                popup;
-    private JButton                                                popupRemove;
+    private JButton                                                          clearAll;
+    private JButton                                                          popup;
+    private JButton                                                          popupRemove;
     private SearchField<LinktablesSearchCategory, FilePackage, DownloadLink> searchField;
-    private PseudoCombo                                            combo;
+    private PseudoCombo                                                      combo;
 
     // private JToggleButton showHideSidebar;
 
@@ -191,10 +195,62 @@ public class BottomBar extends MigPanel {
         if (config.isShowMoveToBottomButton()) {
             addButton(table.getMoveToBottomAction()).setFocusable(false);
         }
+
+        // CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+        //
+        // @Override
+        // public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+        // }
+        //
+        // @Override
+        // public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+        //
+        // new EDTRunner() {
+        //
+        // @Override
+        // protected void runInEDT() {
+        // removeAll();
+        // layoutComponents();
+        // }
+        // };
+        // }
+        // });
+
+        // if(!config.isDownloadPanelOverviewVisible()){
+        //
+        // }
+        final JToggleButton bottomBar = new JToggleButton(new AppAction() {
+            {
+                setIconKey("bottombar");
+                setSelected(CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled());
+
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.toggle();
+            }
+        });
+
+        add(bottomBar, "width 24!,height 24!,gapleft 2,aligny top");
+
+        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                bottomBar.setSelected(newValue);
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+
+            }
+        });
         addButton(new AppAction() {
             {
                 setTooltipText(_GUI._.BottomBar_BottomBar_settings());
                 setIconKey("settings");
+
                 // setIconSizes(18);
             }
 

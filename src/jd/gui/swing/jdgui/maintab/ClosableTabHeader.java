@@ -83,7 +83,7 @@ public class ClosableTabHeader extends JPanel {
         label.setOpaque(false);
 
         add(label);
-        add(view.getCloseButton(), "aligny center,gapleft 5,width 16!,height 16!");
+        add(view.getCloseButton(), "aligny center,gapleft 5,width 16!,height 16!,gaptop 3");
         view.getCloseButton().setOpaque(false);
     }
 

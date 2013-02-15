@@ -65,14 +65,14 @@ public abstract class ClosableView extends View {
 
             protected void onRollOut() {
                 setContentAreaFilled(false);
-                setIcon(NewTheme.I().getIcon("close", 11));
+                setIcon(NewTheme.I().getIcon("close", -1));
             }
 
             /**
              * 
              */
             protected void onRollOver() {
-                setIcon(NewTheme.I().getIcon("close.on", 11));
+                setIcon(NewTheme.I().getIcon("close.on", -1));
             }
 
         };
