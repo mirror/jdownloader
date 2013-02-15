@@ -14,7 +14,6 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
@@ -28,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://(www\\.)?antena3.com/videos/[\\-/0-9A-Za-c]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://(www\\.)?antena3.com/videos/[\\-/\\w]+\\.html" }, flags = { 0 })
 public class Antena3ComSalon extends PluginForDecrypt {
 
     public Antena3ComSalon(PluginWrapper wrapper) {
@@ -74,16 +73,15 @@ public class Antena3ComSalon extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void decryptSingleVideo(final CryptedLink link) throws DecrypterException, IOException {
+    private void decryptSingleVideo(final CryptedLink link) throws Exception {
         String name = br.getRegex("<title>ANTENA 3 TV \\- Vídeos de ([^<>\"]*?)</title>").getMatch(0);
-        final String xmlstuff = br.getRegex("player_capitulo\\.xml=\\'(.*?)\\';").getMatch(0);
+        final String xmlstuff = getXML();
         if (xmlstuff == null || name == null) {
             logger.warning("Decrypter broken for link: " + link.toString());
             throw new DecrypterException("Decrypter broken");
         }
         name = Encoding.htmlDecode(name);
 
-        br.getPage("http://www.antena3.com" + xmlstuff);
         // Offline1
         if (br.containsHTML(">El contenido al que estás intentando acceder ya no está disponible")) {
             logger.info("Link offline: " + link.toString());
@@ -116,4 +114,13 @@ public class Antena3ComSalon extends PluginForDecrypt {
             }
         }
     }
+
+    private String getXML() throws Exception {
+        String urlxml = br.getRegex("<link rel=\"video_src\" href=\"http://www.antena3.com/static/swf/A3Player.swf\\?xml=(.*?)\"/>").getMatch(0);
+        if (urlxml == null) urlxml = br.getRegex("name=\"flashvars\" value=\"xml=(http://[^<>\"]*?)\"").getMatch(0);
+        if (urlxml == null) urlxml = br.getRegex("player_capitulo\\.xml=\'([^\']+)\'").getMatch(0);
+        if (urlxml == null) return null;
+        return br.getPage(urlxml);
+    }
+
 }
