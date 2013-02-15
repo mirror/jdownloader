@@ -71,7 +71,8 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
-    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
+    // fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
@@ -79,7 +80,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object        LOCK                         = new Object();
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.6.1.0
+    // XfileSharingProBasic Version 2.6.2.0
     // mods:
     // non account: chunks * maxdls
     // free account: chunks * maxdls
@@ -220,7 +221,8 @@ public class XFileSharingProBasic extends PluginForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                // stable is lame, issue finding input data fields correctly.
+                // eg. closes at ' quotation mark - remove when jd2 goes stable!
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -367,14 +369,19 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -390,7 +397,8 @@ public class XFileSharingProBasic extends PluginForHost {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
-        // remove custom rules first!!! As html can change because of generic cleanup rules.
+        // remove custom rules first!!! As html can change because of generic
+        // cleanup rules.
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
@@ -504,7 +512,8 @@ public class XFileSharingProBasic extends PluginForHost {
         }
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
+    // String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 
@@ -532,7 +541,8 @@ public class XFileSharingProBasic extends PluginForHost {
         if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         String newExtension = null;
-        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
+        // some streaming sites do not provide proper file.extension within
+        // headers (Content-Disposition or the fail over getURL()).
         if (serverFilename.contains(".")) {
             newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
         } else {
@@ -570,7 +580,8 @@ public class XFileSharingProBasic extends PluginForHost {
     public void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
-                // handle password has failed in the past, additional try catching / resetting values
+                // handle password has failed in the past, additional try
+                // catching / resetting values
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
@@ -635,15 +646,15 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
             login(account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         final String space[][] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
@@ -657,7 +668,8 @@ public class XFileSharingProBasic extends PluginForHost {
         final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
-            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+            // need to set 0 traffic left, as getSize returns positive result,
+            // even when negative value supplied.
             if (!availabletraffic.startsWith("-")) {
                 ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
             } else {
@@ -722,11 +734,11 @@ public class XFileSharingProBasic extends PluginForHost {
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login.html");
                 final Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nFalscher Benutzername/Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (!br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }

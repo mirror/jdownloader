@@ -78,19 +78,16 @@ public class FreeWayMe extends PluginForHost {
         if (br.toString().equalsIgnoreCase("Valid login")) {
             account.setValid(true);
         } else if (br.toString().equalsIgnoreCase("Invalid login")) {
-            ac.setStatus("invalid login. Wrong password?");
             account.setValid(false);
-            return ac;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nFalscher Benutzername/Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (br.toString().equalsIgnoreCase("Banned")) {
-            ac.setStatus("account banned");
-            account.setValid(true);
+            account.setValid(false);
             account.setEnabled(false);
-            return ac;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount banned!\r\nAccount gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
             // unknown error
-            ac.setStatus("unknown account status");
             account.setValid(false);
-            return ac;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnknown account status (deactivated)!\r\nUnbekannter Accountstatus (deaktiviert)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         // account should be valid now, let's get account information:
         br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username);
