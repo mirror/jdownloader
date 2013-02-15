@@ -851,6 +851,10 @@ public class Multi extends IExtraction {
                                     }
                                 }
                             }, password);
+                            if (ExtractOperationResult.DATAERROR.equals(result)) {
+                                /* 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native -> crash jvm) */
+                                return false;
+                            }
                             if (ExtractOperationResult.OK.equals(result)) {
                                 passwordfound.found();
                             }
