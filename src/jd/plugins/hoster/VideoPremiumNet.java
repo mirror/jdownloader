@@ -71,8 +71,7 @@ public class VideoPremiumNet extends PluginForHost {
 
     // DEV NOTES
     /**
-     * Script notes: Streaming versions of this script sometimes redirect you to
-     * their directlinks when accessing this link + the link ID:
+     * Script notes: Streaming versions of this script sometimes redirect you to their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
     // XfileSharingProBasic Version 2.5.6.8-raz
@@ -205,7 +204,7 @@ public class VideoPremiumNet extends PluginForHost {
             dllink = getDllink();
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        download(downloadLink, dllink);
+        rtmpDownload(downloadLink, dllink);
     }
 
     private boolean oldStyle() {
@@ -220,23 +219,20 @@ public class VideoPremiumNet extends PluginForHost {
         return false;
     }
 
+    private void rtmpDownload(DownloadLink downloadLink, String dllink) throws Exception {
+        dl = new RTMPDownload(this, downloadLink, dllink);
+        setupRTMPConnection(dllink, dl, downloadLink);
+        ((RTMPDownload) dl).startDownload();
+    }
+
     private void setupRTMPConnection(String stream, DownloadInterface dl, DownloadLink downloadLink) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
         String url = stream.split("@")[0];
-
         rtmp.setPlayPath(stream.split("@")[1]);
         rtmp.setUrl(url);
         rtmp.setSwfVfy(stream.split("@")[2]);
         rtmp.setPageUrl(downloadLink.getDownloadURL());
         rtmp.setResume(true);
-    }
-
-    private void download(DownloadLink downloadLink, String dllink) throws Exception {
-        dl = new RTMPDownload(this, downloadLink, dllink);
-        setupRTMPConnection(dllink, dl, downloadLink);
-
-        ((RTMPDownload) dl).startDownload();
     }
 
     @Override
@@ -245,19 +241,14 @@ public class VideoPremiumNet extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One
-     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
-     * the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a
-     * final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple
-     * slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20)
-     * captcha events all at once and only allows one download to start. This
-     * prevents wasting peoples time and effort on captcha solving and|or
-     * wasting captcha trading credits. Users will experience minimal harm to
-     * downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -398,9 +389,9 @@ public class VideoPremiumNet extends PluginForHost {
 
         String finallink = null;
         if (decoded != null) {
-            String[] rtmpStuff = new Regex(decoded, "flowplayer\\(\"vplayer\",\"(http://.*?)\",\\{key:\'[#\\$0-9-a-f]+\',clip:\\{url:\'(.*?)\',provider:\'rtmp\',.*?,netConnectionUrl:\'([^\']+)").getRow(0);
+            String rtmpStuff[] = new Regex(decoded, "flashvars=\\{\"comment\":\"[^\"]+\",\"st\":\"[^\"]+\",\"file\":\"([^\"]+)\",p2pkey:\"([^\"]+)\",.*?swfobject\\.embedSWF\\(\"(http://[^\"]+)\",").getRow(0);
             if (rtmpStuff != null && rtmpStuff.length == 3) {
-                finallink = rtmpStuff[2] + "@" + rtmpStuff[1] + "@" + rtmpStuff[0];
+                finallink = rtmpStuff[0] + "@" + rtmpStuff[1] + "@" + rtmpStuff[2];
             }
         }
         return finallink;
@@ -533,7 +524,11 @@ public class VideoPremiumNet extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (true) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Noch nicht fertig...");
+        if (dllink.startsWith("rtmp")) {
+            rtmpDownload(downloadLink, dllink);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Noch nicht fertig...");
+        }
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
