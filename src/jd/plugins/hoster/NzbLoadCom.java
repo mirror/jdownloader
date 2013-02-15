@@ -79,19 +79,24 @@ public class NzbLoadCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (true) throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin broken, sorry, we can't do anything right now...");
         final Regex params = new Regex(downloadLink.getDownloadURL(), "http://(www\\.)?nzbload\\.com/en/download/([a-z0-9]+)/(\\d+)");
         final Browser br2 = br.cloneBrowser();
         br2.getPage("http://www.nzbload.com/tpl/download/" + params.getMatch(1) + ".js?version=1.050");
         final String sleep = br2.getRegex("updateTimer = setTimeout\\(\\'checkProgress\\(\\);\\', (\\d+)\\);").getMatch(0);
-        final String rcID = br2.getRegex("Recaptcha\\.create\\(\\'([^<>\"]*?)\\'").getMatch(0);
-        if (rcID == null || sleep == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (sleep == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         br.getPage("http://www.nzbload.com/data/download.json?overwrite=start-download&t=" + System.currentTimeMillis() + "&sub=" + params.getMatch(1) + "&params[0]=" + params.getMatch(2));
         if (br.containsHTML("Free users can download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         final String expiry = get("expiry");
         final String hash = get("hash");
         if (expiry == null || hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         sleep(Long.parseLong(sleep) + 500, downloadLink);
+
+        String sessionSecret = areYouAHuman();
+        String rcID = br.getRegex("challenge\\?k=([^\"]+)\"").getMatch(0);
+        if (rcID == null || sessionSecret == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(rcID);
@@ -99,7 +104,8 @@ public class NzbLoadCom extends PluginForHost {
         for (int i = 0; i <= 5; i++) {
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
-            br.postPage("http://www.nzbload.com/action/download.json?act=verify_captcha&t=" + System.currentTimeMillis(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+            br.postPage("https://ws.areyouahuman.com/ayahwebservices/index.php/ayahwebservice/recordAccessibilityString", "session_secret=" + sessionSecret + "&challenge=" + rc.getChallenge() + "&response=" + c + "&ordinal=" + i);
+            br.postPage("http://www.nzbload.com/action/download.json?act=verify_captcha&t=" + System.currentTimeMillis(), "session_secret=" + sessionSecret);
             if (br.containsHTML("\"success\":false")) {
                 rc.reload();
                 continue;
@@ -120,6 +126,24 @@ public class NzbLoadCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String areYouAHuman() throws Exception {
+        Browser ayah = br.cloneBrowser();
+        ayah.getPage("/data/download.json?overwrite=get_captcha&t=" + System.currentTimeMillis());
+        String sessionSecret = null;
+        if (ayah.containsHTML("\"captcha\":\"<div id=\'AYAH\'>")) {
+            String next = ayah.getRegex("src=\'(http[^\']+)\'").getMatch(0);
+            if (next != null) {
+                next = next.replaceAll("\\\\", "");
+                sessionSecret = new Regex(next, "/(ip\\-.*?)$").getMatch(0);
+                // rcId
+                br.getPage("https://ws.areyouahuman.com/ws/chooseGame/1/1/" + sessionSecret + "/11-5");
+                // tell the webservice we're falling back to recaptcha
+                ayah.postPage("https://ws.areyouahuman.com/ayahwebservices/index.php/ayahwebservice/doAccessibilityFallback", "session_secret=" + sessionSecret);
+            }
+        }
+        return sessionSecret;
     }
 
     @SuppressWarnings("unchecked")
