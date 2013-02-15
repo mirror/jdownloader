@@ -50,7 +50,10 @@ public class DatacodRu extends PluginForHost {
 				.getRegex(
 						Pattern.compile("<a href=\"(http://files.*?)\" class=\"button\">Скачать файл</a>"))
 				.getMatch(0);
-		if (dlLink == null)
+		if (dlLink == null) /*
+							 * добавил обработку ссылок вида
+							 * http://data.cod.ru/164947
+							 */
 			dlLink = br
 					.getRegex(
 							Pattern.compile("<a href=\"(http://out.*?)\" class=\"button\">Скачать файл</a>"))
