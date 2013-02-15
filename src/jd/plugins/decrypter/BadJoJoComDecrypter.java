@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -151,13 +150,8 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
         }
         externID = br.getRegex("freeporn.com/swf/player/AppLauncher_secure\\.swf\\'><param.*?name=\\'flashvars\\' value=\\'file=([^<>\"]*?)\\&").getMatch(0);
         if (externID != null) {
-            externID = Encoding.urlEncode(externID.trim());
-            br.postPage("http://www.freeporn.com/getcdnurl/", "jsonRequest=%7B%22returnType%22%3A%22json%22%2C%22file%22%3A%22" + externID + "%22%2C%22request%22%3A%22getAllData%22%2C%22width%22%3A%22505%22%2C%22path%22%3A%22" + externID + "%22%2C%22height%22%3A%22400%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Eimage%2Efreeporn%2Ecom%2Fswf%2Fplayer%2FAppLauncher%5Fsecure%2Eswf%22%2C%22htmlHostDomain%22%3A%22www%2Evoayeurs%2Ecom%22%7D&cacheBuster=1339506847983");
-            externID = new Regex(br.toString().replace("\\", ""), "image\\.freeporn\\.com/media/videos/tmb/(\\d+)/").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink("http://www.freeporn.com/video/" + externID + "/"));
-                return decryptedLinks;
-            }
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         }
         externID = br.getRegex("\"(http://(www\\.)?boysfood\\.com/embed/\\d+/?)\"").getMatch(0);
         if (externID != null) {

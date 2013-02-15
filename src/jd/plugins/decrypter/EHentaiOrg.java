@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -78,7 +79,7 @@ public class EHentaiOrg extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     // No available in old Stable
                 }
-                sleep(2 * 1000, param);
+                sleep(new Random().nextInt(5000), param);
                 counter++;
             }
         }
@@ -86,6 +87,11 @@ public class EHentaiOrg extends PluginForDecrypt {
         fp.setName(fpName);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    /* NOTE: no override to keep compatible to old stable */
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 
 }

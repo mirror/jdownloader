@@ -42,7 +42,13 @@ public class AdltDlCom extends PluginForDecrypt {
         String parameter = param.toString().replace("adultddl.com/", "adultddl.ws/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        // Offline1
         if (br.containsHTML(">Sorry, the page could not be found, or has been removed")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        // Offline2
+        if (br.containsHTML("<title> \\| AdultDDL</title>")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

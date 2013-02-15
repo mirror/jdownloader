@@ -79,7 +79,8 @@ public class XXXBlg extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final String[] links = new Regex(pagepiece, "\"http://xxx\\-blog\\.to/download/\\?(http[^<>\"]*?)\"").getColumn(0);
+            String[] links = new Regex(pagepiece, "\"http://xxx\\-blog\\.to/download/\\?(http[^<>\"]*?)\"").getColumn(0);
+            if (links == null || links.length == 0) links = new Regex(pagepiece, "<a href=\"(http[^<>\"]*?)\" target=\"_blank\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

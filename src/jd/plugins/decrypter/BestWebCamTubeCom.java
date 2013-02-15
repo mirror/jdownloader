@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bestwebcamtube.com" }, urls = { "http://(www\\.)?bestwebcamtube\\.com/(\\?p=\\d+|[a-z0-9\\-]+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bestwebcamtube.com" }, urls = { "http://(www\\.)?bestwebcamtube\\.com/(?!wp\\-includes)(\\?p=\\d+|[a-z0-9\\-]+/)" }, flags = { 0 })
 public class BestWebCamTubeCom extends PluginForDecrypt {
 
     public BestWebCamTubeCom(PluginWrapper wrapper) {
@@ -38,8 +38,14 @@ public class BestWebCamTubeCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        // Offline1
         if (br.containsHTML(">Error 404 \\- Not Found<")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        // Offline2
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Link offline (invalid link): " + parameter);
             return decryptedLinks;
         }
         String externID = br.getRegex("id_video=(\\d+)\"").getMatch(0);

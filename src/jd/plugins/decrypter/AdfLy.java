@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "http://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "http://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/(?!link\\-deleted\\.php)[^<>\"/#]+" }, flags = { 0 })
 public class AdfLy extends PluginForDecrypt {
 
     public AdfLy(PluginWrapper wrapper) {
@@ -83,7 +83,8 @@ public class AdfLy extends PluginForDecrypt {
                 if (waittime != null && Integer.parseInt(waittime) <= 20) wait = Integer.parseInt(waittime);
                 if (skipWait) {
                     skipWait();
-                    // Wait a seconds. Not waiting can cause the skipWait feature to fail
+                    // Wait a seconds. Not waiting can cause the skipWait
+                    // feature to fail
                     sleep(1 * 10001l, param);
                 } else {
                     sleep(wait * 1000l, param);
@@ -108,7 +109,8 @@ public class AdfLy extends PluginForDecrypt {
                         break;
                     }
                 } else {
-                    // Everything should have worked correctly, try to get final link
+                    // Everything should have worked correctly, try to get final
+                    // link
                     finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(http://[^<>\"\\']+)\"").getMatch(0);
                     break;
                 }

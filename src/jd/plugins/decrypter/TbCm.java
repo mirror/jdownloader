@@ -174,7 +174,8 @@ public class TbCm extends PluginForDecrypt {
     }
 
     /**
-     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs
+     * after the completed download.
      * 
      * @param downloadlink
      *            . The finished link to the Google CC subtitle file.
@@ -591,7 +592,8 @@ public class TbCm extends PluginForDecrypt {
                 if (LinksFound == null || LinksFound.isEmpty()) {
                     if (linkstodecrypt.size() == 1) {
                         if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
-                        throw new DecrypterException("Video no longer available");
+                        logger.info("Video unavailable: " + url);
+                        continue;
                     } else {
                         continue;
                     }
@@ -684,7 +686,8 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the moment
+                         * we do not want to download unknown formats at the
+                         * moment
                          */
                         continue;
                     }

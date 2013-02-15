@@ -25,6 +25,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abload.de" }, urls = { "http://(www\\.)?abload\\.de/(gallery\\.php\\?key=[A-Za-z0-9]+|browseGallery\\.php\\?gal=[A-Za-z0-9]+\\&img=.+|image.php\\?img=[\\w\\.]+)" }, flags = { 0 })
@@ -47,11 +48,17 @@ public class AbloadDeGallery extends PluginForDecrypt {
         }
         if (!parameter.contains("browseGallery.php?gal=") && !parameter.contains("image.php")) {
             final String galID = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
-            final String[] links = br.getRegex("imageurls\\[\\d+\\] = \"([^<>\"]*?)\"").getColumn(0);
+            // Needed for galleries with ajax-picture-reloac function
+            String[] links = br.getRegex("imageurls\\[\\d+\\] = \"([^<>\"]*?)\"").getColumn(0);
+            // For "normal" galleries
+            if (links == null || links.length == 0) links = br.getRegex("\"/browseGallery\\.php\\?gal=[A-Za-z0-9]+\\&amp;img=([^<>\"/]*?)\"").getColumn(0);
             if (links == null || links.length == 0 || galID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            String fpName = br.getRegex("<title>Galerie:([^<>\"]*?)\\- abload\\.de</title>").getMatch(0);
+            if (fpName == null) fpName = galID;
+            fpName = Encoding.htmlDecode(fpName.trim());
             for (String singlePictureLink : links) {
                 singlePictureLink = "http://www.abload.de/browseGallery.php?gal=" + galID + "&img=" + Encoding.htmlDecode(singlePictureLink);
                 br.getPage(singlePictureLink);
@@ -60,6 +67,9 @@ public class AbloadDeGallery extends PluginForDecrypt {
                 if (finallink == null) return null;
                 decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
             }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
         } else {
             String finallink = br.getRegex(DIRECTLINKREGEX).getMatch(0);
             if (finallink == null) finallink = br.getRegex(DIRECTLINKREGEX2).getMatch(0);

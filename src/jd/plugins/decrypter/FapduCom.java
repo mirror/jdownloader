@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdu\\.com/(?!search|embed|sitemaps)[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdu\\.com/(?!search|embed|sitemaps|rss|hd|register|community|pornstars|videos)[a-z0-9\\-]+" }, flags = { 0 })
 public class FapduCom extends PluginForDecrypt {
 
     public FapduCom(PluginWrapper wrapper) {
@@ -169,13 +169,13 @@ public class FapduCom extends PluginForDecrypt {
         }
         externID = br.getRegex("book\\-mark\\.net/playerconfig/(\\d+)/").getMatch(0);
         if (externID != null) {
-            DownloadLink dl = createDownloadlink("http://www.book-mark.net/videos/" + externID + "/x.html");
+            final DownloadLink dl = createDownloadlink("http://www.book-mark.net/videos/" + externID + "/x.html");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         externID = br.getRegex("pornative\\.com/embed/player\\.swf\\?movie_id=(\\d+)").getMatch(0);
         if (externID != null) {
-            DownloadLink dl = createDownloadlink("http://pornative.com/" + externID + ".html");
+            final DownloadLink dl = createDownloadlink("http://pornative.com/" + externID + ".html");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -189,6 +189,12 @@ public class FapduCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
+        externID = br.getRegex("\"(http://sextube\\.com/media/\\d+/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         // filename needed for all IDs below here
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -201,9 +207,9 @@ public class FapduCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
+        externID = br.getRegex("Flash/Player2\\.swf\\?videoCode=([A-Z0-9\\-]+)\\&WID").getMatch(0);
         if (externID != null) {
-            DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
+            final DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
             dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             decryptedLinks.add(dl);
             return decryptedLinks;
