@@ -28,9 +28,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlgalleries.net" }, urls = { "http://(www\\.)?[a-z0-9]+\\.urlgalleries\\.net/blog_gallery\\.php\\?id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlgalleries.net" }, urls = { "http://(www\\.)?[a-z0-9_]+\\.urlgalleries\\.net/blog_gallery\\.php\\?id=\\d+" }, flags = { 0 })
 public class RlGalleriesNt extends PluginForDecrypt {
+
+    private static String agent = null;
 
     public RlGalleriesNt(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,17 +44,26 @@ public class RlGalleriesNt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         br.setReadTimeout(3 * 60 * 1000);
-        br.setCookie(".urlgalleries.net", "popundr", "1");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
+        // br.setCookie(".urlgalleries.net", "popundr", "1");
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getPage(parameter);
-        final String host = new Regex(parameter, "(http://(www\\.)?[a-z0-9]+\\.urlgalleries\\.net)").getMatch(0);
+        final String host = new Regex(parameter, "(https?://[^/]+\\.urlgalleries\\.net)").getMatch(0);
         final String fpName = br.getRegex("border=\\'0\\' /></a></div>(.*?)</td></tr><tr>").getMatch(0);
         final String[] links = br.getRegex("\\'(/image\\.php\\?cn=\\d+\\&uid=[A-Za-z0-9]+\\&where=.*?)\\'").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
+        }
+        FilePackage fp = FilePackage.getInstance();
+        if (fpName != null) {
+            fp.setName(fpName.trim());
         }
         int counter = 1;
         final Browser brc = br.cloneBrowser();
@@ -78,15 +90,17 @@ public class RlGalleriesNt extends PluginForDecrypt {
             final DownloadLink lol = createDownloadlink(finallink);
             // Give temp name so we have no same filenames
             lol.setName(Integer.toString(new Random().nextInt(1000000000)));
+            if (fp.getName() != null) fp.add(lol);
             decryptedLinks.add(lol);
+            try {
+                distribute(lol);
+            } catch (final Throwable e) {
+                // No available in old Stable
+            }
             logger.info(finallink);
             counter++;
         }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
-        }
+
         return decryptedLinks;
     }
 

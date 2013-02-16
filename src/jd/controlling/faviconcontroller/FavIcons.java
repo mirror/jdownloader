@@ -139,9 +139,9 @@ public class FavIcons {
 
     private static void add(final String host, FavIconRequestor requestor) {
         synchronized (LOCK) {
-            /* dont try this host again? */
+            /* don't try this host again? */
             if (FAILED_LIST.contains(host)) return;
-            /* enqueu this host for favicon loading */
+            /* enqueue this host for favicon loading */
             java.util.List<FavIconRequestor> ret = QUEUE.get(host);
             boolean enqueueFavIcon = false;
             if (ret == null) {

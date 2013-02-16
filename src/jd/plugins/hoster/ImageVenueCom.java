@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "http://(www\\.)?img[0-9]+\\.imagevenue\\.com/img\\.php\\?image=.{4,300}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "http://(www\\.)?img[0-9]+\\.imagevenue\\.com/img\\.php\\?(loc=[^&]+&)?image=.{4,300}" }, flags = { 0 })
 public class ImageVenueCom extends PluginForHost {
 
     public ImageVenueCom(PluginWrapper wrapper) {
@@ -62,10 +62,16 @@ public class ImageVenueCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         /* Error handling */
-        if (br.containsHTML("This image does not exist on this server")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("This image does not exist on this server|<title>404 Not Found</title>|>The requested URL /img\\.php was not found on this server\\.<") || !br.containsHTML("</BODY>[\r\n\t ]+</HTML>")) {
+            logger.warning("File offline");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null;
         String finallink = br.getRegex("id=\"thepic\".*?SRC=\"(.*?)\"").getMatch(0);
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finallink == null) {
+            logger.warning("Could not find finallink reference");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String server = new Regex(link.getDownloadURL(), "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
         finallink = "http://" + server + finallink;
         String ending = new Regex(finallink, "imagevenue\\.com.*?\\.(.{3,4}$)").getMatch(0);

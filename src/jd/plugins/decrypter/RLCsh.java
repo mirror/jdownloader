@@ -21,9 +21,11 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
@@ -75,23 +77,58 @@ public class RLCsh extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private String correctedBR = "";
+
+    /** Remove HTML code which could break the plugin */
+    public void correctBR() throws NumberFormatException, PluginException {
+        correctedBR = br.toString();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
+
+        // generic cleanup
+        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
+        regexStuff.add("(display: ?none;\">.*?</div>)");
+        regexStuff.add("(visibility:hidden>.*?<)");
+
+        for (String aRegex : regexStuff) {
+            String results[] = new Regex(correctedBR, aRegex).getColumn(0);
+            if (results != null) {
+                for (String result : results) {
+                    correctedBR = correctedBR.replace(result, "");
+                }
+            }
+        }
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
-        String link = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getMatch(0);
-        if (link == null) link = br.getRegex("onClick=\"top\\.location=\\'(.*?)\\'\">").getMatch(0);
-        if (link == null) link = br.getRegex("<iframe name=\\'redirectframe\\' id=\\'redirectframe\\'.*?src=\\'(.*?)\\'.*?></iframe>").getMatch(0);
-        if (link == null) link = br.getRedirectLocation();
-        if (link == null && br.containsHTML("<title>URLCash\\.net \\- An URL forwarding service where you make money from")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
+        correctBR();
+        String link = new Regex(correctedBR, "<META HTTP\\-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getMatch(0);
         if (link == null) {
-            logger.warning("Decrypter broken for link:" + parameter);
-            return null;
+            link = new Regex(correctedBR, "onClick=\"top\\.location=\\'(.*?)\\'\">").getMatch(0);
+            if (link == null) {
+                // urlcash fail over.
+                link = new Regex(correctedBR, "linkDestUrl = '([^']+)").getMatch(0);
+                if (link == null) {
+                    link = new Regex(correctedBR, "<iframe name=\\'redirectframe\\' id=\\'redirectframe\\'.*?src=\\'(.*?)\\'.*?></iframe>").getMatch(0);
+                    if (link == null) {
+                        link = br.getRedirectLocation();
+                        if (link == null && br.containsHTML("<title>URLCash\\.net \\- An URL forwarding service where you make money from")) {
+                            logger.info("Link offline: " + parameter);
+                            return decryptedLinks;
+                        } else {
+                            logger.warning("Decrypter broken for link:" + parameter);
+                            return null;
+                        }
+                    }
+                }
+            }
         }
+
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
         return decryptedLinks;
     }

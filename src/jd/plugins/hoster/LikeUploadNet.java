@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -70,6 +71,7 @@ public class LikeUploadNet extends PluginForHost {
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static AtomicBoolean directDl                     = new AtomicBoolean(false);
     private static Object        LOCK                         = new Object();
 
     /** DEV NOTES */
@@ -660,10 +662,18 @@ public class LikeUploadNet extends PluginForHost {
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire)").matches()) {
-                    account.setProperty("nopremium", true);
+                Form settings = br.getForm(0);
+                if (settings != null) {
+                    logger.info(settings.toString());
+                    String hosterislame = new Regex(settings.getHtmlCode(), "(<input type=\"checkbox\" name=\"usr_direct_downloads\"[^>]+>)").getMatch(0);
+                    if (hosterislame != null && hosterislame.matches("\\s+disabled\\s?+")) {
+                        account.setProperty("nopremium", true);
+                    } else {
+                        account.setProperty("nopremium", false);
+                    }
                 } else {
-                    account.setProperty("nopremium", false);
+                    logger.warning("Please inform JDownloader Development Team");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
