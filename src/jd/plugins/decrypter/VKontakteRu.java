@@ -414,9 +414,9 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        String videoName = new Regex(correctedBR, "\\\\\"md_title\\\\\":\\\\\"(.*?)\\\\\"").getMatch(0);
+        String videoName = new Regex(correctedBR, "\"md_title\":\"(.*?)\"").getMatch(0);
         if (videoName == null) {
-            videoName = new Regex(correctedBR, "\\{\\\\\"title\\\\\":\\\\\"(.*?)\\\\\"").getMatch(0);
+            videoName = new Regex(correctedBR, "\\{\"title\\\\\":\"(.*?)\"").getMatch(0);
         }
 
         final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(1000000));
@@ -427,7 +427,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             dl.setName(Encoding.htmlDecode(videoName).replaceAll("(»|\")", "").trim() + ".mp4");
         }
-        dl.setProperty("userid", userID);
+        dl.setProperty("userid", new Regex(parameter, "((\\-)?\\d+)_\\d+$").getMatch(0));
         dl.setProperty("videoid", vidID);
         dl.setProperty("embedhash", embedHash);
         return dl;

@@ -96,7 +96,7 @@ public class VKontakteRuHoster extends PluginForHost {
             MAXCHUNKS = 0;
 
             br.getPage("http://vk.com/video_ext.php?oid=" + link.getStringProperty("userid", null) + "&id=" + link.getStringProperty("videoid", null) + "&hash=" + link.getStringProperty("embedhash", null));
-            final String brReplaced = br.toString().replace("\\", "");
+            // final String brReplaced = br.toString().replace("\\", "");
             final String server = br.getRegex("var video_host = \\'(http://)?([^<>\"]*?)(/)?\\'").getMatch(1);
             final String uid = br.getRegex("var video_uid = \\'(\\d+)\\'").getMatch(0);
             final String vtag = br.getRegex("var video_vtag = \\'([a-z0-9\\-]+)\\'").getMatch(0);
