@@ -101,7 +101,12 @@ public class UpstoRe extends PluginForHost {
             rc.setId(rcID);
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
+            String c = null;
+            try {
+                c = getCaptchaCode(cf, downloadLink);
+            } catch (final Throwable e) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             // int wait = 60;
             // String waittime = br.getRegex("var sec = (\\d+)").getMatch(0);
             // if (waittime != null) wait = Integer.parseInt(waittime);
@@ -208,9 +213,9 @@ public class UpstoRe extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        // br.getPage(link.getDownloadURL());
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("http://upstore.net/load/premium/", "hash= " + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        if (br.containsHTML(">It is strange, but you have reached a download limit for today")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         String dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
