@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -71,7 +70,6 @@ public class LikeUploadNet extends PluginForHost {
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static AtomicBoolean directDl                     = new AtomicBoolean(false);
     private static Object        LOCK                         = new Object();
 
     /** DEV NOTES */
@@ -666,7 +664,7 @@ public class LikeUploadNet extends PluginForHost {
                 if (settings != null) {
                     // logger.info(settings.toString());
                     String hosterislame = new Regex(settings.getHtmlCode(), "(<input type=\"checkbox\" name=\"usr_direct_downloads\"[^>]+>)").getMatch(0);
-                    if (hosterislame != null && hosterislame.matches("\\s+disabled\\s?+")) {
+                    if (hosterislame == null || hosterislame.matches("\\s+disabled\\s?+")) {
                         account.setProperty("nopremium", true);
                     } else {
                         account.setProperty("nopremium", false);
