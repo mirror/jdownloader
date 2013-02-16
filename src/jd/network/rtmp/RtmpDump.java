@@ -256,9 +256,7 @@ public class RtmpDump extends RTMPDownload {
             }
         };
         File tmpFile = new File(downloadLink.getFileOutput() + ".part");
-        if (!CrossSystem.isWindows()) {
-            tmpFile = new File(downloadLink.getFileOutput().replaceAll("\\s", "\\\\s") + ".part");
-        }
+
         try {
             getManagedConnetionHandler().addThrottledConnection(tcon);
             addChunksDownloading(1);
