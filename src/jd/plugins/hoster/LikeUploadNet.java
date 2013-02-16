@@ -664,7 +664,7 @@ public class LikeUploadNet extends PluginForHost {
                 getPage(COOKIE_HOST + "/?op=my_account");
                 Form settings = br.getForm(0);
                 if (settings != null) {
-                    logger.info(settings.toString());
+                    // logger.info(settings.toString());
                     String hosterislame = new Regex(settings.getHtmlCode(), "(<input type=\"checkbox\" name=\"usr_direct_downloads\"[^>]+>)").getMatch(0);
                     if (hosterislame != null && hosterislame.matches("\\s+disabled\\s?+")) {
                         account.setProperty("nopremium", true);
