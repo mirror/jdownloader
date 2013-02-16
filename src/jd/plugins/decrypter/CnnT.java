@@ -42,6 +42,10 @@ public class CnnT extends PluginForDecrypt {
         boolean valid = false;
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML("Es existiert kein Eintrag zu dieser ID")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         synchronized (LOCK) {
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                 final Form captchaForm = br.getFormbyProperty("name", "download_form");

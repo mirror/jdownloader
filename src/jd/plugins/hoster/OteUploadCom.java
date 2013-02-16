@@ -67,20 +67,22 @@ public class OteUploadCom extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = true;
-    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
+    // fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.0.8
-    // mods:
+    // mods: modified premiumonly errorhandling
     // non account: 1 * 1
     // free account: same as above, untested.
     // premium account: 20 * 20
     // protocol: https
     // captchatype: 4dignum
-    // other: site enforces https, but not for downloads, huge timeout issues due to server loads. sqldb becomes unresponsive
+    // other: site enforces https, but not for downloads, huge timeout issues
+    // due to server loads. sqldb becomes unresponsive
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -153,7 +155,8 @@ public class OteUploadCom extends PluginForHost {
         prepBrowser(br);
         getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
-        // they use images for the following errors, but still present within html comments.
+        // they use images for the following errors, but still present within
+        // html comments.
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|/images/404\\.png)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
@@ -317,7 +320,8 @@ public class OteUploadCom extends PluginForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                // stable is lame, issue finding input data fields correctly.
+                // eg. closes at ' quotation mark - remove when jd2 goes stable!
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -468,14 +472,19 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -491,7 +500,8 @@ public class OteUploadCom extends PluginForHost {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
-        // remove custom rules first!!! As html can change because of generic cleanup rules.
+        // remove custom rules first!!! As html can change because of generic
+        // cleanup rules.
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
@@ -613,7 +623,8 @@ public class OteUploadCom extends PluginForHost {
         }
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
+    // String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 
@@ -641,7 +652,8 @@ public class OteUploadCom extends PluginForHost {
         if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         String newExtension = null;
-        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
+        // some streaming sites do not provide proper file.extension within
+        // headers (Content-Disposition or the fail over getURL()).
         if (serverFilename.contains(".")) {
             newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
         } else {
@@ -707,8 +719,9 @@ public class OteUploadCom extends PluginForHost {
         if (correctedBR.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         /** Error handling for only-premium links */
         // parts of this are within html comments
-        if (new Regex(br, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
+        if (new Regex(br, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>The file that you\\'re trying to download is larger than)").matches()) {
             String filesizelimit = new Regex(br, "You can download files up to(.*?)only").getMatch(0);
+            if (filesizelimit == null) filesizelimit = new Regex(br, ">The file that you\\'re trying to download is larger than ([^<>\"]*?)\\.<").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.info("As free user you can download files up to " + filesizelimit + " only");
