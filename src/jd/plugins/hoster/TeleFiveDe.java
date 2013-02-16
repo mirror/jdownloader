@@ -134,12 +134,11 @@ public class TeleFiveDe extends PluginForHost {
                 }
             }
         }
-        fileName = fileName.replaceAll("\\|", "_").replaceAll("\\s_\\s", "_");
+        fileName = fileName.replaceAll("\\|", "_").replaceAll("\\s_\\s", "_").replaceAll(" Â ", "-");
         try {
             fileName = new String(fileName.getBytes("ISO-8859-1"), "UTF-8");
         } catch (Throwable e) {
         }
-
         String media = values.get("filename");
         if (media != null) {
             DLLINK = values.get("path");
