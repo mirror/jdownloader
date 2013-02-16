@@ -91,7 +91,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 return null;
             }
             filename = Encoding.htmlDecode(filename.trim());
-            filename = correctFilename(filename);
+            filename = filename.replaceAll("[\r\n#]+", "");
             for (String dl : links) {
                 final DownloadLink dlink = createDownloadlink(dl.replace("twitch.tv/", "twitchdecrypted.tv/").replace("justin.tv/", "justindecrypted.tv/"));
                 dlink.setProperty("directlink", "true");
@@ -110,8 +110,4 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String correctFilename(final String oldFilename) {
-        String newFilename = oldFilename.replace("#", "");
-        return newFilename;
-    }
 }
