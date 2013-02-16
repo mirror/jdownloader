@@ -81,11 +81,17 @@ public class RDMdthk extends PluginForDecrypt {
         Collections.reverse(Arrays.asList(pages));
 
         for (int i = 0; i < pages.length; ++i) {
-            final String[][] streams = br.getRegex("mt\\-icon_(audio|video).*?<a href=\"([^\"]+)\" class=\"mt\\-fo_source\" rel=\"[^\"]+\">([^<]+)<").getMatches();
+            final String[][] streams = br.getRegex("mt\\-icon_(audio|video).*?<a href=\"([^\"]+)\" class=\"mt\\-fo_source\" rel=\"[^\"]+\"[ onclick=\"[^\"]+\"]*?>([^<]+)<").getMatches();
+            boolean b = false;
+            for (final String[] s : streams) {
+                if (!s[1].contains(ID)) continue;
+                b = true;
+            }
             progress.setRange(streams.length);
             for (final String[] s : streams) {
                 progress.increase(1);
                 if ("audio".equalsIgnoreCase(s[0]) && !includeAudio) continue;
+                if (b && !s[1].contains(ID)) continue;
                 decryptedLinks.addAll(getDownloadLinks(cfg, realBaseUrl + s[1], ID));
                 try {
                     if (this.isAbort()) return decryptedLinks;
