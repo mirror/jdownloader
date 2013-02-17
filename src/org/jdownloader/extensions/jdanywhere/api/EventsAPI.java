@@ -180,7 +180,6 @@ public class EventsAPI implements DownloadControllerListener, CaptchaEventListen
     private void downloadApiLinkRemoved(DownloadLink link) {
         HashMap<String, Object> data = new HashMap<String, Object>();
         data.put("linkID", link.getUniqueID().toString());
-        data.put("packageID", link.getFilePackage().getUniqueID().toString());
         JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadLinkRemoved", data), null);
     }
 
