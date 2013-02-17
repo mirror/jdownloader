@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
@@ -99,13 +100,20 @@ public class SimplyDebridCom extends PluginForHost {
 
         // now it's time to get all supported hosts
         page = br.getPage("http://simply-debrid.com/api.php?list=1");
-        hosts = (new Regex(page, "([^;]*)")).getColumn(0);
+        hosts = (new Regex(page, "([^;]+)")).getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         if (hosts != null) {
-            for (String host : hosts) {
-                if (host != null) {
-                    supportedHosts.add(host.trim());
-                }
+            supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        }
+        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
+            if (!supportedHosts.contains("uploaded.net")) {
+                supportedHosts.add("uploaded.net");
+            }
+            if (!supportedHosts.contains("ul.to")) {
+                supportedHosts.add("ul.to");
+            }
+            if (!supportedHosts.contains("uploaded.to")) {
+                supportedHosts.add("uploaded.to");
             }
         }
         account.setValid(true);

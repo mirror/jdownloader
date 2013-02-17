@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2012  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileproject.com.br" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?fileproject\\.com\\.br/files/epis(odios)?/(HD|SD|LQs)/[^<>\"/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileproject.com.br" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?fileproject\\.com\\.br/files/epis(odios)?/(SD|HD|LQs?|MQ|HQ)/[^<>\"/\\s]+" }, flags = { 0 })
 public class FileProjectComBr extends PluginForHost {
 
     public FileProjectComBr(PluginWrapper wrapper) {
