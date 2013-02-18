@@ -1,30 +1,25 @@
 package org.jdownloader.extensions.jdanywhere.api;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorEvent;
-import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.FilePackage;
 
-import org.appwork.remoteapi.EventsAPIEvent;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
-import org.jdownloader.extensions.jdanywhere.JDAnywhereController;
 import org.jdownloader.extensions.jdanywhere.api.interfaces.ILinkCrawlerApi;
 import org.jdownloader.extensions.jdanywhere.api.storable.CrawledLinkStoreable;
 import org.jdownloader.extensions.jdanywhere.api.storable.CrawledPackageStorable;
 
-public class LinkCrawlerApi implements ILinkCrawlerApi, LinkCollectorListener {
+public class LinkCrawlerApi implements ILinkCrawlerApi {
 
     LinkCollectorAPIImpl lcAPI = new LinkCollectorAPIImpl();
 
     public LinkCrawlerApi() {
-        LinkCollector.getInstance().getEventsender().addListener(this, true);
+
     }
 
     public List<CrawledPackageStorable> list() {
@@ -153,87 +148,4 @@ public class LinkCrawlerApi implements ILinkCrawlerApi, LinkCollectorListener {
         return lcAPI.addLinks(URL, "", "", "");
     }
 
-    private void linkCollectorApiLinkAdded(CrawledLink link) {
-        HashMap<String, Object> data = new HashMap<String, Object>();
-        data.put("action", "linkCollectorLinkAdded");
-        data.put("message", link.getName());
-        data.put("data", link.getDownloadLink().getUniqueID().toString());
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorLinkAdded", data), null);
-    }
-
-    private void linkCollectorApiLinkRemoved(CrawledLink link) {
-        HashMap<String, Object> data = new HashMap<String, Object>();
-        data.put("action", "linkCollectorLinkRemoved");
-        data.put("message", link.getName());
-        data.put("data", link.getDownloadLink().getUniqueID().toString());
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorLinkRemoved", data), null);
-    }
-
-    private void linkCollectorApiPackageAdded(CrawledPackage cpkg) {
-        HashMap<String, Object> data = new HashMap<String, Object>();
-        data.put("action", "linkCollectorPackageAdded");
-        data.put("message", cpkg.getName());
-        data.put("data", cpkg.getUniqueID().toString());
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorPackageAdded", data), null);
-    }
-
-    private void linkCollectorApiPackageRemoved(CrawledPackage cpkg) {
-        HashMap<String, Object> data = new HashMap<String, Object>();
-        data.put("action", "linkCollectorPackageRemoved");
-        data.put("message", cpkg.getName());
-        data.put("data", cpkg.getUniqueID().toString());
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorPackageRemoved", data), null);
-    }
-
-    @Override
-    public void onLinkCollectorAbort(LinkCollectorEvent event) {
-    }
-
-    @Override
-    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
-    }
-
-    @Override
-    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
-    }
-
-    @Override
-    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
-    }
-
-    @Override
-    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
-    }
-
-    @Override
-    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
-        if (event.getParameters() != null) {
-            for (Object object : event.getParameters()) {
-                if (object instanceof CrawledLink) linkCollectorApiLinkRemoved((CrawledLink) object);
-                if (object instanceof CrawledPackage) linkCollectorApiPackageRemoved((CrawledPackage) event.getParameter());
-            }
-        }
-    }
-
-    @Override
-    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
-        if (event.getParameters() != null) {
-            for (Object object : event.getParameters()) {
-                if (object instanceof CrawledLink) linkCollectorApiLinkAdded((CrawledLink) object);
-                if (object instanceof CrawledPackage) linkCollectorApiPackageAdded((CrawledPackage) event.getParameter());
-            }
-        }
-    }
-
-    @Override
-    public void onLinkCollectorContentModified(LinkCollectorEvent event) {
-    }
-
-    @Override
-    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
-    }
-
-    @Override
-    public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
-    }
 }

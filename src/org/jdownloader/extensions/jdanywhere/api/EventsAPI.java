@@ -1,6 +1,8 @@
 package org.jdownloader.extensions.jdanywhere.api;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.captcha.CaptchaDialogQueueEntry;
@@ -10,6 +12,11 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.DownloadLinkProperty;
 import jd.plugins.FilePackage;
@@ -25,13 +32,14 @@ import org.jdownloader.api.captcha.CaptchaJob;
 import org.jdownloader.extensions.jdanywhere.JDAnywhereController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
-public class EventsAPI implements DownloadControllerListener, CaptchaEventListener, StateEventListener {
+public class EventsAPI implements DownloadControllerListener, CaptchaEventListener, StateEventListener, LinkCollectorListener {
 
     HashMap<Long, String> linkStatusMessages = new HashMap<Long, String>();
 
     public EventsAPI() {
         DownloadController.getInstance().addListener(this, true);
         CaptchaEventSender.getInstance().addListener(this);
+        LinkCollector.getInstance().getEventsender().addListener(this, true);
         DownloadWatchDog.getInstance().getStateMachine().addListener(this);
         CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
 
@@ -226,6 +234,93 @@ public class EventsAPI implements DownloadControllerListener, CaptchaEventListen
     }
 
     public void onStateUpdate(StateEvent event) {
+    }
+
+    private void linkCollectorApiLinkAdded(CrawledLink link) {
+        HashMap<String, Object> data = new HashMap<String, Object>();
+        data.put("packageID", link.getDownloadLink().getParentNode().getUniqueID().toString());
+        data.put("linkID", link.getDownloadLink().getUniqueID().toString());
+        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorLinkAdded", data), null);
+    }
+
+    private void linkCollectorApiLinkRemoved(List<CrawledLink> links) {
+        List<String> linkIDs = new ArrayList<String>();
+        for (CrawledLink link : links) {
+            linkIDs.add(link.getDownloadLink().getUniqueID().toString());
+        }
+
+        HashMap<String, Object> data = new HashMap<String, Object>();
+        data.put("linkIDs", linkIDs);
+        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorLinkRemoved", data), null);
+    }
+
+    private void linkCollectorApiPackageAdded(CrawledPackage cpkg) {
+        HashMap<String, Object> data = new HashMap<String, Object>();
+        data.put("packageID", cpkg.getUniqueID().toString());
+        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorPackageAdded", data), null);
+    }
+
+    private void linkCollectorApiPackageRemoved(CrawledPackage cpkg) {
+        HashMap<String, Object> data = new HashMap<String, Object>();
+        data.put("packageID", cpkg.getUniqueID().toString());
+        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorPackageRemoved", data), null);
+    }
+
+    @Override
+    public void onLinkCollectorAbort(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+        if (event.getParameters() != null) {
+            for (Object object : event.getParameters()) {
+                if (object instanceof List<?>) {
+                    if (object != null && ((List<?>) object).get(0) instanceof CrawledLink) {
+                        linkCollectorApiLinkRemoved((List<CrawledLink>) object);
+                    }
+                }
+                if (object instanceof CrawledPackage) linkCollectorApiPackageRemoved((CrawledPackage) event.getParameter());
+            }
+        }
+    }
+
+    @Override
+    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+        if (event.getParameters() != null) {
+            for (Object object : event.getParameters()) {
+                if (object instanceof CrawledLink) linkCollectorApiLinkAdded((CrawledLink) object);
+                if (object instanceof CrawledPackage) linkCollectorApiPackageAdded((CrawledPackage) event.getParameter());
+            }
+        }
+    }
+
+    @Override
+    public void onLinkCollectorContentModified(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
+    @Override
+    public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
     }
 
 }
