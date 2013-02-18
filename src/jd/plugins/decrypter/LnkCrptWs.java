@@ -89,7 +89,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         private String        captchaAddress;
         private String        server;
         private String        path;
-        private Browser       smBr;
+        public Browser        smBr;
         private Form          verify;
         private boolean       secure   = false;
         private boolean       noscript = true;
@@ -121,7 +121,10 @@ public class LnkCrptWs extends PluginForDecrypt {
             getChallengeKey();
             setServer();
             setPath();
-            smBr.getPage(server + path + challenge);
+            if (!smBr.getURL().contains("solvemedia.com/")) {
+                // when we retry solving a solvemedia session, we reuse smBr, browser already contains the info we need!
+                smBr.getPage(server + path + challenge);
+            }
             if (noscript) {
                 verify = smBr.getForm(0);
                 captchaAddress = smBr.getRegex("<img src=\"(/papi/media\\?c=[^\"]+)").getMatch(0);
@@ -135,6 +138,10 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private void getChallengeKey() {
             challenge = br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
+            if (challenge == null) {
+                // when we retry solving a solvemedia session.
+                challenge = smBr.getRegex("<input type=hidden name=\"k\" value=\"([^\"]+)\">").getMatch(0);
+            }
             if (challenge == null) {
                 secure = true;
                 challenge = br.getRegex("ckey:\'([\\w\\-\\.]+)\'").getMatch(0);

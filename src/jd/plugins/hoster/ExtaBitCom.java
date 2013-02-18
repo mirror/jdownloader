@@ -43,7 +43,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extabit.com" }, urls = { "http://(www\\.)?(u\\d+\\.extabit\\.com/go/[a-z0-9]{13}|extabit\\.com/file/[a-z0-9]{13}(/[A-Za-z0-9]+/[^<>\"/]*?\\.htm)?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extabit.com" }, urls = { "http://(www\\.)?(u\\d+\\.extabit\\.com/go/[a-z0-9]{13}|extabit\\.com/file(_[^/]+)?/[a-z0-9]{13}(/[A-Za-z0-9]+/[^<>\"/]*?\\.htm)?)" }, flags = { 2 })
 public class ExtaBitCom extends PluginForHost {
 
     private static final String NOTAVAILABLETEXT = "(>File is temporary unavailable<|temporary unavailable<br/>)";
@@ -67,6 +67,8 @@ public class ExtaBitCom extends PluginForHost {
             finallink = br.getRedirectLocation();
             if (finallink == null) finallink = "http://extabit.com/file/" + System.currentTimeMillis();
             link.setUrlDownload(finallink);
+        } else if (link.getDownloadURL().matches(".+/file_[^/]+/.+")) {
+            link.setUrlDownload(link.getDownloadURL().replaceFirst("/file_[^/]+/", "/file/"));
         }
     }
 
