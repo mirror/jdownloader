@@ -74,8 +74,8 @@ public class NovaFileCom extends PluginForHost {
     // XfileSharingProBasic Version 2.5.6.8-raz
     // mods:
     // non account: 1 * 1, no resume
-    // free account:
-    // premium account:
+    // free account: untested, set same as FREE
+    // premium account: 1 * 10
     // protocol: no https
     // captchatype: recaptcha
     // other: no redirects
@@ -125,7 +125,8 @@ public class NovaFileCom extends PluginForHost {
         String[] fileInfo = new String[3];
         // scan the first page
         scanInfo(fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission critical
+        // scan the second page. filesize[1] and md5hash[2] are not mission
+        // critical
         if (fileInfo[0] == null) {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
@@ -333,14 +334,19 @@ public class NovaFileCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -562,7 +568,8 @@ public class NovaFileCom extends PluginForHost {
         String availabletraffic = new Regex(correctedBR, ">Traffic Available:</td>[\r\n\t ]+<td>([\\-\\d\\.]+ (MB|GB))</td>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
-            // need to set 0 traffic left, as getSize returns a positive result, even when negative value supplied.
+            // need to set 0 traffic left, as getSize returns a positive result,
+            // even when negative value supplied.
             if (!availabletraffic.startsWith("-")) {
                 ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
             } else {
@@ -593,7 +600,7 @@ public class NovaFileCom extends PluginForHost {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
                 try {
-                    maxPrem.set(1);
+                    maxPrem.set(10);
                     account.setMaxSimultanDownloads(maxPrem.get());
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
@@ -685,7 +692,7 @@ public class NovaFileCom extends PluginForHost {
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dllink = Encoding.urlEncode_light(dllink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -725,7 +732,8 @@ public class NovaFileCom extends PluginForHost {
         }
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
+    // String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 

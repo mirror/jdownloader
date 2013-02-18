@@ -67,9 +67,9 @@ public class XxxKinKyCom extends PluginForHost {
         br.getHeaders().put("Accept-Encoding", null);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title> Most Recent Videos - Free Sex Adult Videos - XXX Kinky</title>") || br.getURL().equals("http://www.xxxkinky.com/videos/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title> Most Recent Videos \\- Free Sex Adult Videos \\- XXXKinky\\.com</title>") || br.getURL().equals("http://www.xxxkinky.com/videos/?m=e")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)\\- Free Porn Videos and Sex Movies at XXX Kinky Porn Tube</title>").getMatch(0);
-        DLLINK = br.getRegex("\\'file\\': \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        DLLINK = br.getRegex("xxxkinky\\.com/services/player_vx_config\\.php\\?[^<>\"/]*?=(http[^<>\"]*?)\\'").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();

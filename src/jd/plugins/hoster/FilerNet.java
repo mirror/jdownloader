@@ -113,14 +113,14 @@ public class FilerNet extends PluginForHost {
 
         if (STATUSCODE == 501) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
-        } else if (STATUSCODE == 502) { 
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max free simultan-downloads-limit reached, please finish running downloads before starting new ones!", 5 * 60 * 1000l);
-        }
-        
+        } else if (STATUSCODE == 502) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max free simultan-downloads-limit reached, please finish running downloads before starting new ones!", 5 * 60 * 1000l); }
+
         int wait = Integer.parseInt(getJson("wait", br.toString()));
         if (STATUSCODE == 203) {
             sleep(wait * 1001l, downloadLink);
-        } else if (STATUSCODE == 503) { 
+        } else if (STATUSCODE == 503) {
+            // Waittime too small->Don't reconnect
+            if (wait < 61) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads...", wait * 1001l);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
         }
         callAPI("http://filer.net/get/" + getFID(downloadLink) + ".json" + "?token=" + getJson("token", br.toString()));

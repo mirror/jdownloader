@@ -88,7 +88,7 @@ public class UpstoRe extends PluginForHost {
             final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
             br.postPage(downloadLink.getDownloadURL(), "free=Slow+download&hash=" + fid);
             if (br.containsHTML(">This file is available only for Premium users<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("hoster.upstore.premiumonly", "Only downloadable for premium users"));
-            if (br.containsHTML(">Sorry, but server with file is overloaded")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 30 * 60 * 1000l);
+            if (br.containsHTML(">Server for free downloads is overloaded<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 30 * 60 * 1000l);
             // Same server error (displayed differently) also exists for premium
             // users
             if (br.containsHTML(">Server with file not found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
@@ -209,18 +209,24 @@ public class UpstoRe extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://upstore.net/load/premium/", "hash= " + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        br.getPage(link.getDownloadURL());
         if (br.containsHTML(">It is strange, but you have reached a download limit for today")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        String dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        // Directdownload enabled?
+        String dllink = br.getRedirectLocation();
+        // No directdownload? Let's "click" on download
+        if (dllink == null) {
+            br.postPage("http://upstore.net/load/premium/", "js=1&hash= " + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink).replace("\\", ""), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");

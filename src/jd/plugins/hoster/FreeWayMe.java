@@ -90,13 +90,25 @@ public class FreeWayMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnknown account status (deactivated)!\r\nUnbekannter Accountstatus (deaktiviert)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         // account should be valid now, let's get account information:
-        br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username);
+        br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass);
 
+        // Maker sure that the API is activated
         if (br.toString().contains("API deaktiviert")) {
             showApiDisabledDialog();
-            ac.setStatus("API disabled");
-            account.setTempDisabled(true);
-            return ac;
+            // Wait, maybe the user activated the API so he can directly use the
+            // account
+            Thread.sleep(10 * 1000l);
+            // Check again, maybe the user activated the API
+            br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass);
+            if (br.toString().contains("API deaktiviert")) {
+                String message = "\r\nDu hast die free-way API deaktiviert. Diese wird jedoch zum Downloaden mit JDownloader benötigt.\r\n Hier kannst du sie aktivieren: https://www.free-way.me/account?api_enable";
+                message += "\r\n\r\n";
+                message += "The free-way API is disabled. The API is needed to use free-way with JDownloader.\r\n Here you can activate it: https://www.free-way.me/account?api_enable";
+                ac.setStatus(message);
+
+                account.setTempDisabled(true);
+                return ac;
+            }
         }
 
         int maxPremi = 1;
@@ -271,10 +283,10 @@ public class FreeWayMe extends PluginForHost {
                         String title = null;
                         if ("de".equalsIgnoreCase(lng)) {
                             title = " API deaktiviert";
-                            message = "Du hast free-way API deaktiviert. Diese wird jedoch zum Downloaden benötigt.\r\n" + "Möchtest Du diese aktivieren?";
+                            message = "Du hast die free-way API deaktiviert. Diese wird jedoch zum Downloaden mit JDownloader benötigt.\r\n" + "Möchtest Du diese aktivieren?";
                         } else {
                             title = "API disabled";
-                            message = "The free-way API seems to be disabled. To use jdownloader you need to enable it.";
+                            message = "The free-way API is disabled. The API is needed to use free-way with JDownloader.";
                         }
                         if (CrossSystem.isOpenBrowserSupported()) {
                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);

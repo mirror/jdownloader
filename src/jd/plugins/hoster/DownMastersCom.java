@@ -169,7 +169,8 @@ public class DownMastersCom extends PluginForHost {
             logger.info("Link invalid");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
         case 8:
-            // Actually I don't know what this error means but if it happens, it happens for all links of a host->Disable them!
+            // Actually I don't know what this error means but if it happens, it
+            // happens for all links of a host->Disable them!
             logger.info("Dedicated server detected, retrying later...");
             tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
         }
@@ -202,12 +203,10 @@ public class DownMastersCom extends PluginForHost {
             }
             final String errormessage = link.getLinkStatus().getErrorMessage();
             if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
-                {
-                    /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(DownMastersCom.NOCHUNKS, false) == false) {
-                        link.setProperty(DownMastersCom.NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(DownMastersCom.NOCHUNKS, false) == false) {
+                    link.setProperty(DownMastersCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         }

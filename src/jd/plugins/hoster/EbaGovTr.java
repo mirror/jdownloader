@@ -56,7 +56,7 @@ public class EbaGovTr extends PluginForHost {
         String filename = null;
         if (addedlink.matches(FILELINK)) {
             if (br.containsHTML(">Aradığınız Sayfa Bulunamadı<|>Bu sayfa kaldırılmış olabilir\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            filename = br.getRegex("<h3>Bilim ve Teknik <small>([^<>\"]*?)</small></h3>").getMatch(0);
+            filename = br.getRegex("<h3>[^<>\"]+<small>([^<>\"]*?)</small></h3>").getMatch(0);
             DLLINK = br.getRegex("\"(/download\\.php\\?type=[^<>\"]*?)\"").getMatch(0);
             if (DLLINK != null) DLLINK = "http://www.eba.gov.tr" + DLLINK;
         } else if (addedlink.matches(VIDEOLINK)) {

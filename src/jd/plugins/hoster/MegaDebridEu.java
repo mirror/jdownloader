@@ -30,6 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
 
@@ -37,6 +38,7 @@ import org.appwork.utils.Regex;
 public class MegaDebridEu extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static final String                            NOCHUNKS           = "NOCHUNKS";
 
     public MegaDebridEu(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,7 +64,7 @@ public class MegaDebridEu extends PluginForHost {
         // account is valid, let's fetch account details:
         br.getPage("http://mega-debrid.eu/api.php?action=connectUser&login=" + user + "&password=" + pw);
         if (!"ok".equalsIgnoreCase(getJson("response_code"))) {
-            ac.setStatus("Account is invalid. Wrong password?");
+            ac.setStatus("\r\nInvalid username/password!\r\nFalscher Benutzername/Passwort!");
             logger.severe("mega-debrid.eu: Error, can not parse left days. Account: " + account.getUser() + " Pass: " + account.getPass() + " API response: " + br.toString());
             account.setValid(false);
             return ac;
@@ -73,7 +75,7 @@ public class MegaDebridEu extends PluginForHost {
             final String daysLeft = getJson("vip_end");
             ac.setValidUntil(Long.parseLong(daysLeft) * 1000l);
         } catch (Exception e) {
-            ac.setStatus("can not get left days.");
+            ac.setStatus("Can not get expire date!");
             logger.severe("Multi-debrid.com: Error, can not parse left days. API response: " + br.toString());
             account.setValid(false);
             return ac;
@@ -124,12 +126,36 @@ public class MegaDebridEu extends PluginForHost {
         dllink = dllink.replace("\\", "").replace("\"", "");
         showMessage(link, "Phase 2/2: Download");
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        int maxChunks = 0;
+        if (link.getBooleanProperty(MegaDebridEu.NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            final String errormessage = link.getLinkStatus().getErrorMessage();
+            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(MegaDebridEu.NOCHUNKS, false) == false) {
+                    link.setProperty(MegaDebridEu.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else {
+                    /* unknown error, we disable multiple chunks */
+                    if (link.getBooleanProperty(MegaDebridEu.NOCHUNKS, false) == false) {
+                        link.setProperty(MegaDebridEu.NOCHUNKS, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                }
+            }
+        }
     }
 
     @Override
