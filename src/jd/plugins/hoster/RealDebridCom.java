@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -44,16 +45,15 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "http://\\w+\\.real\\-debrid\\.com/dl/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.real\\-debrid\\.com/dl/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
 
     // DEV NOTES
-    // supports last09 based on pre-generated links and jd2
+    // supports last09 based on pre-generated links and jd2 (but disabled with interfaceVersion 3)
 
     private static final String  mName             = "real-debrid.com";
     private static final String  mProt             = "http://";
     private static Object        LOCK              = new Object();
-    private static final String  DIRECTRD          = "directRD";
     private static AtomicInteger RUNNING_DOWNLOADS = new AtomicInteger(0);
     private static AtomicInteger MAX_DOWNLOADS     = new AtomicInteger(Integer.MAX_VALUE);
 
@@ -69,12 +69,12 @@ public class RealDebridCom extends PluginForHost {
 
     public void prepBrowser() {
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(mProt + mName, "lang", "english");
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
+        br.setConnectTimeout(2 * 60 * 1000);
+        br.setReadTimeout(2 * 60 * 1000);
     }
 
     @Override
@@ -83,7 +83,7 @@ public class RealDebridCom extends PluginForHost {
         try {
             con = br.openGetConnection(dl.getDownloadURL());
             if (con.isContentDisposition()) {
-                dl.setProperty(DIRECTRD, true);
+                dl.setProperty("directRD", true);
                 if (dl.getFinalFileName() == null) dl.setFinalFileName(getFileNameFromHeader(con));
                 dl.setVerifiedFileSize(con.getLongContentLength());
                 dl.setAvailable(true);
@@ -104,7 +104,7 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if (downloadLink.getBooleanProperty(DIRECTRD, false) == true) {
+        if (downloadLink.getBooleanProperty("directRD", false) == true) {
             /* direct link */
             return true;
         }
@@ -141,29 +141,45 @@ public class RealDebridCom extends PluginForHost {
     }
 
     private void handleDL(DownloadLink link, String dllink) throws Exception {
-        /* we want to follow redirects in final stage */
-        if (dllink.startsWith("https")) {
-            dllink = dllink.replace("https://", "http://");
-        }
-        RUNNING_DOWNLOADS.incrementAndGet();
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection().isContentDisposition()) {
-                /* contentdisposition, lets download it */
-                dl.startDownload();
-                return;
-            } else {
-                /*
-                 * download is not contentdisposition, so remove this host from premiumHosts list
-                 */
-                br.followConnection();
-            }
-
-            /* temp disabled the host */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } finally {
-            if (RUNNING_DOWNLOADS.decrementAndGet() == 0) {
-                MAX_DOWNLOADS.set(Integer.MAX_VALUE);
+        // real debrid connections are flakey at times! Do this instead of repeating download steps.
+        int repeat = 3;
+        for (int i = 0; i <= repeat; i++) {
+            Browser br2 = br.cloneBrowser();
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, true, 0);
+                if (dl.getConnection().isContentDisposition()) {
+                    /* content disposition, lets download it */
+                    RUNNING_DOWNLOADS.incrementAndGet();
+                    dl.startDownload();
+                    if (link.getLinkStatus().isFinished()) {
+                        // download is 100%
+                        break;
+                    }
+                    if (this.isAborted(link)) {
+                        // if user aborts
+                        break;
+                    }
+                    if (link.getLinkStatus().getErrorMessage().contains("Unexpected rangeheader format:")) {
+                        logger.warning("Bad Range Header! Resuming isn't possible without resetting");
+                        new PluginException(LinkStatus.ERROR_FATAL);
+                        break;
+                        // logger.warning("BAD HEADER RANGES!, auto resetting");
+                        // link.reset();
+                    }
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    // unhandled error!
+                    break;
+                } else {
+                    /* download is not content disposition. */
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } catch (Throwable e) {
+                continue;
+            } finally {
+                if (RUNNING_DOWNLOADS.decrementAndGet() == 0) {
+                    MAX_DOWNLOADS.set(Integer.MAX_VALUE);
+                }
             }
         }
     }
@@ -184,53 +200,81 @@ public class RealDebridCom extends PluginForHost {
         login(acc, false);
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
+        String dllink = link.getDownloadURL();
         if (link.getStringProperty("pass", null) != null) {
-            br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(link.getDownloadURL()) + "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
+            br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
         } else {
-            br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(link.getDownloadURL()));
+            br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink));
         }
-        // handleErrors();
+        if (br.containsHTML("\"error\":4,")) {
+            if (dllink.contains("https://")) {
+                dllink = dllink.replace("https://", "http://");
+            } else {
+                // not likely but lets try anyway.
+                dllink = dllink.replace("http://", "https://");
+            }
+            if (link.getStringProperty("pass", null) != null) {
+                br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
+            } else {
+                br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink));
+            }
+            if (br.containsHTML("\"error\":4,")) {
+                //
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not download from " + mName);
+            }
+        }
         String generatedLinks = br.getRegex("\"generated_links\":\\[\\[(.*?)\\]\\]").getMatch(0);
-        String dlLinks[] = new Regex(generatedLinks, "\"([^\"]*?)\"").getColumn(0);
-        if (dlLinks == null || dlLinks.length == 0) {
-            if (br.containsHTML("error\":(9|10),")) {
-                if (br.containsHTML("error\":9,")) logger.info("Host is currently not possible because no server is available!");
-                if (br.containsHTML("error\":10,")) logger.info("File's hoster is in maintenance. Try again later");
+        String genLnks[] = new Regex(generatedLinks, "\"([^\"]*?)\"").getColumn(0);
+        if (genLnks == null || genLnks.length == 0) {
+            if (br.containsHTML("error\":10,")) {
+                logger.info("File's hoster is in maintenance. Try again later");
                 removeHostFromMultiHost(link, acc);
             }
-            if (br.containsHTML("error\":11")) {
+            if (br.containsHTML("error\":11,")) {
                 logger.info("Host seems buggy, remove it from list");
                 removeHostFromMultiHost(link, acc);
             }
+
             if (br.containsHTML("error\":12")) {
-                /* You have too many simultenous downloads */
+                /* You have too many simultaneous downloads */
                 MAX_DOWNLOADS.set(RUNNING_DOWNLOADS.get());
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 12: You have too many simultenous downloads", 20 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 12: You have too many simultaneous downloads", 20 * 1000l);
             }
-            if (br.containsHTML("error\":13")) { // TODO
-                logger.info("Unknown error 13");
+
+            if (br.containsHTML("error\":(13|9),")) {
+                String num = "";
+                if (br.containsHTML("error\":13,")) {
+                    num = "13";
+                    logger.info("Unknown error " + num);
+                }
+                // doesn't warrant not retrying! it just means no available host at this point in time! ??
+                if (br.containsHTML("error\":9,")) {
+                    num = "9";
+                    logger.info("Host is currently not possible because no server is available!");
+                }
+
                 /*
                  * after x retries we disable this host and retry with normal plugin
                  */
-                if (link.getLinkStatus().getRetryCount() >= 3) {
+                if (link.getLinkStatus().getRetryCount() == 3) {
                     removeHostFromMultiHost(link, acc);
                     /* reset retrycounter */
                     link.getLinkStatus().setRetryCount(0);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 13: Retry in few secs" + msg, 20 * 1000l);
+                String msg = link.getLinkStatus().getRetryCount() + 1 + " / 3";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error " + num + " : Retry " + msg, 120 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         showMessage(link, "Task 2: Download begins!");
         int counter = 0;
-        for (String dllink : dlLinks) {
+        for (String generatedLink : genLnks) {
             counter++;
-            if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) continue;
-            dllink = dllink.replaceAll("\\\\/", "/");
+            if (StringUtils.isEmpty(generatedLink) || !generatedLink.startsWith("http")) continue;
+            generatedLink = generatedLink.replaceAll("\\\\/", "/");
             try {
-                handleDL(link, dllink);
+                handleDL(link, generatedLink);
                 return;
             } catch (PluginException e1) {
                 try {
@@ -238,11 +282,11 @@ public class RealDebridCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
                 if (br.containsHTML("An error occured while generating a premium link, please contact an Administrator")) {
-                    logger.info("Error while generating premium link, remove it from list");
+                    logger.info("Error while generating premium link, removing host from supported list");
                     removeHostFromMultiHost(link, acc);
                 }
-                if (br.containsHTML("An error occured while attempting to download the file. Multiple")) {
-                    if (counter == dlLinks.length) { throw new PluginException(LinkStatus.ERROR_RETRY); }
+                if (br.containsHTML("An error occured while attempting to download the file.")) {
+                    if (counter == genLnks.length) { throw new PluginException(LinkStatus.ERROR_RETRY); }
                 }
             }
         }
@@ -267,7 +311,7 @@ public class RealDebridCom extends PluginForHost {
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
         }
-        String acctype = br.getRegex("(?i)<type>(\\w+)</type>").getMatch(0).toLowerCase();
+        String acctype = br.getRegex("<type>(\\w+)</type>").getMatch(0).toLowerCase();
         if (acctype.equals("premium")) {
             ai.setStatus("Premium User");
         } else {
@@ -281,6 +325,10 @@ public class RealDebridCom extends PluginForHost {
             // with multihosters as it has geolocation issues. To over come this we need to pass the watch link and not decrypted finallink
             // results...
             supportedHosts.remove("youtube.com");
+            // and so does vimeo
+            supportedHosts.remove("vimeo.com");
+            // supportedHosts.remove("netload.in");
+
             /*
              * set ArrayList<String> with all supported multiHosts of this service
              */
