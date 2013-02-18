@@ -170,11 +170,12 @@ public class IFilezCom extends PluginForHost {
                     return;
                 }
             }
+            br.setFollowRedirects(true);
             br.postPage("https://depfile.com/", "login=login&loginemail=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
             // Language not English? Change setting and go on!
             if (!"2".equals(br.getCookie(MAINPAGE, "sdlanguageid"))) {
                 br.setCookie(MAINPAGE, "sdlanguageid", "2");
-                br.getPage(MAINPAGE);
+                br.getPage("https://depfile.com/");
             }
 
             if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null || !br.containsHTML("class=\\'user_info\\'>Premium:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
