@@ -103,7 +103,7 @@ public class Netloadin extends PluginForHost {
         String countdown = br.getRegex("countdown\":(\\d+)").getMatch(0);
         if (countdown == null) return;
         if ("limitexceeded".equalsIgnoreCase(state)) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(countdown) * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(countdown) * 1001l);
         } else if ("ok".equalsIgnoreCase(state)) {
             this.sleep(Integer.parseInt(countdown) * 1000l, downloadLink);
         } else {
