@@ -26,7 +26,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
-import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -140,8 +139,9 @@ public class PutLockerCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setDebug(true);
-        final Form freeform = getFormByKey("confirm", "Continue+as+Free+User");
+        Form freeform = getFormByHTML("value=\"Continue as Free User\"");
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        freeform.put("confirm", "Continue+as+Free+User");
         if (freeform.containsHTML("/include/captcha")) {
             String captchaIMG = br.getRegex("<img src=\"(/include/captcha.php\\?[^\"]+)\" />").getMatch(0);
             if (captchaIMG == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -306,24 +306,11 @@ public class PutLockerCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
-    /**
-     * Returns the first form that has a 'key' that equals 'value'.
-     * 
-     * @param key
-     * @param value
-     * @return
-     */
-    private Form getFormByKey(final String key, final String value) {
+    private Form getFormByHTML(final String regex) {
         Form[] workaround = br.getForms();
         if (workaround != null) {
             for (Form f : workaround) {
-                for (InputField field : f.getInputFields()) {
-                    if (key != null && key.equals(field.getKey())) {
-                        if (value == null && field.getValue() == null) return f;
-                        if (value != null && value.equals(field.getValue())) return f;
-                    }
-                }
+                if (f.containsHTML(regex)) return f;
             }
         }
         return null;
