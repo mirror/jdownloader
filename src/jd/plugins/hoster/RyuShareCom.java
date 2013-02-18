@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,8 +27,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -51,6 +56,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ryushare.com" }, urls = { "https?://(www\\.)?ryushare\\.com/[a-z0-9]{10,12}" }, flags = { 2 })
 public class RyuShareCom extends PluginForHost {
@@ -604,6 +610,29 @@ public class RyuShareCom extends PluginForHost {
             getPage(link.getDownloadURL());
             doFree(link, true, -2, "freelink2");
         } else {
+            try {
+                SubConfiguration config = null;
+                try {
+                    config = getPluginConfig();
+                    if (config.getBooleanProperty("premIssueShown", Boolean.FALSE) == false) {
+                        if (config.getProperty("premIssueShown") == null) {
+                            premiumWarning();
+                        } else {
+                            config = null;
+                        }
+                    } else {
+                        config = null;
+                    }
+                } catch (final Throwable e) {
+                } finally {
+                    if (config != null) {
+                        config.setProperty("premIssueShown", Boolean.TRUE);
+                        config.setProperty("premIssueShown", "shown");
+                        config.save();
+                    }
+                }
+            } catch (final Throwable b) {
+            }
             logger.info("premium");
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
@@ -642,6 +671,39 @@ public class RyuShareCom extends PluginForHost {
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
+    }
+
+    private static void premiumWarning() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = "RyuShare Premium-Probleme";
+                            message = "Hi, Falls du Probleme beim Downloaden von RyuShare hast, öffne bitte die 'Mein Account' Seite (klicke ok) und aktiviere 'direct downloads'.\r\n";
+                            message += "Indem du das tust werden RyuShare Links, die du im Browser öffnest sofort heruntergeladen.\r\n";
+                            message += "Dies scheint die einzige Lösung für die RyuShare Premium Probleme mit JD zu sein. Wenn du Feedback geben willst, besuche bitte unser Supportforum: http://board.jdownloader.org";
+                        } else {
+                            title = "RyuShare Premium Issues";
+                            message = "Hi, If you're experiencing download issues with RyuShare Premium, please visit 'My Account' control panel (click ok) and enable 'direct downloads'.\r\n";
+                            message += "By enabling 'direct downloads' it automatically starts downloading when viewing Ryushare links in your browser.\r\n";
+                            message += "This seems to be the only solution for Ryushare Premium download issues. For feedback please visit our forum http://board.jdownloader.org";
+                        }
+                        if (CrossSystem.isOpenBrowserSupported()) {
+                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
+                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://ryushare.com/my-account.python"));
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
     }
 
     @Override
