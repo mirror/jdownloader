@@ -28,4 +28,8 @@ public interface MyDownloaderExtensionConfig extends ExtensionConfigInterface {
 
     public void setPassword(String s);
 
+    public void setEncryptionKey(String s);
+
+    public String getEncryptionKey();
+
 }

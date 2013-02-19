@@ -1,25 +1,38 @@
 package org.jdownloader.extensions.myjdownloader;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.crypto.Cipher;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.Base64OutputStream;
+import org.appwork.utils.net.ChunkedOutputStream;
+import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
@@ -94,6 +107,10 @@ public class MyJDownloaderConnectThread extends Thread {
                             public void run() {
                                 try {
                                     HttpConnection httpConnection = new HttpConnection(null, clientSocket) {
+                                        private byte         IV[]  = null;
+                                        private byte         KEY[] = null;
+                                        private OutputStream os    = null;
+
                                         @Override
                                         public List<HttpRequestHandler> getHandler() {
                                             return requestHandler;
@@ -102,15 +119,110 @@ public class MyJDownloaderConnectThread extends Thread {
                                         @Override
                                         protected HttpRequest buildRequest() throws IOException {
                                             HttpRequest ret = super.buildRequest();
+                                            ret.getRequestHeaders().remove(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING);
                                             return ret;
                                         }
 
                                         @Override
-                                        protected String preProcessRequestLine(String requestLine) {
-                                            String ID = new Regex(requestLine, "( /mjd_[a-zA-z0-9]{40}/?)").getMatch(0);
-                                            requestLine = requestLine.replaceFirst(ID, " /");
+                                        public void closeConnection() {
+                                            try {
+                                                getOutputStream().close();
+                                            } catch (final Throwable nothing) {
+                                            }
+                                            try {
+                                                this.clientSocket.close();
+                                            } catch (final Throwable nothing) {
+                                            }
+                                        }
+
+                                        @Override
+                                        protected String preProcessRequestLine(String requestLine) throws IOException {
+                                            String remove = new Regex(requestLine, "( /mjd_([a-zA-z0-9]{40})/?)").getMatch(0);
+                                            String ID = new Regex(requestLine, "( /mjd_([a-zA-z0-9]{40})/?)").getMatch(1);
+                                            MessageDigest md;
+                                            try {
+                                                md = MessageDigest.getInstance("SHA-256");
+                                            } catch (NoSuchAlgorithmException e) {
+                                                throw new IOException(e);
+                                            }
+                                            if (StringUtils.isNotEmpty(config.getEncryptionKey())) {
+                                                md.update(config.getEncryptionKey().getBytes("UTF-8"));
+                                            }
+                                            final byte[] digest = md.digest(ID.getBytes("UTF-8"));
+                                            IV = Arrays.copyOfRange(digest, 0, 16);
+                                            KEY = Arrays.copyOfRange(digest, 16, 32);
+                                            requestLine = requestLine.replaceFirst(remove, " /");
                                             return requestLine;
                                         };
+
+                                        public synchronized OutputStream getOutputStream() throws IOException {
+                                            if (this.os != null) return this.os;
+                                            HTTPHeader contentType = response.getResponseHeaders().get(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
+                                            if (contentType != null && "application/json".equalsIgnoreCase(contentType.getValue())) {
+                                                /* check for json response */
+                                                try {
+                                                    final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                                                    final IvParameterSpec ivSpec = new IvParameterSpec(IV);
+                                                    final SecretKeySpec skeySpec = new SecretKeySpec(KEY, "AES");
+                                                    cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
+                                                    /* remove content-length because we use chunked+base64+aes */
+                                                    response.getResponseHeaders().remove(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH);
+                                                    /* set chunked transfer header */
+                                                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING, HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED));
+                                                    this.sendResponseHeaders();
+                                                    this.os = new OutputStream() {
+                                                        private ChunkedOutputStream chunkedOS     = new ChunkedOutputStream(clientSocket.getOutputStream());
+                                                        Base64OutputStream          b64os         = new Base64OutputStream(chunkedOS) {
+                                                                                                      public void close() throws IOException {
+                                                                                                      };
+
+                                                                                                  };
+                                                        CipherOutputStream          cos           = new CipherOutputStream(b64os, cipher);
+                                                        boolean                     endWritten    = false;
+                                                        boolean                     headerWritten = false;
+
+                                                        @Override
+                                                        public void close() throws IOException {
+                                                            if (headerWritten == true && endWritten == false) {
+                                                                cos.close();
+                                                                chunkedOS.write("\"}".getBytes("UTF-8"));
+                                                                endWritten = true;
+                                                            }
+                                                            chunkedOS.close();
+                                                        }
+
+                                                        @Override
+                                                        public void flush() throws IOException {
+                                                        }
+
+                                                        @Override
+                                                        public void write(int b) throws IOException {
+                                                            if (headerWritten == false) {
+                                                                chunkedOS.write("{\"crypted\":\"".getBytes("UTF-8"));
+                                                                headerWritten = true;
+                                                            }
+                                                            cos.write(b);
+                                                        }
+
+                                                        @Override
+                                                        public void write(byte[] b, int off, int len) throws IOException {
+                                                            if (headerWritten == false) {
+                                                                chunkedOS.write("{\"crypted\":\"".getBytes("UTF-8"));
+                                                                headerWritten = true;
+                                                            }
+                                                            cos.write(b, off, len);
+                                                        };
+
+                                                    };
+                                                } catch (final Throwable e) {
+                                                    throw new IOException(e);
+                                                }
+                                            } else {
+                                                this.sendResponseHeaders();
+                                                this.os = super.os;
+                                            }
+                                            return this.os;
+                                        }
                                     };
                                     httpConnection.run();
                                 } catch (final Throwable e) {

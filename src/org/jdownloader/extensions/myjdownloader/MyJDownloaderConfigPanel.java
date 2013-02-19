@@ -14,13 +14,16 @@ public class MyJDownloaderConfigPanel extends ExtensionConfigPanel<MyJDownloader
     private static final long serialVersionUID = -7040189853650586391L;
     private TextInput         userName;
     private PasswordInput     passWord;
+    private PasswordInput     encryptionKey;
 
     public MyJDownloaderConfigPanel(MyJDownloaderExtension plg, MyDownloaderExtensionConfig config) {
         super(plg);
         userName = new TextInput(config.getStorageHandler().getKeyHandler("Username", StringKeyHandler.class));
         passWord = new PasswordInput(config.getStorageHandler().getKeyHandler("Password", StringKeyHandler.class));
+        passWord = new PasswordInput(config.getStorageHandler().getKeyHandler("EncryptionKey", StringKeyHandler.class));
         addPair("Username:", null, userName);
         addPair("Password:", null, passWord);
+        addPair("EncryptionKey:", null, encryptionKey);
     }
 
     @Override
