@@ -20,7 +20,7 @@ public class MyJDownloaderConfigPanel extends ExtensionConfigPanel<MyJDownloader
         super(plg);
         userName = new TextInput(config.getStorageHandler().getKeyHandler("Username", StringKeyHandler.class));
         passWord = new PasswordInput(config.getStorageHandler().getKeyHandler("Password", StringKeyHandler.class));
-        passWord = new PasswordInput(config.getStorageHandler().getKeyHandler("EncryptionKey", StringKeyHandler.class));
+        encryptionKey = new PasswordInput(config.getStorageHandler().getKeyHandler("EncryptionKey", StringKeyHandler.class));
         addPair("Username:", null, userName);
         addPair("Password:", null, passWord);
         addPair("EncryptionKey:", null, encryptionKey);
