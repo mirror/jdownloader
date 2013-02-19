@@ -8,5 +8,6 @@ installframe_statusmsg_findupdates=檢查更新
 literally_cancel=取消
 literally_close=關閉
 literally_unknown=未知
+rlyexit_title=確定離開嗎？
 update_dialog_cancel=取消
 update_dialog_yes=是(建議)
