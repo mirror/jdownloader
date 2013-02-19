@@ -197,4 +197,7 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Contact Server...", "Server kontaktieren..." })
     String installframe_statusmsg_checkselfupdate();
 
+    @Default(lngs = { "en", "de" }, values = { "Contact Server...", "Server kontaktieren..." })
+    String installframe_statusmsg_connecting_to_server();
+
 }

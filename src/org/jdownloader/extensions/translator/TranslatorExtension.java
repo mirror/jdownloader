@@ -40,6 +40,7 @@ import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.locale.AWUTranslation;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.sendlogs.LogSenderTranslation;
 import org.appwork.utils.svn.Subversion;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -353,6 +354,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             load(tmp, locale, ExternInterfaceTranslation.class);
             load(tmp, locale, ExternTranslation.class);
             load(tmp, locale, ExtTableTranslation.class);
+            load(tmp, locale, LogSenderTranslation.class);
             load(tmp, locale, GuiTranslation.class);
             LanguageFileSetup guiInterface = TranslationFactory.create(LanguageFileSetup.class);
 

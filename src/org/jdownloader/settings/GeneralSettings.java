@@ -126,20 +126,6 @@ public interface GeneralSettings extends ConfigInterface {
     int getForcedFreeSpaceOnDisk();
 
     @AboutConfig
-    @DescriptionForConfigEntry("Timeout for connecting to a httpserver")
-    @SpinnerValidator(min = 0, max = 600000)
-    @DefaultIntValue(60000)
-    @RequiresRestart
-    int getHttpConnectTimeout();
-
-    @AboutConfig
-    @DescriptionForConfigEntry("Timeout for reading from a httpserver")
-    @SpinnerValidator(min = 0, max = 600000)
-    @DefaultIntValue(300000)
-    @RequiresRestart
-    int getHttpReadTimeout();
-
-    @AboutConfig
     @DefaultEnumValue("ASK_FOR_EACH_FILE")
     IfFileExistsAction getIfFileExistsAction();
 
@@ -333,10 +319,6 @@ public interface GeneralSettings extends ConfigInterface {
     void setForcedFreeSpaceOnDisk(int mb);
 
     void setHashCheckEnabled(boolean b);
-
-    void setHttpConnectTimeout(int seconds);
-
-    void setHttpReadTimeout(int seconds);
 
     void setIfFileExistsAction(IfFileExistsAction action);
 

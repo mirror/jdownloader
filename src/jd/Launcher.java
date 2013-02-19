@@ -91,6 +91,7 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.toolbar.ToolbarOffer;
 import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.InternetConnectionSettings;
 
 public class Launcher {
     static {
@@ -394,8 +395,8 @@ public class Launcher {
                     /* set gloabel logger for browser */
                     Browser.setGlobalLogger(LogController.getInstance().getLogger("GlobalBrowser"));
                     /* init default global Timeouts */
-                    Browser.setGlobalReadTimeout(JsonConfig.create(GeneralSettings.class).getHttpReadTimeout());
-                    Browser.setGlobalConnectTimeout(JsonConfig.create(GeneralSettings.class).getHttpConnectTimeout());
+                    Browser.setGlobalReadTimeout(JsonConfig.create(InternetConnectionSettings.class).getHttpReadTimeout());
+                    Browser.setGlobalConnectTimeout(JsonConfig.create(InternetConnectionSettings.class).getHttpConnectTimeout());
                     /* init global proxy stuff */
                     Browser.setGlobalProxy(ProxyController.getInstance().getDefaultProxy());
                     /* add global proxy change listener */
