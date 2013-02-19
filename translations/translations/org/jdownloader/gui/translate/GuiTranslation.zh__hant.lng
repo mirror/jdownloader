@@ -105,6 +105,7 @@ EnabledAction_EnabledAction_disable=停用
 EnabledAction_EnabledAction_enable=啟用
 ExceptionsRuleDialog_getIfText_=允許符合這些條件的所有連結，並且忽略篩選清單
 ExceptionsTableModel_initColumns_condition_=允許連結，如果
+FileColumn_setStringValue_msg_=您已經重新命名了一個擁有多個分割檔的壓縮檔中的一個檔案。您必須依照順序重新命名所有的分割檔以確保壓縮檔可以解壓縮！
 FiletypeFilter_toString_custom='%s1'-檔案
 FilterRuleDialog_FilterRuleDialog_=規則：%s1
 FilterRuleDialog_FilterRuleDialog_title_=篩選規則
