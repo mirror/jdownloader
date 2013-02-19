@@ -69,6 +69,14 @@ public class H2PornCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("This video is a private video uploaded by <")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered members");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -87,18 +95,24 @@ public class H2PornCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) @ H2Porn</title>").getMatch(0);
         }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
+        if (br.containsHTML("This video is a private video uploaded by <")) {
+            downloadLink.setName(filename + ".flv");
+            downloadLink.getLinkStatus().setStatusText("Only downloadable for registered members");
+            return AvailableStatus.TRUE;
+        }
         DLLINK = br.getRegex("video_url=(http://.*?)\\&amp;preview_url").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("video_url:.*?\\('(http://.*?)'\\)").getMatch(0);
         }
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf(".")).replaceAll("\\W", "");
         if (ext == null || ext.length() > 5) {
             ext = "flv";
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + "." + ext);
+        downloadLink.setFinalFileName(filename + "." + ext);
 
         final String time = checkTM();
         final String ahv = checkMD(DLLINK, time);

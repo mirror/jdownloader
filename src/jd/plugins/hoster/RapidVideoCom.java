@@ -51,7 +51,7 @@ public class RapidVideoCom extends PluginForHost {
         if (br.containsHTML(">Die angefordete Video wurde nicht gefunden\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?) \\- RapidVideo</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?) Video \\- RapidVideo\"/>").getMatch(0);
-        DLLINK = br.getRegex("\\'file\\': \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        DLLINK = br.getRegex("(\\'file\\': \\'|file: \")(http://[^<>\"]*?)(\\'|\")").getMatch(1);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if ((ext == null || ext.length() > 5) && DLLINK.contains("MP4")) ext = ".mp4";

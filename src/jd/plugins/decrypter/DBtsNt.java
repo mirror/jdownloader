@@ -169,6 +169,7 @@ public class DBtsNt extends PluginForDecrypt {
                 if (finallink == null) finallink = br.getRedirectLocation();
             }
         }
+        if (finallink == null) finallink = br.getRegex("<frame src=\"(http://(www\\.)?audiobeats\\.net/Video/[^<>\"]*?)\"").getMatch(0);
         if (!br.containsHTML("3voor12\\.vpro\\.nl")) {
             if (finallink == null) {
                 logger.warning("Decrypter must be defect, detailedLink = " + aLink + " Mainlink = " + parameter);

@@ -68,6 +68,7 @@ public class PornHostCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(">The movie needs to be converted first")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The movie needs to be converted first", 30 * 60 * 1000l);
         String dllink = null;
         if (!downloadLink.getDownloadURL().contains(".html")) {
             dllink = br.getRegex("\"(http://cdn\\d+\\.dl\\.pornhost\\.com/[^<>\"]*?)\"").getMatch(0);
@@ -78,7 +79,7 @@ public class PornHostCom extends PluginForHost {
             dllink = br.getRegex("style=\"width: 499px; height: 372px\">[\t\n\r ]+<img src=\"(http.*?)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\"(http://file[0-9]+\\.pornhost\\.com/[0-9]+/.*?)\"").getMatch(0);
         }
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.urlDecode(dllink, true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         try {

@@ -27,6 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.Regex;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "http://(www\\.)?1channel\\.(ch|li)/(watch\\-\\d+|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)" }, flags = { 0 })
 public class OneChannelCh extends PluginForDecrypt {
 
@@ -38,23 +40,40 @@ public class OneChannelCh extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("1channel.li/", "1channel.ch/");
         br.getPage(parameter);
-        String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online \\-  on 1Channel \\| [^<>\"]*?</title>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
-        String[] links = br.getRegex("\\&url=([^<>\"]*?)\\&domain=").getColumn(0);
-        if (links == null || links.length == 0) {
-            if (br.containsHTML("\\'HD Sponsor\\'")) {
-                logger.info("Found no downloadlink in link: " + parameter);
-                return decryptedLinks;
+        if (br.containsHTML("\\(TV Show\\) \\-  on 1Channel \\| LetMeWatchThis</title>")) {
+            final String[] episodes = br.getRegex("class=\"tv_episode_item\"> <a href=\"(/tv[^<>\"]*?)\"").getColumn(0);
+            if (episodes == null || episodes.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (String singleLink : links)
-            decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(singleLink)));
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            for (String singleLink : episodes)
+                decryptedLinks.add(createDownloadlink("http://www.1channel.ch" + singleLink));
+        } else {
+            String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online \\-  on 1Channel \\| [^<>\"]*?</title>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
+            if (parameter.contains("season-") && fpName != null) {
+                final Regex seasonAndEpisode = br.getRegex("<a href=\"/tv\\-[^<>\"/]*?/[^<>\"/]*?\">([^<>\"]*?)</a>[\t\n\r ]+</strong>[\t\n\r ]+> <strong>([^<>\"]*?)</strong>");
+                if (seasonAndEpisode.getMatches().length != 0) {
+                    fpName = Encoding.htmlDecode(fpName.trim());
+                    fpName = fpName + " - " + Encoding.htmlDecode(seasonAndEpisode.getMatch(0)) + " - " + Encoding.htmlDecode(seasonAndEpisode.getMatch(1));
+                }
+            }
+            String[] links = br.getRegex("\\&url=([^<>\"]*?)\\&domain=").getColumn(0);
+            if (links == null || links.length == 0) {
+                if (br.containsHTML("\\'HD Sponsor\\'")) {
+                    logger.info("Found no downloadlink in link: " + parameter);
+                    return decryptedLinks;
+                }
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String singleLink : links)
+                decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(singleLink)));
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }

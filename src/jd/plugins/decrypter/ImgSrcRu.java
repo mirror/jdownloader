@@ -48,7 +48,8 @@ public class ImgSrcRu extends PluginForDecrypt {
     private static Object LOCK     = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        // only allow one instance to run at any point in time. Will help with users that mass decrypt.
+        // only allow one instance to run at any point in time. Will help with
+        // users that mass decrypt.
         synchronized (LOCK) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             ArrayList<String> allPages = new ArrayList<String>();
@@ -83,6 +84,10 @@ public class ImgSrcRu extends PluginForDecrypt {
                 parameter = handlePassword(parameter, param);
             } else {
                 getPage(parameter + "?per_page=48");
+                if (br.getURL().equals("http://imgsrc.ru/")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
                 if (br.containsHTML(">Album foreword:")) {
                     final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html\\?pwd=)\\'").getMatch(0);
                     if (newLink == null) {
@@ -131,7 +136,8 @@ public class ImgSrcRu extends PluginForDecrypt {
                 final String currentPage = MAINPAGE + page;
                 logger.info("Decrypting page " + pageCounter + " of " + allPages.size() + " and working on line: " + currentPage);
                 getPage(page);
-                // Check password again, because they don't set any cookies for correctly entered passwords we have to enter them again for
+                // Check password again, because they don't set any cookies for
+                // correctly entered passwords we have to enter them again for
                 // each page
                 if (isPasswordProtected()) handlePassword(parameter, param);
                 // Get the picture we're currently viewing

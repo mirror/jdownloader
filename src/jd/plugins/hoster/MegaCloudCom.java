@@ -95,6 +95,8 @@ public class MegaCloudCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
+        if (br.containsHTML(">File unavailable \\- This file has exceeded the daily bandwidth limit, please try again later")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file has exceeded the daily bandwidth limit, please try again later", 60 * 60 * 1000l);
+
         String user_id = new Regex(filter, "user_id\":(\\d+)").getMatch(0);
         String file_system_id = new Regex(filter, "file_system_id\":(\\d+)").getMatch(0);
         if (user_id == null || file_system_id == null) {
