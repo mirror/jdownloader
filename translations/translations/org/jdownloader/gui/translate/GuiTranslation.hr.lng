@@ -309,6 +309,7 @@ OpenDownloadFolderAction_layoutDialogContent_current_=Trenutna mapa: %s1
 OpenDownloadFolderAction_layoutDialogContent_object_=Odabir nove mape:
 OpenURLAction_OpenURLAction_=Kliknite za kupnju računa
 OpenUrlAction_OpenUrlAction_=Otvori u pregledniku
+OverViewHeader_OverViewHeader_=Pregled preuzimanja
 PackagizerFilterRuleDialog_PackagizerFilterRuleDialog_test_help=Unesite adresu za provjeru...
 PackagizerFilterRuleDialog_createVariablesMenu_date=Datum ili vrijeme
 PackagizerFilterRuleDialog_createVariablesMenu_filename=Izvorni naziv datoteke zamjenski znak(*) #%s1

@@ -1,0 +1,13 @@
+LogAction=Stvaranje zapisa
+LogAction_actionPerformed_givelogid_=Molimo pošaljite ID ovog zapisa Vašoj podršci!
+LogAction_actionPerformed_wait_=Molimo pričekajte...
+LogAction_actionPerformed_zip_title_=Stvaranje paketa zapisa
+LogAction_getString_uploading_=Priprema Vaših zapisa
+LogAction_tooltip=Stvaranje zapisa
+LogModel_getStringValue_between_=Između %s1 i %s2
+LogModel_initColumns_time_=Vrijeme
+LogModel_initColumns_x_=Provjera
+LogTable_onContextMenu_disable_=Poništi odabir
+LogTable_onContextMenu_enable_=Odaberi
+SendLogDialog_SendLogDialog_title_=Šalji izvješće o grešci
+SendLogDialog_layoutDialogContent_desc_=Kada je problem pojavio? Molimo provjerite sve podatke koji mogu biti vrijedni razmatranja!
