@@ -104,7 +104,7 @@ public class Keep2ShareCc extends PluginForHost {
 
                 }
                 if (dllink == null) {
-                    final String captchaLink = br.getRegex("\"(/site/captcha\\.html\\?v=[a-z0-9]+)\"").getMatch(0);
+                    final String captchaLink = br.getRegex("\"(/file/captcha\\.html\\?[^\"]+)\"").getMatch(0);
                     if (captchaLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     final String code = getCaptchaCode("http://keep2share.cc" + captchaLink, downloadLink);
                     br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
