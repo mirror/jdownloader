@@ -309,6 +309,7 @@ OpenDownloadFolderAction_layoutDialogContent_current_=Carpeta actual: %s1
 OpenDownloadFolderAction_layoutDialogContent_object_=Elija una nueva carpeta:
 OpenURLAction_OpenURLAction_=Click aquí para obtener una cuenta Premium
 OpenUrlAction_OpenUrlAction_=Abrir en el explorador
+OverViewHeader_OverViewHeader_=Descargar Información General
 PackagizerFilterRuleDialog_PackagizerFilterRuleDialog_test_help=Ingrese una URL de prueba
 PackagizerFilterRuleDialog_createVariablesMenu_date=Fecha u hora
 PackagizerFilterRuleDialog_createVariablesMenu_filename=Comodin (*) del nombre de archivo original #%s1
