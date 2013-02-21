@@ -32,6 +32,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.Base64OutputStream;
 import org.appwork.utils.net.ChunkedOutputStream;
+import org.appwork.utils.net.DeChunkingOutputStream;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
@@ -99,7 +100,7 @@ public class MyJDownloaderConnectThread extends Thread {
                         jdToken = null;
                     } else if (validToken == 1) {
                         connectError = 0;
-                        System.out.println("Connection got established");
+                        // System.out.println("Connection got established");
                         closeSocket = false;
                         final Socket clientSocket = connectionSocket;
                         Thread connectionThread = new Thread("MyJDownloaderConnection:" + THREADCOUNTER.incrementAndGet()) {
@@ -119,6 +120,7 @@ public class MyJDownloaderConnectThread extends Thread {
                                         @Override
                                         protected HttpRequest buildRequest() throws IOException {
                                             HttpRequest ret = super.buildRequest();
+                                            /* we do not allow gzip output */
                                             ret.getRequestHeaders().remove(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING);
                                             return ret;
                                         }
@@ -161,6 +163,16 @@ public class MyJDownloaderConnectThread extends Thread {
                                             if (contentType != null && "application/json".equalsIgnoreCase(contentType.getValue())) {
                                                 /* check for json response */
                                                 try {
+                                                    boolean deChunk = false;
+                                                    HTTPHeader transferEncoding = response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING);
+                                                    if (transferEncoding != null) {
+                                                        if (HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED.equalsIgnoreCase(transferEncoding.getValue())) {
+                                                            deChunk = true;
+                                                        } else {
+                                                            throw new IOException("Unsupported TransferEncoding " + transferEncoding);
+                                                        }
+                                                    }
+                                                    final boolean useDeChunkingOutputStream = deChunk;
                                                     final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
                                                     final IvParameterSpec ivSpec = new IvParameterSpec(IV);
                                                     final SecretKeySpec skeySpec = new SecretKeySpec(KEY, "AES");
@@ -177,14 +189,20 @@ public class MyJDownloaderConnectThread extends Thread {
                                                                                                       };
 
                                                                                                   };
-                                                        CipherOutputStream          cos           = new CipherOutputStream(b64os, cipher);
+                                                        OutputStream                outos         = new CipherOutputStream(b64os, cipher);
                                                         boolean                     endWritten    = false;
                                                         boolean                     headerWritten = false;
+                                                        {
+                                                            if (useDeChunkingOutputStream) {
+                                                                outos = new DeChunkingOutputStream(outos);
+                                                            }
+                                                        }
 
                                                         @Override
                                                         public void close() throws IOException {
                                                             if (headerWritten == true && endWritten == false) {
-                                                                cos.close();
+                                                                outos.close();
+                                                                b64os.flush();
                                                                 chunkedOS.write("\"}".getBytes("UTF-8"));
                                                                 endWritten = true;
                                                             }
@@ -201,7 +219,7 @@ public class MyJDownloaderConnectThread extends Thread {
                                                                 chunkedOS.write("{\"crypted\":\"".getBytes("UTF-8"));
                                                                 headerWritten = true;
                                                             }
-                                                            cos.write(b);
+                                                            outos.write(b);
                                                         }
 
                                                         @Override
@@ -210,7 +228,7 @@ public class MyJDownloaderConnectThread extends Thread {
                                                                 chunkedOS.write("{\"crypted\":\"".getBytes("UTF-8"));
                                                                 headerWritten = true;
                                                             }
-                                                            cos.write(b, off, len);
+                                                            outos.write(b, off, len);
                                                         };
 
                                                     };
