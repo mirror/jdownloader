@@ -34,12 +34,18 @@ public class HentaiUltimeNet extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
         br.getPage(parameter);
+
+        if (br.containsHTML("Item not found")) {
+            logger.info("Link offline (received error 404): " + parameter);
+            return decryptedLinks;
+        }
+
         final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        String[] links = br.getRegex("</script>[\t\n\r ]+<a href=\"(/v/[^<>\"]*?)\"").getColumn(0);
+        final String[] links = br.getRegex("</script>[\t\n\r ]+<a href=\"(/v/[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -68,5 +74,4 @@ public class HentaiUltimeNet extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
 }

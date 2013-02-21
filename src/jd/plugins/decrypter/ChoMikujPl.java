@@ -229,6 +229,8 @@ public class ChoMikujPl extends PluginForDecrypt {
             error = "Can't decrypt link, the account of the owner is banned: %s";
         } else if (br.containsHTML("Chomik o takiej nazwie nie istnieje<|Nie znaleziono - błąd 404")) {
             error = "This link is offline (received error 404): %s";
+        } else if (br.containsHTML("\"/action/UserAccess/ShowAdultContentConfirmation\"")) {
+            error = "This link is only available via account: %s";
         }
         return error;
     }

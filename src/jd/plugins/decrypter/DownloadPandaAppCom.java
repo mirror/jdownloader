@@ -38,8 +38,13 @@ public class DownloadPandaAppCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        br.setFollowRedirects(false);
+        if (br.getURL().equals("http://www.pandaapp.com/error/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String fpName = br.getRegex("<div class=\"title\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
         String[] links = br.getRegex("\"(http://[^<>\"]*?)\" class=\"btn_netdisk\"").getColumn(0);
         if (links != null && links.length != 0) {

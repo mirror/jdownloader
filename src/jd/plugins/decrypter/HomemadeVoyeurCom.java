@@ -64,6 +64,7 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
             return null;
         }
         String filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- Voyeur Videos \\- Homemade Amateur Sex Movies</title>").getMatch(0);
         tempID = br.getRegex("var playlist = \\[ \\{ url: escape\\(\\'(http://[^<>\"]*?)\\'\\) \\} \\]").getMatch(0);
         if (tempID == null) tempID = br.getRegex("(\\'|\")(http://(hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv|[a-z0-9]+\\.yourvoyeurvideos\\.com/mp4/\\d+\\.mp4))(\\'|\")").getMatch(1);
         if (tempID == null || filename == null) {
@@ -76,5 +77,4 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }
