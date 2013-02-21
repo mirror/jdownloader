@@ -56,7 +56,7 @@ public class Netloadin extends PluginForHost {
     private static String getID(String link) {
         String id = new Regex(link, "\\/datei([a-zA-Z0-9]+)").getMatch(0);
         if (id == null) id = new Regex(link, "file_id=([a-zA-Z0-9]+)").getMatch(0);
-        if (id == null) id = new Regex(link, "netload\\.in\\/([a-zA-Z0-9]+)\\/.+").getMatch(0);
+        if (id == null) id = new Regex(link, "netload\\.in/([a-zA-Z0-9]+)/.?+").getMatch(0);
         return id;
     }
 

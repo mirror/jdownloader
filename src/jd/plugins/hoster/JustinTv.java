@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(www\\.)?media\\d+.(justin|twitch)decrypted\\.tv/archives/[^<>\"]*?\\.flv" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://.+?media\\d+\\.(justin|twitch)decrypted\\.tv/archives/[^<>\"]*?\\.flv" }, flags = { 0 })
 public class JustinTv extends PluginForHost {
 
     public JustinTv(PluginWrapper wrapper) {
@@ -36,8 +36,7 @@ public class JustinTv extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("justindecrypted.tv", "justin.tv"));
-        link.setUrlDownload(link.getDownloadURL().replace("twitchdecrypted.tv", "justin.tv"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("(justin|twitch)decrypted\\.tv", "justin.tv"));
     }
 
     @Override

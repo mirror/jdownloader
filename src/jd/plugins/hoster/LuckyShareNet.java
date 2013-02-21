@@ -45,8 +45,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luckyshare.net" }, urls = { "http://(www\\.)?luckyshare\\.net/\\d+" }, flags = { 2 })
 public class LuckyShareNet extends PluginForHost {
 
-    private String AGENT = null;
-
     public LuckyShareNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://luckyshare.net/premium");
@@ -59,10 +57,12 @@ public class LuckyShareNet extends PluginForHost {
 
     private static final String MAINPAGE = "http://luckyshare.net/";
     private static Object       LOCK     = new Object();
+    private static String       AGENT    = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(There is no such file available|<title>LuckyShare \\- Download</title>)")) {
@@ -100,12 +100,6 @@ public class LuckyShareNet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        if (AGENT == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            AGENT = jd.plugins.hoster.MediafireCom.stringUserAgent();
-            if (AGENT == null) AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0";
-        }
         requestFileInformation(downloadLink);
         String dllink = downloadLink.getDownloadURL();
         final String filesizelimit = br.getRegex(">Files with filesize over ([^<>\"\\'/]+) are available only for Premium Users").getMatch(0);
@@ -176,9 +170,19 @@ public class LuckyShareNet extends PluginForHost {
         return wait;
     }
 
-    private void prepareHeader(Browser b, String s) {
+    private void prepBrowser(Browser b) {
+        if (AGENT == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            AGENT = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
         b.getHeaders().put("User-Agent", AGENT);
-        b.getHeaders().put("Accept-Language", "en-us");
+        b.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        b.setReadTimeout(3 * 60 * 1000);
+        b.setConnectTimeout(3 * 60 * 1000);
+    }
+
+    private void prepareHeader(Browser b, String s) {
         b.getHeaders().put("Accept-Encoding", "deflate");
         b.getHeaders().put("Accept-Charset", null);
         b.getHeaders().put("Accept", "*/*");
@@ -205,6 +209,7 @@ public class LuckyShareNet extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -220,8 +225,6 @@ public class LuckyShareNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.setReadTimeout(3 * 60 * 1000);
-                br.setConnectTimeout(3 * 60 * 1000);
                 br.getPage("http://luckyshare.net/auth/login");
                 final String token = br.getRegex("type=\"hidden\" name=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (token == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
