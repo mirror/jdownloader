@@ -10,7 +10,7 @@ gui_config_jdshutdown_mode=Modo:
 gui_config_jdshutdown_shutdown=Apagar  (No para todos los Sistemas Operativos)
 gui_config_jdshutdown_standby=Suspender (No para todos los Sistemas Operativos)
 install_force=Instalar Forzar Apagado
-install_msg=Desea preparar su sistema para la característica de Forzar Apagado?
+install_msg=¿Desea preparar su sistema para la característica de Forzar Apagado?
 install_title=Instalar Forzar Apagado
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader se cerrará!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Atencion! El sistema se pondrá en modo de Hibernación!</font></h2>
