@@ -1,0 +1,9 @@
+Proxy Vole (Package com.btr, lib/proxy_util_amd64.dll,lib/proxy_util_ia64.dll,lib/proxy_util_w32.dll)
+License: New BSD License
+------------------------------------
+http://code.google.com/p/proxy-vole/
+Copyright (c) 2009, Bernd Rosstauscher
+All rights reserved.
+
+A Java library to auto detect the platform network proxy settings. The library provides some proxy setting search strategies to read the proxy settings from the
+ system config (Windows, KDE, Gnome, OSX), browser config (Firefox, IE), or environment variables, ... and provides you an ready to use proxy selector.
