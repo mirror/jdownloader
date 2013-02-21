@@ -387,8 +387,7 @@ public class RtmpDump extends RTMPDownload {
                     }
                     if (!line.toLowerCase().contains("download complete")) continue;
 
-                    // autoresuming when FMS sends NetStatus.Play.Stop and
-                    // progress less than 100%
+                    // autoresuming when FMS sends NetStatus.Play.Stop and progress less than 100%
                     if (progressFloat < 99.8 && !line.toLowerCase().contains("download complete")) {
                         int retry = downloadLink.getLinkStatus().getRetryCount() + 1;
                         System.out.println("Versuch Nr.: " + retry + " ::: " + plugin.getMaxRetries(downloadLink, null));
@@ -450,11 +449,21 @@ public class RtmpDump extends RTMPDownload {
                 } else if (e.contains("netstream.play.streamnotfound")) {
                     downloadLink.deleteFile(true, false);
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    return true;
                 } else if (error.startsWith(timeoutMessage)) {
                     logger.severe(error);
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TIMEOUT_REACHED);
                 } else {
-                    logger.severe("cmd: " + cmdArgsWindows);
+                    String cmd = cmdArgsWindows;
+                    if (!CrossSystem.isWindows()) {
+                        StringBuilder sb = new StringBuilder();
+                        for (String s : cmdArgsMacAndLinux) {
+                            sb.append(s);
+                            sb.append(" ");
+                        }
+                        cmd = sb.toString();
+                    }
+                    logger.severe("cmd: " + cmd);
                     logger.severe(error);
                     throw new PluginException(LinkStatus.ERROR_FATAL, error);
                 }
