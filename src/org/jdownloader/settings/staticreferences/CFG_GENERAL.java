@@ -66,7 +66,7 @@ public class CFG_GENERAL {
     // true
     public static final BooleanKeyHandler               AUTO_OPEN_CONTAINER_AFTER_DOWNLOAD                 = SH.getKeyHandler("AutoOpenContainerAfterDownload", BooleanKeyHandler.class);
     // true
-    public static final BooleanKeyHandler               AUTO_DOWNLOAD_START_AFTER_ADDING_ENABLED           = SH.getKeyHandler("AutoDownloadStartAfterAddingEnabled", BooleanKeyHandler.class);
+
     // 1800000
     /**
      * Waittime in ms if a Download Temp Unavailable Failed

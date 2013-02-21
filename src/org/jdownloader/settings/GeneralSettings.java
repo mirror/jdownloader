@@ -192,10 +192,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    boolean isAutoDownloadStartAfterAddingEnabled();
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
     boolean isAutoOpenContainerAfterDownload();
 
     @AboutConfig
@@ -262,8 +258,6 @@ public interface GeneralSettings extends ConfigInterface {
     void setAddNewLinksOnTop(boolean selected);
 
     void setAutoaddLinksAfterLinkcheck(boolean selected);
-
-    void setAutoDownloadStartAfterAddingEnabled(boolean selected);
 
     void setAutoOpenContainerAfterDownload(boolean b);
 
