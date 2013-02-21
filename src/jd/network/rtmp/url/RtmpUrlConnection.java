@@ -6,8 +6,10 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * <tt>UrlConnection</tt> for the rtmp protocol
@@ -134,7 +136,7 @@ public class RtmpUrlConnection extends URLConnection {
     }
 
     /**
-     * Create command line parameters.
+     * Create command line parameters for Windows.
      */
     public String getCommandLineParameter() {
         final StringBuilder cmdargs = new StringBuilder("");
@@ -155,7 +157,35 @@ public class RtmpUrlConnection extends URLConnection {
                 }
             }
         }
-        return cmdargs.toString();
+        return cmdargs.toString() + " -o";
+    }
+
+    /**
+     * Create command line parameters for Uni*.
+     */
+    public List<String> getCommandLineParameterAsArray() {
+        List<String> cmdargs = new ArrayList<String>();
+        if (parameterMap != null) {
+            final Iterator<String> keyIter = parameterMap.keySet().iterator();
+            while (keyIter.hasNext()) {
+                final String key = keyIter.next();
+                if (parameterMap.get(key) != null) {
+                    if (KEY_CONN.equals(key)) { // example: -C B:0 -C S:String -C N:1234
+                        for (String s : parameterMap.get(key).split("#")) {
+                            cmdargs.add("-" + key);
+                            cmdargs.add(s);
+                        }
+                    } else {
+                        cmdargs.add("-" + key);
+                        cmdargs.add(parameterMap.get(key));
+                    }
+                } else {
+                    cmdargs.add("-" + key);
+                }
+            }
+        }
+        cmdargs.add("-o");
+        return cmdargs;
     }
 
     /**

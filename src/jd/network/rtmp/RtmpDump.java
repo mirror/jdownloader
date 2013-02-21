@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -256,7 +258,6 @@ public class RtmpDump extends RTMPDownload {
             }
         };
         File tmpFile = new File(downloadLink.getFileOutput() + ".part");
-
         try {
             getManagedConnetionHandler().addThrottledConnection(tcon);
             addChunksDownloading(1);
@@ -277,27 +278,30 @@ public class RtmpDump extends RTMPDownload {
             String timeoutMessage = "rtmpdump timed out while waiting for a reply after";
             long readerTimeOut = 10000l;
 
-            String cmd = rtmpConnection.getCommandLineParameter();
+            String cmdArgsWindows = rtmpConnection.getCommandLineParameter();
+            List<String> cmdArgsMacAndLinux = new ArrayList<String>();
 
             if (CrossSystem.isWindows()) {
                 // MAX_PATH Fix --> \\?\ + Path
                 if (String.valueOf(tmpFile).length() >= 260) {
-                    cmd += " -o \"\\\\?\\" + String.valueOf(tmpFile) + "\"";
+                    cmdArgsWindows += " \"\\\\?\\" + String.valueOf(tmpFile) + "\"";
                 } else {
-                    cmd += " -o \"" + String.valueOf(tmpFile) + "\"";
+                    cmdArgsWindows += " \"" + String.valueOf(tmpFile) + "\"";
                 }
             } else {
-                cmd = cmd.replaceAll("\"", "") + " -o " + String.valueOf(tmpFile);
+                cmdArgsMacAndLinux.add(RTMPDUMP);
+                cmdArgsMacAndLinux.addAll(rtmpConnection.getCommandLineParameterAsArray());
+                cmdArgsMacAndLinux.add(String.valueOf(tmpFile));
             }
 
             setResume(rtmpConnection.isResume());
 
             try {
                 if (CrossSystem.isWindows()) {
-                    NP = new NativeProcess(RTMPDUMP, cmd);
+                    NP = new NativeProcess(RTMPDUMP, cmdArgsWindows);
                     R = new InputStreamReader(NP.getErrorStream());
                 } else {
-                    P = Runtime.getRuntime().exec(RTMPDUMP + cmd);
+                    P = Runtime.getRuntime().exec(cmdArgsMacAndLinux.toArray(new String[cmdArgsMacAndLinux.size()]));
                     R = new InputStreamReader(P.getErrorStream());
                 }
                 final BufferedReader br = new BufferedReader(R);
@@ -450,7 +454,7 @@ public class RtmpDump extends RTMPDownload {
                     logger.severe(error);
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TIMEOUT_REACHED);
                 } else {
-                    logger.severe("cmd: " + cmd);
+                    logger.severe("cmd: " + cmdArgsWindows);
                     logger.severe(error);
                     throw new PluginException(LinkStatus.ERROR_FATAL, error);
                 }
@@ -470,5 +474,4 @@ public class RtmpDump extends RTMPDownload {
             }
         }
     }
-
 }
