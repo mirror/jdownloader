@@ -5,7 +5,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.captcha.CaptchaEventSender;
 import jd.plugins.AddonPanel;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslateInterface;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -15,7 +14,6 @@ import org.jdownloader.logging.LogController;
 
 public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, TranslateInterface> {
 
-    private CaptchaPushConfig      config;
     private CaptchaPushConfigPanel configPanel;
 
     private CaptchaPushService     service;
@@ -49,15 +47,15 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, T
 
     private void startService() {
         LogController.CL().info("Start the MQTT Service ...");
-        LogController.CL().info("Broker " + config.getBrokerHost() + ":" + config.getBrokerPort() + " on Topic " + config.getBrokerTopic());
+        LogController.CL().info("Broker " + getSettings().getBrokerHost() + ":" + getSettings().getBrokerPort() + " on Topic " + getSettings().getBrokerTopic());
 
         service.connect();
 
         CaptchaEventSender.getInstance().addListener(service);
 
         oldValue = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT);
-        if (oldValue < config.getTimeout()) {
-            SubConfiguration.getConfig("JAC").setProperty(Configuration.JAC_SHOW_TIMEOUT, config.getTimeout());
+        if (oldValue < getSettings().getTimeout()) {
+            SubConfiguration.getConfig("JAC").setProperty(Configuration.JAC_SHOW_TIMEOUT, getSettings().getTimeout());
             SubConfiguration.getConfig("JAC").save();
         } else {
             oldValue = -1;
@@ -79,8 +77,8 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, T
 
     @Override
     protected void initExtension() throws StartException {
-        config = JsonConfig.create(CaptchaPushConfig.class);
-        configPanel = new CaptchaPushConfigPanel(this, config);
+
+        configPanel = new CaptchaPushConfigPanel(this, getSettings());
 
         service = new CaptchaPushService(this);
 
@@ -90,10 +88,6 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, T
     @Override
     public ExtensionConfigPanel<CaptchaPushExtension> getConfigPanel() {
         return configPanel;
-    }
-
-    public CaptchaPushConfig getConfig() {
-        return config;
     }
 
     @Override

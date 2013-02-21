@@ -14,21 +14,21 @@ import com.ibm.mqtt.MqttClient;
 
 public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
 
-    private MqttClient                         mqtt   = null;
+    private MqttClient                              mqtt   = null;
 
-    private Thread                             reconnectThread;
+    private Thread                                  reconnectThread;
 
-    private final CaptchaPushExtension         extension;
-    private LogSource                          logger = null;
+    private final CaptchaPushExtension              extension;
+    private LogSource                               logger = null;
 
-    private final String                       clientId;
+    private final String                            clientId;
 
     private final java.util.List<CaptchaController> currentController;
-    private Thread                             waiterThread;
+    private Thread                                  waiterThread;
 
     public CaptchaPushService(CaptchaPushExtension extension) {
         this.extension = extension;
-        this.clientId = "JD_" + extension.getConfig().getBrokerTopic();
+        this.clientId = "JD_" + extension.getSettings().getBrokerTopic();
         this.currentController = new ArrayList<CaptchaController>();
     }
 
@@ -40,7 +40,7 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
         logger = LogController.CL(CaptchaPushExtension.class);
         try {
             if (mqtt == null) {
-                mqtt = new MqttClient(extension.getConfig().getBrokerHost(), extension.getConfig().getBrokerPort(), this);
+                mqtt = new MqttClient(extension.getSettings().getBrokerHost(), extension.getSettings().getBrokerPort(), this);
             }
 
             mqtt.setRetry(15);
@@ -61,7 +61,7 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
             reconnectThread.interrupt();
         }
 
-        unsubscribe(extension.getConfig().getBrokerTopic());
+        unsubscribe(extension.getSettings().getBrokerTopic());
 
         if (mqtt != null) mqtt.disconnect();
 
@@ -71,10 +71,10 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
 
     public void publish(byte[] message) {
         try {
-            if (mqtt != null) mqtt.publish(extension.getConfig().getBrokerTopic(), message, 0, false);
-            logger.info("  --> PUBLISH sent,  TOPIC: " + extension.getConfig().getBrokerTopic());
+            if (mqtt != null) mqtt.publish(extension.getSettings().getBrokerTopic(), message, 0, false);
+            logger.info("  --> PUBLISH sent,  TOPIC: " + extension.getSettings().getBrokerTopic());
         } catch (Exception ex) {
-            logger.info(" *--> PUBLISH send FAILED, TOPIC: " + extension.getConfig().getBrokerTopic());
+            logger.info(" *--> PUBLISH send FAILED, TOPIC: " + extension.getSettings().getBrokerTopic());
             logger.info("                   EXCEPTION: " + ex.getMessage());
         }
     }
@@ -163,7 +163,7 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
 
             public void run() {
                 try {
-                    Thread.sleep(extension.getConfig().getTimeout() * 1000);
+                    Thread.sleep(extension.getSettings().getTimeout() * 1000);
                     currentController.remove(0);
                     waiterThread = null;
                 } catch (Exception e) {

@@ -5,10 +5,12 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
@@ -16,6 +18,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,7 +29,9 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.logging.LogController;
 
 public class ExtensionController {
     private static final ExtensionController INSTANCE = new ExtensionController();
@@ -44,6 +49,8 @@ public class ExtensionController {
 
     private ExtensionControllerEventSender eventSender;
 
+    private LogSource                      logger;
+
     /**
      * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
@@ -51,6 +58,7 @@ public class ExtensionController {
     private ExtensionController() {
         eventSender = new ExtensionControllerEventSender();
         list = Collections.unmodifiableList(new ArrayList<LazyExtension>());
+        logger = LogController.getInstance().getLogger(ExtensionController.class.getName());
 
     }
 
@@ -86,7 +94,7 @@ public class ExtensionController {
                         /* do a fresh scan */
                         ret = load();
                     } catch (Throwable e) {
-                        Log.L.severe("@ExtensionController: update failed!");
+                        logger.severe("@ExtensionController: update failed!");
                         Log.exception(e);
                     }
                 } else {
@@ -94,7 +102,7 @@ public class ExtensionController {
                     try {
                         ret = loadFromCache();
                     } catch (Throwable e) {
-                        Log.L.severe("@ExtensionController: cache failed!");
+                        logger.severe("@ExtensionController: cache failed!");
                         Log.exception(e);
                     }
                     if (ret.size() == 0) {
@@ -102,16 +110,16 @@ public class ExtensionController {
                             /* do a fresh scan */
                             ret = load();
                         } catch (Throwable e) {
-                            Log.L.severe("@ExtensionController: update failed!");
+                            logger.severe("@ExtensionController: update failed!");
                             Log.exception(e);
                         }
                     }
                 }
             } finally {
-                Log.L.info("@ExtensionController: init in" + (System.currentTimeMillis() - t) + "ms :" + ret.size());
+                logger.info("@ExtensionController: init in" + (System.currentTimeMillis() - t) + "ms :" + ret.size());
             }
             if (ret.size() == 0) {
-                Log.L.severe("@ExtensionController: WTF, no extensions!");
+                logger.severe("@ExtensionController: WTF, no extensions!");
             }
             try {
                 Collections.sort(ret, new Comparator<LazyExtension>() {
@@ -167,6 +175,7 @@ public class ExtensionController {
             if (Application.isJared(ExtensionController.class)) {
                 ret = loadJared();
             } else {
+                ret = loadJared();
                 ret = loadUnpacked();
             }
             JSonStorage.saveTo(getCache(), ret);
@@ -185,18 +194,24 @@ public class ExtensionController {
                 return name.endsWith(".jar");
             }
         });
+
         if (addons != null) {
+            logger.info(Arrays.toString(addons));
             HashSet<File> dupes = new HashSet<File>();
             HashSet<URL> urlDupes = new HashSet<URL>();
+            System.out.println(1);
             main: for (File jar : addons) {
                 try {
 
                     URLClassLoader cl = new URLClassLoader(new URL[] { jar.toURI().toURL() }, null);
-                    final Enumeration<URL> urls = cl.getResources(AbstractExtension.class.getPackage().getName().replace('.', '/'));
+                    String resource = AbstractExtension.class.getPackage().getName().replace('.', '/');
+                    final Enumeration<URL> urls = cl.getResources(resource);
+
                     URL url;
                     Pattern pattern = Pattern.compile(Pattern.quote(AbstractExtension.class.getPackage().getName().replace('.', '/')) + "/(\\w+)/(\\w+Extension)\\.class");
-
+                    boolean atLeastOneSourceFound = false;
                     while (urls.hasMoreElements()) {
+                        atLeastOneSourceFound = true;
                         url = urls.nextElement();
                         if (urlDupes.add(url)) {
 
@@ -245,6 +260,64 @@ public class ExtensionController {
                             }
                         }
                     }
+                    if (!atLeastOneSourceFound) {
+                        logger.severe("Seems Like " + jar + " was built without directory option. This slows down the loading process!");
+                        JarFile jf = new JarFile(jar);
+                        Enumeration<JarEntry> entries = jf.entries();
+                        while (entries.hasMoreElements()) {
+                            JarEntry s = entries.nextElement();
+                            if (s.getName().startsWith(resource)) {
+                                URI uri = jar.toURI();
+                                url = new URL(uri.toString() + "!" + s.getName());
+
+                                if (urlDupes.add(url)) {
+
+                                    if (dupes.add(jar)) {
+                                        FileInputStream fis = null;
+                                        JarInputStream jis = null;
+                                        try {
+                                            jis = new JarInputStream(fis = new FileInputStream(jar));
+                                            JarEntry e;
+                                            while ((e = jis.getNextJarEntry()) != null) {
+                                                try {
+
+                                                    Matcher matcher = pattern.matcher(e.getName());
+
+                                                    if (matcher.find()) {
+                                                        String pkg = matcher.group(1);
+                                                        String clazzName = matcher.group(2);
+                                                        URLClassLoader classloader = new URLClassLoader(new URL[] { jar.toURI().toURL() }, getClass().getClassLoader());
+                                                        Class<?> clazz = classloader.loadClass(AbstractExtension.class.getPackage().getName() + "." + pkg + "." + clazzName);
+
+                                                        if (AbstractExtension.class.isAssignableFrom(clazz)) {
+
+                                                            initModule((Class<AbstractExtension<?, ?>>) clazz, ret, jar);
+                                                            continue main;
+                                                        }
+                                                    }
+                                                } catch (Throwable e1) {
+                                                    Log.exception(e1);
+                                                }
+                                            }
+                                        } finally {
+                                            try {
+                                                jis.close();
+                                            } catch (final Throwable e) {
+                                            }
+                                            try {
+                                                fis.close();
+                                            } catch (final Throwable e) {
+                                            }
+                                        }
+                                    }
+
+                                }
+
+                            }
+                            System.out.println(s);
+                        }
+
+                    }
                 } catch (Throwable e) {
                     Log.exception(e);
                 }
@@ -264,11 +337,11 @@ public class ExtensionController {
                 root = new File(ret.toURI());
             } catch (URISyntaxException e) {
                 Log.exception(e);
-                Log.L.finer("Did not load unpacked Extensions from " + ret);
+                logger.finer("Did not load unpacked Extensions from " + ret);
                 return retl;
             }
         } else {
-            Log.L.finer("Did not load unpacked Extensions from " + ret);
+            logger.finer("Did not load unpacked Extensions from " + ret);
             return retl;
         }
         root = new File(root, AbstractExtension.class.getPackage().getName().replace('.', '/'));
@@ -276,7 +349,7 @@ public class ExtensionController {
             // workaround. this way extensions work in eclipse when started with the updater launcher as well
             root = new File(root.getAbsolutePath().replace("JDownloaderUpdater", "JDownloader"));
         }
-        Log.L.finer("Load Extensions from: " + root.getAbsolutePath());
+        logger.finer("Load Extensions from: " + root.getAbsolutePath());
         File[] folders = root.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
                 return pathname.isDirectory();
@@ -302,14 +375,14 @@ public class ExtensionController {
                                 continue main;
                             }
                         } catch (IllegalArgumentException e) {
-                            Log.L.warning("Did not init Extension " + module + " : " + e.getMessage());
+                            logger.warning("Did not init Extension " + module + " : " + e.getMessage());
                         } catch (Throwable e) {
                             Log.exception(e);
                             Dialog.getInstance().showExceptionDialog("Error", e.getMessage(), e);
                         }
                     }
                     if (!loaded) {
-                        Log.L.warning("Could not load any Extension Module from " + f);
+                        logger.warning("Could not load any Extension Module from " + f);
                     }
                 }
             }
@@ -321,7 +394,7 @@ public class ExtensionController {
         if (list == null) list = new ArrayList<LazyExtension>();
         String id = cls.getName().substring(27);
 
-        Log.L.fine("Load Extension: " + id);
+        logger.fine("Load Extension: " + id);
         LazyExtension extension = LazyExtension.create(id, cls);
         extension.setJarPath(jarFile.getAbsolutePath());
         extension._setPluginClass(cls);

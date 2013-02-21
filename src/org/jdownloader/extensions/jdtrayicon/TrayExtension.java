@@ -512,6 +512,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
      * gets called if mouse stays over the tray. Edit delay in {@link TrayMouseAdapter}
      */
     public void mouseStay(MouseEvent e) {
+
         if (!getSettings().isToolTipEnabled()) return;
         if (trayIconPopup != null && trayIconPopup.isVisible()) return;
         trayIconTooltip.showTooltip(((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft());

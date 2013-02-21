@@ -54,7 +54,7 @@ public class MyJDownloaderConnectThread extends Thread {
         setName("MyJDownloaderConnectThread");
         this.setDaemon(true);
         this.myJDownloaderExtension = myJDownloaderExtension;
-        config = myJDownloaderExtension.getConfig();
+        config = myJDownloaderExtension.getSettings();
         requestHandler = new ArrayList<HttpRequestHandler>();
         requestHandler.add(RemoteAPIController.getInstance().getRequestHandler());
     }

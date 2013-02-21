@@ -32,7 +32,7 @@ public class ToolbarManager {
     }
 
     private HashMap<String, AbstractToolbarAction> map;
-    private java.util.List<AbstractToolbarAction>       list;
+    private java.util.List<AbstractToolbarAction>  list;
 
     public AbstractToolbarAction[] getList() {
         return list.toArray(new AbstractToolbarAction[] {});
@@ -41,8 +41,8 @@ public class ToolbarManager {
     private ToolbarSettings config;
 
     /**
-     * Create a new instance of ToolbarManager. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of ToolbarManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}
+     * .
      */
     private ToolbarManager() {
         config = JsonConfig.create(ToolbarSettings.class);
@@ -89,7 +89,7 @@ public class ToolbarManager {
     }
 
     private void addIntern(AbstractToolbarAction action) {
-        if (action != Seperator.getInstance() && map.containsKey(action.getID())) throw new WTFException("Please Choose a different id for " + action + " OVERRIDE  public String getID() {");
+        if (action != Seperator.getInstance() && map.containsKey(action.getID())) { throw new WTFException("Please Choose a different id for " + action + " OVERRIDE  public String getID() {"); }
         map.put(action.getID(), action);
         if (action.isDefaultVisible()) list.add(action);
     }

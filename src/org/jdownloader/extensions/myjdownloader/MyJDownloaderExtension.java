@@ -2,7 +2,6 @@ package org.jdownloader.extensions.myjdownloader;
 
 import jd.plugins.AddonPanel;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslateInterface;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -11,9 +10,8 @@ import org.jdownloader.extensions.StopException;
 
 public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtensionConfig, TranslateInterface> {
 
-    private MyDownloaderExtensionConfig config;
-    private MyJDownloaderConfigPanel    configPanel;
-    private MyJDownloaderConnectThread  thread = null;
+    private MyJDownloaderConfigPanel   configPanel;
+    private MyJDownloaderConnectThread thread = null;
 
     @Override
     protected void stop() throws StopException {
@@ -35,17 +33,13 @@ public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtens
     @Override
     protected void initExtension() throws StartException {
         setTitle("my.jdownloader.org");
-        config = JsonConfig.create(MyDownloaderExtensionConfig.class);
-        configPanel = new MyJDownloaderConfigPanel(this, config);
+
+        configPanel = new MyJDownloaderConfigPanel(this, getSettings());
     }
 
     @Override
     public ExtensionConfigPanel<?> getConfigPanel() {
         return configPanel;
-    }
-
-    public MyDownloaderExtensionConfig getConfig() {
-        return config;
     }
 
     @Override

@@ -2,7 +2,6 @@ package org.jdownloader.extensions.jdanywhere;
 
 import jd.plugins.AddonPanel;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -33,7 +32,6 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
 
     private EventsAPI             eva;
 
-    private JDAnywhereConfig      config;
     private JDAnywhereConfigPanel configPanel;
 
     @Override
@@ -72,9 +70,9 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
     protected void start() throws StartException {
         try {
             JDAnywhereController remoteAPI = JDAnywhereController.getInstance();
-            int port = config.getPort();
-            String user = config.getUsername();
-            String pass = config.getPassword();
+            int port = getSettings().getPort();
+            String user = getSettings().getUsername();
+            String pass = getSettings().getPassword();
             remoteAPI.register(cma = new CaptchaApi(), port, user, pass);
             remoteAPI.register(coma = new ContentApi(), port, user, pass);
             remoteAPI.register(dba = new DashboardApi(), port, user, pass);
@@ -91,8 +89,8 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
     @Override
     protected void initExtension() throws StartException {
         setTitle("JDAnywhere");
-        config = JsonConfig.create(JDAnywhereConfig.class);
-        configPanel = new JDAnywhereConfigPanel(this, config);
+
+        configPanel = new JDAnywhereConfigPanel(this, getSettings());
     }
 
     @Override
@@ -116,7 +114,7 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
     }
 
     public JDAnywhereConfig getConfig() {
-        return config;
+        return getSettings();
     }
 
     public String getUsername() {
