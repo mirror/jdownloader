@@ -309,6 +309,7 @@ OpenDownloadFolderAction_layoutDialogContent_current_=Cartella corrente: %s1
 OpenDownloadFolderAction_layoutDialogContent_object_=Seleziona una nuova cartella:
 OpenURLAction_OpenURLAction_=Fai clic per ottenere un account Premium
 OpenUrlAction_OpenUrlAction_=Apri nel browser
+OverViewHeader_OverViewHeader_=Sommario download
 PackagizerFilterRuleDialog_PackagizerFilterRuleDialog_test_help=Digitai URL test...
 PackagizerFilterRuleDialog_createVariablesMenu_date=Data o ora
 PackagizerFilterRuleDialog_createVariablesMenu_filename=Caratteri jolly nome file originale (*) #%s1
