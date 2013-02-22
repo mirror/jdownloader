@@ -24,6 +24,9 @@ import jd.Launcher;
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.sendlogs.AbstractLogAction;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.jdserv.JD_SERV_CONSTANTS;
@@ -44,10 +47,19 @@ public class LogAction extends AbstractLogAction {
 
     @Override
     protected void onNewPackage(File zip) throws IOException {
+        try {
+            if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
+            id = JD_SERV_CONSTANTS.CLIENT.create(UploadInterface.class).upload(IO.readFile(zip), "", id);
+            if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
 
-        if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
-        id = JD_SERV_CONSTANTS.CLIENT.create(UploadInterface.class).upload(IO.readFile(zip), "", id);
-        if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
+            Dialog.getInstance().showInputDialog(0, _GUI._.LogAction_actionPerformed_givelogid_(), "jdlog://" + id);
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            Dialog.getInstance().showExceptionDialog("Exception ocurred", e.getMessage(), e);
+        }
     }
 
     @Override
