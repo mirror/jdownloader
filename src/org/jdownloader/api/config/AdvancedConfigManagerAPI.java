@@ -18,18 +18,18 @@ public interface AdvancedConfigManagerAPI extends RemoteAPIInterface {
 
     @AllowStorage(value = { Object.class })
     @ApiDoc("get value from interface by key")
-    public Object get(String interfacename, String key);
+    public Object get(int storageID, String key);
 
     @AllowStorage(value = { Object.class })
     @ApiDoc("set value to interface by key")
-    public boolean set(String interfacename, String key, String value);
+    public boolean set(int storageID, String key, String value);
 
     @ApiDoc("reset interface by key to its default value")
-    public boolean reset(String interfacename, String key);
+    public boolean reset(int storageID, String key);
 
     @AllowStorage(value = { Object.class })
     @ApiDoc("get default value from interface by key")
-    public Object getDefault(String interfacename, String key);
+    public Object getDefault(int storageID, String key);
 
     public List<ConfigInterfaceAPIStorable> queryConfigInterfaces(APIQuery query);
 
