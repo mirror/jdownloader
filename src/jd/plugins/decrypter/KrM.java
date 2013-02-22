@@ -41,7 +41,7 @@ public class KrM extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.containsHTML("404 Not Found")) {
+        if (br.containsHTML(">404 Error \\- Not Found<")) {
             logger.info("Link offline:" + parameter);
             return decryptedLinks;
         }

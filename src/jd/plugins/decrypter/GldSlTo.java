@@ -40,6 +40,10 @@ public class GldSlTo extends PluginForDecrypt {
         // Important: Does not work without this cookie!
         br.setCookie("http://goldesel.to/", "goldesel_in", "1");
         br.getPage(parameter);
+        if (!br.containsHTML("class=\"entry_box_head\">Direct\\-Downloads</div>") && !br.containsHTML("class=\"entry_box_head\">Streams \\-")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("class=\"content_box_head\">Detailansicht von \"(.*?)\"</div>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("width=\"14\" height=\"14\" align=\"absbottom\" />\\&nbsp;\\&nbsp;(.*?)</span><div").getMatch(0);

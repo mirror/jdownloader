@@ -25,9 +25,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega-protect.com" }, urls = { "http://(www\\.)?mega\\-protect\\.com/(?!inscription\\.php).*?\\.php" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega-protect.com" }, urls = { "http://(www\\.)?mega\\-protect\\.com/(?!inscription\\.php|forget\\.php).*?\\.php" }, flags = { 0 })
 public class MegaPrtcCm extends PluginForDecrypt {
 
     public MegaPrtcCm(PluginWrapper wrapper) {
@@ -38,10 +37,16 @@ public class MegaPrtcCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("<title>404 Not Found</title>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("<title>404 Not Found</title>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         // Captcha handling
         for (int i = 0; i <= 5; i++) {
-            if (!br.containsHTML("captcha\\.php")) return null;
+            if (!br.containsHTML("captcha\\.php")) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             String captchalink = "http://www.mega-protect.com/captcha.php";
             String code = getCaptchaCode(captchalink, param);
             br.getPage(parameter + "?captcha=" + code);
@@ -50,7 +55,10 @@ public class MegaPrtcCm extends PluginForDecrypt {
         }
         if (br.containsHTML("(Code incorrect|captcha.php)")) throw new DecrypterException(DecrypterException.CAPTCHA);
         String finallink = br.getRegex("style=\"text-align: center;\">.*?<a href=(.*?)>").getMatch(0);
-        if (finallink == null) return null;
+        if (finallink == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;

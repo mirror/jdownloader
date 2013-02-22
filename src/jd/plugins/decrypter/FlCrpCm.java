@@ -29,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecrop.com" }, urls = { "http://(www\\.)?filecrop\\.com/\\d+/index\\.html" }, flags = { 0 })
 public class FlCrpCm extends PluginForDecrypt {
@@ -37,13 +38,20 @@ public class FlCrpCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static Object LOCK = new Object();
+    public static Object  LOCK  = new Object();
+    private static String agent = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         // Every IP only has to type in a captcha ONCE so the decrypter modules
         // shouldn't do this step simultan
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
         synchronized (LOCK) {
             br.getPage(parameter);
             if (br.containsHTML("<title>404 Not Found</title>")) {

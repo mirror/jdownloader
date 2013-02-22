@@ -52,6 +52,10 @@ public class Mangafox extends PluginForDecrypt {
                 logger.warning("Invalid link or release not yet available, check in your browser: " + parameter);
                 return decryptedLinks;
             }
+            if (!br.containsHTML("onclick=\"return enlarge\\(\\)\"")) {
+                logger.warning("Invalid link: " + parameter);
+                return decryptedLinks;
+            }
             final String nextChapter = br.getRegex("<span>Next Chapter:</span> <a href=\"(http://mangafox\\.me/[^<>\"]*?)\">[^<>\"]*?</a></p>").getMatch(0);
             // We get the title
             String title = br.getRegex("<title>(.*?) \\- Read (.*?) Online \\- Page 1</title>").getMatch(0);

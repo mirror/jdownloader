@@ -96,7 +96,7 @@ public class FilesMailRu extends PluginForHost {
             login(account);
         } catch (PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         account.setValid(true);
         ai.setUnlimitedTraffic();
@@ -155,7 +155,7 @@ public class FilesMailRu extends PluginForHost {
         br.setFollowRedirects(true);
         br.postPage("http://swa.mail.ru/cgi-bin/auth", "Page=http%3A%2F%2Ffiles.mail.ru%2F&Login=" + Encoding.urlEncode(account.getUser()) + "&Domain=mail.ru&Password=" + Encoding.urlEncode(account.getPass()));
         br.getPage("http://files.mail.ru/eng?back=%2Fsms-services");
-        if (!br.containsHTML(">You have a VIP status<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML(">You have a VIP status<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     private void prepareBrowser() {

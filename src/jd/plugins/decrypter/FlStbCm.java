@@ -205,6 +205,10 @@ public class FlStbCm extends PluginForDecrypt {
         } else {
             br.setFollowRedirects(true);
             if (br.getRedirectLocation() != null) {
+                if (br.getRedirectLocation().equals("http://www.filestube.com/")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
                 logger.info("Redirect done, further redirects should be handled automatically!");
                 br.getPage(br.getRedirectLocation());
             } else {

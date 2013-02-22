@@ -46,10 +46,14 @@ public class LtrstrWzCom extends PluginForDecrypt {
         final String mirrors[] = br.getRegex("<b>Download (\\d+)?:</b></td>[\t\r\n ]+<td colspan=\"4\" align=\"left\">(.*?)</td>").getColumn(1);
         if (mirrors == null || mirrors.length == 0) return null;
         for (String mirror : mirrors) {
-            String[] links = HTMLParser.getHttpLinks(mirror, "");
-            if (links == null || links.length == 0) return null;
+            final String[] links = HTMLParser.getHttpLinks(mirror, "");
+            if (links == null || links.length == 0) continue;
             for (String dl : links)
                 decryptedLinks.add(createDownloadlink(dl));
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

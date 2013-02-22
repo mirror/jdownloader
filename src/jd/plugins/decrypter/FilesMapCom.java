@@ -43,13 +43,17 @@ public class FilesMapCom extends PluginForDecrypt {
         if (br.getURL().equals("http://www.filesmap.com/") || br.containsHTML("<title>Your files search engine \\- FilesMap\\.com</title>")) return decryptedLinks;
         if (parameter.matches(".*?filesmap\\.com/mp3/.*?")) {
             /** Handling for MP3 links */
-            String goEarID = br.getRegex("\"http://(www\\.)?goear\\.com/files/local\\.swf\\?file=([A-Za-z0-9]+)\"").getMatch(1);
-            if (goEarID == null) goEarID = br.getRegex("filesmap\\.com/mp3s/GoEarDownload/([A-Za-z0-9]+)/\\'").getMatch(0);
-            if (goEarID == null) {
+            String dlID = br.getRegex("\"http://(www\\.)?goear\\.com/files/local\\.swf\\?file=([A-Za-z0-9]+)\"").getMatch(1);
+            if (dlID == null) dlID = br.getRegex("filesmap\\.com/mp3s/GoEarDownload/([A-Za-z0-9]+)/\\'").getMatch(0);
+            if (dlID == null) {
+                if (br.getRegex("onclick=\"window\\.open\\(\\'(http://(es|ar|en|pt|ru|ja|de|fr|tr|pl)\\.filesmap\\.com/mp3s/dobdDownload/[^<>\"]*?)\\'\\)").getMatch(0) != null) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            decryptedLinks.add(createDownloadlink("http://www.goear.com/listen/" + goEarID + "/" + "x"));
+            decryptedLinks.add(createDownloadlink("http://www.goear.com/listen/" + dlID + "/" + "x"));
         } else {
             /** Handling for all others */
             String fpName = br.getRegex("property=\"og:title\" content=\"(.*?) \\(\\d+\\.?.{1,6}\\)").getMatch(0);
@@ -70,5 +74,4 @@ public class FilesMapCom extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }
