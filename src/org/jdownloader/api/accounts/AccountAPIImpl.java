@@ -86,6 +86,23 @@ public class AccountAPIImpl implements AccountAPI {
     }
 
     @Override
+    public QueryResponseMap listPremiumHosterUrls() {
+
+        final List<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
+        // Filter - only premium plugins should be here
+        final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
+
+        QueryResponseMap ret = new QueryResponseMap();
+        for (LazyHostPlugin lhp : allPLugins) {
+            if (lhp.isPremium()) {
+                plugins.add(lhp);
+                ret.put(lhp.getDisplayName(), AccountController.createFullBuyPremiumUrl(lhp.getPremiumUrl(), "accountmanager/webinterface"));
+            }
+        }
+        return ret;
+    }
+
+    @Override
     public void premiumHosterIcon(RemoteAPIRequest request, RemoteAPIResponse response, String premiumHoster) {
         OutputStream out = null;
         try {
@@ -108,7 +125,7 @@ public class AccountAPIImpl implements AccountAPI {
         }
     }
 
-    public boolean remove(Long[] ids) {
+    public boolean removeAccounts(Long[] ids) {
         java.util.List<Account> removeACCs = getAccountbyIDs(ids);
         for (Account acc : removeACCs) {
             AccountController.getInstance().removeAccount(acc);
@@ -136,6 +153,16 @@ public class AccountAPIImpl implements AccountAPI {
         return accs;
     }
 
+    @Override
+    public boolean enableAccounts(final List<Long> linkIds) {
+        return setEnabledState(true, linkIds.toArray(new Long[linkIds.size()]));
+    }
+
+    @Override
+    public boolean disableAccounts(final List<Long> linkIds) {
+        return setEnabledState(false, linkIds.toArray(new Long[linkIds.size()]));
+    }
+
     public boolean setEnabledState(boolean enabled, Long[] ids) {
         java.util.List<Account> accs = getAccountbyIDs(ids);
         for (Account acc : accs) {
@@ -155,6 +182,24 @@ public class AccountAPIImpl implements AccountAPI {
         Account acc = new Account(username, password);
         acc.setHoster(premiumHoster);
         AccountController.getInstance().addAccount(acc);
+        return true;
+    }
+
+    @Override
+    public boolean updateAccount(Long accountId, String username, String password) {
+        if (accountId == null) return false;
+
+        for (Account acc : AccountController.getInstance().list()) {
+            if (accountId.equals(acc.getID().getID())) {
+                if (username != null && !username.isEmpty()) {
+                    acc.setUser(username);
+                }
+                if (password != null && !password.isEmpty()) {
+                    acc.setPass(password);
+                }
+                return true;
+            }
+        }
         return true;
     }
 }
