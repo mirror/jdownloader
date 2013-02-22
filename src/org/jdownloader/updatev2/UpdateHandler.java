@@ -4,6 +4,8 @@ import java.awt.Window;
 import java.io.IOException;
 import java.util.List;
 
+import org.appwork.utils.logging2.LogSource;
+
 public interface UpdateHandler {
 
     void startIntervalChecker();
@@ -47,5 +49,7 @@ public interface UpdateHandler {
     List<String> getRequestedUnInstalls();
 
     void stopIntervalChecker();
+
+    LogSource getLogger();
 
 }

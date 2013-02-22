@@ -6,6 +6,7 @@
   "panelHeaderLineColor": -4144960,
   "panelHeaderLineForegroundColor" : 0,
   "errorForeground": 16711680,
-  "tooltipForegroundColor": 16121087
+  "tooltipForegroundColor": 16121087,
+  "downloadOverviewHeaderColor":4671303
   
 }

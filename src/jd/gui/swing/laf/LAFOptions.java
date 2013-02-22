@@ -3,16 +3,29 @@ package jd.gui.swing.laf;
 import java.awt.Color;
 
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
 import org.appwork.storage.Storable;
 
 public class LAFOptions implements Storable {
+    public static void main(String[] args) {
+        System.out.println(0x474747);
+    }
 
-    private boolean paintStatusbarTopBorder = true;
-    private int     panelBackgroundColor    = new JTable().getBackground().getRGB();
-    private int     panelHeaderLineColor    = Color.LIGHT_GRAY.getRGB();
+    private boolean paintStatusbarTopBorder     = true;
+    private int     panelBackgroundColor        = new JTable().getBackground().getRGB();
+    private int     panelHeaderLineColor        = Color.LIGHT_GRAY.getRGB();
+    private int     downloadOverviewHeaderColor = -1;
+
+    public int getDownloadOverviewHeaderColor() {
+        return downloadOverviewHeaderColor;
+    }
+
+    public void setDownloadOverviewHeaderColor(int downloadOverviewHeaderColor) {
+        this.downloadOverviewHeaderColor = downloadOverviewHeaderColor;
+    }
 
     public int getPanelHeaderLineColor() {
         return panelHeaderLineColor;
@@ -112,6 +125,15 @@ public class LAFOptions implements Storable {
         if (c >= 0) {
             overViewScrollBar.setBackground(new Color(c));
             overViewScrollBar.setOpaque(true);
+
+        }
+    }
+
+    public void applyDownloadOverviewHeaderColor(JLabel lbl) {
+
+        int c = getDownloadOverviewHeaderColor();
+        if (c >= 0) {
+            lbl.setForeground(new Color(c));
 
         }
     }

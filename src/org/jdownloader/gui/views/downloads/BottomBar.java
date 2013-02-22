@@ -19,6 +19,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
@@ -42,6 +43,9 @@ public class BottomBar extends MigPanel {
     private JButton                                                          popupRemove;
     private SearchField<LinktablesSearchCategory, FilePackage, DownloadLink> searchField;
     private PseudoCombo                                                      combo;
+    private JToggleButton                                                    bottomBar;
+    private ExtButton                                                        settings;
+    private MigPanel                                                         buttonContainer;
 
     // private JToggleButton showHideSidebar;
 
@@ -219,7 +223,7 @@ public class BottomBar extends MigPanel {
         // if(!config.isDownloadPanelOverviewVisible()){
         //
         // }
-        final JToggleButton bottomBar = new JToggleButton(new AppAction() {
+        bottomBar = new JToggleButton(new AppAction() {
             {
                 setIconKey("bottombar");
                 setSelected(CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled());
@@ -232,21 +236,8 @@ public class BottomBar extends MigPanel {
             }
         });
 
-        add(bottomBar, "width 24!,height 24!,gapleft 2,aligny top");
-
-        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
-            @Override
-            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                bottomBar.setSelected(newValue);
-            }
-
-            @Override
-            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-
-            }
-        });
-        addButton(new AppAction() {
+        // add(bottomBar, "width 24!,height 24!,gapleft 2,aligny top,hidemode 2");
+        settings = new ExtButton(new AppAction() {
             {
                 setTooltipText(_GUI._.BottomBar_BottomBar_settings());
                 setIconKey("settings");
@@ -261,6 +252,26 @@ public class BottomBar extends MigPanel {
                 // new CleanupMenu()
             }
         });
+
+        // bt.setText("");
+        // bt.setRolloverEffectEnabled(true);
+        buttonContainer = new MigPanel("ins 0", "[]", "[]");
+        add(buttonContainer, "width 24!,height 24!,gapleft 2,aligny top");
+        updateSettingsButton();
+        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                // bottomBar.setSelected(newValue);
+                updateSettingsButton();
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+
+            }
+        });
+
         // showHideSidebar = new JToggleButton(new AppAction() {
         // /**
         // *
@@ -287,6 +298,25 @@ public class BottomBar extends MigPanel {
         // //
         // add(showHideSidebar, "height 24!,width 24!,gapleft 3,aligny top");
         // }
+
+    }
+
+    protected void updateSettingsButton() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled()) {
+                    buttonContainer.removeAll();
+                    buttonContainer.add(bottomBar, "width 24!,height 24!,aligny top");
+                } else {
+                    buttonContainer.removeAll();
+                    buttonContainer.add(settings, "width 24!,height 24!,aligny top");
+
+                }
+                buttonContainer.repaint();
+            }
+        };
 
     }
 

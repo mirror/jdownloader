@@ -2219,4 +2219,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download Overview" })
     String OverViewHeader_OverViewHeader_();
 
+    @Default(lngs = { "en" }, values = { "Downloads Overview" })
+    String DownloadOverView_DownloadOverView_();
+
 }

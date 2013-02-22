@@ -51,7 +51,7 @@ public class SpeedlimitEditor extends MenuEditor {
 
         add(lbl);
         add(new ExtCheckBox(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED, lbl, spinner), "width 20!");
-        add(spinner, "height 22!,width 100!");
+        add(spinner, "height 22!,width 90!");
 
     }
 }

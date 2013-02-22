@@ -12,7 +12,7 @@ public class MenuEditor extends MigPanel {
     private static final long serialVersionUID = -1702338721344188944L;
 
     public MenuEditor() {
-        super("ins 2", "6[grow,fill][100!,fill]", "[grow,fill]");
+        super("ins 2", "6[grow,fill][90!,fill]", "[grow,fill]");
         setOpaque(false);
     }
 

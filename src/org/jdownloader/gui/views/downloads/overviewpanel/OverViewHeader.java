@@ -24,13 +24,15 @@ public class OverViewHeader extends MigPanel {
     private JButton bt;
 
     public OverViewHeader() {
-        super("ins 0 0 1 0", "[][grow,fill][]0", "[grow,fill]");
+        super("ins 0 0 1 0", "[]2[][grow,fill][]0", "[grow,fill]");
 
         // setBackground(Color.RED);
         // setOpaque(true);
-        JLabel lbl = new JLabel(_GUI._.OverViewHeader_OverViewHeader_());
 
-        add(lbl, "height 17!,gapleft 10");
+        JLabel lbl = SwingUtils.toBold(new JLabel(_GUI._.OverViewHeader_OverViewHeader_()));
+        LookAndFeelController.getInstance().getLAFOptions().applyDownloadOverviewHeaderColor(lbl);
+        add(new JLabel(NewTheme.I().getIcon("download", 16)), "gapleft 1");
+        add(lbl, "height 17!");
         add(Box.createHorizontalGlue());
         setOpaque(true);
         SwingUtils.setOpaque(lbl, false);

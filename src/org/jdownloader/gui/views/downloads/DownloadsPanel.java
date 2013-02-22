@@ -92,9 +92,9 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     private void layoutComponents() {
 
         if (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled()) {
-            setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]2[]"));
+            setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[grow,fill]2[]"));
             this.add(tableScrollPane, "pushx,growx,spanx");
-            add(overViewScrollBar, "spanx,height 64!");
+            add(overViewScrollBar, "spanx,height 80!");
             add(bottomBar, "spanx,height 24!");
         } else {
             setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
