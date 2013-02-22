@@ -59,7 +59,7 @@ public class GrUploadCom extends PluginForHost {
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static Object LOCK                = new Object();
+    private static Object       LOCK                = new Object();
 
     // XfileSharingProBasic Version 2.5.0.8
 
@@ -164,8 +164,7 @@ public class GrUploadCom extends PluginForHost {
             }
         }
         /**
-         * Videolinks can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Videolinks can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -360,7 +359,7 @@ public class GrUploadCom extends PluginForHost {
         if (BRBEFORE.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (BRBEFORE.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         /** Error handling for only-premium links */
-        if (new Regex(BRBEFORE, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file You requested  reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
+        if (new Regex(BRBEFORE, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file You requested  reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only\\.<)").matches()) {
             String filesizelimit = new Regex(BRBEFORE, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
@@ -435,8 +434,7 @@ public class GrUploadCom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             /**
-             * Who needs half points ? If we have a dot in the points, just
-             * remove it
+             * Who needs half points ? If we have a dot in the points, just remove it
              */
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
@@ -559,7 +557,11 @@ public class GrUploadCom extends PluginForHost {
             br.getPage(COOKIE_HOST + "/?op=my_account");
             doSomething();
             if (!new Regex(BRBEFORE, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) {account.setProperty("nopremium", true);                } else {                    account.setProperty("nopremium", false);               }
+            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) {
+                account.setProperty("nopremium", true);
+            } else {
+                account.setProperty("nopremium", false);
+            }
             /** Save cookies */
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(COOKIE_HOST);
