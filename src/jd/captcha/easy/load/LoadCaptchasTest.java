@@ -16,7 +16,6 @@
 
 package jd.captcha.easy.load;
 
-import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.gui.userio.DummyFrame;
 
@@ -24,7 +23,7 @@ public class LoadCaptchasTest {
 
     public static void main(String[] args) throws Exception {
         LookAndFeelController.getInstance().setUIManager();
-        EDTEventQueue.initEventQueue();
+        // EDTEventQueue.initEventQueue();
         new LoadCaptchas(DummyFrame.getDialogParent(), null, true).start();
 
         System.exit(0);

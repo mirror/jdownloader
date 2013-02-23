@@ -94,6 +94,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
     @Override
     protected boolean onSingleClick(MouseEvent e, AbstractNode obj) {
         return super.onSingleClick(e, obj);
+
     }
 
     @Override

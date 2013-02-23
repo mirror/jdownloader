@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
-import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
@@ -25,12 +24,10 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.text.JTextComponent;
 
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionDialog;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterPanel;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.test.PackagizerSingleTestTableModel;
-import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.copycutpaste.CopyAction;
 import org.appwork.app.gui.copycutpaste.CutAction;
@@ -197,19 +194,6 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     @Override
     protected PackagizerRule createReturnValue() {
         return rule;
-    }
-
-    public static void main(String[] args) {
-        try {
-            EDTEventQueue.initEventQueue();
-            LookAndFeelController.getInstance().setUIManager();
-            Dialog.getInstance().showDialog(new PackagizerFilterRuleDialog(new PackagizerRule()));
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        }
-        System.exit(1);
     }
 
     @Override

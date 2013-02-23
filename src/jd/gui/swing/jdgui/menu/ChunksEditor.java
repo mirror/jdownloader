@@ -17,14 +17,18 @@ public class ChunksEditor extends MenuEditor {
     private GeneralSettings   config;
 
     public ChunksEditor() {
-        super();
+        this(false);
+    }
+
+    public ChunksEditor(boolean b) {
+        super(b);
 
         add(getLbl(_GUI._.ChunksEditor_ChunksEditor_(), NewTheme.I().getIcon("chunks", 18)));
         config = JsonConfig.create(GeneralSettings.class);
         spinner = new ExtSpinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_CHUNKS_PER_FILE));
         // new SpinnerNumberModel(config.getMaxChunksPerFile(), 1, 20, 1)
 
-        add(spinner, "height 22!");
+        add(spinner, "height 20!");
     }
 
 }

@@ -46,13 +46,13 @@ import jd.gui.UserIF;
 import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.http.Browser;
 import jd.http.ext.security.JSPermissionRestricter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
+import org.appwork.app.gui.copycutpaste.CopyPasteSupport;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.storage.config.JsonConfig;
@@ -60,6 +60,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ToolTipController;
+import org.appwork.swing.event.AWTEventQueueLinker;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
@@ -579,11 +580,14 @@ public class Launcher {
             public Void edtRun() {
                 /* init gui here */
                 try {
+
+                    AWTEventQueueLinker.link();
+
                     lafInit.waitForEDT();
                     Launcher.LOG.info("InitGUI->" + (System.currentTimeMillis() - Launcher.startup));
                     JDGui.getInstance();
 
-                    EDTEventQueue.initEventQueue();
+                    AWTEventQueueLinker.getInstance().getEventSender().addListener(new CopyPasteSupport());
 
                     Launcher.LOG.info("GUIDONE->" + (System.currentTimeMillis() - Launcher.startup));
                 } catch (Throwable e) {

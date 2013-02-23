@@ -22,8 +22,12 @@ public class SpeedlimitEditor extends MenuEditor {
     private SizeSpinner       spinner;
 
     public SpeedlimitEditor() {
-        super();
-        setLayout(new MigLayout("ins 2", "6[grow,fill][][]", "[grow,fill]"));
+        this(false);
+    }
+
+    public SpeedlimitEditor(boolean b) {
+        super(b);
+        setLayout(new MigLayout("ins 0", "6[grow,fill][][]", "[]"));
 
         setOpaque(false);
 
@@ -51,7 +55,7 @@ public class SpeedlimitEditor extends MenuEditor {
 
         add(lbl);
         add(new ExtCheckBox(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED, lbl, spinner), "width 20!");
-        add(spinner, "height 22!,width 90!");
+        add(spinner, "width 90!,height 20!");
 
     }
 }

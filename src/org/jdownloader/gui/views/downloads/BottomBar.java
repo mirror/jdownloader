@@ -1,6 +1,8 @@
 package org.jdownloader.gui.views.downloads;
 
 import java.awt.Component;
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -8,6 +10,7 @@ import java.util.regex.Pattern;
 
 import javax.swing.JButton;
 import javax.swing.JToggleButton;
+import javax.swing.SwingUtilities;
 
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
@@ -19,7 +22,6 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
@@ -45,7 +47,6 @@ public class BottomBar extends MigPanel {
     private PseudoCombo                                                      combo;
     private JToggleButton                                                    bottomBar;
     private ExtButton                                                        settings;
-    private MigPanel                                                         buttonContainer;
 
     // private JToggleButton showHideSidebar;
 
@@ -238,32 +239,60 @@ public class BottomBar extends MigPanel {
 
         // add(bottomBar, "width 24!,height 24!,gapleft 2,aligny top,hidemode 2");
         settings = new ExtButton(new AppAction() {
+            private QuickSettingsPopup popup;
+
             {
                 setTooltipText(_GUI._.BottomBar_BottomBar_settings());
                 setIconKey("settings");
+                popup = new QuickSettingsPopup() {
+                    public void setVisible(boolean b) {
+                        if (b) {
+                            super.setVisible(true);
+                        } else {
+
+                            // this workaround avoids that a second click on settings hides the popup and recreates it afterwards in the
+                            // actionperformed method
+
+                            Point p = MouseInfo.getPointerInfo().getLocation();
+
+                            SwingUtilities.convertPointFromScreen(p, settings.getParent());
+
+                            if (!settings.getBounds().contains(p)) {
+
+                                super.setVisible(false);
+                            }
+                        }
+                    }
+                };
 
                 // setIconSizes(18);
             }
 
             public void actionPerformed(ActionEvent e) {
-                QuickSettingsPopup pu = new QuickSettingsPopup();
-                int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
-                pu.show((Component) e.getSource(), -pu.getPreferredSize().width + insets[3] + ((Component) e.getSource()).getWidth() + 1, -pu.getPreferredSize().height + insets[2]);
+                // System.out.println(popup.isVisible());
+                //
+
+                if (!popup.isVisible()) {
+                    int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                    popup.show((Component) e.getSource(), -popup.getPreferredSize().width + insets[3] + ((Component) e.getSource()).getWidth() + 1, -popup.getPreferredSize().height + insets[2]);
+                } else {
+                    popup.superSetVisible(false);
+                }
                 // new CleanupMenu()
             }
         });
 
         // bt.setText("");
         // bt.setRolloverEffectEnabled(true);
-        buttonContainer = new MigPanel("ins 0", "[]", "[]");
-        add(buttonContainer, "width 24!,height 24!,gapleft 2,aligny top");
-        updateSettingsButton();
+        add(bottomBar, "width 24!,height 24!,gapleft 2,aligny top");
+        add(settings, "width 24!,height 24!,gapleft 2,aligny top");
+
         CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                // bottomBar.setSelected(newValue);
-                updateSettingsButton();
+                bottomBar.setSelected(newValue);
+
             }
 
             @Override
@@ -298,25 +327,6 @@ public class BottomBar extends MigPanel {
         // //
         // add(showHideSidebar, "height 24!,width 24!,gapleft 3,aligny top");
         // }
-
-    }
-
-    protected void updateSettingsButton() {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                if (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled()) {
-                    buttonContainer.removeAll();
-                    buttonContainer.add(bottomBar, "width 24!,height 24!,aligny top");
-                } else {
-                    buttonContainer.removeAll();
-                    buttonContainer.add(settings, "width 24!,height 24!,aligny top");
-
-                }
-                buttonContainer.repaint();
-            }
-        };
 
     }
 

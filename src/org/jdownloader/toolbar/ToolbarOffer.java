@@ -1,5 +1,6 @@
 package org.jdownloader.toolbar;
 
+import java.awt.AWTEvent;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -20,10 +21,11 @@ import javax.swing.JTextArea;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.nutils.Executer;
 
-import org.appwork.app.gui.copycutpaste.CopyCutPasteHandler;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.event.AWTEventListener;
+import org.appwork.swing.event.AWTEventQueueLinker;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging.Log;
@@ -40,14 +42,17 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
-public class ToolbarOffer extends AbstractDialog<Object> implements Runnable, ShutdownVetoListener {
+public class ToolbarOffer extends AbstractDialog<Object> implements Runnable, ShutdownVetoListener, AWTEventListener {
 
     private JCheckBox cbSearch;
     private JCheckBox cbhp;
     private boolean   silentInstallEnabled = true;
+    private long      lastMouseEvent       = -1;
 
     public ToolbarOffer() {
         super(0, _GUI._.JDToolbarOffer_JDToolbarOffer_title_(), null, _GUI._.JDToolbarOffer_JDToolbarOffer_install_(), _GUI._.JDToolbarOffer_JDToolbarOffer_nothanks_());
+
+        AWTEventQueueLinker.getInstance().getEventSender().addListener(this, true);
     }
 
     public static void main(String[] args) {
@@ -170,7 +175,7 @@ public class ToolbarOffer extends AbstractDialog<Object> implements Runnable, Sh
         new Thread("WaitForMouse") {
             public void run() {
                 while (true) {
-                    if (System.currentTimeMillis() - CopyCutPasteHandler.getInstance().getLastMouseEvent() < 5000) {
+                    if (System.currentTimeMillis() - lastMouseEvent < 5000) {
                         try {
                             file.delete();
                             IO.writeStringToFile(file, "true");
@@ -320,5 +325,15 @@ public class ToolbarOffer extends AbstractDialog<Object> implements Runnable, Sh
     @Override
     public long getShutdownVetoPriority() {
         return 0;
+    }
+
+    @Override
+    public void onAWTEventAfterDispatch(AWTEvent parameter) {
+        if (!(parameter instanceof MouseEvent)) return;
+        lastMouseEvent = System.currentTimeMillis();
+    }
+
+    @Override
+    public void onAWTEventBeforeDispatch(AWTEvent parameter) {
     }
 }

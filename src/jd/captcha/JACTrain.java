@@ -16,7 +16,6 @@
 
 package jd.captcha;
 
-import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDUtilities;
 
@@ -37,7 +36,7 @@ public class JACTrain {
         final JAntiCaptcha jac = new JAntiCaptcha(hoster);
 
         LookAndFeelController.getInstance().setUIManager();
-        EDTEventQueue.initEventQueue();
+        // EDTEventQueue.initEventQueue();
         jac.trainAllCaptchas(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster);
 
         // jac.saveMTHFile();

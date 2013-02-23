@@ -42,7 +42,6 @@ import javax.swing.SpinnerNumberModel;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.easy.load.LoadCaptchas;
 import jd.captcha.translate.T;
-import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.gui.userio.DummyFrame;
@@ -375,7 +374,7 @@ public class EasyCaptchaTool {
 
         JSonStorage.setMapper(new JacksonMapper());
         LookAndFeelController.getInstance().setUIManager();
-        EDTEventQueue.initEventQueue();
+        // EDTEventQueue.initEventQueue();
 
         EasyMethodFile meth = EasyCaptchaTool.getCaptchaMethode();
 

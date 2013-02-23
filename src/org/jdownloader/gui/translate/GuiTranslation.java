@@ -2222,4 +2222,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Downloads Overview" })
     String DownloadOverView_DownloadOverView_();
 
+    @Default(lngs = { "en" }, values = { "Package(s):" })
+    String DownloadOverview_DownloadOverview_packages();
+
+    @Default(lngs = { "en" }, values = { "Link(s):" })
+    String DownloadOverview_DownloadOverview_links();
+
 }

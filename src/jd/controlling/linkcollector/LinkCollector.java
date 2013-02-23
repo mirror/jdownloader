@@ -14,7 +14,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 
 import jd.controlling.IOEQ;
@@ -72,7 +71,7 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
-public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler {
+public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler, ShutdownVetoListener {
 
     public static LinkCollector getInstance() {
         return INSTANCE;
@@ -114,76 +113,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private HashMap<String, java.util.List<CrawledLink>> hosterMap            = new HashMap<String, java.util.List<CrawledLink>>();
     private HashMap<Object, Object>                      autoRenameCache;
     private DelayedRunnable                              asyncCacheCleanup;
-    private final AtomicInteger                          shutdownRequests     = new AtomicInteger(0);
+
     private boolean                                      restoreButtonEnabled = false;
 
     private LinkCollector() {
         autoRenameCache = new HashMap<Object, Object>();
-        ShutdownController.getInstance().addShutdownVetoListener(new ShutdownVetoListener() {
+        ShutdownController.getInstance().addShutdownVetoListener(this);
 
-            @Override
-            public void onShutdownVeto(ShutdownVetoException[] vetos) {
-                for (ShutdownVetoException ex : vetos) {
-                    if (this == ex.getSource()) return;
-                }
-                /*
-                 * none of the exceptions belong to us, so we can decrement the shutdownRequests
-                 */
-                shutdownRequests.decrementAndGet();
-            }
-
-            @Override
-            public void onShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
-                if (vetos.length > 0) {
-                    /* we already abort shutdown, no need to ask again */
-                    /*
-                     * we need this ShutdownVetoException here to avoid count issues with shutdownRequests
-                     */
-                    throw new ShutdownVetoException("Shutdown already cancelled!", this);
-                }
-                synchronized (shutdownRequests) {
-                    if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) {
-                        try {
-                            NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.LinkCollector_onShutdownRequest_(), _JDT._.LinkCollector_onShutdownRequest_msg(), NewTheme.I().getIcon("linkgrabber", 32), _JDT._.literally_yes(), null);
-                            /* user allows to stop */
-                            shutdownRequests.incrementAndGet();
-                            return;
-                        } catch (DialogNoAnswerException e) {
-                            e.printStackTrace();
-                        }
-                        throw new ShutdownVetoException("LinkCollector is still running", this);
-                    }
-                    /* LinkChecker/Collector not running */
-                    shutdownRequests.incrementAndGet();
-                }
-            }
-
-            @Override
-            public void onShutdown(boolean silent) {
-            }
-
-            @Override
-            public void onSilentShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
-                if (vetos.length > 0) {
-                    /* we already abort shutdown, no need to ask again */
-                    /*
-                     * we need this ShutdownVetoException here to avoid count issues with shutdownRequests
-                     */
-                    throw new ShutdownVetoException("Shutdown already cancelled!", this);
-                }
-                synchronized (shutdownRequests) {
-                    if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) { throw new ShutdownVetoException("LinkCollector is still running", this); }
-                    /* LinkChecker/Collector not running */
-                    shutdownRequests.incrementAndGet();
-                }
-            }
-
-            @Override
-            public long getShutdownVetoPriority() {
-                return 0;
-            }
-
-        });
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
@@ -629,8 +565,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public LinkCrawler addCrawlerJob(final java.util.List<CrawledLink> links) {
         if (links == null || links.size() == 0) throw new IllegalArgumentException("no links");
         lazyInit();
-        synchronized (shutdownRequests) {
-            if (shutdownRequests.get() > 0) return null;
+        synchronized (shutdownLock) {
+            if (ShutdownController.getInstance().isShutDownRequested()) return null;
             final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
                 @Override
                 protected void generalCrawledLinkModifier(CrawledLink link) {
@@ -696,8 +632,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         try {
             if (job == null) throw new IllegalArgumentException("job is null");
             lazyInit();
-            synchronized (shutdownRequests) {
-                if (shutdownRequests.get() > 0) return null;
+            synchronized (shutdownLock) {
+                if (ShutdownController.getInstance().isShutDownRequested()) return null;
                 final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
                     private LinkCollectingInformation collectingInfo = new LinkCollectingInformation(this, linkChecker);
 
@@ -1487,6 +1423,62 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     @Override
     protected void _controllerPackageNodeStructureChanged(CrawledPackage pkg, QueuePriority priority) {
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_CONTENT, pkg, priority));
+    }
+
+    @Override
+    public void onShutdown(boolean silent) {
+    }
+
+    @Override
+    public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
+    }
+
+    private Object shutdownLock = new Object();
+
+    @Override
+    public void onShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
+        if (vetos.length > 0) {
+            /* we already abort shutdown, no need to ask again */
+            /*
+             * we need this ShutdownVetoException here to avoid count issues with shutdownRequests
+             */
+            throw new ShutdownVetoException("Shutdown already cancelled!", this);
+        }
+        synchronized (shutdownLock) {
+
+            if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) {
+                try {
+                    NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.LinkCollector_onShutdownRequest_(), _JDT._.LinkCollector_onShutdownRequest_msg(), NewTheme.I().getIcon("linkgrabber", 32), _JDT._.literally_yes(), null);
+
+                    return;
+                } catch (DialogNoAnswerException e) {
+                    e.printStackTrace();
+                }
+                throw new ShutdownVetoException("LinkCollector is still running", this);
+            }
+
+        }
+    }
+
+    @Override
+    public void onSilentShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
+
+        if (vetos.length > 0) {
+            /* we already abort shutdown, no need to ask again */
+            /*
+             * we need this ShutdownVetoException here to avoid count issues with shutdownRequests
+             */
+            throw new ShutdownVetoException("Shutdown already cancelled!", this);
+        }
+        synchronized (shutdownLock) {
+            if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) { throw new ShutdownVetoException("LinkCollector is still running", this); }
+
+        }
+    }
+
+    @Override
+    public long getShutdownVetoPriority() {
+        return 0;
     }
 
 }

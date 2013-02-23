@@ -22,13 +22,19 @@ public class ParallelDownloadsPerHostEditor extends MenuEditor {
     private JLabel            lbl;
 
     public ParallelDownloadsPerHostEditor() {
-        super();
-        setLayout(new MigLayout("ins 2", "6[grow,fill][][]", "[grow,fill]"));
+        this(false);
+    }
+
+    public ParallelDownloadsPerHostEditor(boolean b) {
+        super(b);
+        setLayout(new MigLayout("ins 0", "6[grow,fill][][]", "[grow,fill]"));
 
         lbl = getLbl(_GUI._.ParalellDownloadsEditor_ParallelDownloadsPerHostEditor_(), NewTheme.I().getIcon("batch", 18));
         spinner = new ExtSpinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST));
+
         add(lbl);
         add(new ExtCheckBox(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED, lbl, spinner), "width 20!");
-        add(spinner, "height 22!,width 90!");
+        add(spinner, "width 90!,height 20!");
     }
+
 }
