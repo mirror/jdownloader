@@ -19,8 +19,6 @@ package jd.gui.swing.jdgui.menu.actions.sendlogs;
 import java.io.File;
 import java.io.IOException;
 
-import jd.Launcher;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.sendlogs.AbstractLogAction;
@@ -46,13 +44,13 @@ public class LogAction extends AbstractLogAction {
     }
 
     @Override
-    protected void onNewPackage(File zip) throws IOException {
+    protected void onNewPackage(File zip, String name) throws IOException {
         try {
             if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
             id = JD_SERV_CONSTANTS.CLIENT.create(UploadInterface.class).upload(IO.readFile(zip), "", id);
             if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
 
-            Dialog.getInstance().showInputDialog(0, _GUI._.LogAction_actionPerformed_givelogid_(), "jdlog://" + id);
+            Dialog.getInstance().showInputDialog(0, _GUI._.LogAction_actionPerformed_givelogid_(), name + " jdlog://" + id + "/");
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {
@@ -69,7 +67,8 @@ public class LogAction extends AbstractLogAction {
 
     @Override
     protected boolean isCurrentLogFolder(long timestamp) {
-        return Launcher.startup == timestamp;
+        long startup = LogController.getInstance().getInitTime();
+        return startup == timestamp;
     }
 
 }

@@ -345,6 +345,15 @@ public class Launcher {
 
             @Override
             public void publish(LogRecord record) {
+
+                LogSource ret = LogController.getInstance().getPreviousThreadLogSource();
+
+                if (ret != null) {
+
+                    record.setMessage("Utils>" + record.getMessage());
+                    ret.log(record);
+                    return;
+                }
                 LogSource logger = LogController.getRebirthLogger();
                 if (logger == null) logger = oldLogger;
                 logger.log(record);
@@ -358,6 +367,7 @@ public class Launcher {
             public void close() throws SecurityException {
             }
         });
+
         Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
 
             @Override
