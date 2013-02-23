@@ -191,6 +191,22 @@ public class ReloadCc extends PluginForHost {
 
         }
 
+        try {
+            String limitsJSON = new Regex(info, ".*\"connection_limits\": \\{([^\\}]*)\\}.*").getMatch(0);
+            Regex connLimits = new Regex(limitsJSON, "\"([a-zA-Z0-9\\.\\-]+)\":[ ]*([0-9\\-]*)");
+
+            HashMap<String, Integer> limits = new HashMap<String, Integer>();
+
+            for (int i = 0; i < connLimits.count(); i++) {
+                logger.info("Reload connection limit: " + connLimits.getRow(i)[0] + ": " + connLimits.getRow(i)[1]);
+                limits.put(connLimits.getRow(i)[0], Integer.parseInt(connLimits.getRow(i)[1]));
+            }
+
+            ai.setProperty("connectionLimits", limits);
+        } catch (NullPointerException e) {
+
+        }
+
         return ai;
     }
 
@@ -198,7 +214,7 @@ public class ReloadCc extends PluginForHost {
         br = newBrowser();
         String ret = null;
         try {
-            ret = br.getPage("https://reload.cc/api/login?via=jd&v=1&get_supported=true&user=" + Encoding.urlEncode(account.getUser()) + "&" + getPasswordParam(account));
+            ret = br.getPage("https://reload.cc/api/login?via=jd&v=1&get_supported=true&get_connection_limits=1&user=" + Encoding.urlEncode(account.getUser()) + "&" + getPasswordParam(account));
         } catch (BrowserException e) {
             handleAPIErrors(br, account, null, null);
         } catch (ConnectException e) {
@@ -307,5 +323,26 @@ public class ReloadCc extends PluginForHost {
             /* wait 30 mins to retry this host */
             unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
+    }
+
+    @Override
+    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+        if (account == null || account.getAccountInfo() == null) {
+            logger.info("Could not get max connections limit for " + link.getHost() + ": AccountInfo is empty.");
+            return super.getMaxSimultanDownload(link, account);
+        }
+
+        @SuppressWarnings("unchecked")
+        HashMap<String, Integer> limits = (HashMap<String, Integer>) account.getAccountInfo().getProperty("connectionLimits");
+        if (limits != null) {
+            logger.info("Trying to get max connection limit for " + link.getHost());
+            Integer connections = limits.get(link.getHost());
+            logger.info("Limit is: " + connections);
+            if (connections != null && connections != -1) return connections;
+        } else {
+            logger.info("Could not get max connections limit for " + link.getHost() + ": ConnectionLimits info for account is empty.");
+        }
+
+        return super.getMaxSimultanDownload(link, account);
     }
 }
