@@ -25,7 +25,7 @@ public class ReloadCc extends PluginForHost {
 
     public ReloadCc(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://reload.cc/premium");
+        this.enablePremium("https://reload.cc/premium");
     }
 
     private void showMessage(DownloadLink link, String message) {
@@ -116,7 +116,7 @@ public class ReloadCc extends PluginForHost {
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
         try {
-            br.getPage("http://api.reload.cc/dl?via=jd&v=1&user=" + Encoding.urlEncode(account.getUser()) + "&" + getPasswordParam(account) + "&uri=" + Encoding.urlEncode(link.getDownloadURL()));
+            br.getPage("https://reload.cc/api/dl?via=jd&v=1&user=" + Encoding.urlEncode(account.getUser()) + "&" + getPasswordParam(account) + "&uri=" + Encoding.urlEncode(link.getDownloadURL()));
         } catch (BrowserException e) {
             handleAPIErrors(br, account, link, null);
         }
@@ -198,7 +198,7 @@ public class ReloadCc extends PluginForHost {
         br = newBrowser();
         String ret = null;
         try {
-            ret = br.getPage("http://api.reload.cc/login?via=jd&v=1&get_supported=true&user=" + Encoding.urlEncode(account.getUser()) + "&" + getPasswordParam(account));
+            ret = br.getPage("https://reload.cc/api/login?via=jd&v=1&get_supported=true&user=" + Encoding.urlEncode(account.getUser()) + "&" + getPasswordParam(account));
         } catch (BrowserException e) {
             handleAPIErrors(br, account, null, null);
         } catch (ConnectException e) {
@@ -273,6 +273,10 @@ public class ReloadCc extends PluginForHost {
                 if (statusMessage == null) statusMessage = "Hoster currently not possible";
                 tempUnavailableHoster(account, downloadLink, 30 * 60 * 1000);
                 return false;
+            case 429:
+                /* Too many connections */
+                if (statusMessage == null) statusMessage = "Too many concurrent connections";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 2 * 60 * 1000l);
             case 503:
                 /* temp multihoster issue, maintenance period, block host for 10 mins */
                 if (statusMessage == null) statusMessage = "Hoster temporarily not possible";
