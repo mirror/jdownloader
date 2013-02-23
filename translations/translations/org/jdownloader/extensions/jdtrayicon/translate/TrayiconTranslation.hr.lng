@@ -1,7 +1,7 @@
 JDGui_windowClosing_try_answer_totaskbar=Minimiziraj u traku
 JDGui_windowClosing_try_answer_tray=Sakrij u traku
 JDGui_windowClosing_try_asnwer_close=Izlaz iz JDownloader-a
-JDGui_windowClosing_try_msg_2=Molimo odaberite između  -Izlaz iz JDownloader-a (prekid svih tekućih zadataka)  -Minimiziraj u traku (Preuzimanja će se nastaviti)  -Sakrij u traku (Preuzimanja će se nastaviti u pozadini)
+JDGui_windowClosing_try_msg_2=Molimo odaberite između\r\n   -Izlaz iz JDownloader-a (prekid svih tekućih zadataka)\r\n   -Minimiziraj u traku (Preuzimanja će se nastaviti)\r\n   -Sakrij u traku (Preuzimanja će se nastaviti u pozadini)
 JDGui_windowClosing_try_title_=Spusti u traku
 OnCloseAction_exit=Izlaz iz aplikacije
 OnCloseAction_totaskbar=Minimiziraj u traku
@@ -10,7 +10,7 @@ OnMinimizeAction_ask=Pitaj me
 OnMinimizeAction_totaskbar=Minimiziraj u traku
 OnMinimizeAction_totray=Spusti u traku
 jd_plugins_optional_jdtrayicon_jdlighttray=Light Tray
-jd_plugins_optional_jdtrayicon_jdlighttray_description=Omogućuje smanjivanje ili zatvaranje JDownloader-a u područje obavijesti i srodne značajke kao što su zaštita lozinkom ili drugo.
+jd_plugins_optional_jdtrayicon_jdlighttray_description=Omogućuje smanjivanje ili zatvaranje JDownloader-a u područje\r\nobavijesti i srodne značajke kao što su zaštita lozinkom ili drugo.
 plugins_optional_JDLightTray_always=Uvijek
 plugins_optional_JDLightTray_closetotray2=Klik na 'Zatvori'
 plugins_optional_JDLightTray_linkgrabberresults=Glavni okvir na vrhu ako postoje novi uhvaćeni linkovi
