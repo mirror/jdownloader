@@ -39,7 +39,7 @@ public class JDAnywhereConfigPanel extends ExtensionConfigPanel<JDAnywhereExtens
 
     @Override
     public void save() {
-        showRestartRequiredMessage();
+        // showRestartRequiredMessage();
     }
 
     @Override

@@ -47,7 +47,10 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
     public CrawledPackageStorable getCrawledPackage(long crawledPackageID) {
         CrawledPackage cpkg = getCrawledPackageFromID(crawledPackageID);
         CrawledPackageStorable pkg = new CrawledPackageStorable(cpkg);
-        List<CrawledLinkStoreable> links = new ArrayList<CrawledLinkStoreable>(0);
+        List<CrawledLinkStoreable> links = new ArrayList<CrawledLinkStoreable>(cpkg.getChildren().size());
+        for (CrawledLink link : cpkg.getChildren()) {
+            links.add(new CrawledLinkStoreable(link));
+        }
         pkg.setLinks(links);
         return pkg;
     }
