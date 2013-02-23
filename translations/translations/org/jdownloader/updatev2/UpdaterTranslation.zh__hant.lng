@@ -1,6 +1,7 @@
 confirmdialog_new_update_available_answer_now=立刻下載
 confirmdialog_new_update_available_answer_now_install=立刻安裝
 confirmdialog_new_update_available_frametitle=有可用的更新
+error_last_chance_connection_message=JDownloader 無法連接到網際網路。\r\n請確保正確設定了您的防火牆、防毒軟體和代理！\r\n如果您不能解決這個問題，聯絡我們的技術支援。
 error_last_chance_title=更新錯誤！
 guiless_you_are_up2date=您已經擁有最新版本
 installframe_statusmsg_download=下載更新...
