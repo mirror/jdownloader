@@ -281,14 +281,16 @@ public class VideoFCTwoCom extends PluginForHost {
     }
 
     private String getKey() {
-        String evalString = br.getRegex("eval(\\(f.*?)[\r\n]+").getMatch(0);
-        if (evalString == null) return null;
+        String javaScript = br.getRegex("eval(\\(f.*?)[\r\n]+").getMatch(0);
+        if (javaScript == null) javaScript = br.getRegex("(var __[0-9a-zA-Z]+ = \'undefined\'.*?\\})[\r\n]+\\-\\->").getMatch(0);
+        if (javaScript == null) return null;
         Object result = new Object();
         ScriptEngineManager manager = new ScriptEngineManager();
         ScriptEngine engine = manager.getEngineByName("javascript");
         Invocable inv = (Invocable) engine;
         try {
-            engine.eval(engine.eval(evalString).toString());
+            if (!javaScript.startsWith("var")) engine.eval(engine.eval(javaScript).toString());
+            engine.eval(javaScript);
             engine.eval("var window = new Object();");
             result = inv.invokeFunction("getKey");
         } catch (Throwable e) {
