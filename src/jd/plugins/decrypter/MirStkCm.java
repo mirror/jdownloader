@@ -28,29 +28,39 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "https?://(www\\.)?(mirrorstack\\.com/([a-z0-9]{1,2}_)?[a-z0-9]{12}|(multishared\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com/([a-z0-9]{2}_)?[a-z0-9]{12}))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "https?://(www\\.)?(multishared\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com|mirrorstack\\.com)/([a-z0-9]{12}|[a-z0-9]{2}_[a-z0-9]{12})" }, flags = { 0 })
 public class MirStkCm extends PluginForDecrypt {
 
     /*
-     * TODO many sites are using this type of script. Rename this plugin into general/template type plugin naming scheme (find the name of
-     * the script and rename). Do this after next major update, when we can delete plugins again.
+     * TODO many sites are using this type of script. Rename this plugin into
+     * general/template type plugin naming scheme (find the name of the script
+     * and rename). Do this after next major update, when we can delete plugins
+     * again.
      */
 
     /*
-     * DEV NOTES: (mirrorshack) - provider has issues at times, and doesn't unhash stored data values before exporting them into redirects.
-     * I've noticed this with mediafire links for example http://mirrorstack.com/mf_dbfzhyf2hnxm will at times return
-     * http://www.mediafire.com/?HASH(0x15053b48), you can then reload a couple times and it will work in jd.. provider problem not plugin.
-     * Other example links I've used seem to work fine. - Please keep code generic as possible.
+     * DEV NOTES: (mirrorshack) - provider has issues at times, and doesn't
+     * unhash stored data values before exporting them into redirects. I've
+     * noticed this with mediafire links for example
+     * http://mirrorstack.com/mf_dbfzhyf2hnxm will at times return
+     * http://www.mediafire.com/?HASH(0x15053b48), you can then reload a couple
+     * times and it will work in jd.. provider problem not plugin. Other example
+     * links I've used seem to work fine. - Please keep code generic as
+     * possible.
      * 
-     * Don't use package name as these type of link protection services export a list of hoster urls of a single file. When one imports many
-     * links (parts), JD loads many instances of the decrypter and each url/parameter/instance gets a separate packagename and that sucks.
-     * It's best to use linkgrabbers default auto packagename sorting.
+     * Don't use package name as these type of link protection services export a
+     * list of hoster urls of a single file. When one imports many links
+     * (parts), JD loads many instances of the decrypter and each
+     * url/parameter/instance gets a separate packagename and that sucks. It's
+     * best to use linkgrabbers default auto packagename sorting.
      */
 
     // 16/12/2012
     // mirrorstack.com = up, multiple pages deep, requiring custom r_counter
-    // uploading.to = down/sudoparked = 173.192.223.71-static.reverse.softlayer.com
-    // copyload.com = down/sudoparked = 208.43.167.115-static.reverse.softlayer.com
+    // uploading.to = down/sudoparked =
+    // 173.192.223.71-static.reverse.softlayer.com
+    // copyload.com = down/sudoparked =
+    // 208.43.167.115-static.reverse.softlayer.com
     // multishared.com = up, custom fields for singleLinks && finallinks
     // onmirror.com = up, finallink are redirects on first singleLink page
     // multiupload.biz = up, multiple pages deep, with waits on last page
@@ -71,7 +81,8 @@ public class MirStkCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        // Easier to set redirects on and off than to define every provider. It also creates less maintenance if provider changes things up.
+        // Easier to set redirects on and off than to define every provider. It
+        // also creates less maintenance if provider changes things up.
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">(File )?Not Found</")) {
@@ -99,23 +110,29 @@ public class MirStkCm extends PluginForDecrypt {
             logger.warning("Couldn't find singleLinks... :" + parameter);
             return null;
         }
-        // make sites with long waits return back into the script making it multi-threaded, otherwise singleLinks * results = long time.
+        // make sites with long waits return back into the script making it
+        // multi-threaded, otherwise singleLinks * results = long time.
         if (singleLinks.length > 1 && parameter.matches(".+(multiupload\\.biz)/.+")) {
             for (String singleLink : singleLinks) {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
         } else {
-            // Process links found. Each provider has a slightly different requirement and outcome
+            // Process links found. Each provider has a slightly different
+            // requirement and outcome
             for (String singleLink : singleLinks) {
                 String finallink = null;
                 if (!singleLink.matches(regexSingleLink)) {
                     finallink = singleLink;
                 }
-                Browser brc = br.cloneBrowser();
+                final Browser brc = br.cloneBrowser();
                 if (finallink == null) {
                     brc.getPage(singleLink);
                     if (parameter.matches(".+(multishared\\.com)/.+")) {
-                        finallink = brc.getRegex("<frame src=\"(http[^\"]+)").getMatch(0);
+                        br.getPage(singleLink);
+                        brc.getHeaders().put("Referer", "http://multishared.com/r_counter");
+                        Thread.sleep(5 * 1000);
+                        brc.getPage(singleLink);
+                        finallink = brc.getRegex("http://multishared\\.com/r_ads\\'>[\t\n\r ]+<frame src=\"(http[^<>\"]*?)\"").getMatch(0);
                     } else {
                         finallink = brc.getRedirectLocation();
                         if (finallink == null) {
@@ -136,15 +153,15 @@ public class MirStkCm extends PluginForDecrypt {
                             Thread.sleep(wait * 1000);
                             brc.getPage(singleLink + add_char);
                             finallink = brc.getRedirectLocation();
-                            if (finallink == null) {
-                                logger.warning("WARNING: Couldn't find finallink. Please report this issue to JD Developement team. : " + parameter);
-                                logger.warning("Continuing...");
-                                continue;
-                            }
+                        }
+                        if (finallink == null) {
+                            logger.warning("WARNING: Couldn't find finallink. Please report this issue to JD Developement team. : " + parameter);
+                            logger.warning("Continuing...");
+                            continue;
                         }
                     }
                 }
-                DownloadLink link = createDownloadlink(finallink);
+                final DownloadLink link = createDownloadlink(finallink);
                 decryptedLinks.add(link);
                 try {
                     distribute(link);
@@ -156,7 +173,8 @@ public class MirStkCm extends PluginForDecrypt {
     }
 
     /**
-     * just some code for mirrorstack.com which might be useful if mirrorstack or other sites remove singleLinks from source!
+     * just some code for mirrorstack.com which might be useful if mirrorstack
+     * or other sites remove singleLinks from source!
      * 
      * @param parameter
      * @param singleLinks

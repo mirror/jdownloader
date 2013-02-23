@@ -61,6 +61,7 @@ public class ShareFlareNet extends PluginForHost {
     private static final String  APIKEY                            = "VjR1U3JGUkNx";
     private static final String  APIPAGE                           = "http://api.letitbit.net/";
     private static final String  TEMPDISABLED                      = "class=\"wrapper\\-centered\">Code from picture<";
+    private static String        agent                             = null;
 
     public ShareFlareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -88,6 +89,7 @@ public class ShareFlareNet extends PluginForHost {
         if (urls == null || urls.length == 0) { return false; }
         try {
             final Browser br = new Browser();
+            prepBrowser(br);
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -215,6 +217,7 @@ public class ShareFlareNet extends PluginForHost {
             // Load cookies
             try {
                 this.setBrowserExclusive();
+                prepBrowser(br);
                 br.setCustomCharset("UTF-8");
                 br.setCookie(COOKIE_HOST, "lang", "en");
                 final Object ret = account.getProperty("cookies", null);
@@ -322,6 +325,7 @@ public class ShareFlareNet extends PluginForHost {
     }
 
     private String handleFreeFallback(final DownloadLink downloadLink) throws Exception {
+        prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
@@ -447,6 +451,7 @@ public class ShareFlareNet extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         String dlUrl = null;
         if (account.getUser() == null || account.getUser().trim().length() == 0) {
+            prepBrowser(br);
             br.postPage(APIPAGE, "r=[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/direct_links\",{\"link\":\"" + downloadLink.getDownloadURL() + "\",\"pass\":\"" + account.getPass() + "\"}]]");
             if (br.containsHTML("data\":\"bad password\"")) {
                 logger.info("Wrong password, disabling the account!");
@@ -478,6 +483,7 @@ public class ShareFlareNet extends PluginForHost {
     // NOTE: Old, tested 15.11.12, works!
     private String handleOldPremiumPassWay(final Account account, final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
+        prepBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
         handleNonApiErrors(downloadLink);
@@ -573,6 +579,21 @@ public class ShareFlareNet extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Content-Length", "0");
         br.setCustomCharset("utf-8");
+    }
+
+    private Browser prepBrowser(Browser prepBr) {
+        // define custom browser headers and language settings.
+        if (prepBr == null) prepBr = new Browser();
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        prepBr.getHeaders().put("User-Agent", agent);
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        prepBr.setCustomCharset("UTF-8");
+        prepBr.setCookie(COOKIE_HOST, "lang", "en");
+        return prepBr;
     }
 
 }

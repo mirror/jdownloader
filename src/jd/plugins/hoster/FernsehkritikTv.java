@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -25,7 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv" }, urls = { "http://fernsehkritik\\.tv/jdownloaderfolge\\d+(\\-\\d)?\\.flv" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv" }, urls = { "http://fernsehkritik\\.tv/(jdownloaderfolge\\d+(\\-\\d)?\\.flv|inline\\-video/postecke\\.php\\?iframe=true\\&width=\\d+\\&height=\\d+\\&ep=\\d+)" }, flags = { 0 })
 public class FernsehkritikTv extends PluginForHost {
 
     // Refactored on the 02.07.2011, Rev. 14521,
@@ -44,26 +45,56 @@ public class FernsehkritikTv extends PluginForHost {
         return -1;
     }
 
+    private static final String POSTECKE = "http://fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?iframe=true\\&width=\\d+\\&height=\\d+\\&ep=\\d+";
+    private String              DLLINK   = null;
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        if (downloadLink.getDownloadURL().matches(POSTECKE)) {
+            final String episodenumber = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            br.getPage("http://fernsehkritik.tv/folge-" + episodenumber + "/Start/");
+            final String date = br.getRegex("var flattr_tle = \\'Fernsehkritik\\-TV Folge \\d+ vom(.*?)\\'").getMatch(0);
+            if (date == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(downloadLink.getDownloadURL());
+            DLLINK = br.getRegex("playlist = \\[ \\{ url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("\\'(http://dl\\d+\\.fernsehkritik\\.tv/postecke/postecke\\d+\\.flv)\\'").getMatch(0);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(DLLINK);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    downloadLink.setFinalFileName("Fernsehkritik-TV Postecke " + episodenumber + " vom " + date + ".flv");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        br.getPage("http://fernsehkritik.tv/js/directme.php?file=" + new Regex(downloadLink.getDownloadURL(), "fernsehkritik\\.tv/jdownloaderfolge(.+)").getMatch(0));
-        String finallink = br.getRedirectLocation();
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!downloadLink.getDownloadURL().matches(POSTECKE)) {
+            br.getPage("http://fernsehkritik.tv/js/directme.php?file=" + new Regex(downloadLink.getDownloadURL(), "fernsehkritik\\.tv/jdownloaderfolge(.+)").getMatch(0));
+            DLLINK = br.getRedirectLocation();
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // More chunks work but download will stop at random point then
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        return AvailableStatus.TRUE;
     }
 
     @Override

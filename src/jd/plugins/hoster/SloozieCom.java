@@ -57,7 +57,10 @@ public class SloozieCom extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(PICLINK)) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("").getMatch(0);
-            DLLINK = br.getRegex("title=\"Show full size\"></div><img src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            // Try to get better quality first
+            DLLINK = br.getRegex("id=\"imgMGZoom\" style=\"visibility: visible\"><a rel=\"shadowbox;options=\\{displayNav:true\\}\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            // Nothing found? Grab normal quality
+            if (DLLINK == null) DLLINK = br.getRegex("title=\"Show full size\"></div><img src=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DLLINK = Encoding.htmlDecode(DLLINK);
             filename = filename.trim();
@@ -114,7 +117,8 @@ public class SloozieCom extends PluginForHost {
             setupRTMPConnection(stream, dl);
             ((RTMPDownload) dl).startDownload();
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+            // Don't allow chunks for picture download
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

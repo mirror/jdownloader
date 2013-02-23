@@ -180,10 +180,6 @@ public class FreeWayMe extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(">Es ist ein unbekannter Fehler aufgetreten")) {
-                if (link.getLinkStatus().getRetryCount() >= 2) throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown error");
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error -> Retry");
-            }
             String error = "";
             try {
                 error = (new Regex(br.toString(), "<p id=\\'error\\'>([^<]*)</p>")).getMatch(0);
@@ -205,15 +201,15 @@ public class FreeWayMe extends PluginForHost {
                 tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Diese Datei wurde nicht gefunden.")) {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
-            } else if (error.equalsIgnoreCase("Es ist ein unbekannter Fehler aufgetreten")) {
+            } else if (error.equalsIgnoreCase("Unbekannter Fehler #2")) {
                 /*
                  * after x retries we disable this host and retry with normal
                  * plugin
                  */
-                if (link.getLinkStatus().getRetryCount() >= 3) {
+                if (link.getLinkStatus().getRetryCount() >= 2) {
                     /* reset retrycounter */
                     link.getLinkStatus().setRetryCount(0);
-                    tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
+                    tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
                 }
                 String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error: Retry in few secs" + msg, 20 * 1000l);

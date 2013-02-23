@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -37,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "makinamania.com" }, urls = { "http://(www\\.)?makinamania\\.com/(download/|descargar\\-).+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "makinamania.com" }, urls = { "http://(www\\.)?makinamania\\.com/((download/|descargar\\-).+|index\\.php\\?action=dlattach;topic=\\d+\\.0;attach=\\d+)" }, flags = { 2 })
 public class MakinaManiaCom extends PluginForHost {
 
     public MakinaManiaCom(PluginWrapper wrapper) {
@@ -50,37 +51,66 @@ public class MakinaManiaCom extends PluginForHost {
         return "http://www.makinamania.com/";
     }
 
-    private static final String MAINPAGE = "http://makinamania.com";
-    private static Object       LOCK     = new Object();
-    private static final String NOCHUNKS = "NOCHUNKS";
+    private static final String MAINPAGE         = "http://makinamania.com";
+    private static Object       LOCK             = new Object();
+    private static final String NOCHUNKS         = "NOCHUNKS";
+    private static final String ATTACHEDFILELINK = "http://(www\\.)?makinamania\\.com/index\\.php\\?action=dlattach;topic=\\d+\\.0;attach=\\d+";
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("descargas-busca=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        String filesize = br.getRegex("\\&nbsp;\\&nbsp;Tamaño: ([^<>\"]*?)<br").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (link.getDownloadURL().matches(ATTACHEDFILELINK)) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(link.getDownloadURL());
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        } else {
+            br.getPage(link.getDownloadURL());
+            if (br.getURL().contains("descargas-busca=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            String filesize = br.getRegex("\\&nbsp;\\&nbsp;Tamaño: ([^<>\"]*?)<br").getMatch(0);
+            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setName(Encoding.htmlDecode(filename.trim()));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+        if (downloadLink.getDownloadURL().matches(ATTACHEDFILELINK)) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } else {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available for Premium Members");
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available for Premium Members");
     }
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
