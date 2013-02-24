@@ -37,7 +37,6 @@ import javax.sound.sampled.FloatControl;
 import javax.swing.JComponent;
 
 import jd.Launcher;
-import jd.controlling.captcha.CaptchaResult;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.storage.config.JsonConfig;
@@ -56,7 +55,7 @@ import org.jdownloader.settings.SoundSettings;
 /**
  * This Dialog is used to display a Inputdialog for the captchas
  */
-public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListener, WindowListener, MouseListener {
+public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListener, WindowListener, MouseListener, CaptchaDialogInterface {
 
     private ExtTextField textField;
 
@@ -68,7 +67,7 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
             JsonConfig.create(SoundSettings.class).setCaptchaSoundVolume(100);
             // getGifImages(new
             // File("C:/Users/Thomas/.BuildServ/applications/beta/sources/JDownloader/src/org/jdownloader/extensions/webinterface/webinterface/themes/main/images/core/load.gif").toURI().toURL())
-            cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), ImageProvider.read(new File("C:\\Users\\Thomas\\.jd_home\\captchas\\rusfolder.ru_10.07.2012_11.36.41.860.png")), null, "Enter both words...");
+            cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), ImageProvider.read(new File("C:\\Users\\Thomas\\.jd_home\\captchas\\rusfolder.ru_10.07.2012_11.36.41.860.png")), "Enter both words...");
 
             LookAndFeelController.getInstance().setUIManager();
 
@@ -84,12 +83,12 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
         }
     }
 
-    public CaptchaDialog(final int flag, DialogType type, final DomainInfo DomainInfo, final Image image, final CaptchaResult defaultValue, final String explain) {
-        this(flag, type, DomainInfo, new Image[] { image }, defaultValue, explain);
+    public CaptchaDialog(final int flag, DialogType type, final DomainInfo DomainInfo, final Image image, final String explain) {
+        this(flag, type, DomainInfo, new Image[] { image }, explain);
     }
 
-    public CaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, Image[] images, CaptchaResult defaultValue, String explain) {
-        super(flag | Dialog.STYLE_HIDE_ICON, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, defaultValue, images);
+    public CaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, Image[] images, String explain) {
+        super(flag | Dialog.STYLE_HIDE_ICON, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
 
     }
 
@@ -154,18 +153,6 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
     }
 
     @Override
-    public CaptchaType getCaptchaType() {
-        return CaptchaType.TEXT;
-    }
-
-    @Override
-    public CaptchaResult getCaptchaResult() {
-
-        return new CaptchaResult(textField.getText());
-
-    }
-
-    @Override
     protected JComponent createInputComponent() {
 
         this.textField = new ExtTextField() {
@@ -184,12 +171,17 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
 
         textField.setClearHelpTextOnFocus(false);
         textField.setHelpText(getHelpText());
-        if (getDefaultValue() != null) this.textField.setText(getDefaultValue().getCaptchaText());
+
         this.textField.requestFocusInWindow();
         this.textField.selectAll();
         // panel.add(new JLabel("HJ dsf"));
 
         return textField;
+    }
+
+    @Override
+    public String getResult() {
+        return textField.getText();
     }
 
 }

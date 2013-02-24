@@ -31,8 +31,6 @@ import jd.PluginWrapper;
 import jd.captcha.JACMethod;
 import jd.config.SubConfiguration;
 import jd.controlling.IOPermission;
-import jd.controlling.captcha.CaptchaController;
-import jd.controlling.captcha.CaptchaResult;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.nutils.Formatter;
@@ -49,6 +47,8 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -151,7 +151,7 @@ public abstract class PluginForHost extends Plugin {
         return getCaptchaCode(methodname, captchaFile, 0, downloadLink, null, null);
     }
 
-    protected String getCaptchaCode(final String method, final File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws PluginException {
+    protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws PluginException {
         final LinkStatus linkStatus = link.getLinkStatus();
         final String status = linkStatus.getStatusText();
         int latest = linkStatus.getLatestStatus();
@@ -164,17 +164,16 @@ public abstract class PluginForHost extends Plugin {
             } catch (Throwable e) {
                 e.printStackTrace();
             }
-            CaptchaResult suggest = new CaptchaResult();
-            suggest.setCaptchaText(defaultValue);
-            ArrayList<File> captchaFiles = new ArrayList<File>();
+
             String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
             if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
-                captchaFiles.add(new File(orgCaptchaImage));
+                file = new File(orgCaptchaImage);
             }
-            captchaFiles.add(file);
-            final CaptchaResult cc = new CaptchaController(ioPermission, method, captchaFiles, suggest, explain, this).getCode(flag);
-            if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            return cc.getCaptchaText();
+            BasicCaptchaChallenge c = new BasicCaptchaChallenge(ioPermission, method, file, defaultValue, explain, this, flag);
+            ChallengeResponseController.getInstance().handle(c);
+
+            if (!c.isSolved()) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            return c.getResult();
         } finally {
             linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
             linkStatus.addStatus(latest);
@@ -286,7 +285,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList zurueckgeliefert
+     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList
+     * zurueckgeliefert
      * 
      * @param data
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
@@ -332,7 +332,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /*
-     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have one!
+     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have
+     * one!
      */
     public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
@@ -498,8 +499,8 @@ public abstract class PluginForHost extends Plugin {
          * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
          * 
-         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host does not equal link
-         * host!
+         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
+         * does not equal link host!
          * 
          * 
          * 
@@ -671,8 +672,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect this based on other
-     * downloadlinks
+     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect
+     * this based on other downloadlinks
      * 
      * @param cache
      *            TODO
@@ -768,7 +769,8 @@ public abstract class PluginForHost extends Plugin {
                     /* no prototypesplit available yet, create new one */
                     if (pattern != null) {
                         /*
-                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with same filename
+                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with
+                         * same filename
                          */
                         prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
                     } else {

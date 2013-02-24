@@ -8,12 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import jd.controlling.IOPermission;
-import jd.controlling.captcha.CaptchaController;
+import jd.controlling.captcha.BasicCaptchaDialogQueueEntry;
 import jd.controlling.captcha.CaptchaDialogQueue;
-import jd.controlling.captcha.CaptchaDialogQueueEntry;
-import jd.controlling.captcha.CaptchaEventListener;
-import jd.controlling.captcha.CaptchaEventSender;
-import jd.controlling.captcha.CaptchaResult;
 
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.EventsAPIEvent;
@@ -27,17 +23,21 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.Base64OutputStream;
 import org.appwork.utils.net.httpserver.responses.FileResponse;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.SolverJob;
 
-public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
+public class CaptchaAPIImpl implements CaptchaAPI, ChallengeSolver<Object> {
 
     public CaptchaAPIImpl() {
-        CaptchaEventSender.getInstance().addListener(this);
+
+        ChallengeResponseController.getInstance().addSolver(this);
     }
 
     public List<CaptchaJob> list() {
-        List<CaptchaDialogQueueEntry> entries = CaptchaDialogQueue.getInstance().getJobs();
+        List<BasicCaptchaDialogQueueEntry> entries = CaptchaDialogQueue.getInstance().getJobs();
         java.util.List<CaptchaJob> ret = new ArrayList<CaptchaJob>();
-        for (CaptchaDialogQueueEntry entry : entries) {
+        for (BasicCaptchaDialogQueueEntry entry : entries) {
             if (entry.isFinished()) continue;
             CaptchaJob job = new CaptchaJob();
             job.setType(entry.getCaptchaController().getCaptchaType());
@@ -49,7 +49,7 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
     }
 
     public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id, final boolean returnAsDataURL) {
-        CaptchaDialogQueueEntry captcha = CaptchaDialogQueue.getInstance().getCaptchabyID(id);
+        BasicCaptchaDialogQueueEntry captcha = CaptchaDialogQueue.getInstance().getCaptchabyID(id);
         if (captcha == null || captcha.getCaptchaFile() == null || !captcha.getCaptchaFile().exists()) { throw new RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
         try {
             if (returnAsDataURL) {
@@ -117,14 +117,14 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
     }
 
     public boolean solve(long id, CaptchaResult result) {
-        CaptchaDialogQueueEntry captcha = CaptchaDialogQueue.getInstance().getCaptchabyID(id);
+        BasicCaptchaDialogQueueEntry captcha = CaptchaDialogQueue.getInstance().getCaptchabyID(id);
         if (captcha == null) return false;
         captcha.setResponse(result);
         return true;
     }
 
     public boolean abort(long id, IOPermission.CAPTCHA what) {
-        CaptchaDialogQueueEntry captcha = CaptchaDialogQueue.getInstance().getCaptchabyID(id);
+        BasicCaptchaDialogQueueEntry captcha = CaptchaDialogQueue.getInstance().getCaptchabyID(id);
         if (captcha == null) return false;
         IOPermission io = captcha.getIOPermission();
         if (io != null) {
@@ -137,16 +137,16 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
         return true;
     }
 
-    public void captchaTodo(CaptchaController controller) {
+    public void captchaTodo(CaptchaHandler controller) {
         sendEvent(controller, "new");
     }
 
-    public void captchaFinish(CaptchaController controller) {
+    public void captchaFinish(CaptchaHandler controller) {
         sendEvent(controller, "expired");
     }
 
-    private void sendEvent(CaptchaController controller, String type) {
-        CaptchaDialogQueueEntry entry = controller.getDialog();
+    private void sendEvent(CaptchaHandler controller, String type) {
+        BasicCaptchaDialogQueueEntry entry = controller.getDialog();
         if (entry != null) {
             CaptchaJob job = new CaptchaJob();
             job.setType(entry.getCaptchaController().getCaptchaType());
@@ -158,6 +158,15 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
             RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("captcha", data), null);
         }
 
+    }
+
+    @Override
+    public void solve(SolverJob<Object> solverJob) {
+    }
+
+    @Override
+    public Class<Object> getResultType() {
+        return null;
     }
 
 }

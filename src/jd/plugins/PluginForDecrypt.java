@@ -26,8 +26,6 @@ import jd.captcha.easy.load.LoadImage;
 import jd.config.SubConfiguration;
 import jd.controlling.IOPermission;
 import jd.controlling.ProgressController;
-import jd.controlling.captcha.CaptchaController;
-import jd.controlling.captcha.CaptchaResult;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawlerAbort;
 import jd.controlling.linkcrawler.LinkCrawlerDistributer;
@@ -35,6 +33,8 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
@@ -154,8 +154,8 @@ public abstract class PluginForDecrypt extends Plugin {
     public abstract ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception;
 
     /**
-     * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen Vector<String> mit den decoded
-     * Links setzen
+     * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen
+     * Vector<String> mit den decoded Links setzen
      * 
      * @param cryptedLink
      *            Ein einzelner verschlüsselter Link
@@ -327,17 +327,18 @@ public abstract class PluginForDecrypt extends Plugin {
      * @throws DecrypterException
      */
     protected String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
-        CaptchaResult suggest = new CaptchaResult();
-        suggest.setCaptchaText(defaultValue);
+
         String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
-        ArrayList<File> captchaFiles = new ArrayList<File>();
+
         if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
-            captchaFiles.add(new File(orgCaptchaImage));
+            file = new File(orgCaptchaImage);
         }
-        captchaFiles.add(file);
-        CaptchaResult cc = new CaptchaController(ioPermission, method, captchaFiles, suggest, explain, this).getCode(flag);
-        if (cc == null) throw new DecrypterException(DecrypterException.CAPTCHA);
-        return cc.getCaptchaText();
+        BasicCaptchaChallenge c = new BasicCaptchaChallenge(ioPermission, method, file, defaultValue, explain, this, flag);
+        ChallengeResponseController.getInstance().handle(c);
+
+        if (!c.isSolved()) throw new DecrypterException(DecrypterException.CAPTCHA);
+        return c.getResult();
+
     }
 
     protected void setBrowserExclusive() {

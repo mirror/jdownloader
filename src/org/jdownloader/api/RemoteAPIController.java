@@ -6,7 +6,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.jdownloader.api.accounts.AccountAPIImpl;
-import org.jdownloader.api.captcha.CaptchaAPIImpl;
 import org.jdownloader.api.config.AdvancedConfigManagerAPIImpl;
 import org.jdownloader.api.content.ContentAPIImpl;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
@@ -67,7 +66,7 @@ public class RemoteAPIController {
             Log.exception(e);
             apiEnabled = false;
         }
-        register(new CaptchaAPIImpl());
+        // register(new CaptchaAPIImpl());
         register(new JDAPIImpl());
         register(new DownloadsAPIImpl());
         register(new AdvancedConfigManagerAPIImpl());

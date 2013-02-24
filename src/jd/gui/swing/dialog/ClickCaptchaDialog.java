@@ -27,7 +27,6 @@ import java.net.MalformedURLException;
 import javax.swing.JComponent;
 
 import jd.Launcher;
-import jd.controlling.captcha.CaptchaResult;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.components.ExtTextField;
@@ -36,12 +35,13 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.gui.translate._GUI;
 
 /**
  * This Dialog is used to display a Inputdialog for the captchas
  */
-public class ClickCaptchaDialog extends AbstractCaptchaDialog {
+public class ClickCaptchaDialog extends AbstractCaptchaDialog implements ClickCaptchaDialogInterface {
     public static void main(String[] args) {
         AbstractCaptchaDialog cp;
         try {
@@ -68,7 +68,7 @@ public class ClickCaptchaDialog extends AbstractCaptchaDialog {
     }
 
     public ClickCaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, Image[] images, String explain) {
-        super(flag | Dialog.STYLE_HIDE_ICON | Dialog.BUTTONS_HIDE_OK, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, null, images);
+        super(flag | Dialog.STYLE_HIDE_ICON | Dialog.BUTTONS_HIDE_OK, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
 
     }
 
@@ -112,26 +112,17 @@ public class ClickCaptchaDialog extends AbstractCaptchaDialog {
     }
 
     @Override
-    public CaptchaResult getCaptchaResult() {
-
-        Point position = resultPoint;
-        if (position != null) {
-            return new CaptchaResult(position.x, position.y);
-        } else
-            return null;
-    }
-
-    @Override
-    public CaptchaType getCaptchaType() {
-        return CaptchaType.CLICK;
-    }
-
-    @Override
     protected JComponent createInputComponent() {
         ExtTextField ret = new ExtTextField();
         ret.setText(getHelpText());
         ret.setEditable(false);
         return ret;
+    }
+
+    @Override
+    public ClickedPoint getResult() {
+        if (resultPoint == null) return null;
+        return new ClickedPoint(resultPoint.x, resultPoint.y);
     }
 
 }

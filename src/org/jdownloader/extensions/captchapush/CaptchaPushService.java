@@ -2,7 +2,7 @@ package org.jdownloader.extensions.captchapush;
 
 import java.util.ArrayList;
 
-import jd.controlling.captcha.CaptchaController;
+import jd.controlling.captcha.CaptchaHandler;
 import jd.controlling.captcha.CaptchaEventListener;
 import jd.controlling.captcha.CaptchaResult;
 
@@ -23,13 +23,13 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
 
     private final String                            clientId;
 
-    private final java.util.List<CaptchaController> currentController;
+    private final java.util.List<CaptchaHandler> currentController;
     private Thread                                  waiterThread;
 
     public CaptchaPushService(CaptchaPushExtension extension) {
         this.extension = extension;
         this.clientId = "JD_" + extension.getSettings().getBrokerTopic();
-        this.currentController = new ArrayList<CaptchaController>();
+        this.currentController = new ArrayList<CaptchaHandler>();
     }
 
     public boolean isConnected() {
@@ -156,7 +156,7 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
         }
     }
 
-    private void startNewPublish(CaptchaController controller) throws Exception {
+    private void startNewPublish(CaptchaHandler controller) throws Exception {
         publish(new CaptchaSolveRequest(controller).toByteArray());
 
         waiterThread = new Thread(new Runnable() {
@@ -174,7 +174,7 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
         waiterThread.start();
     }
 
-    public void captchaTodo(CaptchaController controller) {
+    public void captchaTodo(CaptchaHandler controller) {
         try {
             currentController.add(controller);
 
@@ -186,7 +186,7 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
         }
     }
 
-    public void captchaFinish(CaptchaController controller) {
+    public void captchaFinish(CaptchaHandler controller) {
         /* TODO: Clear Smartphone */
     }
 

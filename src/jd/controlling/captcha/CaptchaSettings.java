@@ -32,4 +32,18 @@ public interface CaptchaSettings extends ConfigInterface {
 
     void setLastCancelOption(int i);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Disable, if you do not want JDownloader to autosolve as many captchas as possible")
+    boolean isAutoCaptchaRecognitionEnabled();
+
+    void setAutoCaptchaRecognitionEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultIntValue(95)
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Do not Change me unless you know 100000% what this value is used for!")
+    int getAutoCaptchaErrorTreshold();
+
+    void setAutoCaptchaErrorTreshold(int value);
+
 }

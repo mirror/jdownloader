@@ -17,9 +17,11 @@
 
 package jd;
 
+import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
@@ -77,6 +79,10 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.ExternInterface;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
+import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
+import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.dynamic.Dynamic;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.gui.userio.JDSwingUserIO;
@@ -140,6 +146,18 @@ public class Launcher {
         // System.setProperty("apple.laf.useScreenMenuBar", "true");
         // System.setProperty("apple.awt.showGrowBox", "true");
         // }
+
+        // set WM Class explicitly
+        try {
+            // patch by Vampire
+            Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
+            awtAppClassName.setAccessible(true);
+            awtAppClassName.set(null, "JDownloader");
+        } catch (NoSuchFieldException e) {
+            // it seems we are not in X, nothing to do for now
+        } catch (IllegalAccessException e) {
+            throw new AssertionError("we've set the field accessible, this shouldn't happen");
+        }
 
         try {
             MacOSApplicationAdapter.enableMacSpecial();
@@ -456,6 +474,10 @@ public class Launcher {
                             boolean jared = Application.isJared(Launcher.class);
                             ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipTimeout());
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
+                            ChallengeResponseController.getInstance().addSolver(JACSolver.getInstance());
+                            ChallengeResponseController.getInstance().addSolver(DialogBasicCaptchaSolver.getInstance());
+                            ChallengeResponseController.getInstance().addSolver(DialogClickCaptchaSolver.getInstance());
+
                             if (!jared) {
                                 HostPluginController.getInstance().invalidateCache();
                                 CrawlerPluginController.invalidateCache();

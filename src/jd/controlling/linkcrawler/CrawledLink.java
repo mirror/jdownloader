@@ -4,7 +4,6 @@ import java.util.List;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.captcha.CaptchaController;
 import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -94,11 +93,12 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info about how to prozess
-     * the file afterwards.
+     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
+     * about how to prozess the file afterwards.
      * 
      * example:<br>
-     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID different.
+     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
+     * different.
      * 
      * @return
      */
@@ -317,7 +317,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * If this Link got filtered by {@link CaptchaController}, you can get the matching deny rule here.<br>
+     * If this Link got filtered by {@link CaptchaHandler}, you can get the matching deny rule here.<br>
      * <br>
      * 
      * @return

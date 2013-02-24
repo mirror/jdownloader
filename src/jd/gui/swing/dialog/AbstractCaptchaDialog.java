@@ -27,7 +27,6 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 
 import jd.captcha.utils.GifDecoder;
-import jd.controlling.captcha.CaptchaResult;
 import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Plugin;
@@ -64,28 +63,27 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 import sun.swing.SwingUtilities2;
 
-public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> implements CaptchaDialogInterface {
+public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
-    private CaptchaResult       captchaResult = new CaptchaResult();
-    private LocationStorage     config;
-    private final String        explain;
-    private int                 fps;
-    private int                 frame         = 0;
-    private DomainInfo          hosterInfo;
+    private LocationStorage config;
+    private final String    explain;
+    private int             fps;
+    private int             frame = 0;
+    private DomainInfo      hosterInfo;
 
-    protected JComponent        iconPanel;
-    private final CaptchaResult defaultValue;
-    private Image[]             images;
+    protected JComponent    iconPanel;
 
-    private Timer               paintTimer;
+    private Image[]         images;
 
-    private Plugin              plugin;
+    private Timer           paintTimer;
 
-    private DialogType          type;
-    protected double            scaleFaktor;
-    protected Point             offset;
+    private Plugin          plugin;
 
-    public AbstractCaptchaDialog(int flags, String title, DialogType type, DomainInfo domainInfo, String explain, CaptchaResult defaultValue2, Image... images) {
+    private DialogType      type;
+    protected double        scaleFaktor;
+    protected Point         offset;
+
+    public AbstractCaptchaDialog(int flags, String title, DialogType type, DomainInfo domainInfo, String explain, Image... images) {
         super(flags, title, null, null, null);
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogUniquePositionByHosterEnabled()) {
             setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog_" + domainInfo.getTld()));
@@ -120,14 +118,10 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> imple
         this.images = ret.toArray(new Image[] {});
         fps = 24;
         this.explain = explain;
-        this.defaultValue = defaultValue2;
+
         this.hosterInfo = domainInfo;
         this.type = type;
 
-    }
-
-    public CaptchaResult getDefaultValue() {
-        return defaultValue;
     }
 
     abstract protected JComponent createInputComponent();

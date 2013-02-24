@@ -17,36 +17,35 @@ public class CaptchaDialogQueue extends Queue {
         return INSTANCE;
     }
 
-    private CaptchaDialogQueueEntry currentItem = null;
+    private BasicCaptchaDialogQueueEntry currentItem = null;
 
     private CaptchaDialogQueue() {
         super("CaptchaDialogQueue");
     }
 
-    public CaptchaResult addWait(final CaptchaDialogQueueEntry item) {
+    public void addWait(final ChallengeDialogQueueEntry<?> item) {
         IOPermission io = item.getIOPermission();
-        if (io != null && !io.isCaptchaAllowed(item.getHost().getTld())) return null;
-        CaptchaEventSender.getInstance().fireEvent(new CaptchaTodoEvent(item.getCaptchaController()));
-        CaptchaResult result = null;
+        if (io != null && !io.isCaptchaAllowed(item.getHost().getTld())) return;
+        // CaptchaEventSender.getInstance().fireEvent(new CaptchaTodoEvent(item.getCaptchaController()));
+
         try {
-            if (item.isFinished()) {
-                result = item.getResult();
-            } else {
-                result = super.addWait(item);
+            if (!item.isFinished()) {
+
+                super.addWait(item);
             }
         } finally {
-            CaptchaEventSender.getInstance().fireEvent(new CaptchaFinishEvent(item.getCaptchaController()));
+
         }
-        return result;
+
     }
 
-    public CaptchaDialogQueueEntry getCurrentQueueEntry() {
+    public BasicCaptchaDialogQueueEntry getCurrentQueueEntry() {
         return this.currentItem;
     }
 
     @Override
     protected <T extends Throwable> void startItem(final QueueAction<?, T> item, final boolean callExceptionhandler) throws T {
-        this.currentItem = (CaptchaDialogQueueEntry) item;
+        this.currentItem = (BasicCaptchaDialogQueueEntry) item;
         try {
             super.startItem(item, callExceptionhandler);
         } finally {
@@ -54,10 +53,10 @@ public class CaptchaDialogQueue extends Queue {
         }
     }
 
-    public List<CaptchaDialogQueueEntry> getJobs() {
-        java.util.List<CaptchaDialogQueueEntry> ret = new ArrayList<CaptchaDialogQueueEntry>();
+    public List<BasicCaptchaDialogQueueEntry> getJobs() {
+        java.util.List<BasicCaptchaDialogQueueEntry> ret = new ArrayList<BasicCaptchaDialogQueueEntry>();
         synchronized (this.queueLock) {
-            CaptchaDialogQueueEntry cur = currentItem;
+            BasicCaptchaDialogQueueEntry cur = currentItem;
             if (cur != null) {
                 ret.add(cur);
             }
@@ -65,8 +64,8 @@ public class CaptchaDialogQueue extends Queue {
                 ListIterator<QueueAction<?, ? extends Throwable>> li = this.queue.get(prio).listIterator();
                 while (li.hasNext()) {
                     QueueAction<?, ? extends Throwable> next = li.next();
-                    if (next instanceof CaptchaDialogQueueEntry) {
-                        ret.add((CaptchaDialogQueueEntry) next);
+                    if (next instanceof BasicCaptchaDialogQueueEntry) {
+                        ret.add((BasicCaptchaDialogQueueEntry) next);
                     }
                 }
             }
@@ -74,18 +73,18 @@ public class CaptchaDialogQueue extends Queue {
         return ret;
     }
 
-    public CaptchaDialogQueueEntry getCaptchabyID(long id) {
+    public BasicCaptchaDialogQueueEntry getCaptchabyID(long id) {
         synchronized (this.queueLock) {
             for (final QueuePriority prio : this.prios) {
                 ListIterator<QueueAction<?, ? extends Throwable>> li = this.queue.get(prio).listIterator();
                 while (li.hasNext()) {
                     QueueAction<?, ? extends Throwable> next = li.next();
-                    if (next instanceof CaptchaDialogQueueEntry) {
-                        if (((CaptchaDialogQueueEntry) next).getID().getID() == id) { return (CaptchaDialogQueueEntry) next; }
+                    if (next instanceof BasicCaptchaDialogQueueEntry) {
+                        if (((BasicCaptchaDialogQueueEntry) next).getID().getID() == id) { return (BasicCaptchaDialogQueueEntry) next; }
                     }
                 }
             }
-            CaptchaDialogQueueEntry cur = currentItem;
+            BasicCaptchaDialogQueueEntry cur = currentItem;
             if (cur != null && cur.getID().getID() == id) { return cur; }
         }
         return null;

@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.controlling.captcha.CaptchaController;
-import jd.controlling.captcha.CaptchaDialogQueueEntry;
+import jd.controlling.captcha.CaptchaHandler;
+import jd.controlling.captcha.BasicCaptchaDialogQueueEntry;
 import jd.controlling.captcha.CaptchaEventListener;
 import jd.controlling.captcha.CaptchaEventSender;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -204,16 +204,16 @@ public class EventsAPI implements DownloadControllerListener, CaptchaEventListen
         JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadPackageRemoved", data), null);
     }
 
-    public void captchaTodo(CaptchaController controller) {
+    public void captchaTodo(CaptchaHandler controller) {
         sendEvent(controller, "new");
     }
 
-    public void captchaFinish(CaptchaController controller) {
+    public void captchaFinish(CaptchaHandler controller) {
         sendEvent(controller, "expired");
     }
 
-    private void sendEvent(CaptchaController controller, String type) {
-        CaptchaDialogQueueEntry entry = controller.getDialog();
+    private void sendEvent(CaptchaHandler controller, String type) {
+        BasicCaptchaDialogQueueEntry entry = controller.getDialog();
         if (entry != null) {
             CaptchaJob job = new CaptchaJob();
             job.setType(entry.getCaptchaController().getCaptchaType());

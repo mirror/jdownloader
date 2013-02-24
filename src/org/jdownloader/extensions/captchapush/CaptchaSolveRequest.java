@@ -1,6 +1,6 @@
 package org.jdownloader.extensions.captchapush;
 
-import jd.controlling.captcha.CaptchaController;
+import jd.controlling.captcha.CaptchaHandler;
 
 import org.appwork.utils.IO;
 
@@ -12,7 +12,7 @@ public class CaptchaSolveRequest {
     private final String     explain;
     private final byte[]     captchaBytes;
 
-    public CaptchaSolveRequest(CaptchaController controller) throws Exception {
+    public CaptchaSolveRequest(CaptchaHandler controller) throws Exception {
         this.id = controller.getId();
         this.explain = (controller.getExplain() == null) ? "" : controller.getExplain();
         this.captchaBytes = IO.readFile(controller.getCaptchaFile());

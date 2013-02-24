@@ -18,18 +18,14 @@ package jd.gui;
 
 import java.awt.Point;
 import java.io.File;
-import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 
-import jd.controlling.captcha.CaptchaController;
-import jd.controlling.captcha.CaptchaResult;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.MultiSelectionDialog;
 import jd.nutils.JDFlags;
 import jd.plugins.PluginForDecrypt;
@@ -45,6 +41,8 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -57,10 +55,6 @@ public class UserIO {
     public static final int OPEN_DIALOG                    = JFileChooser.OPEN_DIALOG;
     public static final int SAVE_DIALOG                    = JFileChooser.SAVE_DIALOG;
 
-    /**
-     * TO not query user. Try to fill automaticly, or return null
-     */
-    public static final int NO_USER_INTERACTION            = 1 << 1;
     /**
      * do not display a countdown
      */
@@ -111,7 +105,8 @@ public class UserIO {
      */
     public static final int RETURN_CANCEL                  = 1 << 2;
     /**
-     * don't show again flag has been set. the dialog may has been visible. if RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this flag latly
+     * don't show again flag has been set. the dialog may has been visible. if RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this
+     * flag latly
      */
     public static final int RETURN_DONT_SHOW_AGAIN         = 1 << 3;
     /**
@@ -206,9 +201,7 @@ public class UserIO {
      */
     private int convertFlagToAWDialog(final int flag) {
         int ret = 0;
-        if (BinaryLogic.containsAll(flag, UserIO.NO_USER_INTERACTION)) {
-            ret |= Dialog.LOGIC_BYPASS;
-        }
+
         if (BinaryLogic.containsNone(flag, UserIO.NO_COUNTDOWN)) {
             ret |= Dialog.LOGIC_COUNTDOWN;
         }
@@ -280,13 +273,14 @@ public class UserIO {
             } else if (explain != null) {
                 e = e + " - " + explain;
             }
-            java.util.List<File> captchaFiles = new ArrayList<File>();
-            captchaFiles.add(imagefile);
-            CaptchaController captchaController = new CaptchaController(linkCrawler, null, captchaFiles, null, e, plugin);
-            captchaController.setCaptchaType(CaptchaDialogInterface.CaptchaType.CLICK);
-            CaptchaResult cc = captchaController.getCode(0);
-            if (cc != null && cc.getCaptchaClick() != null && cc.getCaptchaClick().length == 2) { return new Point(cc.getCaptchaClick()[0], cc.getCaptchaClick()[1]); }
-            return null;
+
+            ClickCaptchaChallenge c = new ClickCaptchaChallenge(linkCrawler, imagefile, e, plugin);
+            ChallengeResponseController.getInstance().handle(c);
+            // CaptchaHandler captchaController = new CaptchaHandler(linkCrawler, null, captchaFiles, null, e, plugin);
+            // captchaController.setCaptchaType(CaptchaDialogInterface.CaptchaType.CLICK);
+            // CaptchaResult cc = captchaController.getCode(0);
+            if (!c.isSolved()) return null;
+            return new Point(c.getResult().getX(), c.getResult().getY());
         } else {
             Log.exception(new WTFException("DO NOT USE OUTSIDE DECRYPTER"));
         }

@@ -1,7 +1,5 @@
 package org.jdownloader.extensions.captchapush;
 
-import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.captcha.CaptchaEventSender;
 import jd.plugins.AddonPanel;
 
@@ -17,8 +15,6 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, T
     private CaptchaPushConfigPanel configPanel;
 
     private CaptchaPushService     service;
-
-    private int                    oldValue;
 
     public CaptchaPushExtension() {
         super();
@@ -53,13 +49,6 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, T
 
         CaptchaEventSender.getInstance().addListener(service);
 
-        oldValue = SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT);
-        if (oldValue < getSettings().getTimeout()) {
-            SubConfiguration.getConfig("JAC").setProperty(Configuration.JAC_SHOW_TIMEOUT, getSettings().getTimeout());
-            SubConfiguration.getConfig("JAC").save();
-        } else {
-            oldValue = -1;
-        }
     }
 
     private void stopService() {
@@ -69,10 +58,6 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, T
 
         CaptchaEventSender.getInstance().removeListener(service);
 
-        if (oldValue != -1) {
-            SubConfiguration.getConfig("JAC").setProperty(Configuration.JAC_SHOW_TIMEOUT, oldValue);
-            SubConfiguration.getConfig("JAC").save();
-        }
     }
 
     @Override
