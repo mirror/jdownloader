@@ -119,9 +119,9 @@ public class EgoFilesCom extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!\nGot response:\n" + dl.getConnection().getResponseMessage());
             br.followConnection();
             logger.info("browser code: " + br.getRequest().getHtmlCode());
-            if (br.containsHTML("Download link has expired. Try again or go premium to download it faster."))
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Download link has expired");
-            else
+            if (br.containsHTML("Download link has expired.") || br.containsHTML("Download link has expired or you have reached the limit.")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Download link has expired or limit reached", 5 * 60 * 1000l);
+            } else
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "getConnection returns html");
         }
         dl.startDownload();
