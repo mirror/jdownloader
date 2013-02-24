@@ -210,6 +210,8 @@ public class DashboardApi implements IDashboardApi {
                             ro.setLinkID(link.getUniqueID().getID());
                             ro.setDone(link.getDownloadCurrent());
                             ro.setSpeed(link.getDownloadSpeed());
+                            long remainingBytes = (link.getDownloadSize() - link.getDownloadCurrent());
+                            ro.setETA(remainingBytes / link.getDownloadSpeed());
                             ret.add(ro);
                         }
                     }

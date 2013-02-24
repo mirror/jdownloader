@@ -8,6 +8,7 @@ public class RunningObjectStorable implements Storable {
     private long linkID;
     private long speed;
     private long done;
+    private long eta;
 
     public long getPackageID() {
         return packageID;
@@ -15,6 +16,21 @@ public class RunningObjectStorable implements Storable {
 
     public void setPackageID(long packageID) {
         this.packageID = packageID;
+    }
+
+    /**
+     * @return the time
+     */
+    public long getETA() {
+        return eta;
+    }
+
+    /**
+     * @param time
+     *            the time to set
+     */
+    public void setETA(long eta) {
+        this.eta = eta;
     }
 
     /**
