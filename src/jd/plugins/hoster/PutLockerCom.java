@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -48,10 +50,14 @@ public class PutLockerCom extends PluginForHost {
     private static Object       LOCK     = new Object();
     private String              agent    = null;
     private static final String NOCHUNKS = "NOCHUNKS";
+    /** The list of quality values displayed to the user */
+    private final String[]      servers  = new String[] { "Prefer Original format (bigger size, better quality)", "Prefer Stream format [.flv] (smaller size, less quality)" };
+    private final String        formats  = "formats";
 
     public PutLockerCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.putlocker.com/gopro.php");
+        setConfigElements();
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -67,12 +73,12 @@ public class PutLockerCom extends PluginForHost {
         if (br.containsHTML(">This file doesn\\'t exist, or has been removed \\.<") || br.getURL().contains("?404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("hd_marker\".*?span>(.*?)<strong").getMatch(0);
         if (filename == null) filename = br.getRegex("site\\-content.*?<h1>(.*?)<strong").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) |").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?) \\|").getMatch(0);
         String filesize = br.getRegex("site-content.*?<h1>.*?<strong>\\((.*?)\\)").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // User sometimes adds random stuff to filenames when downloading so we
         // better set the final name here
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
@@ -108,38 +114,16 @@ public class PutLockerCom extends PluginForHost {
         return "http://www.putlocker.com/page.php?terms";
     }
 
-    private String getDllink(DownloadLink downloadLink) throws IOException {
-        // base64 valid chars [A-Za-z0-9_\\-\\=\\+\\/]+
-        String dllink = br.getRegex("<a href=\"/gopro\\.php\">Tired of ads and waiting\\? Go Pro\\!</a>[\t\n\r ]+</div>[\t\n\rn ]+<a href=\"(/.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(/get_file\\.php\\?(download|id)=[A-Z0-9]+\\&key=[A-Za-z0-9_\\-\\=\\+\\/]+)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(/get_file\\.php\\?(download|id)=[A-Z0-9]+\\&key=[A-Za-z0-9_\\-\\=\\+\\/]+&original=1)\"").getMatch(0);
-            if (dllink == null) {
-                // Handling for streamlinks
-                dllink = br.getRegex("playlist: \\'(/get_file\\.php\\?stream=[A-Za-z0-9_\\-\\=\\+\\/]+)\\'").getMatch(0);
-                if (dllink != null) {
-                    dllink = MAINPAGE + dllink;
-                    downloadLink.setProperty("videolink", dllink);
-                    br.getPage(dllink);
-                    dllink = br.getRegex("media:content url=\"(http://.*?)\"").getMatch(0);
-                    if (dllink == null) dllink = br.getRegex("\"(http://media\\-b\\d+\\.putlocker\\.com/download/\\d+/.*?)\"").getMatch(0);
-                }
-            }
-        }
-        if (dllink != null) dllink = dllink.replace("&amp;", "&");
-        return dllink;
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setDebug(true);
-        Form freeform = getFormByHTML("value=\"Continue as Free User\"");
+        br.setFollowRedirects(false);
+        final Form freeform = getFormByHTML("value=\"Continue as Free User\"");
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         freeform.put("confirm", "Continue+as+Free+User");
         if (freeform.containsHTML("/include/captcha")) {
@@ -149,7 +133,8 @@ public class PutLockerCom extends PluginForHost {
             if (captcha != null) freeform.put("captcha_code", Encoding.urlEncode(captcha));
         }
         /** Can still be skipped */
-        // final String waittime = br.getRegex("var countdownNum = (\\d+);").getMatch(0);
+        // final String waittime =
+        // br.getRegex("var countdownNum = (\\d+);").getMatch(0);
         // int wait = 5;
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
@@ -165,16 +150,12 @@ public class PutLockerCom extends PluginForHost {
         }
         if (br.containsHTML(">You have exceeded the daily")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached");
         if (br.containsHTML("(>This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", 2 * 60 * 60 * 1000l);
-        String dllink = getDllink(downloadLink);
-        if (dllink == null) {
-            logger.warning("dllink is null...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!dllink.startsWith("http")) dllink = MAINPAGE + dllink;
+        final String dllink = getDllink(downloadLink);
         int chunks = 0;
         if (downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false)) {
             chunks = 1;
         }
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -184,6 +165,7 @@ public class PutLockerCom extends PluginForHost {
             if (br.containsHTML(">This link has expired\\. Please try again") || br.containsHTML("This content server is down for maintenance\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        fixFilename(downloadLink);
         if (!this.dl.startDownload()) {
             try {
                 if (dl.externalDownloadStop()) return;
@@ -198,7 +180,7 @@ public class PutLockerCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
         br.getPage(link.getDownloadURL());
@@ -210,6 +192,7 @@ public class PutLockerCom extends PluginForHost {
             if (br.getURL().equals("http://www.putlocker.com/")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        fixFilename(link);
         dl.startDownload();
     }
 
@@ -297,6 +280,89 @@ public class PutLockerCom extends PluginForHost {
             }
         }
     }
+
+    /** Same code for putlocker.com and sockshare.com START */
+    private int getConfiguredServer() {
+        switch (getPluginConfig().getIntegerProperty(formats, -1)) {
+        case 0:
+            logger.fine("Original format is configured");
+            return 0;
+        case 1:
+            logger.fine("Stream format is configured");
+            return 1;
+        default:
+            logger.fine("No format is cunfigured, returning default format (original format)");
+            return 0;
+        }
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), formats, servers, JDL.L("plugins.host.putlockerandsocksharecom.preferredformats", "Format selection - select your prefered format:\r\nBy default, JDownloader will download the original format if possible.\r\nIf the desired format isn't available, JDownloader will download the other one.\r\n\rPremium users can only download the original format.")).setDefaultValue(0));
+    }
+
+    private String getDllink(DownloadLink downloadLink) throws IOException, PluginException {
+        String dllink = null;
+        final int selectedFormat = getConfiguredServer();
+        if (selectedFormat == 0) {
+            dllink = getOriginalFormatLink();
+            if (dllink == null) {
+                logger.info("Failed to find chosen format");
+                dllink = getStreamLink();
+            }
+        } else {
+            dllink = getStreamLink();
+            if (dllink == null) {
+                logger.info("Failed to find chosen format");
+                dllink = getOriginalFormatLink();
+            }
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return dllink.replace("&amp;", "&");
+    }
+
+    private String getStreamLink() throws IOException, PluginException {
+        String dllink = br.getRegex("\\'(/get_file\\.php\\?stream=[^<>\"/]*?)\\'").getMatch(0);
+        if (dllink != null) {
+            br.getPage("http://www." + this.getHost() + dllink);
+            dllink = br.getRegex("<media:content url=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return dllink;
+    }
+
+    private String getOriginalFormatLink() throws IOException, PluginException {
+        String dllink = br.getRegex("\"(/get_file\\.php\\?id=[^<>\"/]*?)\"").getMatch(0);
+        if (dllink != null) {
+            br.getPage("http://www." + this.getHost() + dllink);
+            dllink = br.getRedirectLocation();
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return dllink;
+    }
+
+    private void fixFilename(final DownloadLink downloadLink) {
+        String oldName = downloadLink.getFinalFileName();
+        if (oldName == null) oldName = downloadLink.getName();
+        final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        String newExtension = null;
+        // some streaming sites do not provide proper file.extension within
+        // headers (Content-Disposition or the fail over getURL()).
+        if (serverFilename.contains(".")) {
+            newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+        } else {
+            logger.info("HTTP headers don't contain filename.extension information");
+        }
+        if (newExtension != null && !oldName.endsWith(newExtension)) {
+            String oldExtension = null;
+            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            if (oldExtension != null && oldExtension.length() <= 5)
+                downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
+            else
+                downloadLink.setFinalFileName(oldName + newExtension);
+        }
+    }
+
+    /** Same code for putlocker.com and sockshare.com END */
 
     @Override
     public void reset() {

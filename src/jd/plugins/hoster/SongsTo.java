@@ -39,6 +39,7 @@ public class SongsTo extends PluginForHost {
 
     private String  DLLINK       = null;
     private boolean pluginloaded = false;
+    private String  FID          = null;
 
     @Override
     public String getAGBLink() {
@@ -49,15 +50,20 @@ public class SongsTo extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        br.getPage("http://songs.to/json/songlist.php?record=" + fid);
+        FID = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        br.getPage("http://songs.to/json/songlist.php?record=" + FID);
         if (br.containsHTML("\\{\"data\":\\[\\]\\}")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String artist = getJson("artist");
         final String album = getJson("album");
         final String title = getJson("title");
         if (album == null || artist == null || title == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String filename = unescape(artist) + " - " + unescape(album) + " - " + unescape(title) + ".mp3";
-        DLLINK = "http://s.songs.to/data.php?id=" + fid;
+        String filename = null;
+        if (album.equals("")) {
+            filename = unescape(artist) + " - " + unescape(title) + ".mp3";
+        } else {
+            filename = unescape(artist) + " - " + unescape(album) + " - " + unescape(title) + ".mp3";
+        }
+        DLLINK = "http://s.songs.to/data.php?id=" + FID;
         downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -100,8 +106,8 @@ public class SongsTo extends PluginForHost {
     }
 
     private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        String result = br.getRegex(FID + ".*?" + "\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = br.getRegex(FID + ".*?" + "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
         return result;
     }
 

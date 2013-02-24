@@ -77,7 +77,7 @@ public class WantLoadCom extends PluginForHost {
     // mods:
     // non account: 20 * 20
     // free account: untested, set FREE limits
-    // premium account: 20 * 20
+    // premium account: 10 * 2
     // protocol: no https
     // captchatype: null
     // other:
@@ -349,14 +349,19 @@ public class WantLoadCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -636,7 +641,7 @@ public class WantLoadCom extends PluginForHost {
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
                 try {
-                    maxPrem.set(-1);
+                    maxPrem.set(2);
                     account.setMaxSimultanDownloads(maxPrem.get());
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
@@ -730,7 +735,7 @@ public class WantLoadCom extends PluginForHost {
             }
 
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
