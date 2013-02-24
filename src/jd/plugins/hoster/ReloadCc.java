@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
@@ -19,13 +21,21 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 18302 $", interfaceVersion = 3, names = { "reload.cc" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-hrfgmodeydgbgdtklzh" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 18302 $", interfaceVersion = 4, names = { "reload.cc" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-hrfgmodeydgbgdtklzh" }, flags = { 2 })
 public class ReloadCc extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
+    private static final String                            PLUGIN_VERSION_KEY = "PLUGINVERSION";
+    private static final String                            PLUGIN_VERSION     = "0.2";
+
     public ReloadCc(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
         this.enablePremium("https://reload.cc/premium");
+    }
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPluginConfig(), PLUGIN_VERSION_KEY, "Your Reload.cc plugin version: " + PLUGIN_VERSION));
     }
 
     private void showMessage(DownloadLink link, String message) {
