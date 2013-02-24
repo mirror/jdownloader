@@ -457,6 +457,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Delete Container Files?" })
     String AddContainerAction_delete_container_title();
 
+    @Default(lngs = { "en" }, values = { "Do you want to delete %s1 after adding the link(s) to JDownloader?" })
     String AddContainerAction_delete_container_msg(String list);
 
     @Default(lngs = { "en" }, values = { "JDownloader cannot connect to %s1! Your Proxy Server requires authentication. \r\nCheck your credentials..." })
