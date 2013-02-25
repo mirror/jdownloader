@@ -24,6 +24,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,7 +35,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -184,7 +185,7 @@ public class YkCm extends PluginForDecrypt {
 
             fileDesc = new HashMap<String, String>();
             fileDesc.put("seed", seed);
-            fileDesc.put("title", unescape(title));
+            fileDesc.put("title", decodeUnicode(title));
 
             streamTypes = new Regex(st, "\"(.*?)\"").getColumn(0);
 
@@ -227,10 +228,14 @@ public class YkCm extends PluginForDecrypt {
         return false;
     }
 
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        JDUtilities.getPluginForHost("youtube.com");
-        return jd.plugins.hoster.Youtube.unescape(s);
+    private String decodeUnicode(final String s) {
+        Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+        String res = s;
+        Matcher m = p.matcher(res);
+        while (m.find()) {
+            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
+        }
+        return res;
     }
 
 }
