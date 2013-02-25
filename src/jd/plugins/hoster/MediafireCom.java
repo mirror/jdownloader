@@ -66,338 +66,155 @@ public class MediafireCom extends PluginForHost {
     static {
         // Internet Explorer
         // release:
-        // ie9: "Stable release    9.0.7 / April 11, 2012; 2 months ago"
-        // http://en.wikipedia.org/wiki/Internet_Explorer_9
-        // ie10: "Preview release 10.0.8400.0 / May 31, 2012; 40 days ago"
-        // http://en.wikipedia.org/wiki/Internet_Explorer_10
+        // ie9: "Stable release    9.0.13  (February 12, 2013; 10 days ago)" http://en.wikipedia.org/wiki/Internet_Explorer_9
+        // ie10: "Stable release    10.0.2 (12 February 2013; 10 days ago)" http://en.wikipedia.org/wiki/Internet_Explorer_10
         // notes: only version 9 and 10
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)");
+        // notes: chromeframe http://en.wikipedia.org/wiki/Google_Chrome_Frame
         stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0; Trident/5.0)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0; WOW64; Trident/5.0)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0; Trident/5.0; BOIE9;ENUSMSE)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; NavionicsWebStore; Trident/5.0)");
         stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; chromeframe/18.0.1025.162)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; chromeframe/18.0.1025.168)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; chromeframe/19.0.1084.46)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; chromeframe/19.0.1084.52)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; chromeframe/19.0.1084.56)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; chromeframe/20.0.1132.47)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; chromeframe/24.0.1312.52)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; chromeframe/24.0.1312.56)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; chromeframe/24.0.1312.57)");
         stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; MANM)");
         stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; MATP; MATP)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; MSN Optimized;ENAU)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; xs-mpFUgPAPNBo;CiAVK0)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; xs-mpFUgPAPNBo;CiAVLw)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; xs-mpFUgPAPNBo;CiAVM8)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; xs-mpFUgPAPNBo;CiAVMe)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; xs-mpFUgPAPNBo;CiAVMP)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; yie9)");
         stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Win64; x64; Trident/5.0)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Win64; x64; Trident/5.0; BOIE9;ENUSMSNIP)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Win64; x64; Trident/5.0; MASP)");
         stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; BOIE9;ENAU)");
         stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; BOIE9;ENUS)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; chromeframe/18.0.1025.168)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; chromeframe/19.0.1084.46)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; chromeframe/19.0.1084.52)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; chromeframe/19.0.1084.56)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; chromeframe/20.0.1132.47)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; chromeframe/24.0.1312.52)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; chromeframe/24.0.1312.56)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; chromeframe/24.0.1312.57)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; chromeframe/25.0.1364.97)");
         stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; MASP)");
         stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; MATP)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; MSN Optimized;ENAU)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; NP06)");
-        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; NP08; MAAU; NP08)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; NP08; MAAU)");
+
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0; Touch; ASU2JS)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0; chromeframe/24.0.1312.52)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0; chromeframe/24.0.1312.56)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0; chromeframe/24.0.1312.57)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0; Touch)");
+        stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0; Touch; ASU2JS)");
+
         // chrome
-        // release: "Stable release  20.0.1132.47  (June 28, 2012; 12 days ago)"
-        // http://en.wikipedia.org/wiki/Google_Chrome
-        // notes: only allow the last 18-2x releases
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.163 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.165 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.53 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.54 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.163 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.165 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.43 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.53 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.54 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_0) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_1) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_1) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.163 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_1) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_2) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.163 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_2) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.165 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_2) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_2) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_2) AppleWebKit/536.8 (KHTML, like Gecko) Chrome/20.0.1108.0 Safari/536.8");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_2) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/20.0.1131.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_2) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1134.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.142 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.163 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.165 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/536.10 (KHTML, like Gecko) Chrome/20.0.1124.0 Safari/536.10");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.27 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.24 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.30 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.36 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.41 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.53 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.54 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/536.7 (KHTML, like Gecko) Chrome/20.0.1098.0 Safari/536.7");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.17 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.21 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.27 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.34 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.39 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.43 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.53 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.54 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1136.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1137.1 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1141.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1147.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1150.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1154.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1162.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1175.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/22.0.1186.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_0) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_0) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.152 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.17 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.21 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.27 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.34 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.39 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.15 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.30 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.36 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.2) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.152 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.2) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.2) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.2) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.2) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.2) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 5.2) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.152 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0; WOW64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0; WOW64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0; WOW64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.0; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.152 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.10 (KHTML, like Gecko) Chrome/20.0.1123.1 Safari/536.10");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.10 (KHTML, like Gecko) Chrome/20.0.1123.4 Safari/536.10");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1130.1 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.11 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.17 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.21 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.27 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.3 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.34 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.39 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.41 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.42 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.43 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.8 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.15 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.24 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.30 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.36 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.41 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.6 (KHTML, like Gecko) Chrome/20.0.1096.1 Safari/536.6");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.8 (KHTML, like Gecko) Chrome/20.0.1105.0 Safari/536.8");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.8 (KHTML, like Gecko) Chrome/20.0.1105.2 Safari/536.8");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.9 (KHTML, like Gecko) Chrome/20.0.1115.1 Safari/536.9");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1145.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1155.2 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.142 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.152 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.152 Safari/535.19 Comodo_Dragon/18.1.2.0");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.58 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.10 (KHTML, like Gecko) Chrome/20.0.1123.4 Safari/536.10");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.11 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.17 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.21 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.27 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.34 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.39 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.41 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.42 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.43 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11 Comodo_Dragon/20.0.1.0");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.15 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.24 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.30 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.36 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.41 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5 Comodo_Dragon/19.2.0.0");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.8 (KHTML, like Gecko) Chrome/20.0.1105.2 Safari/536.8");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.9 (KHTML, like Gecko) Chrome/20.0.1115.1 Safari/536.9");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1145.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1155.2 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1163.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1171.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1180.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1180.15 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1180.4 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.152 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.11 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.17 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.21 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.30 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1171.0 Safari/537.1");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/532.0 (KHTML, like Gecko) Chrome/3.0.195.27 Safari/532.0");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/533.4 (KHTML, like Gecko) Chrome/5.0.375.99 Safari/533.4");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/535.12 (KHTML, like Gecko) Maxthon/3.0 Chrome/18.0.966.0 Safari/535.12");
-        stringAgent.add("Mozilla/5.0 (X11; Linux i686) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (X11; Linux i686) AppleWebKit/535.19 (KHTML, like Gecko) Ubuntu/11.04 Chromium/18.0.1025.151 Chrome/18.0.1025.151 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.142 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Ubuntu/11.10 Chromium/18.0.1025.142 Chrome/18.0.1025.142 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Ubuntu/11.10 Chromium/18.0.1025.151 Chrome/18.0.1025.151 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Ubuntu/11.10 Chromium/18.0.1025.168 Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Ubuntu/12.04 Chromium/18.0.1025.151 Chrome/18.0.1025.151 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Ubuntu/12.04 Chromium/18.0.1025.168 Chrome/18.0.1025.168 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
+        // release: "Stable release  25.0.1364.99 (February 21, 2013; 4 days ago)" http://en.wikipedia.org/wiki/Google_Chrome
+        // notes: google changes version like it's going out of fashion! try and give balance in array. (25|26)
+        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.99 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.99 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.99 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.97 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.0) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.97 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.29 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.36 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.45 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.58 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.68 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.84 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.97 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.20 (KHTML, like Gecko) Chrome/25.0.1337.0 Safari/537.20");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.21 (KHTML, like Gecko) Chrome/25.0.1349.2 Safari/537.21");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.21 (KHTML, like Gecko) Chrome/25.0.1354.0 Safari/537.21");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.21 (KHTML, like Gecko) Chrome/25.0.1359.3 Safari/537.21");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.26 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.29 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.36 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.45 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.5 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.58 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.68 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.84 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.97 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.20 (KHTML, like Gecko) Chrome/25.0.1330.0 Safari/537.20");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.20 (KHTML, like Gecko) Chrome/25.0.1337.0 Safari/537.20");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.21 (KHTML, like Gecko) Chrome/25.0.1359.3 Safari/537.21");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.26 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.29 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.5 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.97 Safari/537.22");
+        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.97 Safari/537.22");
+
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.27 (KHTML, like Gecko) Chrome/26.0.1386.0 Safari/537.27");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.28 (KHTML, like Gecko) Chrome/26.0.1397.2 Safari/537.28");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.30 (KHTML, like Gecko) Chrome/26.0.1403.0 Safari/537.30");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.27 (KHTML, like Gecko) Chrome/26.0.1386.0 Safari/537.27");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.28 (KHTML, like Gecko) Chrome/26.0.1397.2 Safari/537.28");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.30 (KHTML, like Gecko) Chrome/26.0.1400.0 Safari/537.30");
+
         // firefox
-        // stable: "Stable release  13.0.1  (June 15, 2012; 25 days ago)"
-        // http://en.wikipedia.org/wiki/Firefox
-        // notes: 2011-present based on Gecko date
-        stringAgent.add("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.8; en-GB; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28");
-        stringAgent.add("Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10.5; en-US; rv:1.9.2.27) Gecko/20120216 Firefox/3.6.27");
-        stringAgent.add("Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10.5; en-US; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; rv:14.0) Gecko/20120512 Firefox/14.0a2");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; rv:15.0) Gecko/20120616 Firefox/15.0a2");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; rv:15.0) Gecko/20120627 Firefox/15.0a2");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:10.0.1) Gecko/20120212 Firefox/10.0.1");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:11.0) Gecko/20120313 Firefox/11.0");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:12.0) Gecko/20120427 Firefox/12.0");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:14.0) Gecko/20120523 Firefox/14.0a2");
-        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20120624 Firefox/15.0a2");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.2.23) Gecko/20110920 Firefox/3.6.23");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.2.25) Gecko/20111212 Firefox/3.6.25 ( .NET CLR 3.5.30729)");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.2.26) Gecko/20120128 Firefox/3.6.26 (.NET CLR 3.5.30729)");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28 ( .NET CLR 3.5.30729)");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28 (.NET CLR 3.5.30729)");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.26) Gecko/20120128 Firefox/3.6.26");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.28) Gecko/20120306 AskTbFF/3.15.2.23037 Firefox/3.6.28");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.2; en-US; rv:1.9.1.18) Gecko/20110319 Firefox/3.5.18 ( .NET CLR 3.5.30729)");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 6.0; en-GB; rv:1.9.2.24) Gecko/20111103 Firefox/3.6.24 ( .NET CLR 3.5.30729; .NET4.0C)");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 6.0; en-GB; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28 ( .NET CLR 3.5.30729; .NET4.0C)");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 6.0; en-US; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28 ( .NET CLR 3.5.30729)");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-GB; rv:1.9.1.19) Gecko/20110420 Firefox/3.5.19 ( .NET CLR 3.5.30729; .NET4.0E)");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-GB; rv:1.9.2.16) Gecko/20110319 Firefox/3.6.16");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-GB; rv:1.9.2.18) Gecko/20110614 Firefox/3.6.18 ( .NET CLR 3.5.30729; .NET4.0E)");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-GB; rv:1.9.2.26) Gecko/20120128 Firefox/3.6.26");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-GB; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-GB; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28 ( .NET CLR 3.5.30729)");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.25) Gecko/20111212 Firefox/3.6.25");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.26) Gecko/20120128 Firefox/3.6.26");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28 ( .NET CLR 3.5.30729; .NET4.0C)");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64; rv:10.0.4) Gecko/20120424 Firefox/10.0.4");
-        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64; rv:10.0.5) Gecko/20120605 Firefox/10.0.5");
-        stringAgent.add("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.16) Gecko/20120315 Iceweasel/3.5.16 (like Firefox/3.5.16)");
-        stringAgent.add("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.16) Gecko/20120421 Iceweasel/3.5.16 (like Firefox/3.5.16)");
-        stringAgent.add("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.16) Gecko/20120511 Iceweasel/3.5.16 (like Firefox/3.5.16)");
-        stringAgent.add("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.16) Gecko/20120602 Iceweasel/3.5.16 (like Firefox/3.5.16)");
-        stringAgent.add("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.24) Gecko/20111108 Fedora/3.6.24-1.fc14 Firefox/3.6.24");
-        stringAgent.add("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.26) Gecko/20120216 CentOS/3.6-3.el4.centos Firefox/3.6.26");
-        stringAgent.add("Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.1.16) Gecko/20120315 Iceweasel/3.5.16 (like Firefox/3.5.16)");
-        stringAgent.add("Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.1.16) Gecko/20120421 Iceweasel/3.5.16 (like Firefox/3.5.16)");
-        stringAgent.add("Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.1.16) Gecko/20120511 Iceweasel/3.5.16 (like Firefox/3.5.16)");
-        stringAgent.add("Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.1.16) Gecko/20120602 Iceweasel/3.5.16 (like Firefox/3.5.16)");
-        stringAgent.add("Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/8.04 (hardy) Firefox/3.6.17");
-        stringAgent.add("Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.26) Gecko/20120216 Red Hat/3.6.26-1.el6_2 Firefox/3.6.26");
+        // release: "Stable release  19.0 (February 19, 2013; 6 days ago)" http://en.wikipedia.org/wiki/Firefox
+        // notes: version 18 19 20
+        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 5.1; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 5.2; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.0; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.0; WOW64; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:18.0) Gecko/20130119 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (X11; Linux i686; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (X11; Linux x86_64; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:18.0) Gecko/20100101 Firefox/18.0");
+        stringAgent.add("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:18.0) Gecko/20100101 Firefox/18.0");
+
+        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:19.0) Gecko/20100101 Firefox/19.0");
+        stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:19.0) Gecko/20100101 Firefox/19.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 5.1; rv:19.0) Gecko/20100101 Firefox/19.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 5.2; rv:19.0) Gecko/20100101 Firefox/19.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.0; rv:19.0) Gecko/20100101 Firefox/19.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.0; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; rv:19.0) Gecko/20100101 Firefox/19.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; rv:19.0) Gecko/20100101 Firefox/19.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64; rv:19.0) Gecko/20130107 Firefox/19.0");
+        stringAgent.add("Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:19.0) Gecko/20100101 Firefox/19.0");
+        stringAgent.add("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:19.0) Gecko/20100101 Firefox/19.0");
+
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; rv:20.0) Gecko/20100101 Firefox/20.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64; rv:20.0) Gecko/20130115 Firefox/20.0");
+
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:21.0) Gecko/20130203 Firefox/21.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:21.0) Gecko/20130204 Firefox/21.0");
+        stringAgent.add("Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:21.0) Gecko/20130209 Firefox/21.0");
+
         // safari
-        // release: "Stable release  5.1.7  (May 9, 2012; 61 days ago)"
-        // http://en.wikipedia.org/wiki/Safari_(web_browser)
+        // release: "Stable release  6.1.2  (February 19, 2013; 5 days ago)" http://en.wikipedia.org/wiki/Safari_(web_browser)
         // notes: not sure on safari...
 
         // opera
-        // release: "Stable release  12.00  (June 14, 2012; 25 days ago)"
-        // http://en.wikipedia.org/wiki/Opera_(web_browser)
-        // notes: 11.64-12.x (present)
-        stringAgent.add("Opera/9.80 (Windows NT 5.1; U; en) Presto/2.10.229 Version/11.64");
-        stringAgent.add("Opera/9.80 (Windows NT 5.1; U; en) Presto/2.10.289 Version/12.00");
-        stringAgent.add("Opera/9.80 (Windows NT 6.0; U; en) Presto/2.10.229 Version/11.64");
-        stringAgent.add("Opera/9.80 (Windows NT 6.1; U; en-GB) Presto/2.10.229 Version/11.64");
-        stringAgent.add("Opera/9.80 (Windows NT 6.1; U; en-GB) Presto/2.10.289 Version/12.00");
-        stringAgent.add("Opera/9.80 (Windows NT 6.1; U; IBM EVV/3.0/EAK01AG9/LE; Edition Next; en) Presto/2.11.310 Version/12.50");
-        stringAgent.add("Opera/9.80 (Windows NT 6.1; WOW64; U; Edition Next; en) Presto/2.11.310 Version/12.50");
-        stringAgent.add("Opera/9.80 (Windows NT 6.1; WOW64; U; en) Presto/2.10.229 Version/11.64");
-        stringAgent.add("Opera/9.80 (Windows NT 6.1; WOW64; U; en) Presto/2.10.289 Version/12.00");
-        stringAgent.add("Opera/9.80 (X11; Linux i686; U; en) Presto/2.10.289 Version/12.00");
-        stringAgent.add("Opera/9.80 (X11; Linux zbov; U; en) Presto/2.10.254 Version/12.00");
+        // release: "Stable release  12.14  (February 5, 2013; 18 days ago)" http://en.wikipedia.org/wiki/Opera_(web_browser)
+        // notes: 12.11-12.x (present)
+        stringAgent.add("Opera/9.80 (Windows NT 5.1) Presto/2.12.388 Version/12.11");
+        stringAgent.add("Opera/9.80 (Windows NT 6.0) Presto/2.12.388 Version/12.11");
+        stringAgent.add("Opera/9.80 (Windows NT 6.1; WOW64) Presto/2.12.388 Version/12.11");
+
+        stringAgent.add("Opera/9.80 (Windows NT 5.1) Presto/2.12.388 Version/12.12");
+        stringAgent.add("Opera/9.80 (Windows NT 6.0; WOW64) Presto/2.12.388 Version/12.12");
+        stringAgent.add("Opera/9.80 (Windows NT 6.1; WOW64) Presto/2.12.388 Version/12.12");
+        stringAgent.add("Opera/9.80 (Windows NT 6.2) Presto/2.12.388 Version/12.12");
+        stringAgent.add("Opera/9.80 (Windows NT 6.2; Win64; x64) Presto/2.12.388 Version/12.12");
+
+        stringAgent.add("Opera/9.80 (Windows NT 5.1) Presto/2.12.388 Version/12.13");
+        stringAgent.add("Opera/9.80 (Windows NT 6.1; Win64; x64) Presto/2.12.388 Version/12.13");
+        stringAgent.add("Opera/9.80 (Windows NT 6.1; WOW64) Presto/2.12.388 Version/12.13");
+        stringAgent.add("Opera/9.80 (Windows NT 6.2) Presto/2.12.388 Version/12.13");
+
+        stringAgent.add("Opera/9.80 (Windows NT 5.1) Presto/2.12.388 Version/12.14");
+        stringAgent.add("Opera/9.80 (Windows NT 6.1) Presto/2.12.388 Version/12.14");
+        stringAgent.add("Opera/9.80 (Windows NT 6.1; Win64; x64) Presto/2.12.388 Version/12.14");
+        stringAgent.add("Opera/9.80 (Windows NT 6.1; WOW64) Presto/2.12.388 Version/12.14");
+        stringAgent.add("Opera/9.80 (Windows NT 6.2) Presto/2.12.388 Version/12.14");
+
     }
 
     /**
@@ -419,53 +236,45 @@ public class MediafireCom extends PluginForHost {
 
     private static final ArrayList<String> portableAgent = new ArrayList<String>();
     static {
-        portableAgent.add("Mozilla/5.0 (Android; Linux armv7l; rv:10.0.1) Gecko/20120208 Firefox/10.0.1 Fennec/10.0.1");
-        portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:10.0.4) Gecko/10.0.4 Firefox/10.0.4 Fennec/10.0.4");
-        portableAgent.add("Mozilla/5.0 (hp-tablet; Linux; hpwOS/3.0.5; U; en-AU) AppleWebKit/534.6 (KHTML, like Gecko) wOSBrowser/234.83 Safari/534.6 TouchPad/1.0");
-        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 5_0_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A405 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 5_0_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9Z999 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 5_1_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B206 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176");
-        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B176 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (iPad; U; CPU OS 4_3_5 like Mac OS X; en) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8L1 Safari/6533.18.5");
-        portableAgent.add("Mozilla/5.0 (iPad; U; CPU OS 4_3_5 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8L1 Safari/6533.18.5");
-        portableAgent.add("Mozilla/5.0 (iPad; U; CPU OS 5_0 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (iPad; U; CPU OS 5_1_1 like Mac OS X; en-gb) AppleWebKit/534.46.0 (KHTML, like Gecko) CriOS/19.0.1084.60 Mobile/9B206 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (iPad; U; CPU OS 5_1_1 like Mac OS X; en-us) AppleWebKit/534.46.0 (KHTML, like Gecko) CriOS/19.0.1084.60 Mobile/9B206 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (iPad; U; CPU OS 5_1 like Mac OS X; en-us) AppleWebKit/534.46.0 (KHTML, like Gecko) CriOS/19.0.1084.60 Mobile/9B176 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 5_0_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A405 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 5_0 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 5_1_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B206 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B176 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B179 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_3_3 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8J2 Safari/6533.18.5");
-        portableAgent.add("Mozilla/5.0 (iPhone; U; CPU iPhone OS 5_1_1 like Mac OS X; en-us) AppleWebKit/534.46.0 (KHTML, like Gecko) CriOS/19.0.1084.60 Mobile/9B206 Safari/7534.48.3");
-        portableAgent.add("Mozilla/5.0 (Linux; Android 4.0.1;  Galaxy Nexus Build/ITL41F) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133 Mobile Safari/535.19");
-        portableAgent.add("Mozilla/5.0 (Linux; Android 4.0.3; ASUS Transformer Pad TF300T Build/IML74K) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166  Safari/535.19");
-        portableAgent.add("Mozilla/5.0 (Linux; Android 4.0.3;  Transformer Prime TF201 Build/IML74K) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133  Safari/535.19");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 2.2; en-au; HTC_Desire_A8183 V2.26.841.2 Build/FRF91) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1");
+        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 6_0_1 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A523 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 6_0_1 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A8426 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 6_0_1 like Mac OS X; en-us) AppleWebKit/536.26 (KHTML, like Gecko) CriOS/23.0.1271.100 Mobile/10A523 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 6_0_2 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A550 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 6_0_2 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A8500 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 6_1_2 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10B146 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 6_1_2 like Mac OS X; en-us) AppleWebKit/536.26 (KHTML, like Gecko) CriOS/23.0.1271.100 Mobile/10B146 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 6_1 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10B141 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (iPad; CPU OS 6_1 like Mac OS X; en-us) AppleWebKit/536.26 (KHTML, like Gecko) CriOS/23.0.1271.100 Mobile/10B141 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 6_0_1 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A525 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 6_0_2 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A551 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 6_0_2 like Mac OS X; en-us) AppleWebKit/536.26 (KHTML, like Gecko) CriOS/23.0.1271.100 Mobile/10A551 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 6_1_2 like Mac OS X; en-us) AppleWebKit/536.26 (KHTML, like Gecko) CriOS/23.0.1271.100 Mobile/10B146 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (iPhone; CPU iPhone OS 6_1 like Mac OS X; en-us) AppleWebKit/536.26 (KHTML, like Gecko) CriOS/23.0.1271.100 Mobile/10B143 Safari/8536.25");
+        portableAgent.add("Mozilla/5.0 (Linux; Android 4.1.1; GT-I9305T Build/JRO03C) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.47 Mobile Safari/537.22");
         portableAgent.add("Mozilla/5.0 (Linux; U; Android 2.3.3; en-au; GT-P1000 Build/GINGERBREAD) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 2.3.4; en-au; HTC_SensationXE_Beats_Z715a Build/GRJ22) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 2.3.5; en-au; GT-I9100T Build/GINGERBREAD) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 2.3.6; en-au; GT-I9210T Build/GINGERBREAD) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 2.3.6; en-au; GT-N7000 Build/GINGERBREAD) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 2.3.6; en-au; GT-P1000 Build/GINGERBREAD) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 3.2.2; en-au; XOOM 2 Build/1.6.0_268.4-MZ616) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Safari/533.1");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 3.2; en-au; GT-P6810 Build/HTJ85B) AppleWebKit/534.13 (KHTML, like Gecko) Version/4.0 Safari/534.13");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.3; en-au; GT-I9100 Build/IML74K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.3; en-au; GT-I9100T Build/IML74K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.3; en-au; HTC EVA_UL Build/IML74K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.3; en-au; HTC_SensationXE_Beats_Z715a Build/IML74K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.3; en-us; cm_tenderloin Build/GWK74) AppleWebKit/535.7 (KHTML, like Gecko) CrMo/16.0.912.77  Safari/535.7");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.3; en-us; Transformer Prime TF201 Build/IML74K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.4; en-au; GT-I9300T Build/IMM76D) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
-        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.4; en-us; GT-I9100 Build/IMM76D; CyanogenMod-9) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
-        portableAgent.add("Opera/9.80 (Android 2.3.3; Linux; Opera Mobi/ADR-1203051631; U; en) Presto/2.10.254 Version/12.00");
-        portableAgent.add("Opera/9.80 (Android 2.3.3; Linux; Opera Mobi/ADR-1204201824; U; en) Presto/2.10.254 Version/12.00");
-        portableAgent.add("Opera/9.80 (Android 2.3.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00");
-        portableAgent.add("Opera/9.80 (Android 2.3.3; Linux; Opera Tablet/ADR-1110171336; U; en) Presto/2.9.201 Version/11.50");
-        portableAgent.add("Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1111101157; U; en) Presto/2.9.201 Version/11.50");
-        portableAgent.add("Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.3; en-au; GT-P3110 Build/IML74K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.3; en-au; Transformer TF101 Build/IML74K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.3; en-us; AT330 Build/IML74K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.3; en-us; Sony Tablet S Build/TISU0143) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.4; en-au; GT-I9100 Build/IMM76D) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.4; en-au; GT-N7000 Build/IMM76D) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.4; en-au; HTC Sensation Build/IMM76L; CyanogenMod-9.1.0) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.0.4; en-us; GT-I9300T Build/IMM76D) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.1.1; en-au; ASUS Transformer Pad TF300T Build/JRO03C) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.1.1; en-au; GT-I9300 Build/JRO03C) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.1.1; en-au; GT-I9305 Build/JRO03C) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; ASUS Transformer Pad TF700T Build/JRO03C) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; GT-I9300T Build/JRO03C) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; Transformer Prime TF201 Build/JRO03C) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.1.2; en-au; GT-I9100 Build/JZO54K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.1.2; en-us; GT-I9300T Build/JZO54K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.2.1; en-au; Transformer Prime TF201 Build/JOP40D) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.2.1; en-gb; Galaxy Nexus Build/JOP40D) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Linux; U; Android 4.2.1; en-us; Transformer Prime TF201 Build/JOP40D) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30");
+        portableAgent.add("Mozilla/5.0 (Android; Mobile; rv:19.0) Gecko/19.0 Firefox/19.0");
+        portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:18.0) Gecko/18.0 Firefox/18.0");
+        portableAgent.add("Opera/9.80 (Android 2.3.3; Linux; Opera Mobi/ADR-1212030829) Presto/2.11.355 Version/12.10");
+        portableAgent.add("Opera/9.80 (Android 2.3.3; Linux; Opera Mobi/ADR-1301080958) Presto/2.11.355 Version/12.10");
     }
 
     /**

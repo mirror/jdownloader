@@ -612,10 +612,19 @@ public class WantLoadCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        final String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
-        if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
+        final String space[][] = new Regex(correctedBR, ">Used space:</label></td>[\r\n\t ]+<td>[\r\n\t ]+([0-9\\.]+)? ?(KB|MB|GB|TB)?[\r\n]+").getMatches();
+        if (space != null && space.length != 0) {
+            if (space[0][0] != null && space[0][1] != null) {
+                ai.setUsedSpace(space[0][0] + " " + space[0][1]);
+            } else if (space[0][0] != null && space[0][1] == null) {
+                ai.setUsedSpace(space[0][0] + " MiB");
+            } else if (space[0][0] == null && space[0][1] != null) {
+                ai.setUsedSpace("0 " + space[0][1]);
+            }
+        }
+
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</label></td>[\r\n\t ]+<td>([^<>\"']+)</td>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
