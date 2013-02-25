@@ -52,6 +52,7 @@ public class Youtube extends PluginForHost {
     private static final String ISVIDEOANDPLAYLIST      = "ISVIDEOANDPLAYLIST";
     private static final String IDASFILENAME            = "ISASFILENAME";
     private static final String IDINFILENAME            = "IDINFILENAME_V2";
+    private static final String FORMATINNAME            = "FORMATINNAME";
     private static final String USEUPLOADERINNAME       = "USEUPLOADERINNAME";
     private static final String ALLOW_MP3               = "ALLOW_MP3_V2";
     private static final String ALLOW_MP4               = "ALLOW_MP4_V2";
@@ -421,6 +422,7 @@ public class Youtube extends PluginForHost {
         getConfig().addEntry(id);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDINFILENAME, JDL.L("plugins.hoster.youtube.idinfilename", "Use Video-ID additionally in filename?")).setDefaultValue(false).setEnabledCondidtion(id, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USEUPLOADERINNAME, JDL.L("plugins.hoster.youtube.useuploaderinname", "Use uploader name in filename?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORMATINNAME, JDL.L("plugins.hoster.youtube.formatinname", "Use format in filename?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SUBTITLES, JDL.L("plugins.hoster.youtube.grabsubtitles", "Grab subtitles?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GROUP_FORMAT, JDL.L("plugins.hoster.youtube.groupbyformat", "Group by format?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

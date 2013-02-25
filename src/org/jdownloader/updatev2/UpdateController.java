@@ -60,8 +60,7 @@ public class UpdateController implements UpdateCallbackInterface {
     private UpdateSettings settings;
 
     /**
-     * Create a new instance of UpdateController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of UpdateController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private UpdateController() {
         confirmedThreads = new HashSet<Thread>();
@@ -320,7 +319,6 @@ public class UpdateController implements UpdateCallbackInterface {
     public void onResults(boolean app, boolean updater, int clientRevision, int clientDestRevision, int selfRevision, int selfDestRevision, File awfFileclient, File awfFileSelf, File selfWOrkingDir, boolean jdlaunched) throws InterruptedException, IOException {
         try {
             logger.info("onResult");
-            ;
             if (handler.hasPendingSelfupdate()) {
                 if (!isThreadConfirmed()) {
                     if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) return;

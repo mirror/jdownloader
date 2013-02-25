@@ -174,8 +174,7 @@ public class TbCm extends PluginForDecrypt {
     }
 
     /**
-     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs
-     * after the completed download.
+     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
      * 
      * @param downloadlink
      *            . The finished link to the Google CC subtitle file.
@@ -686,8 +685,7 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the
-                         * moment
+                         * we do not want to download unknown formats at the moment
                          */
                         continue;
                     }
@@ -750,16 +748,20 @@ public class TbCm extends PluginForDecrypt {
                         thislink.setProperty("ALLOW_DUPE", true);
                         filePackage.add(thislink);
                         thislink.setBrowserUrl(url);
-                        thislink.setFinalFileName(YT_FILENAME + info.desc + convertTo.getExtFirst());
+                        String desc = info.desc;
+                        if (cfg.getBooleanProperty("FORMATINNAME", true) == false) {
+                            desc = "";
+                        }
+                        thislink.setFinalFileName(YT_FILENAME + desc + convertTo.getExtFirst());
                         thislink.setProperty("size", info.size);
                         String name = null;
                         if (convertTo != DestinationFormat.AUDIOMP3) {
-                            name = YT_FILENAME + info.desc + convertTo.getExtFirst();
+                            name = YT_FILENAME + desc + convertTo.getExtFirst();
                             thislink.setProperty("name", name);
                         } else {
                             // because demuxer will fail when mp3 file already
                             // exists
-                            name = YT_FILENAME + info.desc + ".tmp";
+                            name = YT_FILENAME + desc + ".tmp";
                             thislink.setProperty("name", name);
                         }
                         thislink.setProperty("convertto", convertTo.name());
