@@ -16,13 +16,9 @@
 
 package jd.plugins.hoster;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -36,8 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class FreeWayMe extends PluginForHost {
@@ -91,25 +85,6 @@ public class FreeWayMe extends PluginForHost {
         }
         // account should be valid now, let's get account information:
         br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass);
-
-        // Maker sure that the API is activated
-        if (br.toString().contains("API deaktiviert")) {
-            showApiDisabledDialog();
-            // Wait, maybe the user activated the API so he can directly use the
-            // account
-            Thread.sleep(10 * 1000l);
-            // Check again, maybe the user activated the API
-            br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass);
-            if (br.toString().contains("API deaktiviert")) {
-                String message = "\r\nDu hast die free-way API deaktiviert. Diese wird jedoch zum Downloaden mit JDownloader benötigt.\r\n Hier kannst du sie aktivieren: https://www.free-way.me/account?api_enable";
-                message += "\r\n\r\n";
-                message += "The free-way API is disabled. The API is needed to use free-way with JDownloader.\r\n Here you can activate it: https://www.free-way.me/account?api_enable";
-                ac.setStatus(message);
-
-                account.setTempDisabled(true);
-                return ac;
-            }
-        }
 
         int maxPremi = 1;
         final String maxPremApi = getJson("parallel", br.toString());
@@ -265,35 +240,6 @@ public class FreeWayMe extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    private static void showApiDisabledDialog() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = " API deaktiviert";
-                            message = "Du hast die free-way API deaktiviert. Diese wird jedoch zum Downloaden mit JDownloader benötigt.\r\n" + "Möchtest Du diese aktivieren?";
-                        } else {
-                            title = "API disabled";
-                            message = "The free-way API is disabled. The API is needed to use free-way with JDownloader.";
-                        }
-                        if (CrossSystem.isOpenBrowserSupported()) {
-                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("https://www.free-way.me/account?api_enable"));
-                        }
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
     }
 
 }

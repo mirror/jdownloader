@@ -43,8 +43,8 @@ public class MusicAolCom extends PluginForDecrypt {
         final int cdNum = Integer.parseInt(new Regex(parameter, "(\\d+)").getMatch(0)) - 1;
         final String feed = br.getRegex("id=\"album_" + cdNum + "\" playlisturl=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (feed == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Decrypter broken or link offline: " + parameter);
+            return decryptedLinks;
         }
         br.getPage(feed);
         String albumName = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);

@@ -51,6 +51,8 @@ public class SloozieCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int tempCounter = 0;
         int offset = 0;
@@ -63,8 +65,17 @@ public class SloozieCom extends PluginForDecrypt {
             }
             final String[] links = br.getRegex("\"(http://(www\\.)?sloozie\\.com/(galleries|videos)/[a-z0-9]+/[^<>\"/]*?)\"").getColumn(0);
             if (links == null || links.length == 0) break;
-            for (final String singleLink : links)
+            for (final String singleLink : links) {
+                final DownloadLink dl = createDownloadlink(singleLink);
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                try {
+                    distribute(dl);
+                } catch (final Throwable e) {
+                    /* does not exist in 09581 */
+                }
                 decryptedLinks.add(createDownloadlink(singleLink));
+            }
             tempCounter = links.length;
             offset += PICSPERSEGMENT;
             segmentCounter++;
@@ -73,8 +84,6 @@ public class SloozieCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

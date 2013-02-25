@@ -41,6 +41,10 @@ public class NoRapidSearchCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        if (br.containsHTML(">File was removed from filehosting")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("class=\"block\\-head\"><div class=\"block\\-head\\-inner\"><h1>Fast download of ([^<>\"\\']+) from <b>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>Start to download ([^<>\"\\']+) file from .*?</title>").getMatch(0);

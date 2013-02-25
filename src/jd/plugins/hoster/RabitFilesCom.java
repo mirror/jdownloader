@@ -46,7 +46,9 @@ public class RabitFilesCom extends PluginForHost {
         return "http://www.rabidfiles.com/terms.html";
     }
 
-    private static final String MAINTENANCE = ">We are doing upgrades";
+    private static final String MAINTENANCE              = ">We are doing upgrades";
+    private static final String SIMULTANDLSLIMIT         = "?e=You+have+reached+the+maximum+concurrent+downloads";
+    private static final String SIMULTANDLSLIMITUSERTEXT = "Max. simultan downloads limit reached, wait to start more downloads from this host";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -57,6 +59,11 @@ public class RabitFilesCom extends PluginForHost {
         if (br.containsHTML(MAINTENANCE)) {
             link.getLinkStatus().setStatusText("Hoster is unter maintenance...");
             return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.getURL().contains(SIMULTANDLSLIMIT)) {
+            link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            link.getLinkStatus().setStatusText(SIMULTANDLSLIMITUSERTEXT);
+            return AvailableStatus.TRUE;
         }
         final Regex infoRegex = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]+)\\)<br/");
         String filename = infoRegex.getMatch(0);
@@ -71,6 +78,7 @@ public class RabitFilesCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_FATAL, "Hoster is unter maintenance...");
+        if (br.getURL().contains(SIMULTANDLSLIMIT)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
         final String waittime = br.getRegex("var seconds = (\\d+);").getMatch(0);
         int wait = waittime == null ? 60 : Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);
@@ -112,7 +120,7 @@ public class RabitFilesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override

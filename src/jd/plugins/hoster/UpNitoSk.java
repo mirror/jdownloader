@@ -43,7 +43,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upnito.sk" }, urls = { "http://[\\w\\.]*?upnito\\.sk/(download\\.php\\?(dwToken=[a-z0-9]+|file=.+)|subor/[a-z0-9]+\\.html)" }, flags = { 2 })
 public class UpNitoSk extends PluginForHost {
 
-    private static AtomicBoolean wthack = new AtomicBoolean(true);
+    private static AtomicBoolean wthack = new AtomicBoolean(false);
 
     public UpNitoSk(final PluginWrapper wrapper) {
         super(wrapper);
@@ -167,6 +167,11 @@ public class UpNitoSk extends PluginForHost {
         this.br.submitForm(dlform);
         // Downloadbutton
         dlform = this.br.getForm(0);
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String secondWaittime = br.getRegex("id=\"cas\" style=\"font\\-size: 12px;\">(\\d+)</span>").getMatch(0);
+        if (secondWaittime != null) {
+            this.sleep(Integer.parseInt(secondWaittime) * 1001l, downloadLink);
+        }
         dlform.put("tahaj", "Stiahnut");
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dlform, false, 1);
         if (this.dl.getConnection().getContentType().contains("html")) {
