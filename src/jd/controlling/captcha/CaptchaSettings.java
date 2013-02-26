@@ -53,4 +53,14 @@ public interface CaptchaSettings extends ConfigInterface {
 
     void setJAntiCaptchaTimeout(int ms);
 
+    @AboutConfig
+    String getCBUser();
+
+    void setCBUser(String jser);
+
+    @AboutConfig
+    String getCBPass();
+
+    void setCBPass(String jser);
+
 }

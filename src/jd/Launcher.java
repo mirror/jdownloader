@@ -80,6 +80,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.ExternInterface;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.solver.CBSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
@@ -477,6 +478,7 @@ public class Launcher {
                             ChallengeResponseController.getInstance().addSolver(JACSolver.getInstance());
                             ChallengeResponseController.getInstance().addSolver(DialogBasicCaptchaSolver.getInstance());
                             ChallengeResponseController.getInstance().addSolver(DialogClickCaptchaSolver.getInstance());
+                            ChallengeResponseController.getInstance().addSolver(CBSolver.getInstance());
 
                             if (!jared) {
                                 HostPluginController.getInstance().invalidateCache();

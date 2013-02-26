@@ -3,6 +3,7 @@ package org.jdownloader.settings.advanced;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.linkchecker.LinkCheckerConfig;
 import jd.controlling.linkcollector.LinkCollectorConfig;
 import jd.controlling.linkcrawler.LinkCrawlerConfig;
@@ -61,6 +62,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(UpdateSettings.class));
         register(JsonConfig.create(SyntheticaSettings.class));
         register(JsonConfig.create(SoundSettings.class));
+        register(JsonConfig.create(CaptchaSettings.class));
 
     }
 
