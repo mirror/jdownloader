@@ -159,10 +159,10 @@ public class BillionUploadsCom extends PluginForHost {
                 if (fileInfo[0] == null) {
                     fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                     if (fileInfo[0] == null) {
-                        fileInfo[0] = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        fileInfo[0] = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^>]+)").getMatch(1);
                         // traits from download1 page below.
                         if (fileInfo[0] == null) {
-                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<]+)").getMatch(1);
                             // next two are details from sharing box
                             if (fileInfo[0] == null) {
                                 fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
@@ -208,11 +208,14 @@ public class BillionUploadsCom extends PluginForHost {
             checkErrors(downloadLink, false, passCode);
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
+                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                download1 = cleanForm(download1);
+                // end of backward compatibility
                 download1.remove("method_premium");
                 sendForm(download1);
                 checkErrors(downloadLink, false, passCode);
+                dllink = getDllink();
             }
-            dllink = getDllink();
         }
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
@@ -220,7 +223,8 @@ public class BillionUploadsCom extends PluginForHost {
             // how many forms deep do you want to try.
             int repeat = 3;
             for (int i = 1; i < repeat; i++) {
-                dlForm.remove(null);
+                dlForm = cleanForm(dlForm);
+                // dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
                 boolean skipWaittime = false;
@@ -336,14 +340,14 @@ public class BillionUploadsCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
-     * singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
-     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
-     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
-     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
-     * begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -715,6 +719,33 @@ public class BillionUploadsCom extends PluginForHost {
             logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
             if (tt > 0) sleep(tt * 1000l, downloadLink);
         }
+    }
+
+    /**
+     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
+     * InputField parse(final String data). Affects revision 19688 and earlier!
+     * 
+     * TODO: remove after JD2 goes stable!
+     * 
+     * @author raztoki
+     * */
+    private Form cleanForm(Form form) {
+        if (form == null) return null;
+        String data = form.getHtmlCode();
+        ArrayList<String> cleanupRegex = new ArrayList<String>();
+        cleanupRegex.add("(\\w+\\s*=\\s*\"[^\"]+\")");
+        cleanupRegex.add("(\\w+\\s*=\\s*'[^']+')");
+        for (String reg : cleanupRegex) {
+            String results[] = new Regex(data, reg).getColumn(0);
+            if (results != null) {
+                String quote = new Regex(reg, "(\"|')").getMatch(0);
+                for (String result : results) {
+                    String cleanedResult = result.replaceFirst(quote, "\\\"").replaceFirst(quote + "$", "\\\"");
+                    data = data.replace(result, cleanedResult);
+                }
+            }
+        }
+        return new Form(data);
     }
 
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
