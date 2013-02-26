@@ -24,8 +24,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,6 +33,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -173,9 +172,9 @@ public class YkCm extends PluginForDecrypt {
         final String se = new Regex(jsonString, "\"segs\":\\{(.*?)\\},\"streamsizes").getMatch(0);
         final String seed = new Regex(jsonString, "\"seed\":(\\d+)").getMatch(0);
         // for volume based videos 1-x within the series http://www.youku.com/show_page/id_zcbff19f8962411de83b1.html
-        String title = new Regex(jsonString, "\"vidEncoded\":\"" + videoId + "\",\"title\":\"(.*?)\"").getMatch(0);
+        String title = new Regex(jsonString, "\"vidEncoded\":\"" + videoId + "\",\"title\":\"(.*?)\",").getMatch(0);
         // standard video and title format. http://v.youku.com/v_show/id_XNTAxODE3NDgw.html
-        if (title == null) title = new Regex(jsonString, ",\"title\":\"(.*?)\"").getMatch(0);
+        if (title == null) title = new Regex(jsonString, ",\"title\":\"(.*?)\",").getMatch(0);
 
         if (sfi != null && ss != null && st != null && se != null && seed != null && title != null) {
 
@@ -185,7 +184,7 @@ public class YkCm extends PluginForDecrypt {
 
             fileDesc = new HashMap<String, String>();
             fileDesc.put("seed", seed);
-            fileDesc.put("title", decodeUnicode(title));
+            fileDesc.put("title", unescape(title.trim()));
 
             streamTypes = new Regex(st, "\"(.*?)\"").getColumn(0);
 
@@ -228,14 +227,10 @@ public class YkCm extends PluginForDecrypt {
         return false;
     }
 
-    private String decodeUnicode(final String s) {
-        Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
-        String res = s;
-        Matcher m = p.matcher(res);
-        while (m.find()) {
-            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
-        }
-        return res;
+    private String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        JDUtilities.getPluginForHost("youtube.com");
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
 }

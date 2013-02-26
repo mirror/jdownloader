@@ -85,51 +85,52 @@ public class Youtube extends PluginForHost {
         int i;
         for (i = 0; i < s.length(); i++) {
             ch = s.charAt(i);
-            switch (ch) {
-            case '%':
-            case '\\':
-                ch2 = ch;
-                ch = s.charAt(++i);
-                StringBuilder sb2 = null;
+            // prevents StringIndexOutOfBoundsException with ending char equals case trigger
+            if (s.length() != i + 1) {
                 switch (ch) {
-                case 'u':
-                    /* unicode */
-                    sb2 = new StringBuilder();
-                    i++;
-                    ii = i + 4;
-                    for (; i < ii; i++) {
-                        ch = s.charAt(i);
-                        if (sb2.length() > 0 || ch != '0') {
+                case '%':
+                case '\\':
+                    ch2 = ch;
+                    ch = s.charAt(++i);
+                    StringBuilder sb2 = null;
+                    switch (ch) {
+                    case 'u':
+                        /* unicode */
+                        sb2 = new StringBuilder();
+                        i++;
+                        ii = i + 4;
+                        for (; i < ii; i++) {
+                            ch = s.charAt(i);
+                            if (sb2.length() > 0 || ch != '0') {
+                                sb2.append(ch);
+                            }
+                        }
+                        i--;
+                        sb.append((char) Long.parseLong(sb2.toString(), 16));
+                        continue;
+                    case 'x':
+                        /* normal hex coding */
+                        sb2 = new StringBuilder();
+                        i++;
+                        ii = i + 2;
+                        for (; i < ii; i++) {
+                            ch = s.charAt(i);
                             sb2.append(ch);
                         }
+                        i--;
+                        sb.append((char) Long.parseLong(sb2.toString(), 16));
+                        continue;
+                    default:
+                        if (ch2 == '%') {
+                            sb.append(ch2);
+                        }
+                        sb.append(ch);
+                        continue;
                     }
-                    i--;
-                    sb.append((char) Long.parseLong(sb2.toString(), 16));
-                    continue;
-                case 'x':
-                    /* normal hex coding */
-                    sb2 = new StringBuilder();
-                    i++;
-                    ii = i + 2;
-                    for (; i < ii; i++) {
-                        ch = s.charAt(i);
-                        sb2.append(ch);
-                    }
-                    i--;
-                    sb.append((char) Long.parseLong(sb2.toString(), 16));
-                    continue;
-                default:
-                    if (ch2 == '%') {
-                        sb.append(ch2);
-                    }
-                    sb.append(ch);
-                    continue;
                 }
-
             }
             sb.append(ch);
         }
-
         return sb.toString();
     }
 
