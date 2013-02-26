@@ -71,20 +71,30 @@ public class FilePackageApi implements IFilePackageApi {
     public boolean setEnabled(long ID, boolean enabled) {
         DownloadController dlc = DownloadController.getInstance();
         boolean b = dlc.readLock();
-        long id = Long.valueOf(ID);
         try {
-            for (FilePackage fpkg : dlc.getPackages()) {
-                if (fpkg.getUniqueID().getID() == id) synchronized (fpkg) {
-                    for (DownloadLink link : fpkg.getChildren()) {
-                        link.setEnabled(enabled);
-                    }
-                    return true;
-                }
+            FilePackage fpkg = Helper.getFilePackageFromID(ID);
+            for (DownloadLink link : fpkg.getChildren()) {
+                link.setEnabled(enabled);
             }
+            return true;
         } finally {
             dlc.readUnlock(b);
         }
-        return true;
+    }
+
+    @Override
+    public boolean reset(long ID) {
+        DownloadController dlc = DownloadController.getInstance();
+        boolean b = dlc.readLock();
+        try {
+            FilePackage fpkg = Helper.getFilePackageFromID(ID);
+            for (DownloadLink link : fpkg.getChildren()) {
+                link.reset();
+            }
+            return true;
+        } finally {
+            dlc.readUnlock(b);
+        }
     }
 
     /*

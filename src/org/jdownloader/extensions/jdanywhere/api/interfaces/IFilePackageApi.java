@@ -21,6 +21,8 @@ public interface IFilePackageApi extends RemoteAPIInterface {
     // used in iPhone-App
     public abstract boolean setEnabled(long ID, boolean enabled);
 
+    public boolean reset(long ID);
+
     public abstract FilePackageStorable getFilePackage(long ID);
 
 }
