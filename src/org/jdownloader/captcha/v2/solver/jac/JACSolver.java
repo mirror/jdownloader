@@ -91,7 +91,7 @@ public class JACSolver extends ChallengeSolver<String> {
                     }
                 }
 
-                job.addAnswer(new CaptchaResponse(this, captchaCode, (int) vp * 100));
+                job.addAnswer(new CaptchaResponse(this, captchaCode, (int) vp));
 
             }
         } catch (IOException e) {
