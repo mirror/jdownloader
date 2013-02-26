@@ -23,7 +23,7 @@ public class ResponseList<E> extends ArrayList<AbstractResponse<E>> implements C
 
     @Override
     public int compareTo(ResponseList<E> o) {
-        return new Integer(sum).compareTo(new Integer(o.sum));
+        return new Integer(o.sum).compareTo(new Integer(sum));
     }
 
     public E getValue() {

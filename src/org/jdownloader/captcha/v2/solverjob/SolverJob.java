@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.solverjob;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -50,6 +51,7 @@ public class SolverJob<T> {
         this.cumulate();
         challenge.setResult(cumulatedList.get(0).getValue());
         if (isSolved()) {
+            getLogger().info("Is Solved - kill rest");
             kill();
         }
         fireNewAnswerEvent(abstractResponse);
@@ -89,6 +91,7 @@ public class SolverJob<T> {
 
             cache.add(a);
         }
+        Collections.sort(list);
         this.cumulatedList = list;
     }
 
@@ -157,7 +160,10 @@ public class SolverJob<T> {
 
     private void kill() {
         for (ChallengeSolver<T> s : solverList) {
-            if (!doneList.contains(s)) s.kill(this);
+            if (!doneList.contains(s)) {
+                getLogger().info("Kill " + s);
+                s.kill(this);
+            }
         }
     }
 

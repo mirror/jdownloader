@@ -11,7 +11,7 @@ public class ChallengeResponseEventSender extends Eventsender<ChallengeResponseL
     protected void fireEvent(ChallengeResponseListener listener, ChallengeResponseEvent event) {
         switch (event.getType()) {
         case JOB_ANSWER:
-            listener.onNewJobAnswer((SolverJob<?>) event.getParameter(0), (AbstractResponse<?>) event.getParameter(1));
+            listener.onNewJobAnswer((SolverJob<?>) event.getParameter(1), (AbstractResponse<?>) event.getParameter(0));
             return;
         case JOB_DONE:
             listener.onJobDone((SolverJob<?>) event.getParameter(0));

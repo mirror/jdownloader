@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URL;
 
 import jd.controlling.captcha.CaptchaSettings;
+import jd.nutils.encoding.Encoding;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
@@ -11,11 +12,15 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.BasicHTTP.BasicHTTP;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
+import org.jdownloader.captcha.v2.solver.jac.JACSolver;
+import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class CBSolver extends ChallengeSolver<String> {
-    private CaptchaSettings       config;
-    private static final CBSolver INSTANCE = new CBSolver();
+    private CaptchaBrotherHoodSettings config;
+    private static final CBSolver      INSTANCE = new CBSolver();
 
     public static CBSolver getInstance() {
         return INSTANCE;
@@ -28,37 +33,50 @@ public class CBSolver extends ChallengeSolver<String> {
 
     private CBSolver() {
         super(1);
-        config = JsonConfig.create(CaptchaSettings.class);
+        config = JsonConfig.create(CaptchaBrotherHoodSettings.class);
+        AdvancedConfigManager.getInstance().register(config);
     }
 
     @Override
-    public void solve(final SolverJob<String> job) throws InterruptedException {
-        if (StringUtils.isEmpty(config.getCBUser()) || StringUtils.isEmpty(config.getCBPass())) return;
+    public void solve(final SolverJob<String> job) throws InterruptedException, SolverException {
+        if (StringUtils.isEmpty(config.getUser()) || StringUtils.isEmpty(config.getPass())) return;
         if (job.getChallenge() instanceof BasicCaptchaChallenge) {
+            job.waitFor(JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout(), JACSolver.getInstance());
 
             BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
             BasicHTTP http = new BasicHTTP();
 
             try {
-                String url = "http://www.captchabrotherhood.com/sendNewCaptcha.aspx?username=" + config.getCBUser() + "&password=" + config.getCBPass() + "&captchaSource=jdPlugin&captchaSite=999&timeout=80&version=1.1.7";
+                String url = "http://www.captchabrotherhood.com/sendNewCaptcha.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaSource=jdPlugin&captchaSite=999&timeout=80&version=1.1.7";
                 byte[] data = IO.readFile(challenge.getImageFile());
 
                 String ret = new String(http.postPage(new URL(url), data));
-
-                if (ret.startsWith("OK-"))
-                ;
-                System.out.println(new String(ret));
+                job.getLogger().info("Send Captcha. Answer: " + ret);
+                if (!ret.startsWith("OK-")) throw new SolverException(ret);
+                // Error-No Credits
+                String captchaID = ret.substring(3);
                 data = null;
-                while (true) {
-                    Thread.sleep(5000);
-                    url = "http://www.captchabrotherhood.com/askCaptchaResult.aspx?username=" + config.getCBUser() + "&password=" + config.getCBPass() + "&captchaID=" + ret.substring(3) + "&version=1.1.7";
 
+                while (true) {
+
+                    Thread.sleep(3000);
+                    url = "http://www.captchabrotherhood.com/askCaptchaResult.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaID=" + Encoding.urlEncode(captchaID) + "&version=1.1.7";
+                    job.getLogger().info("Ask " + url);
                     ret = new String(http.getPage(new URL(url)));
-                    System.out.println(ret);
+                    job.getLogger().info("Answer " + ret);
+                    if (ret.startsWith("OK-answered-")) {
+                        job.addAnswer(new CaptchaResponse(this, ret.substring("OK-answered-".length()), 100));
+                        return;
+                    }
+                    checkInterruption();
+
                 }
 
             } catch (IOException e) {
-                e.printStackTrace();
+                job.getLogger().log(e);
+            } finally {
+
+                System.out.println(1);
             }
 
         }

@@ -48,6 +48,7 @@ public abstract class ChallengeSolver<T> {
             JobRunnable<T> jr = map.remove(job);
 
             if (jr != null) {
+                job.getLogger().info("Cancel " + jr);
                 jr.cancel();
 
             } else {

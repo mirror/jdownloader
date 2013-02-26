@@ -6,4 +6,8 @@ public class SolverException extends Exception {
         super(e);
     }
 
+    public SolverException(String ret) {
+        super(ret);
+    }
+
 }
