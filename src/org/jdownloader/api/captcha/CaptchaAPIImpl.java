@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.IOPermission;
-import jd.controlling.captcha.BasicCaptchaDialogHandler;
-import jd.controlling.captcha.CaptchaDialogQueue;
 
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.RemoteAPI;
@@ -39,7 +37,7 @@ public class CaptchaAPIImpl implements CaptchaAPI {
     }
 
     public List<CaptchaJob> list() {
-        List<BasicCaptchaDialogHandler> entries = CaptchaDialogQueue.getInstance().getJobs();
+
         java.util.List<CaptchaJob> ret = new ArrayList<CaptchaJob>();
         for (SolverJob<?> entry : ChallengeResponseController.getInstance().listJobs()) {
             if (entry.isDone()) continue;
