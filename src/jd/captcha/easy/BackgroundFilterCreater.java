@@ -40,8 +40,9 @@ public class BackgroundFilterCreater {
      * @param files
      * @param methode
      * @return
+     * @throws InterruptedException
      */
-    public static File create(EasyMethodFile methode) {
+    public static File create(EasyMethodFile methode) throws InterruptedException {
         return create(methode.getCaptchaFolder().listFiles(new FileFilter() {
 
             public boolean accept(File pathname) {
@@ -56,9 +57,10 @@ public class BackgroundFilterCreater {
      * @param files
      * @param methode
      * @return
+     * @throws InterruptedException
      */
     @SuppressWarnings("unchecked")
-    public static File create(File[] files, EasyMethodFile methode) {
+    public static File create(File[] files, EasyMethodFile methode) throws InterruptedException {
         boolean ignoreBlack = false;
         JAntiCaptcha jac = new JAntiCaptcha(methode.getName());
         Image image = Utilities.loadImage(files[0]);

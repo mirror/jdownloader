@@ -14,7 +14,6 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.storage.StorageException;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
@@ -30,7 +29,7 @@ import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 
-public abstract class ChallengeDialogQueueEntry<T extends ImageCaptchaChallenge<?>> extends QueueAction<Void, RuntimeException> {
+public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>> {
     private CaptchaDialogInterface textDialog;
     private IOPermission           ioPermission = null;
     private DomainInfo             host;
@@ -38,7 +37,7 @@ public abstract class ChallengeDialogQueueEntry<T extends ImageCaptchaChallenge<
     private CaptchaSettings        config;
     private final UniqueAlltimeID  id           = new UniqueAlltimeID();
 
-    public ChallengeDialogQueueEntry(DomainInfo instance, T captchaChallenge2) {
+    public ChallengeDialogHandler(DomainInfo instance, T captchaChallenge2) {
         this.host = instance;
         this.captchaChallenge = captchaChallenge2;
         config = JsonConfig.create(CaptchaSettings.class);
@@ -48,10 +47,9 @@ public abstract class ChallengeDialogQueueEntry<T extends ImageCaptchaChallenge<
         return host;
     }
 
-    protected Void run() {
+    public void run() throws InterruptedException {
 
         viaGUI();
-        return null;
 
     }
 
@@ -66,7 +64,7 @@ public abstract class ChallengeDialogQueueEntry<T extends ImageCaptchaChallenge<
         return logger;
     }
 
-    private void viaGUI() {
+    private void viaGUI() throws InterruptedException {
         if (ioPermission != null && !ioPermission.isCaptchaAllowed(getHost().getTld())) { return; }
         try {
             DialogType dialogType = null;
@@ -97,6 +95,7 @@ public abstract class ChallengeDialogQueueEntry<T extends ImageCaptchaChallenge<
         } catch (DialogNoAnswerException e) {
 
             /* no external response available */
+            if (e.isCausedByInterrupt()) throw new InterruptedException("Dialog Interrupted");
             if (!e.isCausedByTimeout()) {
                 String[] options = new String[] { _JDT._.captchacontroller_cancel_dialog_allorhost_next(), _JDT._.captchacontroller_cancel_dialog_allorhost_cancelhost(getHost().getTld()), _JDT._.captchacontroller_cancel_dialog_allorhost_all() };
                 try {

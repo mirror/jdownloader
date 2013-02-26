@@ -41,96 +41,52 @@ public class LinkbaseBiz {
 
                 int xMin = Math.max(a.getXMin(), b.getXMin());
                 int xMax = Math.min(a.getXMin() + a.getWidth(), b.getXMin() + b.getWidth());
-                if (xMax+2 <= xMin ) 
-                	continue;
+                if (xMax + 2 <= xMin) continue;
                 int yMin = Math.max(a.getYMin(), b.getYMin());
                 int yMax = Math.min(a.getYMin() + a.getHeight(), b.getYMin() + b.getHeight());
 
-                if (((xMax - xMin)<20) && ((yMax - yMin)<20)) {
-                            a.add(b);
-                            os.remove(b);
-                            mergeObjects2(os);
-                            return;
+                if (((xMax - xMin) < 20) && ((yMax - yMin) < 20)) {
+                    a.add(b);
+                    os.remove(b);
+                    mergeObjects2(os);
+                    return;
                 }
             }
         }
 
     }
-    
+
     /*
-    private static Object[] getNexTOS(PixelObject aos, List<PixelObject> os) {
-        int i = 0;
-        PixelObject nextos;
-        while ((nextos = os.get(i)) == aos) {
-            i++;
+     * private static Object[] getNexTOS(PixelObject aos, List<PixelObject> os) { int i = 0; PixelObject nextos; while ((nextos = os.get(i))
+     * == aos) { i++;
+     * 
+     * } i++; int best; int matching = Math.min((aos.getXMax()), (nextos.getXMax())) - Math.max(aos.getXMin(), nextos.getXMin()); if
+     * (matching >= 0) best = -matching; else best = Math.min((Math.min(Math.abs((aos.getXMin() + aos.getWidth()) - (nextos.getXMin())),
+     * Math.abs((aos.getXMin()) - (nextos.getXMin() + nextos.getWidth())))), (Math.min(Math.abs(aos.getXMin() - nextos.getXMin()),
+     * Math.abs((aos.getXMin() + aos.getWidth()) - (nextos.getXMin() + nextos.getWidth()))))); for (; i < os.size(); i++) { PixelObject b =
+     * os.get(i); if (b == aos) continue; int ib; matching = Math.min((aos.getXMax()), (b.getXMax())) - Math.max(aos.getXMin(),
+     * b.getXMin()); if (matching >= 0) ib = -matching; else ib = Math.min((Math.min(Math.abs((aos.getXMin() + aos.getWidth()) -
+     * (b.getXMin())), Math.abs((aos.getXMin()) - (b.getXMin() + b.getWidth())))), (Math.min(Math.abs(aos.getXMin() - b.getXMin()),
+     * Math.abs((aos.getXMin() + aos.getWidth()) - (b.getXMin() + b.getWidth())))));
+     * 
+     * if (ib < best) { best = ib; nextos = b; } } return new Object[] {nextos, best}; }
+     * 
+     * private static void merge(List<PixelObject> os) { if (os.size() <= 4) return; PixelObject aos = null;
+     * 
+     * for (PixelObject pixelObject : os) { if(aos==null||pixelObject.getSize()<aos.getSize()) { aos=pixelObject; } } if(aos.getSize()<80) {
+     * EasyCaptcha.mergeos(aos, os); merge(os); return; } int mergeos = Integer.MAX_VALUE;
+     * 
+     * for (PixelObject pixelObject : os) { Object[] nos = getNexTOS(pixelObject, os); int dist = (Integer)nos[1]; if (mergeos > dist) {
+     * mergeos = dist; aos = pixelObject; } } if(mergeos<3) { EasyCaptcha.mergeos(aos, os); merge(os); } }
+     */
 
-        }
-        i++;
-        int best;
-        int matching = Math.min((aos.getXMax()), (nextos.getXMax())) - Math.max(aos.getXMin(), nextos.getXMin());
-        if (matching >= 0)
-            best = -matching;
-        else
-            best = Math.min((Math.min(Math.abs((aos.getXMin() + aos.getWidth()) - (nextos.getXMin())), Math.abs((aos.getXMin()) - (nextos.getXMin() + nextos.getWidth())))), (Math.min(Math.abs(aos.getXMin() - nextos.getXMin()), Math.abs((aos.getXMin() + aos.getWidth()) - (nextos.getXMin() + nextos.getWidth())))));
-        for (; i < os.size(); i++) {
-            PixelObject b = os.get(i);
-            if (b == aos) continue;
-            int ib;
-            matching = Math.min((aos.getXMax()), (b.getXMax())) - Math.max(aos.getXMin(), b.getXMin());
-            if (matching >= 0)
-                ib = -matching;
-            else
-                ib = Math.min((Math.min(Math.abs((aos.getXMin() + aos.getWidth()) - (b.getXMin())), Math.abs((aos.getXMin()) - (b.getXMin() + b.getWidth())))), (Math.min(Math.abs(aos.getXMin() - b.getXMin()), Math.abs((aos.getXMin() + aos.getWidth()) - (b.getXMin() + b.getWidth())))));
-
-            if (ib < best) {
-                best = ib;
-                nextos = b;
-            }
-        }
-        return new Object[] {nextos, best};
+    static boolean isRgb(int color) {
+        return color != 0x000000;
     }
 
-    private static void merge(List<PixelObject> os) {
-        if (os.size() <= 4) return;
-        PixelObject aos = null;
-
-        for (PixelObject pixelObject : os) {
-            if(aos==null||pixelObject.getSize()<aos.getSize())
-            {
-                aos=pixelObject;
-            }
-        }
-        if(aos.getSize()<80)
-        {
-            EasyCaptcha.mergeos(aos, os);
-            merge(os);
-            return;
-        }
-        int mergeos = Integer.MAX_VALUE;
-        
-        for (PixelObject pixelObject : os) {
-            Object[] nos = getNexTOS(pixelObject, os);
-            int dist = (Integer)nos[1];
-            if (mergeos > dist) {
-                mergeos = dist;
-                aos = pixelObject;
-            }
-        }
-        if(mergeos<3)
-        {
-        EasyCaptcha.mergeos(aos, os);
-        merge(os);
-        }
-    }
-    */
-
-    static boolean isRgb(int color)
-    {
-        return color!=0x000000;
-    }
     /**
-     * overwrite the colored dots in digits with black dots
-     * die bunten punkte in den Zahlen werden mit schwarzen punkten ersetzt
+     * overwrite the colored dots in digits with black dots die bunten punkte in den Zahlen werden mit schwarzen punkten ersetzt
+     * 
      * @param captcha
      */
     static void setDotsInDigits(Captcha captcha) {
@@ -155,28 +111,30 @@ public class LinkbaseBiz {
         }
         captcha.grid = grid;
     }
+
     static int getlength(Captcha captcha) {
         int x = 3;
-        outerx:for (; x < captcha.getWidth()-3; x++) {
-            for (int y = 3; y < captcha.getHeight()-3; y++) {
+        outerx: for (; x < captcha.getWidth() - 3; x++) {
+            for (int y = 3; y < captcha.getHeight() - 3; y++) {
                 if (captcha.grid[x][y] != 0xffffff) {
                     break outerx;
                 }
 
             }
         }
-        int xo = captcha.getWidth()-4;
-        outerx:for (; xo >4 ; xo--) {
-            for (int y = 3; y < captcha.getHeight()-3; y++) {
+        int xo = captcha.getWidth() - 4;
+        outerx: for (; xo > 4; xo--) {
+            for (int y = 3; y < captcha.getHeight() - 3; y++) {
                 if (captcha.grid[xo][y] != 0xffffff) {
                     break outerx;
                 }
 
             }
         }
-        return xo-x;
+        return xo - x;
     }
-    public static Letter[] getLetters1(Captcha captcha) {
+
+    public static Letter[] getLetters1(Captcha captcha) throws InterruptedException {
         BackGroundImageManager bgit = new BackGroundImageManager(captcha);
         bgit.setBackGroundImageListFileName("bgimages2.xml");
 
@@ -185,37 +143,36 @@ public class LinkbaseBiz {
         setDotsInDigits(captcha);
         setDotsInDigits(captcha);
         setDotsInDigits(captcha);
-//        captcha.autoBottomTopAlign();
+        // captcha.autoBottomTopAlign();
 
-        if(getlength(captcha)<88)
-        captcha.owner.setLetterNum(4);
-        else        captcha.owner.setLetterNum(5);
+        if (getlength(captcha) < 88)
+            captcha.owner.setLetterNum(4);
+        else
+            captcha.owner.setLetterNum(5);
 
         return EasyCaptcha.getLetters(captcha);
 
     }
 
-    public static Letter[] getLetters2(Captcha captcha) {
+    public static Letter[] getLetters2(Captcha captcha) throws InterruptedException {
 
         captcha.cleanByRGBDistance(1, 10);
         captcha.toBlackAndWhite(0.75);
-//        captcha.removeSmallObjects(0.75, 0.75);
+        // captcha.removeSmallObjects(0.75, 0.75);
         // long t = System.currentTimeMillis();
-//        clearCaptcha(captcha);
+        // clearCaptcha(captcha);
         Vector<PixelObject> os = captcha.getObjects(0.75, 0.75);
-        if(os.size()>15)
-        {
+        if (os.size() > 15) {
 
-            captcha.cleanWithDetailMask(captcha.owner.createCaptcha(Utilities.loadImage(captcha.owner.getResourceFile("bgmask_1.png"))), 1);    
+            captcha.cleanWithDetailMask(captcha.owner.createCaptcha(Utilities.loadImage(captcha.owner.getResourceFile("bgmask_1.png"))), 1);
             captcha.blurIt(2);
             captcha.toBlackAndWhite(0.6);
             os = captcha.getObjects(0.75, 0.75);
-            if(os.size()>15)
-            {
-            	captcha.reset();
+            if (os.size() > 15) {
+                captcha.reset();
                 captcha.cleanByRGBDistance(1, 10);
                 captcha.toBlackAndWhite(0.6);
-                captcha.cleanWithDetailMask(captcha.owner.createCaptcha(Utilities.loadImage(captcha.owner.getResourceFile("bgmask.png"))), 2,50);    
+                captcha.cleanWithDetailMask(captcha.owner.createCaptcha(Utilities.loadImage(captcha.owner.getResourceFile("bgmask.png"))), 2, 50);
                 captcha.blurIt(2);
                 captcha.toBlackAndWhite(0.6);
                 os = captcha.getObjects(0.75, 0.75);
@@ -226,20 +183,14 @@ public class LinkbaseBiz {
         mergeObjects2(os);
         java.util.List<Letter> ret = new ArrayList<Letter>();
         for (PixelObject pixelObject : os) {
-        	if(pixelObject.getArea()>10)
-        	{
-            Letter let = pixelObject.toLetter();
-            ret.add(let);
-        	}
+            if (pixelObject.getArea() > 10) {
+                Letter let = pixelObject.toLetter();
+                ret.add(let);
+            }
         }
 
         return ret.toArray(new Letter[] {});
 
     }
-
-
-
-
-
 
 }

@@ -36,7 +36,7 @@ import jd.nutils.Screen;
 import org.appwork.utils.swing.EDTHelper;
 
 public class BackGroundImageGUIList implements ActionListener {
-    public BackGroundImageGUIList(EasyMethodFile methode, JFrame owner) {
+    public BackGroundImageGUIList(EasyMethodFile methode, JFrame owner) throws InterruptedException {
         this.manager = new BackGroundImageManager(methode);
         this.owner = owner;
     }

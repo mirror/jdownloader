@@ -88,8 +88,9 @@ public class JAntiCaptcha {
      * @param file
      * @param methodName
      *            TODO
+     * @throws InterruptedException
      */
-    public static void testMethod(File file, String methodName) {
+    public static void testMethod(File file, String methodName) throws InterruptedException {
         LogSource logger = LogController.CL();
         int checkCaptchas = 20;
         String code;
@@ -193,8 +194,9 @@ public class JAntiCaptcha {
      * Führt einen Testlauf mit den übergebenen Methoden durch
      * 
      * @param methods
+     * @throws InterruptedException
      */
-    public static void testMethods(File[] methods) {
+    public static void testMethods(File[] methods) throws InterruptedException {
         for (File element : methods) {
             JAntiCaptcha.testMethod(element, null);
         }
@@ -291,8 +293,9 @@ public class JAntiCaptcha {
      * @param captcha
      *            Captcha instanz
      * @return CaptchaCode
+     * @throws InterruptedException
      */
-    public String checkCaptcha(File file, Captcha captcha) {
+    public String checkCaptcha(File file, Captcha captcha) throws InterruptedException {
         if (extern) return callExtern();
         workingCaptcha = captcha;
         // Führe prepare aus
@@ -521,8 +524,9 @@ public class JAntiCaptcha {
      * @param captchafile
      *            Pfad zum Bild
      * @return CaptchaCode
+     * @throws InterruptedException
      */
-    public String checkCaptcha(File captchafile) {
+    public String checkCaptcha(File captchafile) throws InterruptedException {
         logger.finer("check " + captchafile);
         Image captchaImage = Utilities.loadImage(captchafile);
         Captcha captcha = createCaptcha(captchaImage);
@@ -537,8 +541,9 @@ public class JAntiCaptcha {
      * @param captchaImage
      *            Image instanz
      * @return captcha
+     * @throws InterruptedException
      */
-    public Captcha createCaptcha(Image captchaImage) {
+    public Captcha createCaptcha(Image captchaImage) throws InterruptedException {
         this.sourceImage = captchaImage;
         if (extern) return null;
         if (captchaImage.getWidth(null) <= 0 || captchaImage.getHeight(null) <= 0) {
@@ -849,8 +854,9 @@ public class JAntiCaptcha {
      * @param B
      *            Vergleichsletter
      * @return int 0(super)-0xffffff (ganz übel)
+     * @throws InterruptedException
      */
-    public LetterComperator getLetter(Letter letter) {
+    public LetterComperator getLetter(Letter letter) throws InterruptedException {
         if (jas.getDouble("quickScanValityLimit") <= 0) {
             logger.info("quickscan disabled");
             return getLetterExtended(letter);
@@ -1028,7 +1034,7 @@ public class JAntiCaptcha {
      *            (refferenz)
      * @return Letter. Beste Übereinstimmung
      */
-    private LetterComperator getLetterExtended(Letter letter) {
+    private LetterComperator getLetterExtended(Letter letter) throws InterruptedException {
         // long startTime = Utilities.getTimer();
         LetterComperator res = null;
         logger.info("Extended SCAN");
@@ -1125,7 +1131,10 @@ public class JAntiCaptcha {
 
                 int tt = 0;
                 for (Letter ltr : letterDB) {
-                    if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+                    if (Thread.currentThread().isInterrupted()) {
+                        //
+                        throw new InterruptedException();
+                    }
 
                     if (turnDB) {
                         tmp = ltr.turn(angle);
@@ -1219,6 +1228,8 @@ public class JAntiCaptcha {
                 // "+(Utilities.getTimer()-startTime2));
             }
             // w.refreshUI();
+        } catch (InterruptedException e) {
+            throw e;
         } catch (Exception e) {
             logger.log(e);
         }
@@ -1307,8 +1318,10 @@ public class JAntiCaptcha {
 
     /**
      * Importiert PNG einzelbilder aus einem ordner und erstellt daraus eine neue db
+     * 
+     * @throws InterruptedException
      */
-    public void importDB(File path) {
+    public void importDB(File path) throws InterruptedException {
         String pattern = JOptionPane.showInputDialog("PATTERN", "\\d+_(.*?)\\.");
         if (JOptionPane.showConfirmDialog(null, "Delete old db?") == JOptionPane.OK_OPTION) letterDB = new ArrayList<Letter>();
         getResourceFile("letters.mth").delete();
@@ -1489,8 +1502,9 @@ public class JAntiCaptcha {
      * Debug Methode. Zeigt den Captcha in verschiedenen bearbeitungsstadien an
      * 
      * @param captchafile
+     * @throws InterruptedException
      */
-    public void showPreparedCaptcha(final File captchafile) {
+    public void showPreparedCaptcha(final File captchafile) throws InterruptedException {
 
         if (!captchafile.exists()) {
 
@@ -1598,7 +1612,11 @@ public class JAntiCaptcha {
         bt.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                JAntiCaptcha.this.trainCaptcha(captchafile, 4);
+                try {
+                    JAntiCaptcha.this.trainCaptcha(captchafile, 4);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
             }
 
         });
@@ -1627,8 +1645,9 @@ public class JAntiCaptcha {
      * Diese methode wird aufgerufen um alle captchas im Ordner methods/Methodname/captchas zu trainieren
      * 
      * @param path
+     * @throws InterruptedException
      */
-    public void trainAllCaptchas(String path) {
+    public void trainAllCaptchas(String path) throws InterruptedException {
         int successFull = 0;
         int total = 0;
         logger.info("TRain " + path);
@@ -1661,7 +1680,7 @@ public class JAntiCaptcha {
 
     }
 
-    public int trainCaptcha(final File captchafile, int letterNum) {
+    public int trainCaptcha(final File captchafile, int letterNum) throws InterruptedException {
 
         if (!captchafile.exists()) {
 

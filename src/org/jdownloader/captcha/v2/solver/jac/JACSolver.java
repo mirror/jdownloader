@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.solver.jac;
 
 import java.awt.Image;
+import java.io.IOException;
 
 import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
@@ -12,11 +13,11 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.SolverJob;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
-public class JACSolver implements ChallengeSolver<String> {
+public class JACSolver extends ChallengeSolver<String> {
     private CaptchaSettings        config;
     private static final JACSolver INSTANCE = new JACSolver();
 
@@ -34,35 +35,47 @@ public class JACSolver implements ChallengeSolver<String> {
      */
 
     private JACSolver() {
+        super(5);
         config = JsonConfig.create(CaptchaSettings.class);
-    }
 
-    public String toString() {
-        return getClass().getSimpleName();
     }
 
     @Override
-    public void solve(SolverJob<String> solverJob) {
+    public long getTimeout() {
+        return 30000;
+    }
+
+    @Override
+    public void solve(SolverJob<String> job) throws InterruptedException, SolverException {
         try {
-            if (solverJob.getChallenge() instanceof BasicCaptchaChallenge) {
-                BasicCaptchaChallenge captchaChallenge = (BasicCaptchaChallenge) solverJob.getChallenge();
+            if (job.getChallenge() instanceof BasicCaptchaChallenge) {
+
+                BasicCaptchaChallenge captchaChallenge = (BasicCaptchaChallenge) job.getChallenge();
                 if (StringUtils.isEmpty(captchaChallenge.getTypeID())) return;
+                job.getLogger().info("JACSolver handles " + job);
+                job.getLogger().info("JAC: enabled: " + config.isAutoCaptchaRecognitionEnabled() + " Has Method: " + JACMethod.hasMethod(captchaChallenge.getTypeID()));
                 if (!config.isAutoCaptchaRecognitionEnabled() || !JACMethod.hasMethod(captchaChallenge.getTypeID())) return;
-
+                checkInterruption();
                 final JAntiCaptcha jac = new JAntiCaptcha(captchaChallenge.getTypeID());
+                checkInterruption();
+                Image captchaImage;
 
-                final Image captchaImage = ImageProvider.read(captchaChallenge.getImageFile());
+                captchaImage = ImageProvider.read(captchaChallenge.getImageFile());
+
+                checkInterruption();
                 final Captcha captcha = jac.createCaptcha(captchaImage);
+                checkInterruption();
                 String captchaCode = jac.checkCaptcha(captchaChallenge.getImageFile(), captcha);
-
+                checkInterruption();
                 if (jac.isExtern()) {
                     if (captchaCode == null || captchaCode.trim().length() == 0) {
                         return;
                     } else {
-                        solverJob.addAnswer(new CaptchaResponse(captchaCode, 100));
+                        job.addAnswer(new CaptchaResponse(this, captchaCode, 100));
                     }
 
                 }
+                checkInterruption();
                 final LetterComperator[] lcs = captcha.getLetterComperators();
 
                 double vp = 0.0;
@@ -78,20 +91,12 @@ public class JACSolver implements ChallengeSolver<String> {
                     }
                 }
 
-                solverJob.addAnswer(new CaptchaResponse(captchaCode, (int) vp));
-
-            } else {
+                job.addAnswer(new CaptchaResponse(this, captchaCode, (int) vp * 100));
 
             }
-
-        } catch (final Exception e) {
-            return;
+        } catch (IOException e) {
+            throw new SolverException(e);
         }
-    }
 
-    @Override
-    public Class<String> getResultType() {
-        return String.class;
     }
-
 }

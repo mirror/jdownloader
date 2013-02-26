@@ -434,7 +434,7 @@ public class NrDr {
         return ret;
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
         BackGroundImageManager bgit = new BackGroundImageManager(captcha);
         bgit.clearCaptchaAll();
         // clearlines(captcha);

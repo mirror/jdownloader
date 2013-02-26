@@ -39,6 +39,7 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterfaceFactory;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -174,6 +175,10 @@ public abstract class PluginForHost extends Plugin {
 
             if (!c.isSolved()) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return c.getResult();
+        } catch (InterruptedException e) {
+            logger.warning(Exceptions.getStackTrace(e));
+
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } finally {
             linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
             linkStatus.addStatus(latest);

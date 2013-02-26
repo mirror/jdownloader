@@ -173,10 +173,8 @@ public class EasyCaptcha {
             /*
              * ist raus wegen schrägen letters
              * 
-             * for (PixelObject b : os) { if (b != aos && (b.getXMin() -
-             * aos.getXMin()) <= 0 && ((b.getXMin() + b.getWidth()) -
-             * ((aos.getXMin() + aos.getWidth())) >= 0)) { b.add(aos);
-             * os.remove(aos); return mergeObjectsBasic(os, captcha, gab);
+             * for (PixelObject b : os) { if (b != aos && (b.getXMin() - aos.getXMin()) <= 0 && ((b.getXMin() + b.getWidth()) -
+             * ((aos.getXMin() + aos.getWidth())) >= 0)) { b.add(aos); os.remove(aos); return mergeObjectsBasic(os, captcha, gab);
              * 
              * } }
              */
@@ -396,7 +394,7 @@ public class EasyCaptcha {
 
     }
 
-    public static Object[] clean(Captcha captcha) {
+    public static Object[] clean(Captcha captcha) throws InterruptedException {
         captcha.owner.jas.executePrepareCommands(captcha.getCaptchaFile(), captcha);
         File file = captcha.owner.getResourceFile("CPoints.xml");
         BackGroundImageManager bgit = new BackGroundImageManager(captcha);
@@ -513,7 +511,7 @@ public class EasyCaptcha {
             try {
                 Vector<PixelObject> co = getSWCaptcha(pixelObject).getObjects(0.5, 0.5);
                 mergeObjectsBasic(co, captcha, gab);
-                
+
                 reto2.addAll(co);
             } catch (Exception e) {
             }
@@ -540,7 +538,7 @@ public class EasyCaptcha {
         return c;
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException {
         Object[] cl = clean(captcha);
         int[] pixels = new int[] { (Integer) cl[0], (Integer) cl[1], (Integer) cl[2] };
         @SuppressWarnings("unchecked")

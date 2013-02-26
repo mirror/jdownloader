@@ -84,7 +84,7 @@ public class HotFile {
 
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
         // cleanByRGBDistance(captcha,1, 30);
         // captcha.cleanBySaturation(-1,5);
         clean(captcha);

@@ -20,7 +20,7 @@ public class MvWrLd {
         }
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
         captcha.cleanBySaturation(0, 19);
         List<PixelObject> ob = ColoredObject.getObjects(captcha, 4, 25, 3);
         Collections.sort(ob);

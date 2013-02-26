@@ -229,7 +229,7 @@ public class ShrLnksBz {
 
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
         Letter[] letbig = getBigLetters(captcha);
         String tx = "";
         for (Letter letter : letbig) {

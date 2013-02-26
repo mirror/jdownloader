@@ -71,7 +71,7 @@ public class Lnkcrptws {
         return ret;
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
         java.util.List<PixelObject> ob = getObjects(captcha);
         // delete the lines
         for (Iterator<PixelObject> iterator = ob.iterator(); iterator.hasNext();) {

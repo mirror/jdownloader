@@ -10,7 +10,7 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 
 public class FsIuA {
 
-    public static String getCode(int marginLeft, int width, File file) throws IOException {
+    public static String getCode(int marginLeft, int width, File file) throws IOException, InterruptedException {
         JAntiCaptcha jac = new JAntiCaptcha("fileshare.in.ua");
         Captcha captcha = jac.createCaptcha(ImageProvider.read(file));
         captcha.crop(-marginLeft, 0, captcha.getWidth() - width + marginLeft, 0);

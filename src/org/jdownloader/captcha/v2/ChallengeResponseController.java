@@ -1,12 +1,18 @@
 package org.jdownloader.captcha.v2;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
 import jd.controlling.captcha.CaptchaSettings;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.event.ChallengeResponseEvent;
+import org.jdownloader.captcha.event.ChallengeResponseEventSender;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.logging.LogController;
 
 public class ChallengeResponseController {
     private static final ChallengeResponseController INSTANCE = new ChallengeResponseController();
@@ -20,7 +26,14 @@ public class ChallengeResponseController {
         return ChallengeResponseController.INSTANCE;
     }
 
-    private CaptchaSettings config;
+    private CaptchaSettings              config;
+    private ChallengeResponseEventSender eventSender;
+
+    public ChallengeResponseEventSender getEventSender() {
+        return eventSender;
+    }
+
+    private LogSource logger;
 
     /**
      * Create a new instance of ChallengeResponseController. This is a singleton class. Access the only existing instance by using
@@ -28,6 +41,8 @@ public class ChallengeResponseController {
      */
     private ChallengeResponseController() {
         config = JsonConfig.create(CaptchaSettings.class);
+        logger = LogController.getInstance().getLogger(getClass().getName());
+        eventSender = new ChallengeResponseEventSender();
     }
 
     public boolean addSolver(ChallengeSolver<?> solver) {
@@ -37,6 +52,10 @@ public class ChallengeResponseController {
 
     }
 
+    public <E> void fireNewAnswerEvent(SolverJob<E> job, AbstractResponse<E> abstractResponse) {
+        eventSender.fireEvent(new ChallengeResponseEvent(this, ChallengeResponseEvent.Type.JOB_ANSWER, abstractResponse, job));
+    }
+
     public List<SolverJob<?>> listJobs() {
         synchronized (activeJobs) {
             return new ArrayList<SolverJob<?>>(activeJobs);
@@ -44,71 +63,100 @@ public class ChallengeResponseController {
         }
     }
 
+    public void fireBeforeSolveEvent(SolverJob<?> job, ChallengeSolver<?> solver) {
+        eventSender.fireEvent(new ChallengeResponseEvent(this, ChallengeResponseEvent.Type.SOLVER_START, solver, job));
+    }
+
+    public void fireAfterSolveEvent(SolverJob<?> job, ChallengeSolver<?> solver) {
+        synchronized (job) {
+            job.getLogger().info("Solver " + solver + " finished job " + job);
+            job.notifyAll();
+        }
+        eventSender.fireEvent(new ChallengeResponseEvent(this, ChallengeResponseEvent.Type.SOLVER_END, solver, job));
+    }
+
+    private void fireNewJobEvent(SolverJob<?> job) {
+        eventSender.fireEvent(new ChallengeResponseEvent(this, ChallengeResponseEvent.Type.NEW_JOB, job));
+    }
+
+    private void fireJobDone(SolverJob<?> job) {
+        eventSender.fireEvent(new ChallengeResponseEvent(this, ChallengeResponseEvent.Type.JOB_DONE, job));
+
+    }
+
     private HashSet<ChallengeSolver<?>> solverList = new HashSet<ChallengeSolver<?>>();
     private List<SolverJob<?>>          activeJobs = new ArrayList<SolverJob<?>>();
+    private HashMap<Long, SolverJob<?>> idToJobMap = new HashMap<Long, SolverJob<?>>();
 
-    public void handle(final Challenge<?> c) {
+    public <T> void handle(final Challenge<T> c) throws InterruptedException {
 
-        ArrayList<ChallengeSolver<?>> solver = new ArrayList<ChallengeSolver<?>>(solverList);
+        ArrayList<ChallengeSolver<T>> solver = null;
+        LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
+        if (logger == null) logger = this.logger;
+        logger.info("Log to " + logger.getName());
 
         synchronized (solverList) {
-            solver = createList(c.getResultType());
+            solver = createList(c);
         }
+        logger.info("Handle Challenge: " + c);
 
         @SuppressWarnings({ "rawtypes", "unchecked" })
-        final SolverJob job = new SolverJob(c, solver);
+        final SolverJob<T> job = new SolverJob<T>(this, c, solver);
+        job.setLogger(logger);
         synchronized (activeJobs) {
             activeJobs.add(job);
+            idToJobMap.put(c.getId().getID(), job);
         }
         try {
-            ArrayList<Thread> threads = new ArrayList<Thread>();
-            for (final ChallengeSolver<?> cs : solver) {
-                // TODO:use threadpool here
-                Thread th = new Thread("ChallengeSolver<?>: " + cs) {
-                    @SuppressWarnings("unchecked")
-                    public void run() {
-                        try {
-                            cs.solve(job);
-                        } finally {
-                            job.setDone(cs);
-                        }
 
+            for (final ChallengeSolver<T> cs : solver) {
+                logger.info("Send to solver: " + cs);
+                cs.enqueue(job);
+            }
+            logger.info("Fire New Job Event");
+            fireNewJobEvent(job);
+
+            logger.info("Wait");
+
+            while (!job.isSolved() && !job.isDone()) {
+
+                synchronized (job) {
+                    if (!job.isSolved() && !job.isDone()) {
+                        job.wait();
                     }
-                };
-                th.start();
-                threads.add(th);
+                }
+                logger.info("Notified");
 
             }
-            try {
-                while (!job.isSolved() && !job.isDone()) {
-                    Thread.sleep(200);
-                }
-                for (Thread t : threads) {
-                    t.interrupt();
-                    t.join();
-                }
 
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            logger.info("All Responses: " + job.getResponses());
+            logger.info("Solvong Done. Result: " + job.getResponse());
+
         } finally {
             synchronized (activeJobs) {
                 activeJobs.remove(job);
+                idToJobMap.remove(job.getChallenge().getId().getID());
             }
+            fireJobDone(job);
         }
     }
 
-    private ArrayList<ChallengeSolver<?>> createList(Class<?> resultType) {
-        ArrayList<ChallengeSolver<?>> ret = new ArrayList<ChallengeSolver<?>>();
+    @SuppressWarnings("unchecked")
+    private <T> ArrayList<ChallengeSolver<T>> createList(Challenge<T> c) {
+        ArrayList<ChallengeSolver<T>> ret = new ArrayList<ChallengeSolver<T>>();
         synchronized (solverList) {
             for (ChallengeSolver<?> s : solverList) {
-                if (s.getResultType().isAssignableFrom(resultType)) {
-                    ret.add(s);
+                if (s.canHandle(c)) {
+                    ret.add((ChallengeSolver<T>) s);
                 }
 
             }
         }
 
         return ret;
+    }
+
+    public SolverJob<?> getJobById(long id) {
+        return idToJobMap.get(id);
     }
 }

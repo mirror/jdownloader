@@ -145,7 +145,7 @@ public class PpscnRg {
         merge(os);
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
         BackGroundImageManager bgit = new BackGroundImageManager(captcha);
         bgit.setBackGroundImageListFileName("bgimages2.xml");
         bgit.clearCaptchaAll();

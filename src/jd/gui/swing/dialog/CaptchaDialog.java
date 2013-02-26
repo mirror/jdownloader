@@ -34,6 +34,9 @@ import javax.sound.sampled.BooleanControl;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.FloatControl;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.LineEvent.Type;
+import javax.sound.sampled.LineListener;
 import javax.swing.JComponent;
 
 import jd.Launcher;
@@ -42,6 +45,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -58,6 +62,7 @@ import org.jdownloader.settings.SoundSettings;
 public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListener, WindowListener, MouseListener, CaptchaDialogInterface {
 
     private ExtTextField textField;
+    private String       suggest;
 
     public static void main(String[] args) {
         AbstractCaptchaDialog cp;
@@ -116,12 +121,11 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
 
                         AudioFormat format;
                         DataLine.Info info;
-                        Clip clip;
 
                         stream = AudioSystem.getAudioInputStream(soundUrl);
                         format = stream.getFormat();
                         info = new DataLine.Info(Clip.class, format);
-                        clip = (Clip) AudioSystem.getLine(info);
+                        final Clip clip = (Clip) AudioSystem.getLine(info);
                         clip.open(stream);
                         try {
                             FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
@@ -137,7 +141,18 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
                             Log.exception(e);
                         }
                         clip.start();
+                        clip.addLineListener(new LineListener() {
 
+                            @Override
+                            public void update(LineEvent event) {
+                                if (event.getType() == Type.STOP) {
+                                    clip.close();
+                                }
+                            }
+                        });
+                        while (clip.isRunning()) {
+                            Thread.sleep(100);
+                        }
                     } catch (Exception e) {
                         Log.exception(e);
                     } finally {
@@ -146,6 +161,11 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
                         } catch (Throwable e) {
 
                         }
+                        // try {
+                        // clip.close();
+                        // } catch (Throwable e) {
+                        //
+                        // }
                     }
                 }
             }.start();
@@ -170,8 +190,19 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
         };
 
         textField.setClearHelpTextOnFocus(false);
-        textField.setHelpText(getHelpText());
+        textField.addFocusListener(new FocusListener() {
 
+            @Override
+            public void focusLost(FocusEvent e) {
+            }
+
+            @Override
+            public void focusGained(FocusEvent e) {
+                textField.selectAll();
+            }
+        });
+        textField.setHelpText(getHelpText());
+        if (suggest != null) textField.setText(suggest);
         this.textField.requestFocusInWindow();
         this.textField.selectAll();
         // panel.add(new JLabel("HJ dsf"));
@@ -182,6 +213,16 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
     @Override
     public String getResult() {
         return textField.getText();
+    }
+
+    @Override
+    public void suggest(String value) {
+        suggest = value;
+        if (textField != null && StringUtils.isEmpty(textField.getText())) {
+            boolean hasFocus = textField.hasFocus();
+            textField.setText(value);
+            if (hasFocus) textField.selectAll();
+        }
     }
 
 }

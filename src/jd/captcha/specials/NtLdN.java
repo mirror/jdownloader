@@ -66,7 +66,7 @@ public class NtLdN {
         }
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
         setDotsInDigits(captcha);
         captcha.cleanByRGBDistance(1, 70);
         toBlack(captcha);

@@ -13,7 +13,7 @@ import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.gui.userio.NewUIO;
 
-public class ClickCaptchaDialogQueueEntry extends ChallengeDialogQueueEntry<ClickCaptchaChallenge> {
+public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptchaChallenge> {
 
     private ClickCaptchaDialog dialog;
     private ClickedPoint       result;
@@ -22,7 +22,7 @@ public class ClickCaptchaDialogQueueEntry extends ChallengeDialogQueueEntry<Clic
         return result;
     }
 
-    public ClickCaptchaDialogQueueEntry(ClickCaptchaChallenge captchaChallenge) {
+    public ClickCaptchaDialogHandler(ClickCaptchaChallenge captchaChallenge) {
         super(DomainInfo.getInstance(captchaChallenge.getPlugin().getHost()), captchaChallenge);
 
     }

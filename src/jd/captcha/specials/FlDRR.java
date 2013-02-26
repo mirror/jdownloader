@@ -62,7 +62,7 @@ public class FlDRR {
         if (objects.size() < 4) EasyCaptcha.getRightletters(objects, captcha, new int[] { 70 }, new int[] { 10, 10 }, 0);
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
 
         // BasicWindow.showImage(captcha.getImage());
 

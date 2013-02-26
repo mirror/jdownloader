@@ -46,4 +46,11 @@ public interface CaptchaSettings extends ConfigInterface {
 
     void setAutoCaptchaErrorTreshold(int value);
 
+    @AboutConfig
+    @DefaultIntValue(15000)
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Milliseconds after which a Captcha Dialog will appear even if Auto AntiCaptcha is still running")
+    int getJAntiCaptchaTimeout();
+
+    void setJAntiCaptchaTimeout(int ms);
+
 }

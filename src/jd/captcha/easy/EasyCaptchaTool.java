@@ -288,7 +288,11 @@ public class EasyCaptchaTool {
                 new Thread(new Runnable() {
                     public void run() {
 
-                        jac.trainAllCaptchas(meth.getCaptchaFolder().getAbsolutePath());
+                        try {
+                            jac.trainAllCaptchas(meth.getCaptchaFolder().getAbsolutePath());
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }).start();
             }
@@ -317,8 +321,13 @@ public class EasyCaptchaTool {
                 new Thread(new Runnable() {
 
                     public void run() {
-                        ColorTrainerGUI.getColor(meth, ownerFrame);
-                        checkReadyToTrain(meth, btnTrain);
+                        try {
+                            ColorTrainerGUI.getColor(meth, ownerFrame);
+                            checkReadyToTrain(meth, btnTrain);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
                     }
                 }).start();
 
@@ -333,7 +342,11 @@ public class EasyCaptchaTool {
                 new Thread(new Runnable() {
 
                     public void run() {
-                        new BackGroundImageGUIList(meth, ownerFrame).show();
+                        try {
+                            new BackGroundImageGUIList(meth, ownerFrame).show();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }).start();
 

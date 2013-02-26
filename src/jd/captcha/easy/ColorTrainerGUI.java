@@ -22,6 +22,7 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.HeadlessException;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -318,15 +319,12 @@ public class ColorTrainerGUI {
         });
         box.add(addb);
         /*
-         * JCheckBox fst = new EDTHelper<JCheckBox>() { public JCheckBox
-         * edtRun() { return new JCheckBox(JDL.L("easycaptcha.fastselection",
+         * JCheckBox fst = new EDTHelper<JCheckBox>() { public JCheckBox edtRun() { return new JCheckBox(JDL.L("easycaptcha.fastselection",
          * "FastSelection:"), colorTrainer.fastSelection); } }.getReturnValue();
          * 
          * fst.addActionListener(new ActionListener() {
          * 
-         * public void actionPerformed(ActionEvent e) {
-         * colorTrainer.fastSelection = !colorTrainer.fastSelection; } });
-         * box.add(fst);
+         * public void actionPerformed(ActionEvent e) { colorTrainer.fastSelection = !colorTrainer.fastSelection; } }); box.add(fst);
          */
         final ChangeListener cl = new ChangeListener() {
 
@@ -437,7 +435,7 @@ public class ColorTrainerGUI {
         }
     }
 
-    public static Vector<CPoint> getColors(File folder, String hoster, Vector<CPoint> colorPoints, JFrame owner) {
+    public static Vector<CPoint> getColors(File folder, String hoster, Vector<CPoint> colorPoints, JFrame owner) throws InterruptedException {
         JAntiCaptcha jac = new JAntiCaptcha(hoster);
 
         File file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment() + "/" + JDUtilities.getJACMethodsDirectory() + jac.getMethodDirName() + "/CPoints.xml");
@@ -486,17 +484,17 @@ public class ColorTrainerGUI {
     }
 
     /**
-     * Startet einen ColorTrainer und gibt die Liste mit den Trainierten CPoints
-     * zurück
+     * Startet einen ColorTrainer und gibt die Liste mit den Trainierten CPoints zurück
      * 
      * @param file
      * @return
+     * @throws InterruptedException
      */
-    public static Vector<CPoint> getColor(EasyMethodFile file, JFrame owner) {
+    public static Vector<CPoint> getColor(EasyMethodFile file, JFrame owner) throws InterruptedException {
         return getColors(file.getCaptchaFolder(), file.getName(), null, owner);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws HeadlessException, InterruptedException {
         String path = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
         String hoster = "canna.to";
         File folder = new File(path + "/captchas/" + hoster);

@@ -6,22 +6,24 @@ import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.DialogType;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.gui.userio.NewUIO;
 
-public class BasicCaptchaDialogQueueEntry extends ChallengeDialogQueueEntry<BasicCaptchaChallenge> {
+public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptchaChallenge> {
 
     private CaptchaDialogInterface dialog;
     private String                 result;
+    private String                 suggest;
 
     public String getCaptchaCode() {
         return result;
     }
 
-    public BasicCaptchaDialogQueueEntry(BasicCaptchaChallenge captchaChallenge) {
+    public BasicCaptchaDialogHandler(BasicCaptchaChallenge captchaChallenge) {
         super(DomainInfo.getInstance(captchaChallenge.getPlugin().getHost()), captchaChallenge);
 
     }
@@ -32,7 +34,22 @@ public class BasicCaptchaDialogQueueEntry extends ChallengeDialogQueueEntry<Basi
         d.setPlugin(captchaChallenge.getPlugin());
         d.setCountdownTime(CaptchaSettings.CFG.getCountdown());
         dialog = d;
+        if (suggest != null) dialog.suggest(suggest);
         result = NewUIO.I().show(CaptchaDialogInterface.class, d).getResult();
+
+    }
+
+    public void suggest(final String value) {
+        suggest = value;
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (dialog != null) {
+                    dialog.suggest(suggest);
+                }
+            }
+        };
 
     }
 

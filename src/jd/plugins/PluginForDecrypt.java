@@ -32,6 +32,7 @@ import jd.controlling.linkcrawler.LinkCrawlerDistributer;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
@@ -334,7 +335,12 @@ public abstract class PluginForDecrypt extends Plugin {
             file = new File(orgCaptchaImage);
         }
         BasicCaptchaChallenge c = new BasicCaptchaChallenge(ioPermission, method, file, defaultValue, explain, this, flag);
-        ChallengeResponseController.getInstance().handle(c);
+        try {
+            ChallengeResponseController.getInstance().handle(c);
+        } catch (InterruptedException e) {
+            logger.warning(Exceptions.getStackTrace(e));
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
 
         if (!c.isSolved()) throw new DecrypterException(DecrypterException.CAPTCHA);
         return c.getResult();

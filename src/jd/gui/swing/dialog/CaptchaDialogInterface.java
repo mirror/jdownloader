@@ -25,4 +25,6 @@ public interface CaptchaDialogInterface extends UserIODefinition {
 
     public void dispose();
 
+    public void suggest(String value);
+
 }

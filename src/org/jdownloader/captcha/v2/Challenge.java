@@ -7,21 +7,24 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 
 public abstract class Challenge<T> {
     private final UniqueAlltimeID id = new UniqueAlltimeID();
+    private Class<T>              resultType;
 
     public UniqueAlltimeID getId() {
         return id;
     }
 
+    @SuppressWarnings("unchecked")
     public Challenge(String method, String explain2) {
         typeID = method;
         explain = explain2;
 
-    }
-
-    public Class<?> getResultType() {
         final Type superClass = this.getClass().getGenericSuperclass();
         if (superClass instanceof Class) { throw new IllegalArgumentException("Wrong Construct"); }
-        return (Class<?>) ((ParameterizedType) superClass).getActualTypeArguments()[0];
+        resultType = (Class<T>) ((ParameterizedType) superClass).getActualTypeArguments()[0];
+    }
+
+    public Class<T> getResultType() {
+        return resultType;
     }
 
     abstract public boolean isSolved();

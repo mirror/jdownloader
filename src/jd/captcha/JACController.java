@@ -78,9 +78,17 @@ public class JACController {
                     public void run() {
                         final JACController jacc = new JACController(new File(chooser.getText()), ((File) methods.getSelectedItem()).getName());
                         if (isTrain) {
-                            jacc.train();
+                            try {
+                                jacc.train();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         } else {
-                            jacc.showCaptcha();
+                            try {
+                                jacc.showCaptcha();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
 
                     }
@@ -104,16 +112,16 @@ public class JACController {
         jac = new JAntiCaptcha(methode);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         File file = new File("C:\\Users\\Thomas\\.appwork\\captchas\\pybckd\\1337856728166.png");
         new JACController(file, "payback.de").showCaptcha();
     }
 
-    public void showCaptcha() {
+    public void showCaptcha() throws InterruptedException {
         jac.showPreparedCaptcha(path);
     }
 
-    public void train() {
+    public void train() throws InterruptedException {
         jac.trainAllCaptchas(path.getAbsolutePath());
         jac.saveMTHFile();
     }

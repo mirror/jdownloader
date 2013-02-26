@@ -42,7 +42,7 @@ public class WbShRnt {
         }
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
         File file = captcha.owner.getResourceFile("CPoints.xml");
         Vector<CPoint> ret = ColorTrainer.load(file);
         for (int x = 0; x < captcha.getWidth(); x++) {

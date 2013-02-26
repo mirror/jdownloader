@@ -92,8 +92,7 @@ public class ThreeDlTv {
     }
 
     /**
-     * schneidet ein 30px breites und 25px hohes objekt an der position int[]
-     * {x,y} aus
+     * schneidet ein 30px breites und 25px hohes objekt an der position int[] {x,y} aus
      * 
      * @param captcha
      * @param header1
@@ -278,16 +277,16 @@ public class ThreeDlTv {
     }
 
     /**
-     * teilt recht zuverlässig ist aber auch ressourcen lastig sollte nur bei
-     * kleinen Letters bentzt werden
+     * teilt recht zuverlässig ist aber auch ressourcen lastig sollte nur bei kleinen Letters bentzt werden
      * 
      * @author bismarck
      * @param pixelObject
      * @param captcha
      * @param index
      * @return
+     * @throws InterruptedException
      */
-    private static java.util.List<Letter> getSplitted(PixelObject pixelObject, final Captcha captcha, int index) {
+    private static java.util.List<Letter> getSplitted(PixelObject pixelObject, final Captcha captcha, int index) throws InterruptedException {
         final java.util.List<Letter> ret = new ArrayList<Letter>();
         if (pixelObject.getArea() < 4) { return ret; }
         // durchschnittliche breite vom char

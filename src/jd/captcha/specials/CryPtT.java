@@ -109,7 +109,7 @@ public class CryPtT {
         return ret;
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
         // BasicWindow.showImage(captcha.getImage());
 
         // BasicWindow.showImage(captcha.getImage());

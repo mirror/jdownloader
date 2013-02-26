@@ -37,7 +37,7 @@ public class Recaptcha {
 
     private static final int SMOOTH_FACTOR = 8;
 
-    private static void autoRemoveCurves(final Captcha captcha) {
+    private static void autoRemoveCurves(final Captcha captcha) throws InterruptedException {
         captcha.clean();
         // Save orginial grid
         final int[][] org = captcha.getGridCopy();

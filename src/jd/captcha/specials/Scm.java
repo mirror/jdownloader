@@ -76,7 +76,7 @@ public class Scm {
 
 	}
 
-	public static Letter[] getLetters(Captcha captcha) {
+	public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
 		clean(captcha);
 		captcha.toBlackAndWhite(0.95);
 		Vector<PixelObject> os = captcha.getObjects(0.5, 0.5);

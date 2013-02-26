@@ -56,7 +56,7 @@ public class LxN {
         }
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
         // BasicWindow.showImage(captcha.getImage());
         toBlack(captcha);
 

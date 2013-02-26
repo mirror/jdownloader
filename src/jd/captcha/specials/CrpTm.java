@@ -111,7 +111,7 @@ public class CrpTm {
 
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException {
 
         // Graphics g = image.getGraphics();
         // g.setColor(Color.black);

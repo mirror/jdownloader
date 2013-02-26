@@ -55,7 +55,7 @@ public class DtnKlnT {
         captcha.grid = grid;
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
         try {
             JAntiCaptcha jac = captcha.owner;
             jac.getJas().setColorType("RGB");

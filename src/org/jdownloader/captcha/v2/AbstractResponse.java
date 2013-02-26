@@ -20,11 +20,21 @@ public class AbstractResponse<T> {
         this.value = value;
     }
 
-    private T value;
+    private T      value;
+    private Object solver;
 
-    public AbstractResponse(int priority, T responseData) {
+    public Object getSolver() {
+        return solver;
+    }
+
+    public AbstractResponse(Object solver, int priority, T responseData) {
+        this.solver = solver;
         this.priority = priority;
         this.value = responseData;
+    }
+
+    public String toString() {
+        return getClass().getSimpleName() + ": Value:" + value + " Priority: " + priority + " Solved By: " + solver;
     }
 
 }

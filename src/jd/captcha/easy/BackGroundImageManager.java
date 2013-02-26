@@ -57,8 +57,9 @@ public class BackGroundImageManager {
      * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt wird bei einem randomCaptcha
      * 
      * @param originalCaptcha
+     * @throws InterruptedException
      */
-    public BackGroundImageManager(EasyMethodFile methode) {
+    public BackGroundImageManager(EasyMethodFile methode) throws InterruptedException {
         this(methode.getRandomCaptcha());
     }
 
@@ -66,8 +67,9 @@ public class BackGroundImageManager {
      * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt wird bei einem randomCaptcha
      * 
      * @param originalCaptcha
+     * @throws InterruptedException
      */
-    public BackGroundImageManager(String hoster) {
+    public BackGroundImageManager(String hoster) throws InterruptedException {
         this(new EasyMethodFile(hoster));
     }
 
@@ -183,8 +185,10 @@ public class BackGroundImageManager {
 
     /**
      * Sucht das Hintergrundbild bei dem die größte Übereinstimmung vorhanden ist und reinigt das Captcha damit
+     * 
+     * @throws InterruptedException
      */
-    public void clearCaptchaAll() {
+    public void clearCaptchaAll() throws InterruptedException {
         clearCaptchaAll(backgroundList);
     }
 
@@ -192,8 +196,9 @@ public class BackGroundImageManager {
      * reinigt das Captcha
      * 
      * @param preview
+     * @throws InterruptedException
      */
-    public void clearCaptchaPreview(BackGroundImage preview) {
+    public void clearCaptchaPreview(BackGroundImage preview) throws InterruptedException {
         captchaImage.grid = PixelGrid.getGridCopy(backupGrid);
         preview.clearCaptcha(captchaImage);
     }
@@ -206,8 +211,9 @@ public class BackGroundImageManager {
      * Sucht das Hintergrundbild bei dem die größte Übereinstimmung vorhanden ist und reinigt das Captcha damit
      * 
      * @param preview
+     * @throws InterruptedException
      */
-    public void clearCaptchaAll(final Vector<BackGroundImage> preview) {
+    public void clearCaptchaAll(final Vector<BackGroundImage> preview) throws InterruptedException {
         Captcha best = null;
         BackGroundImage bestBgi = null;
         int bestVal = -1;

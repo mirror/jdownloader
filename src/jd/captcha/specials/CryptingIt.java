@@ -27,38 +27,37 @@ import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.GifDecoder;
 
 public class CryptingIt {
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
         try {
             GifDecoder d = new GifDecoder();
             d.read(captcha.getCaptchaFile().getAbsolutePath());
             int n = d.getFrameCount();
             Captcha[] frames = new Captcha[d.getFrameCount()];
-            Letter[] Letters= new Letter[3];
+            Letter[] Letters = new Letter[3];
             int c = 0;
             for (int i = 0; i < n; i++) {
                 BufferedImage frame = d.getFrame(i);
                 frames[i] = captcha.owner.createCaptcha(frame);
-                if(i>0 && !frames[i].getString().equals(frames[i-1].getString()))
-                {
-            		Vector<PixelObject> os = frames[i].getObjects(0.99, 0.99);
-                	Letters[c++]=os.get(0).toLetter();
-                if(c==3)
-                	break;
+                if (i > 0 && !frames[i].getString().equals(frames[i - 1].getString())) {
+                    Vector<PixelObject> os = frames[i].getObjects(0.99, 0.99);
+                    Letters[c++] = os.get(0).toLetter();
+                    if (c == 3) break;
                 }
             }
             return Letters;
         } catch (Exception e) {
-e.printStackTrace();
+            e.printStackTrace();
         }
         return null;
     }
-	public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
-		for (int i = 0; i < org.length; i++) {
-			Letter letter = org[i];
-			letter.toBlackAndWhite(0.7);
-			LetterComperator r = jac.getLetter(letter);
-			letter.detected=r;
-		}
-		return org;
-	}
+
+    public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) throws InterruptedException {
+        for (int i = 0; i < org.length; i++) {
+            Letter letter = org[i];
+            letter.toBlackAndWhite(0.7);
+            LetterComperator r = jac.getLetter(letter);
+            letter.detected = r;
+        }
+        return org;
+    }
 }

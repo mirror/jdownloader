@@ -29,21 +29,21 @@ import jd.nutils.Colors;
 import com.jhlabs.image.PosterizeFilter;
 
 public class ColorLetterComperator {
-    private Letter a;
-    private Letter b;
+    private Letter        a;
+    private Letter        b;
     private PixelObject[] aLayers;
     private PixelObject[] bLayers;
-    private Captcha ca;
-    private Captcha cb;
-    private JAntiCaptcha owner;
-    public int lettersPerfect = 2;
-    public int lettersPerfectPercent = 20;
-    public int maxColorDifference = 30;
-    protected double valityPercent = 10000.0;
+    private Captcha       ca;
+    private Captcha       cb;
+    private JAntiCaptcha  owner;
+    public int            lettersPerfect        = 2;
+    public int            lettersPerfectPercent = 20;
+    public int            maxColorDifference    = 30;
+    protected double      valityPercent         = 10000.0;
     /**
      * Farbebenen die untersucht werden sollen
      */
-    public int colorLevels = 2;
+    public int            colorLevels           = 2;
 
     /**
      * vergleicht Farbebenen eignet sich um echte Bilder zu vergleichen
@@ -104,12 +104,12 @@ public class ColorLetterComperator {
     }
 
     /**
-     * vergleicht alle Farbebenen die untersucht werden sollen und gibt den
-     * durchschnittlichen ValityPercent
+     * vergleicht alle Farbebenen die untersucht werden sollen und gibt den durchschnittlichen ValityPercent
      * 
      * @return Prozentwert 0(gut) bis 100 (schlecht) der Übereinstimmung
+     * @throws InterruptedException
      */
-    public double run() {
+    public double run() throws InterruptedException {
         if (aLayers != null && bLayers != null) return valityPercent;
         final int aArea = a.getArea();
         final int bArea = b.getArea();
@@ -199,8 +199,7 @@ public class ColorLetterComperator {
     }
 
     /**
-     * Erstellt aus jeder Farbebene ein Letter Achtung Farben müssen reduziert
-     * sein
+     * Erstellt aus jeder Farbebene ein Letter Achtung Farben müssen reduziert sein
      * 
      * @param grid
      * @return
@@ -250,8 +249,9 @@ public class ColorLetterComperator {
      * 
      * @param letter
      * @return
+     * @throws InterruptedException
      */
-    private Captcha reduceColors(final Letter letter) {
+    private Captcha reduceColors(final Letter letter) throws InterruptedException {
         final PosterizeFilter qf = new PosterizeFilter();
         final BufferedImage image = letter.getImage();
         final BufferedImage dest = qf.createCompatibleDestImage(image, ColorModel.getRGBdefault());

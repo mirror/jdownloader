@@ -1,20 +1,21 @@
 package org.jdownloader.captcha.v2.solver.gui;
 
-import jd.controlling.captcha.CaptchaDialogQueue;
 import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.ClickCaptchaDialogQueueEntry;
+import jd.controlling.captcha.ClickCaptchaDialogHandler;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.SolverJob;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
-public class DialogClickCaptchaSolver implements ChallengeSolver<ClickedPoint> {
+public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
     private CaptchaSettings config;
 
     private DialogClickCaptchaSolver() {
+        super(1);
         config = JsonConfig.create(CaptchaSettings.class);
     }
 
@@ -25,27 +26,22 @@ public class DialogClickCaptchaSolver implements ChallengeSolver<ClickedPoint> {
     }
 
     @Override
-    public Class<ClickedPoint> getResultType() {
-        return ClickedPoint.class;
-    }
+    public void solve(SolverJob<ClickedPoint> solverJob) throws InterruptedException {
 
-    public String toString() {
-        return getClass().getSimpleName();
-    }
+        if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
+            solverJob.waitFor(config.getJAntiCaptchaTimeout(), JACSolver.getInstance());
+            checkInterruption();
+            ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
+            checkInterruption();
+            ClickCaptchaDialogHandler handler = new ClickCaptchaDialogHandler(captchaChallenge);
 
-    @Override
-    public void solve(SolverJob<ClickedPoint> solverJob) {
-        try {
-            if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
-                solverJob.waitFor(JACSolver.getInstance());
-                ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
+            handler.run();
 
-                ClickCaptchaDialogQueueEntry queue = new ClickCaptchaDialogQueueEntry(captchaChallenge);
-                CaptchaDialogQueue.getInstance().addWait(queue);
+            if (handler.getPoint() != null) {
+                solverJob.addAnswer(new ClickCaptchaResponse(this, handler.getPoint(), 100));
             }
-        } catch (final Exception e) {
-            return;
         }
+
     }
 
 }

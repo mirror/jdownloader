@@ -24,7 +24,7 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
 
 public class CllCtRnT {
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException {
 
         // BasicWindow.showImage(captcha.getImage());
 

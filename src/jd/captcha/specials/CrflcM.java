@@ -191,7 +191,7 @@ public class CrflcM {
             }
         }
     }
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
         // captcha.cleanByRGBDistance(1, 25);
         clearlines2(captcha,14);
 

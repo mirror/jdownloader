@@ -27,6 +27,10 @@ public abstract class ImageCaptchaChallenge<T> extends Challenge<T> {
         this.ioPermission = ioPermission;
     }
 
+    public String toString() {
+        return "CaptchaChallenge by " + plugin.getHost() + " File: " + imageFile;
+    }
+
     public Plugin getPlugin() {
         return plugin;
     }

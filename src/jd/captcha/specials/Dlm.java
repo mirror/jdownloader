@@ -107,8 +107,7 @@ public class Dlm {
     }
 
     /**
-     * schneidet ein schneidet ein 30px breites und 25px hohes objekt an der
-     * position int[] {x,y} aus
+     * schneidet ein schneidet ein 30px breites und 25px hohes objekt an der position int[] {x,y} aus
      * 
      * @param captcha
      * @param header1
@@ -169,7 +168,7 @@ public class Dlm {
                 if (head3.getDecodedValue().equals(let.getDecodedValue()))
                     pos = 2;
                 else {// wenn keines der 3 letters zutrifft es ist bestimmt das
-                    // welches am schlechtesten erkennt wurde
+                      // welches am schlechtesten erkennt wurde
                     if (head1.detected.getValityPercent() > head2.detected.getValityPercent()) {
                         if (head1.detected.getValityPercent() > head3.detected.getValityPercent())
                             pos = 0;
@@ -319,15 +318,15 @@ public class Dlm {
     }
 
     /**
-     * teilt recht zuverlässig ist aber auch ressourcen lastig sollte nur bei
-     * kleinen Letters bentzt werden
+     * teilt recht zuverlässig ist aber auch ressourcen lastig sollte nur bei kleinen Letters bentzt werden
      * 
      * @param pixelObject
      * @param captcha
      * @param index
      * @return
+     * @throws InterruptedException
      */
-    private static java.util.List<Letter> getSplitted(PixelObject pixelObject, Captcha captcha, int index) {
+    private static java.util.List<Letter> getSplitted(PixelObject pixelObject, Captcha captcha, int index) throws InterruptedException {
         java.util.List<Letter> ret = new ArrayList<Letter>();
         if (pixelObject.getArea() < 4) return ret;
         Letter let1 = pixelObject.toLetter();

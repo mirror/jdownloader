@@ -26,12 +26,12 @@ import java.io.File;
  */
 public class JACTest {
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws InterruptedException {
         JACTest main = new JACTest();
         main.go();
     }
 
-    private void go() {
+    private void go() throws InterruptedException {
         String hoster = "externtest";
 
         File f = new File("/home/dwd/.jd_home/captchas/serienjunkies.org_02.09.2010_10.31.44.277.png");

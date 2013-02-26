@@ -90,7 +90,7 @@ public class HstjNt {
         captcha.grid = grid;
     }
 
-    public static Letter[] getLetters(Captcha captcha) {
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
 
         toBlack(captcha);
         captcha.crop(2, 2, 2, 2);

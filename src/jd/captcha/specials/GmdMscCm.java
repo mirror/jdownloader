@@ -37,20 +37,20 @@ import jd.nutils.Colors;
 public class GmdMscCm {
     Comparator<Integer> isElementColor = new Comparator<Integer>() {
 
-        public int compare(Integer o1, Integer o2) {
-            int c = o1;
-            int c2 = o2;
-            if (c < 0 || c == 0xffffff) return 0;
-            int[] hsvC = Colors.rgb2hsv(c);
-            int[] hsvC2 = Colors.rgb2hsv(c2);
-            if (hsvC[0] == 0 && hsvC2[0] == 0 && hsvC[1] == 0 && hsvC2[1] == 0) return 1;
-            if (hsvC[0] == hsvC2[0] && hsvC[2] == hsvC2[2]) return 1;
-            return 0;
-        }
+                                           public int compare(Integer o1, Integer o2) {
+                                               int c = o1;
+                                               int c2 = o2;
+                                               if (c < 0 || c == 0xffffff) return 0;
+                                               int[] hsvC = Colors.rgb2hsv(c);
+                                               int[] hsvC2 = Colors.rgb2hsv(c2);
+                                               if (hsvC[0] == 0 && hsvC2[0] == 0 && hsvC[1] == 0 && hsvC2[1] == 0) return 1;
+                                               if (hsvC[0] == hsvC2[0] && hsvC[2] == hsvC2[2]) return 1;
+                                               return 0;
+                                           }
 
-    };
+                                       };
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         File[] list = new File("/home/dwd/.jd_home/captchas/lnkcrptwsCircles").listFiles();
         for (int i = 20; i < 30; i++) {
             File file = list[i];
@@ -96,14 +96,14 @@ public class GmdMscCm {
         return ret;
     }
 
-    private File captchafile = null;
-    private JAntiCaptcha jac = new JAntiCaptcha("EasyCaptcha");
+    private File         captchafile = null;
+    private JAntiCaptcha jac         = new JAntiCaptcha("EasyCaptcha");
 
     public GmdMscCm(File file) {
         this.captchafile = file;
     }
 
-    public int[] getResult() {
+    public int[] getResult() throws InterruptedException {
 
         Image captchaImage = Utilities.loadImage(captchafile);
         Captcha captcha = jac.createCaptcha(captchaImage);

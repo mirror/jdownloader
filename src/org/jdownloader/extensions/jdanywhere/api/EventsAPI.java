@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import jd.controlling.captcha.CaptchaHandler;
-import jd.controlling.captcha.BasicCaptchaDialogQueueEntry;
+import jd.controlling.captcha.BasicCaptchaDialogHandler;
 import jd.controlling.captcha.CaptchaEventListener;
 import jd.controlling.captcha.CaptchaEventSender;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -213,7 +213,7 @@ public class EventsAPI implements DownloadControllerListener, CaptchaEventListen
     }
 
     private void sendEvent(CaptchaHandler controller, String type) {
-        BasicCaptchaDialogQueueEntry entry = controller.getDialog();
+        BasicCaptchaDialogHandler entry = controller.getDialog();
         if (entry != null) {
             CaptchaJob job = new CaptchaJob();
             job.setType(entry.getCaptchaController().getCaptchaType());

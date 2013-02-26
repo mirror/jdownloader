@@ -68,8 +68,9 @@ public class BackGroundImage extends CPoint {
      * Entfernt das Hintergrundbild vom übergebenen Captcha
      * 
      * @param captchaImage
+     * @throws InterruptedException
      */
-    public void clearCaptcha(Captcha captchaImage) {
+    public void clearCaptcha(Captcha captchaImage) throws InterruptedException {
 
         EasyMethodFile methode = new EasyMethodFile(captchaImage.owner.getResourceFile("jacinfo.xml").getParentFile());
         Image bImage = getImage(methode);

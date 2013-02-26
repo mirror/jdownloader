@@ -27,13 +27,13 @@ import org.appwork.utils.Application;
  */
 public class JACTestrun {
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws InterruptedException {
         Application.setApplication(".jd_home");
         JACTestrun main = new JACTestrun();
         main.go();
     }
 
-    private void go() {
+    private void go() throws InterruptedException {
         JAntiCaptcha.testMethod(new File("C:\\Users\\Thomas\\.jd_home\\jd\\captcha\\methods\\cms/"), "ucms");
     }
 }

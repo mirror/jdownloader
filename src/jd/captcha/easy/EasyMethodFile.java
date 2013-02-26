@@ -96,7 +96,8 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
     }
 
     /**
-     * Ermittelt den Dateityp der Captchas im Captchaordner ist der Ordner leer wird jpg ausgegeben bzw Bilder geladen wenn showLoadDialog true ist
+     * Ermittelt den Dateityp der Captchas im Captchaordner ist der Ordner leer wird jpg ausgegeben bzw Bilder geladen wenn showLoadDialog
+     * true ist
      * 
      * @param showLoadDialog
      * @return captchatyp jpg | png | gif
@@ -205,8 +206,9 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
      * Erzeugt ein zufallsCaptcha aus dem Captchaordner
      * 
      * @return
+     * @throws InterruptedException
      */
-    public Captcha getRandomCaptcha() {
+    public Captcha getRandomCaptcha() throws InterruptedException {
         Captcha captchaImage = this.getJac().createCaptcha(Utilities.loadImage(this.getRandomCaptchaFile()));
         if (captchaImage != null && captchaImage.getWidth() > 0 && captchaImage.getWidth() > 0) { return captchaImage; }
         captchaImage = this.getJac().createCaptcha(Utilities.loadImage(this.getRandomCaptchaFile()));

@@ -82,18 +82,24 @@ public class BackGroundImageDialog implements ActionListener {
             }
         }.waitForEDT();
         if (e.getSource() == this.btPreview) {
-            this.workingImage.setDistance((Integer) this.thresholdSpinner.getValue());
-            this.workingImage.setColorDistanceMode(this.colorMode);
-            this.workingImage.setColor(this.colorChooser.getColor().getRGB());
-            this.bgim.clearCaptchaPreview(this.workingImage);
-            final Image image2 = this.bgim.getScaledCaptchaImage();
-            new EDTHelper<Object>() {
-                public Object edtRun() {
-                    BackGroundImageDialog.this.bgv.image = image2;
-                    BackGroundImageDialog.this.bgv.repaint();
-                    return null;
-                }
-            }.waitForEDT();
+            try {
+                this.workingImage.setDistance((Integer) this.thresholdSpinner.getValue());
+                this.workingImage.setColorDistanceMode(this.colorMode);
+                this.workingImage.setColor(this.colorChooser.getColor().getRGB());
+
+                this.bgim.clearCaptchaPreview(this.workingImage);
+
+                final Image image2 = this.bgim.getScaledCaptchaImage();
+                new EDTHelper<Object>() {
+                    public Object edtRun() {
+                        BackGroundImageDialog.this.bgv.image = image2;
+                        BackGroundImageDialog.this.bgv.repaint();
+                        return null;
+                    }
+                }.waitForEDT();
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            }
         } else if (e.getSource() == this.btColorChoose) {
             new EDTHelper<Object>() {
                 public Object edtRun() {
@@ -132,29 +138,9 @@ public class BackGroundImageDialog implements ActionListener {
             this.workingImage.setColor(this.colorChooser.getColor().getRGB());
             this.workingImage.setDistance((Integer) this.thresholdSpinner.getValue());
             this.workingImage.setColorDistanceMode(this.colorMode);
-            this.bgim.clearCaptchaPreview(this.workingImage);
-            this.btPreview.setEnabled(true);
-            final Image image2 = this.bgim.getScaledCaptchaImage();
-
-            new EDTHelper<Object>() {
-                public Object edtRun() {
-                    BackGroundImageDialog.this.bgv.image = image2;
-                    BackGroundImageDialog.this.bgmask.image = BackGroundImageDialog.this.workingImage.getImage(BackGroundImageDialog.this.bgim.methode);
-                    BackGroundImageDialog.this.bgmask.repaint();
-                    BackGroundImageDialog.this.bgv.repaint();
-                    return null;
-                }
-            }.waitForEDT();
-        } else if (e.getSource() == this.btCreateBackgroundFilter) {
-
-            final File fout = BackgroundFilterCreater.create(this.bgim.methode);
-            if (fout != null && fout.exists()) {
-                this.workingImage = new BackGroundImage();
-                this.workingImage.setBackgroundImage(fout.getName());
-                this.workingImage.setColor(this.colorChooser.getColor().getRGB());
-                this.workingImage.setDistance((Integer) this.thresholdSpinner.getValue());
-                this.workingImage.setColorDistanceMode(this.colorMode);
+            try {
                 this.bgim.clearCaptchaPreview(this.workingImage);
+
                 this.btPreview.setEnabled(true);
                 final Image image2 = this.bgim.getScaledCaptchaImage();
 
@@ -167,6 +153,37 @@ public class BackGroundImageDialog implements ActionListener {
                         return null;
                     }
                 }.waitForEDT();
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            }
+        } else if (e.getSource() == this.btCreateBackgroundFilter) {
+
+            File fout;
+            try {
+                fout = BackgroundFilterCreater.create(this.bgim.methode);
+
+                if (fout != null && fout.exists()) {
+                    this.workingImage = new BackGroundImage();
+                    this.workingImage.setBackgroundImage(fout.getName());
+                    this.workingImage.setColor(this.colorChooser.getColor().getRGB());
+                    this.workingImage.setDistance((Integer) this.thresholdSpinner.getValue());
+                    this.workingImage.setColorDistanceMode(this.colorMode);
+                    this.bgim.clearCaptchaPreview(this.workingImage);
+                    this.btPreview.setEnabled(true);
+                    final Image image2 = this.bgim.getScaledCaptchaImage();
+
+                    new EDTHelper<Object>() {
+                        public Object edtRun() {
+                            BackGroundImageDialog.this.bgv.image = image2;
+                            BackGroundImageDialog.this.bgmask.image = BackGroundImageDialog.this.workingImage.getImage(BackGroundImageDialog.this.bgim.methode);
+                            BackGroundImageDialog.this.bgmask.repaint();
+                            BackGroundImageDialog.this.bgv.repaint();
+                            return null;
+                        }
+                    }.waitForEDT();
+                }
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
             }
         } else if (e.getSource() == this.colorModeBox) {
             this.colorMode = ((ColorMode) this.colorModeBox.getSelectedItem()).mode;
@@ -237,43 +254,50 @@ public class BackGroundImageDialog implements ActionListener {
 
         new EDTHelper<Object>() {
             public Object edtRun() {
-                BackGroundImageDialog.this.imagePanel = new JPanel();
+                try {
+                    BackGroundImageDialog.this.imagePanel = new JPanel();
 
-                BackGroundImageDialog.this.imagePanel.setBorder(new TitledBorder(T._.easycaptcha_images()));
+                    BackGroundImageDialog.this.imagePanel.setBorder(new TitledBorder(T._.easycaptcha_images()));
 
-                BackGroundImageDialog.this.imagePanel.setLayout(new BoxLayout(BackGroundImageDialog.this.imagePanel, BoxLayout.Y_AXIS));
-                BackGroundImageDialog.this.imagePanel.add(new JLabel(T._.easycaptcha_mask()));
-                if (BackGroundImageDialog.this.workingImage != null) {
-                    BackGroundImageDialog.this.bgmask = new ImageComponent(BackGroundImageDialog.this.workingImage.getImage(BackGroundImageDialog.this.bgim.methode));
-                } else {
-                    final BufferedImage bi = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-                    final Graphics2D ig2 = bi.createGraphics();
-                    ig2.fillRect(0, 0, image.getWidth(null) - 1, image.getHeight(null) - 1);
-                    BackGroundImageDialog.this.bgmask = new ImageComponent(bi);
+                    BackGroundImageDialog.this.imagePanel.setLayout(new BoxLayout(BackGroundImageDialog.this.imagePanel, BoxLayout.Y_AXIS));
+                    BackGroundImageDialog.this.imagePanel.add(new JLabel(T._.easycaptcha_mask()));
+                    if (BackGroundImageDialog.this.workingImage != null) {
+                        BackGroundImageDialog.this.bgmask = new ImageComponent(BackGroundImageDialog.this.workingImage.getImage(BackGroundImageDialog.this.bgim.methode));
+                    } else {
+                        final BufferedImage bi = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+                        final Graphics2D ig2 = bi.createGraphics();
+                        ig2.fillRect(0, 0, image.getWidth(null) - 1, image.getHeight(null) - 1);
+                        BackGroundImageDialog.this.bgmask = new ImageComponent(bi);
 
+                    }
+
+                    BackGroundImageDialog.this.imagePanel.add(BackGroundImageDialog.this.bgmask);
+
+                    BackGroundImageDialog.this.imagePanel.add(Box.createRigidArea(new Dimension(0, 10)));
+
+                    BackGroundImageDialog.this.imagePanel.add(new JLabel(T._.easycaptcha_orginal()));
+                    BackGroundImageDialog.this.bg1 = new ImageComponent(image);
+
+                    BackGroundImageDialog.this.imagePanel.add(BackGroundImageDialog.this.bg1);
+
+                    BackGroundImageDialog.this.imagePanel.add(Box.createRigidArea(new Dimension(0, 10)));
+
+                    BackGroundImageDialog.this.imagePanel.add(new JLabel(T._.easycaptcha_addbackgroundimagedialog_imagepreview() + ":"));
+                    if (BackGroundImageDialog.this.workingImage != null) {
+                        BackGroundImageDialog.this.threshold = BackGroundImageDialog.this.workingImage.getDistance();
+                        BackGroundImageDialog.this.colorMode = BackGroundImageDialog.this.workingImage.getColorDistanceMode();
+
+                        BackGroundImageDialog.this.bgim.clearCaptchaPreview(BackGroundImageDialog.this.workingImage);
+
+                    }
+
+                    BackGroundImageDialog.this.bgv = new ImageComponent(BackGroundImageDialog.this.bgim.getScaledCaptchaImage());
+                    BackGroundImageDialog.this.imagePanel.add(BackGroundImageDialog.this.bgv);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-
-                BackGroundImageDialog.this.imagePanel.add(BackGroundImageDialog.this.bgmask);
-
-                BackGroundImageDialog.this.imagePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-
-                BackGroundImageDialog.this.imagePanel.add(new JLabel(T._.easycaptcha_orginal()));
-                BackGroundImageDialog.this.bg1 = new ImageComponent(image);
-
-                BackGroundImageDialog.this.imagePanel.add(BackGroundImageDialog.this.bg1);
-
-                BackGroundImageDialog.this.imagePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-
-                BackGroundImageDialog.this.imagePanel.add(new JLabel(T._.easycaptcha_addbackgroundimagedialog_imagepreview() + ":"));
-                if (BackGroundImageDialog.this.workingImage != null) {
-                    BackGroundImageDialog.this.threshold = BackGroundImageDialog.this.workingImage.getDistance();
-                    BackGroundImageDialog.this.colorMode = BackGroundImageDialog.this.workingImage.getColorDistanceMode();
-                    BackGroundImageDialog.this.bgim.clearCaptchaPreview(BackGroundImageDialog.this.workingImage);
-                }
-
-                BackGroundImageDialog.this.bgv = new ImageComponent(BackGroundImageDialog.this.bgim.getScaledCaptchaImage());
-                BackGroundImageDialog.this.imagePanel.add(BackGroundImageDialog.this.bgv);
                 return null;
+
             }
         }.waitForEDT();
     }

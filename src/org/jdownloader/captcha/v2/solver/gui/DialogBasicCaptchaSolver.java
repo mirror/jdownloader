@@ -1,18 +1,20 @@
 package org.jdownloader.captcha.v2.solver.gui;
 
-import jd.controlling.captcha.BasicCaptchaDialogQueueEntry;
-import jd.controlling.captcha.CaptchaDialogQueue;
+import jd.controlling.captcha.BasicCaptchaDialogHandler;
 import jd.controlling.captcha.CaptchaSettings;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.SolverJob;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
+import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
-public class DialogBasicCaptchaSolver implements ChallengeSolver<String> {
+public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     private CaptchaSettings                       config;
     private static final DialogBasicCaptchaSolver INSTANCE = new DialogBasicCaptchaSolver();
 
@@ -26,29 +28,62 @@ public class DialogBasicCaptchaSolver implements ChallengeSolver<String> {
     }
 
     private DialogBasicCaptchaSolver() {
+        super(1);
         config = JsonConfig.create(CaptchaSettings.class);
     }
 
-    public String toString() {
-        return getClass().getSimpleName();
-    }
-
     @Override
-    public void solve(SolverJob<String> solverJob) {
-        try {
-            if (solverJob.getChallenge() instanceof BasicCaptchaChallenge) {
-                solverJob.waitFor(JACSolver.getInstance());
-                if (solverJob.isSolved()) return;
-                BasicCaptchaChallenge captchaChallenge = (BasicCaptchaChallenge) solverJob.getChallenge();
-                BasicCaptchaDialogQueueEntry queue = new BasicCaptchaDialogQueueEntry(captchaChallenge);
-                CaptchaDialogQueue.getInstance().addWait(queue);
-                if (StringUtils.isNotEmpty(queue.getCaptchaCode())) {
-                    solverJob.addAnswer(new CaptchaResponse(queue.getCaptchaCode(), 100));
+    public void solve(final SolverJob<String> job) throws InterruptedException {
+
+        if (job.getChallenge() instanceof BasicCaptchaChallenge) {
+            job.getLogger().info("Waiting for JAC");
+            job.waitFor(config.getJAntiCaptchaTimeout(), JACSolver.getInstance());
+            job.getLogger().info("JAC is done. Response so far: " + job.getResponse());
+            ChallengeSolverJobListener jacListener = null;
+            checkInterruption();
+            BasicCaptchaChallenge captchaChallenge = (BasicCaptchaChallenge) job.getChallenge();
+            // we do not need another queue
+            final BasicCaptchaDialogHandler handler = new BasicCaptchaDialogHandler(captchaChallenge);
+            job.getEventSender().addListener(jacListener = new ChallengeSolverJobListener() {
+
+                @Override
+                public void onSolverTimedOut(ChallengeSolver<?> parameter) {
                 }
+
+                @Override
+                public void onSolverStarts(ChallengeSolver<?> parameter) {
+                }
+
+                @Override
+                public void onSolverJobReceivedNewResponse(AbstractResponse<?> response) {
+                    ResponseList<String> resp = job.getResponse();
+                    handler.suggest(resp.getValue());
+                    job.getLogger().info("Received Suggestion: " + resp);
+
+                }
+
+                @Override
+                public void onSolverDone(ChallengeSolver<?> solver) {
+
+                }
+            });
+            try {
+                ResponseList<String> resp = job.getResponse();
+                if (resp != null) {
+                    handler.suggest(resp.getValue());
+                }
+                checkInterruption();
+                handler.run();
+
+                if (StringUtils.isNotEmpty(handler.getCaptchaCode())) {
+                    job.addAnswer(new CaptchaResponse(this, handler.getCaptchaCode(), 100));
+                }
+            } finally {
+                job.getLogger().info("Dialog closed. Response far: " + job.getResponse());
+                if (jacListener != null) job.getEventSender().removeListener(jacListener);
             }
-        } catch (final Exception e) {
-            return;
         }
+
     }
 
 }

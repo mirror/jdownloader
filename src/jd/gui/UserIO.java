@@ -275,7 +275,11 @@ public class UserIO {
             }
 
             ClickCaptchaChallenge c = new ClickCaptchaChallenge(linkCrawler, imagefile, e, plugin);
-            ChallengeResponseController.getInstance().handle(c);
+            try {
+                ChallengeResponseController.getInstance().handle(c);
+            } catch (InterruptedException e1) {
+                return null;
+            }
             // CaptchaHandler captchaController = new CaptchaHandler(linkCrawler, null, captchaFiles, null, e, plugin);
             // captchaController.setCaptchaType(CaptchaDialogInterface.CaptchaType.CLICK);
             // CaptchaResult cc = captchaController.getCode(0);

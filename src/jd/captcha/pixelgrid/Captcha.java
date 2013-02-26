@@ -38,6 +38,7 @@ import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.nutils.Colors;
 
+import org.appwork.utils.Exceptions;
 import org.jdownloader.logging.LogController;
 
 import com.jhlabs.image.BoxBlurFilter;
@@ -60,8 +61,9 @@ public class Captcha extends PixelGrid {
      * @param image
      * @param owner
      * @return neuer Captcha
+     * @throws InterruptedException
      */
-    public static Captcha getCaptcha(final Image image, final JAntiCaptcha owner) {
+    public static Captcha getCaptcha(final Image image, final JAntiCaptcha owner) throws InterruptedException {
         final int width = image.getWidth(null);
         final int height = image.getHeight(null);
         if (width <= 0 || height <= 0) return null;
@@ -71,6 +73,8 @@ public class Captcha extends PixelGrid {
         try {
             pg.grabPixels();
         } catch (Exception e) {
+            InterruptedException ir = Exceptions.getInstanceof(e, InterruptedException.class);
+            if (ir != null) throw ir;
             return null;
         }
 
@@ -199,8 +203,8 @@ public class Captcha extends PixelGrid {
     private double             valityPercent;
 
     /**
-     * Diese Klasse beinhaltet ein 2D-Pixel-Grid. Sie stellt mehrere Methoden zur verfügung dieses Grid zu bearbeiten Um Grunde sind hier alle Methoden zu
-     * finden um ein captcha als ganzes zu bearbeiten
+     * Diese Klasse beinhaltet ein 2D-Pixel-Grid. Sie stellt mehrere Methoden zur verfügung dieses Grid zu bearbeiten Um Grunde sind hier
+     * alle Methoden zu finden um ein captcha als ganzes zu bearbeiten
      * 
      * @author JD-Team
      * @param width
@@ -473,7 +477,7 @@ public class Captcha extends PixelGrid {
         return Colors.rgbToHex(avg);
     }
 
-    public Vector<PixelObject> getBiggestObjects(int letterNum, int minArea, double contrast, double objectContrast) {
+    public Vector<PixelObject> getBiggestObjects(int letterNum, int minArea, double contrast, double objectContrast) throws InterruptedException {
         int splitter;
         int splitNum;
         int found = 0;
@@ -610,12 +614,13 @@ public class Captcha extends PixelGrid {
         boolean perfectObjectDetection = true;
         // Kleine Objekte ausfiltern
         /*
-         * String removeObjectsContainingImage = "dog.png"; if (removeObjectsContainingImage != null && objects.size() > letterNum) { Captcha remImage =
-         * owner.createCaptcha(Utilities.loadImage(owner.getResourceFile (removeObjectsContainingImage))); java.util.List<Integer[]> blackPoints = new
-         * java.util.List<Integer[]>(); int avg = getAverage(); for (int y = 0; y < remImage.getHeight(); y++) { for (int x = 0; x < remImage.getWidth(); x++) { if
-         * (isElement(remImage.getPixelValue(x, y), avg)) { blackPoints.add(new Integer[] { x, y }); } } } ListIterator<PixelObject> iter =
-         * objects.listIterator(objects.size()); while (iter.hasPrevious() && objects.size() > letterNum) { PixelObject pixelObject = (PixelObject)
-         * iter.previous(); if (objectContainCaptcha(pixelObject, remImage, blackPoints)) {
+         * String removeObjectsContainingImage = "dog.png"; if (removeObjectsContainingImage != null && objects.size() > letterNum) {
+         * Captcha remImage = owner.createCaptcha(Utilities.loadImage(owner.getResourceFile (removeObjectsContainingImage)));
+         * java.util.List<Integer[]> blackPoints = new java.util.List<Integer[]>(); int avg = getAverage(); for (int y = 0; y <
+         * remImage.getHeight(); y++) { for (int x = 0; x < remImage.getWidth(); x++) { if (isElement(remImage.getPixelValue(x, y), avg)) {
+         * blackPoints.add(new Integer[] { x, y }); } } } ListIterator<PixelObject> iter = objects.listIterator(objects.size()); while
+         * (iter.hasPrevious() && objects.size() > letterNum) { PixelObject pixelObject = (PixelObject) iter.previous(); if
+         * (objectContainCaptcha(pixelObject, remImage, blackPoints)) {
          * 
          * iter.remove(); } } }
          */
@@ -847,8 +852,9 @@ public class Captcha extends PixelGrid {
      * @param letterNum
      *            Anzahl der vermuteten Buchstaben
      * @return Array mit den gefundenen Lettern
+     * @throws InterruptedException
      */
-    public Letter[] getLetters(int letterNum) {
+    public Letter[] getLetters(int letterNum) throws InterruptedException {
         if (seperatedLetters != null) { return seperatedLetters; }
         Letter[] ret = getLetters0(letterNum);
         if (ret == null) return null;
@@ -884,7 +890,8 @@ public class Captcha extends PixelGrid {
                 }
 
             } catch (Exception e) {
-
+                InterruptedException ir = Exceptions.getInstanceof(e, InterruptedException.class);
+                if (ir != null) throw ir;
                 logger.severe("Fehler in useLetterFilter:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
 
                 logger.log(e);
@@ -908,8 +915,9 @@ public class Captcha extends PixelGrid {
      * @param minArea
      *            MindestFläche eines Elements
      * @return Erkannte Buchstaben
+     * @throws InterruptedException
      */
-    public Letter[] getLetters(int letterNum, double contrast, double objectContrast, int minArea) {
+    public Letter[] getLetters(int letterNum, double contrast, double objectContrast, int minArea) throws InterruptedException {
         Vector<PixelObject> letters = getBiggestObjects(letterNum, minArea, contrast, objectContrast);
         if (letters == null) { return null; }
         gaps = new boolean[getWidth() + 1];
@@ -1002,7 +1010,7 @@ public class Captcha extends PixelGrid {
         return ret;
     }
 
-    public Letter[] getLetters0(int letterNum) {
+    public Letter[] getLetters0(int letterNum) throws InterruptedException {
 
         if (letterNum == 1) {
             Letter ret = createLetter();
@@ -1042,7 +1050,8 @@ public class Captcha extends PixelGrid {
                 }
 
             } catch (Exception e) {
-
+                InterruptedException ir = Exceptions.getInstanceof(e, InterruptedException.class);
+                if (ir != null) throw ir;
                 logger.severe("Fehler in useSpecialGetLetters:" + e.getLocalizedMessage() + " / " + owner.getJas().getString("useSpecialGetLetters"));
 
                 logger.log(e);
@@ -1128,11 +1137,11 @@ public class Captcha extends PixelGrid {
         return ret;
     }
 
-    public void setContrast(float contrast) {
+    public void setContrast(float contrast) throws InterruptedException {
         setContrast(contrast, 0);
     }
 
-    public void setContrast(float contrast, float brightness) {
+    public void setContrast(float contrast, float brightness) throws InterruptedException {
         BufferedImage image = getImage();
         ContrastFilter cf = new ContrastFilter();
         cf.setContrast(contrast);
@@ -1143,7 +1152,7 @@ public class Captcha extends PixelGrid {
         grid = cap2.grid;
     }
 
-    public void blur(int hRadius, int vRadius, int iteration) {
+    public void blur(int hRadius, int vRadius, int iteration) throws InterruptedException {
         BufferedImage image = getImage();
         BoxBlurFilter blur = new BoxBlurFilter(hRadius, vRadius, iteration);
         BufferedImage dest = blur.createCompatibleDestImage(image, null);
@@ -1156,8 +1165,9 @@ public class Captcha extends PixelGrid {
      * reduziert ein bild auf eine gewisse farbanzahl
      * 
      * @param colorNums
+     * @throws InterruptedException
      */
-    public void reduceColors(int colorNums) {
+    public void reduceColors(int colorNums) throws InterruptedException {
         BufferedImage image = getImage();
         QuantizeFilter reduceFilter = new QuantizeFilter();
         BufferedImage dest = reduceFilter.createCompatibleDestImage(image, null);
@@ -1171,8 +1181,9 @@ public class Captcha extends PixelGrid {
      * reduziert ein bild auf eine gewisse farbanzahl
      * 
      * @param colorNums
+     * @throws InterruptedException
      */
-    public void reduceColorsPosterizeFilter(int numLevels) {
+    public void reduceColorsPosterizeFilter(int numLevels) throws InterruptedException {
         BufferedImage image = getImage();
         PosterizeFilter reduceFilter = new PosterizeFilter();
         BufferedImage dest = reduceFilter.createCompatibleDestImage(image, null);
@@ -1273,7 +1284,8 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Alternativ Methode über das gaps array. TODO: Nicht optimal. Das trim() kann man sich sparen indem man gleich die rihtige Arraygröße wählt
+     * Alternativ Methode über das gaps array. TODO: Nicht optimal. Das trim() kann man sich sparen indem man gleich die rihtige Arraygröße
+     * wählt
      * 
      * @param letterId
      * @param gaps
@@ -1504,8 +1516,9 @@ public class Captcha extends PixelGrid {
      * @param objectContrast
      *            Kontrast zur erkennung einens objektstartpunkte (z.B. 0.5 bei weißem Hintergrund)
      * @return Vector mit den gefundenen Objekten
+     * @throws InterruptedException
      */
-    public boolean objectContainCaptcha(PixelObject pixelObject, Captcha captcha, java.util.List<Integer[]> blackPoints) {
+    public boolean objectContainCaptcha(PixelObject pixelObject, Captcha captcha, java.util.List<Integer[]> blackPoints) throws InterruptedException {
 
         // logger.info(mask.getWidth()+"/"+mask.getHeight()+" - "+getWidth()+" -
         // "+getHeight());
@@ -1521,7 +1534,7 @@ public class Captcha extends PixelGrid {
                     if (bad > size / 3 || right + size / 10 < bad) {
                         break;
                     }
-
+                    if (Thread.interrupted()) throw new InterruptedException();
                     try {
 
                         Integer[] integers = bpiter.next();
@@ -1533,6 +1546,8 @@ public class Captcha extends PixelGrid {
                             }
                         }
                     } catch (Exception e) {
+                        InterruptedException ir = Exceptions.getInstanceof(e, InterruptedException.class);
+                        if (ir != null) throw ir;
                     }
                 }
                 if (right > 200) return true;
@@ -1548,7 +1563,8 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Setztd as interne Grid auf den ausgangszustand zurück. Funktioniert nur wenn dieser gespeichert ist. Im fehlerfall wird fals zurückgegegen
+     * Setztd as interne Grid auf den ausgangszustand zurück. Funktioniert nur wenn dieser gespeichert ist. Im fehlerfall wird fals
+     * zurückgegegen
      * 
      * @return
      */
@@ -1618,8 +1634,9 @@ public class Captcha extends PixelGrid {
      * Setzt Pixel als byte[] (z.B. aus einem Gif
      * 
      * @param bpixel
+     * @throws InterruptedException
      */
-    public void setPixel(byte[] bpixel) {
+    public void setPixel(byte[] bpixel) throws InterruptedException {
         pixel = new int[bpixel.length];
         int i = 0;
         for (int y = 0; y < getHeight(); y++) {
@@ -1637,6 +1654,8 @@ public class Captcha extends PixelGrid {
 
                     pixel[i] = ((IndexColorModel) colorModel).getRGB(bpixel[i] & pixel_mask);
                 } catch (Exception e) {
+                    InterruptedException ir = Exceptions.getInstanceof(e, InterruptedException.class);
+                    if (ir != null) throw ir;
                     logger.log(e);
                     pixel[i] = 0;
                 }

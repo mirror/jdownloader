@@ -26,12 +26,12 @@ import jd.utils.JDUtilities;
  */
 public class JACTrain {
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws InterruptedException {
         JACTrain main = new JACTrain();
         main.go();
     }
 
-    private void go() {
+    private void go() throws InterruptedException {
         final String hoster = "nrdr";
         final JAntiCaptcha jac = new JAntiCaptcha(hoster);
 

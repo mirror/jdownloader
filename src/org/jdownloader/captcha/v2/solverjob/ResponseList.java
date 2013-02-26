@@ -1,6 +1,8 @@
-package org.jdownloader.captcha.v2;
+package org.jdownloader.captcha.v2.solverjob;
 
 import java.util.ArrayList;
+
+import org.jdownloader.captcha.v2.AbstractResponse;
 
 public class ResponseList<E> extends ArrayList<AbstractResponse<E>> implements Comparable<ResponseList<E>> {
     /**
