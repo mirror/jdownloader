@@ -110,7 +110,7 @@ public class ChallengeResponseController {
         try {
 
             for (final ChallengeSolver<T> cs : solver) {
-                logger.info("Send to solver: " + cs);
+                logger.info("Send to solver: " + cs + " " + job);
                 cs.enqueue(job);
             }
             logger.info("Fire New Job Event");

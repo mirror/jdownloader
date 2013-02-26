@@ -27,18 +27,19 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
 
     @Override
     public void solve(SolverJob<ClickedPoint> solverJob) throws InterruptedException {
+        synchronized (DialogBasicCaptchaSolver.getInstance()) {
+            if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
+                solverJob.waitFor(config.getJAntiCaptchaTimeout(), JACSolver.getInstance());
+                checkInterruption();
+                ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
+                checkInterruption();
+                ClickCaptchaDialogHandler handler = new ClickCaptchaDialogHandler(captchaChallenge);
 
-        if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
-            solverJob.waitFor(config.getJAntiCaptchaTimeout(), JACSolver.getInstance());
-            checkInterruption();
-            ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
-            checkInterruption();
-            ClickCaptchaDialogHandler handler = new ClickCaptchaDialogHandler(captchaChallenge);
+                handler.run();
 
-            handler.run();
-
-            if (handler.getPoint() != null) {
-                solverJob.addAnswer(new ClickCaptchaResponse(this, handler.getPoint(), 100));
+                if (handler.getPoint() != null) {
+                    solverJob.addAnswer(new ClickCaptchaResponse(this, handler.getPoint(), 100));
+                }
             }
         }
 

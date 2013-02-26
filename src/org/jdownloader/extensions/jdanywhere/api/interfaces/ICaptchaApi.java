@@ -3,7 +3,6 @@ package org.jdownloader.extensions.jdanywhere.api.interfaces;
 import java.util.List;
 
 import jd.controlling.IOPermission;
-import jd.controlling.captcha.CaptchaResult;
 
 import org.appwork.remoteapi.ApiDoc;
 import org.appwork.remoteapi.ApiNamespace;
@@ -29,7 +28,7 @@ public interface ICaptchaApi extends RemoteAPIInterface {
 
     public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id, final boolean returnAsDataURL);
 
-    public boolean solve(final long id, CaptchaResult result);
+    public boolean solve(final long id, String result);
 
     public boolean abort(final long id, IOPermission.CAPTCHA what);
 

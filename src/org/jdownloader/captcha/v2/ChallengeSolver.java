@@ -49,6 +49,9 @@ public abstract class ChallengeSolver<T> {
 
             if (jr != null) {
                 jr.cancel();
+
+            } else {
+                job.getLogger().info("Could not kill " + job + " in " + this);
             }
         }
     }
@@ -61,7 +64,10 @@ public abstract class ChallengeSolver<T> {
         threadPool = new ThreadPoolExecutor(0, i, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), new ThreadFactory() {
 
             public Thread newThread(final Runnable r) {
+                if (r instanceof JobRunnable) {
+                    ((JobRunnable) r).getJob().getLogger().info("New THread for " + ((JobRunnable) r).getJob());
 
+                }
                 return new Thread(r, "SolverThread:" + ChallengeSolver.this.toString()) {
                     public void interrupt() {
                         if (r instanceof JobRunnable) {

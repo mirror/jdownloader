@@ -34,53 +34,60 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
 
     @Override
     public void solve(final SolverJob<String> job) throws InterruptedException {
+        synchronized (this) {
 
-        if (job.getChallenge() instanceof BasicCaptchaChallenge) {
-            job.getLogger().info("Waiting for JAC");
-            job.waitFor(config.getJAntiCaptchaTimeout(), JACSolver.getInstance());
-            job.getLogger().info("JAC is done. Response so far: " + job.getResponse());
-            ChallengeSolverJobListener jacListener = null;
-            checkInterruption();
-            BasicCaptchaChallenge captchaChallenge = (BasicCaptchaChallenge) job.getChallenge();
-            // we do not need another queue
-            final BasicCaptchaDialogHandler handler = new BasicCaptchaDialogHandler(captchaChallenge);
-            job.getEventSender().addListener(jacListener = new ChallengeSolverJobListener() {
-
-                @Override
-                public void onSolverTimedOut(ChallengeSolver<?> parameter) {
-                }
-
-                @Override
-                public void onSolverStarts(ChallengeSolver<?> parameter) {
-                }
-
-                @Override
-                public void onSolverJobReceivedNewResponse(AbstractResponse<?> response) {
-                    ResponseList<String> resp = job.getResponse();
-                    handler.suggest(resp.getValue());
-                    job.getLogger().info("Received Suggestion: " + resp);
-
-                }
-
-                @Override
-                public void onSolverDone(ChallengeSolver<?> solver) {
-
-                }
-            });
-            try {
-                ResponseList<String> resp = job.getResponse();
-                if (resp != null) {
-                    handler.suggest(resp.getValue());
-                }
+            if (job.getChallenge() instanceof BasicCaptchaChallenge) {
+                job.getLogger().info("Waiting for JAC");
+                job.waitFor(config.getJAntiCaptchaTimeout(), JACSolver.getInstance());
+                job.getLogger().info("JAC is done. Response so far: " + job.getResponse());
+                ChallengeSolverJobListener jacListener = null;
                 checkInterruption();
-                handler.run();
+                BasicCaptchaChallenge captchaChallenge = (BasicCaptchaChallenge) job.getChallenge();
+                // we do not need another queue
+                final BasicCaptchaDialogHandler handler = new BasicCaptchaDialogHandler(captchaChallenge);
+                job.getEventSender().addListener(jacListener = new ChallengeSolverJobListener() {
 
-                if (StringUtils.isNotEmpty(handler.getCaptchaCode())) {
-                    job.addAnswer(new CaptchaResponse(this, handler.getCaptchaCode(), 100));
+                    @Override
+                    public void onSolverTimedOut(ChallengeSolver<?> parameter) {
+                    }
+
+                    @Override
+                    public void onSolverStarts(ChallengeSolver<?> parameter) {
+                    }
+
+                    @Override
+                    public void onSolverJobReceivedNewResponse(AbstractResponse<?> response) {
+                        ResponseList<String> resp = job.getResponse();
+                        handler.suggest(resp.getValue());
+                        job.getLogger().info("Received Suggestion: " + resp);
+
+                    }
+
+                    @Override
+                    public void onSolverDone(ChallengeSolver<?> solver) {
+
+                    }
+                });
+                try {
+                    ResponseList<String> resp = job.getResponse();
+                    if (resp != null) {
+                        handler.suggest(resp.getValue());
+                    }
+                    checkInterruption();
+                    if (!captchaChallenge.getImageFile().exists()) {
+
+                        job.getLogger().info("Cannot solve. image does not exist");
+                        return;
+                    }
+                    handler.run();
+
+                    if (StringUtils.isNotEmpty(handler.getCaptchaCode())) {
+                        job.addAnswer(new CaptchaResponse(this, handler.getCaptchaCode(), 100));
+                    }
+                } finally {
+                    job.getLogger().info("Dialog closed. Response far: " + job.getResponse());
+                    if (jacListener != null) job.getEventSender().removeListener(jacListener);
                 }
-            } finally {
-                job.getLogger().info("Dialog closed. Response far: " + job.getResponse());
-                if (jacListener != null) job.getEventSender().removeListener(jacListener);
             }
         }
 

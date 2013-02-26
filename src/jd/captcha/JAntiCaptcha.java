@@ -36,6 +36,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.ListIterator;
 import java.util.Vector;
+import java.util.logging.Level;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -266,6 +267,7 @@ public class JAntiCaptcha {
 
     public JAntiCaptcha(String methodName) {
         logger = LogController.CL();
+        logger.setLevel(Level.OFF);
         method = JACMethod.forServiceName(methodName);
         if (method == null) {
             logger.severe("no such method found! " + methodName);

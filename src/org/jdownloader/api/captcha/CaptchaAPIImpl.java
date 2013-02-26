@@ -133,7 +133,8 @@ public class CaptchaAPIImpl implements CaptchaAPI {
         ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
 
         if (challenge instanceof BasicCaptchaChallenge) {
-            String res = JSonStorage.restoreFromString(result, new TypeRef<String>() {
+
+            String res = JSonStorage.restoreFromString("\"" + result + "\"", new TypeRef<String>() {
             });
 
             ((SolverJob<String>) job).addAnswer(new CaptchaResponse(null, res, 100));

@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.controlling.captcha.CaptchaHandler;
-import jd.controlling.captcha.BasicCaptchaDialogHandler;
-import jd.controlling.captcha.CaptchaEventListener;
-import jd.controlling.captcha.CaptchaEventSender;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
@@ -25,21 +21,29 @@ import jd.plugins.LinkStatus;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
+import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.EventsAPIEvent;
+import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.api.captcha.CaptchaJob;
+import org.jdownloader.captcha.event.ChallengeResponseListener;
+import org.jdownloader.captcha.v2.AbstractResponse;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.extensions.jdanywhere.JDAnywhereController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
-public class EventsAPI implements DownloadControllerListener, CaptchaEventListener, StateEventListener, LinkCollectorListener {
+public class EventsAPI implements DownloadControllerListener, StateEventListener, LinkCollectorListener, ChallengeResponseListener {
 
     HashMap<Long, String> linkStatusMessages = new HashMap<Long, String>();
 
     public EventsAPI() {
         DownloadController.getInstance().addListener(this, true);
-        CaptchaEventSender.getInstance().addListener(this);
+        ChallengeResponseController.getInstance().getEventSender().addListener(this);
         LinkCollector.getInstance().getEventsender().addListener(this, true);
         DownloadWatchDog.getInstance().getStateMachine().addListener(this);
         CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
@@ -204,26 +208,20 @@ public class EventsAPI implements DownloadControllerListener, CaptchaEventListen
         JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadPackageRemoved", data), null);
     }
 
-    public void captchaTodo(CaptchaHandler controller) {
-        sendEvent(controller, "new");
-    }
+    private void sendEvent(SolverJob<?> job, String type) {
+        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
 
-    public void captchaFinish(CaptchaHandler controller) {
-        sendEvent(controller, "expired");
-    }
+        ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
 
-    private void sendEvent(CaptchaHandler controller, String type) {
-        BasicCaptchaDialogHandler entry = controller.getDialog();
-        if (entry != null) {
-            CaptchaJob job = new CaptchaJob();
-            job.setType(entry.getCaptchaController().getCaptchaType());
-            job.setID(entry.getID().getID());
-            job.setHoster(entry.getHost().getTld());
-            HashMap<String, Object> data = new HashMap<String, Object>();
-            data.put("message", type);
-            data.put("data", job);
-            JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("captcha", data), null);
-        }
+        CaptchaJob apiJob = new CaptchaJob();
+        apiJob.setType(challenge.getClass().getSimpleName());
+        apiJob.setID(challenge.getId().getID());
+        apiJob.setHoster(challenge.getPlugin().getHost());
+        apiJob.setCaptchaCategory(challenge.getTypeID());
+        HashMap<String, Object> data = new HashMap<String, Object>();
+        data.put("message", type);
+        data.put("data", job);
+        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("captcha", data), null);
 
     }
 
@@ -322,6 +320,28 @@ public class EventsAPI implements DownloadControllerListener, CaptchaEventListen
 
     @Override
     public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
+    @Override
+    public void onNewJobAnswer(SolverJob<?> job, AbstractResponse<?> response) {
+    }
+
+    @Override
+    public void onJobDone(SolverJob<?> job) {
+        sendEvent(job, "expired");
+    }
+
+    @Override
+    public void onNewJob(SolverJob<?> job) {
+        sendEvent(job, "new");
+    }
+
+    @Override
+    public void onJobSolverEnd(ChallengeSolver<?> solver, SolverJob<?> job) {
+    }
+
+    @Override
+    public void onJobSolverStart(ChallengeSolver<?> solver, SolverJob<?> job) {
     }
 
 }

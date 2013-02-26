@@ -25,7 +25,9 @@ public class JobRunnable<T> implements Runnable {
 
     @Override
     public void run() {
+        if (canceled) return;
         thread = Thread.currentThread();
+        if (canceled) return;
         try {
             job.fireBeforeSolveEvent(solver);
 
