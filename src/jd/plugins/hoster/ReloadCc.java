@@ -143,10 +143,9 @@ public class ReloadCc extends PluginForHost {
     private void handleDL(Account account, DownloadLink link, String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
-        int maxConnections = 0;
-        // if ("uploaded.to".equalsIgnoreCase(link.getHost())) maxConnections = 1;
+        int maxConnections = this.getMaxSimultanDownload(link, account);
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxConnections);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, (maxConnections == -1) ? 0 : -1);
             if (!handleAPIErrors(br, account, link, dllink)) return;
 
             if (dl.getConnection().isContentDisposition()) {
