@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.jdanywhere.api;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.IOPermission;
@@ -8,6 +9,9 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
 import org.jdownloader.api.captcha.CaptchaJob;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.extensions.jdanywhere.api.interfaces.ICaptchaApi;
 
 public class CaptchaApi implements ICaptchaApi {
@@ -15,7 +19,24 @@ public class CaptchaApi implements ICaptchaApi {
     CaptchaAPIImpl cpAPI = new CaptchaAPIImpl();
 
     public List<CaptchaJob> list() {
-        return cpAPI.list();
+        java.util.List<CaptchaJob> ret = new ArrayList<CaptchaJob>();
+        for (SolverJob<?> entry : ChallengeResponseController.getInstance().listJobs()) {
+            if (entry.isDone()) continue;
+            if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
+                ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) entry.getChallenge();
+                CaptchaJob apiJob = new CaptchaJob();
+                if (challenge.getResultType().isAssignableFrom(String.class))
+                    apiJob.setType("Text");
+                else
+                    apiJob.setType("Click");
+                // apiJob.setType(challenge.getClass().getSimpleName());
+                apiJob.setID(challenge.getId().getID());
+                apiJob.setHoster(challenge.getPlugin().getHost());
+                apiJob.setCaptchaCategory(challenge.getExplain());
+                ret.add(apiJob);
+            }
+        }
+        return ret;
     }
 
     public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id, final boolean returnAsDataURL) {
@@ -26,10 +47,6 @@ public class CaptchaApi implements ICaptchaApi {
         cpAPI.get(request, response, id, false);
     }
 
-    // public boolean solve(long id, CaptchaResult result) {
-    // return cpAPI.solve(id, result);
-    // }
-    // new method: see #org.jdownloader.api.captcha.CaptchaAPIImpl.solve(long, String)
     @Override
     public boolean solve(long id, String result) {
         return cpAPI.solve(id, result);
