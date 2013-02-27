@@ -442,13 +442,6 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         config = JsonConfig.create(Application.getResource("cfg/CaptchaDialogDimensions_" + Hash.getMD5(getTitle())), LocationStorage.class);
 
         HeaderScrollPane sp;
-        final int size = org.jdownloader.settings.staticreferences.CFG_GUI.CAPTCHA_SCALE_FACTOR.getValue();
-        if (size != 100) {
-            for (int i = 0; i < images.length; i++) {
-                images[i] = IconIO.getScaledInstance(images[i], (int) (images[i].getWidth(null) * size / 100.0f), (int) (images[i].getHeight(null) * size / 100.0f), Interpolation.BICUBIC, false);
-
-            }
-        }
 
         iconPanel = new JComponent() {
 
@@ -476,7 +469,13 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             }
         });
 
-        iconPanel.setPreferredSize(new Dimension(images[0].getWidth(null), images[0].getHeight(null)));
+        final int size = org.jdownloader.settings.staticreferences.CFG_GUI.CAPTCHA_SCALE_FACTOR.getValue();
+        if (size != 100) {
+
+            iconPanel.setPreferredSize(new Dimension((int) (images[0].getWidth(null) * size / 100.0f), (int) (images[0].getHeight(null) * size / 100.0f)));
+        } else {
+            iconPanel.setPreferredSize(new Dimension(images[0].getWidth(null), images[0].getHeight(null)));
+        }
 
         field.add(iconPanel);
 
