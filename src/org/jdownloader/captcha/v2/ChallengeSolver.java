@@ -8,7 +8,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.appwork.utils.Exceptions;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
@@ -65,19 +64,7 @@ public abstract class ChallengeSolver<T> {
         threadPool = new ThreadPoolExecutor(0, i, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), new ThreadFactory() {
 
             public Thread newThread(final Runnable r) {
-                if (r instanceof JobRunnable) {
-                    ((JobRunnable) r).getJob().getLogger().info("New THread for " + ((JobRunnable) r).getJob());
-
-                }
-                return new Thread(r, "SolverThread:" + ChallengeSolver.this.toString()) {
-                    public void interrupt() {
-                        if (r instanceof JobRunnable) {
-                            ((JobRunnable) r).getJob().getLogger().info("Interrupt Job: " + ((JobRunnable) r).getJob() + " For Solver: " + ChallengeSolver.this);
-                            ((JobRunnable) r).getJob().getLogger().info("Stacktrace: \r\n" + Exceptions.getStackTrace(new Exception()));
-                        }
-                        super.interrupt();
-                    }
-                };
+                return new Thread(r, "SolverThread:" + ChallengeSolver.this.toString());
             }
 
         }, new ThreadPoolExecutor.AbortPolicy()) {

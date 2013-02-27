@@ -42,7 +42,7 @@ public class ChallengeResponseController {
     private ChallengeResponseController() {
         config = JsonConfig.create(CaptchaSettings.class);
         logger = LogController.getInstance().getLogger(getClass().getName());
-        eventSender = new ChallengeResponseEventSender();
+        eventSender = new ChallengeResponseEventSender(logger);
     }
 
     public boolean addSolver(ChallengeSolver<?> solver) {

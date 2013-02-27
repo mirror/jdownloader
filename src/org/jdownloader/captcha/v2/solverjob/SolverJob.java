@@ -23,15 +23,15 @@ public class SolverJob<T> {
 
     private ChallengeResponseController   controller;
     private ArrayList<ResponseList<T>>    cumulatedList;
-    private HashSet<ChallengeSolver<T>>   doneList    = new HashSet<ChallengeSolver<T>>();
+    private HashSet<ChallengeSolver<T>>   doneList  = new HashSet<ChallengeSolver<T>>();
     private ChallengeSolverJobEventSender eventSender;
-    private List<AbstractResponse<T>>     responses   = new ArrayList<AbstractResponse<T>>();
-    private HashSet<ChallengeSolver<T>>   runningList = new HashSet<ChallengeSolver<T>>();
+    private List<AbstractResponse<T>>     responses = new ArrayList<AbstractResponse<T>>();
+    // private HashSet<ChallengeSolver<T>> runningList = new HashSet<ChallengeSolver<T>>();
     private HashSet<ChallengeSolver<T>>   solverList;
 
     private LogSource                     logger;
 
-    private boolean                       canceled    = false;
+    private boolean                       canceled  = false;
 
     public String toString() {
 
@@ -47,12 +47,15 @@ public class SolverJob<T> {
     }
 
     public void addAnswer(AbstractResponse<T> abstractResponse) {
-        responses.add(abstractResponse);
-        this.cumulate();
-        challenge.setResult(cumulatedList.get(0).getValue());
-        if (isSolved()) {
-            getLogger().info("Is Solved - kill rest");
-            kill();
+        synchronized (responses) {
+            responses.add(abstractResponse);
+
+            T bestValue = cumulate().getValue();
+            challenge.setResult(bestValue);
+            if (isSolved()) {
+                getLogger().info("Is Solved - kill rest");
+                kill();
+            }
         }
         fireNewAnswerEvent(abstractResponse);
     }
@@ -62,43 +65,57 @@ public class SolverJob<T> {
     }
 
     public ResponseList<T> getResponse() {
-        if (cumulatedList == null || cumulatedList.size() == 0) return null;
-        return cumulatedList.get(0);
+        synchronized (responses) {
+            ArrayList<ResponseList<T>> lst = cumulatedList;
+            if (lst == null || lst.size() == 0) return null;
+            return lst.get(0);
+        }
     }
 
     public boolean areDone(ChallengeSolver<?>[] instances) {
 
-        for (ChallengeSolver<?> cs : instances) {
-            if (solverList.contains(cs) && !doneList.contains(cs)) { return false; }
+        synchronized (doneList) {
+
+            for (ChallengeSolver<?> cs : instances) {
+                if (solverList.contains(cs) && !doneList.contains(cs)) { return false; }
+            }
+            logger.info(solverList + "");
+            logger.info(doneList + "");
         }
-        logger.info(solverList + "");
-        logger.info(doneList + "");
+
         return true;
     }
 
-    private void cumulate() {
+    private ResponseList<T> cumulate() {
         HashMap<Object, ResponseList<T>> map = new HashMap<Object, ResponseList<T>>();
         ArrayList<ResponseList<T>> list = new ArrayList<ResponseList<T>>();
-        for (AbstractResponse<T> a : responses) {
+        synchronized (responses) {
 
-            ResponseList<T> cache = map.get(a.getValue());
-            if (cache == null) {
-                cache = new ResponseList<T>();
-                list.add(cache);
-                map.put(a.getValue(), cache);
+            for (AbstractResponse<T> a : responses) {
 
+                ResponseList<T> cache = map.get(a.getValue());
+                if (cache == null) {
+                    cache = new ResponseList<T>();
+                    list.add(cache);
+                    map.put(a.getValue(), cache);
+
+                }
+
+                cache.add(a);
             }
-
-            cache.add(a);
         }
         Collections.sort(list);
         this.cumulatedList = list;
+        return list.size() > 0 ? list.get(0) : null;
     }
 
     public void fireAfterSolveEvent(ChallengeSolver<T> solver) {
+
         if (!solverList.contains(solver)) throw new IllegalStateException("This Job does not contain this solver");
-        doneList.add(solver);
-        runningList.remove(solver);
+        synchronized (doneList) {
+            doneList.add(solver);
+        }
+        // runningList.remove(solver);
         if (eventSender != null) eventSender.fireEvent(new ChallengeSolverJobEvent(this, ChallengeSolverJobEvent.Type.SOLVER_DONE, solver));
         controller.fireAfterSolveEvent(this, solver);
         logger.info("Notify");
@@ -111,7 +128,7 @@ public class SolverJob<T> {
 
     public void fireBeforeSolveEvent(ChallengeSolver<T> solver) {
         if (!solverList.contains(solver)) throw new IllegalStateException("This Job does not contain this solver");
-        runningList.add(solver);
+        // runningList.add(solver);
         if (eventSender != null) eventSender.fireEvent(new ChallengeSolverJobEvent(this, ChallengeSolverJobEvent.Type.SOLVER_START, solver));
         controller.fireBeforeSolveEvent(this, solver);
     }
@@ -141,11 +158,16 @@ public class SolverJob<T> {
     }
 
     public boolean isDone() {
-        return isCanceled() || solverList.size() == doneList.size();
+        synchronized (doneList) {
+
+            return isCanceled() || solverList.size() == doneList.size();
+        }
     }
 
     public boolean isDone(ChallengeSolver<T> instance) {
-        return !solverList.contains(instance) || doneList.contains(instance);
+        synchronized (doneList) {
+            return !solverList.contains(instance) || doneList.contains(instance);
+        }
     }
 
     public boolean isSolved() {
@@ -153,16 +175,21 @@ public class SolverJob<T> {
     }
 
     private boolean isSolved(int treshhold) {
-
-        if (cumulatedList == null || cumulatedList.size() == 0) return false;
-        return cumulatedList.get(0).getSum() >= treshhold;
+        synchronized (responses) {
+            ArrayList<ResponseList<T>> locList = cumulatedList;
+            if (locList == null || locList.size() == 0) return false;
+            return locList.get(0).getSum() >= treshhold;
+        }
     }
 
     private void kill() {
         for (ChallengeSolver<T> s : solverList) {
-            if (!doneList.contains(s)) {
-                getLogger().info("Kill " + s);
-                s.kill(this);
+            synchronized (doneList) {
+
+                if (!doneList.contains(s)) {
+                    getLogger().info("Kill " + s);
+                    s.kill(this);
+                }
             }
         }
     }

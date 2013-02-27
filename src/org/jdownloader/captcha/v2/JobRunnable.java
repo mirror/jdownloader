@@ -25,10 +25,13 @@ public class JobRunnable<T> implements Runnable {
 
     @Override
     public void run() {
-        if (canceled) return;
-        thread = Thread.currentThread();
-        if (canceled) return;
+
         try {
+            synchronized (this) {
+                if (canceled) return;
+
+                thread = Thread.currentThread();
+            }
             job.fireBeforeSolveEvent(solver);
 
             DelayedRunnable timeout = null;
@@ -71,14 +74,13 @@ public class JobRunnable<T> implements Runnable {
         return thread;
     }
 
-    public void setThread(Thread thread) {
-        this.thread = thread;
-    }
-
     public void cancel() {
-        this.canceled = true;
-        if (thread != null && thread != Thread.currentThread()) {
-            thread.interrupt();
+        synchronized (this) {
+            this.canceled = true;
+            Thread locThread = thread;
+            if (locThread != null && locThread != Thread.currentThread()) {
+                locThread.interrupt();
+            }
         }
     }
 

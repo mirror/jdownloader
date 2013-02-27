@@ -10,6 +10,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.BasicHTTP.BasicHTTP;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
@@ -35,6 +36,13 @@ public class CBSolver extends ChallengeSolver<String> {
         super(1);
         config = JsonConfig.create(CaptchaBrotherHoodSettings.class);
         AdvancedConfigManager.getInstance().register(config);
+
+    }
+
+    @Override
+    public boolean canHandle(Challenge<?> c) {
+
+        return config.isEnabled() && super.canHandle(c);
     }
 
     @Override
