@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://([\\w\\-\\.]+)?(1000eb\\.com/[\\w\\-]+\\.htm(\\?p=\\d+)?|[\\w\\-\\.]+1000eb\\.com/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://([\\w\\-\\.]+)?(1000eb\\.com/(?!upload|bulletin_detail_\\d+|chance|copyrights|agreements|faq|contactus|aboutus|jounus|reportbadinformation)[\\w\\-]+\\.htm(\\?p=\\d+)?|[\\w\\-\\.]+1000eb\\.com/)" }, flags = { 0 })
 public class OneThousandEbComFolder extends PluginForDecrypt {
 
     public OneThousandEbComFolder(final PluginWrapper wrapper) {

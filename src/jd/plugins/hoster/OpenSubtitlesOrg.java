@@ -50,10 +50,10 @@ public class OpenSubtitlesOrg extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://opensubtitles.org/", "weblang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.opensubtitles.org/en")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("title=\"Download\" href=\"/en/subtitleserve/sub/\\d+\">([^<>\"]*?)</a>").getMatch(0);
+        if (br.getURL().equals("http://www.opensubtitles.org/en") || br.containsHTML(">These subtitles were <b>disabled</b>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("title=\"Download\" href=\"/en/subtitleserve/sub/\\d+\">([^<>]*?)</a>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".zip");
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()).replace("\"", "'") + ".zip");
         return AvailableStatus.TRUE;
     }
 

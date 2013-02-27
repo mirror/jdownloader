@@ -38,6 +38,10 @@ public class NowAm extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String finallink = br.getRedirectLocation();
         if (finallink != null && !this.canHandle(finallink)) {
             decryptedLinks.add(createDownloadlink(finallink));

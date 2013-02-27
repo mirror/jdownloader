@@ -45,7 +45,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "http://((www|m)\\.)?gameone\\.de/(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "http://((www|m)\\.)?gameone\\.de/(?!playtube/)(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3" }, flags = { 0 })
 public class GameOneDeA extends PluginForDecrypt {
 
     public class ReplacerInputStream extends InputStream {
@@ -59,7 +59,8 @@ public class GameOneDeA extends PluginForDecrypt {
          * Replacing & to {@literal &amp;} in InputStreams
          * 
          * @author mhaller
-         * @see <a href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
+         * @see <a
+         *      href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
          */
         public ReplacerInputStream(InputStream in) {
             this.in = in;
@@ -118,7 +119,7 @@ public class GameOneDeA extends PluginForDecrypt {
             br.setFollowRedirects(true);
             if (br.getRedirectLocation() != null) {
                 if (br.getHttpConnection().getResponseCode() == 302) {
-                    logger.info("Link offline: " + parameter);
+                    logger.info("Link offline or no downloadable content found: " + parameter);
                     return decryptedLinks;
                 } else if (br.getHttpConnection().getResponseCode() == 301) {
                     br.getPage(parameter);

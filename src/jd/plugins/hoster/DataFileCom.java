@@ -59,13 +59,16 @@ public class DataFileCom extends PluginForHost {
     private static final String PREMIUMONLY = "\"Sorry\\. Only premium users can download this file\"";
 
     /**
-     * They have a linkchecker but it doesn't show filenames if they're not included in the URL: http://www.datafile.com/linkchecker.html
+     * They have a linkchecker but it doesn't show filenames if they're not
+     * included in the URL: http://www.datafile.com/linkchecker.html
      */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepBrowser(br);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(false);
         // Invalid link
         if (br.containsHTML("<div class=\"error\\-msg\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Deleted file

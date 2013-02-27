@@ -47,7 +47,10 @@ public class OdMscNt extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCookiesExclusive(true);
         br.setFollowRedirects(false);
-        if (!getUserLogin(parameter)) return null;
+        if (!getUserLogin(parameter)) {
+            logger.info("No or wrong logindata entered -> Can't decrypt...");
+            return decryptedLinks;
+        }
         if (!parameter.contains("engine/go.php?")) {
             if (br.containsHTML("(An error occurred|We're sorry for the inconvenience)")) {
                 logger.info("Link offline: " + parameter);

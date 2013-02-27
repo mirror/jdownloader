@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://(www\\.)?1000eb\\.com/(?!myspace_)[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://(www\\.)?1000eb\\.com/(?!myspace_|upload|bulletin_detail_\\d+|chance|copyrights|agreements|faq|contactus|aboutus|jounus|reportbadinformation)[a-z0-9]+" }, flags = { 0 })
 public class OneThousandEbCom extends PluginForHost {
 
     public OneThousandEbCom(final PluginWrapper wrapper) {

@@ -73,6 +73,10 @@ public class RpprsIn extends PluginForDecrypt {
                 }
                 br.getPage("http://www.rappers.in/artistplaylist_" + onlyDifference + "-" + artistID + "-1808.xml?" + new Random().nextInt(100) + "&s=undefined");
             }
+            if (br.containsHTML("<playlist>[\t\n\r ]+</playlist>")) {
+                logger.info("Link offline (empty tracklist): " + parameter);
+                return decryptedLinks;
+            }
             final String[][] allSongs = br.getRegex("<filename>(http://[^<>\"]*?)</filename>[\t\n\r ]+<title>([^<>\"]*?)</title>").getMatches();
             if (allSongs == null || allSongs.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);

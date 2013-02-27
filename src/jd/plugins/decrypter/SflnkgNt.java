@@ -75,7 +75,19 @@ public class SflnkgNt extends PluginForDecrypt {
             gsh.setAddedLink(newparameter);
             br.getPage(gsh.getAddedLink());
         }
-        gsh.decrypt();
+        br.setFollowRedirects(true);
+        br.getPage(gsh.getAddedLink());
+        if (br.getURL().contains("safelinking.net/404")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        br.setFollowRedirects(false);
+        if (gsh.getAddedLink().contains("/d/")) {
+            gsh.decryptSingleLink();
+        } else {
+            gsh.handleCaptcha(gsh.getAddedLink(), param);
+            gsh.decryptMultipleLinks(gsh.getAddedLink(), param);
+        }
         decryptedLinks = gsh.getDecryptedLinks();
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter out of date for link: " + parameter);
@@ -86,7 +98,9 @@ public class SflnkgNt extends PluginForDecrypt {
 
     public class GeneralSafelinkingHandling {
         /**
-         * A class to handle sites similar to safelinking.net ->Google "Secure your links with a captcha, a password and much more" to find such sites
+         * A class to handle sites similar to safelinking.net ->Google
+         * "Secure your links with a captcha, a password and much more" to find
+         * such sites
          */
 
         public GeneralSafelinkingHandling(final Browser br, final CryptedLink param, final String host) {
@@ -271,7 +285,8 @@ public class SflnkgNt extends PluginForDecrypt {
                             logger.warning(HOST + ": 500 Internal Server Error. Link: " + parameter);
                             continue;
                         }
-                        password = br.getRegex("type=\"password\" name=\"link-password\"").matches(); // password correct?
+                        password = br.getRegex("type=\"password\" name=\"link-password\"").matches(); // password
+                                                                                                      // correct?
                     }
 
                     if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || password || br.containsHTML("<strong>Prove you are human</strong>")) {
@@ -309,7 +324,10 @@ public class SflnkgNt extends PluginForDecrypt {
             final ScriptEngineManager manager = new ScriptEngineManager();
             final ScriptEngine engine = manager.getEngineByName("javascript");
             try {
-                /* creating pseudo functions: document.location.protocol + document.write(value) */
+                /*
+                 * creating pseudo functions: document.location.protocol +
+                 * document.write(value)
+                 */
                 engine.eval("var document = { loc : function() { var newObj = new Object(); function protocol() { return \"" + protocol + "\"; } newObj.protocol = protocol(); return newObj; }, write : function(a) { return a; }}");
                 engine.eval("document.location = document.loc();");
                 result = engine.eval(javaScript);
