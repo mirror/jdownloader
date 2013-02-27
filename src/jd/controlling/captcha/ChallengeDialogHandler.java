@@ -4,7 +4,6 @@ import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.util.logging.Logger;
 
-import jd.controlling.IOPermission;
 import jd.controlling.IOPermission.CAPTCHA;
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialogInterface;
@@ -31,16 +30,17 @@ import org.jdownloader.translate._JDT;
 
 public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>> {
     private CaptchaDialogInterface textDialog;
-    private IOPermission           ioPermission = null;
+
     private DomainInfo             host;
     protected T                    captchaChallenge;
     private CaptchaSettings        config;
-    private final UniqueAlltimeID  id           = new UniqueAlltimeID();
+    private final UniqueAlltimeID  id = new UniqueAlltimeID();
 
     public ChallengeDialogHandler(DomainInfo instance, T captchaChallenge2) {
         this.host = instance;
         this.captchaChallenge = captchaChallenge2;
         config = JsonConfig.create(CaptchaSettings.class);
+
     }
 
     public DomainInfo getHost() {
@@ -65,7 +65,7 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
     }
 
     private void viaGUI() throws InterruptedException {
-        if (ioPermission != null && !ioPermission.isCaptchaAllowed(getHost().getTld())) { return; }
+        if (captchaChallenge.getIoPermission() != null && !captchaChallenge.getIoPermission().isCaptchaAllowed(getHost().getTld())) { return; }
         try {
             DialogType dialogType = null;
             if (captchaChallenge.getPlugin() instanceof PluginForHost) {
@@ -108,14 +108,14 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
                         CaptchaSettings.CFG.setLastCancelOption(0);
                         break;
                     case 1:
-                        if (ioPermission != null) {
-                            ioPermission.setCaptchaAllowed(getHost().getTld(), CAPTCHA.BLOCKHOSTER);
+                        if (captchaChallenge.getIoPermission() != null) {
+                            captchaChallenge.getIoPermission().setCaptchaAllowed(getHost().getTld(), CAPTCHA.BLOCKHOSTER);
                         }
                         CaptchaSettings.CFG.setLastCancelOption(1);
                         break;
                     case 2:
-                        if (ioPermission != null) {
-                            ioPermission.setCaptchaAllowed(null, CAPTCHA.BLOCKALL);
+                        if (captchaChallenge.getIoPermission() != null) {
+                            captchaChallenge.getIoPermission().setCaptchaAllowed(null, CAPTCHA.BLOCKALL);
                         }
                         CaptchaSettings.CFG.setLastCancelOption(2);
                         break;
@@ -140,10 +140,6 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
      * @throws DialogCanceledException
      */
     abstract protected void showDialog(DialogType dialogType, int flag, Image[] images) throws DialogClosedException, DialogCanceledException;
-
-    public IOPermission getIOPermission() {
-        return ioPermission;
-    }
 
     /**
      * @return the iD

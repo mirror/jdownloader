@@ -64,10 +64,10 @@ public class CBSolver extends ChallengeSolver<String> {
                 // Error-No Credits
                 String captchaID = ret.substring(3);
                 data = null;
-
+                Thread.sleep(6000);
                 while (true) {
 
-                    Thread.sleep(3000);
+                    Thread.sleep(1000);
                     url = "http://www.captchabrotherhood.com/askCaptchaResult.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaID=" + Encoding.urlEncode(captchaID) + "&version=1.1.7";
                     job.getLogger().info("Ask " + url);
                     ret = new String(http.getPage(new URL(url)));
