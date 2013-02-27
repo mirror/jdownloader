@@ -136,12 +136,12 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             dllink = brc.getRegex(">Please <a href=\"([^\"\\']+)\"").getMatch(0);
         } else if (parameter.contains("go4up.com/")) {
             dllink = brc.getRegex("window\\.location = \"(http[^<>\"]*?)\"").getMatch(0);
-        } else if (parameter.contains("qooy.com/") || parameter.contains("maxmirror.com/")) {
+        } else if (parameter.contains("qooy.com/")) {
             dllink = brc.getRegex("<a style=\"text\\-decoration: none;border:none;\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
-        } else if (parameter.contains("exzip.net/")) {
+        } else if (parameter.contains("exzip.net/") || parameter.contains("maxmirror.com/")) {
             dllink = brc.getRegex("\"(/down/[A-Z0-9]{8}/\\d+)\"").getMatch(0);
             if (dllink != null) {
-                brc.getPage("http://www.exzip.net" + dllink);
+                brc.getPage(dllink);
                 dllink = brc.getRegex(DEFAULTREGEX).getMatch(0);
             }
         } else {
