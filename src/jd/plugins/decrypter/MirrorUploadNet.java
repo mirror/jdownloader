@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -44,21 +44,8 @@ public class MirrorUploadNet extends PluginForDecrypt {
         br.getPage(parameter);
         String fpName = br.getRegex("<title>MirrorUpload\\.net \\- Download \\- ([^<>\"]*?)</title>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<b>File : </b>([^<>\"]*?)<br />").getMatch(0);
-        final String noCaptcha = br.getRegex("name=\"nocaptcha\" value=\"(\\d+)\"").getMatch(0);
-        if (noCaptcha != null) {
-            br.postPage(br.getURL(), "nocaptcha=" + noCaptcha);
-        } else {
-            if (!br.containsHTML("images/captcha/captcha\\.php")) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (int i = 0; i <= 3; i++) {
-                final String code = getCaptchaCode("http://www.mirrorupload.net/images/captcha/captcha.php", param);
-                br.postPage(parameter, "captcha=" + code);
-                if (!br.containsHTML("images/captcha/captcha\\.php")) break;
-            }
-            if (br.containsHTML("images/captcha/captcha\\.php")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        }
+        br.getPage("/status.html?uid=" + new Regex(parameter, "file/([A-Z0-9]{8})").getMatch(0));
+
         final String[] links = br.getRegex(">(http://(www\\.)?mirrorupload\\.net/host\\-\\d+/[A-Z0-9]{8}/?)<").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
