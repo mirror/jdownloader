@@ -148,18 +148,6 @@ public class Launcher {
         // System.setProperty("apple.awt.showGrowBox", "true");
         // }
 
-        // set WM Class explicitly
-        try {
-            // patch by Vampire
-            Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
-            awtAppClassName.setAccessible(true);
-            awtAppClassName.set(null, "JDownloader");
-        } catch (NoSuchFieldException e) {
-            // it seems we are not in X, nothing to do for now
-        } catch (IllegalAccessException e) {
-            throw new AssertionError("we've set the field accessible, this shouldn't happen");
-        }
-
         try {
             MacOSApplicationAdapter.enableMacSpecial();
         } catch (final Throwable e) {
@@ -223,6 +211,11 @@ public class Launcher {
             // Must be in Main
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
             Launcher.initMACProperties();
+        }
+
+        if (CrossSystem.isLinux()) {
+            initLinux();
+
         }
         /* hack for ftp plugin to use new ftp style */
         System.setProperty("ftpStyle", "new");
@@ -308,6 +301,20 @@ public class Launcher {
     // }
     // }
     // }
+
+    private static void initLinux() {
+        // set WM Class explicitly
+        try {
+            // patch by Vampire
+            Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
+            awtAppClassName.setAccessible(true);
+            awtAppClassName.set(null, "JDownloader");
+        } catch (NoSuchFieldException e) {
+            // it seems we are not in X, nothing to do for now
+        } catch (IllegalAccessException e) {
+            throw new AssertionError("we've set the field accessible, this shouldn't happen");
+        }
+    }
 
     private static void preInitChecks() {
         Launcher.javaCheck();
