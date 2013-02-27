@@ -160,8 +160,11 @@ public class DirectHTTP extends PluginForHost {
         public void load() throws IOException, PluginException {
             this.rcBr = this.br.cloneBrowser();
             // this prevents google/recaptcha group from seeing referrer
-            // jd2 only!
-            // this.rcBr.setCurrentURL(null);
+            try {
+                this.rcBr.setCurrentURL(null);
+            } catch (final Throwable e) {
+                /* 09581 will break here */
+            }
             // end of privacy protection
 
             /* follow redirect needed as google redirects to another domain */
