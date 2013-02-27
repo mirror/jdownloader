@@ -50,7 +50,7 @@ public class CBSolver extends ChallengeSolver<String> {
         if (StringUtils.isEmpty(config.getUser()) || StringUtils.isEmpty(config.getPass())) return;
         if (job.getChallenge() instanceof BasicCaptchaChallenge) {
             job.waitFor(JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout(), JACSolver.getInstance());
-
+            checkInterruption();
             BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
             BasicHTTP http = new BasicHTTP();
 

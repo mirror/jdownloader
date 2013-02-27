@@ -36,8 +36,7 @@ public class ChallengeResponseController {
     private LogSource logger;
 
     /**
-     * Create a new instance of ChallengeResponseController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of ChallengeResponseController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private ChallengeResponseController() {
         config = JsonConfig.create(CaptchaSettings.class);
@@ -133,11 +132,14 @@ public class ChallengeResponseController {
             logger.info("Solvong Done. Result: " + job.getResponse());
 
         } finally {
-            synchronized (activeJobs) {
-                activeJobs.remove(job);
-                idToJobMap.remove(job.getChallenge().getId().getID());
+            try {
+                synchronized (activeJobs) {
+                    activeJobs.remove(job);
+                    idToJobMap.remove(job.getChallenge().getId().getID());
+                }
+            } finally {
+                fireJobDone(job);
             }
-            fireJobDone(job);
         }
     }
 

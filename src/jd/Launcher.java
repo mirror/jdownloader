@@ -309,10 +309,8 @@ public class Launcher {
             Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
             awtAppClassName.setAccessible(true);
             awtAppClassName.set(null, "JDownloader");
-        } catch (NoSuchFieldException e) {
+        } catch (Throwable e) {
             // it seems we are not in X, nothing to do for now
-        } catch (IllegalAccessException e) {
-            throw new AssertionError("we've set the field accessible, this shouldn't happen");
         }
     }
 
