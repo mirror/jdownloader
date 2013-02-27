@@ -28,7 +28,7 @@ public class ReloadCc extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     private static final String                            PLUGIN_VERSION_KEY = "PLUGINVERSION";
-    private static final String                            PLUGIN_VERSION     = "0.2.1";
+    private static final String                            PLUGIN_VERSION     = "0.2.2";
 
     public ReloadCc(PluginWrapper wrapper) {
         super(wrapper);
