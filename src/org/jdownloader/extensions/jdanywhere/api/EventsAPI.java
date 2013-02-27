@@ -21,9 +21,7 @@ import jd.plugins.LinkStatus;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
-import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.EventsAPIEvent;
-import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -209,18 +207,27 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
     }
 
     private void sendEvent(SolverJob<?> job, String type) {
-        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
+        // if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new
+        // RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
 
         ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
 
         CaptchaJob apiJob = new CaptchaJob();
-        apiJob.setType(challenge.getClass().getSimpleName());
+        if (challenge.getResultType().isAssignableFrom(String.class))
+            apiJob.setType("Text");
+        else
+            apiJob.setType("Click");
+        // apiJob.setType(challenge.getClass().getSimpleName());
         apiJob.setID(challenge.getId().getID());
         apiJob.setHoster(challenge.getPlugin().getHost());
-        apiJob.setCaptchaCategory(challenge.getTypeID());
+        apiJob.setCaptchaCategory(challenge.getExplain());
+        // apiJob.setType(challenge.getClass().getSimpleName());
+        // apiJob.setID(challenge.getId().getID());
+        // apiJob.setHoster(challenge.getPlugin().getHost());
+        // apiJob.setCaptchaCategory(challenge.getTypeID());
         HashMap<String, Object> data = new HashMap<String, Object>();
         data.put("message", type);
-        data.put("data", job);
+        data.put("data", apiJob);
         JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("captcha", data), null);
 
     }

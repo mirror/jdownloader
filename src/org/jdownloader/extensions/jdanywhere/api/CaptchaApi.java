@@ -32,7 +32,7 @@ public class CaptchaApi implements ICaptchaApi {
     // new method: see #org.jdownloader.api.captcha.CaptchaAPIImpl.solve(long, String)
     @Override
     public boolean solve(long id, String result) {
-        return false;
+        return cpAPI.solve(id, result);
     }
 
     public boolean abort(long id, IOPermission.CAPTCHA what) {
