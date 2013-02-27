@@ -21,12 +21,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.logging.LogController;
+
 @HostPlugin(revision = "$Revision: 18302 $", interfaceVersion = 4, names = { "reload.cc" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-hrfgmodeydgbgdtklzh" }, flags = { 2 })
 public class ReloadCc extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     private static final String                            PLUGIN_VERSION_KEY = "PLUGINVERSION";
-    private static final String                            PLUGIN_VERSION     = "0.2";
+    private static final String                            PLUGIN_VERSION     = "0.2.1";
 
     public ReloadCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -337,6 +339,8 @@ public class ReloadCc extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
+        setLogger(LogController.getInstance().getLogger(this));
+
         if (account == null || account.getAccountInfo() == null) {
             logger.info("Could not get max connections limit for " + link.getHost() + ": AccountInfo is empty.");
             return super.getMaxSimultanDownload(link, account);
