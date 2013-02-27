@@ -17,11 +17,9 @@
 
 package jd;
 
-import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
@@ -213,10 +211,6 @@ public class Launcher {
             Launcher.initMACProperties();
         }
 
-        if (CrossSystem.isLinux()) {
-            initLinux();
-
-        }
         /* hack for ftp plugin to use new ftp style */
         System.setProperty("ftpStyle", "new");
         /* random number: eg used for cnl2 without asking dialog */
@@ -301,18 +295,6 @@ public class Launcher {
     // }
     // }
     // }
-
-    private static void initLinux() {
-        // set WM Class explicitly
-        try {
-            // patch by Vampire
-            Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
-            awtAppClassName.setAccessible(true);
-            awtAppClassName.set(null, "JDownloader");
-        } catch (Throwable e) {
-            // it seems we are not in X, nothing to do for now
-        }
-    }
 
     private static void preInitChecks() {
         Launcher.javaCheck();

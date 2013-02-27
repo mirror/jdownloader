@@ -2228,4 +2228,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Link(s):" })
     String DownloadOverview_DownloadOverview_links();
 
+    @Default(lngs = { "en" }, values = { "Reset Dialog 'Don't show again' flags" })
+    String GUISettings_GUISettings_resetdialogs_();
+
+    @Default(lngs = { "en" }, values = { "Dialog 'Don't show again' are resetted now!" })
+    String GUISettings_actionPerformed_reset_done();
+
+    @Default(lngs = { "en" }, values = { "Dialog Windows" })
+    String gui_config_dialogs();
+
 }

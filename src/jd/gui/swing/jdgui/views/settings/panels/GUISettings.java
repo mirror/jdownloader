@@ -30,15 +30,19 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorageException;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.JDRestartController;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate.GuiTranslation;
@@ -54,6 +58,7 @@ public class GUISettings extends AbstractConfigPanel {
     private ComboBox<String>  lng;
     private String[]          languages;
     private Thread            languageScanner;
+    private SettingsButton    resetDialogs;
 
     public String getTitle() {
         return _JDT._.gui_settings__gui_title();
@@ -97,12 +102,32 @@ public class GUISettings extends AbstractConfigPanel {
             }
         });
 
+        resetDialogs = new SettingsButton(new AppAction() {
+            {
+                setName(_GUI._.GUISettings_GUISettings_resetdialogs_());
+
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    AbstractDialog.resetDialogInformations();
+                    Dialog.getInstance().showMessageDialog(_GUI._.GUISettings_actionPerformed_reset_done());
+
+                } catch (StorageException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
+
         this.addHeader(getTitle(), NewTheme.I().getIcon("gui", 32));
+
         // this.addHeader(getTitle(),
         // NewTheme.I().getIcon("barrierfreesettings", 32));
         this.addDescription(_JDT._.gui_settings_barrierfree_description());
         this.addPair(_GUI._.gui_config_barrierfree_captchasize(), null, captchaSize);
         this.addPair(_GUI._.gui_config_language(), null, lng);
+        this.addPair(_GUI._.gui_config_dialogs(), null, resetDialogs);
 
     }
 

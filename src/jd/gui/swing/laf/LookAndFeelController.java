@@ -15,6 +15,9 @@
 
 package jd.gui.swing.laf;
 
+import java.awt.Toolkit;
+import java.lang.reflect.Field;
+
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
 
@@ -62,6 +65,18 @@ public class LookAndFeelController implements LAFManagerInterface {
      * Config parameter to store the users laf selection
      */
 
+    private static void initLinux() {
+        // set WM Class explicitly
+        try {
+            // patch by Vampire
+            final Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
+            awtAppClassName.setAccessible(true);
+            awtAppClassName.set(null, "JDownloader");
+        } catch (final Exception e) {
+            // it seems we are not in X, nothing to do for now
+        }
+    }
+
     public static final String DEFAULT_PREFIX = "LAF_CFG";
     private static boolean     uiInitated     = false;
 
@@ -71,6 +86,7 @@ public class LookAndFeelController implements LAFManagerInterface {
     public synchronized void setUIManager() {
         if (uiInitated) return;
         uiInitated = true;
+        initLinux();
         long t = System.currentTimeMillis();
         try {
             // de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setLookAndFeel("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel");
