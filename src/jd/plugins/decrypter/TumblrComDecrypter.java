@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://(www\\.)?(tumblr\\.com/audio_file/\\d+/tumblr_[A-Za-z0-9]+|(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]*?\\.tumblr\\.com(/image/\\d+|/post/\\d+|/page/\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|/page/\\d+)" }, flags = { 0 })
 public class TumblrComDecrypter extends PluginForDecrypt {
 
     public TumblrComDecrypter(PluginWrapper wrapper) {
@@ -38,16 +38,20 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("www.", "");
-        if (parameter.matches("http://tumblr\\.com/audio_file/\\d+/tumblr_[A-Za-z0-9]+")) {
+        if (parameter.matches(".+tumblr\\.com/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+")) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             String finallink = br.getRedirectLocation();
+            if (parameter.matches(".+tumblr\\.com/video_file/\\d+/tumblr_[A-Za-z0-9]+")) {
+                br.getPage(finallink);
+                finallink = br.getRedirectLocation();
+            }
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             decryptedLinks.add(createDownloadlink(finallink));
-        } else if (parameter.matches("http://[\\w\\.\\-]*?\\.tumblr\\.com/post/\\d+")) {
+        } else if (parameter.matches(".+tumblr\\.com/post/\\d+")) {
             // Single posts
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
@@ -71,7 +75,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             String externID = br.getRegex("(http://(www\\.)?gasxxx\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
             if (externID != null) {
                 br.getPage(externID);
-                externID = br.getRegex("<src>(http://[^<>\"]*?\\.flv)</src>").getMatch(0);
+                externID = br.getRegex("<src>(http://.+\\.flv)</src>").getMatch(0);
                 if (externID == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -114,8 +118,22 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             }
             externID = br.getRegex("\\\\x3csource src=\\\\x22(http://[^<>\"]*?)\\\\x22").getMatch(0);
             if (externID != null) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-                decryptedLinks.add(dl);
+                if (externID.matches(".+tumblr\\.com/video_file/.+")) {
+                    br.setFollowRedirects(false);
+                    br.getPage(externID);
+                    externID = br.getRedirectLocation();
+                    if (externID != null && externID.matches("https?://www\\.tumblr\\.com/video_file/.+")) {
+                        br.getPage(externID);
+                        externID = br.getRedirectLocation();
+                    }
+                    final DownloadLink dl = createDownloadlink(externID);
+                    String extension = externID.substring(externID.lastIndexOf("."));
+                    dl.setFinalFileName(fpName + extension);
+                    decryptedLinks.add(dl);
+                } else {
+                    final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                    decryptedLinks.add(dl);
+                }
                 return decryptedLinks;
             }
             // Try to find the biggest picture
@@ -135,7 +153,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
 
-        } else if (parameter.matches("http://(www\\.)?[\\w\\.\\-]*?\\.tumblr\\.com/image/\\d+")) {
+        } else if (parameter.matches(".+tumblr\\.com/image/\\d+")) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             final String finallink = br.getRegex("class=\"fit_to_screen\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
@@ -151,7 +169,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             // Users
             String nextPage = "1";
             int counter = 1;
-            boolean decryptSingle = parameter.matches("http://(www\\.)?[\\w\\.\\-]*?\\.tumblr\\.com/page/\\d+");
+            boolean decryptSingle = parameter.matches(".+tumblr\\.com/page/\\d+");
             br.getPage(parameter);
             if (br.containsHTML(">Not found\\.<")) {
                 logger.info("Link offline: " + parameter);
