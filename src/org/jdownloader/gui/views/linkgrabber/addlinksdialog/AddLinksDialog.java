@@ -370,6 +370,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             DragAndDropDelegater dnd = new DragAndDropDelegater(this, input);
             input.setTransferHandler(dnd);
         }
+
         input.setEditable(false);
         this.getDialog().addWindowListener(listener = new WindowListener() {
 

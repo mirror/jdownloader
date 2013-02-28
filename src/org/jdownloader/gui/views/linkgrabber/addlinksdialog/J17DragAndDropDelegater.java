@@ -81,14 +81,21 @@ public class J17DragAndDropDelegater extends TransferHandler {
             String base = ClipboardMonitoring.getCurrentBrowserURL(support.getTransferable());
 
             StringBuilder sb = new StringBuilder();
+
+            String old = input.getText();
+            int start = input.getSelectionStart();
+            int end = input.getSelectionEnd();
+
+            sb.append(old.substring(0, start));
             if (!StringUtils.isEmpty(html)) {
                 sb.append(html);
             }
 
             if (!StringUtils.isEmpty(text)) {
-                if (sb.length() > 0) sb.append("\r\n");
+                if (sb.length() > 0 && (text.startsWith("http") || text.startsWith("ftp://"))) sb.append("\r\n");
                 sb.append(text);
             }
+            sb.append(old.substring(end));
 
             String txt = sb.toString();
             dialog.parse(txt);
@@ -111,6 +118,7 @@ public class J17DragAndDropDelegater extends TransferHandler {
 
         } catch (Throwable e) {
             LogController.CL().log(e);
+
         }
         return false;
     }
