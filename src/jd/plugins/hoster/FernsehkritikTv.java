@@ -21,6 +21,8 @@ import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -35,6 +37,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -46,6 +49,7 @@ public class FernsehkritikTv extends PluginForHost {
     public FernsehkritikTv(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://couch.fernsehkritik.tv/register.php");
+        this.setConfigElements();
     }
 
     @Override
@@ -65,6 +69,9 @@ public class FernsehkritikTv extends PluginForHost {
     private static Object       LOCK        = new Object();
     private static final String LOGIN_ERROR = "Login fehlerhaft";
     private String              DLLINK      = null;
+    private static final String DL_AS_MOV   = "DL_AS_MOV";
+    private static final String DL_AS_MP4   = "DL_AS_MP4";
+    private static final String DL_AS_FLV   = "DL_AS_FLV";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -300,5 +307,12 @@ public class FernsehkritikTv extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DL_AS_MOV, JDL.L("plugins.hoster.fernsehkritik.mov", "Load Free Streams as Premium .mov")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DL_AS_MP4, JDL.L("plugins.hoster.fernsehkritik.mp4", "Load Free Streams as Premium .mp4")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DL_AS_FLV, JDL.L("plugins.hoster.fernsehkritik.flv", "Load Free Streams as Premium .flv")).setDefaultValue(true));
+
     }
 }
