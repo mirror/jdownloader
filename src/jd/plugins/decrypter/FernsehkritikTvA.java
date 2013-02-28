@@ -17,10 +17,13 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -65,30 +68,47 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             }
 
         } else {
-            br.getPage(parameter + "/Start/");
-            final String fpName = br.getRegex("var flattr_tle = \\'(.*?)\\'").getMatch(0);
-            final String[] jumps = br.getRegex("url: base \\+ \\'\\d+\\-(\\d+)\\.flv\\'").getColumn(0);
-            if (jumps == null || jumps.length == 0) {
-                logger.warning("FATAL error, no parts found for link: " + parameter);
-                return null;
+            final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("fernsehkritik.tv");
+            Account account = null;
+            if (accounts != null && accounts.size() != 0) {
+                Iterator<Account> it = accounts.iterator();
+                while (it.hasNext()) {
+                    Account n = it.next();
+                    if (n.isEnabled() && n.isValid()) {
+                        account = n;
+                        break;
+                    }
+                }
             }
-            ArrayList<String> parts = new ArrayList<String>();
-            parts.add("1");
-            for (String jump : jumps)
-                if (!parts.contains(jump)) parts.add(jump);
-            fp = FilePackage.getInstance();
-            fp.setName(fpName);
-            for (final String part : parts) {
-                String partname = null;
-                if (part.equals("1"))
-                    partname = episode + ".flv";
-                else
-                    partname = episode + "-" + part + ".flv";
-                final DownloadLink dlLink = createDownloadlink("http://fernsehkritik.tv/jdownloaderfolge" + partname);
-                dlLink.setFinalFileName(fpName + "_Teil" + part + ".flv");
-                fp.add(dlLink);
-                dlLink.setAvailable(true);
+            if (account != null) {
+                final DownloadLink dlLink = createDownloadlink("http://couch.fernsehkritik.tv/dl/fernsehkritik" + episode + ".mp4");
                 decryptedLinks.add(dlLink);
+            } else {
+                br.getPage(parameter + "/Start/");
+                final String fpName = br.getRegex("var flattr_tle = \\'(.*?)\\'").getMatch(0);
+                final String[] jumps = br.getRegex("url: base \\+ \\'\\d+\\-(\\d+)\\.flv\\'").getColumn(0);
+                if (jumps == null || jumps.length == 0) {
+                    logger.warning("FATAL error, no parts found for link: " + parameter);
+                    return null;
+                }
+                ArrayList<String> parts = new ArrayList<String>();
+                parts.add("1");
+                for (String jump : jumps)
+                    if (!parts.contains(jump)) parts.add(jump);
+                fp = FilePackage.getInstance();
+                fp.setName(fpName);
+                for (final String part : parts) {
+                    String partname = null;
+                    if (part.equals("1"))
+                        partname = episode + ".flv";
+                    else
+                        partname = episode + "-" + part + ".flv";
+                    final DownloadLink dlLink = createDownloadlink("http://fernsehkritik.tv/jdownloaderfolge" + partname);
+                    dlLink.setFinalFileName(fpName + "_Teil" + part + ".flv");
+                    fp.add(dlLink);
+                    dlLink.setAvailable(true);
+                    decryptedLinks.add(dlLink);
+                }
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) { return null; }
