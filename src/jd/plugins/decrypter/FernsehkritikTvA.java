@@ -37,9 +37,9 @@ public class FernsehkritikTvA extends PluginForDecrypt {
     private static final String DL_AS_MOV = "DL_AS_MOV";
     private static final String DL_AS_MP4 = "DL_AS_MP4";
     private static final String DL_AS_FLV = "DL_AS_FLV";
-    private boolean             MOV       = false;
-    private boolean             MP4       = false;
-    private boolean             FLV       = false;
+    private boolean             MOV       = true;
+    private boolean             MP4       = true;
+    private boolean             FLV       = true;
 
     public FernsehkritikTvA(final PluginWrapper wrapper) {
         super(wrapper);
@@ -90,9 +90,9 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             }
             if (account != null) {
                 SubConfiguration cfg = SubConfiguration.getConfig("fernsehkritik.tv");
-                MOV = cfg.getBooleanProperty(DL_AS_MOV, false);
-                MP4 = cfg.getBooleanProperty(DL_AS_MP4, false);
-                FLV = cfg.getBooleanProperty(DL_AS_FLV, false);
+                MOV = cfg.getBooleanProperty(DL_AS_MOV, true);
+                MP4 = cfg.getBooleanProperty(DL_AS_MP4, true);
+                FLV = cfg.getBooleanProperty(DL_AS_FLV, true);
                 if (MOV) {
                     final DownloadLink dlLink = createDownloadlink("http://couch.fernsehkritik.tv/dl/fernsehkritik" + episode + ".mov");
                     decryptedLinks.add(dlLink);
