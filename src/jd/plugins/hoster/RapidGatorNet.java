@@ -406,11 +406,13 @@ public class RapidGatorNet extends PluginForHost {
                 br.submitForm(captcha);
             }
             if (br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            String dllink = br.getRegex("location\\.href = \\'(http://.*?)\\'").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\\'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
+
+            String dllink = br.getRegex("\\'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\\'(http://pr\\d+\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("location\\.href = \\'(http://.*?)\\'").getMatch(0);
             if (dllink == null) {
-                if (br.getRegex("location\\.href = \\'/\\?r=download/index\\&session_id=[A-Za-z0-9]+\\'").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 logger.info(br.toString());
+                if (br.getRegex("location\\.href = \\'/\\?r=download/index\\&session_id=[A-Za-z0-9]+\\'").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -576,6 +578,7 @@ public class RapidGatorNet extends PluginForHost {
                 }
                 dllink = br.getRegex("var premium_download_link = \\'(http://[^<>\"\\']+)\\';").getMatch(0);
                 if (dllink == null) dllink = br.getRegex("\\'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("\\'(http://pr\\d+\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
                 if (dllink == null) {
                     if (br.containsHTML("You have reached daily quota of downloaded information for premium accounts")) {
                         logger.info("You have reached daily quota of downloaded information for premium accounts");
