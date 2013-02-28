@@ -463,7 +463,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             g2.setColor(filterNotifyColor);
             g2.fillRect(visibleRect.x, visibleRect.y, visibleRect.x + visibleRect.width, visibleRect.y + visibleRect.height);
         }
-        if (filteredColumn >= 0) {
+        if (filteredColumn >= 0 && tableModel.isTristateSorterEnabled()) {
             Rectangle first = this.getCellRect(0, filteredColumn, true);
             g2.setColor(sortNotifyColor);
             g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getExtTableModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);

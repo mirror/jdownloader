@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.extraction.gui;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Shape;
@@ -236,6 +237,16 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                         g2.fill(a);
 
                     }
+
+                    private Dimension dimension;
+                    {
+                        dimension = new Dimension(32, 32);
+                    }
+
+                    @Override
+                    public Dimension getPreferredSize() {
+                        return dimension;
+                    }
                 });
 
                 determinatedRenderer.setNonvalueClipPainter(new IconPainter() {
@@ -247,6 +258,16 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                         a.intersect(new Area(new Ellipse2D.Float(0, 0, diameter, diameter)));
 
                         g2.fill(a);
+                    }
+
+                    private Dimension dimension;
+                    {
+                        dimension = new Dimension(32, 32);
+                    }
+
+                    @Override
+                    public Dimension getPreferredSize() {
+                        return dimension;
                     }
                 });
 

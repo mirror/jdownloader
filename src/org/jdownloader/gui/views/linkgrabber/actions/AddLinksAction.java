@@ -26,7 +26,7 @@ public class AddLinksAction extends AppAction {
     }
 
     public AddLinksAction() {
-        this(_GUI._.AddLinksAction_());
+        this(_GUI._.AddLinksToLinkgrabberAction());
 
     }
 

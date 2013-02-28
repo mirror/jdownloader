@@ -39,6 +39,16 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         public abstract void modifyTableData(java.util.List<PackageType> packages);
     }
 
+    private boolean tristateSorterEnabled = true;
+
+    public boolean isTristateSorterEnabled() {
+        return tristateSorterEnabled;
+    }
+
+    public void setTristateSorterEnabled(boolean tristateSorterEnabled) {
+        this.tristateSorterEnabled = tristateSorterEnabled;
+    }
+
     private static final String                                                          SORT_ORIGINAL  = "ORIGINAL";
 
     private DelayedRunnable                                                              asyncRefresh;
@@ -385,12 +395,20 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
     @Override
     public String getNextSortIdentifier(String sortOrderIdentifier) {
-        if (sortOrderIdentifier == null || sortOrderIdentifier.equals(ExtColumn.SORT_ASC)) {
-            return ExtColumn.SORT_DESC;
-        } else if (sortOrderIdentifier.equals(ExtColumn.SORT_DESC)) {
-            return SORT_ORIGINAL;
+        if (!isTristateSorterEnabled()) {
+            if (sortOrderIdentifier == null || sortOrderIdentifier.equals(ExtColumn.SORT_ASC)) {
+                return ExtColumn.SORT_DESC;
+            } else {
+                return ExtColumn.SORT_ASC;
+            }
         } else {
-            return ExtColumn.SORT_ASC;
+            if (sortOrderIdentifier == null || sortOrderIdentifier.equals(ExtColumn.SORT_ASC)) {
+                return ExtColumn.SORT_DESC;
+            } else if (sortOrderIdentifier.equals(ExtColumn.SORT_DESC)) {
+                return SORT_ORIGINAL;
+            } else {
+                return ExtColumn.SORT_ASC;
+            }
         }
     }
 

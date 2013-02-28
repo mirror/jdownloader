@@ -388,6 +388,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             /* loading is not allowed */
             return;
         }
+
         LinkedList<FilePackage> lpackages = null;
         for (File downloadList : getAvailableDownloadLists()) {
             try {
@@ -416,6 +417,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     writeLock();
                     /* add loaded Packages to this controller */
                     try {
+
                         for (final FilePackage filePackage : lpackages2) {
                             filePackage.setControlledBy(DownloadController.this);
                         }
@@ -427,6 +429,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         setSaveAllowed(true);
                         writeUnlock();
                     }
+                    broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.DOWNLOADLINKS_LOADED));
                     broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
                 }
                 return null;

@@ -36,7 +36,6 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
     protected ImagePainter activeNonValuePainter;
     protected ImagePainter valuePainter;
     protected ImagePainter nonValuePainter;
-    private int            size;
 
     @Override
     public boolean isTooltipWithoutFocusEnabled() {
@@ -44,38 +43,14 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
         return false;
     }
 
-    protected IconedProcessIndicator(int size) {
+    protected IconedProcessIndicator() {
+        super();
 
-        this.size = size;
-    }
-
-    public Dimension getSize() {
-        return new Dimension(size, size);
-    }
-
-    public Dimension getSize(Dimension rv) {
-        rv.setSize(size, size);
-
-        return rv;
-    }
-
-    public int getWidth() {
-        return size;
-    }
-
-    /**
-     * Returns the current height of this component. This method is preferable to writing <code>component.getBounds().height</code>, or
-     * <code>component.getSize().height</code> because it doesn't cause any heap allocations.
-     * 
-     * @return the current height of this component
-     */
-    public int getHeight() {
-        return size;
     }
 
     public IconedProcessIndicator(ImageIcon icon) {
         super();
-        size = 22;
+
         updatePainter(icon, Color.WHITE, Color.GRAY, Color.WHITE, Color.GREEN, Color.LIGHT_GRAY, Color.GREEN);
         ToolTipController.getInstance().register(this);
         setActive(false);
@@ -97,7 +72,7 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
     }
 
     public ExtTooltip createExtTooltip(final Point mousePosition) {
-        IconedProcessIndicator comp = new IconedProcessIndicator(32);
+        IconedProcessIndicator comp = new IconedProcessIndicator();
 
         comp.valuePainter = valuePainter;
         comp.nonValuePainter = nonValuePainter;

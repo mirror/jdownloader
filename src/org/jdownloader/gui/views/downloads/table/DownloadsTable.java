@@ -3,32 +3,41 @@ package org.jdownloader.gui.views.downloads.table;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Image;
+import java.awt.LayoutManager;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.EventObject;
 
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
+import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadControllerEvent;
+import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import net.miginfocom.swing.MigLayout;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.circlebar.CircledProgressBar;
+import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
@@ -50,6 +59,65 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
         onSelectionChanged();
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+
+        final MigPanel loaderPanel = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]");
+        // loaderPanel.setPreferredSize(new Dimension(200, 200));
+
+        loaderPanel.setOpaque(false);
+        loaderPanel.setBackground(null);
+
+        final CircledProgressBar loader = new CircledProgressBar() {
+            public int getAnimationFPS() {
+                return 25;
+            }
+        };
+
+        loader.setValueClipPainter(new ImagePainter(NewTheme.I().getImage("robot", 256), 1.0f));
+
+        loader.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getImage("robot", 256), 0.1f));
+        ((ImagePainter) loader.getValueClipPainter()).setBackground(null);
+        ((ImagePainter) loader.getValueClipPainter()).setForeground(null);
+        loader.setIndeterminate(true);
+        System.out.println(NewTheme.I().getImage("robot", 256).getHeight(null));
+        System.out.println(loader.getPreferredSize());
+        System.out.println(loader.getSize());
+        loaderPanel.add(loader);
+
+        JProgressBar ph = new JProgressBar();
+        ph.setString(_GUI._.DownloadsTable_DownloadsTable_object_wait_for_loading_links());
+        ph.setStringPainted(true);
+        ph.setIndeterminate(true);
+        loaderPanel.add(ph, "alignx center");
+        // loaderPanel.setSize(400, 400);
+
+        final LayoutManager orgLayout = getLayout();
+        final Component rendererPane = getComponent(0);
+
+        setLayout(new MigLayout("ins 0", "[grow]", "[grow]"));
+        removeAll();
+        add(loaderPanel, "alignx center,aligny 20%");
+
+        DownloadController.getInstance().addListener(new DownloadControllerListener() {
+
+            @Override
+            public void onDownloadControllerEvent(DownloadControllerEvent event) {
+                if (event.getType() == DownloadControllerEvent.TYPE.DOWNLOADLINKS_LOADED) {
+                    DownloadController.getInstance().removeListener(this);
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            remove(loaderPanel);
+                            setLayout(orgLayout);
+
+                            loaderPanel.setVisible(false);
+                            add(rendererPane);
+                            repaint();
+                        }
+                    };
+                }
+            }
+        });
     }
 
     protected boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
@@ -60,6 +128,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     public boolean isSearchEnabled() {
+
         return false;
     }
 
@@ -125,7 +194,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     }
 
     @Override
-    protected void onHeaderSortClick(final MouseEvent e1, final ExtColumn<AbstractNode> oldSortColumn, String oldSortId) {
+    protected boolean onHeaderSortClick(final MouseEvent e1, final ExtColumn<AbstractNode> oldSortColumn, String oldSortId, ExtColumn<AbstractNode> newColumn) {
 
         // own thread to
         new Timer(100, new ActionListener() {
@@ -141,7 +210,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
             }
         }).start();
-
+        return false;
     }
 
     @Override

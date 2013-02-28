@@ -16,7 +16,7 @@ public class ExtractionListenerIcon implements ExtractionListener {
         icon = new ExtractorProgress(extractionExtension);
         // JDGui.getInstance().getStatusBar().setLayout(new MigLayout("ins 0",
         // "[fill,grow,left][][][]3", "[22!]"));
-        JDGui.getInstance().getStatusBar().add(icon);
+        JDGui.getInstance().getStatusBar().addProcessIndicator(icon);
     }
 
     public void onExtractionEvent(final ExtractionEvent event) {
@@ -31,6 +31,6 @@ public class ExtractionListenerIcon implements ExtractionListener {
     }
 
     public void cleanup() {
-        JDGui.getInstance().getStatusBar().remove(icon);
+        JDGui.getInstance().getStatusBar().removeProcessIndicator(icon);
     }
 }

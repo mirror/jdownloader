@@ -1,7 +1,9 @@
 package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Image;
+import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -12,25 +14,40 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.TransferHandler;
 
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import net.miginfocom.swing.MigLayout;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.circlebar.CircledProgressBar;
+import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ContextMenuFactory;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionAction;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.translate._JDT;
 
 public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, CrawledLink> {
 
@@ -39,11 +56,132 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     public LinkGrabberTable(LinkGrabberPanel linkGrabberPanel, final LinkGrabberTableModel tableModel) {
         super(tableModel);
+
         this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
         this.setTransferHandler(new LinkGrabberTableTransferHandler(this));
         this.setDragEnabled(true);
         this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
+
         contextMenuFactory = new ContextMenuFactory(this, linkGrabberPanel);
+        final MigPanel loaderPanel = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]");
+        // loaderPanel.setPreferredSize(new Dimension(200, 200));
+
+        loaderPanel.setOpaque(false);
+        loaderPanel.setBackground(null);
+
+        final CircledProgressBar loader = new CircledProgressBar() {
+            public int getAnimationFPS() {
+                return 25;
+            }
+        };
+
+        loader.setValueClipPainter(new ImagePainter(NewTheme.I().getImage("robot", 256), 1.0f));
+
+        loader.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getImage("robot", 256), 0.1f));
+        ((ImagePainter) loader.getValueClipPainter()).setBackground(null);
+        ((ImagePainter) loader.getValueClipPainter()).setForeground(null);
+        loader.setIndeterminate(true);
+        System.out.println(NewTheme.I().getImage("robot", 256).getHeight(null));
+        System.out.println(loader.getPreferredSize());
+        System.out.println(loader.getSize());
+        loaderPanel.add(loader);
+
+        JProgressBar ph = new JProgressBar();
+        ph.setString(_GUI._.LinkGrabberTable_LinkGrabberTable_object_wait_for_loading_links());
+        ph.setStringPainted(true);
+        ph.setIndeterminate(true);
+        loaderPanel.add(ph, "alignx center");
+        // loaderPanel.setSize(400, 400);
+
+        final LayoutManager orgLayout = getLayout();
+        final Component rendererPane = getComponent(0);
+
+        setLayout(new MigLayout("ins 0", "[grow]", "[grow]"));
+        removeAll();
+        add(loaderPanel, "alignx center,aligny 20%");
+
+        LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorListener() {
+
+            @Override
+            public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+            }
+
+            @Override
+            public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
+            }
+
+            @Override
+            public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorContentModified(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorAbort(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorListLoaded() {
+
+                LinkCollector.getInstance().getEventsender().removeListener(this);
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        remove(loaderPanel);
+                        setLayout(orgLayout);
+
+                        loaderPanel.setVisible(false);
+                        add(rendererPane);
+                        repaint();
+                    }
+                };
+            }
+        });
+    }
+
+    public void sortPackageChildren(ExtDefaultRowSorter<AbstractNode> rowSorter, String nextSortIdentifier) {
+        // TODO:
+        // set LinkGrabberTableModel.setTRistate....to false and implement sorter here
+    }
+
+    protected boolean onHeaderSortClick(final MouseEvent event, final ExtColumn<AbstractNode> oldColumn, final String oldIdentifier, ExtColumn<AbstractNode> newColumn) {
+        if (((LinkGrabberTableModel) getExtTableModel()).isTristateSorterEnabled()) return false;
+        try {
+            NewUIO.I().showConfirmDialog(Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.getNextSortIdentifier_sort_warning_rly_title_(), _JDT._.getNextSortIdentifier_sort_warning_rly_msg(newColumn.getName()), NewTheme.I().getIcon("help", 32), _JDT._.basics_yes(), _JDT._.basics_no());
+
+            sortPackageChildren(newColumn.getRowSorter(), getExtTableModel().getNextSortIdentifier(newColumn.getSortOrderIdentifier()));
+
+            return true;
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+
+        return true;
     }
 
     @Override

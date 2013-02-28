@@ -60,7 +60,8 @@ public class UpdateController implements UpdateCallbackInterface {
     private UpdateSettings settings;
 
     /**
-     * Create a new instance of UpdateController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of UpdateController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private UpdateController() {
         confirmedThreads = new HashSet<Thread>();
@@ -155,11 +156,11 @@ public class UpdateController implements UpdateCallbackInterface {
                     lazyGetIcon().setIndeterminate(true);
                     lazyGetIcon().setTitle(_GUI._.JDUpdater_JDUpdater_object_icon());
                     lazyGetIcon().setDescription(null);
-                    JDGui.getInstance().getStatusBar().add(icon);
+                    JDGui.getInstance().getStatusBar().addProcessIndicator(icon);
 
                 } else {
                     lazyGetIcon().setIndeterminate(false);
-                    JDGui.getInstance().getStatusBar().remove(icon);
+                    JDGui.getInstance().getStatusBar().removeProcessIndicator(icon);
                 }
             }
         };

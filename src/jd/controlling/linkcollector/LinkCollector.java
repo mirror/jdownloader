@@ -207,6 +207,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             public void onLinkCollectorContentModified(LinkCollectorEvent event) {
             }
+
+            @Override
+            public void onLinkCollectorListLoaded() {
+            }
         });
     }
 
@@ -1057,6 +1061,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         setSaveAllowed(true);
                         writeUnlock();
                     }
+                    eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.LINKGRABBERLIST_LOADED));
                     eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE));
                 }
                 return null;

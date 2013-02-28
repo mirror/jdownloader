@@ -466,4 +466,10 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "JDownloader cannot connect to %s1! Please check your connection settings..." })
     String TranslationProxyDialogNoConnection(String host);
 
+    @Default(lngs = { "en" }, values = { "Sort Linkgrabber?" })
+    String getNextSortIdentifier_sort_warning_rly_title_();
+
+    @Default(lngs = { "en" }, values = { "Do you really want to sort all Links and Packages on '%s1'?" })
+    String getNextSortIdentifier_sort_warning_rly_msg(String string);
+
 }

@@ -21,9 +21,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -46,6 +47,9 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
+import org.appwork.exceptions.WTFException;
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
@@ -57,6 +61,7 @@ public class StatusBarImpl extends JPanel {
     private ReconnectProgress      reconnectIndicator;
     private IconedProcessIndicator linkGrabberIndicator;
     private JLabel                 statusLabel;
+    private DelayedRunnable        updateDelayer;
 
     public StatusBarImpl() {
         Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -77,14 +82,13 @@ public class StatusBarImpl extends JPanel {
     }
 
     private void initGUI() {
-        setLayout(new MigLayout("ins 0", "[left]0[grow,fill][][][]3", "[22!]"));
+
         if (LookAndFeelController.getInstance().getLAFOptions().isPaintStatusbarTopBorder()) {
             setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
         } else {
             setBorder(BorderFactory.createMatteBorder(0, 0, 0, 0, getBackground().darker()));
         }
 
-        super.add(PremiumStatus.getInstance());
         statusLabel = new JLabel();
         statusLabel.setEnabled(false);
         reconnectIndicator = new ReconnectProgress();
@@ -199,11 +203,10 @@ public class StatusBarImpl extends JPanel {
         // extractIndicator.setToolTipText("<html><img src=\"" +
         // NewTheme.I().getImageUrl("archive") +
         // "\"></img>Extracting Archives: 85%</html>");
-        super.add(statusLabel, "height 22!");
+
         statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        super.add(Box.createHorizontalGlue(), "height 22!,width 22!");
-        super.add(reconnectIndicator, "height 22!,width 22!");
-        super.add(linkGrabberIndicator, "height 22!,width 22!");
+
+        redoLayout();
         Timer timer = new Timer(1000, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -213,42 +216,75 @@ public class StatusBarImpl extends JPanel {
         });
         timer.setRepeats(true);
         timer.start();
+        updateDelayer = new DelayedRunnable(ToolTipController.EXECUTER, 1000, 2000) {
+
+            @Override
+            public void delayedrun() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        redoLayout();
+                    }
+                };
+            }
+        };
         // add(extractIndicator, "height 22!,width 22!,hidemode 2");
+    }
+
+    private void redoLayout() {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("[left]0[grow,fill]");
+        for (int i = -2; i < processIndicators.size(); i++) {
+            sb.append("1[fill,22!]");
+        }
+        sb.append("3");
+        setLayout(new MigLayout("ins 0", sb.toString(), "[fill,22!]"));
+
+        super.removeAll();
+        super.add(PremiumStatus.getInstance());
+        super.add(statusLabel, "height 22!,gapright 10!");
+
+        super.add(reconnectIndicator, "");
+
+        super.add(linkGrabberIndicator, "");
+        for (JComponent c : processIndicators) {
+            super.add(c, "");
+        }
+        repaint();
+        revalidate();
+
+    }
+
+    public void removeProcessIndicator(JComponent icon) {
+        processIndicators.remove(icon);
+        updateDelayer.resetAndStart();
+    }
+
+    public void addProcessIndicator(JComponent icon) {
+        processIndicators.add(icon);
+        updateDelayer.resetAndStart();
     }
 
     public IconedProcessIndicator getLinkGrabberIndicator() {
         return linkGrabberIndicator;
     }
 
-    public Component add(Component comp) {
-        updateLayout(getComponentCount() + 1);
-        try {
-            return super.add(comp);
-        } finally {
-            revalidate();
-        }
-    }
-
-    private void updateLayout(int components) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[left]0[grow,fill,left][22!][22!]");
-        for (int i = 4; i < components; i++) {
-            sb.append("[22!]");
-        }
-        sb.append("3");
-        setLayout(new MigLayout("ins 0", sb.toString(), "[22!]"));
-    }
+    private ArrayList<JComponent> processIndicators = new ArrayList<JComponent>();
 
     public void remove(Component comp) {
-        updateLayout(getComponentCount() - 1);
-        super.remove(comp);
-        revalidate();
+        throw new WTFException("Use #removeProcessIndicator");
+
     }
 
     public void add(Component comp, Object constraints) {
-        updateLayout(getComponentCount() + 1);
-        super.add(comp, constraints);
-        revalidate();
+        throw new WTFException("Use #addProcessIndicator");
+
+    }
+
+    public Component add(Component comp) {
+        throw new WTFException("Use #addProcessIndicator");
     }
 
     private void updateLinkGrabberIndicator() {

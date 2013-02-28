@@ -2,6 +2,7 @@ package org.jdownloader.gui.translate;
 
 import org.appwork.txtresource.Default;
 import org.appwork.txtresource.Defaults;
+import org.appwork.txtresource.DescriptionForTranslationEntry;
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 
@@ -644,8 +645,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Views" })
     String LinkGrabberSideBarHeader_LinkGrabberSideBarHeader();
 
-    @Default(lngs = { "en" }, values = { "Add Downloads" })
-    String AddLinksAction_();
+    @Default(lngs = { "en" }, values = { "Add New Links" })
+    @DescriptionForTranslationEntry("Add Links Button in Linkgrabber bottom left")
+    String AddLinksToLinkgrabberAction();
 
     @Default(lngs = { "en" }, values = { "Restore %s1 filtered Links" })
     String RestoreFilteredLinksAction_(int x);
@@ -2236,5 +2238,11 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Dialog Windows" })
     String gui_config_dialogs();
+
+    @Default(lngs = { "en" }, values = { "Please wait. Loading Links..." })
+    String DownloadsTable_DownloadsTable_object_wait_for_loading_links();
+
+    @Default(lngs = { "en" }, values = { "Please wait. Loading Links..." })
+    String LinkGrabberTable_LinkGrabberTable_object_wait_for_loading_links();
 
 }

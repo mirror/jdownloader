@@ -8,9 +8,10 @@ import javax.swing.Box;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
-import javax.swing.Timer;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadControllerEvent;
+import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.gui.swing.jdgui.menu.ChunksEditor;
 import jd.gui.swing.jdgui.menu.ParalellDownloadsEditor;
 import jd.gui.swing.jdgui.menu.ParallelDownloadsPerHostEditor;
@@ -18,11 +19,12 @@ import jd.gui.swing.jdgui.menu.SpeedlimitEditor;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.MigPanel;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 
-public class DownloadOverview extends MigPanel implements ActionListener {
+public class DownloadOverview extends MigPanel implements ActionListener, DownloadControllerListener {
 
     private DownloadsTable downloadTable;
     private JLabel         packageCount;
@@ -38,8 +40,11 @@ public class DownloadOverview extends MigPanel implements ActionListener {
             setOpaque(true);
         }
         MigPanel info = new MigPanel("ins 2 0 0 0 ,wrap 2", "[grow]10[grow]", "[]2[]");
+        info.setOpaque(false);
         packageCount = new JLabel();
         linkCount = new JLabel();
+        // SwingUtils.setOpaque(packageCount, false);
+        // SwingUtils.setOpaque(packageCount, false);
         // total size
         // selected
         // filtered
@@ -59,8 +64,8 @@ public class DownloadOverview extends MigPanel implements ActionListener {
         add(Box.createHorizontalGlue());
         add(new JSeparator(JSeparator.VERTICAL), "pushy,growy");
         add(settings);
-
-        new Timer(1000, this).start();
+        DownloadController.getInstance().addListener(this);
+        // new Timer(1000, this).start();
     }
 
     private JComponent createHeaderLabel(String label) {
@@ -72,7 +77,23 @@ public class DownloadOverview extends MigPanel implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        packageCount.setText(DownloadController.getInstance().size() + "");
+
+    }
+
+    @Override
+    public void onDownloadControllerEvent(final DownloadControllerEvent event) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                switch (event.getType()) {
+                case REFRESH_STRUCTURE:
+                    packageCount.setText(DownloadController.getInstance().size() + "");
+                    linkCount.setText(DownloadController.getInstance().getAllDownloadLinks().size() + "");
+                }
+            }
+        };
+
     }
 
 }

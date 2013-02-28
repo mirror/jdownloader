@@ -351,4 +351,8 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
     public void onJobSolverStart(ChallengeSolver<?> solver, SolverJob<?> job) {
     }
 
+    @Override
+    public void onLinkCollectorListLoaded() {
+    }
+
 }
