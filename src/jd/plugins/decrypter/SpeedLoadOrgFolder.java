@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedload.org" }, urls = { "http://(www\\.)?speedload\\.org/(?!faq|register|login|terms|report|index|earn_money|upgrade|checker|sitemap|dmca|tos)[a-z0-9]+(~f)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedload.org" }, urls = { "http://(www\\.)?speedload\\.org/brokenAtTheMoment" }, flags = { 0 })
 public class SpeedLoadOrgFolder extends PluginForDecrypt {
 
     public SpeedLoadOrgFolder(PluginWrapper wrapper) {

@@ -37,9 +37,11 @@ public class Mv2kTo extends PluginForDecrypt {
     }
 
     /**
-     * Description of the regexes array: 1= nowvideo.co,streamcloud.com 2=flashx.tv,veervid.com,ginbig
-     * .com,vidbux.com,xvidstage.com,vidstream.in ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos .net,putlocker
-     * .com,vureel.com,vidbox.net,watchfreeinhd.com and many others 3=zalaa.com,sockshare.com 4=stream2k.com 5=flashx.tv
+     * Description of the regexes array: 1= nowvideo.co,streamcloud.com
+     * 2=flashx.tv,veervid.com,ginbig .com,vidbux.com,xvidstage.com,vidstream.in
+     * ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos
+     * .net,putlocker .com,vureel.com,vidbox.net,watchfreeinhd.com and many
+     * others 3=zalaa.com,sockshare.com 4=stream2k.com 5=flashx.tv, yesload.net
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -66,7 +68,7 @@ public class Mv2kTo extends PluginForDecrypt {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim() + (mirror > 1 ? "@Mirror " + i : "")));
             for (int j = 1; j <= part; j++) {
-                final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"(http://[^<>\"]*?)\"", "0" }, { "<IFRAME SRC=\"(http://[^<>\"]*?)\"", "0" }, { "<iframe width=\\d+% height=\\d+px frameborder=\"0\" scrolling=\"no\" src=\"(http://embed\\.stream2k\\.com/[^<>\"]*?)\"", "0" }, { "\"(http://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+)", "0" }, { "\\'(http://(www\\.)?novamov\\.com/embed\\.php\\?v=[^<>\"/]*?)\\'", "0" }, { "\"(http://(www\\.)?video\\.google\\.com/googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=\\d+)", "0" } };
+                final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"(http://[^<>\"]*?)\"", "0" }, { "<IFRAME SRC=\"(http://[^<>\"]*?)\"", "0" }, { "<iframe width=\\d+% height=\\d+px frameborder=\"0\" scrolling=\"no\" src=\"(http://embed\\.stream2k\\.com/[^<>\"]*?)\"", "0" }, { "\"(http://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+)", "0" }, { "\\'(http://(www\\.)?novamov\\.com/embed\\.php\\?v=[^<>\"/]*?)\\'", "0" }, { "\"(http://(www\\.)?video\\.google\\.com/googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=\\d+)", "0" }, { "\\'(http://embed\\.yesload\\.net/[A-Za-z0-9]+)\\'", "0" } };
                 for (String[] regex : regexes) {
                     String finallink = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getMatch(Integer.parseInt(regex[1]));
                     if (finallink != null) {
@@ -104,6 +106,8 @@ public class Mv2kTo extends PluginForDecrypt {
                     br.getPage(nextPart);
                     br2 = br.cloneBrowser();
                 }
+                // No wait = stream2k links may fail
+                this.sleep(2 * 1000l, param);
             }
             if (mirrors.length == 0) break;
             if (i < mirrors.length) {

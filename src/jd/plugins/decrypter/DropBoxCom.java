@@ -48,15 +48,14 @@ public class DropBoxCom extends PluginForDecrypt {
         br.setCookie("http://dropbox.com", "locale", "en");
         br.getPage(parameter);
         // Handling for single links
-        if (br.containsHTML(new Regex(parameter, ".*?(dropbox\\.com/.+)").getMatch(0) + "\\?dl=1\"")) {
+        if (br.containsHTML(new Regex(parameter, ".*?(dropbox\\.com/sh/[a-z0-9]+).+").getMatch(0) + "[^<>\"]+" + "dl=1\"")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
             dl.setProperty("decrypted", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         // Decrypt file- and folderlinks
-        String fpName = br.getRegex("<h3 id=\"folder\\-title\" class=\"shmodel\\-filename\">([^<>\"]*?)</h3>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("SharingModel\\.init\\('(.*?)'").getMatch(0);
+        String fpName = br.getRegex("content=\"([^<>/]*?)\" property=\"og:title\"").getMatch(0);
         String emSnippets[][] = br.getRegex("\\('emsnippet-(.*?)'\\).*?=\\s*'(.*?)'").getMatches();
         HashMap<String, String> fileNameMap = new HashMap<String, String>();
         if (emSnippets != null && emSnippets.length > 0) {
@@ -96,7 +95,10 @@ public class DropBoxCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         }
-        if (decryptedLinks.size() == 0) return decryptedLinks;
+        if (decryptedLinks.size() == 0) {
+            logger.info("Found nothing to download: " + parameter);
+            return decryptedLinks;
+        }
         if (fpName != null) {
             if (fpName.contains("\\")) fpName = unescape(fpName);
             FilePackage fp = FilePackage.getInstance();

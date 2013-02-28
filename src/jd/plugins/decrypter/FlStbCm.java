@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|advanced_search\\.html|search|look_for\\.html.+|sponsored_go\\.html.+|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback|privacy\\.html|terms\\.html|trends/|last_added_files\\.html|add_contact\\.html|apidoc\\.html|submit\\.html|query\\.html)([^<>/\"]+\\.html|[A-Za-z0-9]{10,})|video\\.filestube\\.com/watch,[a-z0-9]+/.+\\.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|advanced_search\\.html|search|look_for\\.html.+|sponsored_go\\.html.+|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback|privacy\\.html|terms\\.html|trends/|last_added_files\\.html|add_contact\\.html|apidoc\\.html|submit\\.html|query\\.html|affiliation\\.html)([^<>/\"]+\\.html|[A-Za-z0-9]{10,})|video\\.filestube\\.com/watch,[a-z0-9]+/.+\\.html)" }, flags = { 0 })
 public class FlStbCm extends PluginForDecrypt {
 
     public FlStbCm(PluginWrapper wrapper) {
@@ -44,8 +45,18 @@ public class FlStbCm extends PluginForDecrypt {
         final String parameter = param.toString();
         // Allows us to get age restricted videos
         br.setCookie("http://filestube.com/", "adultChecked", "1");
+        br.setFollowRedirects(true);
+        try {
+            br.getPage(parameter);
+        } catch (final BrowserException e) {
+            logger.info("Link offline or unsupported: " + parameter);
+            return decryptedLinks;
+        }
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        if (br.containsHTML(">403 Forbidden<")) {
+            logger.info("Link offline or unsupported: " + parameter);
+            return decryptedLinks;
+        }
         if (parameter.contains("/go.html")) {
             if (br.containsHTML("\\- File no longer available<")) {
                 logger.info("Link offline: " + parameter);
@@ -204,15 +215,9 @@ public class FlStbCm extends PluginForDecrypt {
             }
         } else {
             br.setFollowRedirects(true);
-            if (br.getRedirectLocation() != null) {
-                if (br.getRedirectLocation().equals("http://www.filestube.com/")) {
-                    logger.info("Link offline: " + parameter);
-                    return decryptedLinks;
-                }
-                logger.info("Redirect done, further redirects should be handled automatically!");
-                br.getPage(br.getRedirectLocation());
-            } else {
-                logger.info("There was no redirect!");
+            if (br.getURL().equals("http://www.filestube.com/")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
             }
             // Invalid link
             if (br.containsHTML("(>File no longer available<|>Error 404 \\- Requested)")) {

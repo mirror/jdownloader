@@ -64,8 +64,8 @@ public class WorldClipsRu extends PluginForHost {
         if (off == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final String[] rows = new Regex(off, "<td>([^<>\"]*?)</td>").getColumn(0);
         if (rows == null || rows.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String filename = br.getRegex(">Имя файла:</span><span>([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final Regex urlFilename = new Regex(link.getDownloadURL(), "worldclips\\.ru/clips/([^<>\"/]*?)/([^<>\"/]+)");
+        final String filename = urlFilename.getMatch(0) + " - " + urlFilename.getMatch(1) + "." + rows[1];
         String filesize = rows[0];
         filesize = filesize.replace("Г", "G");
         filesize = filesize.replace("М", "M");

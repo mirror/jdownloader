@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.File;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -87,10 +89,27 @@ public class FileGoOrg extends PluginForHost {
         // first try to get the streaming link (skips captcha)
         try {
             /**
-             * We could also use: http://filego.org/fghtml5.php?id=ID or http://filego.org/fgdivx.php?id=ID
+             * We could also use: http://filego.org/fghtml5.php?id=ID or
+             * http://filego.org/fgdivx.php?id=ID
              */
             br.getPage("http://filego.org/fgflash.php?id=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
-            finalLink = br.getRegex("\\'(http://s\\d+\\.filego\\.org/[^<>\";]*?\\.mp4)\\'").getMatch(0);
+            final String[] hits = br.getRegex("\\'(http://s\\d+\\.filego\\.org/[^<>\";]*?\\.mp4)\\'").getColumn(0);
+            for (final String hit : hits) {
+                if (hits != null && hits.length != 0) {
+                    try {
+                        Browser br2 = br.cloneBrowser();
+                        URLConnectionAdapter con = br2.openGetConnection(hit);
+                        if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                            continue;
+                        }
+                        con.disconnect();
+                        finalLink = hit;
+                        break;
+                    } catch (Exception e) {
+                        finalLink = null;
+                    }
+                }
+            }
         } catch (final Exception e) {
         }
         if (finalLink == null) {
@@ -111,11 +130,13 @@ public class FileGoOrg extends PluginForHost {
             // Download still works without account
             // if (br.containsHTML("Guest Can\\&#39;t Download Video")) {
             // try {
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+            // PluginException.VALUE_ID_PREMIUM_ONLY);
             // } catch (final Throwable e) {
             // if (e instanceof PluginException) throw (PluginException) e;
             // }
-            // throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account!");
+            // throw new PluginException(LinkStatus.ERROR_FATAL,
+            // "Only downloadable via account!");
             // }
             // old stuff
             if (br.containsHTML("value=\"Free Users\"")) {

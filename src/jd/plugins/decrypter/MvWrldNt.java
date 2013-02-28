@@ -23,6 +23,7 @@ import java.util.List;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Base64;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -32,7 +33,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net", "chili-warez.net" }, urls = { "http://(www\\.)?mov-world\\.net/(?!news/)(\\?id=\\d+|.*?/.*?\\d+\\.html)", "http://(www\\.)?xxx\\-4\\-free\\.net/.*?/.*?.html", "http://(www\\.)?chili\\-warez\\.net/.*?/(\\-/)?.*?.html" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net", "chili-warez.net" }, urls = { "http://(www\\.)?mov\\-world\\.net/(?!news/)(\\?id=\\d+|.*?/.*?\\d+\\.html)", "http://(www\\.)?xxx\\-4\\-free\\.net/.*?/.*?\\.html", "http://(www\\.)?chili\\-warez\\.net/(?!news).*?/(\\-/)?.*?\\d+\\.html" }, flags = { 0, 0, 0 })
 public class MvWrldNt extends PluginForDecrypt {
 
     public MvWrldNt(final PluginWrapper wrapper) {
@@ -44,7 +45,12 @@ public class MvWrldNt extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final BrowserException e) {
+            logger.info("Link offline (server error): " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML("<h1>Dieses Release ist nur noch bei <a")) {
             logger.info("Link offline (offline): " + parameter);
             return decryptedLinks;
@@ -53,6 +59,7 @@ public class MvWrldNt extends PluginForDecrypt {
             logger.info("Link offline (error 404): " + parameter);
             return decryptedLinks;
         }
+
         final String MAINPAGE = "http://" + br.getHost();
         final String password = br.getRegex("class=\"password\">Password: (.*?)</p>").getMatch(0);
         ArrayList<String> pwList = null;

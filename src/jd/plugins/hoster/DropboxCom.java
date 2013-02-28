@@ -48,11 +48,9 @@ public class DropboxCom extends PluginForHost {
             br.setCookie("http://dropbox.com", "locale", "en");
             br.getPage(link.getDownloadURL());
             if (br.containsHTML("(>Error \\(404\\)<|>Dropbox \\- 404<|>We can\\'t find the page you\\'re looking for)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String filename = br.getRegex("<div class=\"filename\\-below shmodel\\-filename\">([^<>\"]*?)</div>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<div class=\"filename shmodel\\-filename\">([^<>\"]*?)</div>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<meta content=\"([^\"]+) - Dropbox\"").getMatch(0);
+            String filename = br.getRegex("content=\"([^<>/]*?)\" property=\"og:title\"").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final String filesize = br.getRegex("<div class=\"meta\">\\d+ days ago \\&middot; ([^<>\"]*?)</div>").getMatch(0);
+            final String filesize = br.getRegex("class=\"meta\">\\d+ (days|months) ago\\&nbsp;\\&middot;\\&nbsp; ([^<>\"]*?)</div><a").getMatch(1);
             if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
             return AvailableStatus.TRUE;
         } else {

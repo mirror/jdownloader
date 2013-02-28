@@ -407,8 +407,9 @@ public class RapidGatorNet extends PluginForHost {
             }
             if (br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
-            String dllink = br.getRegex("\\'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\\'(http://pr\\d+\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
+            String dllink = br.getRegex("\\'(http://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\\'(http://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
+            // Old regex
             if (dllink == null) dllink = br.getRegex("location\\.href = \\'(http://.*?)\\'").getMatch(0);
             if (dllink == null) {
                 logger.info(br.toString());

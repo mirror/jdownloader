@@ -55,6 +55,10 @@ public class Stlth extends PluginForDecrypt {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.getURL().equals("http://stealth.to/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML("besucherpass\\.png")) {
             for (int i = 0; i <= 3; i++) {
                 final Form form = br.getFormBySubmitvalue("Weiter");

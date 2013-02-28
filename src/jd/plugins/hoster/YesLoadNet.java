@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yesload.net" }, urls = { "http://(www\\.)?yesload\\.net/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yesload.net" }, urls = { "http://(www\\.)?(embed\\.)?yesload\\.net/[A-Za-z0-9]+" }, flags = { 0 })
 public class YesLoadNet extends PluginForHost {
 
     public YesLoadNet(PluginWrapper wrapper) {
@@ -38,6 +38,10 @@ public class YesLoadNet extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://yesload.net/contact";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload("http://yesload.net/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     @Override

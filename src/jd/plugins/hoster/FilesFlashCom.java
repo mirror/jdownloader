@@ -123,8 +123,8 @@ public class FilesFlashCom extends PluginForHost {
         String wait = br.getRegex("count=(\\d+);").getMatch(0);
         int waittime = 45;
         if (wait != null) waittime = Integer.parseInt(wait);
-        // Normal waittime is 45 seconds, if waittime > 2 Minutes reconnect
-        if (waittime > 120) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1001l);
+        // Normal waittime is 45 seconds, if waittime > 10 Minutes reconnect
+        if (waittime > 600) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1001l);
         sleep(waittime * 1001l, downloadLink);
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);

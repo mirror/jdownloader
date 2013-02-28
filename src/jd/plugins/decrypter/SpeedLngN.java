@@ -47,15 +47,18 @@ public class SpeedLngN extends PluginForDecrypt {
             passwords.add(pass.trim());
         }
         String fpname = br.getRegex("<title>(.*?) \\- Speedlounge\\.in</title>").getMatch(0);
-        if (br.containsHTML("Entry NOT found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("Entry NOT found")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String[] links = br.getRegex("href=\"(http://[^<>\"]*?)\" target=\"_blank\" style=\"text\\-decoration:none;\" title=\"Download via").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String cryptedlink : links) {
-            if (cryptedlink.contains("=")) {
-                final DownloadLink dl = createDownloadlink(cryptedlink);
-                dl.setSourcePluginPasswordList(passwords);
-                decryptedLinks.add(dl);
-            }
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        for (final String cryptedlink : links) {
+            final DownloadLink dl = createDownloadlink(cryptedlink);
+            decryptedLinks.add(dl);
         }
         if (fpname != null) {
             FilePackage fp = FilePackage.getInstance();

@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thekollection.com" }, urls = { "http://(www\\.)?((dubstep|electro|indie)\\.)?thekollection\\.com/(?!wp\\-includes|wp\\-content|category|about|contact|playlists|submit)[\\w\\-]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thekollection.com" }, urls = { "http://(www\\.)?((dubstep|electro|indie)\\.)?thekollection\\.com/(?!wp\\-includes|wp\\-content|category|about|contact|playlists|submit|artist)[\\w\\-]+/" }, flags = { 0 })
 public class TKlnCm extends PluginForDecrypt {
 
     // https not currently available
