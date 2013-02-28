@@ -94,16 +94,16 @@ public class DataFileCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        br.setFollowRedirects(false);
-        final String waitTime = br.getRegex("var countdown = (\\d+);").getMatch(0);
-        if (waitTime == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final int wait = Integer.parseInt(waitTime);
-        if (wait > 120) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
-        long timeBefore = System.currentTimeMillis();
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            final String rcID = br.getRegex("api\\.recaptcha\\.net/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+            final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+            br.setFollowRedirects(false);
+            final String waitTime = br.getRegex("var countdown = (\\d+);").getMatch(0);
+            if (waitTime == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final int wait = Integer.parseInt(waitTime);
+            if (wait > 120) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+            long timeBefore = System.currentTimeMillis();
+            final String rcID = br.getRegex("api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
             if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -116,7 +116,7 @@ public class DataFileCom extends PluginForHost {
                 if (i == 1) {
                     waitTime(timeBefore, downloadLink, wait);
                 }
-                postPage("http://www.datafile.com/files/ajax.html", "doaction=getlink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
+                postPage("https://www.datafile.com/files/ajax.html", "doaction=getlink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
                 if (br.containsHTML("\"text\":\"Captcha not valid\"")) {
                     rc.reload();
                     continue;
@@ -128,7 +128,7 @@ public class DataFileCom extends PluginForHost {
             dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -270,7 +270,7 @@ public class DataFileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
