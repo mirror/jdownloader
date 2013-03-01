@@ -78,9 +78,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         ((ImagePainter) loader.getValueClipPainter()).setBackground(null);
         ((ImagePainter) loader.getValueClipPainter()).setForeground(null);
         loader.setIndeterminate(true);
-        System.out.println(NewTheme.I().getImage("robot", 256).getHeight(null));
-        System.out.println(loader.getPreferredSize());
-        System.out.println(loader.getSize());
+
         loaderPanel.add(loader);
 
         JProgressBar ph = new JProgressBar();

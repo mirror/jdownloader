@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
@@ -25,18 +24,18 @@ public abstract class Restarter {
         return logger;
     }
 
-    public void restart(List<String> parameters) {
+    public void restart(File root, List<String> parameters) {
         try {
 
             System.out.println("RestartIt");
-            List<String> lst = getApplicationStartCommands();
+            List<String> lst = getApplicationStartCommands(root);
             System.out.println("appcommands");
 
             lst.addAll(parameters);
             System.out.println("cmd " + lst);
 
             ProcessBuilder p = ProcessBuilderFactory.create(lst);
-            p.directory(getRunInDirectory());
+            p.directory(getRunInDirectory(root));
             System.out.println("Start process");
             Process process = p.start();
             System.out.println("Read errorstream");
@@ -50,13 +49,13 @@ public abstract class Restarter {
 
     }
 
-    protected File getRunInDirectory() {
-        return Application.getResource("tmp").getParentFile();
+    protected File getRunInDirectory(File root) {
+        return root;
     }
 
-    protected abstract List<String> getApplicationStartCommands();
+    protected abstract List<String> getApplicationStartCommands(File root);
 
-    protected abstract List<String> getJVMApplicationStartCommands();
+    protected abstract List<String> getJVMApplicationStartCommands(File root);
 
     public static Restarter getInstance(RestartController restartController) {
         Restarter restarter;

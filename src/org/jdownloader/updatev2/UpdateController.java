@@ -421,7 +421,6 @@ public class UpdateController implements UpdateCallbackInterface {
             handler.stopIntervalChecker();
             throw new DialogCanceledException(0);
         }
-        System.out.println(1);
 
     }
 

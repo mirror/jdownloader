@@ -1,5 +1,6 @@
 package org.jdownloader.updatev2;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
@@ -46,6 +48,7 @@ public class RestartController implements ShutdownVetoListener {
     private Restarter       restarter;
     private ParameterParser startupParameters;
     private String[]        arguments;
+    private File            root = Application.getResource("tmp").getParentFile();
 
     // public String updaterJar = "Updater.jar";
     //
@@ -58,6 +61,11 @@ public class RestartController implements ShutdownVetoListener {
     // private String[] startArguments;
 
     // private boolean silentShutDownEnabled = false;
+
+    public void setRoot(File root) {
+        if (root == null) root = Application.getResource("tmp").getParentFile();
+        this.root = root;
+    }
 
     /**
      * Create a new instance of RestartController. This is a singleton class. Access the only existing instance by using
@@ -88,9 +96,13 @@ public class RestartController implements ShutdownVetoListener {
         if (toDo == null) return;
         switch (toDo) {
         case RESTART:
-            restarter.restart(getFilteredRestartParameters());
+            restarter.restart(getRoot(), getFilteredRestartParameters());
             break;
         }
+    }
+
+    private File getRoot() {
+        return root;
     }
 
     public List<String> getFilteredRestartParameters() {

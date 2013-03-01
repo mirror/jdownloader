@@ -9,19 +9,19 @@ import java.util.List;
 import org.appwork.utils.Application;
 
 public class MacRestarter extends LinuxRestarter {
-    protected File getRunInDirectory() {
-        File app = getApp();
+    protected File getRunInDirectory(File root) {
+        File app = getApp(root);
         if (app.exists()) {
             return app.getParentFile();
         } else {
-            return super.getRunInDirectory();
+            return super.getRunInDirectory(root);
         }
     }
 
     @Override
-    protected List<String> getApplicationStartCommands() {
+    protected List<String> getApplicationStartCommands(File root) {
         ArrayList<String> lst = new ArrayList<String>();
-        File app = getApp();
+        File app = getApp(root);
         if (app.exists()) {
 
             lst.add("open");
@@ -34,12 +34,12 @@ public class MacRestarter extends LinuxRestarter {
 
         }
         // user Fallback
-        return super.getApplicationStartCommands();
+        return super.getApplicationStartCommands(root);
     }
 
-    private File getApp() {
+    private File getApp(File root2) {
         String appname = "JDownloader.app";
-        File apppath = Application.getResource("../../../../");
+        File apppath = new File(root2, "../../../../");
         try {
 
             File root = Application.getApplicationRoot();
