@@ -100,8 +100,12 @@ public class FreeWayMe extends PluginForHost {
         final String maxPremApi = getJson("parallel", br.toString());
         if (maxPremApi != null) maxPremi = Integer.parseInt(maxPremApi);
         maxPrem.set(maxPremi);
-        Long guthaben = Long.parseLong(getRegexTag(br.toString(), "guthaben").getMatch(0));
-        ac.setTrafficLeft(guthaben * 1024 * 1024);
+        try {
+            Long guthaben = Long.parseLong(getRegexTag(br.toString(), "guthaben").getMatch(0));
+            ac.setTrafficLeft(guthaben * 1024 * 1024);
+        } catch (Exception e) {
+            ac.setUnlimitedTraffic(); // workaround
+        }
         try {
             account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(true);
@@ -167,12 +171,10 @@ public class FreeWayMe extends PluginForHost {
 
         if (betaEncoding) {
             /* Begin workaround for wrong encoding while redirect */
-
             br.setFollowRedirects(false);
             br.getPage(dllink);
             String location = br.getRedirectLocation();
             dllink = location.substring(0, location.indexOf("?")) + dllink.substring(dllink.indexOf("?"), dllink.length()) + "&s=" + location.substring(location.length() - 1, location.length());
-
             /* end workaround for wrong encoding while redirect */
         }
 
