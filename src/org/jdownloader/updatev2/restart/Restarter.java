@@ -16,8 +16,9 @@ public abstract class Restarter {
     private RestartController controller;
 
     protected Restarter() {
-        logger.info("Create Restarter");
+
         logger = LogController.getInstance().getLogger(getClass().getName());
+        logger.info("Create Restarter");
     }
 
     public LogSource getLogger() {
