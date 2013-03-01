@@ -25,6 +25,7 @@ public class MacRestarter extends LinuxRestarter {
             lst.add("open");
             lst.add("-n");
             lst.add(app.getAbsolutePath());
+            lst.add("--args");
             getLogger().info(lst + "");
             return lst;
         } else {
