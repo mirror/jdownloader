@@ -7,6 +7,7 @@ import java.util.List;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.RestartController;
 
@@ -34,7 +35,9 @@ public abstract class Restarter {
 
             lst.addAll(parameters);
             logger.info("cmd " + lst);
-
+            if (CrossSystem.isMac()) {
+                Dialog.getInstance().showMessageDialog(lst + "");
+            }
             ProcessBuilder p = ProcessBuilderFactory.create(lst);
             p.directory(getRunInDirectory(root));
             logger.info("Start process");
