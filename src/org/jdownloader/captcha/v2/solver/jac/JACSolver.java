@@ -66,6 +66,7 @@ public class JACSolver extends ChallengeSolver<String> {
                 final Captcha captcha = jac.createCaptcha(captchaImage);
                 checkInterruption();
                 String captchaCode = jac.checkCaptcha(captchaChallenge.getImageFile(), captcha);
+                if (StringUtils.isEmpty(captchaCode)) return;
                 checkInterruption();
                 if (jac.isExtern()) {
                     if (captchaCode == null || captchaCode.trim().length() == 0) {
