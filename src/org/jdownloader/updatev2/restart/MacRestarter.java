@@ -27,7 +27,7 @@ public class MacRestarter extends LinuxRestarter {
             lst.add("open");
             lst.add("-n");
             lst.add(app.getAbsolutePath());
-
+            getLogger().info(lst + "");
             return lst;
         } else {
             getLogger().warning("MAX " + app + " is missing");
@@ -41,6 +41,11 @@ public class MacRestarter extends LinuxRestarter {
         String appname = "JDownloader.app";
         File apppath = new File(root2, "../../../../");
         try {
+            getLogger().info("Look in " + apppath + " - " + apppath.getCanonicalPath());
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }
+        try {
 
             File root = Application.getApplicationRoot();
             final HashSet<File> loopMap = new HashSet<File>();
@@ -48,7 +53,7 @@ public class MacRestarter extends LinuxRestarter {
                 if (root.getName().endsWith(".app")) {
                     apppath = root.getParentFile();
                     appname = root.getName();
-                    getLogger().finer("Found App: " + apppath);
+                    getLogger().info("Found App: " + apppath);
                     break;
 
                 }
@@ -57,7 +62,7 @@ public class MacRestarter extends LinuxRestarter {
             }
 
             if (root != null) {
-                System.out.println("APPNAME " + appname + " - " + root.getCanonicalPath());
+                getLogger().info("APPNAME " + appname + " - " + root.getCanonicalPath());
             }
         } catch (final IOException e) {
 

@@ -16,7 +16,7 @@ public abstract class Restarter {
     private RestartController controller;
 
     protected Restarter() {
-        System.out.println("Create Restarter");
+        logger.info("Create Restarter");
         logger = LogController.getInstance().getLogger(getClass().getName());
     }
 
@@ -27,20 +27,20 @@ public abstract class Restarter {
     public void restart(File root, List<String> parameters) {
         try {
 
-            System.out.println("RestartIt");
+            logger.info("RestartIt");
             List<String> lst = getApplicationStartCommands(root);
-            System.out.println("appcommands");
+            logger.info("appcommands");
 
             lst.addAll(parameters);
-            System.out.println("cmd " + lst);
+            logger.info("cmd " + lst);
 
             ProcessBuilder p = ProcessBuilderFactory.create(lst);
             p.directory(getRunInDirectory(root));
-            System.out.println("Start process");
+            logger.info("Start process");
             Process process = p.start();
-            System.out.println("Read errorstream");
+            logger.info("Read errorstream");
             logger.logAsynch(process.getErrorStream());
-            System.out.println("Read inputstream");
+            logger.info("Read inputstream");
             logger.logAsynch(process.getInputStream());
         } catch (IOException e) {
             e.printStackTrace();
