@@ -8,11 +8,11 @@ import jd.controlling.IOPermission;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
-import org.jdownloader.api.captcha.CaptchaJob;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.extensions.jdanywhere.api.interfaces.ICaptchaApi;
+import org.jdownloader.extensions.jdanywhere.api.storable.CaptchaJob;
 
 public class CaptchaApi implements ICaptchaApi {
 

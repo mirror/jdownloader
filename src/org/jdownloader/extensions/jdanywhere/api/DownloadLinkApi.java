@@ -49,7 +49,7 @@ public class DownloadLinkApi implements IDownloadLinkApi {
         if (enabled) {
             return dlAPI.enableLinks(linkIds);
         } else {
-            return dlAPI.enableLinks(linkIds);
+            return dlAPI.disableLinks(linkIds);
         }
     }
 

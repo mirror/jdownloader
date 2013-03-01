@@ -25,7 +25,6 @@ import org.appwork.remoteapi.EventsAPIEvent;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.jdownloader.api.captcha.CaptchaJob;
 import org.jdownloader.captcha.event.ChallengeResponseListener;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
@@ -33,6 +32,7 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.extensions.jdanywhere.JDAnywhereController;
+import org.jdownloader.extensions.jdanywhere.api.storable.CaptchaJob;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class EventsAPI implements DownloadControllerListener, StateEventListener, LinkCollectorListener, ChallengeResponseListener {
@@ -123,6 +123,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                     Object param = event.getParameter(1);
                     if (param instanceof DownloadLinkProperty) {
                         data.put("linkID", dl.getUniqueID().getID());
+                        data.put("packageID", dl.getFilePackage().getUniqueID().toString());
                         data.put("NewValue", ((DownloadLinkProperty) param).getValue());
                         switch (((DownloadLinkProperty) param).getProperty()) {
                         case NAME:
@@ -154,6 +155,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                             linkStatusMessages.put(dl.getUniqueID().getID(), newMessage);
                             data.put("action", "MessageChanged");
                             data.put("linkID", dl.getUniqueID().getID());
+
                             data.put("NewValue", newMessage);
                             JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkstatusChanged", data), null);
                         }
@@ -209,6 +211,14 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
     private void sendEvent(SolverJob<?> job, String type) {
         // if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new
         // RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
+        long captchCount = 0;
+        java.util.List<CaptchaJob> ret = new ArrayList<CaptchaJob>();
+        for (SolverJob<?> entry : ChallengeResponseController.getInstance().listJobs()) {
+            if (entry.isDone()) continue;
+            if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
+                captchCount++;
+            }
+        }
 
         ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
 
@@ -221,6 +231,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
         apiJob.setID(challenge.getId().getID());
         apiJob.setHoster(challenge.getPlugin().getHost());
         apiJob.setCaptchaCategory(challenge.getExplain());
+        apiJob.setCount(captchCount);
         // apiJob.setType(challenge.getClass().getSimpleName());
         // apiJob.setID(challenge.getId().getID());
         // apiJob.setHoster(challenge.getPlugin().getHost());
