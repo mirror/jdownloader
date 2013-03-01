@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -38,11 +40,17 @@ public class FreeWayMe extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
+    private final String                                   USEBETAENCODING    = "USEBETAENCODING";
 
     public FreeWayMe(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(1 * 1000l);
+        setConfigElements();
         this.enablePremium("https://www.free-way.me/premium");
+    }
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USEBETAENCODING, "Use beta encoding").setDefaultValue(false));
     }
 
     @Override
@@ -57,17 +65,19 @@ public class FreeWayMe extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        boolean betaEncoding = this.getPluginConfig().getBooleanProperty(USEBETAENCODING, false);
+
         AccountInfo ac = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-        String username = Encoding.urlEncode(account.getUser());
-        String pass = Encoding.urlEncode(account.getPass());
+        String username = (betaEncoding) ? Encoding.urlTotalEncode(account.getUser()) : Encoding.urlEncode(account.getUser());
+        String pass = (betaEncoding) ? Encoding.urlTotalEncode(account.getPass()) : Encoding.urlEncode(account.getPass());
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        br.getPage("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + pass);
+        br.getPage("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + pass + ((betaEncoding) ? "&encoded" : ""));
         // "Invalid login" / "Banned" / "Valid login"
         if (br.toString().equalsIgnoreCase("Valid login")) {
             account.setValid(true);
@@ -84,7 +94,7 @@ public class FreeWayMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnknown account status (deactivated)!\r\nUnbekannter Accountstatus (deaktiviert)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         // account should be valid now, let's get account information:
-        br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass);
+        br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass + ((betaEncoding) ? "&encoded" : ""));
 
         int maxPremi = 1;
         final String maxPremApi = getJson("parallel", br.toString());
@@ -148,11 +158,26 @@ public class FreeWayMe extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
-        final String user = Encoding.urlEncode(acc.getUser());
-        final String pw = Encoding.urlEncode(acc.getPass());
-        final String url = Encoding.urlEncode(link.getDownloadURL());
-        final String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url;
+        boolean betaEncoding = this.getPluginConfig().getBooleanProperty(USEBETAENCODING, false);
+        String user = (betaEncoding) ? Encoding.urlTotalEncode(acc.getUser()) : Encoding.urlEncode(acc.getUser());
+        String pw = (betaEncoding) ? Encoding.urlTotalEncode(acc.getPass()) : Encoding.urlEncode(acc.getPass());
+        final String url = (betaEncoding) ? Encoding.urlTotalEncode(link.getDownloadURL()) : Encoding.urlEncode(link.getDownloadURL());
+
+        String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url + ((betaEncoding) ? "&encoded" : "");
+
+        if (betaEncoding) {
+            /* Begin workaround for wrong encoding while redirect */
+
+            br.setFollowRedirects(false);
+            br.getPage(dllink);
+            String location = br.getRedirectLocation();
+            dllink = location.substring(0, location.indexOf("?")) + dllink.substring(dllink.indexOf("?"), dllink.length()) + "&s=" + location.substring(location.length() - 1, location.length());
+
+            /* end workaround for wrong encoding while redirect */
+        }
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             String error = "";
@@ -178,8 +203,7 @@ public class FreeWayMe extends PluginForHost {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Unbekannter Fehler #2")) {
                 /*
-                 * after x retries we disable this host and retry with normal
-                 * plugin
+                 * after x retries we disable this host and retry with normal plugin
                  */
                 if (link.getLinkStatus().getRetryCount() >= 2) {
                     /* reset retrycounter */
