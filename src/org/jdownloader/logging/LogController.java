@@ -50,6 +50,7 @@ public class LogController extends LogSourceProvider {
 
     private LogController() {
         super(System.currentTimeMillis());
+        getConsoleHandler().setAllowedLoggerNames("org.jdownloader.update.UpdateManager");
 
     }
 
