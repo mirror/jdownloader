@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.appwork.utils.Application;
-
 public class MacRestarter extends LinuxRestarter {
     protected File getRunInDirectory(File root) {
         File app = getApp(root);
@@ -37,9 +35,9 @@ public class MacRestarter extends LinuxRestarter {
         return super.getApplicationStartCommands(root);
     }
 
-    private File getApp(File root2) {
+    private File getApp(File root) {
         String appname = "JDownloader.app";
-        File apppath = new File(root2, "../../../../");
+        File apppath = new File(root, "../../../../");
         try {
             getLogger().info("Look in " + apppath + " - " + apppath.getCanonicalPath());
         } catch (IOException e1) {
@@ -47,9 +45,9 @@ public class MacRestarter extends LinuxRestarter {
         }
         try {
 
-            File root = Application.getApplicationRoot();
             final HashSet<File> loopMap = new HashSet<File>();
             while (root != null && loopMap.add(root)) {
+                getLogger().info(root.getCanonicalPath());
                 if (root.getName().endsWith(".app")) {
                     apppath = root.getParentFile();
                     appname = root.getName();
