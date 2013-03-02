@@ -19,6 +19,7 @@ import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.TransferHandler;
 
+import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
@@ -35,6 +36,7 @@ import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -97,67 +99,81 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         setLayout(new MigLayout("ins 0", "[grow]", "[grow]"));
         removeAll();
         add(loaderPanel, "alignx center,aligny 20%");
-
-        LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorListener() {
-
-            @Override
-            public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
-            }
+        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
-            public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
-            }
+            protected Void run() throws RuntimeException {
+                if (LinkCollector.getInstance().isSaveAllowed()) {
+                    removeLoaderPanel(loaderPanel, orgLayout, rendererPane);
+                } else {
+                    LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorListener() {
 
-            @Override
-            public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
-            }
+                        @Override
+                        public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+                        }
 
-            @Override
-            public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
-            }
+                        @Override
+                        public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+                        }
 
-            @Override
-            public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
-            }
+                        @Override
+                        public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+                        }
 
-            @Override
-            public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
-            }
+                        @Override
+                        public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+                        }
 
-            @Override
-            public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
-            }
+                        @Override
+                        public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
+                        }
 
-            @Override
-            public void onLinkCollectorContentModified(LinkCollectorEvent event) {
-            }
+                        @Override
+                        public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+                        }
 
-            @Override
-            public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
-            }
+                        @Override
+                        public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+                        }
 
-            @Override
-            public void onLinkCollectorAbort(LinkCollectorEvent event) {
-            }
+                        @Override
+                        public void onLinkCollectorContentModified(LinkCollectorEvent event) {
+                        }
 
-            @Override
-            public void onLinkCollectorListLoaded() {
+                        @Override
+                        public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+                        }
 
-                LinkCollector.getInstance().getEventsender().removeListener(this);
-                new EDTRunner() {
+                        @Override
+                        public void onLinkCollectorAbort(LinkCollectorEvent event) {
+                        }
 
-                    @Override
-                    protected void runInEDT() {
-                        remove(loaderPanel);
-                        setLayout(orgLayout);
-
-                        loaderPanel.setVisible(false);
-                        add(rendererPane);
-                        repaint();
-                    }
-                };
+                        @Override
+                        public void onLinkCollectorListLoaded() {
+                            LinkCollector.getInstance().getEventsender().removeListener(this);
+                            removeLoaderPanel(loaderPanel, orgLayout, rendererPane);
+                        }
+                    });
+                }
+                return null;
             }
         });
+
+    }
+
+    protected void removeLoaderPanel(final MigPanel loaderPanel, final LayoutManager orgLayout, final Component rendererPane) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                remove(loaderPanel);
+                setLayout(orgLayout);
+
+                loaderPanel.setVisible(false);
+                add(rendererPane);
+                repaint();
+            }
+        };
     }
 
     public void sortPackageChildren(ExtDefaultRowSorter<AbstractNode> rowSorter, String nextSortIdentifier) {

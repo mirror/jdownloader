@@ -22,6 +22,7 @@ import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
+import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
@@ -37,6 +38,7 @@ import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -95,27 +97,43 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         removeAll();
         add(loaderPanel, "alignx center,aligny 20%");
 
-        DownloadController.getInstance().addListener(new DownloadControllerListener() {
+        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
-            public void onDownloadControllerEvent(DownloadControllerEvent event) {
-                if (event.getType() == DownloadControllerEvent.TYPE.DOWNLOADLINKS_LOADED) {
-                    DownloadController.getInstance().removeListener(this);
-                    new EDTRunner() {
+            protected Void run() throws RuntimeException {
+                if (DownloadController.getInstance().isSaveAllowed()) {
+                    removeLoaderPanel(loaderPanel, orgLayout, rendererPane);
+                } else {
+                    DownloadController.getInstance().addListener(new DownloadControllerListener() {
 
                         @Override
-                        protected void runInEDT() {
-                            remove(loaderPanel);
-                            setLayout(orgLayout);
-
-                            loaderPanel.setVisible(false);
-                            add(rendererPane);
-                            repaint();
+                        public void onDownloadControllerEvent(DownloadControllerEvent event) {
+                            if (event.getType() == DownloadControllerEvent.TYPE.DOWNLOADLINKS_LOADED) {
+                                DownloadController.getInstance().removeListener(this);
+                                removeLoaderPanel(loaderPanel, orgLayout, rendererPane);
+                            }
                         }
-                    };
+                    });
                 }
+                return null;
             }
         });
+
+    }
+
+    protected void removeLoaderPanel(final MigPanel loaderPanel, final LayoutManager orgLayout, final Component rendererPane) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                remove(loaderPanel);
+                setLayout(orgLayout);
+
+                loaderPanel.setVisible(false);
+                add(rendererPane);
+                repaint();
+            }
+        };
     }
 
     protected boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
