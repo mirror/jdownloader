@@ -1,6 +1,6 @@
 ABSTRACTDIALOG_BUTTON_CANCEL=İptal
 ABSTRACTDIALOG_BUTTON_OK=Tamam
-ABSTRACTDIALOG_STYLE_SHOW_DO_NOT_DISPLAY_AGAIN=Bunu bir daha gösterme
+ABSTRACTDIALOG_STYLE_SHOW_DO_NOT_DISPLAY_AGAIN=Bunu tekrar gösterme
 AccountNew_AccountNew_message=Lütfen oturum açma bilgilerinizi buraya girin
 AccountNew_AccountNew_title=Oturum Açma bilgilerini girin
 AccountNew_layoutDialogContent_accountname=Kullanıcı adı
