@@ -54,7 +54,7 @@ public class ZaycevNet extends PluginForHost {
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("windowTitle: \\'Добавление комментария ([^<>\"/]*?)\\'").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>/\"]*?) скачать бесплатно mp3 download скачать без регистрации").getMatch(0);
-        String filesize = br.getRegex(">Размер: ([^<>\"]*?)</li>").getMatch(0);
+        String filesize = br.getRegex("class=\"track\\-file\\-info__size\">Размер: ([^<>\"]*?)<meta").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -68,31 +68,30 @@ public class ZaycevNet extends PluginForHost {
         if (finallink == null) {
             String cryptedlink = br.getRegex("\"(/download\\.php\\?id=\\d+\\&ass=[^<>/\"]*?\\.mp3)\"").getMatch(0);
             if (cryptedlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            cryptedlink = "http://www.zaycev.net" + cryptedlink;
+            cryptedlink = "http://zaycev.net" + cryptedlink;
             br.getPage(cryptedlink);
-            if (br.containsHTML(CAPTCHATEXT)) {
-                for (int i = 0; i <= 5; i++) {
-                    // Captcha handling
+            finallink = getDllink();
+            if (finallink == null) {
+                if (br.containsHTML(CAPTCHATEXT)) {
+                    for (int i = 0; i <= 5; i++) {
+                        // Captcha handling
+                        String captchaID = getCaptchaID();
+                        if (captchaID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        String code = getCaptchaCode("http://www.zaycev.net/captcha/" + captchaID + "/", downloadLink);
+                        String captchapage = cryptedlink + "&captchaId=" + captchaID + "&text_check=" + code + "&ok=%F1%EA%E0%F7%E0%F2%FC";
+                        br.getPage(captchapage);
+                        if (br.containsHTML(CAPTCHATEXT)) continue;
+                        break;
+                    }
+                    if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else {
+                    String code = br.getRegex("<label>Ваш IP</label><span class=\"readonly\">[0-9\\.]+</span></div><input value=\"(.*?)\"").getMatch(0);
                     String captchaID = getCaptchaID();
-                    if (captchaID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    String code = getCaptchaCode("http://www.zaycev.net/captcha/" + captchaID + "/", downloadLink);
+                    if (code == null || captchaID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     String captchapage = cryptedlink + "&captchaId=" + captchaID + "&text_check=" + code + "&ok=%F1%EA%E0%F7%E0%F2%FC";
                     br.getPage(captchapage);
-                    if (br.containsHTML(CAPTCHATEXT)) continue;
-                    break;
                 }
-                if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            } else {
-                String code = br.getRegex("<label>Ваш IP</label><span class=\"readonly\">[0-9\\.]+</span></div><input value=\"(.*?)\"").getMatch(0);
-                String captchaID = getCaptchaID();
-                if (code == null || captchaID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                String captchapage = cryptedlink + "&captchaId=" + captchaID + "&text_check=" + code + "&ok=%F1%EA%E0%F7%E0%F2%FC";
-                br.getPage(captchapage);
-            }
-            finallink = br.getRegex("\\{REFRESH: \\{url: \"(http://dl\\.zaycev\\.net/[^<>\"]*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("то нажмите на эту <a href=\\'(http.*?)\\'").getMatch(0);
-                if (finallink == null) finallink = br.getRegex("\"(http://dl\\.zaycev\\.net/[a-z0-9\\-]+/\\d+/\\d+/.*?)\"").getMatch(0);
+                finallink = getDllink();
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
@@ -127,6 +126,15 @@ public class ZaycevNet extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    private String getDllink() {
+        String finallink = br.getRegex("\\{REFRESH: \\{url: \"(http://dl\\.zaycev\\.net/[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("то нажмите на эту <a href=\\'(http.*?)\\'").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("\"(http://dl\\.zaycev\\.net/[a-z0-9\\-]+/\\d+/\\d+/.*?)\"").getMatch(0);
+        }
+        return finallink;
     }
 
     @Override

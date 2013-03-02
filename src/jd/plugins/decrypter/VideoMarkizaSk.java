@@ -91,6 +91,10 @@ public class VideoMarkizaSk extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String parameter = cryptedLink.getCryptedUrl();
         br.getPage(parameter);
+        if (true) {
+            logger.info("Cannot decrypt link because only registered or premium users can watch videos: " + parameter);
+            return decryptedLinks;
+        }
         DownloadLink dl;
         if (parameter.matches("http://(video\\.markiza\\.sk/archiv\\-tv\\-markiza/[\\-a-z0-9]+/[0-9]+|doma\\.markiza\\.sk/archiv\\-doma/[\\-a-z0-9]+/[0-9]+|video\\.markiza\\.sk/(mini\\-music\\-tv|fun\\-tv)/[0-9]+/[\\-a-z0-9]+/[0-9]+)")) {
             // retrieve playlist first

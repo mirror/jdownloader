@@ -70,18 +70,20 @@ public class XboxIsoZoneCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        String nameAddition = "-free";
         if (link.getBooleanProperty("premiumonly")) {
+            nameAddition = "-premium";
             br.getPage(link.getDownloadURL());
-            final String filesize = br.getRegex(">Premium Download</span>[\t\n\r ]+<center style=\"margin\\-top:3px;\">[\t\n\r ]+1 File download, Total size ([^<>\"]*?) <br").getMatch(0);
-            final String filename = br.getRegex("<title>([^<>\"]*?) \\&bull; Xbox Isos \\&bull; Downloads @ The Iso Zone</title>").getMatch(0);
-            if (filename != null) link.setName(Encoding.htmlDecode(filename.trim()));
-            if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
             link.getLinkStatus().setStatusText("Only downloadable for premium users");
         } else {
+            nameAddition = "-free";
+            br.getPage(link.getStringProperty("mainlink"));
             link.getLinkStatus().setStatusText("Only downloadable for freeusers");
         }
-        // No available check possible because this tells the server that i
-        // started a download
+        final String filesize = br.getRegex(">Premium Download</span>[\t\n\r ]+<center style=\"margin\\-top:3px;\">[\t\n\r ]+1 File download, Total size ([^<>\"]*?) <br").getMatch(0);
+        final String filename = br.getRegex("class=\"content_icon\" style=\"padding\\-top:5px;\" />([^<>\"]*?)<br").getMatch(0);
+        if (filename != null) link.setName(Encoding.htmlDecode(filename.trim()) + nameAddition);
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
         return AvailableStatus.TRUE;
     }
 

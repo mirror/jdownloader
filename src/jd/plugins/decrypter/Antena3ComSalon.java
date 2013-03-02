@@ -35,6 +35,7 @@ public class Antena3ComSalon extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    private static final String     SERIES         = "http://(www\\.)?antena3.com/videos/[A-Za-z0-9\\-]+\\.html";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink link, ProgressController progress) throws Exception {
@@ -43,7 +44,7 @@ public class Antena3ComSalon extends PluginForDecrypt {
             logger.info("Link offline: " + link.toString());
             return decryptedLinks;
         }
-        if (br.containsHTML("<li class=\"active\"><a title=\"Vídeos de Capítulos Completos de Series de Antena 3\"")) {
+        if (link.toString().matches(SERIES)) {
             final String[] videoPages = br.getRegex("<ul class=\"page\\d+\">(.*?)</ul>").getColumn(0);
             for (final String vList : videoPages) {
                 final String[] episodeList = new Regex(vList, "alt=\"[^<>\"/]+\"[\t\n\r ]+href=\"(/videos/[^<>\"]*?)\"").getColumn(0);

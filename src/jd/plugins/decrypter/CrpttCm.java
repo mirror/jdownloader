@@ -63,7 +63,11 @@ public class CrpttCm extends PluginForDecrypt {
         if (con.getContentType().indexOf("text/html") >= 0) {
             // +"" due to refaktor compatibilities. old <ref10000 returns
             // String. else Request INstance
-            logger.info(br.loadConnection(con) + "");
+            br.followConnection();
+            if (br.containsHTML("Down for maintenance")) {
+                logger.info("Down for maintenance: " + parameter);
+                return decryptedLinks;
+            }
             if (br.containsHTML(PATTERN_PW)) {
                 String pass = getUserInput(null, param);
                 String postData = "a=pw&pw=" + Encoding.urlEncode(pass);

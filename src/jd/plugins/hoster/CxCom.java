@@ -30,48 +30,53 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anonstream.com" }, urls = { "http://(www\\.)?anonstream\\.com/get_[A-Za-z0-9]+" }, flags = { 0 })
-public class AnonStreamCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cx.com" }, urls = { "https://(www\\.)?cx\\.com/mycx/share/[A-Za-z0-9\\-_]+/.{1}" }, flags = { 0 })
+public class CxCom extends PluginForHost {
 
-    public AnonStreamCom(PluginWrapper wrapper) {
+    public CxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://anonstream.com/contact";
+        return "https://www.cx.com/terms-and-conditions/";
     }
 
+    private String FID = null;
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Fehler, keine Datei gefunden|Fehler\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex inforegex = br.getRegex("Downloading:<font style=\\'color:black;font\\-size:25px;\\'>([^<>\"]*?)</font> <font  style=\\'color:black;font\\-size:20px;\\'>\\- ([^<>\"]*?)</font>");
-        String filename = inforegex.getMatch(0);
-        String filesize = inforegex.getMatch(1);
+        FID = new Regex(link.getDownloadURL(), "cx\\.com/mycx/share/([A-Za-z0-9\\-_]+)/.{1}").getMatch(0);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Accept", "*/*");
+        br.getPage("https://www.cx.com/0/files/list?path=" + FID + "%3A&sortby=modified&sortOrder=desc&offset=0&versionCount=true&showDirectoryInfo=true&_=" + System.currentTimeMillis());
+        if ("Group or Share not found".equals(getJson("message"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = getJson("name");
+        final String filesize = getJson("size");
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace("yte", "")));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://anonstream.com/ajax/streams.php", "streamcode=" + new Regex(downloadLink.getDownloadURL(), "anonstream\\.com/get_(.+)").getMatch(0));
-        String dllink = br.getRegex("type=\"video/divx\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/upl/\\d+/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        final String dllink = "https://www.cx.com/0/filedata/download/" + FID + ":";
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(">416 Requested Range Not Satisfiable")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getJson(final String parameter) {
+        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        return result;
     }
 
     @Override
@@ -80,11 +85,11 @@ public class AnonStreamCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }
