@@ -128,7 +128,7 @@ public class CraMitIn extends PluginForHost {
         final Form freeform = new Form();
         freeform.setAction(br.getURL());
         freeform.setMethod(MethodType.POST);
-        freeform.put("method_free", "FREE+DOWNLOAD");
+        freeform.put("free_method", "FREE+DOWNLOAD");
         freeform.put("op", "download1");
         freeform.put("fname", downloadLink.getName());
         freeform.put("usr_login", "");

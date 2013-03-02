@@ -54,7 +54,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedload.org" }, urls = { "https?://(www\\.)?speedload\\.org/[A-Za-z0-9]{2,12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedload.org" }, urls = { "https?://(www\\.)?speedloaddecrypted\\.org/[A-Za-z0-9]{2,12}" }, flags = { 2 })
 public class SpeedLoadOrg extends PluginForHost {
 
     private String               correctedBR                  = "";

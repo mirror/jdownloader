@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedload.org" }, urls = { "http://(www\\.)?speedload\\.org/brokenAtTheMoment" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedload.org" }, urls = { "http://(www\\.)?speedload\\.org/(\\d+~f|folder/\\d+|[A-Za-z0-9]{2,12})" }, flags = { 0 })
 public class SpeedLoadOrgFolder extends PluginForDecrypt {
 
     public SpeedLoadOrgFolder(PluginWrapper wrapper) {
@@ -36,33 +36,30 @@ public class SpeedLoadOrgFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-
-        if (parameter.contains("~f")) {
-            br.getPage("http://speedload.org/api/folder_link.php?id=" + new Regex(parameter, "/(\\d+)~f$").getMatch(0));
-            if ("0".equals("total_files")) {
-                logger.info("This folder is empty: " + parameter);
+        String parameter = param.toString();
+        if (parameter.matches("http://(www\\.)?speedload\\.org/[A-Za-z0-9]{2,12}")) {
+            decryptedLinks.add(createDownloadlink(parameter.replace("speedload.org/", "speedloaddecrypted.org/")));
+        } else {
+            String fid = new Regex(parameter, "speedload\\.org/folder/(\\d+)").getMatch(0);
+            if (fid == null) fid = new Regex(parameter, "speedload\\.org/(\\d+)~f").getMatch(0);
+            parameter = "http://speedload.org/folder/" + fid;
+            br.getPage(parameter);
+            if ("0".equals(">File Not Found<")) {
+                logger.info("This folder is offline: " + parameter);
                 return decryptedLinks;
             }
-            if (br.containsHTML("No htmlCode read")) {
-                logger.info("This folderlink is invalid: " + parameter);
-                return decryptedLinks;
-            }
-            final String[] links = br.getRegex("\"(http:\\\\/\\\\/speedload\\.org\\\\/[A-Za-z0-9]+)\"").getColumn(0);
+            final String[] links = br.getRegex("\"(http://speedload\\.org/[A-Za-z0-9]+)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (final String singleLink : links) {
-                decryptedLinks.add(createDownloadlink(singleLink.replace("\\", "").replace("speedload.org/", "speedload.orgdecrypted/")));
+                decryptedLinks.add(createDownloadlink(singleLink.replace("speedload.org/", "speedloaddecrypted.org/")));
             }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(getJson("folderName"));
+            fp.setName("speedload.org folder - " + fid);
             fp.addLinks(decryptedLinks);
-        } else {
-            decryptedLinks.add(createDownloadlink(parameter.replace("speedload.org/", "speedload.orgdecrypted/")));
         }
-
         return decryptedLinks;
     }
 

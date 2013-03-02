@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -44,20 +45,54 @@ public class XvideosCom extends PluginForHost {
     }
 
     private static final String NOCHUNKS = "NOCHUNKS";
+    private String              DLLINK   = null;
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.getHeaders().put("Accept-Encoding", "gzip");
+        br.getPage(parameter.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            logger.info("Setting new downloadlink: " + br.getRedirectLocation());
+            parameter.setUrlDownload(br.getRedirectLocation());
+            br.getPage(parameter.getDownloadURL());
+        }
+        if (br.containsHTML("(This video has been deleted|Page not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h2>([^<>\"]*?)<span class").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filename = filename.trim() + ".flv";
+        parameter.setFinalFileName(Encoding.htmlDecode(filename));
+        DLLINK = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
+        if (DLLINK == null) DLLINK = decode(br.getRegex("encoded=(.*?)\\&").getMatch(0));
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(DLLINK);
+            if (!con.getContentType().contains("html")) {
+                parameter.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+    }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
-        String dllink = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
-        if (dllink == null) dllink = decode(br.getRegex("encoded=(.*?)\\&").getMatch(0));
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = Encoding.htmlDecode(dllink);
         int chunks = 0;
         if (link.getBooleanProperty(XvideosCom.NOCHUNKS, false)) {
             chunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, chunks);
         if (!this.dl.startDownload()) {
             try {
                 if (dl.externalDownloadStop()) return;
@@ -100,25 +135,6 @@ public class XvideosCom extends PluginForHost {
             i++;
         }
         return calculated;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.getHeaders().put("Accept-Encoding", "gzip");
-        br.getPage(parameter.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            logger.info("Setting new downloadlink: " + br.getRedirectLocation());
-            parameter.setUrlDownload(br.getRedirectLocation());
-            br.getPage(parameter.getDownloadURL());
-        }
-        if (br.containsHTML("(This video has been deleted|Page not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2>([^<>\"]*?)<span class").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filename = filename.trim() + ".flv";
-        parameter.setFinalFileName(Encoding.htmlDecode(filename));
-        return AvailableStatus.TRUE;
     }
 
     @Override
