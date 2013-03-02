@@ -41,7 +41,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "http://(www\\.)?(ctdisk|400gb|pipipan|t00y)\\.com/file/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "http://(www\\.)?((ctdisk|400gb|pipipan|t00y)\\.com|bego\\.cc)/file/\\d+" }, flags = { 2 })
 public class CtDiskCom extends PluginForHost {
 
     private static final String DLLINKREGEX2 = ">电信限速下载</a>[\t\n\r ]+<a href=\"(http://.*?)\"";
@@ -54,7 +54,7 @@ public class CtDiskCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(ctdisk|pipipan|t00y)\\.com/", "400gb.com/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("((ctdisk|pipipan|t00y)\\.com|bego\\.cc)/", "400gb.com/"));
     }
 
     public void prepBrowser(final Browser br) {
@@ -71,8 +71,13 @@ public class CtDiskCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>提示：本文件已到期。成为VIP后才能下载所有文件|<title>成为VIP即可下载全部视频和文件</title>|>注意：高级VIP可下载所有文件|color=\"#FF0000\" face=\"黑体\">点击立即成为VIP</font>|>Woops\\!找不到文件 \\- 免费高速下载|>对不起，这个文件已到期或被删除。您可以注册城通会)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"top_title\"[^>]+>(.*?)<").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) \\- 免费高速下载 \\- 城通网盘").getMatch(0);
+        String filename = null;
+        if (br.getURL().contains("bego.cc/")) {
+            filename = br.getRegex("<div class=\"file_title\">([^<>\"]*?)</div>").getMatch(0);
+        } else {
+            filename = br.getRegex("<div class=\"top_title\"[^>]+>(.*?)<").getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>(.*?) \\- 免费高速下载 \\- 城通网盘").getMatch(0);
+        }
         String filesize = br.getRegex("\">\\(([\\d\\,\\.]+ (KB|MB|GB))\\)</span><").getMatch(0);
         if (filesize == null) filesize = br.getRegex("([\\d\\,\\.]+ (KB|MB|GB))").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -100,19 +105,21 @@ public class CtDiskCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.submitForm(free);
+            if (br.containsHTML(">验证码输入错误，请返回页面重新输入")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
 
         if (dllink == null) {
             dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\" id=\"local_free\">").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\"").getMatch(0);
-                if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = Encoding.Base64Decode(Encoding.htmlDecode(dllink));
             if (!dllink.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        // Check if link is working. If not try mirror. Limits can be extended/skipped using this method :D
+        // Check if link is working. If not try mirror. Limits can be
+        // extended/skipped using this method :D
         boolean failed = false;
         URLConnectionAdapter con = null;
         Browser br2 = br.cloneBrowser();

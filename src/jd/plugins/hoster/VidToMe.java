@@ -70,9 +70,11 @@ public class VidToMe extends PluginForHost {
     private static final boolean       useRUA                       = false;
 
     // Connection Management
-    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
+    // fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
-    // set true if the hoster allows every 'account type' (non account|free account|paid account) allow own connection threshold.
+    // set true if the hoster allows every 'account type' (non account|free
+    // account|paid account) allow own connection threshold.
     private static final boolean       allowConcurrent              = true;
 
     // DEV NOTES
@@ -141,7 +143,8 @@ public class VidToMe extends PluginForHost {
         String[] fileInfo = new String[3];
         // scan the first page
         scanInfo(fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission critical
+        // scan the second page. filesize[1] and md5hash[2] are not mission
+        // critical
         if (fileInfo[0] == null) {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
@@ -175,7 +178,8 @@ public class VidToMe extends PluginForHost {
                 fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (fileInfo[0] == null) {
                     // can cause new line finds, so check if it matches.
-                    // fileInfo[0] = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                    // fileInfo[0] = new Regex(correctedBR,
+                    // "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                     // traits from download1 page below.
                     if (fileInfo[0] == null) {
                         fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
@@ -190,10 +194,12 @@ public class VidToMe extends PluginForHost {
                 }
             }
         }
-        // String fileExtension = new Regex(correctedBR, "<META NAME=\"description\" CONTENT=\"[^>\"]+ ([^\"]+)\">").getMatch(0);
+        // String fileExtension = new Regex(correctedBR,
+        // "<META NAME=\"description\" CONTENT=\"[^>\"]+ ([^\"]+)\">").getMatch(0);
         // if (fileExtension == null) fileExtension = new Regex(correctedBR,
         // "<META NAME=\"keywords\"\\s+CONTENT=\"[^>\"]+ ([^\"]+)\">").getMatch(0);
-        // after uploading original files are no longer stored/kept, effectively they re-encode into formats they want for their flash
+        // after uploading original files are no longer stored/kept, effectively
+        // they re-encode into formats they want for their flash
         // player! All videos that i've seen have been changed into mp4 format,
         String fileExtension = "mp4";
         if (!fileInfo[0].endsWith(".mp4") && (fileExtension != null && fileInfo[0] != null)) fileInfo[0] = fileInfo[0].trim() + "." + fileExtension.trim();
@@ -236,10 +242,12 @@ public class VidToMe extends PluginForHost {
             checkErrors(downloadLink, false);
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
-                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                // stable is lame, issue finding input data fields correctly.
+                // eg. closes at ' quotation mark - remove when jd2 goes stable!
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
+                waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
@@ -349,7 +357,8 @@ public class VidToMe extends PluginForHost {
                 }
             }
         }
-        // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
+        // Process usedHost within hostMap. We do it here so that we can probe
+        // if slots are already used before openDownload.
         controlHost(account, downloadLink, true);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
@@ -393,7 +402,8 @@ public class VidToMe extends PluginForHost {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
-        // remove custom rules first!!! As html can change because of generic cleanup rules.
+        // remove custom rules first!!! As html can change because of generic
+        // cleanup rules.
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
@@ -430,7 +440,8 @@ public class VidToMe extends PluginForHost {
     private void checkErrors(DownloadLink theLink, boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
-                // handle password has failed in the past, additional try catching / resetting values
+                // handle password has failed in the past, additional try
+                // catching / resetting values
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
@@ -445,9 +456,11 @@ public class VidToMe extends PluginForHost {
         // monitor this
         if (new Regex(correctedBR, "(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)").matches()) {
             /*
-             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
-             * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
-             * previous happen as in past tense not a wait time going forward...
+             * Indication of when you've reached the max download limit for that
+             * given session! Usually shows how long the session was recorded
+             * from x time (hours|days) which can trigger false positive below
+             * wait handling. As its only indication of what's previous happen
+             * as in past tense not a wait time going forward...
              */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
         }
@@ -530,7 +543,9 @@ public class VidToMe extends PluginForHost {
                 if (finallink == null) {
                     finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
                     if (finallink == null) {
-                        // multiple resolutions found! only returns the first of course! but atm it seems they place the highest resolution
+                        // multiple resolutions found! only returns the first of
+                        // course! but atm it seems they place the highest
+                        // resolution
                         // first.
                         finallink = new Regex(decoded, ",file:(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + ")(:\\d{1,4})?/[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
                     }
@@ -691,7 +706,8 @@ public class VidToMe extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
+            // Process usedHost within hostMap. We do it here so that we can
+            // probe if slots are already used before openDownload.
             controlHost(account, downloadLink, true);
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
@@ -723,8 +739,10 @@ public class VidToMe extends PluginForHost {
         }
     }
 
-    // ***************************************************************************************************** //
-    // The components below doesn't require coder interaction, or configuration !
+    // *****************************************************************************************************
+    // //
+    // The components below doesn't require coder interaction, or configuration
+    // !
 
     private String                                            correctedBR                  = "";
     private String                                            passCode                     = null;
@@ -742,7 +760,8 @@ public class VidToMe extends PluginForHost {
     private static AtomicInteger                              totalMaxSimultanPremDownload = new AtomicInteger(1);
     private static AtomicInteger                              maxFree                      = new AtomicInteger(1);
     private static AtomicInteger                              maxPrem                      = new AtomicInteger(1);
-    // connections you can make to a given 'host' file server (not dynamic), this assumes each server is setup identically.
+    // connections you can make to a given 'host' file server (not dynamic),
+    // this assumes each server is setup identically.
     private static AtomicInteger                              maxNonAccSimDlPerHost        = new AtomicInteger(20);
     private static AtomicInteger                              maxFreeAccSimDlPerHost       = new AtomicInteger(20);
     private static AtomicInteger                              maxPremAccSimDlPerHost       = new AtomicInteger(20);
@@ -818,7 +837,8 @@ public class VidToMe extends PluginForHost {
         if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         String newExtension = null;
-        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
+        // some streaming sites do not provide proper file.extension within
+        // headers (Content-Disposition or the fail over getURL()).
         if (serverFilename.contains(".")) {
             newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
         } else {
@@ -873,14 +893,19 @@ public class VidToMe extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -898,8 +923,10 @@ public class VidToMe extends PluginForHost {
     }
 
     /**
-     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
-     * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
+     * ControlSimHost, On error it will set the upper mark for 'max sim dl per
+     * host'. This will be the new 'static' setting used going forward. Thus
+     * prevents new downloads starting when not possible and is self aware and
+     * requires no coder interaction.
      * 
      * @param account
      * 
@@ -933,9 +960,11 @@ public class VidToMe extends PluginForHost {
     }
 
     /**
-     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
-     * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
-     * hosts/IP setup. This will help with those situations by allowing more connection when possible.
+     * This matches dllink against an array of used 'host' servers. Use this
+     * when site have multiple download servers and they allow x connections to
+     * ip/host server. Currently JD allows a global connection controller and
+     * doesn't allow for handling of different hosts/IP setup. This will help
+     * with those situations by allowing more connection when possible.
      * 
      * @param Account
      *            Account that's been used, can be null
@@ -946,7 +975,8 @@ public class VidToMe extends PluginForHost {
      * */
     private synchronized void controlHost(Account account, DownloadLink downloadLink, boolean action) throws Exception {
 
-        // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
+        // xfileshare valid links are either
+        // https://((sub.)?domain|IP)(:port)?/blah
         usedHost = new Regex(dllink, "https?://([^/\\:]+)").getMatch(0);
         if (dllink == null || usedHost == null) {
             if (dllink == null)
@@ -977,11 +1007,13 @@ public class VidToMe extends PluginForHost {
         }
         user = user + " @ " + acctype;
 
-        // save finallink and use it for later, this script can determine if it's usable at a later stage. (more for dev purposes)
+        // save finallink and use it for later, this script can determine if
+        // it's usable at a later stage. (more for dev purposes)
         downloadLink.setProperty(directlinkproperty, dllink);
 
         if (!action) {
-            // download finished (completed, failed, etc), check for value and remove a value
+            // download finished (completed, failed, etc), check for value and
+            // remove a value
             Integer usedSlots = getHashedHashedValue(account);
             if (usedSlots == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             setHashedHashKeyValue(account, -1);
@@ -991,12 +1023,16 @@ public class VidToMe extends PluginForHost {
                 logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
             }
         } else {
-            // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
+            // New download started, check finallink host against hostMap values
+            // && max(Free|Prem)SimDlHost!
 
             /*
-             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads
-             * finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control over to reset
-             * the count. Highly dependent on how fast or slow the users connections is.
+             * max(Free|Prem)SimDlHost prevents more downloads from starting on
+             * a given host! At least until one of the previous downloads
+             * finishes. This is best practice otherwise you have to use some
+             * crude system of waits, but you have no control over to reset the
+             * count. Highly dependent on how fast or slow the users connections
+             * is.
              */
             if (isHashedHashedKey(account, usedHost)) {
                 Integer usedSlots = getHashedHashedValue(account);
@@ -1026,7 +1062,8 @@ public class VidToMe extends PluginForHost {
      * @param account
      *            Account that's been used, can be null
      * @param x
-     *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
+     *            Integer positive or negative. Positive adds slots. Negative
+     *            integer removes slots.
      * */
     private void setHashedHashKeyValue(Account account, Integer x) {
         if (usedHost == null || x == null) return;
@@ -1034,7 +1071,8 @@ public class VidToMe extends PluginForHost {
         if (!hostMap.isEmpty()) {
             // load hostMap within holder if not empty
             holder = hostMap.get(account);
-            // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
+            // remove old hashMap reference, prevents creating duplicate entry
+            // of 'account' when returning result.
             if (holder.containsKey(account)) hostMap.remove(account);
         }
         String currentKey = getHashedHashedKey(account);
@@ -1053,7 +1091,8 @@ public class VidToMe extends PluginForHost {
             }
         }
         if (holder.isEmpty()) {
-            // the last value(download) within holder->account. Remove entry to reduce memory allocation
+            // the last value(download) within holder->account. Remove entry to
+            // reduce memory allocation
             hostMap.remove(account);
         } else {
             // put updated holder back into hostMap
@@ -1122,7 +1161,8 @@ public class VidToMe extends PluginForHost {
         return false;
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
+    // String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 
@@ -1146,8 +1186,9 @@ public class VidToMe extends PluginForHost {
     }
 
     /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
-     * InputField parse(final String data). Affects revision 19688 and earlier!
+     * If form contain both " and ' quotation marks within input fields it can
+     * return null values, thus you submit wrong/incorrect data re: InputField
+     * parse(final String data). Affects revision 19688 and earlier!
      * 
      * TODO: remove after JD2 goes stable!
      * 

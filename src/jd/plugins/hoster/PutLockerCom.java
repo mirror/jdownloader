@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -94,13 +95,13 @@ public class PutLockerCom extends PluginForHost {
                 ai.setStatus("Free Accounts are not currently supported");
             }
             account.setValid(false);
-            return ai;
+            throw e;
         }
         String validUntil = br.getRegex("Expiring </td>.*?>(.*?)<").getMatch(0);
         if (validUntil != null) {
             validUntil = validUntil.replaceFirst(" at ", " ");
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "MMMM dd, yyyy HH:mm", null));
-            ai.setStatus("Premium okay");
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "MMMM dd, yyyy HH:mm", Locale.ENGLISH));
+            ai.setStatus("Premium User");
             ai.setUnlimitedTraffic();
             account.setValid(true);
         } else {
@@ -184,6 +185,7 @@ public class PutLockerCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(false);
         String dlURL = getDllink(link);
         if (dlURL == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlURL, true, 0);
@@ -257,13 +259,13 @@ public class PutLockerCom extends PluginForHost {
                 login.put("remember", "1");
                 br.submitForm(login);
                 // no auth = not logged / invalid account.
-                if (br.getCookie(MAINPAGE, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha wrong!\r\nUngültiger Benutzername oder ungültiges Passwort oder ungültiges login Captcha!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // finish off more code here
                 br.getPage("http://www.putlocker.com/profile.php?pro");
                 proActive = br.getRegex("Pro  ?Status</?[^>]+>[\r\n\t ]+<[^>]+>(Active)").getMatch(0);
                 if (proActive == null) {
                     logger.severe(br.toString());
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnknown accounttype!\r\nUnbekannter Accounttyp!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();

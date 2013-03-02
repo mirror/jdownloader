@@ -62,7 +62,8 @@ public class SendspaceCom extends PluginForHost {
      * For premium we use their API: http://www.sendspace.com/dev_method.html
      */
     /**
-     * Usage: create a token, log in and then use the functions via method "apiRequest(String url, String data)
+     * Usage: create a token, log in and then use the functions via method
+     * "apiRequest(String url, String data)
      * */
     @Override
     public String getAGBLink() {
@@ -89,17 +90,25 @@ public class SendspaceCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser();
         // createSessToken();
-        // final Account aa = AccountController.getInstance().getValidAccount(this);
+        // final Account aa =
+        // AccountController.getInstance().getValidAccount(this);
         // if (aa != null) {
-        // apiLogin(aa.getUser(), JDHash.getMD5(SESSIONTOKEN + JDHash.getMD5(aa.getPass()).toLowerCase()));
+        // apiLogin(aa.getUser(), JDHash.getMD5(SESSIONTOKEN +
+        // JDHash.getMD5(aa.getPass()).toLowerCase()));
         // } else {
-        // apiLogin(Encoding.Base64Decode(JDUSERNAME), JDHash.getMD5(SESSIONTOKEN + JDHash.getMD5("JD Account Password").toLowerCase()));
+        // apiLogin(Encoding.Base64Decode(JDUSERNAME),
+        // JDHash.getMD5(SESSIONTOKEN +
+        // JDHash.getMD5("JD Account Password").toLowerCase()));
         // }
-        // apiRequest("http://api.sendspace.com/rest/?method=files.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" +
+        // apiRequest("http://api.sendspace.com/rest/?method=files.getinfo",
+        // "&session_key=" + SESSIONKEY + "&file_id=" +
         // getFid(downloadLink));
-        // if (br.containsHTML("<error code=\"9\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // final String filename = br.getRegex("name=\"([^<>\"]*?)\"").getMatch(0);
-        // final String filesize = br.getRegex("file_size=\"(\\d+)\"").getMatch(0);
+        // if (br.containsHTML("<error code=\"9\"")) throw new
+        // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // final String filename =
+        // br.getRegex("name=\"([^<>\"]*?)\"").getMatch(0);
+        // final String filesize =
+        // br.getRegex("file_size=\"(\\d+)\"").getMatch(0);
         // if (filename != null && filename != null) {
         // downloadLink.setFinalFileName(filename);
         // downloadLink.setDownloadSize(Long.parseLong(filesize));
@@ -489,6 +498,7 @@ public class SendspaceCom extends PluginForHost {
                 logger.warning("API_ERROR_INVALID_FILE_URL");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             default:
+                logger.warning("HTML code: " + br.toString());
                 logger.warning("Unknown API errorcode: " + CURRENTERRORCODE);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
