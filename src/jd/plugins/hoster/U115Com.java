@@ -28,7 +28,6 @@ import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -56,7 +55,8 @@ public class U115Com extends PluginForHost {
     public U115Com(PluginWrapper wrapper) {
         super(wrapper);
         /**
-         * 10 seconds waittime between the downloadstart of simultan DLs of this host
+         * 10 seconds waittime between the downloadstart of simultan DLs of this
+         * host
          */
         this.setStartIntervall(10000l);
         this.enablePremium();
@@ -131,7 +131,8 @@ public class U115Com extends PluginForHost {
     }
 
     /**
-     * Here we get mirrors, sometimes a mirror does not work so we'll check until we find a working one.
+     * Here we get mirrors, sometimes a mirror does not work so we'll check
+     * until we find a working one.
      * 
      * @throws PluginException
      */
@@ -248,12 +249,8 @@ public class U115Com extends PluginForHost {
                 }
             }
             br.setFollowRedirects(true);
-            br.getPage("https://passport.115.com");
-            Form login = br.getForm(0);
-            if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            login.put("login%5Baccount%5D", Encoding.urlEncode(account.getUser()));
-            login.put("login%5Bpasswd%5D", Encoding.urlEncode(account.getPass()));
-            br.submitForm(login);
+            br.getPage("https://passport.115.com/?ct=login");
+            br.postPage("https://passport.115.com/?ac=login", "login%5Btime%5D=on&goto=&client=&callback=&login%5Baccount%5D=" + Encoding.urlEncode(account.getUser()) + "&login%5Bpasswd%5D=" + Encoding.urlEncode(account.getPass()));
             if (br.getCookie(MAINPAGE, "OOFL") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -279,7 +276,8 @@ public class U115Com extends PluginForHost {
         ai.setUnlimitedTraffic();
         account.setValid(true);
         /**
-         * Doesn't have a premium login, plugin is only designed for free accounts!
+         * Doesn't have a premium login, plugin is only designed for free
+         * accounts!
          */
         ai.setStatus("Registered (free) User");
         return ai;

@@ -51,6 +51,7 @@ public class CtDiskCom extends PluginForHost {
     public CtDiskCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.400gb.com/premium.php");
+        this.setStartIntervall(5 * 1000l);
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -193,7 +194,7 @@ public class CtDiskCom extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         // Works best this way. Maximum that worked for me was 6
-        return 5;
+        return -1;
     }
 
     @Override
@@ -203,11 +204,28 @@ public class CtDiskCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.getPage(link.getDownloadURL());
-        doFree(link, true, 1);
+        String dllink = checkDirectLink(link, "directpremlink");
+        if (dllink == null) {
+            br.getPage(link.getDownloadURL());
+            final String downHTML = br.getRegex("(\\'|\")(/downhtml/[^<>\"]*?\\.html)(\\'|\")").getMatch(1);
+            if (downHTML == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage("http://www.400gb.com" + downHTML);
+            final String vipLinks = br.getRegex("<div class=\"viplist\">(.*?)<div class=\"freelist\">").getMatch(0);
+            if (vipLinks == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = new Regex(vipLinks, "<a href=\"(.*?)\"").getMatch(0);
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = Encoding.Base64Decode(dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -5);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setProperty("directpremlink", dllink);
+        dl.startDownload();
     }
 
     // do not add @Override here to keep 0.* compatibility
