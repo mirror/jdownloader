@@ -140,6 +140,7 @@ public class RtmpUrlConnection extends URLConnection {
      */
     public String getCommandLineParameter() {
         final StringBuilder cmdargs = new StringBuilder("");
+        String ret = null;
         if (parameterMap != null) {
             final Iterator<String> keyIter = parameterMap.keySet().iterator();
             while (keyIter.hasNext()) {
@@ -156,8 +157,9 @@ public class RtmpUrlConnection extends URLConnection {
                     cmdargs.append(" -").append(key);
                 }
             }
+            ret = cmdargs.toString() + " -o";
         }
-        return cmdargs.toString() + " -o";
+        return ret;
     }
 
     /**
@@ -183,8 +185,8 @@ public class RtmpUrlConnection extends URLConnection {
                     cmdargs.add("-" + key);
                 }
             }
+            cmdargs.add("-o");
         }
-        cmdargs.add("-o");
         return cmdargs;
     }
 

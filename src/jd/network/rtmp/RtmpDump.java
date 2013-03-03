@@ -340,8 +340,8 @@ public class RtmpDump extends RTMPDownload {
                     if (debug) logger.finest(line);
                     if (line.startsWith("ERROR:")) error = line;
                     if (!new Regex(line, "^[0-9]").matches()) {
-                        if (line.contains("length") || line.contains("lastkeyframelocation")) {
-                            if (line.contains("length")) runTimeSize = true;
+                        if (line.contains("length") || line.contains("lastkeyframelocation") || line.contains("filesize")) {
+                            if (line.contains("length") || line.contains("filesize")) runTimeSize = true;
                             String size = new Regex(line, ".*?(\\d.+)").getMatch(0);
                             iSize = SizeFormatter.getSize(size);
                         }
