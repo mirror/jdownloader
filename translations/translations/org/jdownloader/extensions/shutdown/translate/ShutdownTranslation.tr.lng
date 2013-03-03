@@ -9,18 +9,18 @@ gui_config_jdshutdown_hibernate=Hazırda Beklet (Tüm İşletim Sistemleri için
 gui_config_jdshutdown_mode=Kip:
 gui_config_jdshutdown_shutdown=Bilgisayarı Kapat
 gui_config_jdshutdown_standby=Beklemeye Al (Tüm İşletim Sistemleri için değildir)
-install_force=Bilgisayar kapatma zorlayıcısını yükle
-install_msg=Sisteminizi, bilgisayar kapatma zorlayıcısı özelliği için hazırlamak istiyor musunuz?
-install_title=Bilgisayar kapatma zorlayıcısını yükle
+install_force=Zorla Kapatmayı Yükle
+install_msg=Sisteminizi zorla kapatma özelliği için hazırlamak istiyor musunuz?
+install_title=Zorla Kapatmayı Yükle
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader kapatılacak!</font></h2>
-interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Sistem hazırda bekleme kipine alınacak!</font></h2>
+interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Sistem hazırda beklet kipine alınacak!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Sistem kapatılacak!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Sistem bekleme kipine alınacak!</font></h2>
-interaction_shutdown_dialog_title_closejd=JDownloader kapatılsın mı?
-interaction_shutdown_dialog_title_hibernate=Hazırda Beklemeye alınsın mı?
+interaction_shutdown_dialog_title_closejd=JDownloader Kapatılsın mı?
+interaction_shutdown_dialog_title_hibernate=Hazırda Bekletilsin mi?
 interaction_shutdown_dialog_title_shutdown=Bilgisayar Kapatılsın mı?
-interaction_shutdown_dialog_title_standby=Beklemeye alınsın mı?
-jd_plugins_optional_jdshutdown=Sistem Kapatma
+interaction_shutdown_dialog_title_standby=Beklemeye Alınsın mı?
+jd_plugins_optional_jdshutdown=JD Kapat
 jd_plugins_optional_jdshutdown_description=İndirmeler bittiğinde ya da durdurulduğunda, bilgisayarınız otomatik olarak kapatılsın, askıya, hazırda beklemeye alınsın veya JDownloader'dan çıkılsın.
 lit_shutdownn=Sistem kapatma
 show_admin=JDownloader'ı hazırda bekleme (hibernasyon) veya bekleme kiplerine ayarlamak için Yönetici yetkileri gereklidir.
