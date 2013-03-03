@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/(shared|s)/((\\w+\\b(?<!\\bstatic))(/rss\\.xml|#\\w*)?|[a-z0-9]{16})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/shared/[a-z0-9]+" }, flags = { 0 })
 public class BxNt extends PluginForDecrypt {
     private static final String  BASE_URL_PATTERN             = "(https?://(www|[a-z0-9\\-_]+)\\.box\\.com/shared/\\w+)(#\\w*)?";
     private static final Pattern FEED_FILEINFO_PATTERN        = Pattern.compile("<item>(.*?)<\\/item>", Pattern.DOTALL);
@@ -67,7 +67,7 @@ public class BxNt extends PluginForDecrypt {
             }
             if (decryptedLinks.size() == 0) {
                 logger.info("Haven't found any links to decrypt, now trying decryptSingleDLPage");
-                decryptedLinks.add(createDownloadlink(parameter.toString().replaceAll("box\\.(net|com)/s", "boxdecrypted.com/s")));
+                decryptedLinks.add(createDownloadlink(parameter.toString().replaceAll("box\\.(net|com)/shared", "boxdecrypted.com/shared")));
             }
         }
         return decryptedLinks;

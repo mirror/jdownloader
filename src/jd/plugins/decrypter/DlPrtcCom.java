@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -45,7 +46,7 @@ public class DlPrtcCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // Prefer English language
         String parameter = param.toString().replaceAll("dl\\-protect\\.com/(en|fr)/", "dl-protect.com/").replace("dl-protect.com/", "dl-protect.com/en/");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
         if (br.containsHTML(PASSWORDTEXT) || br.containsHTML(CAPTCHATEXT)) {
             for (int i = 0; i <= 5; i++) {
@@ -96,8 +97,7 @@ public class DlPrtcCom extends PluginForDecrypt {
     }
 
     private String getCaptchaLink() {
-        String captchaLink = br.getRegex("id=\"captcha\" src=\"(/.*?)\"").getMatch(0);
-        if (captchaLink == null) captchaLink = br.getRegex("\"(/captcha\\.php\\?uid=[a-z0-9]+)\"").getMatch(0);
+        final String captchaLink = br.getRegex("\"(/captcha\\.php\\?uid=[a-z0-9]+)\"").getMatch(0);
         return captchaLink;
     }
 

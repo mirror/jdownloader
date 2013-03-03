@@ -29,14 +29,14 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "(https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)(/(shared/static/|rssdownload/).*|/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+)|https?://www\\.boxdecrypted\\.(net|com)/s/[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "(https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)(/(shared/static/|rssdownload/).*|/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+)|https?://www\\.boxdecrypted\\.(net|com)/shared/[a-z0-9]+)" }, flags = { 0 })
 public class BoxNet extends PluginForHost {
     private static final String TOS_LINK               = "https://www.box.net/static/html/terms.html";
 
     private static final String OUT_OF_BANDWITH_MSG    = "out of bandwidth";
     private static final String REDIRECT_DOWNLOAD_LINK = "https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+";
     private static final String DLLINKREGEX            = "href=\"(https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=[^<>\"\\']+)\"";
-    private static final String SLINK                  = "https?://www\\.box\\.(net|com)/s/[a-z0-9]+";
+    private static final String SLINK                  = "https?://www\\.box\\.(net|com)/shared/[a-z0-9]+";
     private String              DLLINK                 = null;
 
     public BoxNet(PluginWrapper wrapper) {
@@ -54,7 +54,7 @@ public class BoxNet extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("boxdecrypted\\.(net|com)/s/", "box.com/s/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("boxdecrypted\\.(net|com)/shared/", "box.com/shared/"));
         link.setUrlDownload(link.getDownloadURL().replace("box\\.net/", "box.com/"));
     }
 
@@ -62,7 +62,8 @@ public class BoxNet extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         // setup referer and cookies for single file downloads
         requestFileInformation(link);
-        // site has many redirects, it could be set off from requestFileInformation...
+        // site has many redirects, it could be set off from
+        // requestFileInformation...
         br.setFollowRedirects(true);
         if (link.getDownloadURL().matches(SLINK) && DLLINK == null) {
             String fid = br.getRegex("var file_id = \\'(\\d+)\\';").getMatch(0);
