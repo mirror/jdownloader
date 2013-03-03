@@ -1,0 +1,13 @@
+LogAction=创建一个日志
+LogAction_actionPerformed_givelogid_=请发送本日志 ID 到您的技术支持人员!
+LogAction_actionPerformed_wait_=请稍候...
+LogAction_actionPerformed_zip_title_=创建日志包
+LogAction_getString_uploading_=正在准备您的日志
+LogAction_tooltip=创建一个日志
+LogModel_getStringValue_between_=介于 %s1 和 %s2 之间
+LogModel_initColumns_time_=时间
+LogModel_initColumns_x_=检查
+LogTable_onContextMenu_disable_=取消选择
+LogTable_onContextMenu_enable_=选择
+SendLogDialog_SendLogDialog_title_=发送错误报告
+SendLogDialog_layoutDialogContent_desc_=问题什么时候发生?请检查所有值得考虑的项目!
