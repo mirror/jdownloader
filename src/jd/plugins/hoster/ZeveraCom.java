@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -154,23 +156,38 @@ public class ZeveraCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         login(account, false);
-        showMessage(link, "Task 1: URL check for pre-generated links!");
+        showMessage(link, "Phase 1/3: URL check for pre-generated links!");
         requestFileInformation(link);
-        showMessage(link, "Task 2: Download begins!");
+        showMessage(link, "Pgase 2/3: Download ready!");
         handleDL(link, link.getDownloadURL());
     }
 
-    private void handleDL(DownloadLink link, String dllink) throws Exception {
-        /* we want to follow redirects in final stage */
+    private void handleDL(final DownloadLink link, String dllink) throws Exception {
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        showMessage(link, "Phase 3/3: Check download!");
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        } catch (final PluginException e) {
+            logger.info("Zevera download failed because: " + e.getMessage());
+            throw e;
+        } catch (final SocketTimeoutException e) {
+            logger.info("Zevera download failed because of a timeout -> This is probably caused by zevera and NOT a JD issue!");
+            throw e;
+        } catch (final SocketException e) {
+            logger.info("Zevera download failed because of a timeout/connection problem -> This is probably caused by zevera and NOT a JD issue!");
+            throw e;
+        } catch (final Exception e) {
+            logger.info("Zevera download FATAL failed because: " + e.getMessage());
+            throw e;
+        }
         if (!dl.getConnection().getContentType().contains("html")) {
             /* contentdisposition, lets download it */
             dl.startDownload();
             return;
         } else {
             /*
-             * download is not contentdisposition, so remove this host from premiumHosts list
+             * download is not contentdisposition, so remove this host from
+             * premiumHosts list
              */
             br.followConnection();
         }
@@ -191,6 +208,7 @@ public class ZeveraCom extends PluginForHost {
             br.getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()));
         }
         // handleErrors();
+        br.setFollowRedirects(false);
         final String continuePage = br.getRedirectLocation();
         br.getPage(continuePage);
         String dllink = br.getRedirectLocation();
@@ -230,7 +248,8 @@ public class ZeveraCom extends PluginForHost {
             String[] hosts = new Regex(hostsSup, "([^,]+)").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             /*
-             * set ArrayList<String> with all supported multiHosts of this service
+             * set ArrayList<String> with all supported multiHosts of this
+             * service
              */
             ai.setProperty("multiHostSupport", supportedHosts);
         } catch (Throwable e) {

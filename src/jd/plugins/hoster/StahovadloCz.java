@@ -137,18 +137,11 @@ public class StahovadloCz extends PluginForHost {
         }
         br.getPage("http://www.stahovadlo.cz/");
         final String availableTraffic = br.getRegex(">Kredit</a>([^<>\"/\\|]*?)\\|").getMatch(0);
-        if (availableTraffic != null)
+        if (availableTraffic != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic.trim()));
-        else
+        } else {
             ai.setUnlimitedTraffic();
-        // final String expire = br.getRegex("").getMatch(0);
-        // if (expire == null) {
-        // account.setValid(false);
-        // return ai;
-        // } else {
-        // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire,
-        // "dd MMMM yyyy", Locale.ENGLISH));
-        // }
+        }
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;

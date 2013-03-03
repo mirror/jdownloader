@@ -700,7 +700,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (finalfilename != null) finalfilename = finalfilename.replaceAll("[\r\n]+", "") + ".flv";
             finallink = "http://videos.sharmota.com/flv888/" + new Regex(parameter, "movies/\\d+/(\\d+)").getMatch(0) + ".flv";
         } else if (parameter.matches("https?://t\\.co/.*")) {
-            if (br.containsHTML("(>Sorry, but we couldn’t find that link|>Sorry, leider konnten wir diesen Link nicht finden<)")) {
+            if (br.containsHTML("<h1>Sorry, that page doesn’t exist|<p>Thanks for noticing\\&mdash;we\\'re going")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }

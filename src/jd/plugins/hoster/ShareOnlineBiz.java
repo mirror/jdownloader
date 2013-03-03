@@ -311,6 +311,8 @@ public class ShareOnlineBiz extends PluginForHost {
             } else if (data.length == 2) {
                 ret.put(data[0].trim(), data[1].trim());
             } else {
+                logger.warning("GetInfos failed, browser content:\n");
+                logger.warning(br.toString());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }

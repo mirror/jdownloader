@@ -63,7 +63,7 @@ public class BanaShareCom extends PluginForHost {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
             return AvailableStatus.UNCHECKABLE;
         }
-        if (new Regex(brbefore, "(No such file|No such user exist|File not found)").matches()) {
+        if (new Regex(brbefore, "(No such file|No such user exist|File not found|Reason for deletion:)").matches()) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

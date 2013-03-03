@@ -49,6 +49,7 @@ public class WdrDeMediathek extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("/fehler.xml")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String sendung = br.getRegex("class=\"moSubText\">([^<>\"]*?)<br").getMatch(0);
         String filename = br.getRegex("<title>([^<>\"]*?)\\-  WDR MEDIATHEK \\- WDR\\.de</title>").getMatch(0);
         String preferedExt = ".mp4";
         if (br.containsHTML("<div class=\"audioContainer\">")) {
@@ -65,7 +66,12 @@ public class WdrDeMediathek extends PluginForHost {
         filename = filename.trim().replace(":", " - ").replace("?", "");
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = preferedExt;
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        filename = Encoding.htmlDecode(filename);
+        if (sendung != null) {
+            downloadLink.setFinalFileName(Encoding.htmlDecode(sendung) + " - " + filename + ext);
+        } else {
+            downloadLink.setFinalFileName(filename + ext);
+        }
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

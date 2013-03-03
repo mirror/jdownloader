@@ -251,7 +251,7 @@ public class U115Com extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage("https://passport.115.com/?ct=login");
             br.postPage("https://passport.115.com/?ac=login", "login%5Btime%5D=on&goto=&client=&callback=&login%5Baccount%5D=" + Encoding.urlEncode(account.getUser()) + "&login%5Bpasswd%5D=" + Encoding.urlEncode(account.getPass()));
-            if (br.getCookie(MAINPAGE, "OOFL") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (br.getCookie(MAINPAGE, "OOFL") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(MAINPAGE);
@@ -271,7 +271,7 @@ public class U115Com extends PluginForHost {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);

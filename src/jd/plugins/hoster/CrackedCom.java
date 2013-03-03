@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -66,15 +65,10 @@ public class CrackedCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<title> - Funny Videos \\| Cracked\\.com</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1  id=\"title\">([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
-        }
-        String flashvars = br.getRegex("name=\"flashVars\" value=\"(.*?)\"").getMatch(0);
-        if (flashvars == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        flashvars = Encoding.urlDecode(flashvars, false);
-        DLLINK = new Regex(flashvars, "source=(http://[^<>\"]*?\\.(mp4|flv))\\&").getMatch(0);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
+        DLLINK = br.getRegex("&source=(http[^<>\"]*?)\\&").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".mp4";
