@@ -90,6 +90,7 @@ connecting=Bağlanıyor...
 crossSystem_open_url_failed_msg=Lütfen bu bağlantıyı tarayıcınızda açın:
 download_msg=Dosya indiriliyor
 download_title=İndir
+extdatecolumn_dateandtimeformat=dd.MM.yyyy HH:mm
 extpasswordeditorcolumn_tooltip=Parolanız
 extttable_disable_all=Tümü etkisiz
 extttable_enabled_all=Tümü etkin
