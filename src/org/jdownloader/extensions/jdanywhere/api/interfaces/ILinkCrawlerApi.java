@@ -16,11 +16,7 @@ public interface ILinkCrawlerApi extends RemoteAPIInterface {
 
     public boolean AddCrawledPackageToDownloads(long crawledPackageID);
 
-    public boolean AddCrawledLinkToDownloads(long crawledLinkID);
-
     public boolean CrawlLink(String URL);
-
-    public boolean removeCrawledLink(String ID);
 
     public boolean removeCrawledPackage(String ID);
 
@@ -29,4 +25,18 @@ public interface ILinkCrawlerApi extends RemoteAPIInterface {
     public CrawledLinkStoreable getCrawledLink(long crawledLinkID);
 
     public String getPackageIDFromLinkID(long ID);
+
+    public boolean addCrawledLinkToDownloads(List<Long> linkIds);
+
+    public boolean removeCrawledLink(List<Long> linkIds);
+
+    public boolean enableCrawledLink(final List<Long> linkIds, boolean enabled);
+
+    public boolean setCrawledLinkPriority(final List<Long> linkIds, int priority);
+
+    public boolean setCrawledPackagePriority(long ID, int priority);
+
+    public boolean setCrawledLinkEnabled(final List<Long> linkIds, boolean enabled);
+
+    public boolean setCrawledPackageEnabled(long ID, boolean enabled);
 }

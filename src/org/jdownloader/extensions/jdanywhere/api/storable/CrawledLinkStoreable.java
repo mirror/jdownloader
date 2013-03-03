@@ -83,14 +83,14 @@ public class CrawledLinkStoreable implements Storable {
     public void setFinished(long finished) {
     }
 
-    // public int getPriority() {
-    // if (link == null) return 0;
-    // return link.getPriority();
-    // }
-    //
-    // public void setPriority(int priority) {
-    // link.setPriority(priority);
-    // }
+    public int getPriority() {
+        if (link == null) return 0;
+        return link.getPriority().getId();
+    }
+
+    public void setPriority(int priority) {
+
+    }
 
     public int getChunks() {
         if (link == null) return 0;

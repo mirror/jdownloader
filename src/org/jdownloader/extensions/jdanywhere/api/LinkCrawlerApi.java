@@ -7,9 +7,11 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.jdanywhere.api.interfaces.ILinkCrawlerApi;
 import org.jdownloader.extensions.jdanywhere.api.storable.CrawledLinkStoreable;
 import org.jdownloader.extensions.jdanywhere.api.storable.CrawledPackageStorable;
@@ -79,33 +81,12 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
         return true;
     }
 
-    public boolean AddCrawledLinkToDownloads(long crawledLinkID) {
-        List<Long> crawledLinks = new ArrayList<Long>();
-        crawledLinks.add(crawledLinkID);
-        return lcAPI.startDownloads(crawledLinks);
+    public boolean addCrawledLinkToDownloads(List<Long> linkIds) {
+        return lcAPI.startDownloads(linkIds);
     }
 
-    public boolean removeCrawledLink(String ID) {
-        LinkCollector lc = LinkCollector.getInstance();
-        boolean b = lc.readLock();
-        long id = Long.valueOf(ID);
-        try {
-            for (CrawledPackage cpkg : lc.getPackages()) {
-                synchronized (cpkg) {
-                    for (CrawledLink link : cpkg.getChildren()) {
-                        if (link.getDownloadLink().getUniqueID().getID() == id) {
-                            List<CrawledLink> children = new ArrayList<CrawledLink>(0);
-                            children.add(link);
-                            lc.removeChildren(cpkg, children, true);
-                            return true;
-                        }
-                    }
-                }
-            }
-            return true;
-        } finally {
-            lc.readUnlock(b);
-        }
+    public boolean removeCrawledLink(List<Long> linkIds) {
+        return lcAPI.removeLinks(linkIds);
     }
 
     public boolean removeCrawledPackage(String ID) {
@@ -147,8 +128,129 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
         }
     }
 
+    public boolean setCrawledLinkPriority(final List<Long> linkIds, int priority) {
+        LinkCollector lc = LinkCollector.getInstance();
+        lc.writeLock();
+        try {
+            List<CrawledLink> lks = lc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
+                @Override
+                public int returnMaxResults() {
+                    return -1;
+                }
+
+                @Override
+                public boolean isChildrenNodeFiltered(CrawledLink node) {
+                    return linkIds != null && linkIds.contains(node.getUniqueID().getID());
+                }
+            });
+
+            for (CrawledLink cl : lks) {
+                setPriority(priority, cl);
+            }
+        } finally {
+            lc.writeUnlock();
+        }
+        return true;
+    }
+
+    public boolean setCrawledPackagePriority(long ID, int priority) {
+        CrawledPackage cp = getCrawledPackageFromID(ID);
+        if (cp != null) {
+            synchronized (cp) {
+                for (CrawledLink link : cp.getChildren()) {
+                    setPriority(priority, link);
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean setCrawledLinkEnabled(final List<Long> linkIds, boolean enabled) {
+        LinkCollector lc = LinkCollector.getInstance();
+        lc.writeLock();
+        try {
+            List<CrawledLink> lks = lc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
+                @Override
+                public int returnMaxResults() {
+                    return -1;
+                }
+
+                @Override
+                public boolean isChildrenNodeFiltered(CrawledLink node) {
+                    return linkIds != null && linkIds.contains(node.getUniqueID().getID());
+                }
+            });
+
+            for (CrawledLink cl : lks) {
+                cl.setEnabled(enabled);
+            }
+        } finally {
+            lc.writeUnlock();
+        }
+        return true;
+    }
+
+    public boolean setCrawledPackageEnabled(long ID, boolean enabled) {
+        CrawledPackage cp = getCrawledPackageFromID(ID);
+        if (cp != null) {
+            synchronized (cp) {
+                for (CrawledLink link : cp.getChildren()) {
+                    link.setEnabled(enabled);
+                }
+            }
+        }
+        return true;
+    }
+
+    private void setPriority(int priority, CrawledLink cl) {
+        switch (priority) {
+        case -1:
+            cl.setPriority(Priority.LOWER);
+            break;
+        case 0:
+            cl.setPriority(Priority.DEFAULT);
+            break;
+        case 1:
+            cl.setPriority(Priority.HIGH);
+            break;
+        case 2:
+            cl.setPriority(Priority.HIGHER);
+            break;
+        case 3:
+            cl.setPriority(Priority.HIGHEST);
+            break;
+        }
+    }
+
     public boolean CrawlLink(String URL) {
         return lcAPI.addLinks(URL, "", "", "");
+    }
+
+    public boolean enableCrawledLink(final List<Long> linkIds, boolean enabled) {
+        LinkCollector lc = LinkCollector.getInstance();
+
+        lc.writeLock();
+        try {
+            List<CrawledLink> lks = lc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
+                @Override
+                public int returnMaxResults() {
+                    return -1;
+                }
+
+                @Override
+                public boolean isChildrenNodeFiltered(CrawledLink node) {
+                    return linkIds != null && linkIds.contains(node.getUniqueID().getID());
+                }
+            });
+
+            for (CrawledLink cl : lks) {
+                cl.setEnabled(enabled);
+            }
+        } finally {
+            lc.writeUnlock();
+        }
+        return true;
+
     }
 
 }

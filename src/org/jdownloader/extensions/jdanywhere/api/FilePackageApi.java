@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -69,23 +70,26 @@ public class FilePackageApi implements IFilePackageApi {
      */
     @Override
     public boolean setEnabled(long ID, boolean enabled) {
-        DownloadController dlc = DownloadController.getInstance();
-        boolean b = dlc.readLock();
-        try {
-            FilePackage fpkg = Helper.getFilePackageFromID(ID);
+        FilePackage fpkg = Helper.getFilePackageFromID(ID);
+        for (DownloadLink link : fpkg.getChildren()) {
+            link.setEnabled(enabled);
+        }
+        return true;
+    }
+
+    public boolean priority(long ID, int priority) {
+        FilePackage fpkg = Helper.getFilePackageFromID(ID);
+        if (fpkg != null) {
             for (DownloadLink link : fpkg.getChildren()) {
-                link.setEnabled(enabled);
+                link.setPriority(priority);
             }
             return true;
-        } finally {
-            dlc.readUnlock(b);
-        }
+        } else
+            return false;
     }
 
     @Override
     public boolean reset(long ID) {
-        DownloadController dlc = DownloadController.getInstance();
-        boolean b = dlc.readLock();
         try {
             FilePackage fpkg = Helper.getFilePackageFromID(ID);
             for (DownloadLink link : fpkg.getChildren()) {
@@ -93,8 +97,21 @@ public class FilePackageApi implements IFilePackageApi {
             }
             return true;
         } finally {
-            dlc.readUnlock(b);
         }
+    }
+
+    public boolean forceDownload(long ID) {
+        try {
+            FilePackage fpkg = Helper.getFilePackageFromID(ID);
+            if (fpkg != null) {
+                DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+                List<DownloadLink> sdl = fpkg.getChildren();
+                dwd.forceDownload(sdl);
+                return true;
+            }
+        } finally {
+        }
+        return false;
     }
 
     /*

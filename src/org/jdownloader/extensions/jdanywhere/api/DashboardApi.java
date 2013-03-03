@@ -6,15 +6,18 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.imageio.ImageIO;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -89,7 +92,55 @@ public class DashboardApi implements IDashboardApi {
     }
 
     public synchronized Object getCompleteState() {
-        return tbAPI.getStatus();
+        HashMap<String, Object> ret = new HashMap<String, Object>();
+        int running = DownloadWatchDog.getInstance().getActiveDownloads();
+        ret.put("running", running > 0);
+        ret.put("limit", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
+        if (org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled()) {
+            ret.put("limitspeed", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
+        } else {
+            ret.put("limitspeed", 0);
+        }
+        ret.put("reconnect", org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled());
+        ret.put("clipboard", org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled());
+        ret.put("stopafter", DownloadWatchDog.getInstance().isStopMarkSet());
+        ret.put("premium", org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
+        if (running == 0) {
+            ret.put("speed", 0);
+        } else {
+            ret.put("speed", DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getSpeedMeter());
+        }
+        ret.put("pause", DownloadWatchDog.getInstance().isPaused());
+
+        List<DownloadLink> calc_progress = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+
+            public int returnMaxResults() {
+                return 0;
+            }
+
+            public boolean isChildrenNodeFiltered(DownloadLink node) {
+                if (!node.isEnabled()) return false;
+                if (node.getLinkStatus().isFailed()) return false;
+                if (AvailableStatus.FALSE == node.getAvailableStatus()) return false;
+                return true;
+            }
+        });
+
+        long todo = 0;
+        long done = 0;
+        for (DownloadLink link : calc_progress) {
+            done += Math.max(0, link.getDownloadCurrent());
+            todo += Math.max(0, link.getDownloadSize());
+        }
+        ret.put("download_current", done);
+        ret.put("download_complete", todo);
+
+        ret.put("maxDL", org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getValue());
+        ret.put("maxConDL", org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_CHUNKS_PER_FILE.getValue());
+        ret.put("maxConHost", org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getValue());
+        ret.put("maxConHostActive", org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled());
+
+        return ret;
     }
 
     // returns the current downloadspeed
@@ -222,4 +273,35 @@ public class DashboardApi implements IDashboardApi {
         }
         return ret;
     }
+
+    public boolean setMaxDL(int value) {
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.setValue(value);
+        return true;
+    }
+
+    public boolean setMaxConDL(int value) {
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_CHUNKS_PER_FILE.setValue(value);
+        return true;
+    }
+
+    public boolean setMaxConHost(int value) {
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.setValue(value);
+        return true;
+    }
+
+    public boolean activateMaxConHost(boolean value) {
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.setValue(value);
+        return true;
+    }
+
+    public boolean activateReconnect(boolean value) {
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.setValue(value);
+        return true;
+    }
+
+    public boolean activatePremium(boolean value) {
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(value);
+        return true;
+    }
+
 }

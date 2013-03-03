@@ -50,4 +50,16 @@ public interface IDashboardApi extends RemoteAPIInterface {
     @AllowStorage(value = { Object.class })
     public Object getCompleteState();
 
+    public boolean setMaxDL(int value);
+
+    public boolean setMaxConDL(int value);
+
+    public boolean setMaxConHost(int value);
+
+    public boolean activateMaxConHost(boolean value);
+
+    public boolean activateReconnect(boolean value);
+
+    public boolean activatePremium(boolean value);
+
 }

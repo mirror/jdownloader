@@ -48,9 +48,9 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
 
             public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
                 HashMap<String, Object> data = new HashMap<String, Object>();
-                data.put("message", "LimitspeedChanged");
+                data.put("message", "Limitspeed");
                 data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
-                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LimitspeedChanged", data), null);
+                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
             }
 
             public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
@@ -65,7 +65,79 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                 HashMap<String, Object> data = new HashMap<String, Object>();
                 data.put("message", "LimitspeedActivated");
                 data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
-                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LimitspeedActivated", data), null);
+                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+            }
+        }, false);
+        CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
+
+            public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+                HashMap<String, Object> data = new HashMap<String, Object>();
+                data.put("message", "MaxDL");
+                data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getValue());
+                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+            }
+
+            public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+            }
+        }, false);
+        CFG_GENERAL.MAX_CHUNKS_PER_FILE.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
+
+            public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+                HashMap<String, Object> data = new HashMap<String, Object>();
+                data.put("message", "MaxConDL");
+                data.put("data", CFG_GENERAL.MAX_CHUNKS_PER_FILE.getValue());
+                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+            }
+
+            public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+            }
+        }, false);
+        CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
+
+            public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+                HashMap<String, Object> data = new HashMap<String, Object>();
+                data.put("message", "MaxConHost");
+                data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getValue());
+                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+            }
+
+            public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+            }
+        }, false);
+        CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                HashMap<String, Object> data = new HashMap<String, Object>();
+                data.put("message", "MaxConHostActivated");
+                data.put("data", CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled());
+                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+            }
+        }, false);
+        CFG_GENERAL.AUTO_RECONNECT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                HashMap<String, Object> data = new HashMap<String, Object>();
+                data.put("message", "Reconnect");
+                data.put("data", CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled());
+                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+            }
+        }, false);
+        CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                HashMap<String, Object> data = new HashMap<String, Object>();
+                data.put("message", "Premium");
+                data.put("data", CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
+                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
             }
         }, false);
     }
@@ -140,6 +212,11 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                             break;
                         }
                         JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkstatusChanged", data), null);
+                    } else if (param instanceof String) {
+                        data.put("linkID", dl.getUniqueID().getID());
+                        data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                        data.put("action", (String) param);
+                        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkChanged", data), null);
                     } else {
                         LinkStatus linkStatus = dl.getLinkStatus();
                         String lastMessage = linkStatusMessages.get(dl.getUniqueID().getID());
@@ -301,6 +378,10 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
 
     @Override
     public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+        if (event.getParameter() instanceof CrawledLink) {
+            CrawledLink dl = (CrawledLink) event.getParameter();
+        }
+
     }
 
     @SuppressWarnings("unchecked")
