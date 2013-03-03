@@ -219,22 +219,36 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                         JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkChanged", data), null);
                     } else {
                         LinkStatus linkStatus = dl.getLinkStatus();
-                        String lastMessage = linkStatusMessages.get(dl.getUniqueID().getID());
-                        if (lastMessage == null) {
-                            lastMessage = "";
-                        }
-                        String newMessage = linkStatus.getMessage(false);
-                        if (newMessage == null) {
-                            newMessage = "";
-                        }
-                        if (!lastMessage.equals(newMessage)) {
-                            linkStatusMessages.remove(dl.getUniqueID().getID());
-                            linkStatusMessages.put(dl.getUniqueID().getID(), newMessage);
-                            data.put("action", "MessageChanged");
+                        if (linkStatus.getLatestStatus() == 2 && linkStatus.isPluginActive()) { // && linkStatus.getStatus() !=
+                                                                                                // linkStatus.getLatestStatus()) {
                             data.put("linkID", dl.getUniqueID().getID());
+                            data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                            data.put("action", "Finished");
+                            JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkChanged", data), null);
+                            if (dl.getFilePackage().getFinishedDate() > 0) {
+                                data = new HashMap<String, Object>();
+                                data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                                data.put("action", "PackageFinished");
+                                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("PackageFinished", data), null);
+                            }
+                        } else {
+                            String lastMessage = linkStatusMessages.get(dl.getUniqueID().getID());
+                            if (lastMessage == null) {
+                                lastMessage = "";
+                            }
+                            String newMessage = linkStatus.getMessage(false);
+                            if (newMessage == null) {
+                                newMessage = "";
+                            }
+                            if (!lastMessage.equals(newMessage)) {
+                                linkStatusMessages.remove(dl.getUniqueID().getID());
+                                linkStatusMessages.put(dl.getUniqueID().getID(), newMessage);
+                                data.put("action", "MessageChanged");
+                                data.put("linkID", dl.getUniqueID().getID());
 
-                            data.put("NewValue", newMessage);
-                            JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkstatusChanged", data), null);
+                                data.put("NewValue", newMessage);
+                                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkstatusChanged", data), null);
+                            }
                         }
                     }
                 }
