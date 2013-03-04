@@ -1,0 +1,9 @@
+LogAction=Kreiraj Log
+LogAction_actionPerformed_wait_=Molimo sačekajte...
+LogAction_tooltip=Kreiraj Log
+LogModel_getStringValue_between_=Između %s1 i %s2
+LogModel_initColumns_time_=Vrijeme
+LogModel_initColumns_x_=Provjeri
+LogTable_onContextMenu_disable_=Deselektuj
+LogTable_onContextMenu_enable_=Selektuj
+SendLogDialog_SendLogDialog_title_=Pošalji izvještaj o Greški
