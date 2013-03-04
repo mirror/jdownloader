@@ -1,0 +1,11 @@
+LogAction=Bir Günlük oluştur
+LogAction_actionPerformed_givelogid_=Lütfen bu günlük ID'sini destek biriminize gönderin!
+LogAction_actionPerformed_wait_=Lütfen bekleyin...
+LogAction_actionPerformed_zip_title_=Günlük Paketi oluşturuluyor
+LogAction_getString_uploading_=Günlükleriniz hazırlanıyor
+LogAction_tooltip=Bir Günlük oluştur
+LogModel_getStringValue_between_=%s1 ve %s2 arasında
+LogModel_initColumns_time_=Süre
+LogModel_initColumns_x_=İşaretle
+LogTable_onContextMenu_disable_=Seçimi kaldır
+LogTable_onContextMenu_enable_=Seç
