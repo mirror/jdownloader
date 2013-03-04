@@ -9,3 +9,5 @@ LogModel_initColumns_time_=Süre
 LogModel_initColumns_x_=İşaretle
 LogTable_onContextMenu_disable_=Seçimi kaldır
 LogTable_onContextMenu_enable_=Seç
+SendLogDialog_SendLogDialog_title_=Bir Hata raporu gönder
+SendLogDialog_layoutDialogContent_desc_=Sorun ne zaman meydana geldi? Lütfen dikkate değer olabilir tüm girişleri kontrol edin!
