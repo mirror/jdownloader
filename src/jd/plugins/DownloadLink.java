@@ -48,8 +48,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
 /**
- * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
- * dargestellt
+ * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle dargestellt
  * 
  * @author astaldo
  */
@@ -57,6 +56,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public static class DownloadLinkProperty {
         public static enum Property {
+            RESET,
             NAME,
             PRIORITY,
             ENABLED,
@@ -420,8 +420,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Liefert den Datei Namen dieses Downloads zurueck. Wurde der Name mit setfinalFileName(String) festgelegt wird dieser Name
-     * zurueckgegeben
+     * Liefert den Datei Namen dieses Downloads zurueck. Wurde der Name mit setfinalFileName(String) festgelegt wird dieser Name zurueckgegeben
      * 
      * @return Name des Downloads
      */
@@ -469,8 +468,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch
-     * ermittelt.
+     * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch ermittelt.
      * 
      * @return Statischer Dateiname
      */
@@ -513,8 +511,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * this will abort an ongoing download of this DownloadLink, the abortDownload method of the SingleDownloadController will start a new
-     * Thread for terminating of the download, so you will have to check manually when the download finally has stopped
+     * this will abort an ongoing download of this DownloadLink, the abortDownload method of the SingleDownloadController will start a new Thread for
+     * terminating of the download, so you will have to check manually when the download finally has stopped
      */
     public void abort() {
         SingleDownloadController dlc = getDownloadLinkController();
@@ -522,8 +520,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
-     * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
+     * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob schon geprueft worden
+     * ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
      * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
@@ -592,12 +590,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         // }
         // plg.init();
         // plg.resetDownloadlink(this);
-        if (this.getDownloadInstance() == null) notifyChanges(AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE, "Reset");
+        if (this.getDownloadInstance() == null) notifyChanges(AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.RESET, null));
     }
 
     /**
-     * deletes the final downloaded file if finalfile is true deletes the partfile if partfile is true deletes the downloadfolder if its
-     * emptry and NOT equal to default downloadfolder
+     * deletes the final downloaded file if finalfile is true deletes the partfile if partfile is true deletes the downloadfolder if its emptry and NOT equal to
+     * default downloadfolder
      */
     public void deleteFile(boolean partfile, boolean finalfile) {
         int maxtries = 5;
@@ -784,10 +782,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum Speichern der Datei verwendet. ist er == null, so wird der
-     * dateiName im Plugin automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist endgueltig. Diese Funktion sollte nach Moeglichkeit
-     * nicht von Plugins verwendet werden. Sie gibt der Gui die Moeglichkeit unabhaengig von den Plugins einen Downloadnamen festzulegen.
-     * Userinputs>Automatische Erkennung - Plugins sollten {@link #setName(String)} verwenden um den Speichernamen anzugeben.
+     * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum Speichern der Datei verwendet. ist er == null, so wird der dateiName im Plugin
+     * automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist endgueltig. Diese Funktion sollte nach Moeglichkeit nicht von Plugins verwendet werden. Sie
+     * gibt der Gui die Moeglichkeit unabhaengig von den Plugins einen Downloadnamen festzulegen. Userinputs>Automatische Erkennung - Plugins sollten
+     * {@link #setName(String)} verwenden um den Speichernamen anzugeben.
      */
     public void setFinalFileName(String newfinalFileName) {
         String oldName = null;
@@ -823,8 +821,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Diese Methhode fragt das eigene Plugin welche Informationen ueber die File bereit gestellt werden. Der String eignet Sich zur
-     * Darstellung in der UI
+     * Diese Methhode fragt das eigene Plugin welche Informationen ueber die File bereit gestellt werden. Der String eignet Sich zur Darstellung in der UI
      */
     @Override
     public String toString() {
