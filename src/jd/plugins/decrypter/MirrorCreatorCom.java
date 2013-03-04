@@ -71,7 +71,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         for (String link : links) {
             Browser br2 = br.cloneBrowser();
             br2.getPage("http://www.mirrorcreator.com" + link);
-            String[] redirectLinks = br2.getRegex("(/redirect?/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
+            String[] redirectLinks = br2.getRegex("(/(redirect?|hlink)/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
             if (redirectLinks == null || redirectLinks.length == 0) {
                 redirectLinks = br2.getRegex("><a href=(.*?)target=").getColumn(0);
                 if (redirectLinks == null || redirectLinks.length == 0) {
@@ -89,8 +89,8 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 br2 = br.cloneBrowser();
                 String dllink = null;
                 // Handling for links that need to be regexed or that need to be get by redirect
-                if (singlelink.matches("/redirect?/[0-9A-Z]+/[a-z0-9]+")) {
-                    br2.getPage("http://www.mirrorcreator.com" + singlelink);
+                if (singlelink.matches("/(redirect?|hlink)/[0-9A-Z]+/[a-z0-9]+")) {
+                    br2.getPage("http://www.mirrorcreator.com" + singlelink.trim());
                     dllink = br2.getRedirectLocation();
                     if (dllink == null) {
                         dllink = br2.getRegex("Please <a href=(\"|\\')?(http.*?)(\"|\\')? ").getMatch(1);
