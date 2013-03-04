@@ -306,7 +306,7 @@ public class ReloadCc extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 2 * 60 * 1000l);
             case 503:
                 /* temp multihoster issue, maintenance period, block host for 10 mins */
-                if (statusMessage == null) statusMessage = "Hoster temporarily not possible";
+                if (statusMessage == null) statusMessage = "Reload.cc Server Maintenance";
                 tempUnavailableHoster(account, downloadLink, 3 * 60 * 1000);
                 /* only disable plugin for this link */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 10 * 60 * 1000l);
