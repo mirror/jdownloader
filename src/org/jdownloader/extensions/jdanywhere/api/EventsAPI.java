@@ -199,7 +199,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                         if (((DownloadLinkProperty) param).getProperty() == Property.RESET) {
                             data.put("linkID", dl.getUniqueID().getID());
                             data.put("packageID", dl.getFilePackage().getUniqueID().toString());
-                            data.put("action", (String) param);
+                            data.put("action", "Reset");
                             JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkChanged", data), null);
                         } else {
                             data.put("linkID", dl.getUniqueID().getID());
