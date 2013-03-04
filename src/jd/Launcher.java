@@ -333,7 +333,7 @@ public class Launcher {
     }
 
     private static void go() {
-        Launcher.LOG.info("Initialize JDownloader");
+        Launcher.LOG.info("Initialize JDownloader2");
         try {
             Log.closeLogfile();
         } catch (final Throwable e) {
