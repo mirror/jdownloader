@@ -28,7 +28,7 @@ public class ReloadCc extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     private static final String                            PLUGIN_VERSION_KEY = "PLUGINVERSION";
-    private static final String                            PLUGIN_VERSION     = "0.2.3";
+    private static final String                            PLUGIN_VERSION     = "0.2.4";
 
     public ReloadCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -228,7 +228,16 @@ public class ReloadCc extends PluginForHost {
         try {
             ret = br.getPage("https://reload.cc/api/login?via=jd&v=1&get_supported=true&get_connection_limits=1&user=" + Encoding.urlEncode(account.getUser()) + "&" + getPasswordParam(account));
         } catch (BrowserException e) {
-            handleAPIErrors(br, account, null, null);
+            int status = br.getHttpConnection().getResponseCode();
+            if (status == 401) {
+                account.setProperty("hashed", null);
+                account.setProperty("hashedFor", null);
+
+                // Retry with plaintext password
+                return login(account);
+            } else {
+                handleAPIErrors(br, account, null, null);
+            }
         } catch (ConnectException e) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No connection possible", 3 * 60 * 1000l);
         }
