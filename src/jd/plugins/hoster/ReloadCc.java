@@ -28,7 +28,7 @@ public class ReloadCc extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     private static final String                            PLUGIN_VERSION_KEY = "PLUGINVERSION";
-    private static final String                            PLUGIN_VERSION     = "0.2.2";
+    private static final String                            PLUGIN_VERSION     = "0.2.3";
 
     public ReloadCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -144,8 +144,9 @@ public class ReloadCc extends PluginForHost {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         int maxConnections = this.getMaxSimultanDownload(link, account);
+        logger.info("MaxConnections: " + maxConnections + " - Setting max Chunks per Download to " + ((maxConnections == Integer.MAX_VALUE) ? 0 : -1));
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, (maxConnections == -1) ? 0 : -1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, (maxConnections == Integer.MAX_VALUE) ? 0 : -1);
             if (!handleAPIErrors(br, account, link, dllink)) return;
 
             if (dl.getConnection().isContentDisposition()) {
