@@ -16,6 +16,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.DownloadLinkProperty;
+import jd.plugins.DownloadLink.DownloadLinkProperty.Property;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
@@ -194,29 +195,32 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                     HashMap<String, Object> data = new HashMap<String, Object>();
                     Object param = event.getParameter(1);
                     if (param instanceof DownloadLinkProperty) {
-                        data.put("linkID", dl.getUniqueID().getID());
-                        data.put("packageID", dl.getFilePackage().getUniqueID().toString());
-                        data.put("NewValue", ((DownloadLinkProperty) param).getValue());
-                        switch (((DownloadLinkProperty) param).getProperty()) {
-                        case NAME:
-                            data.put("action", "NameChanged");
-                            break;
-                        case PRIORITY:
-                            data.put("action", "PriorityChanged");
-                            break;
-                        case ENABLED:
-                            data.put("action", "EnabledChanged");
-                            break;
-                        case AVAILABILITY:
-                            data.put("action", "AvailabilityChanged");
-                            break;
+
+                        if (((DownloadLinkProperty) param).getProperty() == Property.RESET) {
+                            data.put("linkID", dl.getUniqueID().getID());
+                            data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                            data.put("action", (String) param);
+                            JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkChanged", data), null);
+                        } else {
+                            data.put("linkID", dl.getUniqueID().getID());
+                            data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                            data.put("NewValue", ((DownloadLinkProperty) param).getValue());
+                            switch (((DownloadLinkProperty) param).getProperty()) {
+                            case NAME:
+                                data.put("action", "NameChanged");
+                                break;
+                            case PRIORITY:
+                                data.put("action", "PriorityChanged");
+                                break;
+                            case ENABLED:
+                                data.put("action", "EnabledChanged");
+                                break;
+                            case AVAILABILITY:
+                                data.put("action", "AvailabilityChanged");
+                                break;
+                            }
+                            JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkstatusChanged", data), null);
                         }
-                        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkstatusChanged", data), null);
-                    } else if (param instanceof String) {
-                        data.put("linkID", dl.getUniqueID().getID());
-                        data.put("packageID", dl.getFilePackage().getUniqueID().toString());
-                        data.put("action", (String) param);
-                        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkChanged", data), null);
                     } else {
                         LinkStatus linkStatus = dl.getLinkStatus();
                         if (linkStatus.getLatestStatus() == 2 && linkStatus.isPluginActive()) { // && linkStatus.getStatus() !=

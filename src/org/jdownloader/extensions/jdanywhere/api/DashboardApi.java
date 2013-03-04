@@ -96,11 +96,11 @@ public class DashboardApi implements IDashboardApi {
         int running = DownloadWatchDog.getInstance().getActiveDownloads();
         ret.put("running", running > 0);
         ret.put("limit", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
-        if (org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled()) {
-            ret.put("limitspeed", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
-        } else {
-            ret.put("limitspeed", 0);
-        }
+        // if (org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled()) {
+        ret.put("limitspeed", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
+        // } else {
+        // ret.put("limitspeed", 0);
+        // }
         ret.put("reconnect", org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled());
         ret.put("clipboard", org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled());
         ret.put("stopafter", DownloadWatchDog.getInstance().isStopMarkSet());
