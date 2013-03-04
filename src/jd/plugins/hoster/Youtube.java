@@ -78,6 +78,7 @@ public class Youtube extends PluginForHost {
     private static final String PROXY_PORT              = "PROXY_PORT";
 
     public static String unescape(final String s) {
+        if (s == null) return null;
         char ch;
         char ch2;
         final StringBuilder sb = new StringBuilder();
