@@ -131,6 +131,11 @@ public class MultiDebridCom extends PluginForHost {
         br.setFollowRedirects(true);
         String page = br.getPage("http://multi-debrid.com/api.php?user=" + user + "&pass=" + pw + "&link=" + url);
 
+        if (br.containsHTML("\\{\"status\":\"error\",\"link\":null\\}")) {
+            logger.info("API error, API returned NULL, no downloadlink available...temporarily disabling current host...");
+            tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+        }
+
         // parse json
         if (page.contains("Max atteint !")) {
             // max for this host reached, try again in 1h
