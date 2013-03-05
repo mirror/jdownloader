@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://(www\\.)?antena3.com/videos/[\\-/\\w]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://(www\\.)?antena3.com/videos/(?!programas\\.html)[\\-/\\w]+\\.html" }, flags = { 0 })
 public class Antena3ComSalon extends PluginForDecrypt {
 
     public Antena3ComSalon(PluginWrapper wrapper) {
@@ -75,6 +75,10 @@ public class Antena3ComSalon extends PluginForDecrypt {
     }
 
     private void decryptSingleVideo(final CryptedLink link) throws Exception {
+        if (br.containsHTML("<title>Página Entrada Valores Premium</title>")) {
+            logger.info("Found an onlypremium link...");
+            return;
+        }
         String name = br.getRegex("<title>ANTENA 3 TV \\- Vídeos de ([^<>\"]*?)</title>").getMatch(0);
         final String xmlstuff = getXML();
         if (xmlstuff == null || name == null) {

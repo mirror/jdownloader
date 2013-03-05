@@ -26,7 +26,6 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -34,7 +33,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/(#\\!/)?media/set/\\?set=a\\.\\d+\\.\\d+\\.\\d+|facebook\\.com/photo\\.php\\?fbid=\\d+)" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
@@ -82,9 +80,15 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 boolean addAcc = false;
                 if (aa == null) {
                     String username = UserIO.getInstance().requestInputDialog("Enter Loginname for facebook.com :");
-                    if (username == null) throw new DecrypterException(JDL.L("plugins.decrypt.facebookcomgallery.nousername", "Username not entered!"));
+                    if (username == null) {
+                        logger.info("FacebookDecrypter: No username entered while decrypting link: " + parameter);
+                        return decryptedLinks;
+                    }
                     String password = UserIO.getInstance().requestInputDialog("Enter password for facebook.com :");
-                    if (password == null) throw new DecrypterException(JDL.L("plugins.decrypt.facebookcomgallery.nopassword", "Password not entered!"));
+                    if (password == null) {
+                        logger.info("FacebookDecrypter: No password entered while decrypting link: " + parameter);
+                        return decryptedLinks;
+                    }
                     aa = new Account(username, password);
                     addAcc = true;
                 }

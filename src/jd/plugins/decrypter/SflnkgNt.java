@@ -75,9 +75,9 @@ public class SflnkgNt extends PluginForDecrypt {
             gsh.setAddedLink(newparameter);
             br.getPage(gsh.getAddedLink());
         }
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.getPage(gsh.getAddedLink());
-        if (br.getURL().contains("safelinking.net/404")) {
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("safelinking.net/404")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

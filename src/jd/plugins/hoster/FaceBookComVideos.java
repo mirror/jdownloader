@@ -187,7 +187,8 @@ public class FaceBookComVideos extends PluginForHost {
             loginForm.put("pass", Encoding.urlEncode(account.getPass()));
             br.submitForm(loginForm);
             /**
-             * Facebook thinks we're an unknown device, now we prove we're not ;)
+             * Facebook thinks we're an unknown device, now we prove we're not
+             * ;)
              */
             if (br.containsHTML("/checkpoint/")) {
                 br.getPage("https://www.facebook.com/checkpoint/");
@@ -224,7 +225,7 @@ public class FaceBookComVideos extends PluginForHost {
         br.getPage(link.getDownloadURL());
         String getThisPage = br.getRegex("window\\.location\\.replace\\(\"(http:.*?)\"").getMatch(0);
         if (getThisPage != null) br.getPage(getThisPage.replace("\\", ""));
-        if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<h2 class=\"accessible_elem\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"mtm mbs mrs fsm fwn fcg\">[A-Za-z0-9:]+</span>([^<>\"]*?)</div>").getMatch(0);

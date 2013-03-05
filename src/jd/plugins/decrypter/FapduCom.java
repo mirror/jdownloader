@@ -195,6 +195,11 @@ public class FapduCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        externID = br.getRegex("src=\"http://(www\\.)?embed\\.porntube\\.com/(\\d+)\"").getMatch(1);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://porntube.com/videos/x_" + externID));
+            return decryptedLinks;
+        }
         // filename needed for all IDs below here
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);

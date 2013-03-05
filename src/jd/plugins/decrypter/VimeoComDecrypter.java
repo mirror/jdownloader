@@ -94,6 +94,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             String url = quality[0];
             String name = Encoding.htmlDecode(quality[1]);
             String fmt = quality[2];
+            name += "_" + fmt + ".mp4";
             if (fmt != null) fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
             if (fmt != null) {
                 /* best selection is done at the end */
@@ -193,7 +194,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 qualities = new String[quality.length][4];
                 for (int i = 0; i < quality.length; i++) {
                     qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=" + quality[i];
-                    qualities[i][1] = title + ".mp4";
+                    qualities[i][1] = title;
                     qualities[i][2] = quality[i];
                     qualities[i][3] = null;
                 }

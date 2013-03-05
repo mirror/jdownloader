@@ -53,11 +53,14 @@ public class DopeRomsCom extends PluginForHost {
         br.getHeaders().put("Referer", link.getDownloadURL());
         br.getPage("http://doperoms.com/set_language.php?lang=EN");
         br.getPage(link.getDownloadURL());
+        // Offline
         if (br.getURL().equals("http://www.doperoms.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Empty
+        if (br.containsHTML("name=\"No Roms\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<H1>(.*?) <br/><font").getMatch(0);
         String filesize = br.getRegex("<br/><br/>[\t\n\r ]+<center><br/>[^<>\"/:]*?: ([^<>\"]*?)<br/>").getMatch(0);
         System.out.println(br.toString() + "\n");
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         String md5 = br.getRegex(">MD5 Checksum: ([a-z0-9]+)<br/><br").getMatch(0);

@@ -134,6 +134,10 @@ public class MegaDebridEu extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML(">400 Bad Request<")) {
+                logger.info("Temporarily removing hoster from hostlist because of server error 400");
+                tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!this.dl.startDownload()) {

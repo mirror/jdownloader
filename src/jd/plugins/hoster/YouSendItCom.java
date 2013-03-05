@@ -101,7 +101,9 @@ public class YouSendItCom extends PluginForHost {
             // File expired
             if (br.containsHTML("Sorry, this file has expired and cannot be downloaded")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // Link invalid
-            if (br.containsHTML(">The server returned a 404 response")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">Error 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // We're on mainpage
+            if (br.containsHTML("<label for=\"recepientemail\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = null;
             String filesize = null;
             if (br.containsHTML(VERIFYRECEPTIENT)) {
