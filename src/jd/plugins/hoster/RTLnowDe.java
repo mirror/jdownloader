@@ -67,15 +67,17 @@ public class RTLnowDe extends PluginForHost {
 
     private void download(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String linkurl = br.getRegex("data:\'(.*?)\'").getMatch(0);
+        String contentUrl = br.getRegex("data:\'(.*?)\'").getMatch(0);
         final String ivw = br.getRegex("ivw:\'(.*?)\',").getMatch(0);
         final String client = br.getRegex("id:\'(.*?)\'").getMatch(0);
         final String swfurl = br.getRegex("swfobject.embedSWF\\(\"(.*?)\",").getMatch(0);
-        if (linkurl == null || ivw == null || client == null || swfurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (contentUrl == null || ivw == null || client == null || swfurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        linkurl = Encoding.urlDecode("http://" + downloadLink.getHost() + linkurl, true);
+        contentUrl = Encoding.urlDecode(downloadLink.getHost() + contentUrl, true);
+        if (contentUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        contentUrl = "http://" + contentUrl;
 
-        final XPath xPath = xmlParser(linkurl + "&ts=" + System.currentTimeMillis() / 1000);
+        final XPath xPath = xmlParser(contentUrl + "&ts=" + System.currentTimeMillis() / 1000);
         final String query = "/data/playlist/videoinfo";
 
         final String dllink = xPath.evaluate(query + "/filename", doc);
@@ -121,7 +123,7 @@ public class RTLnowDe extends PluginForHost {
 
         } else {
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, contentUrl, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
