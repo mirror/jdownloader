@@ -26,8 +26,8 @@ import org.jdownloader.logging.LogController;
 
 public class FileSignatures {
 
-    private final Signature SIG_TXT = new Signature("TXTfile", null, "Plaintext", ".*\\.(txt|doc|nfo|html|htm|xml)");
-    private Signature[]     SIGNATURES;
+    private final Signature      SIG_TXT = new Signature("TXTfile", null, "Plaintext", ".*\\.(txt|doc|nfo|html|htm|xml)");
+    private volatile Signature[] SIGNATURES;
 
     public static String readFileSignature(File f) throws IOException {
         FileInputStream reader = null;

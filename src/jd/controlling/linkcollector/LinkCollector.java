@@ -80,7 +80,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private transient LinkCollectorEventSender           eventsender          = new LinkCollectorEventSender();
     private static LinkCollector                         INSTANCE             = new LinkCollector();
 
-    private LinkChecker<CrawledLink>                     linkChecker          = null;
+    private volatile LinkChecker<CrawledLink>            linkChecker          = null;
     /**
      * NOTE: only access these fields inside the IOEQ
      */

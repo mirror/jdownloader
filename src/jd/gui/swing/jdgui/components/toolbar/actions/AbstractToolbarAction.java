@@ -4,7 +4,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.images.NewTheme;
 
 public abstract class AbstractToolbarAction extends AppAction {
-    private boolean inited = false;
+    private volatile boolean inited = false;
 
     public AbstractToolbarAction() {
         setIconSizes(32);

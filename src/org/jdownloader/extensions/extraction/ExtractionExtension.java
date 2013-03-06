@@ -362,7 +362,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * 
      * @param archive
      */
-    void removeArchive(Archive archive) {
+    synchronized void removeArchive(Archive archive) {
         archives.remove(archive);
     }
 

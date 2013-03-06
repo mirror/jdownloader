@@ -80,6 +80,11 @@ public class MultiShareCz extends PluginForHost {
                 String hostsSup = br.cloneBrowser().getPage("http://www.multishare.cz/html/mms_support.php");
                 String[] hosts = Regex.getLines(hostsSup);
                 ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+                for (String host : hosts) {
+                    if ("freakshare.net".equalsIgnoreCase(host)) {
+                        supportedHosts.add("freakshare.com");
+                    }
+                }
                 /*
                  * set ArrayList<String> with all supported multiHosts of this service
                  */

@@ -146,9 +146,9 @@ public abstract class Plugin implements ActionListener {
         return password;
     }
 
-    private ConfigContainer config;
+    private volatile ConfigContainer config;
 
-    protected Browser       br = null;
+    protected Browser                br = null;
 
     public Plugin() {
     }

@@ -318,17 +318,17 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         return extension == null ? quickToggleEnabled : extension.isQuickToggleEnabled();
     }
 
-    private String                           classname;
+    private String                                    classname;
 
-    protected Class<AbstractExtension<?, ?>> pluginClass;
+    protected volatile Class<AbstractExtension<?, ?>> pluginClass;
 
     public void _setPluginClass(Class<AbstractExtension<?, ?>> pluginClass) {
         this.pluginClass = pluginClass;
     }
 
-    private Constructor<AbstractExtension<?, ?>> constructor;
+    private volatile Constructor<AbstractExtension<?, ?>> constructor;
 
-    private String                               jarPath;
+    private String                                        jarPath;
 
     public String getClassname() {
         return classname;

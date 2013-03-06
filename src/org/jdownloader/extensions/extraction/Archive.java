@@ -116,7 +116,7 @@ public class Archive {
 
     private ContentView                 contents;
 
-    private ArchiveSettings             settings;
+    private volatile ArchiveSettings    settings;
 
     public ArchiveFactory getFactory() {
         return factory;
@@ -285,11 +285,12 @@ public class Archive {
         synchronized (this) {
             if (settings != null) return settings;
             Application.getResource("cfg/archives/").mkdirs();
-            settings = JsonConfig.create(Application.getResource("cfg/archives/" + getFactory().getID()), ArchiveSettings.class);
-            if (settings.getAutoExtract() == null || BooleanStatus.UNSET.equals(settings.getAutoExtract())) {
+            ArchiveSettings lsettings = JsonConfig.create(Application.getResource("cfg/archives/" + getFactory().getID()), ArchiveSettings.class);
+            if (lsettings.getAutoExtract() == null || BooleanStatus.UNSET.equals(lsettings.getAutoExtract())) {
                 /* only set AutoExtract value when it is UNSET */
-                settings.setAutoExtract(getFactory().getDefaultAutoExtract());
+                lsettings.setAutoExtract(getFactory().getDefaultAutoExtract());
             }
+            settings = lsettings;
         }
         return settings;
     }

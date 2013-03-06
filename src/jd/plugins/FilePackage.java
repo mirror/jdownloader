@@ -144,9 +144,9 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         return uniqueID;
     }
 
-    private transient FilePackageView     fpInfo = null;
+    private volatile transient FilePackageView fpInfo = null;
 
-    private ChildComparator<DownloadLink> sorter;
+    private ChildComparator<DownloadLink>      sorter;
 
     /*
      * (non-Javadoc)

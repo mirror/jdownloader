@@ -34,8 +34,8 @@ public class ModDbComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private boolean       loaded = false;
-    private static Object LOCK   = new Object();
+    private volatile boolean loaded = false;
+    private static Object    LOCK   = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

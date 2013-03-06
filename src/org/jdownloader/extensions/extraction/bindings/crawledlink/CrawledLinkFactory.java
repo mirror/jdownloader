@@ -139,7 +139,6 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
 
     @Override
     public void onArchiveFinished(Archive archive) {
-
         String id = getID();
         if (id == null) {
             for (ArchiveFile af : archive.getArchiveFiles()) {
@@ -169,9 +168,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
 
             }
             archive.getSettings().setPasswords(pws);
-
         }
-
     }
 
     @Override

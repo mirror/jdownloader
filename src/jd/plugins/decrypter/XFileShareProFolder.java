@@ -83,6 +83,7 @@ public class XFileShareProFolder extends PluginForDecrypt {
                 }
             }
         }
+
         if (fpName != null) {
             fpName = "Folder - " + (Encoding.urlDecode(fpName, false));
             FilePackage fp = FilePackage.getInstance();
