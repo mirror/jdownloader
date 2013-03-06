@@ -110,7 +110,8 @@ public class ChoMikujPl extends PluginForDecrypt {
             } else {
                 // Or it's just a specified page of a folder, we remove that to
                 // prevent problems!
-                parameter = parameter.replace(linkending, "");
+                logger.info("Usually linkreplace would be here...");
+                // parameter = parameter.replace(linkending, "");
             }
         }
 
@@ -229,8 +230,6 @@ public class ChoMikujPl extends PluginForDecrypt {
             error = "Can't decrypt link, the account of the owner is banned: %s";
         } else if (br.containsHTML("Chomik o takiej nazwie nie istnieje<|Nie znaleziono - błąd 404")) {
             error = "This link is offline (received error 404): %s";
-        } else if (br.containsHTML("\"/action/UserAccess/ShowAdultContentConfirmation\"")) {
-            error = "This link is only available via account: %s";
         }
         return error;
     }

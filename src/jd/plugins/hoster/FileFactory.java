@@ -56,7 +56,8 @@ import org.mozilla.javascript.Scriptable;
 public class FileFactory extends PluginForHost {
 
     // DEV NOTES
-    // other: currently they 302 redirect all non www. to www. which kills most of this plugin. Adjust COOKIE_HOST to suite future changes,
+    // other: currently they 302 redirect all non www. to www. which kills most
+    // of this plugin. Adjust COOKIE_HOST to suite future changes,
     // or remove COOKIE_HOST from that section of the script.
 
     private static final String  FILESIZE          = "id=\"info\" class=\"metadata\">[\t\n\r ]+<span>(.*?) file uploaded";
@@ -157,7 +158,8 @@ public class FileFactory extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) throws PluginException {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com//", ".com/"));
         link.setUrlDownload(link.getDownloadURL().replaceAll("://filefactory", "://www.filefactory"));
-        // set trafficshare links like 'normal' links, this allows downloads to continue living if the uploader doesn't discontinues
+        // set trafficshare links like 'normal' links, this allows downloads to
+        // continue living if the uploader doesn't discontinues
         // trafficshare for that uid. Also re-format premium only links!
         if (link.getDownloadURL().contains(TRAFFICSHARELINK) || link.getDownloadURL().contains("/digitalsales/")) {
             String[][] uid = new Regex(link.getDownloadURL(), "(https?://.*?filefactory\\.com/)(trafficshare|digitalsales)/[a-z0-9]{32}/([^/]+)/?").getMatches();
@@ -211,7 +213,8 @@ public class FileFactory extends PluginForHost {
             final String loaded = br.getRegex("You have used (.*?) out").getMatch(0);
             String max = br.getRegex("limit of (.*?)\\. ").getMatch(0);
             if (max != null && loaded != null) {
-                // you don't need to strip characters or reorder its structure. The source is fine!
+                // you don't need to strip characters or reorder its structure.
+                // The source is fine!
                 ai.setTrafficMax(SizeFormatter.getSize(max));
                 ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(loaded));
             } else {
@@ -259,9 +262,8 @@ public class FileFactory extends PluginForHost {
     }
 
     public String getUrl() throws IOException, PluginException {
-        String url = br.getRegex("<div.*?id=\"downloadLink\".*?>.*?<a .*?href=\"(.*?)\".*?\"downloadLinkTarget").getMatch(0);
-        if (url == null) url = br.getRegex("greyDownload\".*?<div.*?id=\"free\".*?>.*?<a .*?href=\"(http.*?)\".*?\"downloadLinkTarget").getMatch(0);
-        if (url == null) url = br.getRegex("downloadLinkTarget.*?href=\"(http.*?)\".*?\"").getMatch(0);
+        String url = br.getRegex("\"(http://[a-z0-9\\-]+\\.filefactory\\.com/dl/[^<>\"]*?)\"").getMatch(0);
+        if (url == null) url = br.getRegex("id=\"downloadLinkTarget\" style=\"display: none;\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (url == null) {
             Context cx = null;
             try {
@@ -434,8 +436,9 @@ public class FileFactory extends PluginForHost {
 
     public void handleTrafficShare(final DownloadLink downloadLink) throws Exception {
         /*
-         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl,
-         * Unknown until proven otherwise.
+         * This is for filefactory.com/trafficshare/ sharing links or I guess
+         * what we call public premium links. This might replace dlUrl, Unknown
+         * until proven otherwise.
          */
         logger.finer("Traffic sharing link - Free Premium Donwload");
         String finalLink = br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/[^\"]+)\"([^>]+)?>Download").getMatch(0);

@@ -235,13 +235,17 @@ public class Keep2ShareCc extends PluginForHost {
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("class=\"premium\">Premium:[\t\n\r ]+(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
         if (expire == null) {
-            account.setValid(false);
-            return ai;
+            if (br.containsHTML(">Premium:[\t\n\r ]+LifeTime")) {
+                ai.setStatus("Premium Lifetime User");
+            } else {
+                account.setValid(false);
+                return ai;
+            }
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
+            ai.setStatus("Premium User");
         }
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 

@@ -203,9 +203,10 @@ public class FreeWayMe extends PluginForHost {
                 tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Diese Datei wurde nicht gefunden.")) {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
-            } else if (error.equalsIgnoreCase("Unbekannter Fehler #2")) {
+            } else if (error.equalsIgnoreCase("Unbekannter Fehler #2") || error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
                 /*
-                 * after x retries we disable this host and retry with normal plugin
+                 * after x retries we disable this host and retry with normal
+                 * plugin
                  */
                 if (link.getLinkStatus().getRetryCount() >= 2) {
                     /* reset retrycounter */

@@ -27,6 +27,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -42,6 +43,9 @@ public class VideoSlasherCom extends PluginForHost {
         return "http://www.videoslasher.com/terms";
     }
 
+    private static final String MAINTENANCE         = ">The service VideoSlasher is currently down for maintenance";
+    private static final String MAINTENANCEUSERTEXT = JDL.L("hoster.videoslashercom.errors.undermaintenance", "This server is under Maintenance");
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -51,6 +55,10 @@ public class VideoSlasherCom extends PluginForHost {
         if (br.getURL().equals("http://www.videoslasher.com/404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Link offline
         if (br.containsHTML(">This material has been removed due to infringement")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(MAINTENANCE)) {
+            link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
+            return AvailableStatus.TRUE;
+        }
         final Regex fileInfo = br.getRegex("<h1 style=\"margin:20px 20px 10px 20px\">([^<>\"]*?) \\((\\d+(,\\d+)? [A-Za-z]{1,5})\\)</h1>");
         final String filename = fileInfo.getMatch(0);
         final String filesize = fileInfo.getMatch(1);
@@ -63,6 +71,7 @@ public class VideoSlasherCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
         br.postPage(br.getURL(), "foo=bar&confirm=Close+Ad+and+Watch+as+Free+User");
         final String playlist = br.getRegex("\\'(/playlist/[a-z0-9]+)\\'").getMatch(0);
         if (playlist == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
