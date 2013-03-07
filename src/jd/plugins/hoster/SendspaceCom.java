@@ -341,7 +341,7 @@ public class SendspaceCom extends PluginForHost {
         try {
             apiRequest("http://api.sendspace.com/rest/?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
         } catch (final Exception e) {
-            logger.warning("Argh it happened again...");
+            logger.info("Unexpected error while trying to download, maybe old sessionkey, logging in again...");
             login(account, true);
             apiRequest("http://api.sendspace.com/rest/?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
         }
