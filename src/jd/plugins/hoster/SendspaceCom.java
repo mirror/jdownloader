@@ -18,14 +18,17 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -52,9 +55,11 @@ public class SendspaceCom extends PluginForHost {
 
     private static final String JDOWNLOADERAPIKEY = "T1U5ODVNT1FDTQ==";
     // private static final String JDUSERNAME = "cHNwem9ja2Vyc2NlbmVqZA==";
-    private static String       CURRENTERRORCODE;
+    private String              CURRENTERRORCODE;
     private static String       SESSIONTOKEN;
     private static String       SESSIONKEY;
+    private static Object       LOCK              = new Object();
+    private static final String COOKIE_HOST       = "http://sendspace.com";
 
     // TODO: Add handling for password protected files for handle premium,
     // actually it only works for handle free
@@ -221,7 +226,7 @@ public class SendspaceCom extends PluginForHost {
                     String tmpmin = br.getRegex("again in.*?h:(\\d+)m or").getMatch(0);
                     if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
                     int waittime = ((3600 * hours) + (60 * minutes) + 1) * 1000;
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
                 }
                 // Password protected links handling
                 String passCode = null;
@@ -332,8 +337,14 @@ public class SendspaceCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account);
-        apiRequest("http://api.sendspace.com/rest/?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
+        login(account, false);
+        try {
+            apiRequest("http://api.sendspace.com/rest/?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
+        } catch (final Exception e) {
+            logger.warning("Argh it happened again...");
+            login(account, true);
+            apiRequest("http://api.sendspace.com/rest/?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
+        }
         String linkurl = br.getRegex("url=\"(http[^<>\"]*?)\"").getMatch(0);
         if (linkurl == null) {
             logger.warning("Final downloadlink couldn't be found!");
@@ -359,18 +370,50 @@ public class SendspaceCom extends PluginForHost {
         br.setRequestIntervalLimit(getHost(), 750);
     }
 
-    public void login(Account account) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        createSessToken();
-        try {
-            apiLogin(account.getUser(), account.getPass());
-        } catch (final Exception e) {
-            logger.warning("Disabling premium account...");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        if ("Lite".equals(get("membership_type"))) {
-            logger.info("This is a free account, JDownloader doesn't support sendspace.com free accounts!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    public void login(final Account account, final boolean force) throws IOException, PluginException {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        SendspaceCom.SESSIONTOKEN = account.getStringProperty("sessiontoken", null);
+                        SendspaceCom.SESSIONKEY = account.getStringProperty("sessionkey", null);
+                        return;
+                    }
+                }
+                createSessToken();
+                apiLogin(account.getUser(), account.getPass());
+                if ("Lite".equals(get("membership_type"))) {
+                    logger.info("This is a free account, JDownloader doesn't support sendspace.com free accounts!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+                account.setProperty("sessiontoken", SendspaceCom.SESSIONTOKEN);
+                account.setProperty("sessionkey", SendspaceCom.SESSIONKEY);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                account.setProperty("sessiontoken", Property.NULL);
+                account.setProperty("sessionkey", Property.NULL);
+                throw e;
+            }
         }
     }
 
@@ -379,8 +422,8 @@ public class SendspaceCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
         try {
-            login(account);
-        } catch (PluginException e) {
+            login(account, true);
+        } catch (final PluginException e) {
             account.setValid(false);
             return ai;
         }
@@ -418,10 +461,6 @@ public class SendspaceCom extends PluginForHost {
         return br.getRegex("<" + parameter + ">([^<>\"]*?)</" + parameter + ">").getMatch(0);
     }
 
-    private String getFid(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-    }
-
     private String getErrorcode() {
         return br.getRegex("<error code=\"(\\d+)\"").getMatch(0);
     }
@@ -432,17 +471,21 @@ public class SendspaceCom extends PluginForHost {
 
     private void createSessToken() throws IOException, PluginException {
         apiRequest("http://api.sendspace.com/rest/", "?method=auth.createtoken&api_key=" + Encoding.Base64Decode(JDOWNLOADERAPIKEY) + "&api_version=1.0&response_format=xml&app_version=0.1");
-        SESSIONTOKEN = get("token");
-        if (SESSIONTOKEN == null) {
+        SendspaceCom.SESSIONTOKEN = get("token");
+        if (SendspaceCom.SESSIONTOKEN == null) {
             logger.warning("sessiontoken could not be found!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
-    @SuppressWarnings("unused")
-    private boolean sessionOk() throws IOException, PluginException {
-        apiRequest("http://api.sendspace.com/rest/", "?method=auth.checksession&session_key=" + SESSIONKEY);
-        if (!"ok".equals(get("session")))
+    private boolean sessionOk() {
+        boolean failed = false;
+        try {
+            apiRequest("http://api.sendspace.com/rest/", "?method=auth.checksession&session_key=" + SendspaceCom.SESSIONKEY);
+        } catch (final Exception e) {
+            failed = true;
+        }
+        if (!"ok".equals(get("session")) || failed)
             return false;
         else
             return true;
@@ -454,16 +497,15 @@ public class SendspaceCom extends PluginForHost {
     }
 
     private void apiLogin(final String username, final String password) throws IOException, PluginException {
-        // lowercase(md5(token+lowercase(md5(password))))
         apiRequest("http://api.sendspace.com/rest/", "?method=auth.login&token=" + SESSIONTOKEN + "&user_name=" + username + "&tokened_password=" + JDHash.getMD5(SESSIONTOKEN + JDHash.getMD5(password).toLowerCase()));
         SESSIONKEY = get("session_key");
         if (SESSIONKEY == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     private void handleAPIErrors() throws PluginException {
-        final String errcode = getErrorcode();
-        if (errcode != null) {
-            final int error = Integer.parseInt(errcode);
+        CURRENTERRORCODE = getErrorcode();
+        if (CURRENTERRORCODE != null) {
+            final int error = Integer.parseInt(CURRENTERRORCODE);
             switch (error) {
             case 5:
                 logger.warning("API_ERROR_BAD_API_VERSION");
@@ -497,9 +539,12 @@ public class SendspaceCom extends PluginForHost {
             case 26:
                 logger.warning("API_ERROR_INVALID_FILE_URL");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 30:
+                logger.warning("API ERROR 30: Too many sessions open for account (re-login required, temp. disabling account)");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             default:
-                logger.warning("HTML code: " + br.toString());
                 logger.warning("Unknown API errorcode: " + CURRENTERRORCODE);
+                logger.warning("HTML code: " + br.toString());
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

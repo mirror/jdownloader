@@ -248,7 +248,7 @@ public class SharedBitNet extends PluginForHost {
         }
         br.getPage("https://sharedbit.net/account");
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("subscription renewal at <b>([^<>\"]*?)</b>").getMatch(0);
+        final String expire = br.getRegex("class=\"until\">valid until \\&#151; <b>([^<>\"]*?)</b></span>").getMatch(0);
         if (expire == null) {
             account.setValid(false);
             return ai;
