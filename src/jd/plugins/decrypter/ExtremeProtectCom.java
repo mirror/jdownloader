@@ -29,7 +29,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.com" }, urls = { "http://[\\w\\.]*?extreme-protect\\.com/(linkcheck|linkidwoc)\\.php\\?linkid=[a-z]+" }, flags = { 0 })
 public class ExtremeProtectCom extends PluginForDecrypt {
@@ -47,7 +46,7 @@ public class ExtremeProtectCom extends PluginForDecrypt {
         br.getPage(parameter);
         boolean failed = true;
         for (int i = 0; i <= 5; i++) {
-            if (!br.containsHTML(RECAPTCHATEXT) && !br.containsHTML(RECAPTCHATEXT2)) return null;
+            if (!br.containsHTML(RECAPTCHATEXT) && !br.containsHTML(RECAPTCHATEXT2)) { return null; }
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
             rc.parse();
@@ -63,10 +62,16 @@ public class ExtremeProtectCom extends PluginForDecrypt {
             break;
         }
         if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
-        if (!br.containsHTML("Title:")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("<a href= target=_blank></a>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<td style=\\'border:1px;font\\-weight:bold;font\\-size:90%;font\\-family:Arial,Helvetica,sans-serif;\\'>(.*?)</td>").getMatch(0);
         String[] links = br.getRegex("target=_blank>(.*?)</a>").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
         if (fpName != null) {

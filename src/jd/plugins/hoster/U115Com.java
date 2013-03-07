@@ -25,7 +25,6 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -36,6 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -47,18 +47,12 @@ public class U115Com extends PluginForHost {
     private static final String MAINPAGE              = "http://115.com/";
     private static final String UNDERMAINTENANCEURL   = "http://u.115.com/weihu.html";
     private static final String UNDERMAINTENANCETEXT  = "The servers are under maintenance";
-    private static final String NOFREESLOTS           = "网络繁忙时段，非登陆用户其它下载地址暂时关闭。推荐您使用优蛋下载";
     private static final String ACCOUNTNEEDEDUSERTEXT = "Account is needed to download this link";
-    private static final String EXACTLINKREGEX        = "\"(http://[a-z0-9]+\\.115\\.com/[a-z0-9_\\-]+\\d+/[^<>\"\\'/]*?/[^<>\"\\'/]*?/[^<>\"\\']*?)\"";
     private static Object       LOCK                  = new Object();
+    private boolean             pluginloaded          = false;
 
     public U115Com(PluginWrapper wrapper) {
         super(wrapper);
-        /**
-         * 10 seconds waittime between the downloadstart of simultan DLs of this
-         * host
-         */
-        this.setStartIntervall(10000l);
         this.enablePremium();
     }
 
@@ -67,7 +61,7 @@ public class U115Com extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepareBrowser(br);
         br.getPage(link.getDownloadURL());
@@ -96,73 +90,12 @@ public class U115Com extends PluginForHost {
         }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filesize = filesize.replace(",", "");
-        link.setFinalFileName(filename);
+        link.setProperty("plainfilename", filename);
+        link.setFinalFileName(Encoding.htmlDecode(filename));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         parseSHA1(link, br);
         if (true) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.u115com.only4registered", ACCOUNTNEEDEDUSERTEXT));
         return AvailableStatus.TRUE;
-    }
-
-    public String findLink(DownloadLink link) throws Exception {
-        String linkToDownload = br.getRegex(EXACTLINKREGEX).getMatch(0);
-        if (linkToDownload == null) {
-            linkToDownload = br.getRegex("<div class=\"btn\\-wrap\">[\t\n\r ]+<a href=\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/[^\"\\'<>]+)\"").getMatch(0);
-            if (linkToDownload == null) {
-                /** First way: For freeusers */
-                String pickLink = br.getRegex("\"(/\\?ct=pickcode\\&.*?)\"").getMatch(0);
-                if (pickLink != null) {
-                    String waittime = br.getRegex("id=\"js_get_download_second\">(\\d+)</b>").getMatch(0);
-                    if (waittime == null) waittime = br.getRegex("var second = (\\d+);").getMatch(0);
-                    if (waittime != null) sleep(Integer.parseInt(waittime) * 1001l, link);
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.getPage("http://115.com" + pickLink);
-                    linkToDownload = findWorkingLink(br.toString().replace("\\", ""));
-                }
-                /** Second way: For logged in freeusers */
-                pickLink = br.getRegex("GetMyDownloadAddress\\(\\'(h=[^<>\"\\']+)\\'").getMatch(0);
-                if (pickLink != null) {
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.getPage("http://115.com/?ct=download&ac=get&" + pickLink);
-                    linkToDownload = findWorkingLink(br.toString().replace("\\", ""));
-                }
-            }
-        }
-        return linkToDownload;
-    }
-
-    /**
-     * Here we get mirrors, sometimes a mirror does not work so we'll check
-     * until we find a working one.
-     * 
-     * @throws PluginException
-     */
-    private String findWorkingLink(String correctedBR) throws IOException, PluginException {
-        if (correctedBR.contains("\"msg_code\":50027")) throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
-        String linksToDownload[] = new Regex(correctedBR, "\"(url|data)\":\"(http:.*?)\"").getColumn(1);
-        if (linksToDownload == null || linksToDownload.length == 0) linksToDownload = new Regex(correctedBR, EXACTLINKREGEX).getColumn(0);
-        if (linksToDownload == null || linksToDownload.length == 0) return null;
-        String finallink = null;
-        Browser br2 = br.cloneBrowser();
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        for (String mirror : linksToDownload) {
-            try {
-                con = br2.openGetConnection(mirror);
-                if (!con.getContentType().contains("html")) {
-                    finallink = mirror;
-                    con.disconnect();
-                    break;
-                } else {
-                    con.disconnect();
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-        }
-        return finallink;
     }
 
     @Override
@@ -189,11 +122,11 @@ public class U115Com extends PluginForHost {
         try {
             if (br == null) { return; }
             br.setReadTimeout(2 * 60 * 1000);
-            br.setCookie("http://u.115.com/", "lang", "en");
+            br.setCookie("http://115.com/", "lang", "zh");
             br.getHeaders().put("User-Agent", ua);
             br.setCustomCharset("utf-8");
             br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-            br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+            br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
             br.getHeaders().put("Pragma", null);
             br.getHeaders().put("Cache-Control", null);
         } catch (Throwable e) {
@@ -205,28 +138,7 @@ public class U115Com extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        doFree(link);
-    }
-
-    public void doFree(DownloadLink link) throws Exception {
-        if (UNDERMAINTENANCEURL.equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
-        if (br.containsHTML(NOFREESLOTS)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
         if (true) throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
-        final String dllink = findLink(link);
-        if (dllink == null) {
-            logger.warning("dllink is null, seems like the regexes are defect!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        parseSHA1(link, br);
-        /** Don't do html decode, it can make the dllink invalid */
-        // dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("(help_down.html|onclick=\"WaittingManager|action=submit_feedback|\"report_box\"|UploadErrorMsg)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @SuppressWarnings("unchecked")
@@ -284,11 +196,71 @@ public class U115Com extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
         br.getPage(link.getDownloadURL());
-        doFree(link);
+        if (!br.containsHTML("onclick=\"MoveMyFile\\.Show\\(true\\);")) throw new PluginException(LinkStatus.ERROR_FATAL, "This file is not downloadable");
+        String plainfilename = link.getStringProperty("plainfilename", null);
+        final String userID = br.getRegex("user_id:   \\'(\\d+)\\'").getMatch(0);
+        final String fileID = br.getRegex("file_id:   \\'(\\d+)\\'").getMatch(0);
+        if (userID == null || fileID == null || plainfilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        // Check if we find the new id, maybe the file has already been added to
+        // the account
+        String newFileID = findNewIdByFilename(plainfilename);
+        if (newFileID == null) {
+            // Add file to account
+            br.getPage("http://115.com/?ct=pickcode&ac=collect&user_id=" + userID + "&tid=" + fileID + "&is_temp=0&aid=1&cid=0");
+            if (!br.containsHTML("\"state\":true")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            newFileID = findNewIdByFilename(plainfilename);
+            if (newFileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // Finally...download it
+        br.getPage("http://115.com/?ct=pickcode&ac=download&pickcode=" + newFileID + "&_t=" + System.currentTimeMillis());
+        String dllink = findLink();
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = Encoding.htmlDecode(dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+        // TODO: Maybe delete file from account after successfull download?!
+    }
+
+    private String findNewIdByFilename(final String plainfilename) throws IOException {
+        // Access filelist in account
+        br.getPage("http://web.api.115.com/files?aid=1&cid=0&o=&asc=0&offset=0&show_dir=1&limit=66&source=&format=json&_t=" + System.currentTimeMillis());
+        String newFileID = null;
+        // Search new ID of the added file via filename
+        String[] files = br.getRegex("(\\{\"fid\":\".*?\\})").getColumn(0);
+        for (final String file : files) {
+            String currentFilename = new Regex(file, "\"n\":\"([^<>\"]*?)\"").getMatch(0);
+            if (currentFilename == null) continue;
+            currentFilename = unescape(currentFilename);
+            if (currentFilename.equals(plainfilename)) {
+                newFileID = new Regex(file, "\"pc\":\"([a-z0-9]+)\"").getMatch(0);
+                break;
+            }
+        }
+        return newFileID;
+    }
+
+    public String findLink() throws Exception {
+        String linkToDownload = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/gdown_group[^<>\"]*?)\"").getMatch(0);
+        return linkToDownload;
+    }
+
+    private synchronized String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            pluginloaded = true;
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     @Override

@@ -126,7 +126,10 @@ public class ChoMikujPl extends PluginForDecrypt {
 
         /** Handle single links 2 */
         String ext = parameter.substring(parameter.lastIndexOf("."));
-        if (ext != null && ext.length() <= 5 && ext.matches(ENDINGS)) {
+        if (ext != null) {
+            ext = new Regex(ext, "(" + ENDINGS + ").+$").getMatch(0);
+        }
+        if (ext != null && ext.matches(ENDINGS)) {
             br.getPage(parameter);
             redirect = br.getRedirectLocation();
             if (redirect != null) {
@@ -333,6 +336,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                  */
                 if (fileIds == null || fileIds.length == 0) {
                     fileIds = tempBr.getRegex("fileIdContainer\" rel=\"(\\d+)\"").getMatches();
+                    addRegexInt(0, 0, 0, 0, 0);
                 }
             }
             if ((fileIds == null || fileIds.length == 0) && (allFolders == null || allFolders.length == 0)) {
@@ -352,7 +356,6 @@ public class ChoMikujPl extends PluginForDecrypt {
                             dl.setName(correctFilename(Encoding.htmlDecode(id[REGEXSORT.get(4)].trim())));
                         } else {
                             dl.setName(correctFilename(Encoding.htmlDecode(id[REGEXSORT.get(0)].trim()) + id[REGEXSORT.get(1)].trim()));
-
                         }
                         dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
                         dl.setAvailable(true);

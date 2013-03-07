@@ -63,7 +63,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://(www\\.)?rapidgator\\.net/file/\\d+(/[^/<>]+\\.html)?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://(www\\.)?rapidgator\\.net/file/([a-z0-9]{32}/[^<>\"/]*?\\.html|\\d+(/[^/<>]+\\.html)?)" }, flags = { 2 })
 public class RapidGatorNet extends PluginForHost {
 
     public RapidGatorNet(PluginWrapper wrapper) {
@@ -283,6 +283,16 @@ public class RapidGatorNet extends PluginForHost {
         }
         if (br.containsHTML(PREMIUMONLYTEXT)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         try {
+            // end of experiment
+            if (br.containsHTML("You have reached your daily downloads limit. Please try")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", 60 * 60 * 1000l);
+            if (br.containsHTML("(You can`t download not more than 1 file at a time in free mode\\.<|>Wish to remove the restrictions\\?)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't download more than one file within a certain time period in free mode", 60 * 60 * 1000l);
+            final String freedlsizelimit = br.getRegex("\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
+            if (freedlsizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.rapidgatornet.only4premium", "No free download link for this file"));
+            final String reconnectWait = br.getRegex("Delay between downloads must be not less than (\\d+) min\\.<br>Don`t want to wait\\? <a style=\"").getMatch(0);
+            if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWait) + 1) * 60 * 1000l);
+            String fid = new Regex(downloadLink.getDownloadURL(), "rapidgator\\.net/file/(\\d{3,})").getMatch(0);
+            if (fid == null) fid = br.getRegex("var fid = (\\d+);").getMatch(0);
+            if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // far as I can tell it's not needed.
             final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
             for (String link : sitelinks) {
@@ -291,25 +301,14 @@ public class RapidGatorNet extends PluginForHost {
                     simulateBrowser(br2, link);
                 }
             }
-            // end of experiment
-            if (br.containsHTML("You have reached your daily downloads limit. Please try")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", 60 * 60 * 1000l);
-            if (br.containsHTML("(You can`t download not more than 1 file at a time in free mode\\.<|>Wish to remove the restrictions\\?)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't download more than one file within a certain time period in free mode", 60 * 60 * 1000l);
-            final String freedlsizelimit = br.getRegex("\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
-            if (freedlsizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.rapidgatornet.only4premium", "No free download link for this file"));
-            final String reconnectWait = br.getRegex("Delay between downloads must be not less than (\\d+) min\\.<br>Don`t want to wait\\? <a style=\"").getMatch(0);
-            if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWait) + 1) * 60 * 1000l);
             int wait = 30;
             final String waittime = br.getRegex("var secs = (\\d+);").getMatch(0);
             if (waittime != null) wait = Integer.parseInt(waittime);
-            String fid = new Regex(downloadLink.getDownloadURL(), "rapidgator\\.net/file/(\\d+)").getMatch(0);
             Browser br2 = br.cloneBrowser();
             prepareBrowser(br2);
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            if (fid != null)
-                br2.getPage("http://rapidgator.net/download/AjaxStartTimer?fid=" + fid);
-            else
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br2.getPage("http://rapidgator.net/download/AjaxStartTimer?fid=" + fid);
             String sid = br2.getRegex("sid\":\"([a-zA-Z0-9]{32})").getMatch(0);
             String state = br2.getRegex("state\":\"([^\"]+)").getMatch(0);
             if (!"started".equalsIgnoreCase(state)) {
