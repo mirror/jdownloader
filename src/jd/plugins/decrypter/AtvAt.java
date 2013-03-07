@@ -39,8 +39,8 @@ public class AtvAt extends PluginForDecrypt {
     }
 
     /**
-     * Important note: Via browser the videos are streamed via RTMP (maybe even
-     * in one part) but with this method we get HTTP links which is fine.
+     * Important note: Via browser the videos are streamed via RTMP (maybe even in one part) but with this method we get HTTP links which is
+     * fine.
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -69,7 +69,9 @@ public class AtvAt extends PluginForDecrypt {
             return decryptedLinks;
         }
         String name = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
-        final String allLinks = br.getRegex("video_urls\":\\[(\".*?\")\\],").getMatch(0);
+        String allLinks = br.getRegex("video_urls\":\\[(\".*?\")\\],").getMatch(0);
+        final String videoProgressiveUrls = br.getRegex("video_progressive_urls\":\\[(\".*?\")\\],").getMatch(0);
+        if (allLinks != null && allLinks.contains("playlist.m3u8")) allLinks = videoProgressiveUrls;
         if (name == null || allLinks == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
