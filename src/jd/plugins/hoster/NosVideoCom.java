@@ -133,7 +133,10 @@ public class NosVideoCom extends PluginForHost {
         if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "").trim();
         // Replace wrong ending with correct ending
-        String ext = fileInfo[0].substring(fileInfo[0].lastIndexOf("."));
+        String ext = null;
+        if (fileInfo[0].contains(".")) {
+            ext = fileInfo[0].substring(fileInfo[0].lastIndexOf("."));
+        }
         if (ext != null && ext.length() < 5) {
             fileInfo[0] = fileInfo[0].replace(ext, ".flv");
         }
@@ -220,6 +223,7 @@ public class NosVideoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
+        fixFilename(downloadLink);
         try {
             // add a download slot
             controlFree(+1);
@@ -457,6 +461,28 @@ public class NosVideoCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    private void fixFilename(final DownloadLink downloadLink) {
+        String oldName = downloadLink.getFinalFileName();
+        if (oldName == null) oldName = downloadLink.getName();
+        final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        String newExtension = null;
+        // some streaming sites do not provide proper file.extension within
+        // headers (Content-Disposition or the fail over getURL()).
+        if (serverFilename.contains(".")) {
+            newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+        } else {
+            logger.info("HTTP headers don't contain filename.extension information");
+        }
+        if (newExtension != null && !oldName.endsWith(newExtension)) {
+            String oldExtension = null;
+            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            if (oldExtension != null && oldExtension.length() <= 5)
+                downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
+            else
+                downloadLink.setFinalFileName(oldName + newExtension);
+        }
     }
 
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {

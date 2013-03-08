@@ -102,12 +102,14 @@ public class UstreamTv extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("We\\'re sorry, the page you requested cannot be found\\.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML(">Sorry, the page you requested cannot be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String pageUrl = downloadLink.getDownloadURL();
         final String videoId = new Regex(pageUrl, "recorded/(\\d+)").getMatch(0);
 
         Browser amf = new Browser();
         getAMFRequest(amf, createAMFRequest(pageUrl, videoId));
+        /** Private video -> Can't watch! */
+        if (amf.containsHTML("This video was made private by the owner")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String result = beautifierString(amf);
         HashMap<String, String> values = new HashMap<String, String>();
         for (String[] s : new Regex(result == null ? "" : result, "#(title|flv|liveHttpUrl|smoothStreamingUrl)#.([^<>#]+)").getMatches()) {
@@ -125,6 +127,7 @@ public class UstreamTv extends PluginForHost {
                 }
             }
         }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         DLLINK = values.get("liveHttpUrl");
         if (DLLINK == null) {
@@ -135,7 +138,7 @@ public class UstreamTv extends PluginForHost {
             }
         }
         if (NOTFORSTABLE) throw new PluginException(LinkStatus.ERROR_FATAL, "JDownloader2 is needed!");
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         downloadLink.setName(filename.trim() + ext);
 

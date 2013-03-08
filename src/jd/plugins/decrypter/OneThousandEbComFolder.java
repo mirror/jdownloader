@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://([\\w\\-\\.]+)?(1000eb\\.com/(?!upload|bulletin_detail_\\d+|chance|copyrights|agreements|faq|contactus|aboutus|jounus|reportbadinformation)[\\w\\-]+\\.htm(\\?p=\\d+)?|[\\w\\-\\.]+1000eb\\.com/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://(?!static)([\\w\\-\\.]+)?(1000eb\\.com/(?!upload|bulletin_detail_\\d+|chance|copyrights|agreements|faq|contactus|aboutus|joinus|reportbadinformation|login)[\\w\\-]+\\.htm(\\?p=\\d+)?|[\\w\\-\\.]+1000eb\\.com/)" }, flags = { 0 })
 public class OneThousandEbComFolder extends PluginForDecrypt {
 
     public OneThousandEbComFolder(final PluginWrapper wrapper) {
@@ -40,6 +40,7 @@ public class OneThousandEbComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
 
         int maxCount = 1, minCount = 1;

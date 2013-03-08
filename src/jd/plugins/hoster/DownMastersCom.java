@@ -144,6 +144,11 @@ public class DownMastersCom extends PluginForHost {
         showMessage(link, "Phase 1/2: Generating link");
         br.postPage("http://downmasters.com/api.php", "username=" + user + "&password=" + pw + "&link=" + url);
 
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Received empty page from API, deactivating host for 3 hours");
+            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+        }
+
         final int status = Integer.parseInt(getJson("status"));
         switch (status) {
         case 0:

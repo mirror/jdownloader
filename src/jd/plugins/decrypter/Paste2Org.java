@@ -24,11 +24,9 @@ import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "paste2.org" }, urls = { "http://[\\w\\.]*?paste2\\.org/(p|followup)/[0-9]+" }, flags = { 0 })
 public class Paste2Org extends PluginForDecrypt {
@@ -49,7 +47,10 @@ public class Paste2Org extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("Page Not Found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
+        if (br.containsHTML("Page Not Found")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String plaintxt = br.getRegex("main-container(.*?)footer-contents").getMatch(0);
         if (plaintxt == null) plaintxt = br.getRegex("<div class=\"code\\-wrap\">(.*?)</div>").getMatch(0);
         if (plaintxt == null) {
@@ -60,7 +61,7 @@ public class Paste2Org extends PluginForDecrypt {
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
             logger.info("Found no hosterlinks in plaintext from link " + parameter);
-            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
+            return decryptedLinks;
         }
         /* avoid recursion */
         for (int i = 0; i < links.length; i++) {
