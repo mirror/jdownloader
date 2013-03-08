@@ -22,4 +22,9 @@ public class JDAPIImpl implements JDAPI {
         CrawlerPluginController.getInstance().init(true);
         return true;
     }
+
+    @Override
+    public int sum(int a, int b) {
+        return a + b;
+    }
 }

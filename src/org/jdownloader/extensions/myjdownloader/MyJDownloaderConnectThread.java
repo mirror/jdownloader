@@ -6,7 +6,6 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +24,7 @@ import jd.nutils.encoding.Encoding;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
@@ -36,19 +36,25 @@ import org.appwork.utils.net.DeChunkingOutputStream;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
+import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
+import org.appwork.utils.net.httpserver.requests.JSonRequest;
+import org.appwork.utils.net.httpserver.requests.OptionsRequest;
+import org.appwork.utils.net.httpserver.requests.PostRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.extensions.myjdownloader.api.MyJDownloaderAPI;
 
 public class MyJDownloaderConnectThread extends Thread {
 
     private final AtomicLong              THREADCOUNTER = new AtomicLong(0);
     private MyJDownloaderExtension        myJDownloaderExtension;
-    private String                        jdToken       = null;
     private int                           loginError    = 0;
     private int                           connectError  = 0;
     private MyDownloaderExtensionConfig   config;
     private Socket                        connectionSocket;
     private ArrayList<HttpRequestHandler> requestHandler;
+    private final MyJDownloaderAPI        api;
 
     public MyJDownloaderConnectThread(MyJDownloaderExtension myJDownloaderExtension) {
         setName("MyJDownloaderConnectThread");
@@ -56,7 +62,28 @@ public class MyJDownloaderConnectThread extends Thread {
         this.myJDownloaderExtension = myJDownloaderExtension;
         config = myJDownloaderExtension.getSettings();
         requestHandler = new ArrayList<HttpRequestHandler>();
+        requestHandler.add(new HttpRequestHandler() {
+
+            @Override
+            public boolean onPostRequest(PostRequest request, HttpResponse response) {
+                return false;
+            }
+
+            @Override
+            public boolean onGetRequest(GetRequest request, HttpResponse response) {
+                if (request instanceof OptionsRequest) {
+                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
+                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_METHODS, "GET, POST"));
+                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS, request.getRequestHeaders().getValue("Access-Control-Request-Headers")));
+                    response.setResponseCode(ResponseCode.SUCCESS_OK);
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        });
         requestHandler.add(RemoteAPIController.getInstance().getRequestHandler());
+        api = new MyJDownloaderAPI(config);
     }
 
     @Override
@@ -73,14 +100,8 @@ public class MyJDownloaderConnectThread extends Thread {
                 }
                 try {
                     /* fetch new jdToken if needed */
-                    if (jdToken == null) {
-                        HashMap<String, Object> jdTokenResponse = getJDToken();
-                        if ("OK".equalsIgnoreCase(parseJDTokenResponse(jdTokenResponse, "status"))) {
-                            jdToken = parseJDTokenResponse(jdTokenResponse, "token");
-                            loginError = 0;
-                        }
-                        if (StringUtils.isEmpty(jdToken)) { throw new WTFException("Login failed"); }
-                    }
+                    String connectToken = api.getConnectToken();
+                    if (StringUtils.isEmpty(connectToken)) { throw new WTFException("Login failed"); }
                 } catch (final Throwable e) {
                     loginError++;
                     e.printStackTrace();
@@ -92,29 +113,55 @@ public class MyJDownloaderConnectThread extends Thread {
                     connectionSocket = new Socket();
                     connectionSocket.setSoTimeout(60000);
                     connectionSocket.connect(new InetSocketAddress(this.config.getAPIURL(), this.config.getAPIPort()), 30000);
-                    connectionSocket.getOutputStream().write(("JD" + jdToken).getBytes("ISO-8859-1"));
+                    connectionSocket.getOutputStream().write(("JD" + api.getConnectToken()).getBytes("ISO-8859-1"));
                     int validToken = connectionSocket.getInputStream().read();
                     if (validToken == 0) {
                         loginError++;
                         System.out.println("Token seems to be invalid!");
-                        jdToken = null;
+                        api.invalidateConnectToken();
                     } else if (validToken == 1) {
                         connectError = 0;
                         // System.out.println("Connection got established");
                         closeSocket = false;
+                        final byte[] serverSecret = api.getServerSecret();
+                        final byte[] jdSecret = api.getJDSecret();
                         final Socket clientSocket = connectionSocket;
                         Thread connectionThread = new Thread("MyJDownloaderConnection:" + THREADCOUNTER.incrementAndGet()) {
                             @Override
                             public void run() {
                                 try {
                                     HttpConnection httpConnection = new HttpConnection(null, clientSocket) {
-                                        private byte         IV[]  = null;
-                                        private byte         KEY[] = null;
-                                        private OutputStream os    = null;
+                                        private OutputStream os        = null;
+                                        private byte[]       aesSecret = null;
 
                                         @Override
                                         public List<HttpRequestHandler> getHandler() {
                                             return requestHandler;
+                                        }
+
+                                        @Override
+                                        public boolean closableStreams() {
+                                            return super.closableStreams();
+                                        }
+
+                                        @Override
+                                        public byte[] getAESJSon_IV(String ID) {
+                                            if (ID != null) {
+                                                if (ID.equalsIgnoreCase("jd")) {
+                                                    return Arrays.copyOfRange(aesSecret, 0, 16);
+                                                } else if (ID.equalsIgnoreCase("server")) { return Arrays.copyOfRange(serverSecret, 0, 16); }
+                                            }
+                                            return null;
+                                        }
+
+                                        @Override
+                                        public byte[] getAESJSon_KEY(String ID) {
+                                            if (ID != null) {
+                                                if (ID.equalsIgnoreCase("jd")) {
+                                                    return Arrays.copyOfRange(aesSecret, 16, 32);
+                                                } else if (ID.equalsIgnoreCase("server")) { return Arrays.copyOfRange(serverSecret, 16, 32); }
+                                            }
+                                            return null;
                                         }
 
                                         @Override
@@ -138,21 +185,23 @@ public class MyJDownloaderConnectThread extends Thread {
                                         }
 
                                         @Override
+                                        public boolean isJSonRequestValid(JSonRequest aesJsonRequest) {
+                                            if (aesJsonRequest == null) return false;
+                                            if (StringUtils.isEmpty(aesJsonRequest.getUrl())) return false;
+                                            /* TODO: fixme, timestamp replay */
+                                            return true;
+                                        }
+
+                                        @Override
                                         protected String preProcessRequestLine(String requestLine) throws IOException {
-                                            String remove = new Regex(requestLine, "( /mjd_([a-zA-z0-9]{40})/?)").getMatch(0);
-                                            String ID = new Regex(requestLine, "( /mjd_([a-zA-z0-9]{40})/?)").getMatch(1);
-                                            MessageDigest md;
+                                            String remove = new Regex(requestLine, "( /t_([a-zA-z0-9]{40})/)").getMatch(0);
+                                            String requestConnectToken = new Regex(requestLine, "( /t_([a-zA-z0-9]{40})/)").getMatch(1);
                                             try {
-                                                md = MessageDigest.getInstance("SHA-256");
+                                                aesSecret = api.getAESSecret(requestConnectToken);
+                                                if (aesSecret == null) throw new IOException("Could not generate AESSecret " + requestLine);
                                             } catch (NoSuchAlgorithmException e) {
                                                 throw new IOException(e);
                                             }
-                                            if (StringUtils.isNotEmpty(config.getEncryptionKey())) {
-                                                md.update(config.getEncryptionKey().getBytes("UTF-8"));
-                                            }
-                                            final byte[] digest = md.digest(ID.getBytes("UTF-8"));
-                                            IV = Arrays.copyOfRange(digest, 0, 16);
-                                            KEY = Arrays.copyOfRange(digest, 16, 32);
                                             requestLine = requestLine.replaceFirst(remove, " /");
                                             return requestLine;
                                         };
@@ -174,24 +223,24 @@ public class MyJDownloaderConnectThread extends Thread {
                                                     }
                                                     final boolean useDeChunkingOutputStream = deChunk;
                                                     final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                                                    final IvParameterSpec ivSpec = new IvParameterSpec(IV);
-                                                    final SecretKeySpec skeySpec = new SecretKeySpec(KEY, "AES");
+                                                    final IvParameterSpec ivSpec = new IvParameterSpec(Arrays.copyOfRange(aesSecret, 0, 16));
+                                                    final SecretKeySpec skeySpec = new SecretKeySpec(Arrays.copyOfRange(aesSecret, 16, 32), "AES");
                                                     cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
                                                     /* remove content-length because we use chunked+base64+aes */
                                                     response.getResponseHeaders().remove(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH);
+                                                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "Content-Type: application/aesjson-jd; charset=utf-8"));
                                                     /* set chunked transfer header */
                                                     response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING, HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED));
                                                     this.sendResponseHeaders();
                                                     this.os = new OutputStream() {
-                                                        private ChunkedOutputStream chunkedOS     = new ChunkedOutputStream(clientSocket.getOutputStream());
-                                                        Base64OutputStream          b64os         = new Base64OutputStream(chunkedOS) {
-                                                                                                      public void close() throws IOException {
-                                                                                                      };
-
+                                                        private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(clientSocket.getOutputStream());
+                                                        Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
+                                                                                                  public void close() throws IOException {
                                                                                                   };
-                                                        OutputStream                outos         = new CipherOutputStream(b64os, cipher);
-                                                        boolean                     endWritten    = false;
-                                                        boolean                     headerWritten = false;
+
+                                                                                              };
+                                                        OutputStream                outos     = new CipherOutputStream(b64os, cipher);
+
                                                         {
                                                             if (useDeChunkingOutputStream) {
                                                                 outos = new DeChunkingOutputStream(outos);
@@ -200,12 +249,8 @@ public class MyJDownloaderConnectThread extends Thread {
 
                                                         @Override
                                                         public void close() throws IOException {
-                                                            if (headerWritten == true && endWritten == false) {
-                                                                outos.close();
-                                                                b64os.flush();
-                                                                chunkedOS.write("\"}".getBytes("UTF-8"));
-                                                                endWritten = true;
-                                                            }
+                                                            outos.close();
+                                                            b64os.flush();
                                                             chunkedOS.close();
                                                         }
 
@@ -215,19 +260,11 @@ public class MyJDownloaderConnectThread extends Thread {
 
                                                         @Override
                                                         public void write(int b) throws IOException {
-                                                            if (headerWritten == false) {
-                                                                chunkedOS.write("{\"crypted\":\"".getBytes("UTF-8"));
-                                                                headerWritten = true;
-                                                            }
                                                             outos.write(b);
                                                         }
 
                                                         @Override
                                                         public void write(byte[] b, int off, int len) throws IOException {
-                                                            if (headerWritten == false) {
-                                                                chunkedOS.write("{\"crypted\":\"".getBytes("UTF-8"));
-                                                                headerWritten = true;
-                                                            }
                                                             outos.write(b, off, len);
                                                         };
 
