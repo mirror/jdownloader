@@ -22,8 +22,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.gui.UserIO;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -37,16 +40,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "egofiles.com" }, urls = { "http://(www\\.)?egofiles\\.com/(?!checker|dmca|files|help|logout|policy|premium|remote|settings|style|tos|voucher)[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "egofiles.com" }, urls = { "https?://(www\\.)?egofiles\\.com/(?!checker|dmca|files|help|logout|policy|premium|remote|settings|style|tos|voucher)[A-Za-z0-9]+" }, flags = { 2 })
 public class EgoFilesCom extends PluginForHost {
 
     public EgoFilesCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://egofiles.com/premium");
+        setConfigElements();
     }
 
     @Override
@@ -54,11 +59,17 @@ public class EgoFilesCom extends PluginForHost {
         return "http://egofiles.com/tos";
     }
 
-    private static final String MAINPAGE = "http://egofiles.com";
-    private static Object       LOCK     = new Object();
+    private static final String MAINPAGE       = "http://egofiles.com";
+    private static Object       LOCK           = new Object();
+    public static final String  USETHTTPSLOGIN = "USETHTTPSLOGIN";
+    public static final String  USEALWAYSHTTP  = "USEALWAYSHTTP";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        final boolean alwaysHttp = this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.EgoFilesCom.USEALWAYSHTTP, false);
+        if (alwaysHttp) {
+            link.setUrlDownload(link.getDownloadURL().replace("https", "http"));
+        }
         this.setBrowserExclusive();
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
@@ -74,7 +85,11 @@ public class EgoFilesCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+
+        // final boolean alwaysHttp = this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.EgoFilesCom.USEALWAYSHTTP, false);
+        final String connectionType = (downloadLink.getDownloadURL().contains("https") ? "https" : "http");
         requestFileInformation(downloadLink);
+
         Regex limitReached = br.getRegex(">For next free download you have to wait <strong>(\\d+)m (\\d+)s</strong>");
         if (limitReached.getMatches().length > 0) {
             logger.warning("Free download limit reached, waittime is applied.");
@@ -101,15 +116,16 @@ public class EgoFilesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA, "reCaptcha error");
         }
         br.setFollowRedirects(false);
-        String dllink = br.getRegex("<h2 class=\"grey\\-brake\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://s\\d+\\.egofiles\\.com:\\d+/dl/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<h2 class=\"grey\\-brake\">[ \t\n\r\f]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("<h2 class=\"grey\\-brake\"><a href=\"(" + connectionType + "://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(" + connectionType + "://s\\d+\\.egofiles\\.com:\\d+/dl/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("<h2 class=\"grey\\-brake\">[ \t\n\r\f]+<a href=\"(" + connectionType + "://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             limitReached = br.getRegex(">For next free download you have to wait <strong>(\\d+)m (\\d+)s</strong>");
             if (limitReached.getMatches().length > 0) {
                 logger.warning("Free download limit reached, waittime is applied.");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(limitReached.getMatch(0)) * 60 + Integer.parseInt(limitReached.getMatch(1))) * 1001l);
             } else {
+                if (br.containsHTML("socket error")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Https socket error", 10 * 1000l); }
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!\n" + br.getRequest().getHtmlCode());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "final dllink is null");
             }
@@ -133,6 +149,8 @@ public class EgoFilesCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                br.setAcceptLanguage("en, pl;q=0.8");
+                br.setCookie(MAINPAGE, "lang", "en");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -148,8 +166,11 @@ public class EgoFilesCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
+                final boolean httpsLogin = this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.EgoFilesCom.USETHTTPSLOGIN, false);
+                String loginType = "http";
+                if (httpsLogin) loginType = "https";
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("http://egofiles.com/ajax/register.php", "log=1&loginV=" + Encoding.urlEncode(account.getUser()) + "&passV=" + Encoding.urlEncode(account.getPass()));
+                br.postPage(loginType + "://egofiles.com/ajax/register.php", "log=1&loginV=" + Encoding.urlEncode(account.getUser()) + "&passV=" + Encoding.urlEncode(account.getPass()));
                 br.getHeaders().put("X-Requested-With", null);
                 if (br.getCookie(MAINPAGE, "p") == null || br.getCookie(MAINPAGE, "h") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
@@ -175,12 +196,21 @@ public class EgoFilesCom extends PluginForHost {
             login(account, true);
         } catch (PluginException e) {
             ai.setStatus("Login failed");
-            UserIO.getInstance().requestMessageDialog(0, "EgoFiles.com Premium Error", "Login failed!\r\nPlease check your Username and Password!");
+            String errorMsg = "Please check your Username and Password!";
+            if (br.getRequest().getHtmlCode().contains("error")) {
+                errorMsg = getJson("error", br);
+            }
+            UserIO.getInstance().requestMessageDialog(0, "EgoFiles.com Premium Error!", errorMsg);
             account.setValid(false);
             return ai;
         }
         br.getPage(MAINPAGE);
-        ai.setUnlimitedTraffic();
+        if (br.containsHTML("Traffic left:")) {
+            String trafficLeft = br.getRegex("Traffic left: (.*?)[\t\n\r\f]").getMatch(0);
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficLeft));
+        } else
+            ai.setUnlimitedTraffic();
+
         final String expire = br.getRegex("<br/> Premium: (\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire == null) {
             account.setValid(false);
@@ -195,12 +225,16 @@ public class EgoFilesCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
+
+        final String connectionType = (link.getDownloadURL().contains("https") ? "https" : "http");
+
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();
-        if (dllink == null) dllink = br.getRegex("<h2 class=\"grey\\-brake\">[ \t\n\r\f]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+
+        if (dllink == null) dllink = br.getRegex("<h2 class=\"grey\\-brake\">[ \t\n\r\f]+<a href=\"(" + connectionType + "://[^<>\"]*?)\"").getMatch(0);
 
         if (dllink == null) {
             // based on the logs only, need real Premium to check
@@ -242,4 +276,13 @@ public class EgoFilesCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EgoFilesCom.USETHTTPSLOGIN, JDL.L("plugins.hoster.egofilescom.usehttpslogin", "Use HTTPS for login")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EgoFilesCom.USEALWAYSHTTP, JDL.L("plugins.hoster.egofilescom.usealwayshttp", "Use always http connection")).setDefaultValue(false));
+    }
+
+    public static String getJson(final String parameter, final Browser br2) {
+        String result = br2.getRegex("\"" + parameter + "\":\"(.*?)\"").getMatch(0);
+        return result;
+    }
 }
