@@ -43,12 +43,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "restfile.com" }, urls = { "https?://(www\\.)?restfile\\.(com?|net)/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "restfile.ws", "restfile.com" }, urls = { "https?://(www\\.)?restfile\\.(co|ws)/[a-z0-9]{12}", "jh045uz609h456t6tjojkhoretkmjpDELETE_MEt45h789hioufdbfhnoui" }, flags = { 0, 0 })
 public class RestFileCom extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://restfile.net";
+    private static final String COOKIE_HOST         = "http://restfile.ws";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
@@ -63,7 +63,7 @@ public class RestFileCom extends PluginForHost {
     // other: redirects
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.restfile.net/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
+        link.setUrlDownload("http://www.restfile.ws/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
     }
 
     @Override

@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(www\\.)?anilinkz\\.com/(?!get|img|dsa|series|forums|files|category)[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(youtube\\.com|veoh\\.com|nowvideo\\.eu|videobam\\.com|mp4upload\\.com)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(youtube\\.com|veoh\\.com|nowvideo\\.eu|videobam\\.com|mp4upload\\.com|gorillavid\\.in)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_UNSUPPORTED_HOSTER       = Pattern.compile("(facebook\\.com|google\\.com)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_SUPPORTED_FILE_EXTENSION = Pattern.compile("(\\.mp4|\\.flv|\\.fll)", Pattern.CASE_INSENSITIVE);
 
@@ -126,6 +126,8 @@ public class AniLinkzCom extends PluginForDecrypt {
                             dllink = "directhttp://" + Encoding.htmlDecode(dllink);
                         } else if (dllink.contains("videobam.com/widget/")) {
                             dllink = dllink.replace("videobam.com/widget/", "videobam.com/");
+                        } else if (dllink.contains("gorillavid.in/")) {
+                            dllink = "http://gorillavid.in/" + new Regex(dllink, "gorillavid\\.in/embed\\-([a-z0-9]{12})").getMatch(0);
                         }
                     } catch (final Exception e) {
                         logger.log(Level.SEVERE, e.getMessage(), e);

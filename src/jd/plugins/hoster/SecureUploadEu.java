@@ -121,7 +121,7 @@ public class SecureUploadEu extends PluginForHost {
         prepBrowser(br);
         getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
-        if (new Regex(correctedBR, "(<Title>Download </Title>|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, "(<Title>Download </Title>|>File Not Found<|>The file was removed by|Reason for deletion)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;

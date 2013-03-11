@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/(?!dl/)[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/(?!dl/|static|browse|images|terms|contact|audible|search|people|upload|featured)[a-z0-9]+" }, flags = { 0 })
 public class HulkShareComFolder extends PluginForDecrypt {
 
     public HulkShareComFolder(PluginWrapper wrapper) {
@@ -53,7 +53,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML(">Page not found") || br.containsHTML(">This file has been subject to a DMCA notice")) {
+        if (br.containsHTML(">Page not found") || br.containsHTML(">This file has been subject to a DMCA notice") || br.containsHTML("<h2>Error</h2>")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/"));
             dl.setProperty("fileoffline", true);
             dl.setAvailable(false);
