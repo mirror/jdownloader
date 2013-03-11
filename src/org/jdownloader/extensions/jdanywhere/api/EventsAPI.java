@@ -349,10 +349,12 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
     }
 
     private void linkCollectorApiLinkAdded(CrawledLink link) {
-        HashMap<String, Object> data = new HashMap<String, Object>();
-        data.put("packageID", link.getDownloadLink().getParentNode().getUniqueID().toString());
-        data.put("linkID", link.getDownloadLink().getUniqueID().toString());
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorLinkAdded", data), null);
+        if (link.getParentNode().getUniqueID() != null) {
+            HashMap<String, Object> data = new HashMap<String, Object>();
+            data.put("packageID", link.getParentNode().getUniqueID().toString());
+            data.put("linkID", link.getUniqueID().toString());
+            JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorLinkAdded", data), null);
+        }
     }
 
     private void linkCollectorApiLinkRemoved(List<CrawledLink> links) {
@@ -396,10 +398,6 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
 
     @Override
     public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
-        if (event.getParameter() instanceof CrawledLink) {
-            CrawledLink dl = (CrawledLink) event.getParameter();
-        }
-
     }
 
     @SuppressWarnings("unchecked")
@@ -433,6 +431,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
 
     @Override
     public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+        linkCollectorApiLinkAdded((CrawledLink) parameter);
     }
 
     @Override

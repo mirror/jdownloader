@@ -1,5 +1,8 @@
 package org.jdownloader.extensions.jdanywhere.api.storable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -46,6 +49,14 @@ public class FilePackageStorable implements Storable {
 
     public long getSize() {
         return pkg.getView().getSize();
+    }
+
+    public List<String> getHoster() {
+        List<String> links = new ArrayList<String>(pkg.size());
+        for (DownloadLink link : pkg.getChildren()) {
+            if (!links.contains(link.getHost())) links.add(link.getHost());
+        }
+        return links;
     }
 
     public int getEnabled() {

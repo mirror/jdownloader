@@ -39,4 +39,6 @@ public interface ILinkCrawlerApi extends RemoteAPIInterface {
     public boolean setCrawledLinkEnabled(final List<Long> linkIds, boolean enabled);
 
     public boolean setCrawledPackageEnabled(long ID, boolean enabled);
+
+    public List<CrawledLinkStoreable> listLinks(long ID);
 }

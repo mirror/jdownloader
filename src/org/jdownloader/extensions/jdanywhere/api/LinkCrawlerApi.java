@@ -32,15 +32,38 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
             for (CrawledPackage cpkg : lc.getPackages()) {
                 CrawledPackageStorable pkg;
                 ret.add(pkg = new CrawledPackageStorable(cpkg));
-                synchronized (cpkg) {
-                    List<CrawledLinkStoreable> links = new ArrayList<CrawledLinkStoreable>(cpkg.getChildren().size());
-                    for (CrawledLink link : cpkg.getChildren()) {
-                        links.add(new CrawledLinkStoreable(link));
-                    }
-                    pkg.setLinks(links);
-                }
+                // synchronized (cpkg) {
+                // List<CrawledLinkStoreable> links = new ArrayList<CrawledLinkStoreable>(cpkg.getChildren().size());
+                // for (CrawledLink link : cpkg.getChildren()) {
+                // links.add(new CrawledLinkStoreable(link));
+                // }
+                // pkg.setLinks(links);
+                // }
             }
             return ret;
+        } finally {
+            lc.readUnlock(b);
+        }
+    }
+
+    public List<CrawledLinkStoreable> listLinks(long ID) {
+        LinkCollector lc = LinkCollector.getInstance();
+        boolean b = lc.readLock();
+        try {
+            List<CrawledLinkStoreable> links = null;
+            for (CrawledPackage cpkg : lc.getPackages()) {
+                if (cpkg.getUniqueID().getID() == ID) {
+                    synchronized (cpkg) {
+                        links = new ArrayList<CrawledLinkStoreable>(cpkg.getChildren().size());
+                        for (CrawledLink link : cpkg.getChildren()) {
+                            links.add(new CrawledLinkStoreable(link));
+                        }
+                        break;
+                    }
+                }
+            }
+            return links;
+
         } finally {
             lc.readUnlock(b);
         }
