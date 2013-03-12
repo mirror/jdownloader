@@ -114,12 +114,14 @@ public class FreeWayMe extends PluginForHost {
         }
         String accountType = getRegexTag(br.toString(), "premium").getMatch(0);
         ac.setValidUntil(-1);
-        if (accountType.equalsIgnoreCase("Flatrate")) {
-            ac.setUnlimitedTraffic();
-            long validUntil = Long.parseLong(getRegexTag(br.toString(), "Flatrate").getMatch(0));
-            ac.setValidUntil(validUntil * 1000);
-        } else if (accountType.equalsIgnoreCase("Spender")) {
-            ac.setUnlimitedTraffic();
+        if (accountType != null) {
+            if (accountType.equalsIgnoreCase("Flatrate")) {
+                ac.setUnlimitedTraffic();
+                long validUntil = Long.parseLong(getRegexTag(br.toString(), "Flatrate").getMatch(0));
+                ac.setValidUntil(validUntil * 1000);
+            } else if (accountType.equalsIgnoreCase("Spender")) {
+                ac.setUnlimitedTraffic();
+            }
         }
         // now let's get a list of all supported hosts:
         br.getPage("https://www.free-way.me/ajax/jd.php?id=3");
@@ -205,8 +207,7 @@ public class FreeWayMe extends PluginForHost {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Unbekannter Fehler #2") || error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
                 /*
-                 * after x retries we disable this host and retry with normal
-                 * plugin
+                 * after x retries we disable this host and retry with normal plugin
                  */
                 if (link.getLinkStatus().getRetryCount() >= 2) {
                     /* reset retrycounter */
