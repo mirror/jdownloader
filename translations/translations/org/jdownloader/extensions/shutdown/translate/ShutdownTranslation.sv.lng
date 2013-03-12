@@ -1,6 +1,7 @@
 action_tooltip=Aktivera för att stänga av datorn när nerladdningarna är klara.
 addons_jdshutdown_statusmessage_disabled=Datorn stängs INTE av JDownloader
 addons_jdshutdown_statusmessage_enabled=JDownloader kommer at att stänga av datorn efter att nerladdningen är färdig
+config_active_by_default=Fortsätt ha Avstängning aktiverad
 config_toolbarbutton=Toolbar Button synlig
 gui_config_jdshutdown_close=Stäng JD
 gui_config_jdshutdown_forceshutdown=Tvinga nerstängning (Inte för alla OS)
