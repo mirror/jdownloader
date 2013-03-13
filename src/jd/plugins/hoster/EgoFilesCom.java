@@ -95,6 +95,10 @@ public class EgoFilesCom extends PluginForHost {
             logger.warning("Free download limit reached, waittime is applied.");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(limitReached.getMatch(0)) * 60 + Integer.parseInt(limitReached.getMatch(1))) * 1001l);
         }
+        if (br.containsHTML("Your IP have reached daily <strong>downloading&nbsp;limit")) {
+            logger.warning("Free daily download limit reached!");
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        }
         final String rcID = br.getRegex("google\\.com/recaptcha/api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
         if (rcID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "reCaptcha ID not recognized"); }
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");

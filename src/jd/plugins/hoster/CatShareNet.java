@@ -74,6 +74,7 @@ public class CatShareNet extends PluginForHost {
 
             }
         }
+
     }
 
     // never got one, but left this for future usage
@@ -98,7 +99,7 @@ public class CatShareNet extends PluginForHost {
         Form dlForm = new Form();
         if (new Regex(BRBEFORE, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
             dlForm = br.getForm(0);
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no reCaptcha form!");
 
             logger.info("Detected captcha method \"Re Captcha\" for this host");
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -106,16 +107,26 @@ public class CatShareNet extends PluginForHost {
             rc.setForm(dlForm);
             String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
             rc.setId(id);
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            Form rcform = rc.getForm();
-            rcform.put("recaptcha_challenge_field", rc.getChallenge());
-            rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
-            logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-            dlForm = rc.getForm();
-            // waittime is often skippable for reCaptcha handling
-            // skipWaittime = true;
+            for (int i = 0; i < 5; i++) {
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                Form rcform = rc.getForm();
+                rcform.put("recaptcha_challenge_field", rc.getChallenge());
+                rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
+                logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
+                dlForm = rc.getForm();
+                // waittime is often skippable for reCaptcha handling
+                // skipWaittime = true;
+                br.submitForm(dlForm);
+                logger.info("Submitted DLForm");
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    rc.reload();
+                    continue;
+                }
+                break;
+            }
+
         } else {
             logger.warning("Unknown ReCaptcha method for: " + downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown ReCaptcha method!");
@@ -123,8 +134,11 @@ public class CatShareNet extends PluginForHost {
 
         /* Captcha END */
         // if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
-        br.submitForm(dlForm);
-        logger.info("Submitted DLForm");
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            logger.info("5 reCaptcha tryouts for <" + downloadLink.getDownloadURL() + "> were incorrect");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "reCaptcha error", 1 * 60 * 1000l);
+        }
+
         doSomething();
         checkErrors(downloadLink, false);
         dllink = getDllink();
