@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.myjdownloader;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ConnectException;
@@ -228,12 +229,12 @@ public class MyJDownloaderConnectThread extends Thread {
                                                     cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
                                                     /* remove content-length because we use chunked+base64+aes */
                                                     response.getResponseHeaders().remove(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH);
-                                                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "Content-Type: application/aesjson-jd; charset=utf-8"));
+                                                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "application/aesjson-jd; charset=utf-8"));
                                                     /* set chunked transfer header */
                                                     response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING, HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED));
                                                     this.sendResponseHeaders();
                                                     this.os = new OutputStream() {
-                                                        private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(clientSocket.getOutputStream());
+                                                        private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(getOutputStream(), 16384));
                                                         Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
                                                                                                   public void close() throws IOException {
                                                                                                   };
