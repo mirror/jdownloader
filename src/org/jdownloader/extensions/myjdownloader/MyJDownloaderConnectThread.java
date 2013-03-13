@@ -113,6 +113,7 @@ public class MyJDownloaderConnectThread extends Thread {
                 try {
                     connectionSocket = new Socket();
                     connectionSocket.setSoTimeout(60000);
+                    connectionSocket.setTcpNoDelay(false);
                     connectionSocket.connect(new InetSocketAddress(this.config.getAPIURL(), this.config.getAPIPort()), 30000);
                     connectionSocket.getOutputStream().write(("JD" + api.getConnectToken()).getBytes("ISO-8859-1"));
                     int validToken = connectionSocket.getInputStream().read();
@@ -234,7 +235,7 @@ public class MyJDownloaderConnectThread extends Thread {
                                                     response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING, HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED));
                                                     this.sendResponseHeaders();
                                                     this.os = new OutputStream() {
-                                                        private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(getOutputStream(), 16384));
+                                                        private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(clientSocket.getOutputStream(), 16384));
                                                         Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
                                                                                                   public void close() throws IOException {
                                                                                                   };
