@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "restfile.ws", "restfile.com" }, urls = { "https?://(www\\.)?restfile\\.(co|ws)/[a-z0-9]{12}", "jh045uz609h456t6tjojkhoretkmjpDELETE_MEt45h789hioufdbfhnoui" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "restfile.ws", "restfile.com" }, urls = { "https?://(www\\.)?restfile\\.(ws|ca|co|com)/[a-z0-9]{12}", "jh045uz609h456t6tjojkhoretkmjpDELETE_MEt45h789hioufdbfhnoui" }, flags = { 0, 0 })
 public class RestFileCom extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -63,7 +63,7 @@ public class RestFileCom extends PluginForHost {
     // other: redirects
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.restfile.ws/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
+        link.setUrlDownload("http://restfile.ws/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
     }
 
     @Override
@@ -149,8 +149,7 @@ public class RestFileCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
