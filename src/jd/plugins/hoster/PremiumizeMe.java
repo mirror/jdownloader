@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2012  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -73,6 +73,7 @@ public class PremiumizeMe extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
+        br.setAllowedResponseCodes(new int[] { 400, 401, 402, 403, 404, 428, 502, 503, 509 });
         return br;
     }
 

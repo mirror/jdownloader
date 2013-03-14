@@ -258,8 +258,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             br.getPage(parameter.replace("download-", "dl-"));
             finallink = br.getRedirectLocation();
         } else if (parameter.contains("bogatube.com/")) {
-            // Those site only contains videos of xvideos.com, just find the id
-            // and make the link
+            // Those site only contains videos of xvideos.com, just find the id and make the link
             final String videoID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
             if (videoID != null) {
                 finallink = "http://xvideos.com/video" + videoID;
@@ -629,7 +628,10 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             }
             dh = true;
         } else if (parameter.contains("hflix.in/")) {
-            finallink = br.getRegex("<a id=\"yourls\\-once\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                finallink = br.getRegex("<a id=\"yourls\\-once\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            }
         } else if (parameter.contains("getunite.com/")) {
             finallink = "http://mediafire.com/?" + new Regex(parameter, "getunite\\.com/\\?d=\\d+\\.\\d+\\.\\d+\\.\\d+/[a-z0-9]+/([a-z0-9]+)/").getMatch(0);
         } else if (parameter.contains("tinymoviez.info/")) {

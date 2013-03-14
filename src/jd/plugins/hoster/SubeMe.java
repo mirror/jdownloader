@@ -65,18 +65,16 @@ public class SubeMe extends PluginForHost {
     private static final String        DOMAINS                      = "(sube\\.me)";
     private static final String        PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private static final String        MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final boolean       videoHoster                  = true;
+    private static final boolean       videoHoster                  = false;
     private static final boolean       supportsHTTPS                = false;
     private static final boolean       useRUA                       = false;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
-    // set true if the hoster allows every 'account type' (non account|free account|paid account) allow own connection threshold.
-    private static final boolean       allowConcurrent              = true;
 
     // DEV NOTES
-    // XfileShare Version 3.0.2.0
+    // XfileShare Version 3.0.2.1
     // mods:
     // protocol: no https
     // captchatype: recaptcha, but never used as of vidembed
@@ -101,6 +99,19 @@ public class SubeMe extends PluginForHost {
             resumes = false;
             acctype = "Non Account";
             directlinkproperty = "freelink";
+        }
+    }
+
+    private boolean allowsConcurrent(Account account) {
+        if (account != null && account.getBooleanProperty("nopremium")) {
+            // free account
+            return true;
+        } else if (account != null && !account.getBooleanProperty("nopremium")) {
+            // prem account
+            return true;
+        } else {
+            // non account
+            return false;
         }
     }
 
@@ -214,6 +225,11 @@ public class SubeMe extends PluginForHost {
 
     @SuppressWarnings("unused")
     private void doFree(final DownloadLink downloadLink, Account account) throws Exception, PluginException {
+        if (account != null) {
+            logger.info(account.getUser() + " @ " + acctype + " -> Free Download");
+        } else {
+            logger.info("Guest @ " + acctype + " -> Free Download");
+        }
         passCode = downloadLink.getStringProperty("pass");
         // First, bring up saved final links
         dllink = checkDirectLink(downloadLink);
@@ -234,6 +250,7 @@ public class SubeMe extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
+                download1.put("method_free", "Free+Download");
                 sendForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
@@ -242,11 +259,10 @@ public class SubeMe extends PluginForHost {
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dlForm = cleanForm(dlForm);
             // how many forms deep do you want to try.
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
-                dlForm.remove(null);
+                dlForm = cleanForm(dlForm);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
                 boolean skipWaittime = false;
@@ -260,7 +276,7 @@ public class SubeMe extends PluginForHost {
                     if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
                 }
                 /* Captcha START */
-                if (correctedBR.contains(";background:#ccc;text-align")) {
+                if (correctedBR.contains(";background:#ccc;text-align\\-left:\\d+")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
                     /** Captcha method by ManiacMansion */
                     final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
@@ -336,7 +352,6 @@ public class SubeMe extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
-                    dlForm = cleanForm(dlForm);
                     continue;
                 } else {
                     break;
@@ -533,7 +548,9 @@ public class SubeMe extends PluginForHost {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
         String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
-        if (ttt == null) ttt = new Regex(correctedBR, "id=\"countdown_str\"[^>]+>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
+        if (ttt == null) ttt = new Regex(correctedBR, "id=\"countdown_str\"[^>]?+>Wait ?(<span[^>]+>)?(\\d+)</span>").getMatch(1);
+        // System.out.println(correctedBR);
+        System.out.println(br.toString());
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
@@ -661,6 +678,7 @@ public class SubeMe extends PluginForHost {
             getPage(downloadLink.getDownloadURL());
             doFree(downloadLink, account);
         } else {
+            logger.info(account.getUser() + " @ " + acctype + " -> Premium Download");
             dllink = checkDirectLink(downloadLink);
             if (dllink == null) {
                 getPage(downloadLink.getDownloadURL());
@@ -918,7 +936,6 @@ public class SubeMe extends PluginForHost {
         } else {
             logger.info("maxSimPerHost = " + account.getUser() + " @ " + acctype + " -> was = " + was + " && new upper limit = " + current);
         }
-
     }
 
     /**
@@ -945,9 +962,28 @@ public class SubeMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
+        // save finallink and use it for later, this script can determine if it's usable at a later stage. (more for dev purposes)
+        downloadLink.setProperty(directlinkproperty, dllink);
+
         // place account into a place holder, for later references;
         Account accHolder = account;
-        if (!allowConcurrent) account = null;
+
+        // allows concurrent logic
+        boolean thisAccount = allowsConcurrent(account);
+        boolean continu = true;
+        if (!hostMap.isEmpty()) {
+            // compare stored values within hashmap, determine if they allow concurrent with current account download request!
+            for (Entry<Account, HashMap<String, Integer>> holder : hostMap.entrySet()) {
+                if (!allowsConcurrent(holder.getKey())) {
+                    continu = false;
+                }
+            }
+            if (thisAccount && continu) {
+                // current account allows concurrent
+                // hostmap entries c
+            }
+
+        }
 
         String user = null;
         Integer simHost;
@@ -965,9 +1001,6 @@ public class SubeMe extends PluginForHost {
             simHost = maxNonAccSimDlPerHost.get();
         }
         user = user + " @ " + acctype;
-
-        // save finallink and use it for later, this script can determine if it's usable at a later stage. (more for dev purposes)
-        downloadLink.setProperty(directlinkproperty, dllink);
 
         if (!action) {
             // download finished (completed, failed, etc), check for value and remove a value

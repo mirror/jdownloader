@@ -165,7 +165,6 @@ public class RehostTo extends PluginForHost {
             // to get back into the correct JD format this formula required
             // ai.setTrafficLeft((Long.parseLong(c_d[0][0]) / 1000 * 1024 * 1024 * 1024));
             ai.setUnlimitedTraffic();
-            ;
         } else {
             // one of the above fields was null.
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -248,16 +247,20 @@ public class RehostTo extends PluginForHost {
                 statusMessage = "Download Failed! Temporarily unavailable.";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 15 * 60 * 1000);
                 // tempUnavailableHoster(account, downloadLink, 15 * 60 * 1000);
-            } else if (error.equals("no_prem_available")) {
+            } else if (error.equals("no_prem_available") || error.matches("traffic_[a-z]{2}")) {
                 /*
                  * 'no_prem_available': there is currently no premium account available in our system to process this download. Please
                  * update get_supported_och_dl.
                  */
-                statusMessage = "Download not currently possible. " + mName + " is out of hoster data";
+                if (error.equals("no_prem_available"))
+                    statusMessage = "Download not currently possible. " + mName + " is out of hoster data";
+                else
+                    // quota exhausted
+                    statusMessage = "Out of quota for " + downloadLink.getHost();
                 AccountInfo ai = new AccountInfo();
                 hostUpdate(br, account, ai);
                 if (ai.getProperty("multiHostSupport") != null) account.getAccountInfo().setProperty("multiHostSupport", ai.getProperty("multiHostSupport"));
-                throw new PluginException(LinkStatus.ERROR_FATAL);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (error.equals("invalid_link")) {
                 /*
                  * 'invalid_link': the provided link format is invalid. Plugin outdated? Contact rehost.
@@ -270,6 +273,7 @@ public class RehostTo extends PluginForHost {
             }
         } catch (final PluginException e) {
             logger.info("Exception: statusCode: " + error + " statusMessage: " + statusMessage);
+            if (br.getRedirectLocation() != null) br.followConnection();
             throw e;
         }
 
