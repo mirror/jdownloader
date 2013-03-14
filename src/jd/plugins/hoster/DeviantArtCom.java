@@ -45,7 +45,7 @@ public class DeviantArtCom extends PluginForHost {
      */
 
     private static final String COOKIE_HOST = "http://www.deviantart.com";
-    private static Object LOCK        = new Object();
+    private static Object       LOCK        = new Object();
 
     public DeviantArtCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -112,6 +112,7 @@ public class DeviantArtCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        login(account, br, false);
         String dllink = downloadLink.getDownloadURL();
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
@@ -131,7 +132,7 @@ public class DeviantArtCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account, this.br);
+            login(account, this.br, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -142,7 +143,7 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    public void login(Account account, Browser br) throws Exception {
+    public void login(Account account, Browser br, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
@@ -150,18 +151,18 @@ public class DeviantArtCom extends PluginForHost {
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            br.setCookie(COOKIE_HOST, key, value);
+                            br.setCookie(this.getHost(), key, value);
                         }
                         return;
                     }
                 }
-                br.setCookie(COOKIE_HOST, "lang", "english");
+                br.setCookie(this.getHost(), "lang", "english");
                 br.getPage("https://www.deviantart.com/users/login");
                 Form loginform = br.getFormbyProperty("id", "login");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -170,11 +171,11 @@ public class DeviantArtCom extends PluginForHost {
                 loginform.put("remember_me", "1");
                 br.submitForm(loginform);
                 if (br.getRedirectLocation() != null) {
-                    if (!br.getRedirectLocation().contains("/users/loggedin")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (br.getRedirectLocation().contains("deviantart.com/users/wrong-password?")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(COOKIE_HOST);
+                final Cookies add = br.getCookies(this.getHost());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }

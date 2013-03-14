@@ -36,8 +36,6 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(art/[\\w\\-]+|((gallery|favourites)/\\d+(\\?offset=\\d+)?|(gallery|favourites)/(\\?offset=\\d+)?))" }, flags = { 0 })
 public class DevArtCm extends PluginForDecrypt {
 
-    private boolean loggedIn = false;
-
     public DevArtCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,21 +44,19 @@ public class DevArtCm extends PluginForDecrypt {
      * @author raztoki
      */
 
-    /*
-     * This plugin grabs range of content depending on parameter.
-     * profile.devart.com/gallery/uid* profile.devart.com/favorites/uid*
-     * profile.devart.com/gallery/* profile.devart.com/favorites/* =
-     * ?offset=\\d+
-     * 
-     * All of the above formats should support spanning pages, but when
-     * parameter contains '?offset=x' it will not span.
-     * 
-     * profilename.deviantart.com/art/uid/ == grabs the 'download image' (best
-     * quality available).
-     * 
-     * I've created the plugin this way to allow users to grab as little or as
-     * much, content as they wish. Hopefully this wont create any issues.
-     */
+    // This plugin grabs range of content depending on parameter.
+    // profile.devart.com/gallery/uid*
+    // profile.devart.com/favorites/uid*
+    // profile.devart.com/gallery/*
+    // profile.devart.com/favorites/*
+    // * = ?offset=\\d+
+    //
+    // All of the above formats should support spanning pages, but when parameter contains '?offset=x' it will not span.
+    //
+    // profilename.deviantart.com/art/uid/ == grabs the 'download image' (best quality available).
+    //
+    // I've created the plugin this way to allow users to grab as little or as much, content as they wish. Hopefully this wont create any
+    // issues.
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -72,8 +68,7 @@ public class DevArtCm extends PluginForDecrypt {
             logger.warning("Invalid URL: " + parameter);
             return decryptedLinks;
         }
-        // for stable compliance (getHost() will only return domain.tld and not
-        // subdomain(s).domain.tld)
+        // for stable compliance (getHost() will only return domain.tld and not subdomain(s).domain.tld)
         String host = new Regex(br.getURL(), "(https?://.*?deviantart\\.com)/").getMatch(0);
 
         // only non /art/ requires packagename
@@ -126,15 +121,14 @@ public class DevArtCm extends PluginForDecrypt {
             ratedContent = true;
         }
         /* download high res version if available */
-        String dllink = br.getRegex("id=\"download-button\".*?href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("id=\"gmi\\-ResViewSizer_fullimg\" data\\-gmiclass=\"ResViewSizer_fullimg\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("id=\"download\\-button\".*?href=\"(https?://[^\"]+)").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("id=\"gmi\\-ResViewSizer_fullimg\" data\\-gmiclass=\"ResViewSizer_fullimg\".*?src=\"(https?://[^\"]+)").getMatch(0);
 
         if (dllink != null) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + dllink);
+            final DownloadLink dl = createDownloadlink("DEVART://" + dllink);
+            dl.setProperty("ratedContent", ratedContent);
             ret.add(dl);
-        }
-
-        else {
+        } else {
             logger.warning("Error within parseArtPage");
             return;
         }
@@ -143,16 +137,15 @@ public class DevArtCm extends PluginForDecrypt {
     private void parsePage(ArrayList<DownloadLink> ret, String host, String parameter) throws Exception {
         String grab = br.getRegex("<smoothie q=(.*?)class=\"folderview\\-bottom\"></div>").getMatch(0);
         String[] artlinks = new Regex(grab, "<a class=\"thumb([\\s\\w]+)?\" href=\"(https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+)\"").getColumn(1);
-        String nextPage = br.getRegex("<div class=\"pagination\\-wrapper full\">.*?<li class=\"next\"><a class=\"away\" href=\"(/(gallery|favourites)/(\\d+)?\\?offset=\\d+)\">Next</a>").getMatch(0);
+        String nextPage = br.getRegex("href=\"(/(gallery|favourites)/(\\d+)?\\?offset=\\d+)\">Next</a>").getMatch(0);
         if (artlinks == null || artlinks.length == 0) {
             logger.warning("Possible Plugin error, with finding /art/ links: " + parameter);
             return;
         }
         if (artlinks != null && artlinks.length != 0) {
             for (String al : artlinks) {
-                ret.add(createDownloadlink(al));
-                // br.getPage(al);
-                // parseArtPage(ret, parameter);
+                br.getPage(al);
+                parseArtPage(ret, parameter);
             }
         }
         if (nextPage != null && !parameter.contains("?offset=")) {
@@ -161,20 +154,25 @@ public class DevArtCm extends PluginForDecrypt {
         }
     }
 
+    private static final Object LOCK = new Object();
+
     private boolean login() throws Exception {
         boolean isNew = false;
         PluginForHost DeviantArtPlugin = JDUtilities.getPluginForHost("deviantart.com");
         Account aa = AccountController.getInstance().getValidAccount(DeviantArtPlugin);
         if (aa == null) {
-            isNew = true;
-            String username = UserIO.getInstance().requestInputDialog("Enter Loginname for deviantart.com :");
-            if (username == null) return false;
-            String password = UserIO.getInstance().requestInputDialog("Enter password for deviantart.com :");
-            if (password == null) return false;
-            aa = new Account(username, password);
+            // lets prevent multiple dialogs because of threading
+            synchronized (LOCK) {
+                isNew = true;
+                String username = UserIO.getInstance().requestInputDialog("Enter Loginname for deviantart.com :");
+                if (username == null) return false;
+                String password = UserIO.getInstance().requestInputDialog("Enter password for deviantart.com :");
+                if (password == null) return false;
+                aa = new Account(username, password);
+            }
         }
         try {
-            ((jd.plugins.hoster.DeviantArtCom) DeviantArtPlugin).login(aa, this.br);
+            ((jd.plugins.hoster.DeviantArtCom) DeviantArtPlugin).login(aa, this.br, false);
         } catch (final PluginException e) {
             aa.setEnabled(false);
             aa.setValid(false);

@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://(www\\.)?(soundcloud\\.com/(?!you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#)[^<>\"\\']+(\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z09]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://(www\\.|m\\.)?(soundcloud\\.com/(?!you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#)[^<>\"\\']+(\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z09]+)" }, flags = { 0 })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     public SoundCloudComDecrypter(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceAll("(/download|\\\\)", "").replace("www.", "").replace("http://", "https://");
+        String parameter = param.toString().replace("http://", "https://").replaceAll("(/download|\\\\)", "").replaceFirst("://(www|m)\\.", "://");
         if (parameter.matches("http://(www\\.)?snd\\.sc/[A-Za-z09]+")) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
@@ -92,7 +92,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 // Decrypt all tracks of a user
                 fpName = ((jd.plugins.hoster.SoundcloudCom) hostPlugin).getXML("username", br.toString());
                 if (fpName == null) fpName = getJson("username");
-                final String userID = br.getRegex("\"uri\":\"https://api\\.soundcloud\\.com/users/(\\d+)").getMatch(0);
+                String userID = br.getRegex("<uri>https://api\\.soundcloud\\.com/users/(\\d+)").getMatch(0);
+                if (userID == null) userID = br.getRegex("id type=\"integer\">(\\d+)").getMatch(0);
                 if (userID == null) {
                     logger.info("Link probably offline: " + parameter);
                     return decryptedLinks;
@@ -132,7 +133,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     private String getJson(final String parameter) {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^\"]+)").getMatch(0);
         return result;
     }
 }

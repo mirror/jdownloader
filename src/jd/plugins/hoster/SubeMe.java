@@ -549,8 +549,6 @@ public class SubeMe extends PluginForHost {
         /** Ticket Time */
         String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (ttt == null) ttt = new Regex(correctedBR, "id=\"countdown_str\"[^>]?+>Wait ?(<span[^>]+>)?(\\d+)</span>").getMatch(1);
-        // System.out.println(correctedBR);
-        System.out.println(br.toString());
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
