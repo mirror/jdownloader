@@ -17,9 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,15 +31,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactie\\.be/(permalink/\\d\\.\\d+|cm/vrtnieuws([^/]+)?/mediatheek.+)", "http://(www\\.)?sporza\\.be/(permalink/\\d\\.\\d+|cm/vrtnieuws([^/]+)?/mediatheek.+)" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactie\\.be/(permalink/\\d\\.\\d+|cm/vrtnieuws([^/]+)?/(mediatheek|videozone).+)", "http://(www\\.)?sporza\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|sporza)([^/]+)?/(mediatheek|videozone).+)" }, flags = { 0, 0 })
 public class DeredactieBe extends PluginForHost {
 
     public DeredactieBe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK  = null;
-    private String JSARRAY = null;
+    private String DLLINK = null;
 
     @Override
     public String getAGBLink() {
@@ -61,17 +58,16 @@ public class DeredactieBe extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         // Link offline
         if (br.containsHTML("(>Pagina \\- niet gevonden<|>De pagina die u zoekt kan niet gevonden worden)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        HashMap<String, String> mediaValue = new HashMap<String, String>();
+        for (String[] s : br.getRegex("data\\-video\\-([^=]+)=\"([^\"]+)\"").getMatches()) {
+            mediaValue.put(s[0], s[1]);
+        }
         // Nothing to download
-        if (!br.containsHTML("player\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (mediaValue == null || mediaValue.size() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        JSARRAY = br.getRegex("(var vars\\d+.*?\\[\'w\'\\]\\s?=\\s?\'\\d+\';)").getMatch(0);
-        if (JSARRAY == null) makeJsArray(); // sporza.be
-
-        if (JSARRAY == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        JSARRAY = JSARRAY.replaceAll("vars\\d+", "vars12345");
-
-        DLLINK = getMediaUrl("src");
-        final String filename = getMediaUrl("title");
+        DLLINK = mediaValue.get("src");
+        final String filename = mediaValue.get("title");
         if (DLLINK == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
@@ -86,8 +82,8 @@ public class DeredactieBe extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                DLLINK = getMediaUrl("rtmpServer");
-                DLLINK = DLLINK != null && getMediaUrl("rtmpPath") != null ? DLLINK + "@" + getMediaUrl("rtmpPath") : null;
+                DLLINK = mediaValue.get("rtmp-server");
+                DLLINK = DLLINK != null && mediaValue.get("rtmp-path") != null ? DLLINK + "@" + mediaValue.get("rtmp-path") : null;
                 if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
@@ -96,15 +92,6 @@ public class DeredactieBe extends PluginForHost {
                 con.disconnect();
             } catch (Throwable e) {
             }
-        }
-    }
-
-    private void makeJsArray() {
-        String sporza = br.getRegex("(data\\-video\\-id=.*?data\\-video\\-width\\s?=\\s?\"\\d+\")").getMatch(0);
-        if (sporza != null) {
-            sporza = sporza.replace("rtmp-server", "rtmpServer").replace("rtmp-path", "rtmpPath");
-            sporza = sporza.replaceAll("data\\-video-([^=]+)\\s?=\\s?\"([^\"]+)?\"", "vars12345['$1'] = '$2';");
-            if (sporza.contains("vars12345")) JSARRAY = "var vars12345 = Array();\n" + sporza;
         }
     }
 
@@ -123,18 +110,6 @@ public class DeredactieBe extends PluginForHost {
             }
             dl.startDownload();
         }
-    }
-
-    private String getMediaUrl(String s) {
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        JSARRAY += "\nvar out = vars12345['" + s + "'];";
-        try {
-            engine.eval(JSARRAY);
-            return String.valueOf(engine.get("out"));
-        } catch (final Throwable e) {
-        }
-        return null;
     }
 
     private void setupRTMPConnection(final DownloadInterface dl) {
