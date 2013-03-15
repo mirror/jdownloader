@@ -101,16 +101,9 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://pornhost.com/" + externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("(http://(www\\.)?keezmovies\\.com/embed_player\\.php\\?vid=\\d+)\"").getMatch(0);
+        externID = br.getRegex("(https?://www\\.keezmovies\\.com/embed_player\\.php\\?id=\\d+)").getMatch(0);
         if (externID != null) {
-            br.getPage(externID);
-            externID = br.getRegex("<share>(http://[^<>\"]*?)</share>").getMatch(0);
-            if (externID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            final DownloadLink dl = createDownloadlink(externID);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         // youporn.com handling 1

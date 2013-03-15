@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankwire.com" }, urls = { "http://(www\\.)?spankwire\\.com/.*?/video\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankwire.com" }, urls = { "http://(www\\.)?spankwire\\.com/(.*?/video\\d+|EmbedPlayer\\.aspx\\?ArticleId=\\d+)" }, flags = { 0 })
 public class SpankWireCom extends PluginForHost {
 
     public String DLLINK = null;
@@ -60,16 +60,27 @@ public class SpankWireCom extends PluginForHost {
         // Link offline
         if (br.containsHTML(">This article has been deleted") | br.containsHTML(">This video has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileID = new Regex(downloadLink.getDownloadURL(), "spankwire\\.com/.*?/video(\\d+)").getMatch(0);
-        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (fileID == null) {
+            fileID = new Regex(downloadLink.getDownloadURL(), "EmbedPlayer\\.aspx\\?ArticleId=(\\d+)").getMatch(0);
+            if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String filename = null;
+        if (!downloadLink.getDownloadURL().contains("EmbedPlayer.aspx")) {
+            br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<meta name=\"Description\" content=\"(.*?)\"").getMatch(0);
+                filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<meta name=\"Description\" content=\"(.*?)\"").getMatch(0);
+                }
+            }
+        } else {
+            filename = br.getRegex("video_title = \"([^\"]+)\";").getMatch(0);
+            if (filename != null) {
+                filename = filename.replaceAll("\\+", " ");
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(filename);
+        downloadLink.setName(filename.trim());
         if (br.containsHTML(">This article is temporarily unavailable")) {
             downloadLink.getLinkStatus().setStatusText("This video is temporarily unavailable!");
             return AvailableStatus.TRUE;

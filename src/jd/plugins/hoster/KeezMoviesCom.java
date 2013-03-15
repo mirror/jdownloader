@@ -27,6 +27,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
 import jd.gui.UserIO;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
@@ -39,7 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/video/[\\w\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/(video/[\\w\\-]+|embed_player\\.php\\?id=\\d+)" }, flags = { 2 })
 public class KeezMoviesCom extends PluginForHost {
 
     private String DLLINK    = null;
@@ -172,6 +173,20 @@ public class KeezMoviesCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(false);
+        // embed corrections
+        if (downloadLink.getDownloadURL().contains(".com/embed_player.php")) {
+            Browser br2 = br.cloneBrowser();
+            br2.getPage(downloadLink.getDownloadURL());
+            String realurl = br2.getRegex("<share>(http://[^<>\"]*?)</share>").getMatch(0);
+            if (realurl != null) {
+                br2.getPage(realurl);
+                downloadLink.setUrlDownload(br2.getURL());
+            } else {
+                logger.warning("Link correction failed! Please report this to the JDownloader Developement Team.");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+
         // Set cookie so we can watch all videos ;)
         br.setCookie("http://www.keezmovies.com/", "age_verified", "1");
         br.getPage(downloadLink.getDownloadURL());

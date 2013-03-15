@@ -85,6 +85,11 @@ public class MuchaCarneCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        externID = br.getRegex("(https?://www\\.keezmovies\\.com/embed_player\\.php\\?id=\\d+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         // For all following ids, a filename is needed
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);

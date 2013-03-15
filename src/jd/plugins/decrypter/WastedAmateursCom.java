@@ -45,7 +45,7 @@ public class WastedAmateursCom extends PluginForDecrypt {
         }
         String filename = br.getRegex(":: Viewing Media \\- (.*?)</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0);
+            filename = br.getRegex("<meta name=\"title\" content=\"([^\"]+)").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("target=\"_blank\" title=\"Click to Download FULL VIDEO and Get Access to our Huge Video Archives\">(.*?) </a></h1>").getMatch(0);
             }
@@ -65,6 +65,21 @@ public class WastedAmateursCom extends PluginForDecrypt {
                     finallink = br.getRegex("<b>PAGE URL:</b><br>\\[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
                     if (finallink == null) {
                         finallink = br.getRegex("\" style=\"color: #FFFFFF\">(http://.*?)</a>").getMatch(0);
+                        if (finallink == null) {
+                            String id = br.getRegex("src=\"(http[^ \"']+myxvids\\.com/embed/\\d+)").getMatch(0);
+                            if (id != null) {
+                                br.getPage(id);
+                                finallink = br.getRegex("video_url: '(http[^\"']+)").getMatch(0);
+                                if (finallink != null) {
+                                    // browser & flash will fill in other args (in the format of other plugins), but it doesn't seem necessary as download works.
+                                    // finallink + ?time=20130315100520&ahv=272678ee4d246a2c3ce8866ddd9af032&cv=5bde6b6fb56417ef49ba402c6e181a56&ref=http://www.myxvids.com/embed + id
+                                    DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+                                    dl.setFinalFileName(filename + ".mp4");
+                                    decryptedLinks.add(dl);
+                                    return decryptedLinks;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -89,7 +104,6 @@ public class WastedAmateursCom extends PluginForDecrypt {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
         tempID = br.getRegex("var urlAddress = \"(http://.*?)\"").getMatch(0);
         if (tempID != null) {
@@ -103,7 +117,6 @@ public class WastedAmateursCom extends PluginForDecrypt {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
         tempID = br.getRegex("addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
         if (tempID == null) tempID = br.getRegex("\\'(http://(www\\.)?amateurdumper\\.com/videos/.*?)\\'").getMatch(0);
@@ -112,7 +125,6 @@ public class WastedAmateursCom extends PluginForDecrypt {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
         if (tempID == null) {
             logger.warning("Decrypter broken for link: " + parameter);

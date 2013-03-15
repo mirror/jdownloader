@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "http://(www\\.)?freeviewmovies\\.com/porn/\\d+/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "http://(www\\.)?freeviewmoviesdecrypted/(porn|video)/\\d+" }, flags = { 0 })
 public class FreeViewMoviesCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -62,17 +62,29 @@ public class FreeViewMoviesCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        if (downloadLink.getDownloadURL().contains("freeviewmoviesdecrypted/")) {
+            downloadLink.setUrlDownload(downloadLink.getDownloadURL().replace("freeviewmoviesdecrypted/", "freeviewmovies.com/"));
+        }
         this.setBrowserExclusive();
+        // old /porn/ links redirect
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if ("http://www.freeviewmovies.com/".equals(br.getURL()) || br.containsHTML(">404 Error Page")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<td width=\"80%\"><h1>(.*?)</h1></td>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Amateur porn - (.*?) - Free Porn - freeviewmovies\\.com</title>").getMatch(0);
-        br.getPage("http://www.freeviewmovies.com/flv/skin/ofconfig.php?id=" + new Regex(downloadLink.getDownloadURL(), "freeviewmovies\\.com/porn/(\\d+)/").getMatch(0));
-        DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
+        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) \\- FreeViewMovies\\.com</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\" />").getMatch(0);
+            }
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("file: \'(http[^']+)").getMatch(0);
+        }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        String ext = new Regex(DLLINK.substring(DLLINK.lastIndexOf(".")), "([^\\?]+)").getMatch(0);
+        if (ext == null || ext.length() > 5) ext = ".mp4";
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

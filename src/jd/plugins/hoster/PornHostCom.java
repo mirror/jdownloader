@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -29,10 +30,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "http://(www\\.)?pornhostdecrypted\\.com/([0-9]+/[0-9]+\\.html|[0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "http://(www\\.)?pornhostdecrypted\\.com/([0-9]+/[0-9]+\\.html|[0-9]+|embed/\\d+)" }, flags = { 0 })
 public class PornHostCom extends PluginForHost {
 
     private String ending = null;
+    private String DDLINK = null;
 
     public PornHostCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,6 +42,11 @@ public class PornHostCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("pornhostdecrypted.com/", "pornhost.com/"));
+        if (link.getDownloadURL().contains(".com/embed/")) {
+            String protocol = new Regex(link.getDownloadURL(), "(https?)://").getMatch(0);
+            String id = new Regex(link.getDownloadURL(), "embed/(\\d+)").getMatch(0);
+            link.setUrlDownload(protocol + "://www.pornhost.com/" + id);
+        }
     }
 
     @Override
@@ -62,26 +69,39 @@ public class PornHostCom extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (filename.equals("")) filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         downloadLink.setFinalFileName(filename.trim() + ".flv");
-        return AvailableStatus.TRUE;
+        if (!downloadLink.getDownloadURL().contains(".html")) {
+            DDLINK = br.getRegex("\"(http://cdn\\d+\\.dl\\.pornhost\\.com/[^<>\"]*?)\"").getMatch(0);
+            if (DDLINK == null) {
+                DDLINK = br.getRegex("download this file</label>.*?<a href=\"(.*?)\"").getMatch(0);
+            }
+        } else {
+            DDLINK = br.getRegex("style=\"width: 499px; height: 372px\">[\t\n\r ]+<img src=\"(http.*?)\"").getMatch(0);
+            if (DDLINK == null) DDLINK = br.getRegex("\"(http://file[0-9]+\\.pornhost\\.com/[0-9]+/.*?)\"").getMatch(0);
+        }
+        if (DDLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DDLINK = Encoding.urlDecode(DDLINK, true);
+
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(DDLINK);
+            if (!con.getContentType().contains("html"))
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML(">The movie needs to be converted first")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The movie needs to be converted first", 30 * 60 * 1000l);
-        String dllink = null;
-        if (!downloadLink.getDownloadURL().contains(".html")) {
-            dllink = br.getRegex("\"(http://cdn\\d+\\.dl\\.pornhost\\.com/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("download this file</label>.*?<a href=\"(.*?)\"").getMatch(0);
-            }
-        } else {
-            dllink = br.getRegex("style=\"width: 499px; height: 372px\">[\t\n\r ]+<img src=\"(http.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://file[0-9]+\\.pornhost\\.com/[0-9]+/.*?)\"").getMatch(0);
-        }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = Encoding.urlDecode(dllink, true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DDLINK, true, 0);
         try {
             dl.setAllowFilenameFromURL(false);
             String name = Plugin.getFileNameFromHeader(dl.getConnection());

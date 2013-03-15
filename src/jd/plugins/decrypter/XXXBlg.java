@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx\\-blog\\.to/(?!livecams|download|feed|trade|contact|faq|webmasters|a\\-z\\-index|link\\-us|\\d{4}/)((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx\\-blog\\.to/(?!livecams|download|feed|trade|contact|faq|webmasters|a\\-z\\-index|link\\-us|\\d{4}/)((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)" }, flags = { 0 })
 public class XXXBlg extends PluginForDecrypt {
 
     private static ArrayList<String> pwList = new ArrayList<String>();
@@ -64,7 +64,7 @@ public class XXXBlg extends PluginForDecrypt {
                 Form form = br.getForm(0);
                 if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 dLink = createDownloadlink(form.getAction(null));
-                if (!parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image-sets|games)/.+/)")) decryptedLinks.add(createDownloadlink(parameter));
+                if (!parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/)")) decryptedLinks.add(createDownloadlink(parameter));
             }
             dLink.setSourcePluginPasswordList(pwList);
             decryptedLinks.add(dLink);
@@ -74,7 +74,7 @@ public class XXXBlg extends PluginForDecrypt {
             String fpname = br.getRegex("<title>(.*?)\\| XXX\\-Blog").getMatch(0);
             if (fpname == null) fpname = br.getRegex("rel=\"bookmark\" title=\"(.*?)\"").getMatch(0);
             String pagepiece = br.getRegex("<strong>(.*?)</a></strong></p>").getMatch(0);
-            if (pagepiece == null) pagepiece = br.getRegex("<div class=\"entry\">(.*?)<div id=\"respond\">").getMatch(0);
+            if (pagepiece == null) pagepiece = br.getRegex("<div class=\"entry\">(.+)\\s+</div>\\s+<br />").getMatch(0);
             if (pagepiece == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -86,7 +86,7 @@ public class XXXBlg extends PluginForDecrypt {
                 return null;
             }
             for (String link : links) {
-                if (link.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)")) continue;
+                if (link.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)")) continue;
                 final DownloadLink dlink = createDownloadlink(link);
                 dlink.setSourcePluginPasswordList(pwList);
                 decryptedLinks.add(dlink);

@@ -48,7 +48,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube8.com" }, urls = { "http://(www\\.)?tube8\\.com/(?!(cat|latest)/)[^<>\"/]*?/[^<>\"/]*?/([^<>\"/]*?/)?[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube8.com" }, urls = { "http://(www\\.)?tube8\\.com/(?!(cat|latest)/)[^/]+/[^/]+/([^/]+/)?[0-9]+" }, flags = { 2 })
 public class Tube8Com extends PluginForHost {
 
     private boolean             setEx  = true;
@@ -69,9 +69,9 @@ public class Tube8Com extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (setEx) this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String verifyAge = br.getRegex("(<div class=\"enter\\-btn\">)").getMatch(0);
         if (verifyAge != null) {
             br.postPage(downloadLink.getDownloadURL(), "processdisclaimer=");

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -79,6 +80,21 @@ public class DonkPartyCom extends PluginForDecrypt {
             if (tempID != null) {
                 decryptedLinks.add(createDownloadlink(tempID));
                 return decryptedLinks;
+            }
+            if (tempID == null) {
+                String id = br.getRegex("src=\"(http[^ \"']+myxvids\\.com/embed/\\d+)").getMatch(0);
+                if (id != null) {
+                    br.getPage(id);
+                    String finallink = br.getRegex("video_url: '(http[^\"']+)").getMatch(0);
+                    if (finallink != null) {
+                        // browser & flash will fill in other args (in the format of other plugins), but it doesn't seem necessary as download works.
+                        // finallink + ?time=20130315100520&ahv=272678ee4d246a2c3ce8866ddd9af032&cv=5bde6b6fb56417ef49ba402c6e181a56&ref=http://www.myxvids.com/embed/ + id
+                        DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+                        dl.setFinalFileName(filename + ".mp4");
+                        decryptedLinks.add(dl);
+                        return decryptedLinks;
+                    }
+                }
             }
         }
         if (br.containsHTML("megaporn.com/")) {

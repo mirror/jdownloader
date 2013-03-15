@@ -48,7 +48,13 @@ public class FilthDumpCom extends PluginForDecrypt {
         String tempID = br.getRegex("\\?settings=(http://(www\\.)?(tube\\.)?watchgfporn\\.com/playerConfig\\.php\\?.*?)\"").getMatch(0);
         if (tempID != null) {
             br.setFollowRedirects(true);
-            br.getPage(tempID);
+            try {
+                br.getPage(tempID);
+            } catch (Exception UnknownHostException) {
+                logger.warning("Embeded video provider DNS is down.! This is not a bug: " + parameter);
+                // throw UnknownHostException;
+                return decryptedLinks;
+            }
             String finallink = br.getRegex("defaultVideo:(http://.*?);").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

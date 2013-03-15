@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://(www\\.)?xhamster\\.com/movies/[0-9]+/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://(www\\.)?xhamster\\.com/(xembed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html)" }, flags = { 0 })
 public class XHamsterCom extends PluginForHost {
 
     public XHamsterCom(PluginWrapper wrapper) {
@@ -65,6 +65,14 @@ public class XHamsterCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        // embeded correction
+        if (br.getURL().contains(".com/xembed.php")) {
+            String realpage = br.getRegex("main_url=(http[^&]+)").getMatch(0);
+            if (realpage != null) {
+                br.getPage(realpage);
+                downloadLink.setUrlDownload(br.getURL());
+            }
+        }
         if (br.containsHTML("(Video Not found|403 Forbidden|>This video was deleted<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) \\- xHamster\\.com</title>").getMatch(0);
         if (filename == null) {
@@ -104,8 +112,7 @@ public class XHamsterCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        // Access the page again to get a new direct link because by checking
-        // the availibility the first linkisn't valid anymore
+        // Access the page again to get a new direct link because by checking the availability the first linkisn't valid anymore
         br.getPage(downloadLink.getDownloadURL());
         String dllink = getDllink();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);

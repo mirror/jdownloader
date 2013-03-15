@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "http://(www\\.)?pornhost\\.com/[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "http://(www\\.)?pornhost\\.com/([0-9]+|embed/\\d+)" }, flags = { 0 })
 public class PrnHstComFldr extends PluginForDecrypt {
 
     public PrnHstComFldr(PluginWrapper wrapper) {
@@ -43,7 +43,7 @@ public class PrnHstComFldr extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML("(moviecontainer|flashmovie|play this movie|createPlayer|>The movie needs to be converted first)")) {
+        if (br.containsHTML("(moviecontainer|flashmovie|play this movie|createPlayer|>The movie needs to be converted first)") || br.getURL().contains(".com/embed/")) {
             String finallink = br.getURL();
             decryptedLinks.add(createDownloadlink(finallink.replace("pornhost.com/", "pornhostdecrypted.com/")));
         } else {

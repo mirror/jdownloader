@@ -75,7 +75,12 @@ public class PornRabbitCom extends PluginForHost {
         }
         if (DLLINK == null) {
             DLLINK = br.getRegex("class=\"download\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK == null) DLLINK = br.getRegex("\"(http://cdn\\d+\\.media\\.pornrabbit\\.com/[^<>\"]*?)\"").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("file: '(http[^']+)',").getMatch(0);
+                if (DLLINK == null) {
+                    DLLINK = br.getRegex("\"(http://cdn\\d+\\.media\\.pornrabbit\\.[^<>\"]*?)\"").getMatch(0);
+                }
+            }
         }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);

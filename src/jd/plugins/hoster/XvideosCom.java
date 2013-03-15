@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //xvideos.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://(www\\.)?xvideos\\.com/video[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://((www\\.)?xvideos\\.com/video[0-9]+|\\w+\\.xvideos\\.com/embedframe/\\d+)" }, flags = { 0 })
 public class XvideosCom extends PluginForHost {
 
     public XvideosCom(PluginWrapper wrapper) {
@@ -50,14 +51,22 @@ public class XvideosCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(false);
         br.getHeaders().put("Accept-Encoding", "gzip");
         br.getPage(parameter.getDownloadURL());
+        // fixes embed links back to normal links
+        if (parameter.getDownloadURL().contains(".com/embedframe/")) {
+            String id = new Regex(parameter.getDownloadURL(), "\\.com/embedframe/(\\d+)").getMatch(0);
+            br.getPage("http://www.xvideos.com/video" + id);
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            parameter.setUrlDownload(br.getURL());
+        }
         if (br.getRedirectLocation() != null) {
             logger.info("Setting new downloadlink: " + br.getRedirectLocation());
             parameter.setUrlDownload(br.getRedirectLocation());
             br.getPage(parameter.getDownloadURL());
         }
-        if (br.containsHTML("(This video has been deleted|Page not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\. Go to X ?Videos for more <)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2>([^<>\"]*?)<span class").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

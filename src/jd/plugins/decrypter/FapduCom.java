@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdu\\.com/(?!search|embed|sitemaps|rss|hd|register|community|pornstars|videos)[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdu\\.com/(?!search|embed|sitemaps|rss|hd|register|community|pornstars|videos|pics|emo|channels)[a-z0-9\\-]+" }, flags = { 0 })
 public class FapduCom extends PluginForDecrypt {
 
     public FapduCom(PluginWrapper wrapper) {
@@ -261,8 +261,8 @@ public class FapduCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        logger.warning("Decrypter broken for link: " + parameter);
-        return null;
+        logger.warning("Unsupported link type or Decrypter broken for link: " + parameter);
+        return decryptedLinks;
     }
 
 }
