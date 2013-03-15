@@ -49,7 +49,7 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
             remoteAPI.unregister(dla);
             remoteAPI.unregister(fpa);
             remoteAPI.unregister(lca);
-            eva = null;
+            remoteAPI.unregister(eva);
         } catch (final Throwable e) {
             LogController.CL().log(e);
             throw new StopException(e.getMessage());
@@ -79,7 +79,7 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
             remoteAPI.register(dla = new DownloadLinkApi(), port, user, pass);
             remoteAPI.register(fpa = new FilePackageApi(), port, user, pass);
             remoteAPI.register(lca = new LinkCrawlerApi(), port, user, pass);
-            eva = new EventsAPI();
+            remoteAPI.register(eva = new EventsAPI(), port, user, pass);
         } catch (final Throwable e) {
             LogController.CL().log(e);
             throw new StartException(e);
