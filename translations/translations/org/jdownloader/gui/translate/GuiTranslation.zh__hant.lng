@@ -20,6 +20,7 @@ AddLinksDialog_validateForm_input_missing=請輸入 Url、連結、網站、或�
 AddLinksProgress_AddLinksProgress_=正在爬行取得下載
 AddLinksProgress_found=找到的下載：
 AddLinksProgress_layoutDialogContent_duration=持續時間：
+AddLinksProgress_layoutDialogContent_header_=正在搜尋在 %s1 中的下載...
 AddLinksProgress_setReturnmask_msg_=您隱藏了網路爬蟲的視窗。\r\n無須擔心！您可以在這裡檢視連結爬蟲狀態。
 AddLinksProgress_setReturnmask_title_=網路爬蟲視窗已隱藏！
 AddLinksToLinkgrabberAction=新增連結
