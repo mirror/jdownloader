@@ -118,7 +118,8 @@ public class YunFileCom extends PluginForHost {
         if (userid == null || fileid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Waittime is still skippable
         // int wait = 30;
-        // String shortWaittime = br.getRegex("id=wait_span style=\"font\\-size: 28px; color: green;\">(\\d+)</span>").getMatch(0);
+        // String shortWaittime =
+        // br.getRegex("id=wait_span style=\"font\\-size: 28px; color: green;\">(\\d+)</span>").getMatch(0);
         // if (shortWaittime != null) wait = Integer.parseInt(shortWaittime);
         // sleep(wait * 1001l, downloadLink);
         // Check if captcha needed
@@ -127,20 +128,18 @@ public class YunFileCom extends PluginForHost {
             br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + "/" + code + ".html");
             if (br.containsHTML("Not HTML Code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else {
-            // br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + ".html");
+            // br.getPage("http://yunfile.com/file/down/" + userid + "/" +
+            // fileid + ".html");
             br.getPage(domain + "/file/down/" + userid + "/" + fileid + ".html");
         }
-        String vid = br.getRegex("name=\"vid\" value=\"(.*?)\"").getMatch(0);
-        String vid1 = br.getRegex("setCookie\\(\"vid1\", \"(.*?)\"").getMatch(0);
-        String vid2 = br.getRegex("setCookie\\(\"vid2\", \"(.*?)\"").getMatch(0);
-        String action = br.getRegex("id=\"down_from\"([\t\n\r ]+)?action=\"(http://.*?)\"([\t\n\r ]+)?method=\"post\"").getMatch(1);
-        if (action == null) action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/file/downfile/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
-        if (vid == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Those cookies are important, no download start without one of them!
-        if (vid1 != null) br.setCookie(MAINPAGE, "vid1", vid1);
-        if (vid2 != null) br.setCookie(MAINPAGE, "vid2", vid2);
+        String vid = br.getRegex("form\\.vid\\.value = \"([a-z0-9]+)\"").getMatch(0);
+        String vid1 = br.getRegex("name=\"vid1\" value=\"([a-z0-9]+)\"").getMatch(0);
+        String action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/view\\?fid=[a-z0-9]+)\"").getMatch(0);
+        final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
+
+        if (vid == null || action == null || md5 == null || vid1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
-        String postData = "module=fileService&action=downfile&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid;
+        String postData = "module=fileService&action=downfile&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid + "&vid1=" + vid1 + "&md5=" + md5;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action, postData, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

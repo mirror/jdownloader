@@ -25,11 +25,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://books.google.[a-z]+/books\\?id=[0-9a-zA-Z-_]+.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://books\\.google\\.(de|pt)/books\\?id=[0-9a-zA-Z-_]+.*" }, flags = { 0 })
 public class GglBks extends PluginForDecrypt {
 
     public GglBks(PluginWrapper wrapper) {
@@ -45,12 +43,20 @@ public class GglBks extends PluginForDecrypt {
         String url2 = url.concat("&printsec=frontcover&jscmd=click3");
         br.setFollowRedirects(true);
         br.getPage(url2);
+        if (!br.containsHTML("\"page\"")) {
+            logger.info("Link offline or book not downloadable: " + parameter);
+            return decryptedLinks;
+        }
         // logger.info(br.toString());
         // page moved + capcha - secure for automatic downloads
         if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*")) {
             url = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getRegex("<A HREF=\"(http://sorry.google.com/sorry/\\?continue=http://books.google.com/books.*?)\">").getMatch(0);
-            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            if (url == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            logger.info("Reconnect needed to continue downloading, quitting decrypter...");
+            return decryptedLinks;
             // TODO: can make redirect and capcha but this only for secure to
             // continue connect not for download page
         }
@@ -59,8 +65,10 @@ public class GglBks extends PluginForDecrypt {
         // { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 *
         // 1000); }
         String[] links = br.getRegex("\\{\\\"pid\\\":\\\"(.*?)\\\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String dl : links) {
             DownloadLink link = createDownloadlink(url.replace("books.google", "googlebooksdecrypter") + "&pg=" + dl);
             int counter = 120000;
@@ -73,7 +81,6 @@ public class GglBks extends PluginForDecrypt {
                 link.setName(dl + ".jpg");
             }
             decryptedLinks.add(link);
-            progress.increase(1);
         }
         br.getPage(param);
         String fpName = br.getRegex("<div id=\"titlebar\"><h1 class=title dir=ltr>(.*?)</h1>").getMatch(0);

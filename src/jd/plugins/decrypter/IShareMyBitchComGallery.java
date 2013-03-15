@@ -37,6 +37,7 @@ public class IShareMyBitchComGallery extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getURL().equals("http://www.isharemybitch.com/404.php") || br.containsHTML("The file you have requested was not found on this server")) {
             logger.info("Link offline: " + parameter);
@@ -54,8 +55,8 @@ public class IShareMyBitchComGallery extends PluginForDecrypt {
         br.getPage("http://www.isharemybitch.com/gallery-widget/widget.php?id=" + galleryID);
         final String[] links = br.getRegex("\"(http://media\\.isharemybitch\\.com:\\d+/galleries/[a-z0-9]+/[^<>\"/]+\\.jpg)\"").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Link offline or this is an empty gallery: " + parameter);
+            return decryptedLinks;
         }
         int counter = 1;
         final DecimalFormat df = new DecimalFormat("0000");

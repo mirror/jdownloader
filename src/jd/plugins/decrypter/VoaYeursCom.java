@@ -131,12 +131,54 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        externID = br.getRegex("(http://(www\\.)?mofosex\\.com/embed_player\\.php\\?id=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            if (br.containsHTML("No htmlCode read")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            externID = br.getRegex("<click_tag>(http://(www\\.)?mofosex\\.com/videos/\\d+/[^<>\"]*?)</click_tag>").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         // For all following ids, a filename is needed
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
+        externID = br.getRegex("foxytube\\.com/embedded/(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage("http://www.foxytube.com/embconfig/" + externID + "/");
+            externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?extremetube\\.com/embed_player\\.php\\?id=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            externID = br.getRegex("<flv_url>(http://[^<>\"]*?)</flv_url>").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         externID = br.getRegex("flashvars=\"enablejs=true\\&autostart=(false|true)\\&mediaid=(\\d+)\\&").getMatch(1);
         if (externID != null) {
             br.getPage("http://www.deviantclip.com/playlists/" + externID + "/playlist.xml");

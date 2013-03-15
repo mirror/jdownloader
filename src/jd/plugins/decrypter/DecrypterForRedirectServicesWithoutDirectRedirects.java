@@ -258,7 +258,8 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             br.getPage(parameter.replace("download-", "dl-"));
             finallink = br.getRedirectLocation();
         } else if (parameter.contains("bogatube.com/")) {
-            // Those site only contains videos of xvideos.com, just find the id and make the link
+            // Those site only contains videos of xvideos.com, just find the id
+            // and make the link
             final String videoID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
             if (videoID != null) {
                 finallink = "http://xvideos.com/video" + videoID;
@@ -280,6 +281,15 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             finallink = br.getRedirectLocation();
             if (finallink == null) finallink = br.getRegex("id=\"fdown\" name=\"fdown\" src=\"(.*?)\"").getMatch(0);
         } else if (parameter.contains("slutdrive.com/video-")) {
+            if (br.getRedirectLocation() != null) {
+                br.setFollowRedirects(true);
+                br.getPage(br.getRedirectLocation());
+            }
+            if ("http://slutdrive.com/".equals(br.getURL())) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            System.out.println(br.getRedirectLocation());
             finallink = br.getRegex("allowscriptaccess=\"always\" flashvars=\"file=(http://.*?\\.flv)\\&image=").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("(http://fs\\d+\\.slutdrive\\.com/videos/\\d+\\.flv)").getMatch(0);

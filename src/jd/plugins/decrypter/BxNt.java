@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/shared/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/shared/(?!static)[a-z0-9]+" }, flags = { 0 })
 public class BxNt extends PluginForDecrypt {
     private static final String  BASE_URL_PATTERN             = "(https?://(www|[a-z0-9\\-_]+)\\.box\\.com/shared/\\w+)(#\\w*)?";
     private static final Pattern FEED_FILEINFO_PATTERN        = Pattern.compile("<item>(.*?)<\\/item>", Pattern.DOTALL);
@@ -94,6 +94,7 @@ public class BxNt extends PluginForDecrypt {
      */
     private ArrayList<DownloadLink> decryptFeed(String feedUrl) throws IOException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         String title = br.getRegex(FEED_FILETITLE_PATTERN).getMatch(0);
         String[] folder = br.getRegex(FEED_FILEINFO_PATTERN).getColumn(0);
         if (folder == null) return null;

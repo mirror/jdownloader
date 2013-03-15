@@ -53,6 +53,10 @@ public class FlStbCm extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
+        if (br.getURL().contains("filestube.com/query.html")) {
+            logger.info("The added link links to a search links and those links are unsupported: " + br.getURL());
+            return decryptedLinks;
+        }
         if (br.containsHTML(">403 Forbidden<")) {
             logger.info("Link offline or unsupported: " + parameter);
             return decryptedLinks;

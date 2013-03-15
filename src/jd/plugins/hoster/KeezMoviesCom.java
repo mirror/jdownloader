@@ -51,7 +51,8 @@ public class KeezMoviesCom extends PluginForHost {
     }
 
     /**
-     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
+     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in
+     * JavaScript by Chris Veness
      * 
      * @see <a
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
@@ -170,9 +171,10 @@ public class KeezMoviesCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(false);
+        String filename = null;
         // embed corrections
         if (downloadLink.getDownloadURL().contains(".com/embed_player.php")) {
             Browser br2 = br.cloneBrowser();
@@ -182,39 +184,42 @@ public class KeezMoviesCom extends PluginForHost {
                 br2.getPage(realurl);
                 downloadLink.setUrlDownload(br2.getURL());
             } else {
-                logger.warning("Link correction failed! Please report this to the JDownloader Developement Team.");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                DLLINK = br2.getRegex("<flv_url>(http://[^<>\"]*?)</flv_url>").getMatch(0);
+                if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                filename = downloadLink.getFinalFileName();
+                if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
             }
         }
-
-        // Set cookie so we can watch all videos ;)
-        br.setCookie("http://www.keezmovies.com/", "age_verified", "1");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<span class=\"fn\" style=\"display:none\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?) - KeezMovies\\.com</title>").getMatch(0);
-        }
-        FLASHVARS = br.getRegex("<param name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
-        if (FLASHVARS == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-        FLASHVARS = Encoding.htmlDecode(FLASHVARS);
-        String isEncrypted = getValue("encrypted");
-        if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
-            String decrypted = getValue("video_url");
-            String key = getValue("video_title");
-            try {
-                DLLINK = new BouncyCastleAESCounterModeDecrypt().decrypt(decrypted, key, 256);
-            } catch (Throwable e) {
-                /* Fallback for stable version */
-                DLLINK = AESCounterModeDecrypt(decrypted, key, 256);
+        if (downloadLink.getDownloadURL().matches("http://(www\\.)?keezmovies\\.com/video/[\\w\\-]+")) {
+            // Set cookie so we can watch all videos ;)
+            br.setCookie("http://www.keezmovies.com/", "age_verified", "1");
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.getRedirectLocation() != null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            filename = br.getRegex("<span class=\"fn\" style=\"display:none\">([^<>\"]*?)</span>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?) \\- KeezMovies\\.com</title>").getMatch(0);
             }
-            if (DLLINK != null && (DLLINK.startsWith("Error:") || !DLLINK.startsWith("http"))) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, DLLINK); }
-        } else {
-            DLLINK = getValue("video_url");
-        }
+            FLASHVARS = br.getRegex("<param name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
+            if (FLASHVARS == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            FLASHVARS = Encoding.htmlDecode(FLASHVARS);
+            String isEncrypted = getValue("encrypted");
+            if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
+                String decrypted = getValue("video_url");
+                String key = getValue("video_title");
+                try {
+                    DLLINK = new BouncyCastleAESCounterModeDecrypt().decrypt(decrypted, key, 256);
+                } catch (Throwable e) {
+                    /* Fallback for stable version */
+                    DLLINK = AESCounterModeDecrypt(decrypted, key, 256);
+                }
+                if (DLLINK != null && (DLLINK.startsWith("Error:") || !DLLINK.startsWith("http"))) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, DLLINK); }
+            } else {
+                DLLINK = getValue("video_url");
+            }
+
+            if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setFinalFileName(filename.trim() + ".flv");
         DLLINK = Encoding.htmlDecode(DLLINK);
         URLConnectionAdapter con = br.openGetConnection(DLLINK);

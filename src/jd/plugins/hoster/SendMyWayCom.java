@@ -63,10 +63,11 @@ public class SendMyWayCom extends PluginForHost {
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST         = "http://sendmyway.com";
+    private static final String DOMAINS             = "(sendmyway\\.com)";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static Object       LOCK                = new Object();
+    private static Object       LOCK                = new Object();                                                ;
 
     @Override
     public String getAGBLink() {
@@ -101,10 +102,17 @@ public class SendMyWayCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(correctedBR, "<p class=\"file\\-name\" ><a href=\"http://(www\\.)?sendmyway\\.com/[a-z0-9]{12}\" style=\"text\\-decoration:none;color: #FFFFFF;\">([^<>\"]*?)</a></p>").getMatch(1);
-        if (filename == null) {
-            filename = new Regex(correctedBR, "<b>share:</b>\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;([^<>\"]*?)<br/>").getMatch(0);
+        String filename;
+        if (br.containsHTML("jquery_jplayer_1\"")) {
+            filename = new Regex(correctedBR, "<div class=\"song\\-name\" title=\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) filename = new Regex(correctedBR, "var audio_ext = openFile\\(\"([^<>\"]*?)\"\\)").getMatch(0);
+        } else {
+            filename = new Regex(correctedBR, "<p class=\"file\\-name\" ><a href=\"http://(www\\.)?sendmyway\\.com/[a-z0-9]{12}\" style=\"text\\-decoration:none;color: #FFFFFF;\">([^<>\"]*?)</a></p>").getMatch(1);
+            if (filename == null) {
+                filename = new Regex(correctedBR, "<b>share:</b>\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;([^<>\"]*?)<br/>").getMatch(0);
+            }
         }
+
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "<small>\\((.*?)\\)</small>").getMatch(0);
@@ -171,7 +179,8 @@ public class SendMyWayCom extends PluginForHost {
         }
 
         /**
-         * Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
+         * Videolinks can already be found here, if a link is found here we can
+         * skip waittimes and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -310,19 +319,13 @@ public class SendMyWayCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-                if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                        if (cryptedScripts != null && cryptedScripts.length != 0) {
-                            for (String crypted : cryptedScripts) {
-                                dllink = decodeDownloadLink(crypted);
-                                if (dllink != null) break;
-                            }
-                        }
+                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                    for (String crypted : cryptedScripts) {
+                        dllink = decodeDownloadLink(crypted);
+                        if (dllink != null) break;
                     }
                 }
             }
@@ -444,7 +447,8 @@ public class SendMyWayCom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             /**
-             * Who needs half points ? If we have a dot in the points, just remove it
+             * Who needs half points ? If we have a dot in the points, just
+             * remove it
              */
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);

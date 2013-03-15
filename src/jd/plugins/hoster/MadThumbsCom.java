@@ -68,7 +68,7 @@ public class MadThumbsCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie("http://www.madthumbs.com/", "language", "en");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>Free Porn Tube \\- MadThumbs\\&trade;</title>|<meta property=\"og:title\" content=\"Free Porn Tube \\- MadThumbs\")")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!br.containsHTML("mt_main\\.player_page\\.init")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("vid_title:\"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) \\- MadThumbs\\&trade;</title> ").getMatch(0);
@@ -79,8 +79,16 @@ public class MadThumbsCom extends PluginForHost {
                 }
             }
         }
-        final String[] param = br.getRegex("flowplayer\\((.*?)\\)\\;").getMatch(0).replaceAll("\n|\\s|'", "").split(",");
-        if (param == null || param.length == 0 || param.length < 4 || filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        String[] param = null;
+        try {
+            param = br.getRegex("flowplayer\\((.*?)\\)\\;").getMatch(0).replaceAll("\n|\\s|'", "").split(",");
+        } catch (final Exception e) {
+            {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
+        if (param == null || param.length == 0 || param.length < 4 || filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         // Generate hashvalue
         String hash = null;
         try {

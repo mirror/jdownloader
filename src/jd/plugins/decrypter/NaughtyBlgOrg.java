@@ -35,7 +35,11 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">Page not found \\(404\\)<|>403 Forbidden<")) {
+        if (br.containsHTML(">Page not found \\(404\\)<|>403 Forbidden<") || br.containsHTML("No htmlCode read")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(">Deleted due DMCA report<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

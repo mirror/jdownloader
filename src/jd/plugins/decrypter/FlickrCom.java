@@ -67,7 +67,10 @@ public class FlickrCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         /** Login is not always needed but we force it to get all pictures */
-        getUserLogin();
+        if (!getUserLogin()) {
+            logger.info("Login failed -> Cannot decrypt flickr links without any active accounts: " + parameter);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
 
         // Some stuff which is different from link to link

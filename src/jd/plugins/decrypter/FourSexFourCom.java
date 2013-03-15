@@ -37,12 +37,7 @@ public class FourSexFourCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String externID = br.getRegex("(https?://www\\.keezmovies\\.com/embed_player\\.php\\?id=\\d+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
-            return decryptedLinks;
-        }
-        externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?extremetube\\.com/embed_player\\.php\\?id=\\d+)\"").getMatch(0);
+        String externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?extremetube\\.com/embed_player\\.php\\?id=\\d+)\"").getMatch(0);
         if (externID != null) {
             br.getPage(externID);
             String finallink = br.getRegex("<click_tag>(http://.*?)</click_tag>").getMatch(0);
@@ -93,7 +88,14 @@ public class FourSexFourCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        filename = filename.trim();
+        filename = Encoding.htmlDecode(filename.trim());
+        externID = br.getRegex("(https?://www\\.keezmovies\\.com/embed_player\\.php\\?id=\\d+)").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
+            dl.setFinalFileName(filename);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
         if (externID != null) {
             if (filename == null) {
@@ -158,6 +160,14 @@ public class FourSexFourCom extends PluginForDecrypt {
                 return null;
             }
             decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        // Decrypt images
+        externID = br.getRegex("<div class=\"embed\"><img src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
+            dl.setFinalFileName(filename + "." + externID.substring(externID.lastIndexOf(".")));
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (externID == null) {

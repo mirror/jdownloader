@@ -53,6 +53,7 @@ public class WallBaseCc extends PluginForHost {
         this.setBrowserExclusive();
         final Account acc = AccountController.getInstance().getValidAccount(this);
         if (acc != null) login(this.br, acc, false);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         // Offline1
         if (br.getURL().equals("http://wallbase.cc/home")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
