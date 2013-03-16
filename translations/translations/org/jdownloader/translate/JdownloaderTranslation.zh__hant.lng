@@ -19,6 +19,7 @@ SetDownloadFolderAction_actionPerformed_=分割套件 %s1
 SetDownloadFolderAction_msg=變更整個任務 %s1，或僅用於 %s2 個選擇的連結的下載資料夾
 SetDownloadFolderAction_yes=任務
 StartDownloadsAction_createTooltip_=開始下載
+TranslationProxyDialogAuthRequired=JDownloader 不能連接到 %s1！您的代理伺服器需要身份驗證。\r\n檢查您的憑證...
 basics_browser_folder=選擇
 basics_no=否
 basics_yes=是
