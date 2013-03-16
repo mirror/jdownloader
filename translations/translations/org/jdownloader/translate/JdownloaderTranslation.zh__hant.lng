@@ -16,6 +16,7 @@ Mainstart_now=立刻開始！
 PackagizerSettings_folderbypackage_rule_name=依任務名稱建立子資料夾
 RemoveAction_actionPerformed_rly_msg=確定要刪除所有選擇的規則嗎？
 SetDownloadFolderAction_actionPerformed_=分割套件 %s1
+SetDownloadFolderAction_msg=變更整個任務 %s1，或僅用於 %s2 個選擇的連結的下載資料夾
 SetDownloadFolderAction_yes=任務
 StartDownloadsAction_createTooltip_=開始下載
 basics_browser_folder=選擇

@@ -39,6 +39,7 @@ literally_unknown=未知
 rlyexit=您是否確認您想退出？
 rlyexit_title=確定離開嗎？
 update_dialog_cancel=取消
+update_dialog_later=稍後問我
 update_dialog_msg_x_updates_available=更新已準備好安裝。您是否想現在執行更新？
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_yes=是(建議)

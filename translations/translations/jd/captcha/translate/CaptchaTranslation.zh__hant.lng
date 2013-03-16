@@ -53,4 +53,5 @@ jd_plugins_optional_schedule_maingui_edit=編輯
 showcaptcha_choose_file=選擇圖片檔
 showcaptcha_chooser_title=JDownloader :: 顯示驗證碼
 train_choose_folder=選擇資料夾
+train_chooser_title=JDownloader :: 訓練全部
 train_method=選擇驗證碼程序
