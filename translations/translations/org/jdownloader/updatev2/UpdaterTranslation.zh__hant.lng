@@ -55,3 +55,4 @@ update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=更新可用
 update_dialog_yes=是(建議)
 update_in_next_session=取消，不再詢問直至下一次重新啟動
+updatedplugins=外掛已被更新。\r\n您現在正在執行最新的 JDownloader。
