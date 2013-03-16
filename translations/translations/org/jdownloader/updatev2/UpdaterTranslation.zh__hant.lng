@@ -52,5 +52,6 @@ update_dialog_later=稍後問我
 update_dialog_msg_x_updates_available=更新已準備好安裝。您是否想現在執行更新？
 update_dialog_news_button=開啟更新日誌
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
+update_dialog_title_updates_available=更新可用
 update_dialog_yes=是(建議)
 update_in_next_session=取消，不再詢問直至下一次重新啟動
