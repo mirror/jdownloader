@@ -75,8 +75,8 @@ public class FlashxTv extends PluginForHost {
         final String seclink = br.getRegex("\"(http://play\\.flashx\\.tv/player/[^<>\"]*?)\"").getMatch(0);
         if (seclink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(seclink);
-        final String thirdLink = br.getRegex("(http://play\\.flashx\\.tv/nuevo/player/cst\\.php\\?hash=[A-Za-z0-9]+)").getMatch(0);
-        if (thirdLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String thirdLink = br.getRegex("(http://play\\.flashx\\.tv/nuevo/player/cst\\.php\\?hash=[A-Za-z0-9]+)").getMatch(0);
+        if (thirdLink == null) thirdLink = "http://play.flashx.tv/nuevo/player/fxconfig.php?hash=" + new Regex(seclink, "hash=([^\\&]+)\\&").getMatch(0);
         br.getPage(thirdLink);
         String dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

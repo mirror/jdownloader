@@ -92,7 +92,7 @@ public class DrTuberCom extends PluginForHost {
         // Check if link is an embedded link e.g. from a decrypter
 
         /* embed v3 */
-        String vk = new Regex(downloadLink.getDownloadURL(), "vkey=(.+)").getMatch(0);
+        String vk = new Regex(downloadLink.getDownloadURL(), "vkey=(\\w+)").getMatch(0);
         if (vk != null) {
             br.getPage(downloadLink.getDownloadURL() + "&pkey=" + JDHash.getMD5(vk + Encoding.Base64Decode("S0s2Mml5aUliWFhIc2J3")));
             String finallink = br.getRegex("type=video_click\\&amp;target_url=(http.*?)</url>").getMatch(0);
@@ -114,16 +114,23 @@ public class DrTuberCom extends PluginForHost {
             }
             br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
             continueLink = getContinueLink(br.getRegex("(var configPath.*?addVariable\\(\\'config\\',.*?;)").getMatch(0));
-            String vKey = new Regex(continueLink, "vkey=([0-9a-z]+)").getMatch(0);
+            String vKey = new Regex(continueLink, "vkey=(\\w+)").getMatch(0);
             if (continueLink == null || vKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             continueLink = "http://drtuber.com" + Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("UFQ2bDEzdW1xVjhLODI3"));
         }
 
         /* embed v4 */
         if (downloadLink.getDownloadURL().matches("http://(www\\.)?drtuber\\.com/embed/\\d+")) {
-            String[] hashEncValues = br.getRegex("flashvars=\"id_video=(\\d+)\\&t=(\\d+)").getRow(0);
-            if (hashEncValues == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            continueLink = "/player/config_embed4.php?id_video=" + hashEncValues[0] + "&t=" + hashEncValues[1] + "&pkey=" + JDHash.getMD5(hashEncValues[0] + hashEncValues[1] + Encoding.Base64Decode("RXMxaldDemZOQmRsMlk4"));
+            String nextUrl = br.getRegex("flashvars=\"embed=1\\&config=([^\"]+)\"").getMatch(0);
+            if (nextUrl == null) {
+                String[] hashEncValues = br.getRegex("flashvars=\"id_video=(\\d+)\\&t=(\\d+)").getRow(0);
+                if (hashEncValues == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                continueLink = "/player/config_embed4.php?id_video=" + hashEncValues[0] + "&t=" + hashEncValues[1] + "&pkey=" + JDHash.getMD5(hashEncValues[0] + hashEncValues[1] + Encoding.Base64Decode("RXMxaldDemZOQmRsMlk4"));
+            } else {
+                nextUrl = Encoding.htmlDecode(nextUrl);
+                vk = new Regex(nextUrl, "vkey=(\\w+)").getMatch(0);
+                continueLink = nextUrl + "&pkey=" + JDHash.getMD5(vk + Encoding.Base64Decode("UFQ2bDEzdW1xVjhLODI3"));
+            }
             filename = br.getRegex("<title>(.*?)\\s+\\-\\s+Free Porn Videos").getMatch(0);
         }
         if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
