@@ -1,3 +1,4 @@
+AutoDetectAction_run_failed=Encontrados dispositivos UPNP, mas não foi possível conectar.\nTente antes o LiveHeader!
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Tenta encontrar todos os dispositivos UPNP reconectáveis na sua rede.\nMuitos dos Routers FritzBox são reconectáveis por este método.
 UPNPReconnectInvoker_getName_=Reconectar Router UPNP
 UPNPRouterPlugin_run_error=Impossível detectar qualquer dispositivos  UPNP. Tentar reconectar usando Cabeçalhos!

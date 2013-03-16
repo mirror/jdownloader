@@ -1,6 +1,7 @@
 action_tooltip=Activar para Desligar o S.O. após descargas concluídas
 addons_jdshutdown_statusmessage_disabled=O sistema não será desligado pelo JDownloader
 addons_jdshutdown_statusmessage_enabled=O JDownloader irá desligar o seu sistema após concluir as transferências activas
+config_active_by_default=Manter Desligar activo
 config_toolbarbutton=Botão barra ferramentas visível
 gui_config_jdshutdown_close=Fechar JD
 gui_config_jdshutdown_forceshutdown=Forçar Encerramento (apenas alguns S.O.)
