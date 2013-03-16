@@ -1,0 +1,13 @@
+LogAction=Utwórz log
+LogAction_actionPerformed_givelogid_=Wyślij ten IDentyfikator logów do naszego wsparcia!
+LogAction_actionPerformed_wait_=Proszę czekać...
+LogAction_actionPerformed_zip_title_=Utwórz pakiet z logami
+LogAction_getString_uploading_=Logi są przygotowywane
+LogAction_tooltip=Tworzenie logów
+LogModel_getStringValue_between_=Pomiędzy %s1 a %s2
+LogModel_initColumns_time_=Czas
+LogModel_initColumns_x_=Sprawdź
+LogTable_onContextMenu_disable_=Anuluj wybór
+LogTable_onContextMenu_enable_=Wybierz
+SendLogDialog_SendLogDialog_title_=Wyślij informację o błędzie
+SendLogDialog_layoutDialogContent_desc_=Kiedy pojawił się problem? Zaznacz wszystkie, odpowiednie pozycje logów.
