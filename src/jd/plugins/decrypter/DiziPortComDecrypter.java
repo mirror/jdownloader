@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -43,7 +44,12 @@ public class DiziPortComDecrypter extends PluginForDecrypt {
             br.getPage("http://diziport.com/nesne-uye.php?olay=sayac&sid=" + sid);
             String externID = br.getRegex("file:\\'((www\\.)?youtube\\.com/watch\\?v=[^<>\"]*?)\\',").getMatch(0);
             if (externID != null) {
-                decryptedLinks.add(createDownloadlink("http://" + externID));
+                if (externID.contains("watch?v=http")) {
+                    externID = new Regex(externID, "(http.+)").getMatch(0);
+                    decryptedLinks.add(createDownloadlink(externID));
+                } else {
+                    decryptedLinks.add(createDownloadlink("http://" + externID));
+                }
                 return decryptedLinks;
             }
         }

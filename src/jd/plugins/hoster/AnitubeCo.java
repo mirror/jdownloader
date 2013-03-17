@@ -58,10 +58,17 @@ public class AnitubeCo extends PluginForHost {
         if (br.containsHTML(">403 Forbidden<") && br.containsHTML(">nginx/[\\d+\\.]+<")) throw new PluginException(LinkStatus.ERROR_FATAL, "IP Blocked: Provider prevents access based on IP address.");
         if (br.containsHTML("Unfortunately it\\'s impossible to access the site from your current geographic location")) return AvailableStatus.UNCHECKABLE;
         if (br.getURL().contains("error.php?type=video_missing")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex match = br.getRegex("(http://(?:www\\.)?anitube\\.co/[^/]+)/config\\.php\\?key=([0-9a-f]+)'");
-        if (match.count() > 0) {
-            br.getPage(match.getMatch(0) + "/playlist.php?key=" + match.getMatch(1));
+        String[] matches = br.getRegex("(http://(?:www\\.)?anitube\\.[^ \"']+/config\\.php\\?key=[0-9a-f]+)'").getColumn(0);
+        // final Regex match = br.getRegex("(http://(?:www\\.)?anitube\\.[^/]+)/[^ \"']+/config\\.php\\?key=([0-9a-f]+)'");
+        // http://www.anitube.jp/nuevo/config.php?key=0f114c048f4a91d70108
+        // if (match.count() > 0) {
+        for (String match : matches) {
+            String host = new Regex(match, "(https?://.+)/config\\.php\\?key=([0-9a-f]+)").getMatch(0);
+            String key = new Regex(match, "(https?://.+)/config\\.php\\?key=([0-9a-f]+)").getMatch(1);
+            if (host == null || key == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            br.getPage(host + "/playlist.php?key=" + key);
             dllink = br.getRegex("<file>\\s*(http://[^<]+\\d+\\.flv)\\s*</file>").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("<html5>(http[^<]+)</html5>").getMatch(0);
             String filename = br.getRegex("<title>\\s*([^<]+)\\s*</title>").getMatch(0);
             if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             URLConnectionAdapter con = null;
@@ -70,7 +77,7 @@ public class AnitubeCo extends PluginForHost {
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                     filename = filename.trim();
-                    downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
+                    downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + dllink.substring(dllink.lastIndexOf(".")));
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -80,8 +87,6 @@ public class AnitubeCo extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return AvailableStatus.TRUE;
     }

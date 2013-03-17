@@ -50,11 +50,14 @@ public class XxxMsnCamCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>Oops not found|<title>Nothing found for|>Deleted due to complaint<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Maybe invalid link
-        if (!br.containsHTML("xxxmsncam\\.com/jwflvplayer/player\\.swf\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.containsHTML("(xxxmsncam\\.com/jwflvplayer/player\\.swf\"|flowplayer/FlowPlayerDark\\.swf|kvs\\-flv\\-player/kt_player\\.swf)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("title=\"Comment on ([^<>\"/]+)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"/]+) \\| Free Amateur WebCam Movies</title>").getMatch(0);
         DLLINK = br.getRegex("\\.addVariable\\(\"(file|link)\",\"(http://[^<>\"\\']+)\"").getMatch(1);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://(www\\.)?xxxmsncam\\.com/hostedvids/\\d+{4}/\\d+{2}/\\d+{2}/[^<>\"\\'/]+)\"").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("videoFile: '(http[^\']+)'").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("\"(http://(\\w+\\.)?xxxmsncam\\.com/hostedvids/\\d+{4}/\\d+{2}/\\d+{2}/[^<>\"\\'/]+(\\.flv|\\.mp4))").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
