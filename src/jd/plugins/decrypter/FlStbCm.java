@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|advanced_search\\.html|search|look_for\\.html.+|sponsored_go\\.html.+|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback|privacy\\.html|terms\\.html|trends/|last_added_files\\.html|add_contact\\.html|apidoc\\.html|submit\\.html|query\\.html|affiliation\\.html)([^<>/\"]+\\.html|[A-Za-z0-9]{10,})|video\\.filestube\\.com/watch,[a-z0-9]+/.+\\.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|advanced_search\\.html|search|look_for\\.html.+|sponsored_go\\.html.+|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback|privacy\\.html|terms\\.html|trends/|last_added_files\\.html|add_contact\\.html|apidoc\\.html|submit\\.html|query\\.html|affiliation\\.html)([^<>/\"]+\\.html|[A-Za-z0-9]{10,})|video\\.filestube\\.com/(watch,[a-z0-9]+/.+\\.html|[a-z0-9]+))" }, flags = { 0 })
 public class FlStbCm extends PluginForDecrypt {
 
     public FlStbCm(PluginWrapper wrapper) {
@@ -73,7 +73,7 @@ public class FlStbCm extends PluginForDecrypt {
                 return null;
             }
             decryptedLinks.add(createDownloadlink(finallink));
-        } else if (parameter.contains("video.filestube.com/watch")) {
+        } else if (parameter.contains("video.filestube.com/")) {
             if (br.containsHTML("(>Error 404 video not found<|>Sorry, the video you requested does not exist|>This video has been removed)")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
@@ -83,10 +83,9 @@ public class FlStbCm extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + externID));
                 return decryptedLinks;
             }
-            externID = br.getRegex("dailymotion\\.com/swf/video/([a-z0-9\\-_]+)\"").getMatch(0);
-            if (externID == null) externID = br.getRegex("dailymotion\\.com/video/([a-z0-9\\-_]+)\"").getMatch(0);
+            externID = br.getRegex("(https?://(www\\.)?dailymotion\\.com/(video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+))").getMatch(0);
             if (externID != null) {
-                decryptedLinks.add(createDownloadlink("http://www.dailymotion.com/video/" + externID + "_" + System.currentTimeMillis()));
+                decryptedLinks.add(createDownloadlink(externID));
                 return decryptedLinks;
             }
             externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);

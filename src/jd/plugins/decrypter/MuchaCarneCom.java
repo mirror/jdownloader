@@ -70,9 +70,9 @@ public class MuchaCarneCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.isharemybitch.com/galleries/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
-        externID = br.getRegex("dailymotion\\.com/swf/([a-z0-9\\-_]+)\\&").getMatch(0);
+        externID = br.getRegex("(https?://[^/]+dailymotion\\.com/swf/[a-z0-9\\-_]+)").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.dailymotion.com/video/" + externID + "_" + System.currentTimeMillis()));
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         externID = br.getRegex("\"(http://(www\\.)?oneclicktube\\.com/flvPlayer\\.swf\\?id=[^<>\"]*?)\"").getMatch(0);
