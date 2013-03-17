@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudyload.com" }, urls = { "http://(www\\.)?cloudyload\\.comdecrypted/(?!faq|register|login|terms|report_file)[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudyload.com" }, urls = { "http://(www\\.)?cloudyload\\.comdecrypted/(?!faq|register|login|terms|report|build|themes|js)[a-z0-9]+" }, flags = { 2 })
 public class CloudyLoadCom extends PluginForHost {
 
     public CloudyLoadCom(PluginWrapper wrapper) {
@@ -74,7 +74,7 @@ public class CloudyLoadCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/error.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("/error.html") || br.getURL().contains("index.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(\\.\\d+)? (KB|MB|GB))\\)<br/>");
         final String filename = fInfo.getMatch(0);
         final String filesize = fInfo.getMatch(1);

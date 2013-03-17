@@ -357,6 +357,7 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private String handleFreeFallback(final DownloadLink downloadLink) throws Exception {
+        String url = null;
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -369,93 +370,98 @@ public class LetitBitNet extends PluginForHost {
         passed = submitFreeForm();
         if (passed) logger.info("Sent free form #3");
 
-        String urlPrefix = new Regex(br.getURL(), "http://(www\\.)?([a-z0-9]+\\.)letitbit\\.net/.+").getMatch(1);
-        if (urlPrefix == null) urlPrefix = "";
-        final String ajaxmainurl = "http://" + urlPrefix + "letitbit.net";
+        // Russians can get the downloadlink here, they don't have to enter
+        // captchas
+        final String finalLinksText = br.getRegex("eval\\(\\'var _direct_links = new Array\\((\".*?)\\);").getMatch(0);
+        if (finalLinksText != null) {
+            logger.info("Entering russian handling...");
+            url = this.getFinalLink(finalLinksText);
+            if (url == null) {
+                logger.warning("Russian handling failed...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            String urlPrefix = new Regex(br.getURL(), "http://(www\\.)?([a-z0-9]+\\.)letitbit\\.net/.+").getMatch(1);
+            if (urlPrefix == null) urlPrefix = "";
+            final String ajaxmainurl = "http://" + urlPrefix + "letitbit.net";
 
-        final String dlFunction = br.getRegex("function getLink\\(\\)(.*?)</script>").getMatch(0);
-        if (dlFunction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String ajaxPostpage = new Regex(dlFunction, "\\$\\.post\\(\"(/ajax/[^<>\"]*?)\"").getMatch(0);
-        if (ajaxPostpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        ajaxPostpage = ajaxmainurl + ajaxPostpage;
-        int wait = 60;
-        String waittime = br.getRegex("id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span>").getMatch(0);
-        if (waittime == null) waittime = br.getRegex("seconds = (\\d+)").getMatch(0);
-        if (waittime != null) {
-            logger.info("Waittime found, waittime is " + waittime + " seconds .");
-            wait = Integer.parseInt(waittime);
-        } else {
-            logger.info("No waittime found, continuing...");
-        }
-        sleep((wait + 1) * 1001l, downloadLink);
-        final Browser br2 = br.cloneBrowser();
-        prepareBrowser(br2);
-        /*
-         * this causes issues in 09580 stable, no workaround known, please
-         * update to latest jd version
-         */
-        br2.getHeaders().put("Content-Length", "0");
-        br2.postPage(ajaxmainurl + "/ajax/download3.php", "");
-        br2.getHeaders().remove("Content-Length");
-        /* we need to remove the newline in old browser */
-        final String resp = br2.toString().replaceAll("%0D%0A", "").trim();
-        if (!"1".equals(resp)) {
-            if (br2.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // reCaptcha handling
-        if (ajaxPostpage.contains("recaptcha")) {
-            final String rcControl = new Regex(dlFunction, "var recaptcha_control_field = \\'([^<>\"]*?)\\'").getMatch(0);
-            final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-            if (rcID == null || rcControl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setId(rcID);
-            rc.load();
-            for (int i = 0; i <= 5; i++) {
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
-                br2.postPage(ajaxPostpage, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&recaptcha_control_field=" + Encoding.urlEncode(rcControl));
-                if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
-                    rc.reload();
-                    continue;
+            final String dlFunction = br.getRegex("function getLink\\(\\)(.*?)</script>").getMatch(0);
+            if (dlFunction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String ajaxPostpage = new Regex(dlFunction, "\\$\\.post\\(\"(/ajax/[^<>\"]*?)\"").getMatch(0);
+            if (ajaxPostpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            ajaxPostpage = ajaxmainurl + ajaxPostpage;
+            int wait = 60;
+            String waittime = br.getRegex("id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span>").getMatch(0);
+            if (waittime == null) waittime = br.getRegex("seconds = (\\d+)").getMatch(0);
+            if (waittime != null) {
+                logger.info("Waittime found, waittime is " + waittime + " seconds .");
+                wait = Integer.parseInt(waittime);
+            } else {
+                logger.info("No waittime found, continuing...");
+            }
+            sleep((wait + 1) * 1001l, downloadLink);
+            final Browser br2 = br.cloneBrowser();
+            prepareBrowser(br2);
+            /*
+             * this causes issues in 09580 stable, no workaround known, please
+             * update to latest jd version
+             */
+            br2.getHeaders().put("Content-Length", "0");
+            br2.postPage(ajaxmainurl + "/ajax/download3.php", "");
+            br2.getHeaders().remove("Content-Length");
+            /* we need to remove the newline in old browser */
+            final String resp = br2.toString().replaceAll("%0D%0A", "").trim();
+            if (!"1".equals(resp)) {
+                if (br2.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // reCaptcha handling
+            if (ajaxPostpage.contains("recaptcha")) {
+                final String rcControl = new Regex(dlFunction, "var recaptcha_control_field = \\'([^<>\"]*?)\\'").getMatch(0);
+                final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+                if (rcID == null || rcControl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.setId(rcID);
+                rc.load();
+                for (int i = 0; i <= 5; i++) {
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode(cf, downloadLink);
+                    br2.postPage(ajaxPostpage, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&recaptcha_control_field=" + Encoding.urlEncode(rcControl));
+                    if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
+                        rc.reload();
+                        continue;
+                    }
+                    break;
                 }
-                break;
+                if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                // Normal captcha handling, UNTESTED!
+                final DecimalFormat df = new DecimalFormat("0000");
+                for (int i = 0; i <= 5; i++) {
+                    final String code = getCaptchaCode("letitbitnew", ajaxmainurl + "/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
+                    sleep(2000, downloadLink);
+                    br2.postPage(ajaxPostpage, "code=" + Encoding.urlEncode(code));
+                    if (br2.toString().contains("error_wrong_captcha")) continue;
+                    break;
+                }
+                if (br2.toString().contains("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        } else {
-            // Normal captcha handling, UNTESTED!
-            final DecimalFormat df = new DecimalFormat("0000");
-            for (int i = 0; i <= 5; i++) {
-                final String code = getCaptchaCode("letitbitnew", ajaxmainurl + "/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
-                sleep(2000, downloadLink);
-                br2.postPage(ajaxPostpage, "code=" + Encoding.urlEncode(code));
-                if (br2.toString().contains("error_wrong_captcha")) continue;
-                break;
+            // Download limit is per day so let's just wait 3 hours
+            if (br2.containsHTML("error_free_download_blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
+            if (br2.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            url = getFinalLink(br2.toString());
+            if (url == null || url.length() > 1000 || !url.startsWith("http")) {
+                if (br2.containsHTML("error_free_download_blocked")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free download blocked", 2 * 60 * 60 * 1000l); }
+                logger.warning("url couldn't be found!");
+                logger.severe(url);
+                logger.severe(br2.toString());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (br2.toString().contains("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        // Download limit is per day so let's just wait 3 hours
-        if (br2.containsHTML("error_free_download_blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
-        if (br2.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-        LinkedList<String> finallinksx = new LinkedList<String>();
-        String[] finallinks = br2.getRegex("\"(http:[^<>\"]*?)\"").getColumn(0);
-        // More common for shareflare.net
-        if ((finallinks == null || finallinks.length == 0) && br2.toString().length() < 500) finallinks = br2.getRegex("(http:[^<>\"].+)").getColumn(0);
-        if (finallinks == null || finallinks.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        for (final String finallink : finallinks) {
-            if (!finallinksx.contains(finallink) && finallink.startsWith("http")) finallinksx.add(finallink);
-        }
-        // Grab last links, this might changes and has to be fixed if users get
-        // "server error" in JD while it's working via browser. If this
-        // is changed often we should consider trying the whole list of
-        // finallinks.
-        final String url = finallinksx.peekLast();
-        if (url == null || url.length() > 1000 || !url.startsWith("http")) {
-            if (br2.containsHTML("error_free_download_blocked")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free download blocked", 2 * 60 * 60 * 1000l); }
-            logger.warning("url couldn't be found!");
-            logger.severe(url);
-            logger.severe(br2.toString());
+        // This should never happen
+        if (url.length() > 1000 || !url.startsWith("http")) {
+            logger.warning("The found finallink is invalid...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* we have to wait little because server too buggy */
@@ -470,7 +476,9 @@ public class LetitBitNet extends PluginForHost {
         if (allforms == null || allforms.length == 0) return false;
         Form down = null;
         for (Form singleform : allforms) {
-            if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && !singleform.containsHTML("/sms/check")) {
+            // id=\"phone_submit_form\" is in the 2nd free form when you have a
+            // russian IP
+            if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && !singleform.containsHTML("/sms/check") && !singleform.containsHTML("id=\"phone_submit_form\"")) {
                 down = singleform;
                 break;
             }
@@ -478,6 +486,22 @@ public class LetitBitNet extends PluginForHost {
         if (down == null) return false;
         br.submitForm(down);
         return true;
+    }
+
+    private String getFinalLink(final String source) throws PluginException {
+        LinkedList<String> finallinksx = new LinkedList<String>();
+        String[] finallinks = new Regex(source, "\"(http:[^<>\"]*?)\"").getColumn(0);
+        // More common for shareflare.net
+        if ((finallinks == null || finallinks.length == 0) && source.length() < 500) finallinks = new Regex(source, "(http:[^<>\"].+)").getColumn(0);
+        if (finallinks == null || finallinks.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        for (final String finallink : finallinks) {
+            if (!finallinksx.contains(finallink) && finallink.startsWith("http")) finallinksx.add(finallink);
+        }
+        // Grab last links, this might changes and has to be fixed if users get
+        // "server error" in JD while it's working via browser. If this
+        // is changed often we should consider trying the whole list of
+        // finallinks.
+        return finallinksx.peekLast();
     }
 
     private boolean login(final Account account, final boolean force) throws Exception {

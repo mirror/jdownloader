@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cineon.com" }, urls = { "http://(www\\.)?c1neon\\.com/download\\-[\\w\\-]+\\d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cineon.com" }, urls = { "http://(www\\.)?c1neon\\.com/(download\\-[\\w\\-]+\\d+\\.html|link/\\d+)" }, flags = { 0 })
 public class CineonCom extends PluginForDecrypt {
 
     public CineonCom(PluginWrapper wrapper) {
@@ -39,31 +39,40 @@ public class CineonCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getPage(parameter);
         br.setFollowRedirects(false);
-        String fpName = br.getRegex("title=\'([^\']+)").getMatch(0);
-        if (fpName != null) fpName = Encoding.htmlDecode(fpName);
-        String allLinks = br.getRegex("var subcats = \\{([^;]+)").getMatch(0);
-        if (allLinks != null) {
-            allLinks = allLinks.replaceAll("\\\\|\"", "");
-            for (String q[] : new Regex(allLinks, "(XVID|720p|1080p):\\{(.*?)\\}\\}\\}").getMatches()) {
-                for (String s[] : new Regex(q[1], "([\\w\\-]+):\\[(\\[.*?\\])\\]").getMatches()) {
-                    FilePackage fp = FilePackage.getInstance();
-                    fp.setName(fpName + "@" + s[0].trim() + "__" + q[0]);
-                    for (String ss[] : new Regex(s[1], "\\[(\\d),(\\w+),.*?,(.*?),\\d+\\]").getMatches()) {
-                        String link = ss[2].trim();
-                        if ("redirect".equalsIgnoreCase(ss[1].trim())) link = getRedirectUrl(link);
-                        final DownloadLink dl = createDownloadlink(link);
-                        fp.add(dl);
-                        try {
-                            distribute(dl);
-                        } catch (final Throwable e) {
-                            /* does not exist in 09581 */
+        if (parameter.matches("http://(www\\.)?c1neon\\.com/download\\-[\\w\\-]+\\d+\\.html")) {
+            br.getPage(parameter);
+            String fpName = br.getRegex("title=\'([^\']+)").getMatch(0);
+            if (fpName != null) fpName = Encoding.htmlDecode(fpName);
+            String allLinks = br.getRegex("var subcats = \\{([^;]+)").getMatch(0);
+            if (allLinks != null) {
+                allLinks = allLinks.replaceAll("\\\\|\"", "");
+                for (String q[] : new Regex(allLinks, "(XVID|720p|1080p):\\{(.*?)\\}\\}\\}").getMatches()) {
+                    for (String s[] : new Regex(q[1], "([\\w\\-]+):\\[(\\[.*?\\])\\]").getMatches()) {
+                        FilePackage fp = FilePackage.getInstance();
+                        fp.setName(fpName + "@" + s[0].trim() + "__" + q[0]);
+                        for (String ss[] : new Regex(s[1], "\\[(\\d),(\\w+),.*?,(.*?),\\d+\\]").getMatches()) {
+                            String link = ss[2].trim();
+                            if ("redirect".equalsIgnoreCase(ss[1].trim())) link = getRedirectUrl(link);
+                            final DownloadLink dl = createDownloadlink(link);
+                            fp.add(dl);
+                            try {
+                                distribute(dl);
+                            } catch (final Throwable e) {
+                                /* does not exist in 09581 */
+                            }
+                            decryptedLinks.add(dl);
                         }
-                        decryptedLinks.add(dl);
                     }
                 }
             }
+        } else {
+            final String finallink = getRedirectUrl(parameter);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return decryptedLinks;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
         }
         return decryptedLinks;
     }

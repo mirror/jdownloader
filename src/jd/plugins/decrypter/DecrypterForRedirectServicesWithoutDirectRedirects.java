@@ -289,7 +289,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            System.out.println(br.getRedirectLocation());
             finallink = br.getRegex("allowscriptaccess=\"always\" flashvars=\"file=(http://.*?\\.flv)\\&image=").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("(http://fs\\d+\\.slutdrive\\.com/videos/\\d+\\.flv)").getMatch(0);

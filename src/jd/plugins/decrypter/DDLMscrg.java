@@ -72,10 +72,14 @@ public class DDLMscrg extends PluginForDecrypt {
             for (String aLink : allLinks)
                 decryptedLinks.add(createDownloadlink(aLink));
         } else if (parameter.matches(DECRYPTER_DDLMSC_MAIN)) {
-            String fpName = br.getRegex("<title>DDL-Music v3.0 // Eric Clapton - (.*?)</title>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("\\'\\);\">\\&gt;\\&gt; (.*?)</div>").getMatch(0);
             logger.info("The user added a DECRYPTER_DDLMSC_MAIN link...");
             br.getPage(parameter);
+            String fpName = br.getRegex("<title>DDL-Music v3.0 // Eric Clapton - (.*?)</title>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("\\'\\);\">\\&gt;\\&gt; (.*?)</div>").getMatch(0);
+            if (br.containsHTML(">Download nicht gefunden")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String password = br.getRegex(Pattern.compile("<b>Passwort:</b> <i>(.*?)</i><br />", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             if (password != null && password.contains("(kein Passwort)")) {
                 password = null;
