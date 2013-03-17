@@ -14,45 +14,24 @@ public class CrawledPackageStorable implements Storable {
         return pkg.getName();
     }
 
-    public void setName(String name) {
-    }
-
     public long getId() {
         return pkg.getUniqueID().getID();
     }
 
-    public void setId(long id) {
-    }
-
-    // public String getDldir() {
-    // return pkg.getDownloadDirectory();
-    // }
-
-    public void setDldir(String dldir) {
+    public String getDirectory() {
+        return pkg.getDownloadFolder();
     }
 
     public String getComment() {
         String comment = pkg.getComment();
-        if (comment == null || comment.length() == 0) return null;
+        if (comment == null || comment.length() == 0) return "";
         return comment;
     }
 
-    public void setComment(String comment) {
-    }
-
-    /**
-     * @return the added
-     */
     public long getAdded() {
         return pkg.getCreated();
     }
 
-    public void setAdded(long added) {
-    }
-
-    /**
-     * @return the links
-     */
     public List<CrawledLinkStoreable> getLinks() {
         return links;
     }
@@ -73,10 +52,20 @@ public class CrawledPackageStorable implements Storable {
         return links;
     }
 
-    /**
-     * @param links
-     *            the links to set
-     */
+    public String getPassword() {
+        String password = "---";
+        for (CrawledLink link : pkg.getChildren()) {
+            if (password == null || password.length() == 0 || password.equals("---"))
+                password = link.getDownloadLink().getDownloadPassword();
+            else if (!link.getDownloadLink().getDownloadPassword().equals(password)) {
+                password = "";
+                break;
+            }
+        }
+        if (password.equals(null) || password.equals("---")) password = "";
+        return password;
+    }
+
     public void setLinks(List<CrawledLinkStoreable> links) {
         this.links = links;
     }

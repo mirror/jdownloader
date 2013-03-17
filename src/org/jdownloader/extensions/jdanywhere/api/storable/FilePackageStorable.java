@@ -21,17 +21,10 @@ public class FilePackageStorable implements Storable {
         return pkg.getUniqueID().getID();
     }
 
-    public String getDldir() {
-        return pkg.getDownloadDirectory();
-    }
-
     public String getComment() {
         String comment = pkg.getComment();
-        if (comment == null || comment.length() == 0) return null;
+        if (comment == null || comment.length() == 0) return "";
         return comment;
-    }
-
-    public void setComment(String comment) {
     }
 
     public long getAdded() {
@@ -49,6 +42,21 @@ public class FilePackageStorable implements Storable {
 
     public long getSize() {
         return pkg.getView().getSize();
+    }
+
+    public String getDirectory() {
+        return pkg.getDownloadDirectory();
+    }
+
+    public String getPassword() {
+        String password = "---";
+        for (DownloadLink link : pkg.getChildren()) {
+            if (password == null || password.length() == 0 || password.equals("---"))
+                password = link.getDownloadPassword();
+            else if (!link.getDownloadPassword().equals(password)) { return ""; }
+        }
+        if (password == null || password.length() == 0 || password.equals("---")) return "";
+        return password;
     }
 
     public List<String> getHoster() {

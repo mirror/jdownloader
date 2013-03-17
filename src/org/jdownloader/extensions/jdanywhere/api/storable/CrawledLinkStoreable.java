@@ -11,23 +11,9 @@ public class CrawledLinkStoreable implements Storable {
         return link.getDownloadLink().getUniqueID().getID();
     }
 
-    public void setId(long id) {
-    }
-
     public String getName() {
         if (link == null) return null;
         return link.getName();
-    }
-
-    public void setName(String name) {
-    }
-
-    // public String getComment() {
-    // if (link == null) return null;
-    // return link.get();
-    // }
-
-    public void setComment(String comment) {
     }
 
     public String getHost() {
@@ -35,15 +21,9 @@ public class CrawledLinkStoreable implements Storable {
         return link.getHost();
     }
 
-    public void setHost(String hoster) {
-    }
-
     public String getOnlinestatus() {
         if (link == null) return null;
         return "";
-    }
-
-    public void setOnlinestatus(String onlinestatus) {
     }
 
     public long getSize() {
@@ -51,28 +31,14 @@ public class CrawledLinkStoreable implements Storable {
         return link.getDownloadLink().getDownloadSize();
     }
 
-    public void setSize(long size) {
-    }
-
     public boolean isEnabled() {
         if (link == null) return true;
         return link.isEnabled();
     }
 
-    public void setEnabled(boolean enabled) {
-    }
-
-    // public long getSpeed() {
-    // if (link == null) return 0;
-    // return link.getDownloadSpeed();
-    // }
-
     public long getAdded() {
         if (link == null) return -1l;
         return link.getCreated();
-    }
-
-    public void setAdded(long added) {
     }
 
     public long getFinished() {
@@ -80,16 +46,9 @@ public class CrawledLinkStoreable implements Storable {
         return link.getFinishedDate();
     }
 
-    public void setFinished(long finished) {
-    }
-
     public int getPriority() {
         if (link == null) return 0;
         return link.getPriority().getId();
-    }
-
-    public void setPriority(int priority) {
-
     }
 
     public int getChunks() {
@@ -97,15 +56,24 @@ public class CrawledLinkStoreable implements Storable {
         return link.getChunks();
     }
 
-    public void setChunks(int chunks) {
+    public String getBrowserurl() {
+        if (link == null) return null;
+        return link.getURL();
     }
 
-    // public String getBrowserurl() {
-    // if (link == null) return null;
-    // return link.getBrowserUrl();
-    // }
+    public String getPassword() {
+        if (link == null) return null;
+        return link.getDownloadLink().getDownloadPassword();
+    }
 
-    public void setBrowserurl(String browserurl) {
+    public String getDirectory() {
+        if (link == null) return null;
+        return link.getDownloadLink().getFileOutput();
+    }
+
+    public String getComment() {
+        if (link == null) return null;
+        return link.getDownloadLink().getComment();
     }
 
     // public LinkStatusJob getLinkStatus() {

@@ -14,9 +14,6 @@ public class DownloadLinkStorable implements Storable {
         return link.getUniqueID().getID();
     }
 
-    public void setId(long id) {
-    }
-
     public String getComment() {
         if (link == null) return null;
         return link.getComment();
@@ -28,26 +25,13 @@ public class DownloadLinkStorable implements Storable {
         return link.getUniqueID().getID();
     }
 
-    public void setUUId(long id) {
-    }
-
     public String getName() {
         if (link == null) return null;
         return link.getName();
     }
 
-    public void setName(String name) {
-    }
-
     public QueryResponseMap getInfoMap() {
         return infoMap;
-    }
-
-    public void setComment(String comment) {
-    }
-
-    public void setInfoMap(QueryResponseMap infoMap) {
-        this.infoMap = infoMap;
     }
 
     public String getHost() {
@@ -58,9 +42,6 @@ public class DownloadLinkStorable implements Storable {
     private DownloadLink     link;
     private QueryResponseMap infoMap = null;
 
-    public void setHost(String hoster) {
-    }
-
     public DownloadLinkStorable(/* Storable */) {
         this.link = null;
     }
@@ -70,15 +51,9 @@ public class DownloadLinkStorable implements Storable {
         return this.link.getAvailableStatus().toString();
     }
 
-    public void setOnlinestatus(String onlinestatus) {
-    }
-
     public long getSize() {
         if (link == null) return -1l;
         return link.getDownloadSize();
-    }
-
-    public void setSize(long size) {
     }
 
     public long getDone() {
@@ -86,15 +61,9 @@ public class DownloadLinkStorable implements Storable {
         return link.getDownloadCurrent();
     }
 
-    public void setDone(long done) {
-    }
-
     public boolean isEnabled() {
         if (link == null) return true;
         return link.isEnabled();
-    }
-
-    public void setEnabled(boolean enabled) {
     }
 
     public long getSpeed() {
@@ -102,15 +71,9 @@ public class DownloadLinkStorable implements Storable {
         return link.getDownloadSpeed();
     }
 
-    public void setSpeed(long speed) {
-    }
-
     public long getAdded() {
         if (link == null) return -1l;
         return link.getCreated();
-    }
-
-    public void setAdded(long added) {
     }
 
     public long getFinished() {
@@ -118,16 +81,9 @@ public class DownloadLinkStorable implements Storable {
         return link.getFinishedDate();
     }
 
-    public void setFinished(long finished) {
-    }
-
     public int getPriority() {
         if (link == null) return 0;
         return link.getPriority();
-    }
-
-    public void setPriority(int priority) {
-        link.setPriority(priority);
     }
 
     public int getChunks() {
@@ -135,15 +91,19 @@ public class DownloadLinkStorable implements Storable {
         return link.getChunks();
     }
 
-    public void setChunks(int chunks) {
-    }
-
     public String getBrowserurl() {
         if (link == null) return null;
         return link.getBrowserUrl();
     }
 
-    public void setBrowserurl(String browserurl) {
+    public String getPassword() {
+        if (link == null) return null;
+        return link.getDownloadPassword();
+    }
+
+    public String getDirectory() {
+        if (link == null) return null;
+        return link.getFileOutput();
     }
 
     public LinkStatusJobStorable getLinkStatus() {
