@@ -459,6 +459,7 @@ StatusBarImpl_initGUI_reconnect=Yeniden Bağlanma İşlemi
 StatusBarImpl_onIPOffline_=Çevrimdışı - Internet Bağlantısı yok ya da kötü proksi ayarı!
 StatusBarImpl_onIPOnline_=Çevrimiçi - Harici IP: %s1
 StatusColumn_StatusColumn=Aktif Görev
+StopDownloadsAction_run_msg_=Tüm yürütülen indirmeleri durdurmak istediğinize emin misiniz?\n%s2 devam edilemez İndirmeden dolayı %s1 kaybedeceksiniz!
 StopSignColumn_StopSignColumn=İndirme Denetimi
 StopsignAction_actionPerformed_help_msg_=Eğer İndirme Bağlantısındaki Durdurma İşaretini ayarlarsanız, JDownloader bu dosya yüklendikten sonra indirmeyi durduracaktır.\nEğer bu Paket bitene kadar indirmek istiyorsanız, bunun yerine Paketteki Durdurma İşaretini ayarlamalısınız.
 StopsignAction_actionPerformed_help_msg_package_=Eğer Paketteki Durdurma İşaretini ayarlarsanız, Paket içerisindeki tüm dosyalar bittikten sonra JDownloader indirmeyi durduracaktır.
