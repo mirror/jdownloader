@@ -78,13 +78,14 @@ public class MndCm extends PluginForDecrypt {
             /* Übersicht der Alben */
             String ArtistID = new Regex(parameter.toString(), "artist/(.+)").getMatch(0);
             br.getPage("http://www.jamendo.com/en/artist/" + ArtistID);
-            String Albums[] = br.getRegex("href=\"/en/album/(\\d+)/share\"").getColumn(0);
+            String Albums[] = br.getRegex("<h2>\\n\\s*<a href=\'/en/list/a(\\d+)/").getColumn(0);
             DownloadLink link;
             for (String Album : Albums) {
                 if (cfg.getBooleanProperty("PREFER_WHOLEALBUM", true)) {
                     link = createDownloadlink("http://storage-new.newjamendo.com/en/download/a" + Album);
-                } else
+                } else {
                     link = createDownloadlink("http://www.jamendo.com/en/album/" + Album);
+                }
                 decryptedLinks.add(link);
             }
         }
