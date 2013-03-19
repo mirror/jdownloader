@@ -218,6 +218,9 @@ public class FreeWayMe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error: Retry in few secs" + msg, 20 * 1000l);
             } else if (error.startsWith("Die Datei darf maximal")) {
                 tempUnavailableHoster(acc, link, 2 * 60 * 1000l);
+            } else if (error.equalsIgnoreCase("Mehrere Computer haben in letzter Zeit diesen Account genutzt")) {
+                acc.setTempDisabled(true);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             logger.info("Unhandled download error on free-way.me: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
