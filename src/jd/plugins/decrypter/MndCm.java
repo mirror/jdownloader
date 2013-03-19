@@ -35,15 +35,13 @@ public class MndCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = parameter.toString();
         SubConfiguration cfg = SubConfiguration.getConfig("jamendo.com");
         if (url.contains("/album") || url.contains("list/a")) {
-            /* Einzelnes Album */
-            String AlbumID = new Regex(url, "album/(\\d+)").getMatch(0);
-            if (AlbumID == null) AlbumID = new Regex(url, "list/a(\\d+)").getMatch(0);
+            String AlbumID = new Regex(url, "list/a(\\d+)").getMatch(0);
             br.setFollowRedirects(true);
             br.getPage("http://www.jamendo.com/en/album/" + AlbumID);
             String Album = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
@@ -54,9 +52,9 @@ public class MndCm extends PluginForDecrypt {
             if (Album != null) packageName = packageName + Album;
             if (Artist != null) {
                 if (packageName.length() > 0) {
-                    packageName = packageName + "-";
+                    packageName = " - " + packageName;
                 }
-                packageName = packageName + Artist;
+                packageName = Artist + packageName;
             }
             fp.setName(packageName);
             if (cfg.getBooleanProperty("PREFER_WHOLEALBUM", true)) {
@@ -68,21 +66,23 @@ public class MndCm extends PluginForDecrypt {
             } else {
                 for (String Track[] : Tracks) {
                     DownloadLink link = createDownloadlink("http://www.jamendo.com/en/track/" + Track[0]);
-                    link.setName(Track[1] + ".mp3");
+                    link.setName(Artist + " - " + Album + " - " + Track[1] + ".mp3");
                     link.setAvailable(true);
                     fp.add(link);
                     decryptedLinks.add(link);
                 }
             }
         } else {
-            /* Übersicht der Alben */
             String ArtistID = new Regex(parameter.toString(), "artist/(.+)").getMatch(0);
+            br.setFollowRedirects(true);
             br.getPage("http://www.jamendo.com/en/artist/" + ArtistID);
-            String Albums[] = br.getRegex("<h2>\\n\\s*<a href=\'/en/list/a(\\d+)/").getColumn(0);
+            String Artist = br.getRegex("([^\"]+)\" property=\"og:title").getMatch(0);
+            String Albums[] = br.getRegex("<h2>\\s+<a href='/en/list/a(\\d+)/\\w+' >").getColumn(0);
             DownloadLink link;
             for (String Album : Albums) {
                 if (cfg.getBooleanProperty("PREFER_WHOLEALBUM", true)) {
                     link = createDownloadlink("http://storage-new.newjamendo.com/en/download/a" + Album);
+                    link.setName(Artist + " - " + Album + ".zip");
                 } else {
                     link = createDownloadlink("http://www.jamendo.com/en/album/" + Album);
                 }
@@ -91,5 +91,4 @@ public class MndCm extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
 }
