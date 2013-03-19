@@ -63,6 +63,11 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
             dl.setFinalFileName(filename + ".flv");
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(http://(www\\.)?xhamster\\.com/xembed\\.php\\?video=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         externID = br.getRegex("file=(http://(www\\.)?hostave\\d+\\.net/.*?)\\&screenfile").getMatch(0);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("directhttp://" + externID);
@@ -138,6 +143,12 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
             decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        // drtuber.com embed v3
+        externID = br.getRegex("(http://(www\\.)?drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         // pornhub handling number 2

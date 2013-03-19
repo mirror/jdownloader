@@ -29,7 +29,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upmirror.com" }, urls = { "http://(www\\.)?upmirror\\.com/[a-z0-9]+" }, flags = { 0 })
 public class UpMirrorCom extends PluginForDecrypt {
@@ -44,7 +43,10 @@ public class UpMirrorCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage("http://upmirror.com/intervencao.php?key=" + new Regex(parameter, "upmirror\\.com/(.+)").getMatch(0));
-        if (br.containsHTML(">NOT FOUND<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML(">NOT FOUND<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         for (int i = 0; i <= 5; i++) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);

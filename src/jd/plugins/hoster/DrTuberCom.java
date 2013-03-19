@@ -95,6 +95,7 @@ public class DrTuberCom extends PluginForHost {
         String vk = new Regex(downloadLink.getDownloadURL(), "vkey=(\\w+)").getMatch(0);
         if (vk != null) {
             br.getPage(downloadLink.getDownloadURL() + "&pkey=" + JDHash.getMD5(vk + Encoding.Base64Decode("S0s2Mml5aUliWFhIc2J3")));
+            if (br.containsHTML("Invalid video key\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String finallink = br.getRegex("type=video_click\\&amp;target_url=(http.*?)</url>").getMatch(0);
             if (finallink == null) {
                 logger.warning("Failed to find original link for: " + downloadLink.getDownloadURL());
