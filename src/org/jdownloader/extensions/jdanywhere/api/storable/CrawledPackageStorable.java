@@ -62,7 +62,7 @@ public class CrawledPackageStorable implements Storable {
                 break;
             }
         }
-        if (password.equals(null) || password.equals("---")) password = "";
+        if (password == null || password.length() == 0 || password.equals("---")) password = "";
         return password;
     }
 
