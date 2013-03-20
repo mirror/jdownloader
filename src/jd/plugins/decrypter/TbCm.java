@@ -174,7 +174,8 @@ public class TbCm extends PluginForDecrypt {
     }
 
     /**
-     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs
+     * after the completed download.
      * 
      * @param downloadlink
      *            . The finished link to the Google CC subtitle file.
@@ -427,6 +428,10 @@ public class TbCm extends PluginForDecrypt {
             // Handle user links
             parameter = "http://www.youtube.com/user/" + new Regex(parameter, "youtube\\.com/user/([a-z\\-_A-Z0-9]+)($|\\?.*?)").getMatch(0);
             br.getPage(parameter + "/videos?view=0");
+            if (br.containsHTML(">404 Not Found<")) {
+                logger.info("The following link is offline: " + parameter);
+                return decryptedLinks;
+            }
 
             String next = null;
 
@@ -685,7 +690,8 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the moment
+                         * we do not want to download unknown formats at the
+                         * moment
                          */
                         continue;
                     }

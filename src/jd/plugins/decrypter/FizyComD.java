@@ -109,6 +109,10 @@ public class FizyComD extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.getCryptedUrl();
+        if (parameter.equals("http://fizy.com/")) {
+            logger.info("Mainpage added -> Invalid link");
+            return decryptedLinks;
+        }
 
         // processing plugin configuration
         final SubConfiguration cfg = SubConfiguration.getConfig("fizy.com");

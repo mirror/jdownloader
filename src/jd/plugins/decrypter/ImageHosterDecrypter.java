@@ -242,7 +242,13 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             finallink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/download\\.php\\?id=\\d+)\"").getMatch(0);
             if (finallink == null) finallink = parameter.replace("/?v=", "/images/");
         } else if (parameter.contains("instagram.com/") || parameter.contains("instagr.am/")) {
+            // Prefer english
+            br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
             br.getPage(parameter.replace("instagr.am/", "instagram.com/"));
+            if (br.containsHTML(">Page Not Found|>This page could not be found")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             finallink = br.getRegex("property=\"og:image\" content=\"(https?://[^<>\"]*?)\"").getMatch(0);
         }
         if (finallink == null) {

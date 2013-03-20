@@ -52,7 +52,7 @@ public class ProDjCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setCookiesExclusive(true);
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.containsHTML("(<title>404 \\&ndash; Инфинити</title>|<h1>Page not found :\\(</h1>)")) {
             logger.warning("Invalid URL: " + parameter);
@@ -141,6 +141,10 @@ public class ProDjCm extends PluginForDecrypt {
         } else {
             final String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             String dllink = br.getRegex("\"(http://promodj\\.com/prelisten[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null && filename != null) {
+                logger.info("No downloadable content available for link: " + parameter);
+                return;
+            }
             if (dllink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return;
@@ -148,7 +152,7 @@ public class ProDjCm extends PluginForDecrypt {
             br.setFollowRedirects(false);
             br.getPage(dllink + "?hq=1");
             dllink = br.getRedirectLocation();
-            if (dllink == null) dllink = br.getRegex("#EXTINF:\\-1,[\t\n\r ]+(http[^<>\"]*?\\.mp3)").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("#EXTINF:\\-1,[^<>\"/]+(http[^<>\"]*?\\.mp3)").getMatch(0);
             if (dllink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return;

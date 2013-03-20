@@ -42,9 +42,14 @@ public class MirrorUploadNet extends PluginForDecrypt {
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
         br.getPage(parameter);
+
         String fpName = br.getRegex("<title>MirrorUpload\\.net \\- Download \\- ([^<>\"]*?)</title>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<b>File : </b>([^<>\"]*?)<br />").getMatch(0);
-        br.getPage("/status.html?uid=" + new Regex(parameter, "file/([A-Z0-9]{8})").getMatch(0));
+        br.getPage("http://www.mirrorupload.net/status.html?uid=" + new Regex(parameter, "file/([A-Z0-9]{8})").getMatch(0));
+        if (br.containsHTML("<table width=\"800\" style=\"margin\\-left:30px;\"><tr><td class=\"table\\-middle\" width=\"100%\"><table></table>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
 
         final String[] links = br.getRegex(">(http://(www\\.)?mirrorupload\\.net/host\\-\\d+/[A-Z0-9]{8}/?)<").getColumn(0);
         if (links == null || links.length == 0) {

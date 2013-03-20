@@ -47,6 +47,10 @@ public class FilesPartCom extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
+            if (br.containsHTML(">Error 404 \\-")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             /** Captcha only appears if user adds maaany links */
             if (br.containsHTML(">Please Enter Captcha For Download:")) {
                 for (int i = 0; i <= 3; i++) {

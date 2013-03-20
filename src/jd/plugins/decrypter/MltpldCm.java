@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiupload.com" }, urls = { "http://(www\\.)?multiupload\\.(com|nl)/([A-Z0-9]{2}_[A-Z0-9]+|[0-9A-Z]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiupload.com" }, urls = { "http://(www\\.)?multiupload\\.(com|nl)/(?!extreme)([A-Z0-9]{2}_[A-Z0-9]+|[0-9A-Z]+)" }, flags = { 0 })
 public class MltpldCm extends PluginForDecrypt {
 
     public MltpldCm(PluginWrapper wrapper) {
@@ -40,7 +40,8 @@ public class MltpldCm extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             String redirect = br.getRedirectLocation();
-            // lets just return the result back into JD, and proper plugin can pick it up if we have support.
+            // lets just return the result back into JD, and proper plugin can
+            // pick it up if we have support.
             if (!redirect.matches("http.+multiupload\\.(com|nl)/.+")) {
                 decryptedLinks.add(createDownloadlink(redirect));
                 return decryptedLinks;
@@ -54,6 +55,14 @@ public class MltpldCm extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (br.containsHTML(">UNKNOWN ERROR<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("<title>Index of")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(">Please select file")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

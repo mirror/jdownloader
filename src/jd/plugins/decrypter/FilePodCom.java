@@ -64,7 +64,7 @@ public class FilePodCom extends PluginForDecrypt {
                 if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
             }
         }
-        final String finallink = br.getRegex(">Download <a href=\"([^<>\"]*?)\"").getMatch(0);
+        final String finallink = br.getRegex("<br>download link: <a href=\\'(http[^<>\"]*?)\\'").getMatch(0);
         if (finallink == null) return null;
         decryptedLinks.add(createDownloadlink(finallink));
 

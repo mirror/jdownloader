@@ -28,9 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "maxmirror.com", "exzip.net", "bikupload.com", "uploadseeds.com", "indirbindir.biz", "createmirror.com", "exoshare.com", "3ll3.in", "go4up.com", "uploadonall.com", "up4vn.com", "directmirror.com", "nextdown.net", "bitsor.com", "mirrorafile.com", "lougyl.com", "neo-share.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "mirrorfusion.com", "digzip.com", "needmirror.com" }, urls = { "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?exzip\\.net/download/[0-9A-Z]{8}", "http://(www\\.)?bikupload\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?uploadseeds\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?indirbindir\\.biz/files/[0-9A-Z]{8}",
-        "http://(www\\.)?createmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?exoshare\\.com/download\\.php\\?uid=[A-Z0-9]{8}", "http://(www\\.)?3ll3\\.in/(files|dl)/\\w{14,18}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "https?://(www\\.)?up4vn\\.com/\\?go=[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?bitsor\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}",
-        "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?digzip\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "maxmirror.com", "exzip.net", "bikupload.com", "uploadseeds.com", "indirbindir.biz", "createmirror.com", "exoshare.com", "3ll3.in", "go4up.com", "uploadonall.com", "up4vn.com", "directmirror.com", "nextdown.net", "bitsor.com", "mirrorafile.com", "lougyl.com", "neo-share.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "mirrorfusion.com", "needmirror.com" }, urls = { "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?exzip\\.net/download/[0-9A-Z]{8}", "http://(www\\.)?bikupload\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?uploadseeds\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?indirbindir\\.biz/files/[0-9A-Z]{8}", "http://(www\\.)?createmirror\\.com/files/[0-9A-Z]{8}",
+        "http://(www\\.)?exoshare\\.com/download\\.php\\?uid=[A-Z0-9]{8}", "http://(www\\.)?3ll3\\.in/(files|dl)/\\w{14,18}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "https?://(www\\.)?up4vn\\.com/\\?go=[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?bitsor\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}",
+        "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
@@ -45,7 +45,8 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
         String parameter = param.toString();
-        // Only uploadmirrors.com has those "/download/" links so we need to correct them
+        // Only uploadmirrors.com has those "/download/" links so we need to
+        // correct them
         if (parameter.contains("go4up.com")) {
             parameter = parameter.replace("link.php?id=", "dl/");
         } else if (parameter.contains("uploadmirrors.com/")) {
@@ -58,7 +59,8 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         String protocol = new Regex(parameter, "(https?://)").getMatch(0);
         String host = new Regex(parameter, "://([^/]+)/").getMatch(0);
         String id = new Regex(parameter, "https?://.+/(\\?go=|download\\.php\\?uid=)?([0-9A-Za-z]{8,18})").getMatch(1);
-        // This should never happen but in case a dev changes the plugin without much testing he'll see the error later!
+        // This should never happen but in case a dev changes the plugin without
+        // much testing he'll see the error later!
         if (host == null || id == null) {
             logger.warning("A critical error happened! Please inform the support. : " + param.toString());
             return null;
@@ -103,7 +105,8 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             singlelink = singlelink.replace("\"", "").trim();
             Browser brc = br.cloneBrowser();
             String dllink = null;
-            // Handling for links that need to be regexed or that need to be get by redirect
+            // Handling for links that need to be regexed or that need to be get
+            // by redirect
             if (singlelink.contains("/redirect") || singlelink.contains("/rd/") || singlelink.matches("/r/.+") || singlelink.matches("/dl/.+") || singlelink.matches("/mirror/.+")) {
                 brc.getPage(protocol + host + singlelink);
                 dllink = decryptLink(brc, parameter);

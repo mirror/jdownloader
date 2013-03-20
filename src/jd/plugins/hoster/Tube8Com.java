@@ -76,6 +76,7 @@ public class Tube8Com extends PluginForHost {
         if (verifyAge != null) {
             br.postPage(downloadLink.getDownloadURL(), "processdisclaimer=");
         }
+        if (br.containsHTML("class=\"video\\-removed\\-div\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) \\- ").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("var videotitle=\"(.*?)\"").getMatch(0);
@@ -192,7 +193,7 @@ public class Tube8Com extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -200,6 +201,7 @@ public class Tube8Com extends PluginForHost {
                 downloadLink.getProperties().remove("401");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
             }
+            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -267,7 +269,8 @@ public class Tube8Com extends PluginForHost {
     }
 
     /**
-     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
+     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in
+     * JavaScript by Chris Veness
      * 
      * @see <a
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>

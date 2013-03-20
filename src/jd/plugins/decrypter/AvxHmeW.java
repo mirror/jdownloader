@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -41,7 +42,13 @@ public class AvxHmeW extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.clearCookies(getHost());
-        br.getPage(cryptedLink.getCryptedUrl().replaceAll("avaxhome.ws", "avaxhome.bz"));
+        final String parameter = cryptedLink.getCryptedUrl().replaceAll("avaxhome.ws", "avaxhome.bz");
+        try {
+            br.getPage(parameter);
+        } catch (final BrowserException e) {
+            logger.info("Link offline (server error): " + parameter);
+            return decryptedLinks;
+        }
         // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore
         // images/self site refs + imdb refs
         String[][] links = br.getRegex("<a href=\"(http(s)?://(?!(www[.]imdb[.]com|avaxhome[.](ws|bz)))[\\S&&[^<]]+?)\" target=\"_blank\" rel=\"nofollow\">(?!<img)").getMatches();

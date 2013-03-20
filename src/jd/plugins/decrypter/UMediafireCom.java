@@ -51,11 +51,18 @@ public class UMediafireCom extends PluginForDecrypt {
                 }
             }
         } else {
-            // the following string is always present in html, you need js confirmation
-            // if (br.containsHTML(">Sorry, file is not exist or has been deleted")) {
+            // the following string is always present in html, you need js
+            // confirmation
+            // if
+            // (br.containsHTML(">Sorry, file is not exist or has been deleted"))
+            // {
             // logger.info("Link offline: " + parameter);
             // return decryptedLinks;
             // }
+            if (br.containsHTML(">Password protected<")) {
+                logger.info("Password protected links aren't supported yet.\nTo support them we need example links with their corresponding valid passwords\n Link which failed: " + parameter);
+                return decryptedLinks;
+            }
             final String iFrame = br.getRegex("\"(index\\.php\\?(page=get_hotlink&r=\\d+|get=\\d+))\"").getMatch(0);
             if (iFrame == null) {
                 if (br.getRedirectLocation() != null) {
@@ -68,8 +75,10 @@ public class UMediafireCom extends PluginForDecrypt {
                 return null;
             }
             br.getPage("http://linkhalt.com/" + iFrame);
-            // Values are within the above page grab, and definitions of what values mean are
-            // http://linkhalt.com/styles/default/javascript/download.js, just needs JS interp, as it could change!
+            // Values are within the above page grab, and definitions of what
+            // values mean are
+            // http://linkhalt.com/styles/default/javascript/download.js, just
+            // needs JS interp, as it could change!
 
             if (br.containsHTML("google\\.com/recaptcha")) {
                 if (br.containsHTML("google\\.com/recaptcha")) {
