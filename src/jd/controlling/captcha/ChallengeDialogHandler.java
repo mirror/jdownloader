@@ -79,7 +79,7 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
             }
             Image[] images = CaptchaDialog.getGifImages(captchaChallenge.getImageFile().toURI().toURL());
             if (images == null || images.length == 0) {
-                BufferedImage img = IconIO.getImage(captchaChallenge.getImageFile().toURI().toURL());
+                BufferedImage img = IconIO.getImage(captchaChallenge.getImageFile().toURI().toURL(), false);
                 if (img != null) images = new Image[] { img };
             }
 
