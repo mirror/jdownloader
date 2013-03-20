@@ -63,7 +63,6 @@ import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.event.AWTEventQueueLinker;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
-import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.queue.QueueAction;
@@ -103,10 +102,6 @@ import org.jdownloader.updatev2.InternetConnectionSettings;
 public class Launcher {
     static {
         statics();
-    }
-
-    public static void main(String[] args) {
-        System.out.println(Hash.getMD5(new File("C:\\Users\\thomas\\AppData\\Local\\JDownloader 2.0\\JDownloader2.exe")));
     }
 
     private static LogSource           LOG;
