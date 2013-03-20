@@ -13,6 +13,8 @@ public interface IFilePackageApi extends RemoteAPIInterface {
 
     public abstract List<FilePackageStorable> list();
 
+    public abstract List<FilePackageStorable> listRanges(int startWith, int maxResults);
+
     public abstract String getIDFromLinkID(long ID);
 
     public abstract boolean remove(long ID);

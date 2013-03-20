@@ -25,11 +25,30 @@ public class FilePackageApi implements IFilePackageApi {
         try {
             java.util.List<FilePackageStorable> ret = new ArrayList<FilePackageStorable>(dlc.size());
             for (FilePackage fpkg : dlc.getPackages()) {
-                @SuppressWarnings("unused")
-                FilePackageStorable pkg;
-                ret.add(pkg = new FilePackageStorable(fpkg));
+                ret.add(new FilePackageStorable(fpkg));
             }
             return ret;
+        } finally {
+            dlc.readUnlock(b);
+        }
+    }
+
+    @Override
+    public List<FilePackageStorable> listRanges(int startWith, int maxResults) {
+        DownloadController dlc = DownloadController.getInstance();
+        boolean b = dlc.readLock();
+        try {
+            java.util.List<FilePackageStorable> ret = new ArrayList<FilePackageStorable>(dlc.size());
+            if (startWith > dlc.size() - 1) return ret;
+            if (startWith < 0) startWith = 0;
+            if (maxResults < 0) maxResults = dlc.size();
+
+            for (int i = startWith; i < Math.min(startWith + maxResults, dlc.size()); i++) {
+                FilePackage fpkg = dlc.getPackages().get(i);
+                ret.add(new FilePackageStorable(fpkg));
+            }
+            return ret;
+
         } finally {
             dlc.readUnlock(b);
         }
