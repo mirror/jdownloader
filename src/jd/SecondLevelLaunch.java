@@ -96,6 +96,7 @@ import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.toolbar.ToolbarOffer;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
+import org.jdownloader.updatev2.RestartController;
 
 public class SecondLevelLaunch {
     static {
@@ -585,7 +586,7 @@ public class SecondLevelLaunch {
             public Void edtRun() {
                 /* init gui here */
                 try {
-
+                    ShutdownController.getInstance().addShutdownVetoListener(RestartController.getInstance());
                     AWTEventQueueLinker.link();
 
                     lafInit.waitForEDT();

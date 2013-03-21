@@ -186,9 +186,7 @@ public class Main {
     public static void main(String[] args) {
 
         // USe Jacksonmapper in this project
-        System.err.println(CrossSystem.class.getClassLoader());
-        System.err.println(JacksonMapper.class.getClassLoader());
-        System.err.println(Thread.currentThread().getContextClassLoader());
+
         JacksonMapper jm = new JacksonMapper();
         JSonStorage.setMapper(jm);
 

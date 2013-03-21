@@ -85,7 +85,7 @@ public class RestartController implements ShutdownVetoListener {
                 finalHook();
             }
         });
-        ShutdownController.getInstance().addShutdownVetoListener(this);
+
         restarter = Restarter.getInstance(this);
 
     }
