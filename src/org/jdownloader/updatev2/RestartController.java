@@ -179,6 +179,7 @@ public class RestartController implements ShutdownVetoListener {
     public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
         if (shutdownVetoExceptions.length > 0) { return; }
         try {
+            System.out.println("Ask veto restartcon");
             // if you do not want to ask here, use
             // ShutdownController.getInstance().removeShutdownVetoListener(RestartController.getInstance());
             ConfirmDialog cd = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmToExit_(), _UPDATE._.RestartController_confirmToExit_msg(), AWUTheme.I().getIcon("exit", 32), null, null) {
