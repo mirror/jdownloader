@@ -62,10 +62,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.event.AWTEventQueueLinker;
 import org.appwork.txtresource.TranslationFactory;
-import org.appwork.uio.BasicDialogHandler;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.queue.QueueAction;
@@ -158,7 +155,6 @@ public class SecondLevelLaunch {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        UIOManager.setUserIO(new BasicDialogHandler());
 
     }
 
