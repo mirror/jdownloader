@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -51,8 +52,13 @@ public class Free18Net extends PluginForHost {
         if (br.containsHTML("HTTP\\-EQUIV=\"Refresh\" CONTENT=\"1;URL=http://www\\.free18\\.net/\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("face=\"Verdana\" size=\"2\"><strong>Title: ([^<>\"]*?)<br /> ").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?), Watch, Free Porn Video</title>").getMatch(0);
-        DLLINK = br.getRegex("url : \"(http://[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://c\\d+\\.free18\\.net/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.flv)\"").getMatch(0);
+        final String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+        if (cryptedScripts != null && cryptedScripts.length != 0) {
+            for (String crypted : cryptedScripts) {
+                DLLINK = decodeDownloadLink(crypted);
+                if (DLLINK != null) break;
+            }
+        }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
@@ -87,6 +93,33 @@ public class Free18Net extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String decodeDownloadLink(final String s) {
+        String decoded = null;
+
+        try {
+            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
+
+            String p = params.getMatch(0).replaceAll("\\\\", "");
+            int a = Integer.parseInt(params.getMatch(1));
+            int c = Integer.parseInt(params.getMatch(2));
+            String[] k = params.getMatch(3).split("\\|");
+
+            while (c != 0) {
+                c--;
+                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+            }
+
+            decoded = p;
+        } catch (Exception e) {
+        }
+
+        String finallink = null;
+        if (decoded != null) {
+            finallink = new Regex(decoded, "\"(http[^<>\"]*?)\"").getMatch(0);
+        }
+        return finallink;
     }
 
     @Override

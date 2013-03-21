@@ -156,7 +156,7 @@ public class VKontakteRu extends PluginForDecrypt {
             postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + new Regex(parameter, "(\\d+)$").getMatch(0);
         }
         br.postPage("http://vk.com/audio", postData);
-        final String[][] audioLinks = br.getRegex("\\'(\\d+)\\',\\'(http://cs\\d+\\.(vk\\.com|userapi\\.com)/u\\d+/audios?/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
+        final String[][] audioLinks = br.getRegex("\\'(\\d+)\\',\\'(http://cs\\d+\\.[a-z0-9]+\\.[a-z]{2,4}/u\\d+/audios?/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
         if (audioLinks == null || audioLinks.length == 0) return null;
         for (String audioInfo[] : audioLinks) {
             final String finallink = "http://vkontaktedecrypted.ru/audiolink/" + audioInfo[0];
@@ -164,7 +164,7 @@ public class VKontakteRu extends PluginForDecrypt {
             dl.setProperty("postdata", postData);
             dl.setProperty("directlink", Encoding.htmlDecode(audioInfo[1]));
             // Set filename so we have nice filenames here ;)
-            dl.setFinalFileName(Encoding.htmlDecode(audioInfo[3].trim()) + " - " + Encoding.htmlDecode(audioInfo[4].trim()) + ".mp3");
+            dl.setFinalFileName(Encoding.htmlDecode(audioInfo[2].trim()) + " - " + Encoding.htmlDecode(audioInfo[3].trim()) + ".mp3");
             dl.setAvailable(true);
             decryptedLinks.add(dl);
             logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);

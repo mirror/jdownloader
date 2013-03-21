@@ -29,7 +29,7 @@ public class TedCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        String plainfilename = br.getRegex("\"http://download\\.ted\\.com/talks/([^<>\"]*?)\\.mp4\">download the video</a>").getMatch(0);
+        String plainfilename = br.getRegex("\"http://download\\.ted\\.com/talks/([^<>\"]*?)\\.mp4([^<>\"]+)?\">download the video</a>").getMatch(0);
         if (plainfilename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

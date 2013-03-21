@@ -195,6 +195,7 @@ public class KeezMoviesCom extends PluginForHost {
             br.setCookie("http://www.keezmovies.com/", "age_verified", "1");
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() != null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML(">This video has been removed<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             filename = br.getRegex("<span class=\"fn\" style=\"display:none\">([^<>\"]*?)</span>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>(.*?) \\- KeezMovies\\.com</title>").getMatch(0);

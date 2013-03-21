@@ -88,7 +88,7 @@ public class VKontakteRuHoster extends PluginForHost {
             if (!linkOk(link, finalFilename)) {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage("http://vk.com/audio", link.getStringProperty("postdata", null));
-                FINALLINK = br.getRegex("\\'" + audioID + "\\',\\'(http://cs\\d+\\.(vk\\.com|userapi\\.com)/u\\d+/audios?/[a-z0-9]+\\.mp3)\\'").getMatch(0);
+                FINALLINK = br.getRegex("\\'" + audioID + "\\',\\'(http://cs\\d+\\.[a-z0-9]+\\.[a-z]{2,4}/u\\d+/audios?/[a-z0-9]+\\.mp3)\\'").getMatch(0);
                 if (FINALLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (!linkOk(link, finalFilename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

@@ -40,7 +40,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://(www\\.)?linksave\\.in/(view.php\\?id=)?(?!dl\\-)[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://(www\\.)?linksave\\.in/(?!news|api|partner|usercp|protect|faq|contact|language)(view.php\\?id=)?(?!dl\\-)[\\w]+" }, flags = { 0 })
 public class Lnksvn extends PluginForDecrypt {
 
     private boolean isExternInterfaceActive() {
@@ -65,11 +65,13 @@ public class Lnksvn extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://linksave.in/", "Linksave_Language", "german");
         br.setRequestIntervalLimit("linksave.in", 1000);
+        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        if (br.containsHTML("Ordner nicht gefunden")) {
-            logger.info("Error 404 - Ordner: \"" + parameter + "\" nicht gefunden!");
+        if (br.containsHTML("Ordner nicht gefunden<|e>404 \\- Not Found<")) {
+            logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        br.setFollowRedirects(false);
         getCaptcha(param, "");
         // CNL
         /* old CNL handling found in revision 13753 */

@@ -264,6 +264,11 @@ public class FileFactory extends PluginForHost {
     public String getUrl() throws IOException, PluginException {
         String url = br.getRegex("\"(http://[a-z0-9\\-]+\\.filefactory\\.com/dl/[^<>\"]*?)\"").getMatch(0);
         if (url == null) url = br.getRegex("id=\"downloadLinkTarget\" style=\"display: none;\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        // New
+        if (url == null) {
+            url = br.getRegex("\\'(/dlf/f/[^<>\"]*?)\\'").getMatch(0);
+            if (url != null) url = "http://filefactory.com" + url;
+        }
         if (url == null) {
             Context cx = null;
             try {
@@ -319,7 +324,7 @@ public class FileFactory extends PluginForHost {
                     if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
                 }
                 String urlWithFilename = null;
-                if (br.containsHTML("recaptcha_ajax\\.js")) {
+                if (br.getRegex("Recaptcha\\.create\\(([\r\n\t ]+)?\"([^\"]+)").getMatch(1) != null) {
                     urlWithFilename = handleRecaptcha(downloadLink);
                 } else {
                     urlWithFilename = getUrl();
@@ -334,12 +339,12 @@ public class FileFactory extends PluginForHost {
                 final String skipAds = br.getRegex("\"(http://(www\\.)?filefactory\\.com/dlf/[^<>\"]*?)\"").getMatch(0);
                 if (skipAds != null) br.getPage(skipAds);
 
+                checkErrors(false);
                 String wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
                 if (wait != null) {
                     waittime = Long.parseLong(wait) * 1000l;
                     if (waittime > 60000) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
                 }
-                checkErrors(false);
                 String downloadUrl = getUrl();
                 if (downloadUrl == null) {
                     logger.warning("getUrl is broken!");
