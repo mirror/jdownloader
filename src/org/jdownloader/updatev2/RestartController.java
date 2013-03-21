@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 
 import org.appwork.app.launcher.parameterparser.CommandSwitch;
 import org.appwork.app.launcher.parameterparser.ParameterParser;
+import org.appwork.resources.AWUTheme;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -20,7 +21,6 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.restart.Restarter;
 
 public class RestartController implements ShutdownVetoListener {
@@ -180,7 +180,7 @@ public class RestartController implements ShutdownVetoListener {
         if (shutdownVetoExceptions.length > 0) { return; }
         try {
 
-            ConfirmDialog cd = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmToExit_(), _UPDATE._.RestartController_confirmToExit_msg(), NewTheme.I().getIcon("exit", 32), null, null) {
+            ConfirmDialog cd = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmToExit_(), _UPDATE._.RestartController_confirmToExit_msg(), AWUTheme.I().getIcon("exit", 32), null, null) {
 
                 @Override
                 protected String getDontShowAgainKey() {
