@@ -20,6 +20,7 @@ package org.jdownloader.startup;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.Enumeration;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -31,9 +32,11 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.IOErrorHandler;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.logging.ExtLogManager;
 import org.jdownloader.logging.LogController;
@@ -205,6 +208,29 @@ public class Main {
 
         PARAMETER_HANDLER = new ParameterHandler();
         PARAMETER_HANDLER.onStartup(args);
+        try {
+
+            // ensure that there is a Jdownloader.jar and call it to keep jd_home up2date
+            if (!Application.isJared(Main.class)) {
+                // Developer Mode. Let's call JDownloader.jar Updater in .jd_home
+
+                File jdjar = Application.getResource("JDownloader.jar");
+                if (!jdjar.exists()) {
+                    //
+                    URL mainClass = Application.getRessourceURL("org", true);
+
+                    File svnJar = new File(new File(mainClass.toURI()).getParentFile().getParentFile(), "dev/JDownloader.jar");
+                    jdjar.delete();
+                    IO.copyFile(svnJar, jdjar);
+
+                }
+                ProcessBuilderFactory.create(CrossSystem.getJavaBinary(), "-jar", jdjar.getName(), "-forceupdate", "guiless", "-exitafterupdate").directory(jdjar.getParentFile()).start();
+                System.out.println(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         jd.SecondLevelLaunch.mainStart(args);
 
     }
