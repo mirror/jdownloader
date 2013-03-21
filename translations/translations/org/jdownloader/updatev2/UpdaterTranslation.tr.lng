@@ -1,3 +1,5 @@
+RestartController_confirmToExit_=Çıkılsın mı?
+RestartController_confirmToExit_msg=JDownloader'dan gerçekten çıkmak istiyor musunuz?
 close_jd=%s1 dosyasını yazmak için yetersiz izinler.\nTüm çalışan JDownloader ve Java işlemlerini kapatmayı deneyin ve ondan sonra terar deneyin!\nEğer bu sorun sistemi yeniden başlattıktan sonra hala meydana geliyorsa, lütfen destek birimimizle temasa geçin.
 confirmdialog_new_update_available_answer_later=Sonra
 confirmdialog_new_update_available_answer_later_install=Sonra
