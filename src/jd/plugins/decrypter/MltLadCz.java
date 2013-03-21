@@ -22,11 +22,9 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 //multiload.cz by pspzockerscene
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiload.cz" }, urls = { "http://[\\w\\.]*?multiload\\.cz/stahnout/[0-9]+/" }, flags = { 0 })
@@ -42,10 +40,13 @@ public class MltLadCz extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("soubor neexistuje")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("soubor neexistuje")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         /* File package handling */
         ArrayList<String> allinks = new ArrayList<String>();
-        String pagepieces[] = br.getRegex("class=\"(manager-linky|manager-linky multishare-kod)\">(.*?)</p>").getColumn(1);
+        String pagepieces[] = br.getRegex("class=\"(manager\\-linky|manager\\-linky multishare\\-kod)\">(.*?)</p>").getColumn(1);
         for (String pagepiece : pagepieces) {
             String[] links = HTMLParser.getHttpLinks(pagepiece, "");
             for (String link : links) {

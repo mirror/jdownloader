@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://(www\\.|m\\.)?(soundcloud\\.com/(?!you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#)[^<>\"\\']+(\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z09]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((www\\.|m\\.)?(soundcloud\\.com/(?!you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#)[^<>\"\\']+(\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z09]+)|api\\.soundcloud\\.com/tracks/\\d+)" }, flags = { 0 })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     public SoundCloudComDecrypter(PluginWrapper wrapper) {
@@ -47,6 +47,14 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             final String newparameter = br.getRedirectLocation();
+            if (newparameter == null) {
+                logger.warning("Decrypter failed on redirect link: " + parameter);
+                return null;
+            }
+            parameter = newparameter;
+        } else if (parameter.matches("https?://api\\.soundcloud\\.com/tracks/\\d+")) {
+            br.getPage("https://api.soundcloud.com/tracks/" + new Regex(parameter, "(\\d+)$").getMatch(0) + "?client_id=" + SoundCloudComDecrypter.CLIENTID + "&format=json");
+            final String newparameter = br.getRegex("\"permalink_url\":\"(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+)\"").getMatch(0);
             if (newparameter == null) {
                 logger.warning("Decrypter failed on redirect link: " + parameter);
                 return null;

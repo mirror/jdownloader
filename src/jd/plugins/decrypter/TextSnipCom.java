@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "textsnip.com" }, urls = { "http://(www\\.)?textsnip\\.com/(?!user)[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "textsnip.com" }, urls = { "http://(www\\.)?textsnip\\.com/(?!user|acc)[a-z0-9]+" }, flags = { 0 })
 public class TextSnipCom extends PluginForDecrypt {
 
     public TextSnipCom(PluginWrapper wrapper) {
@@ -39,11 +39,18 @@ public class TextSnipCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         /* Error handling */
-        if ("http://textsnip.com".equals(br.getRedirectLocation())) {
+        if ("http://textsnip.com/".equals(br.getRedirectLocation())) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (br.getRedirectLocation() != null) { return null; }
+        if (br.containsHTML("action=\"create\\.php\"")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.getRedirectLocation() != null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         final String plaintxt = br.getRegex("<code>(.*?)</code>").getMatch(0);
         if (plaintxt == null) {
             logger.warning("Decrypter broken for link: " + parameter);

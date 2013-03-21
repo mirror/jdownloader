@@ -46,7 +46,8 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Sorry, we couldn\\'t find that stream\\.")) {
-            // final Regex info = new Regex(parameter, "(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)");
+            // final Regex info = new Regex(parameter,
+            // "(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)");
             final DownloadLink dlink = createDownloadlink("http://media" + new Random().nextInt(1000) + ".twitchdecrypted.tv/archives/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".flv");
             dlink.setAvailable(false);
             decryptedLinks.add(dlink);
@@ -77,8 +78,13 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            String filename = br.getRegex("<h2 id=\\'broadcast_title\\'>([^<>\"]*?)</h2>").getMatch(0);
-            if (parameter.contains("justin.tv/")) filename = br.getRegex("<h2 class=\"clip_title\">([^<>\"]*?)</h2>").getMatch(0);
+            String filename = null;
+            if (parameter.contains("justin.tv/")) {
+                filename = br.getRegex("<h2 class=\"clip_title\">([^<>\"]*?)</h2>").getMatch(0);
+            } else {
+                // Testlink: http://www.twitch.tv/fiegsy/b/296921448
+                filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            }
             if (parameter.contains("/b/")) {
                 br.getPage("http://api.justin.tv/api/broadcast/by_archive/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".xml");
             } else {
