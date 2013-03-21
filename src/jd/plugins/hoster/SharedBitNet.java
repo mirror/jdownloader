@@ -119,31 +119,33 @@ public class SharedBitNet extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         } else if (br.containsHTML(PRIVATE)) throw new PluginException(LinkStatus.ERROR_FATAL, PRIVATEUSERTEXT);
-
-        final long timeBefore = System.currentTimeMillis();
-
-        // final String scaptchaLink =
-        // br.getRegex("\"(/captcha/\\d+/authmini)\"").getMatch(0);
-        // try {
-        // br.cloneBrowser().openGetConnection("https://sharedbit.net" +
-        // scaptchaLink);
-        // } catch (final Exception e) {
-        // }
+        String code = null;
         for (int i = 0; i <= 3; i++) {
             final String captchaLink = br.getRegex("\"(/captcha/\\d+/dl[^<>\"]*?)\"").getMatch(0);
             if (captchaLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final String code = getCaptchaCode("https://sharedbit.net" + captchaLink, downloadLink);
-            if (i == 0) waitTime(timeBefore, downloadLink);
-            ajaxPost("https://sharedbit.net/dl-process/link", "hash=" + fid + "&captcha=" + code);
+            code = getCaptchaCode("https://sharedbit.net" + captchaLink, downloadLink);
+            ajaxPost("https://sharedbit.net/dl-process/link", "dlid=&hash=" + fid + "&captcha=" + code);
             if (AJAX.containsHTML("\"error\":\"\",\"captcha\":1")) continue;
             break;
         }
         if (AJAX.containsHTML("\"error\":\"\",\"captcha\":1")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (AJAX.containsHTML("\"error\":\"other\"")) {
-            logger.warning("Unknown error happened, probably waittime is wrong!");
+            logger.warning("FATAL unknown error happened");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (AJAX.containsHTML("\"error\":\"bound\"")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
         if (AJAX.containsHTML("\"error\":\"parallel\"")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Parallel downloads are not allowed for freeusers", 3 * 60 * 1000l);
+        final String dlid = AJAX.getRegex("\"dlid\":\"([^<>\"]*?)\"").getMatch(0);
+        if (dlid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        waitTime(System.currentTimeMillis(), downloadLink);
+        ajaxPost("https://sharedbit.net/dl-process/link", "dlid=" + dlid + "&hash=" + fid + "&captcha=" + code);
 
         String dllink = AJAX.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -164,11 +166,13 @@ public class SharedBitNet extends PluginForHost {
     }
 
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
+        int wait = 60;
+        final String waittime = AJAX.getRegex("\"timer\":\"(\\d+)\"").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 2;
         /** Ticket Time */
-        int tt = 60;
-        tt -= passedTime;
-        if (tt > 0) sleep(tt * 1000l, downloadLink);
+        wait -= passedTime;
+        if (wait > 0) sleep(wait * 1000l, downloadLink);
     }
 
     private String handlePassword(final DownloadLink thelink, final String fid) throws IOException, PluginException {

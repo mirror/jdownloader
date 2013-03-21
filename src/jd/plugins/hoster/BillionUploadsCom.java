@@ -74,8 +74,8 @@ public class BillionUploadsCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.7-raz
     // mods: getdllink
-    // non account: 2 * 1
-    // free account: 2 * 1
+    // non account: 1 * 1
+    // free account: untested, set same as FREE
     // premium account: untested
     // protocol: no https
     // captchatype: null
@@ -126,7 +126,8 @@ public class BillionUploadsCom extends PluginForHost {
         String[] fileInfo = new String[3];
         // scan the first page
         scanInfo(fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission critical
+        // scan the second page. filesize[1] and md5hash[2] are not mission
+        // critical
         if (fileInfo[0] == null) {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
@@ -194,7 +195,7 @@ public class BillionUploadsCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -208,7 +209,8 @@ public class BillionUploadsCom extends PluginForHost {
             checkErrors(downloadLink, false, passCode);
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
-                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                // stable is lame, issue finding input data fields correctly.
+                // eg. closes at ' quotation mark - remove when jd2 goes stable!
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
@@ -340,14 +342,19 @@ public class BillionUploadsCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -389,11 +396,14 @@ public class BillionUploadsCom extends PluginForHost {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
-                        // generic fail over for COOKIE_HOST on final link format.
+                        // generic fail over for COOKIE_HOST on final link
+                        // format.
                         if (dllink == null) {
                             dllink = br.getRegex("id=\"wo\".*?<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File|Download)").getMatch(0);
-                            // dllink = new Regex(correctedBR, "(https?://[^/]+/cgi\\-bin/dl\\.cgi/[a-z0-9]+/[^\"\\']+)").getMatch(0);
-                            // dllink = new Regex(correctedBR, "(https?://[^/]+/files/\\d+/[a-z0-9]+/[^\"\\']+)").getMatch(0);
+                            // dllink = new Regex(correctedBR,
+                            // "(https?://[^/]+/cgi\\-bin/dl\\.cgi/[a-z0-9]+/[^\"\\']+)").getMatch(0);
+                            // dllink = new Regex(correctedBR,
+                            // "(https?://[^/]+/files/\\d+/[a-z0-9]+/[^\"\\']+)").getMatch(0);
                             if (dllink == null) {
                                 String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -660,7 +670,7 @@ public class BillionUploadsCom extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, true, -2, "freelink2");
+            doFree(link, true, 1, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
@@ -722,8 +732,9 @@ public class BillionUploadsCom extends PluginForHost {
     }
 
     /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
-     * InputField parse(final String data). Affects revision 19688 and earlier!
+     * If form contain both " and ' quotation marks within input fields it can
+     * return null values, thus you submit wrong/incorrect data re: InputField
+     * parse(final String data). Affects revision 19688 and earlier!
      * 
      * TODO: remove after JD2 goes stable!
      * 
@@ -748,7 +759,8 @@ public class BillionUploadsCom extends PluginForHost {
         return new Form(data);
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
+    // String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 

@@ -29,10 +29,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "(http://(www\\.)?spiegel\\.de/video/video\\-\\d+\\.html|http://[\\w\\.]*?spiegel\\.de/fotostrecke/fotostrecke-\\d+(-\\d+)?.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "(http://(www\\.)?spiegel\\.de/video/[a-z0-9\\-]+\\-\\d+\\.html|http://[\\w\\.]*?spiegel\\.de/fotostrecke/fotostrecke-\\d+(-\\d+)?.html)" }, flags = { 0 })
 public class SpglD extends PluginForDecrypt {
 
-    private static final Pattern PATTERN_SUPPORTED_VIDEO      = Pattern.compile("http://[\\w\\.]*?spiegel\\.de/video/video-(\\d+).html", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_VIDEO      = Pattern.compile("http://[\\w\\.]*?spiegel\\.de/video/[a-z0-9\\-]+-(\\d+).html", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern PATTERN_SUPPORED_FOTOSTRECKE = Pattern.compile("http://[\\w\\.]*?spiegel\\.de/fotostrecke/fotostrecke-\\d+(-\\d+)?.html", Pattern.CASE_INSENSITIVE);
 

@@ -31,7 +31,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spreadlink.us" }, urls = { "http://[\\w\\.]*?spreadlink\\.us/[a-z0-9]+" }, flags = { 0 })
 public class SprdLnkUs extends PluginForDecrypt {
@@ -43,6 +42,7 @@ public class SprdLnkUs extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
         if (br.containsHTML("loading\\.gif\\' alt=\\'Lade\\'")) {
@@ -52,9 +52,16 @@ public class SprdLnkUs extends PluginForDecrypt {
         }
         if (br.containsHTML("Dir fehlt die Berechtigung für diesen Link")) {
             logger.warning("The link " + parameter + " is blocked through a referer protection and can't be accessed!");
-            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            return decryptedLinks;
         }
-        if (br.containsHTML(">Dieser Link exestiert nicht")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML(">Dieser Link exestiert nicht")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("e>403 Forbidden<") || br.containsHTML(">404 Not Found<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String finallink = null;
         if (br.containsHTML("/> Du wirst weitergeleitet in:")) {
             logger.info("Found Weiterleitungslink");

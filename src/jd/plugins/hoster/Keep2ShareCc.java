@@ -95,46 +95,37 @@ public class Keep2ShareCc extends PluginForHost {
                 dllink = getDllink();
             } else {
                 if (br.containsHTML("Traffic limit exceed\\!<br>|Download count files exceed!<br>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
-                final String uniqueID = br.getRegex("<input type=\"hidden\" value=\"([a-z0-9]+)\" name=\"uniqueId\"").getMatch(0);
+                final String uniqueID = br.getRegex("name=\"slow_id\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (uniqueID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                try {
-                    /** Try to skip the captcha */
-                    final Browser br2 = br.cloneBrowser();
-                    br2.getPage("http://keep2share.cc/file/url.html?file=" + uniqueID);
-                    dllink = br2.getRedirectLocation();
-                } catch (final Exception e) {
-
+                br.postPage(br.getURL(), "slow_id=" + uniqueID);
+                if (br.containsHTML("Free account does not allow to download more than one file at the same time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    logger.info("Detected captcha method \"Re Captcha\" for this host");
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    rc.setId(id);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode(cf, downloadLink);
+                    br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
+                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else {
+                    final String captchaLink = br.getRegex("\"(/file/captcha\\.html\\?[^\"]+)\"").getMatch(0);
+                    if (captchaLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    final String code = getCaptchaCode("http://keep2share.cc" + captchaLink, downloadLink);
+                    br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
+                    if (br.containsHTML(">The verification code is incorrect|/site/captcha.html")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                if (dllink == null) {
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                        logger.info("Detected captcha method \"Re Captcha\" for this host");
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                        final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-                        if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        rc.setId(id);
-                        rc.load();
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode(cf, downloadLink);
-                        br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
-                        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    } else {
-                        final String captchaLink = br.getRegex("\"(/file/captcha\\.html\\?[^\"]+)\"").getMatch(0);
-                        if (captchaLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        final String code = getCaptchaCode("http://keep2share.cc" + captchaLink, downloadLink);
-                        br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
-                        if (br.containsHTML(">The verification code is incorrect|/site/captcha.html")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
 
-                    /** Skippable */
-                    // int wait = 30;
-                    // final String waittime =
-                    // br.getRegex("<div id=\"download\\-wait\\-timer\">[\t\n\r ]+(\\d+)[\t\n\r ]+</div>").getMatch(0);
-                    // if (waittime != null) wait = Integer.parseInt(waittime);
-                    // sleep(wait * 1001l, downloadLink);
-                    br.postPage(br.getURL(), "free=1&uniqueId=" + uniqueID);
-                    dllink = getDllink();
-                }
+                /** Skippable */
+                int wait = 30;
+                final String waittime = br.getRegex("<div id=\"download\\-wait\\-timer\">[\t\n\r ]+(\\d+)[\t\n\r ]+</div>").getMatch(0);
+                if (waittime != null) wait = Integer.parseInt(waittime);
+                sleep(wait * 1001l, downloadLink);
+                br.postPage(br.getURL(), "free=1&uniqueId=" + uniqueID);
+                dllink = getDllink();
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -147,7 +138,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     private String getDllink() throws PluginException {
-        String dllink = br.getRegex("\\'(/file/url\\.html\\?file=[a-z0-9]+)\\';").getMatch(0);
+        String dllink = br.getRegex("(\\'|\")(/file/url\\.html\\?file=[a-z0-9]+)(\\'|\")").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = "http://keep2share.cc" + dllink;
         return dllink;
@@ -281,7 +272,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
     @Override
