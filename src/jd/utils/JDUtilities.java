@@ -28,7 +28,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.config.NoOldJDDataBaseFoundException;
@@ -125,10 +125,10 @@ public class JDUtilities {
             return JD_HOME;
         } else {
             // do not use hardcoded classpathes if possible
-            URL ressource = Thread.currentThread().getContextClassLoader().getResource(Launcher.class.getName().replace(".", "/") + ".class");
+            URL ressource = Thread.currentThread().getContextClassLoader().getResource(SecondLevelLaunch.class.getName().replace(".", "/") + ".class");
 
             if (ressource != null) {
-                JD_HOME = new File(Application.getRoot(jd.Launcher.class));
+                JD_HOME = new File(Application.getRoot(jd.SecondLevelLaunch.class));
             } else {
                 throw new NullPointerException("jd/Main.class not found");
             }

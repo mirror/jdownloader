@@ -24,7 +24,6 @@ import java.util.Enumeration;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import jd.Launcher;
 import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 import jd.gui.swing.laf.LookAndFeelController;
 
@@ -58,7 +57,7 @@ public class Main {
         } catch (final Throwable e) {
         }
         org.appwork.utils.Application.setApplication(".jd_home");
-        org.appwork.utils.Application.getRoot(jd.Launcher.class);
+        org.appwork.utils.Application.getRoot(jd.SecondLevelLaunch.class);
 
         Dialog.getInstance().setLafManager(LookAndFeelController.getInstance());
         try {
@@ -206,7 +205,7 @@ public class Main {
 
         PARAMETER_HANDLER = new ParameterHandler();
         PARAMETER_HANDLER.onStartup(args);
-        jd.Launcher.mainStart(args);
+        jd.SecondLevelLaunch.mainStart(args);
 
     }
 }

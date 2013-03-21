@@ -11,7 +11,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.gui.swing.dialog.AddAccountDialog;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Account;
@@ -101,7 +101,7 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
     public static void main(String[] args) {
         BuyAndAddPremiumAccount cp;
         try {
-            Launcher.statics();
+            SecondLevelLaunch.statics();
 
             cp = new BuyAndAddPremiumAccount(DomainInfo.getInstance("filesonic.com"), "test");
 

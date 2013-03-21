@@ -9,11 +9,11 @@ import javax.swing.JPopupMenu;
 import jd.gui.swing.jdgui.BasicJDTable;
 
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
@@ -36,7 +36,7 @@ public class AdvancedTable extends BasicJDTable<AdvancedConfigEntry> {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    NewUIO.I().showConfirmDialog(0, _GUI._.lit_are_you_sure(), _GUI._.AdvancedTablecontextmenu_reset(selection.size()));
+                    UIOManager.I().showConfirmDialog(0, _GUI._.lit_are_you_sure(), _GUI._.AdvancedTablecontextmenu_reset(selection.size()));
                     for (AdvancedConfigEntry ce : selection) {
                         ce.setValue(ce.getDefault());
                     }

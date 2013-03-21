@@ -6,12 +6,12 @@ import jd.gui.swing.dialog.ClickCaptchaDialog;
 import jd.gui.swing.dialog.ClickCaptchaDialogInterface;
 import jd.gui.swing.dialog.DialogType;
 
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.gui.userio.NewUIO;
 
 public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptchaChallenge> {
 
@@ -34,7 +34,7 @@ public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptc
         d.setPlugin(captchaChallenge.getPlugin());
         d.setCountdownTime(CaptchaSettings.CFG.getCountdown());
         dialog = d;
-        result = NewUIO.I().show(ClickCaptchaDialogInterface.class, d).getResult();
+        result = UIOManager.I().show(ClickCaptchaDialogInterface.class, d).getResult();
 
     }
 

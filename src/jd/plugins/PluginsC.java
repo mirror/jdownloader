@@ -27,6 +27,7 @@ import jd.nutils.encoding.Encoding;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -34,7 +35,6 @@ import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
@@ -158,7 +158,7 @@ public abstract class PluginsC {
                         };
                         try {
 
-                            NewUIO.I().show(ConfirmDialogInterface.class, d);
+                            UIOManager.I().show(ConfirmDialogInterface.class, d);
 
                             file.delete();
                             if (d.isDontShowAgainSelected()) {

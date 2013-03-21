@@ -5,7 +5,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
 
@@ -21,7 +21,7 @@ public class FileMenu extends JMenu {
     public FileMenu() {
         super(_GUI._.jd_gui_skins_simple_simplegui_menubar_filemenu());
 
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 AddLinksAction ala = new AddLinksAction();

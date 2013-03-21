@@ -26,7 +26,7 @@ import java.net.MalformedURLException;
 
 import javax.swing.JComponent;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.components.ExtTextField;
@@ -46,7 +46,7 @@ public class ClickCaptchaDialog extends AbstractCaptchaDialog implements ClickCa
         AbstractCaptchaDialog cp;
         try {
             Application.setApplication(".jd_home");
-            Launcher.statics();
+            SecondLevelLaunch.statics();
             cp = new ClickCaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), getGifImages(new File("C:/Users/Thomas/.BuildServ/applications/beta/sources/JDownloader/src/org/jdownloader/extensions/webinterface/webinterface/themes/main/images/core/load.gif").toURI().toURL()), "Enter both words...");
 
             LookAndFeelController.getInstance().setUIManager();

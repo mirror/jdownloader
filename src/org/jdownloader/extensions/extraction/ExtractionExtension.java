@@ -35,7 +35,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 import javax.swing.filechooser.FileFilter;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.config.SubConfiguration;
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -51,6 +51,7 @@ import jd.plugins.FilePackage;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging2.LogSource;
@@ -81,7 +82,6 @@ import org.jdownloader.gui.menu.MenuContext;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
 import org.jdownloader.gui.shortcuts.ShortcutController;
-import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext;
@@ -379,7 +379,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         ShutdownController.getInstance().removeShutdownVetoListener(listener);
         MenuFactoryEventSender.getInstance().removeListener(this);
         FileCreationManager.getInstance().getEventSender().removeListener(this);
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 new EDTRunner() {
@@ -403,7 +403,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         LinkCollector.getInstance().setArchiver(this);
         MenuFactoryEventSender.getInstance().addListener(this);
         FileCreationManager.getInstance().getEventSender().addListener(this);
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
             public void run() {
                 new EDTRunner() {
 
@@ -429,7 +429,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 }
                 if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) {
                     try {
-                        NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.Extraction_onShutdownRequest_(), _JDT._.Extraction_onShutdownRequest_msg(), NewTheme.I().getIcon("unpack", 32), _JDT._.literally_yes(), null);
+                        UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.Extraction_onShutdownRequest_(), _JDT._.Extraction_onShutdownRequest_msg(), NewTheme.I().getIcon("unpack", 32), _JDT._.literally_yes(), null);
                         return;
                     } catch (DialogNoAnswerException e) {
                         e.printStackTrace();

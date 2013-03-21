@@ -200,4 +200,10 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Contact Server...", "Server kontaktieren..." })
     String installframe_statusmsg_connecting_to_server();
 
+    @Default(lngs = { "en" }, values = { "Really Exit?" })
+    String RestartController_confirmToExit_();
+
+    @Default(lngs = { "en" }, values = { "Do you really want to exit JDownloader?" })
+    String RestartController_confirmToExit_msg();
+
 }

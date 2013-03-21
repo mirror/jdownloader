@@ -2182,12 +2182,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Launcher" })
     String jd_gui_swing_components_AboutDialog_launcher();
 
-    @Default(lngs = { "en" }, values = { "Really Exit?" })
-    String RestartController_confirmToExit_();
-
-    @Default(lngs = { "en" }, values = { "Do you really want to exit JDownloader?" })
-    String RestartController_confirmToExit_msg();
-
     @Default(lngs = { "en" }, values = { "Could not create Folder %s1" })
     String DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(String folder);
 

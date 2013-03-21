@@ -23,7 +23,7 @@ import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -131,7 +131,7 @@ public class ExtensionController {
                 Log.exception(e);
             }
             list = Collections.unmodifiableList(ret);
-            Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+            SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
                 public void run() {
                     List<LazyExtension> llist = list;

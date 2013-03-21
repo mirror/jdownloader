@@ -50,8 +50,7 @@ public class SolverJob<T> {
         synchronized (responses) {
             responses.add(abstractResponse);
 
-            T bestValue = cumulate().getValue();
-            challenge.setResult(bestValue);
+            challenge.setResult(cumulate());
             if (isSolved()) {
                 getLogger().info("Is Solved - kill rest");
                 kill();

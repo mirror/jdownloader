@@ -36,7 +36,8 @@ public class ChallengeResponseController {
     private LogSource logger;
 
     /**
-     * Create a new instance of ChallengeResponseController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of ChallengeResponseController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private ChallengeResponseController() {
         config = JsonConfig.create(CaptchaSettings.class);

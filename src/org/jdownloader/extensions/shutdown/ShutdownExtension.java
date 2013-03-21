@@ -40,6 +40,9 @@ import org.appwork.controlling.StateEventListener;
 import org.appwork.controlling.StateMachine;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.uio.MessageDialogImpl;
+import org.appwork.uio.MessageDialogInterface;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
@@ -57,9 +60,6 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
 import org.jdownloader.extensions.shutdown.translate.T;
 import org.jdownloader.gui.shortcuts.ShortcutController;
-import org.jdownloader.gui.userio.MessageDialogImpl;
-import org.jdownloader.gui.userio.MessageDialogInterface;
-import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.RestartController;
 
@@ -373,7 +373,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
                 WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_shutdown(), message);
                 try {
-                    NewUIO.I().show(WarningDialogInterface.class, d);
+                    UIOManager.I().show(WarningDialogInterface.class, d);
                 } catch (Throwable e) {
 
                 }
@@ -388,7 +388,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 message = _.interaction_shutdown_dialog_msg_standby();
                 d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_standby(), message);
                 try {
-                    NewUIO.I().show(WarningDialogInterface.class, d);
+                    UIOManager.I().show(WarningDialogInterface.class, d);
                 } catch (Throwable e) {
 
                 }
@@ -403,7 +403,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 message = _.interaction_shutdown_dialog_msg_hibernate();
                 d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_hibernate(), message);
                 try {
-                    NewUIO.I().show(WarningDialogInterface.class, d);
+                    UIOManager.I().show(WarningDialogInterface.class, d);
                 } catch (Throwable e) {
 
                 }
@@ -418,7 +418,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
                 d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_closejd(), message);
                 try {
-                    NewUIO.I().show(WarningDialogInterface.class, d);
+                    UIOManager.I().show(WarningDialogInterface.class, d);
                 } catch (Throwable e) {
 
                 }
@@ -488,10 +488,10 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                     try {
                         if (isSelected()) {
 
-                            NewUIO.I().show(MessageDialogInterface.class, new MessageDialogImpl(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _.addons_jdshutdown_statusmessage_enabled()));
+                            UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _.addons_jdshutdown_statusmessage_enabled()));
 
                         } else {
-                            NewUIO.I().show(MessageDialogInterface.class, new MessageDialogImpl(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _.addons_jdshutdown_statusmessage_disabled()));
+                            UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _.addons_jdshutdown_statusmessage_disabled()));
 
                         }
                     } catch (DialogClosedException e1) {

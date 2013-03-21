@@ -17,6 +17,7 @@ import jd.controlling.IOEQ;
 import jd.plugins.Account;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
@@ -27,7 +28,6 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -165,7 +165,7 @@ public class BuyAction extends AbstractAction {
                     if (buyIt == null || StringUtils.isEmpty(buyIt.getPremiumUrl())) return;
                     CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(buyIt.getPremiumUrl(), "accountmanager" + (table == null ? "/context" : "/table")));
                     try {
-                        NewUIO.I().show(BuyAndAddPremiumDialogInterface.class, new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
+                        UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
                     } catch (DialogClosedException e1) {
                         e1.printStackTrace();
                     } catch (DialogCanceledException e1) {

@@ -6,12 +6,12 @@ import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.DialogType;
 
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
-import org.jdownloader.gui.userio.NewUIO;
 
 public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptchaChallenge> {
 
@@ -35,7 +35,7 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
         d.setCountdownTime(CaptchaSettings.CFG.getCountdown());
         dialog = d;
         if (suggest != null) dialog.suggest(suggest);
-        result = NewUIO.I().show(CaptchaDialogInterface.class, d).getResult();
+        result = UIOManager.I().show(CaptchaDialogInterface.class, d).getResult();
 
     }
 

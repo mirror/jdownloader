@@ -31,7 +31,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerEvent;
@@ -64,7 +64,7 @@ public class StatusBarImpl extends JPanel {
     private DelayedRunnable        updateDelayer;
 
     public StatusBarImpl() {
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 new EDTRunner() {
@@ -96,7 +96,7 @@ public class StatusBarImpl extends JPanel {
         reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());
         reconnectIndicator.setIndeterminate(false);
         reconnectIndicator.setEnabled(false);
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 Reconnecter.getInstance().getStateMachine().addListener(new StateEventListener() {
@@ -174,7 +174,7 @@ public class StatusBarImpl extends JPanel {
             public void mouseClicked(MouseEvent e) {
             }
         });
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 LinkCrawler.getEventSender().addListener(new LinkCrawlerListener() {

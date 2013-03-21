@@ -98,6 +98,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 return true;
 
             } else if (!ac.isValid()) {
+
                 Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(ac.getAccountInfo().getStatus()));
                 return false;
             } else {

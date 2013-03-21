@@ -3,6 +3,7 @@ package org.jdownloader.captcha.v2;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public abstract class Challenge<T> {
@@ -48,13 +49,13 @@ public abstract class Challenge<T> {
         this.explain = explain;
     }
 
-    public T getResult() {
+    public ResponseList<T> getResult() {
         return result;
     }
 
-    public void setResult(T result) {
+    public void setResult(ResponseList<T> result) {
         this.result = result;
     }
 
-    private T result;
+    private ResponseList<T> result;
 }

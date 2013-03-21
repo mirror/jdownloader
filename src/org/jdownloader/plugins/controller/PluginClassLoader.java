@@ -30,7 +30,7 @@ public class PluginClassLoader extends URLClassLoader {
         }
 
         public PluginClassLoaderChild(PluginClassLoader parent) {
-            super(new URL[] { Application.getRootUrlByClass(jd.Launcher.class, null) }, parent);
+            super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, parent);
             this.parent = parent;
         }
 
@@ -237,7 +237,7 @@ public class PluginClassLoader extends URLClassLoader {
     }
 
     private PluginClassLoader() {
-        super(new URL[] { Application.getRootUrlByClass(jd.Launcher.class, null) }, PluginClassLoader.class.getClassLoader());
+        super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, PluginClassLoader.class.getClassLoader());
 
     }
 

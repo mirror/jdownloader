@@ -9,7 +9,7 @@ import javax.swing.JComponent;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.storage.JSonStorage;
@@ -72,7 +72,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
 
         try {
             Application.setApplication(".jd_home");
-            Launcher.statics();
+            SecondLevelLaunch.statics();
 
             LookAndFeelController.getInstance().setUIManager();
 

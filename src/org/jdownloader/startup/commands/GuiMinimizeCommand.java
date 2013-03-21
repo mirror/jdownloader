@@ -1,6 +1,6 @@
 package org.jdownloader.startup.commands;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.gui.UIConstants;
 import jd.gui.UserIF;
 
@@ -16,7 +16,7 @@ public class GuiMinimizeCommand extends AbstractStartupCommand {
 
     @Override
     public void run(final String command, final String... parameters) {
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
             public void run() {
@@ -31,7 +31,7 @@ public class GuiMinimizeCommand extends AbstractStartupCommand {
             }
 
         });
-        Launcher.INIT_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
             public void run() {

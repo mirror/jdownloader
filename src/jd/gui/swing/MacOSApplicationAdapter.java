@@ -20,7 +20,7 @@ import java.io.File;
 
 import javax.swing.JFrame;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.gui.swing.dialog.AboutDialog;
@@ -60,7 +60,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         macApplication.addAppEventListener(adapter);
         macApplication.setOpenFileHandler(adapter);
         macApplication.setOpenURIHandler(adapter);
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 try {
@@ -143,7 +143,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         appReOpened(null);
         LogController.GL.info("Handle open uri from Dock " + e.getURI().toString());
         String links = e.getURI().toString();
-        if (Launcher.GUI_COMPLETE.isReached()) {
+        if (SecondLevelLaunch.GUI_COMPLETE.isReached()) {
             LogController.GL.info("Distribute links: " + links);
             LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(links));
         } else {

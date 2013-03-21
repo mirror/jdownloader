@@ -2,7 +2,7 @@ package jd.gui.swing.jdgui.menu;
 
 import javax.swing.JMenuBar;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 
 public class JDMenuBar extends JMenuBar {
 
@@ -10,7 +10,7 @@ public class JDMenuBar extends JMenuBar {
 
     public JDMenuBar() {
         super();
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 add(new FileMenu());

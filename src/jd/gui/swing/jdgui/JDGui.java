@@ -48,7 +48,7 @@ import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.config.ConfigContainer;
 import jd.gui.UIConstants;
 import jd.gui.swing.SwingGui;
@@ -211,7 +211,7 @@ public class JDGui extends SwingGui {
             }
         });
         // Launcher.INIT_COMPLETE
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
 
@@ -240,7 +240,7 @@ public class JDGui extends SwingGui {
 
         });
 
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 new Thread("StatsDialog") {
@@ -383,7 +383,7 @@ public class JDGui extends SwingGui {
         this.linkgrabberView = new LinkGrabberView();
         this.mainTabbedPane.addTab(downloadView);
         this.mainTabbedPane.addTab(this.linkgrabberView);
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
             @Override
             public void run() {
                 new EDTRunner() {
@@ -691,7 +691,7 @@ public class JDGui extends SwingGui {
                 return null;
             }
         }.start();
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 if (Application.getJavaVersion() >= 16000000) {

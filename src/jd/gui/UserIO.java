@@ -284,7 +284,7 @@ public class UserIO {
             // captchaController.setCaptchaType(CaptchaDialogInterface.CaptchaType.CLICK);
             // CaptchaResult cc = captchaController.getCode(0);
             if (!c.isSolved()) return null;
-            return new Point(c.getResult().getX(), c.getResult().getY());
+            return new Point(c.getResult().getValue().getX(), c.getResult().getValue().getY());
         } else {
             Log.exception(new WTFException("DO NOT USE OUTSIDE DECRYPTER"));
         }

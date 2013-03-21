@@ -15,7 +15,8 @@ public class BasicCaptchaChallenge extends ImageCaptchaChallenge<String> {
     }
 
     public boolean isSolved() {
-        return StringUtils.isNotEmpty(getResult());
+        if (getResult() == null) return false;
+        return StringUtils.isNotEmpty(getResult().getValue());
     }
 
 }

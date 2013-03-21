@@ -18,7 +18,7 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.nutils.Executer;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -187,7 +187,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         Executer exec = new Executer(binary);
         exec.setLogger(LogController.CL());
         exec.addParameters(new String[] { "--version" });
-        exec.setRunin(Application.getRoot(Launcher.class));
+        exec.setRunin(Application.getRoot(SecondLevelLaunch.class));
         exec.setWaitTimeout(5);
         exec.start();
         exec.waitTimeout();

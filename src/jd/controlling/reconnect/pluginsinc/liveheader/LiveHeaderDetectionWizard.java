@@ -35,6 +35,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.remotecall.client.RemoteCallCommunicationException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.ProcessCallBack;
@@ -46,7 +47,6 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.images.NewTheme;
 
 public class LiveHeaderDetectionWizard {
@@ -223,7 +223,7 @@ public class LiveHeaderDetectionWizard {
         try {
             if (pre) {
 
-                NewUIO.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.ipcheck());
+                UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.ipcheck());
                 JsonConfig.create(ReconnectConfig.class).setIPCheckGloballyDisabled(false);
 
             }
@@ -239,7 +239,7 @@ public class LiveHeaderDetectionWizard {
 
             JsonConfig.create(ReconnectConfig.class).setIPCheckGloballyDisabled(pre);
             if (pre) {
-                NewUIO.I().showMessageDialog(T._.ipcheckreverted());
+                UIOManager.I().showMessageDialog(T._.ipcheckreverted());
             }
         }
 
@@ -316,7 +316,7 @@ public class LiveHeaderDetectionWizard {
                     // TODO
                     DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
                     dcd.setLoginsOnly(true);
-                    GetLoginsInterface impl = NewUIO.I().show(GetLoginsInterface.class, dcd);
+                    GetLoginsInterface impl = UIOManager.I().show(GetLoginsInterface.class, dcd);
 
                     username = impl.getUsername();
                     password = impl.getPassword();
@@ -352,7 +352,7 @@ public class LiveHeaderDetectionWizard {
 
                     if (i < tests.size() - 1) {
 
-                        if (ret.size() == 1) NewUIO.I().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
+                        if (ret.size() == 1) UIOManager.I().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
                         return ret;
                     }
                 } else {
@@ -404,7 +404,7 @@ public class LiveHeaderDetectionWizard {
 
                     if (!IP.isValidRouterIP(gatewayAdressIP)) {
 
-                        NewUIO.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), NewTheme.I().getIcon("warning", 32), _GUI._.literally_yes(), _GUI._.literally_edit());
+                        UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), NewTheme.I().getIcon("warning", 32), _GUI._.literally_yes(), _GUI._.literally_edit());
 
                     }
                     break;
@@ -712,7 +712,7 @@ public class LiveHeaderDetectionWizard {
             System.out.println("UserConfirm");
             DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
             // dcd.setLoginsText(T._.LiveHeaderDetectionWizard_userConfirm_loginstext());
-            DataCompareDialogInterface impl = NewUIO.I().show(DataCompareDialogInterface.class, dcd);
+            DataCompareDialogInterface impl = UIOManager.I().show(DataCompareDialogInterface.class, dcd);
             username = impl.getUsername();
 
             password = impl.getPassword();
@@ -725,7 +725,7 @@ public class LiveHeaderDetectionWizard {
                 gatewayAdressHost = gatewayAdress.getHostName();
                 break;
             } catch (IOException e) {
-                NewUIO.I().showConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), NewTheme.I().getIcon("error", 32), _GUI._.literally_edit(), null);
+                UIOManager.I().showConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), NewTheme.I().getIcon("error", 32), _GUI._.literally_edit(), null);
 
             }
         }
@@ -826,7 +826,7 @@ public class LiveHeaderDetectionWizard {
 
                     DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
                     dcd.setLoginsText(T._.LiveHeaderDetectionWizard_userConfirm_loginstext());
-                    DataCompareDialogInterface impl = NewUIO.I().show(DataCompareDialogInterface.class, dcd);
+                    DataCompareDialogInterface impl = UIOManager.I().show(DataCompareDialogInterface.class, dcd);
                     username = impl.getUsername();
 
                     password = impl.getPassword();
@@ -839,7 +839,7 @@ public class LiveHeaderDetectionWizard {
                         gatewayAdressHost = gatewayAdress.getHostName();
                         break;
                     } catch (IOException e) {
-                        NewUIO.I().showConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), NewTheme.I().getIcon("error", 32), _GUI._.literally_edit(), null);
+                        UIOManager.I().showConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), NewTheme.I().getIcon("error", 32), _GUI._.literally_edit(), null);
 
                     }
                 }
@@ -847,7 +847,7 @@ public class LiveHeaderDetectionWizard {
 
                     if (!IP.isValidRouterIP(gatewayAdressIP)) {
 
-                        NewUIO.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), NewTheme.I().getIcon("warning", 32), _GUI._.literally_yes(), _GUI._.literally_edit());
+                        UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), NewTheme.I().getIcon("warning", 32), _GUI._.literally_yes(), _GUI._.literally_edit());
 
                     }
                     break;
@@ -863,7 +863,7 @@ public class LiveHeaderDetectionWizard {
         } catch (InterruptedException e) {
             throw e;
         } catch (ReconnectException e) {
-            NewUIO.I().showErrorMessage(T._.LiveHeaderDetectionWizard_sendRouter_reconnectFailed());
+            UIOManager.I().showErrorMessage(T._.LiveHeaderDetectionWizard_sendRouter_reconnectFailed());
         }
     }
 
@@ -872,9 +872,9 @@ public class LiveHeaderDetectionWizard {
         RouterData rd = getRouterData();
         rd.setScript(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript());
         if (RecollController.getInstance().addRouter(rd)) {
-            NewUIO.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_ok());
+            UIOManager.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_ok());
         } else {
-            NewUIO.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_failed());
+            UIOManager.I().showMessageDialog(T._.LiveHeaderDetectionWizard_uploadData_sent_failed());
         }
 
     }

@@ -174,7 +174,7 @@ public abstract class PluginForHost extends Plugin {
             ChallengeResponseController.getInstance().handle(c);
 
             if (!c.isSolved()) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            return c.getResult();
+            return c.getResult().getValue();
         } catch (InterruptedException e) {
             logger.warning(Exceptions.getStackTrace(e));
 

@@ -27,7 +27,7 @@ public class PluginController<T extends Plugin> {
             File path = null;
             PluginClassLoaderChild cl = null;
 
-            path = Application.getRootByClass(jd.Launcher.class, hosterpath);
+            path = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath);
 
             cl = PluginClassLoader.getInstance().getChild();
 

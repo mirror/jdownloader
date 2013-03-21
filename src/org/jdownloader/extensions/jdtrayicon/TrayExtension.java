@@ -37,7 +37,7 @@ import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -144,7 +144,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             if (CrossSystem.isLinux()) LogController.CL().severe("Make sure your Notification Area is enabled!");
             throw new StartException("Tray isn't supported!");
         }
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 new EDTRunner() {
@@ -295,7 +295,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             }
             return;
         }
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 LogController.CL(TrayExtension.class).info("JDLightTrayIcon Init complete");

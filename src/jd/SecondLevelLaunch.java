@@ -62,7 +62,10 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.event.AWTEventQueueLinker;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.BasicDialogHandler;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.queue.QueueAction;
@@ -84,8 +87,6 @@ import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.dynamic.Dynamic;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.gui.userio.JDSwingUserIO;
-import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
@@ -99,7 +100,7 @@ import org.jdownloader.toolbar.ToolbarOffer;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 
-public class Launcher {
+public class SecondLevelLaunch {
     static {
         statics();
     }
@@ -123,8 +124,8 @@ public class Launcher {
             com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", -1));
         } catch (final Throwable e) {
             /* not every mac has this */
-            Launcher.LOG.info("Error Initializing  Mac Look and Feel Special: " + e);
-            Launcher.LOG.log(e);
+            SecondLevelLaunch.LOG.info("Error Initializing  Mac Look and Feel Special: " + e);
+            SecondLevelLaunch.LOG.log(e);
         }
 
         // Use ScreenMenu in every LAF
@@ -145,8 +146,8 @@ public class Launcher {
         try {
             MacOSApplicationAdapter.enableMacSpecial();
         } catch (final Throwable e) {
-            Launcher.LOG.info("Error Initializing  Mac Look and Feel Special: " + e);
-            Launcher.LOG.log(e);
+            SecondLevelLaunch.LOG.info("Error Initializing  Mac Look and Feel Special: " + e);
+            SecondLevelLaunch.LOG.log(e);
         }
 
     }
@@ -157,7 +158,7 @@ public class Launcher {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        NewUIO.setUserIO(new JDSwingUserIO());
+        UIOManager.setUserIO(new BasicDialogHandler());
 
     }
 
@@ -166,7 +167,7 @@ public class Launcher {
      */
     private static void javaCheck() {
         if (Application.getJavaVersion() < Application.JAVA15) {
-            Launcher.LOG.warning("Javacheck: Wrong Java Version! JDownloader needs at least Java 1.5 or higher!");
+            SecondLevelLaunch.LOG.warning("Javacheck: Wrong Java Version! JDownloader needs at least Java 1.5 or higher!");
             System.exit(0);
         }
         if (Application.isOutdatedJavaVersion(true)) {
@@ -197,14 +198,14 @@ public class Launcher {
             e.printStackTrace();
         }
 
-        Launcher.LOG = LogController.GL;
+        SecondLevelLaunch.LOG = LogController.GL;
 
         // Mac OS specific
         if (CrossSystem.isMac()) {
             // Set MacApplicationName
             // Must be in Main
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
-            Launcher.initMACProperties();
+            SecondLevelLaunch.initMACProperties();
         }
 
         /* hack for ftp plugin to use new ftp style */
@@ -215,32 +216,32 @@ public class Launcher {
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
         try {
             // log source revision infos
-            Launcher.LOG.info(IO.readFileToString(Application.getResource("build.json")));
+            SecondLevelLaunch.LOG.info(IO.readFileToString(Application.getResource("build.json")));
         } catch (Throwable e1) {
-            Launcher.LOG.log(e1);
+            SecondLevelLaunch.LOG.log(e1);
         }
         final Properties pr = System.getProperties();
         final TreeSet<Object> propKeys = new TreeSet<Object>(pr.keySet());
         for (final Object it : propKeys) {
             final String key = it.toString();
-            Launcher.LOG.finer(key + "=" + pr.get(key));
+            SecondLevelLaunch.LOG.finer(key + "=" + pr.get(key));
         }
-        Launcher.LOG.info("JDownloader");
+        SecondLevelLaunch.LOG.info("JDownloader");
 
         // checkSessionInstallLog();
 
-        boolean jared = Application.isJared(Launcher.class);
+        boolean jared = Application.isJared(SecondLevelLaunch.class);
         String revision = JDUtilities.getRevision();
         if (!jared) {
             /* always enable debug and cache refresh in developer version */
-            Launcher.LOG.info("Not Jared Version(" + revision + "): RefreshCache=true");
+            SecondLevelLaunch.LOG.info("Not Jared Version(" + revision + "): RefreshCache=true");
         } else {
-            Launcher.LOG.info("Jared Version(" + revision + ")");
+            SecondLevelLaunch.LOG.info("Jared Version(" + revision + ")");
         }
 
-        Launcher.preInitChecks();
+        SecondLevelLaunch.preInitChecks();
 
-        Launcher.start(args);
+        SecondLevelLaunch.start(args);
 
     }
 
@@ -293,7 +294,7 @@ public class Launcher {
     // }
 
     private static void preInitChecks() {
-        Launcher.javaCheck();
+        SecondLevelLaunch.javaCheck();
     }
 
     private static void exitCheck() {
@@ -329,11 +330,11 @@ public class Launcher {
     }
 
     private static void go() {
-        Launcher.LOG.info("Initialize JDownloader2");
+        SecondLevelLaunch.LOG.info("Initialize JDownloader2");
         try {
             Log.closeLogfile();
         } catch (final Throwable e) {
-            Launcher.LOG.log(e);
+            SecondLevelLaunch.LOG.log(e);
         }
         try {
             for (Handler handler : Log.L.getHandlers()) {
@@ -353,7 +354,7 @@ public class Launcher {
 
                 if (ret != null) {
 
-                    record.setMessage("Utils>" + record.getMessage());
+                    record.setMessage("Utils>" + ret.getName() + ">" + record.getMessage());
                     ret.log(record);
                     return;
                 }
@@ -403,7 +404,7 @@ public class Launcher {
                     try {
                         JSPermissionRestricter.init();
                     } catch (final Throwable e) {
-                        Launcher.LOG.log(e);
+                        SecondLevelLaunch.LOG.log(e);
                     }
                     /* set gloabel logger for browser */
                     Browser.setGlobalLogger(LogController.getInstance().getLogger("GlobalBrowser"));
@@ -422,7 +423,7 @@ public class Launcher {
                                     try {
                                         Browser.setGlobalProxy(proxy);
                                     } finally {
-                                        Launcher.LOG.info("Set new DefaultProxy: " + proxy);
+                                        SecondLevelLaunch.LOG.info("Set new DefaultProxy: " + proxy);
                                     }
                                 }
                             }
@@ -430,7 +431,7 @@ public class Launcher {
                         }
                     });
                 } catch (Throwable e) {
-                    Launcher.LOG.log(e);
+                    SecondLevelLaunch.LOG.log(e);
                     Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
 
                     // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
@@ -455,7 +456,7 @@ public class Launcher {
                     @Override
                     public void run() {
                         try {
-                            boolean jared = Application.isJared(Launcher.class);
+                            boolean jared = Application.isJared(SecondLevelLaunch.class);
                             ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipTimeout());
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
                             ChallengeResponseController.getInstance().addSolver(JACSolver.getInstance());
@@ -573,7 +574,7 @@ public class Launcher {
                                 });
                             }
                         } catch (Throwable e) {
-                            Launcher.LOG.log(e);
+                            SecondLevelLaunch.LOG.log(e);
                             Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
                             // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                         }
@@ -592,14 +593,14 @@ public class Launcher {
                     AWTEventQueueLinker.link();
 
                     lafInit.waitForEDT();
-                    Launcher.LOG.info("InitGUI->" + (System.currentTimeMillis() - Launcher.startup));
+                    SecondLevelLaunch.LOG.info("InitGUI->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
                     JDGui.getInstance();
 
                     AWTEventQueueLinker.getInstance().getEventSender().addListener(new CopyPasteSupport());
 
-                    Launcher.LOG.info("GUIDONE->" + (System.currentTimeMillis() - Launcher.startup));
+                    SecondLevelLaunch.LOG.info("GUIDONE->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
                 } catch (Throwable e) {
-                    Launcher.LOG.log(e);
+                    SecondLevelLaunch.LOG.log(e);
                     Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
 
                     // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
@@ -619,13 +620,13 @@ public class Launcher {
             ShutdownController.getInstance().requestShutdown(true);
             return;
         }
-        Launcher.GUI_COMPLETE.setReached();
+        SecondLevelLaunch.GUI_COMPLETE.setReached();
 
         if (CrossSystem.isWindows()) {
             new ToolbarOffer().run();
         }
-        Launcher.LOG.info("Initialisation finished");
-        Launcher.INIT_COMPLETE.setReached();
+        SecondLevelLaunch.LOG.info("Initialisation finished");
+        SecondLevelLaunch.INIT_COMPLETE.setReached();
 
         // init statsmanager
         StatsManager.I();

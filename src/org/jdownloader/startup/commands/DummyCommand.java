@@ -1,6 +1,5 @@
-package org.jdownloader.startup;
+package org.jdownloader.startup.commands;
 
-import org.jdownloader.startup.commands.AbstractStartupCommand;
 
 public class DummyCommand extends AbstractStartupCommand {
 

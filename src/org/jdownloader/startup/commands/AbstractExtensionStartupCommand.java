@@ -1,6 +1,6 @@
 package org.jdownloader.startup.commands;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
@@ -14,7 +14,7 @@ public abstract class AbstractExtensionStartupCommand extends AbstractStartupCom
 
     @Override
     public final void run(final String command, final String... parameters) {
-        Launcher.INIT_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
             public void run() {

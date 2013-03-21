@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 
 import org.appwork.app.launcher.parameterparser.CommandSwitch;
 import org.appwork.app.launcher.parameterparser.CommandSwitchListener;
@@ -130,7 +130,7 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
             startupParameters.getEventSender().removeListener(list);
         }
 
-        if (!startupParameters.hasCommandSwitch("console") && Application.isJared(Launcher.class)) {
+        if (!startupParameters.hasCommandSwitch("console") && Application.isJared(SecondLevelLaunch.class)) {
             logger.info("Remove ConsoleHandler");
             LogController.getInstance().removeConsoleHandler();
         }

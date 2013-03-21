@@ -44,6 +44,7 @@ import jd.plugins.download.DownloadInterface;
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -51,7 +52,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
@@ -456,7 +456,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         switch (doAction) {
         case ASK_FOR_EACH_FILE:
             try {
-                doAction = NewUIO.I().show(IfFileExistsDialogInterface.class, new IfFileExistsDialog(downloadLink.getFileOutput(), downloadLink.getFilePackage().getName(), downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated())).getAction();
+                doAction = UIOManager.I().show(IfFileExistsDialogInterface.class, new IfFileExistsDialog(downloadLink.getFileOutput(), downloadLink.getFilePackage().getName(), downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated())).getAction();
             } catch (DialogNoAnswerException e1) {
                 doAction = IfFileExistsAction.SKIP_FILE;
             }

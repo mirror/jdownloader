@@ -1,6 +1,6 @@
 package org.jdownloader.extensions.streaming;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.nutils.Executer;
 import jd.plugins.DownloadLink;
 
@@ -36,7 +36,7 @@ public abstract class PlayToLocalBinary implements PlayToDevice {
                     Executer exec = new Executer(getBinaryPath());
                     exec.setLogger(LogController.CL());
                     exec.addParameters(getParams(url));
-                    exec.setRunin(Application.getRoot(Launcher.class));
+                    exec.setRunin(Application.getRoot(SecondLevelLaunch.class));
                     exec.setWaitTimeout(0);
                     exec.start();
 

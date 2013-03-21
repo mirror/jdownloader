@@ -2,7 +2,7 @@ package jd.gui.swing.jdgui.menu;
 
 import javax.swing.JMenu;
 
-import jd.Launcher;
+import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.menu.actions.SettingsAction;
 
 import org.jdownloader.gui.translate._GUI;
@@ -16,7 +16,7 @@ public class SettingsMenu extends JMenu {
     public SettingsMenu() {
         super(_GUI._.SettingsMenu_SettingsMenu_());
 
-        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 add(new SettingsAction());

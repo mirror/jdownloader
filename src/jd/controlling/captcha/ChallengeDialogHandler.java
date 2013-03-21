@@ -13,6 +13,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.storage.StorageException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
@@ -24,7 +25,6 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 
@@ -102,7 +102,7 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
                     int defSelection = CaptchaSettings.CFG.getLastCancelOption();
                     ComboBoxDialog combo = new ComboBoxDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.captchacontroller_cancel_dialog_allorhost(), _JDT._.captchacontroller_cancel_dialog_allorhost_msg(), options, defSelection, null, null, null, null);
 
-                    switch (NewUIO.I().show(ComboBoxDialogInterface.class, combo).getSelectedIndex()) {
+                    switch (UIOManager.I().show(ComboBoxDialogInterface.class, combo).getSelectedIndex()) {
                     case 0:
                         // nothing
                         CaptchaSettings.CFG.setLastCancelOption(0);

@@ -343,7 +343,7 @@ public abstract class PluginForDecrypt extends Plugin {
         }
 
         if (!c.isSolved()) throw new DecrypterException(DecrypterException.CAPTCHA);
-        return c.getResult();
+        return c.getResult().getValue();
 
     }
 

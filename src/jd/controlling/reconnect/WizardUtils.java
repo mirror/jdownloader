@@ -5,13 +5,13 @@ import java.net.InetAddress;
 
 import javax.swing.AbstractAction;
 
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.userio.NewUIO;
 import org.jdownloader.images.NewTheme;
 
 public class WizardUtils {
@@ -69,7 +69,7 @@ public class WizardUtils {
             if (!routerAdress.equals(gateway)) {
                 // ouch. if gateway is not routerIp, we might be in a VPN
                 try {
-                    NewUIO.I().showConfirmDialog(0, _GUI._.ReconnectPluginController_autoFind_gatewaywarning_t(), _GUI._.ReconnectPluginController_autoFind_gatewaywarning(), NewTheme.I().getIcon("warning", 32), _GUI._.literally_continue(), null);
+                    UIOManager.I().showConfirmDialog(0, _GUI._.ReconnectPluginController_autoFind_gatewaywarning_t(), _GUI._.ReconnectPluginController_autoFind_gatewaywarning(), NewTheme.I().getIcon("warning", 32), _GUI._.literally_continue(), null);
                 } catch (DialogNoAnswerException e) {
                     return true;
                 }

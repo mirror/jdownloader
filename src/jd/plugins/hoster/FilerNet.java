@@ -207,12 +207,12 @@ public class FilerNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        // try {
+        login(account);
+        // } catch (PluginException e) {
+        // account.setValid(false);
+        // return ai;
+        // }
         if (getJson("state", br.toString()).equals("free")) {
             ai.setStatus("Free Account (dieser Accounttyp wird nicht unterstützt)");
             account.setValid(false);
