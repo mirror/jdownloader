@@ -69,7 +69,7 @@ public class ShufuniCom extends PluginForHost {
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         con = br.openGetConnection(downloadLink.getDownloadURL());
-        if (con.getResponseCode() == 500) {
+        if (con.getResponseCode() == 500 || con.getResponseCode() == 404) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

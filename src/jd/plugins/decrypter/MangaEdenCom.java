@@ -45,6 +45,10 @@ public class MangaEdenCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML("Isn\\'t Out\\!<")) {
+            logger.info("Link offline (next chapter isn't out yet): " + parameter);
+            return decryptedLinks;
+        }
         final String thisLinkpart = new Regex(parameter, "mangaeden\\.com(/.*?)1/$").getMatch(0);
         String fpName = br.getRegex("<title>([^<>\"]*?) \\- [\t\n\r ]+Manga Eden").getMatch(0);
         final String[] pages = br.getRegex("class=\"ui\\-state\\-default\" href=\"(" + thisLinkpart + "\\d+/)\"").getColumn(0);

@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://(www\\.)?multiup\\.org/(fichiers/download/[a-z0-9]{32}_[^<> \"'&]+|([a-z]{2}/)?(download|miror)/[a-z0-9]{32}/[^<> \"'&]+|\\?lien=[a-z0-9]{32}_[^<> \"'&]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://(www\\.)?multiup\\.org/([a-z]{2}/download/[a-z0-9]{32}/[^<> \"\\'\\&]+|fichiers/download/[a-z0-9]{32}[^<> \"\\'\\&]+)" }, flags = { 0 })
 public class MultiupOrg extends PluginForDecrypt {
 
     // DEV NOTES:
@@ -50,6 +50,7 @@ public class MultiupOrg extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        br.getPage(br.getURL().replace("/download/", "/miror/"));
 
         String[] links = br.getRegex("style=\"width:97%;text\\-align:left\"[\t\n\r ]+href=\"(http[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
