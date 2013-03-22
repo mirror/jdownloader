@@ -516,7 +516,7 @@ public class SimpleFTP {
                 readLines(new int[] { 350 }, "Resume not supported");
             }
         }
-        sendLine("RETR " + filename);
+
         MeteredThrottledInputStream input = null;
         RandomAccessFile fos = null;
         Socket dataSocket = null;
@@ -525,6 +525,7 @@ public class SimpleFTP {
             dataSocket = new Socket();
             dataSocket.setSoTimeout(30 * 1000);
             dataSocket.connect(new InetSocketAddress(pasv.getHostName(), pasv.getPort()), 30 * 1000);
+            sendLine("RETR " + filename);
             input = new MeteredThrottledInputStream(dataSocket.getInputStream(), new AverageSpeedMeter()) {
 
                 @Override
