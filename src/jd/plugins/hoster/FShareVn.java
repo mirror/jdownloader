@@ -154,7 +154,8 @@ public class FShareVn extends PluginForHost {
         if (downloadURL == null) {
             downloadURL = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location=\\'(http://.*?)\\'\"").getMatch(0);
             if (downloadURL == null) {
-                // downloadURL = br.getRegex("\\'(http://download\\d+\\.fshare\\.vn/download/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
+                // downloadURL =
+                // br.getRegex("\\'(http://download\\d+\\.fshare\\.vn/download/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
                 downloadURL = br.getRegex("<form action=\"(http://download\\d+\\.fshare\\.vn/download/[A-Za-z0-9]+/.*?)\"").getMatch(0);
             }
         }
@@ -276,9 +277,15 @@ public class FShareVn extends PluginForHost {
                 }
                 br.submitForm(login);
                 // stable br.postPage doesn't contain this header...
-                // br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                // stable also doesn't respect current browser protocol, so you must provide full url
-                // br.postPage("https://www.fshare.vn/login.php", "login_useremail=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()) + "&url_refe=" + Encoding.urlEncode("/index.php") + "&auto_login=1");
+                // br.getHeaders().put("Content-Type",
+                // "application/x-www-form-urlencoded");
+                // stable also doesn't respect current browser protocol, so you
+                // must provide full url
+                // br.postPage("https://www.fshare.vn/login.php",
+                // "login_useremail=" + Encoding.urlEncode(account.getUser()) +
+                // "&login_password=" + Encoding.urlEncode(account.getPass()) +
+                // "&url_refe=" + Encoding.urlEncode("/index.php") +
+                // "&auto_login=1");
 
                 if (br.getCookie(this.getHost(), "fshare_userpass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
@@ -311,7 +318,10 @@ public class FShareVn extends PluginForHost {
         if (!br.getURL().endsWith("/index.php")) br.getPage("/index.php");
         String validUntil = br.getRegex(">Hạn dùng:<strong[^>]+>\\&nbsp;(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
         if (validUntil == null) validUntil = br.getRegex(">Hạn dùng:<strong>\\&nbsp;([^<>\"]*?)</strong>").getMatch(0);
-        if (validUntil != null) {
+        if (br.containsHTML("title=\"Platium\">VIP </span>")) {
+            ai.setStatus("Vip User");
+            account.setProperty("acctype", Property.NULL);
+        } else if (validUntil != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH));
             try {
                 maxPrem.set(-1);

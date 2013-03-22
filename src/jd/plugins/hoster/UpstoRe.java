@@ -156,9 +156,10 @@ public class UpstoRe extends PluginForHost {
                         return;
                     }
                 }
+                if (!isMail(account.getUser())) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your mailadress in the 'username' field!\r\nBitte gib deine E-Mail Adresse in das 'Benutzername' Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 br.setFollowRedirects(true);
                 br.postPage("http://upstore.net/account/login/", "url=http%253A%252F%252Fupstore.net%252F&send=Login&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "usid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "usid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -175,14 +176,17 @@ public class UpstoRe extends PluginForHost {
         }
     }
 
+    private boolean isMail(final String parameter) {
+        return parameter.matches(".+@.+");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
         } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
+            throw e;
         }
         // Make sure that the language is correct
         br.getPage("http://upstore.net/?lang=en");
