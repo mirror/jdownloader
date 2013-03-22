@@ -27,10 +27,10 @@ public interface CaptchaSettings extends ConfigInterface {
 
     void setCountdown(int seconds);
 
-    @DefaultIntValue(0)
-    int getLastCancelOption();
-
-    void setLastCancelOption(int i);
+    // @DefaultIntValue(0)
+    // int getLastCancelOption();
+    //
+    // void setLastCancelOption(int i);
 
     @AboutConfig
     @DefaultBooleanValue(true)

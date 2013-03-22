@@ -21,9 +21,13 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.Timer;
 
 import jd.captcha.utils.GifDecoder;
@@ -55,6 +59,7 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.premium.PremiumInfoDialog;
@@ -65,26 +70,82 @@ import sun.swing.SwingUtilities2;
 
 public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
+    public static Image[] getGifImages(InputStream openStream) {
+
+        try {
+            GifDecoder decoder = new GifDecoder();
+            decoder.read(openStream);
+            BufferedImage[] ret = new BufferedImage[decoder.getFrameCount()];
+            for (int i = 0; i < decoder.getFrameCount(); i++) {
+                ret[i] = decoder.getFrame(i);
+                // ImageIO.write(ret[i], "png", Application.getResource("img_" +
+                // i + ".png"));
+            }
+            return ret;
+
+        } finally {
+            try {
+                openStream.close();
+            } catch (final Throwable e) {
+            }
+        }
+
+    }
+
+    /**
+     * @param url
+     * @return
+     */
+    public static Image[] getGifImages(URL url) {
+        InputStream stream = null;
+        try {
+            return getGifImages(stream = url.openStream());
+        } catch (IOException e) {
+            Log.exception(e);
+        } finally {
+            try {
+                stream.close();
+            } catch (final Throwable e) {
+            }
+        }
+        return null;
+    }
+
     private LocationStorage config;
+
+    protected boolean       hideCaptchasForHost    = false;
+
+    protected boolean       hideCaptchasForPackage = false;
+
     private final String    explain;
+
     private int             fps;
-    private int             frame = 0;
-    private DomainInfo      hosterInfo;
 
-    protected JComponent    iconPanel;
+    private int             frame                  = 0;
+    private boolean         hideAllCaptchas;
 
-    private Image[]         images;
+    public boolean isHideAllCaptchas() {
+        return hideAllCaptchas;
+    }
 
-    private Timer           paintTimer;
+    private DomainInfo   hosterInfo;
+    protected JComponent iconPanel;
 
-    private Plugin          plugin;
+    private Image[]      images;
 
-    private DialogType      type;
-    protected double        scaleFaktor;
-    protected Point         offset;
+    protected Point      offset;
+
+    private Timer        paintTimer;
+
+    private Plugin       plugin;
+    protected double     scaleFaktor;
+
+    protected boolean    stopDownloads = false;
+
+    private DialogType   type;
 
     public AbstractCaptchaDialog(int flags, String title, DialogType type, DomainInfo domainInfo, String explain, Image... images) {
-        super(flags, title, null, null, null);
+        super(flags, title, null, _GUI._.AbstractCaptchaDialog_AbstractCaptchaDialog_continue(), _GUI._.AbstractCaptchaDialog_AbstractCaptchaDialog_cancel());
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogUniquePositionByHosterEnabled()) {
             setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog_" + domainInfo.getTld()));
         } else {
@@ -126,52 +187,112 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
     abstract protected JComponent createInputComponent();
 
+    private void createPopup() {
+        final JPopupMenu popup = new JPopupMenu();
+        JMenuItem mi;
+        if (getType() == DialogType.HOSTER) {
+
+            mi = new JMenuItem(new AppAction() {
+                {
+                    setName(_GUI._.AbstractCaptchaDialog_createPopup_skip_and_disable_all_downloads_from(getHost()));
+                    setSmallIcon(getHostIcon());
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    hideCaptchasForHost = true;
+                    setReturnmask(false);
+                    dispose();
+                }
+
+            });
+
+            popup.add(mi);
+
+            mi = new JMenuItem(new AppAction() {
+                {
+                    setName(_GUI._.AbstractCaptchaDialog_createPopup_skip_and_disable_package(getPackageName()));
+                    setSmallIcon(NewTheme.I().getIcon("package_open_error", 16));
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    hideCaptchasForPackage = true;
+                    setReturnmask(false);
+                    dispose();
+                }
+
+            });
+
+            popup.add(mi);
+
+            mi = new JMenuItem(new AppAction() {
+
+                {
+                    setName(_GUI._.AbstractCaptchaDialog_createPopup_skip_and_hide_all_captchas_download());
+                    setSmallIcon(NewTheme.I().getIcon("clear", 16));
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    hideAllCaptchas = true;
+                    setReturnmask(false);
+                    dispose();
+                }
+
+            });
+
+            popup.add(mi);
+
+            mi = new JMenuItem(new AppAction() {
+                {
+                    setName(_GUI._.AbstractCaptchaDialog_createPopup_skip_and_stop_all_downloads());
+                    setSmallIcon(NewTheme.I().getIcon("stop", 16));
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    stopDownloads = true;
+                    setReturnmask(false);
+                    dispose();
+                }
+
+            });
+
+            popup.add(mi);
+
+        } else {
+
+            mi = new JMenuItem(new AppAction() {
+                {
+                    setName("Skip & Cancel LinkCrawler");
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                    setReturnmask(false);
+                    dispose();
+                }
+
+            });
+
+            popup.add(mi);
+        }
+
+        int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+
+        Dimension pref = popup.getPreferredSize();
+        pref.height = popup.getComponentCount() * 24 + insets[0] + insets[2];
+
+        popup.setPreferredSize(pref);
+        popup.show(cancelButton, +insets[1] - pref.width + cancelButton.getWidth() + 8 + 5, +cancelButton.getHeight());
+    }
+
     @Override
     protected String createReturnValue() {
 
         return null;
-    }
-
-    public String getHelpText() {
-        return explain;
-    }
-
-    @Override
-    public int getCountdownTime() {
-        return JsonConfig.create(GraphicalUserInterfaceSettings.class).getCaptchaDialogTimeout();
-    }
-
-    public String getFilename() {
-        if (!JsonConfig.create(GeneralSettings.class).isShowFileNameInCaptchaDialogEnabled()) return null;
-        switch (type) {
-        case HOSTER:
-            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return null;
-            return ((PluginForHost) plugin).getDownloadLink().getName();
-        }
-        return null;
-    }
-
-    public String getCrawlerStatus() {
-        switch (type) {
-        case CRAWLER:
-            return ((PluginForDecrypt) plugin).getCrawlerStatusString();
-        default:
-            return null;
-
-        }
-    }
-
-    public long getFilesize() {
-        switch (type) {
-        case HOSTER:
-            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return -1;
-            return ((PluginForHost) plugin).getDownloadLink().getDownloadMax();
-        }
-        return -1;
-    }
-
-    public void setPlugin(Plugin plugin) {
-        this.plugin = plugin;
     }
 
     public void dispose() {
@@ -187,8 +308,49 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
     }
 
     @Override
+    public int getCountdownTime() {
+        return JsonConfig.create(GraphicalUserInterfaceSettings.class).getCaptchaDialogTimeout();
+    }
+
+    public String getCrawlerStatus() {
+        switch (type) {
+        case CRAWLER:
+            return ((PluginForDecrypt) plugin).getCrawlerStatusString();
+        default:
+            return null;
+
+        }
+    }
+
+    @Override
     protected DefaultButtonPanel getDefaultButtonPanel() {
-        final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[]", "0[fill,grow]0");
+        final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[]", "0[grow,fill]0") {
+
+            @Override
+            public void addCancelButton(final JButton cancelButton) {
+                super.addCancelButton(cancelButton);
+
+                final JButton bt = new JButton(NewTheme.I().getIcon("popdownButton", -1)) {
+
+                    public void setBounds(int x, int y, int width, int height) {
+                        int delta = 5;
+                        super.setBounds(x - delta, y, width + delta, height);
+                    }
+
+                };
+
+                bt.addActionListener(new ActionListener() {
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        createPopup();
+                    }
+
+                });
+                super.add(bt, "gapleft 0,width 8!");
+            }
+
+        };
         ret.setOpaque(false);
         ExtButton premium = new ExtButton(new AppAction() {
             /**
@@ -228,49 +390,66 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         return hosterInfo;
     }
 
-    /**
-     * @param url
-     * @return
-     */
-    public static Image[] getGifImages(URL url) {
-        InputStream stream = null;
-        try {
-            return getGifImages(stream = url.openStream());
-        } catch (IOException e) {
-            Log.exception(e);
-        } finally {
-            try {
-                stream.close();
-            } catch (final Throwable e) {
-            }
+    public String getFilename() {
+        if (!JsonConfig.create(GeneralSettings.class).isShowFileNameInCaptchaDialogEnabled()) return null;
+        switch (type) {
+        case HOSTER:
+            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return null;
+            return ((PluginForHost) plugin).getDownloadLink().getName();
         }
         return null;
     }
 
-    public static Image[] getGifImages(InputStream openStream) {
-
-        try {
-            GifDecoder decoder = new GifDecoder();
-            decoder.read(openStream);
-            BufferedImage[] ret = new BufferedImage[decoder.getFrameCount()];
-            for (int i = 0; i < decoder.getFrameCount(); i++) {
-                ret[i] = decoder.getFrame(i);
-                // ImageIO.write(ret[i], "png", Application.getResource("img_" +
-                // i + ".png"));
-            }
-            return ret;
-
-        } finally {
-            try {
-                openStream.close();
-            } catch (final Throwable e) {
-            }
+    public long getFilesize() {
+        switch (type) {
+        case HOSTER:
+            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return -1;
+            return ((PluginForHost) plugin).getDownloadLink().getDownloadMax();
         }
+        return -1;
+    }
 
+    public String getHelpText() {
+        return explain;
+    }
+
+    public String getHost() {
+        switch (type) {
+        case HOSTER:
+
+            return ((PluginForHost) plugin).getDomainInfo().getTld();
+        case CRAWLER:
+            return ((PluginForDecrypt) plugin).getHost();
+        }
+        return null;
+    }
+
+    protected Icon getHostIcon() {
+        try {
+            return DomainInfo.getInstance(getHost()).getIcon(16);
+        } catch (Exception e) {
+        }
+        return null;
     }
 
     public Image[] getImages() {
         return images;
+    }
+
+    public Point getOffset() {
+        return offset;
+    }
+
+    protected String getPackageName() {
+        switch (type) {
+        case HOSTER:
+            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return null;
+            return ((PluginForHost) plugin).getDownloadLink().getFilePackage().getName();
+
+        case CRAWLER:
+            return null;
+        }
+        return null;
     }
 
     protected int getPreferredHeight() {
@@ -284,8 +463,20 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         return config.getX();
     }
 
+    public double getScaleFaktor() {
+        return scaleFaktor;
+    }
+
     public DialogType getType() {
         return type;
+    }
+
+    public boolean isHideCaptchasForHost() {
+        return hideCaptchasForHost;
+    }
+
+    public boolean isHideCaptchasForPackage() {
+        return hideCaptchasForPackage;
     }
 
     @Override
@@ -293,25 +484,8 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         return true;
     }
 
-    public static byte[] hexStringToByteArray(String s) {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i + 1), 16));
-        }
-        return data;
-    }
-
-    public static String bytesToHex(byte[] bytes) {
-        final char[] hexArray = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-        char[] hexChars = new char[bytes.length * 2];
-        int v;
-        for (int j = 0; j < bytes.length; j++) {
-            v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-        }
-        return new String(hexChars);
+    public boolean isStopDownloads() {
+        return stopDownloads;
     }
 
     @Override
@@ -532,14 +706,6 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         return panel;
     }
 
-    public Point getOffset() {
-        return offset;
-    }
-
-    public double getScaleFaktor() {
-        return scaleFaktor;
-    }
-
     public void mouseClicked(final MouseEvent e) {
         this.cancel();
     }
@@ -563,5 +729,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
         getDialog().setMinimumSize(getDialog().getRawPreferredSize());
 
+    }
+
+    public void setPlugin(Plugin plugin) {
+        this.plugin = plugin;
     }
 }

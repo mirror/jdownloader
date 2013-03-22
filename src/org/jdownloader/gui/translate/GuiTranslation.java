@@ -2239,4 +2239,31 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please wait. Loading Links..." })
     String LinkGrabberTable_LinkGrabberTable_object_wait_for_loading_links();
 
+    @Default(lngs = { "en" }, values = { "Skip" })
+    String AbstractCaptchaDialog_AbstractCaptchaDialog_cancel();
+
+    @Default(lngs = { "en" }, values = { "Send" })
+    String AbstractCaptchaDialog_AbstractCaptchaDialog_continue();
+
+    @Default(lngs = { "en" }, values = { "Stop all Downloads" })
+    String AbstractCaptchaDialog_createPopup_skip_and_stop_all_downloads();
+
+    @Default(lngs = { "en" }, values = { "Skip all captchas for host '%s1'" })
+    String AbstractCaptchaDialog_createPopup_skip_and_disable_all_downloads_from(String host);
+
+    @Default(lngs = { "en" }, values = { "Skip all captchas for Package '%s1'" })
+    String AbstractCaptchaDialog_createPopup_skip_and_disable_package(String packageName);
+
+    @Default(lngs = { "en" }, values = { "Skip all captchas" })
+    String AbstractCaptchaDialog_createPopup_skip_and_hide_all_captchas_download();
+
+    @Default(lngs = { "en" }, values = { "Skipped Captchas!" })
+    String StatusBarImpl_lazyGetDownloadWatchdogIndicator_title();
+
+    @Default(lngs = { "en" }, values = { "Some or all Downloads with Captchas get skipped. Rightclick to change this!" })
+    String StatusBarImpl_lazyGetDownloadWatchdogIndicator_desc();
+
+    @Default(lngs = { "en" }, values = { "Show & allow all Captchas" })
+    String StatusBarImpl_lazyGetDownloadWatchdogIndicator_release();
+
 }

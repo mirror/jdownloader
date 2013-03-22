@@ -131,7 +131,10 @@ public class ChallengeResponseController {
 
             logger.info("All Responses: " + job.getResponses());
             logger.info("Solvong Done. Result: " + job.getResponse());
+        } catch (InterruptedException e) {
+            // for example downloads have been stopped
 
+            job.kill();
         } finally {
             try {
                 synchronized (activeJobs) {

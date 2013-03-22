@@ -161,7 +161,7 @@ public class CaptchaAPIImpl implements CaptchaAPI {
         if (io != null) {
             if (IOPermission.CAPTCHA.BLOCKTHIS == what) {
 
-                job.cancel();
+                job.kill();
             } else {
                 io.setCaptchaAllowed(challenge.getPlugin().getHost(), what);
             }

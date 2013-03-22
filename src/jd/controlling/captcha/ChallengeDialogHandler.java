@@ -2,22 +2,21 @@ package jd.controlling.captcha;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.net.MalformedURLException;
 import java.util.logging.Logger;
 
 import jd.controlling.IOPermission.CAPTCHA;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.DialogType;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.StorageException;
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.swing.dialog.ComboBoxDialog;
-import org.appwork.utils.swing.dialog.ComboBoxDialogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -26,7 +25,6 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.translate._JDT;
 
 public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>> {
     private CaptchaDialogInterface textDialog;
@@ -96,38 +94,28 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
 
             /* no external response available */
             if (e.isCausedByInterrupt()) throw new InterruptedException("Dialog Interrupted");
-            if (!e.isCausedByTimeout()) {
-                String[] options = new String[] { _JDT._.captchacontroller_cancel_dialog_allorhost_next(), _JDT._.captchacontroller_cancel_dialog_allorhost_cancelhost(getHost().getTld()), _JDT._.captchacontroller_cancel_dialog_allorhost_all() };
-                try {
-                    int defSelection = CaptchaSettings.CFG.getLastCancelOption();
-                    ComboBoxDialog combo = new ComboBoxDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.captchacontroller_cancel_dialog_allorhost(), _JDT._.captchacontroller_cancel_dialog_allorhost_msg(), options, defSelection, null, null, null, null);
 
-                    switch (UIOManager.I().show(ComboBoxDialogInterface.class, combo).getSelectedIndex()) {
-                    case 0:
-                        // nothing
-                        CaptchaSettings.CFG.setLastCancelOption(0);
-                        break;
-                    case 1:
-                        if (captchaChallenge.getIoPermission() != null) {
-                            captchaChallenge.getIoPermission().setCaptchaAllowed(getHost().getTld(), CAPTCHA.BLOCKHOSTER);
-                        }
-                        CaptchaSettings.CFG.setLastCancelOption(1);
-                        break;
-                    case 2:
-                        if (captchaChallenge.getIoPermission() != null) {
-                            captchaChallenge.getIoPermission().setCaptchaAllowed(null, CAPTCHA.BLOCKALL);
-                        }
-                        CaptchaSettings.CFG.setLastCancelOption(2);
-                        break;
-                    }
+        }
 
-                } catch (DialogNoAnswerException e1) {
-                } catch (StorageException e1) {
-                    LogSource.exception(getLogger(), e1);
-                }
+        catch (HideCaptchasByHostException e) {
+            if (captchaChallenge.getIoPermission() != null) {
+                captchaChallenge.getIoPermission().setCaptchaAllowed(getHost().getTld(), CAPTCHA.BLOCKHOSTER);
+            }
+        } catch (HideCaptchasByPackageException e) {
+            Dialog.getInstance().showExceptionDialog("Error", "Not Implemented Yet", new WTFException("Not Implemented yet"));
+        } catch (StopDownloadsException e) {
+            if (captchaChallenge.getIoPermission() != null) {
+                captchaChallenge.getIoPermission().setCaptchaAllowed(null, CAPTCHA.BLOCKALL);
             }
 
-        } catch (Throwable e) {
+            DownloadWatchDog.getInstance().stopDownloads();
+        } catch (HideAllCaptchasException e) {
+            if (captchaChallenge.getIoPermission() != null) {
+                captchaChallenge.getIoPermission().setCaptchaAllowed(null, CAPTCHA.BLOCKALL);
+            }
+        } catch (MalformedURLException e) {
+            throw new WTFException();
+        } catch (RuntimeException e) {
             LogSource.exception(getLogger(), e);
         }
     }
@@ -138,8 +126,12 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
      * @param images
      * @throws DialogClosedException
      * @throws DialogCanceledException
+     * @throws HideCaptchasByHostException
+     * @throws StopDownloadsException
+     * @throws HideCaptchasByPackageException
+     * @throws HideAllCaptchasException
      */
-    abstract protected void showDialog(DialogType dialogType, int flag, Image[] images) throws DialogClosedException, DialogCanceledException;
+    abstract protected void showDialog(DialogType dialogType, int flag, Image[] images) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopDownloadsException, HideAllCaptchasException;
 
     /**
      * @return the iD

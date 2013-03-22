@@ -31,7 +31,7 @@ public class SolverJob<T> {
 
     private LogSource                     logger;
 
-    private boolean                       canceled  = false;
+    // private boolean canceled = false;
 
     public String toString() {
 
@@ -159,7 +159,7 @@ public class SolverJob<T> {
     public boolean isDone() {
         synchronized (doneList) {
 
-            return isCanceled() || solverList.size() == doneList.size();
+            return solverList.size() == doneList.size();
         }
     }
 
@@ -181,7 +181,7 @@ public class SolverJob<T> {
         }
     }
 
-    private void kill() {
+    public void kill() {
         for (ChallengeSolver<T> s : solverList) {
             synchronized (doneList) {
 
@@ -225,16 +225,16 @@ public class SolverJob<T> {
         return logger;
     }
 
-    public void cancel() {
-        canceled = true;
-        synchronized (this) {
-            this.notifyAll();
+    // public void cancel() {
+    // canceled = true;
+    // synchronized (this) {
+    // this.notifyAll();
+    //
+    // }
+    // }
 
-        }
-    }
-
-    public boolean isCanceled() {
-        return canceled;
-    }
+    // public boolean isCanceled() {
+    // return canceled;
+    // }
 
 }
