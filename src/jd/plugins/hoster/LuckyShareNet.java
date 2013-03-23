@@ -55,22 +55,40 @@ public class LuckyShareNet extends PluginForHost {
         return "http://luckyshare.net/termsofservice";
     }
 
-    private static final String MAINPAGE = "http://luckyshare.net/";
-    private static Object       LOCK     = new Object();
-    private static String       AGENT    = null;
+    private static final String MAINPAGE      = "http://luckyshare.net/";
+    private static Object       LOCK          = new Object();
+    private static String       AGENT         = null;
+    private static boolean      FAILED409     = false;
+    private static final String ONLYBETAERROR = "Downloading from luckyshare.net is only possible with the JDownloader 2 BETA";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getDownloadURL());
+            if (con.getResponseCode() == 409 && oldStyle()) {
+                // Hier krachts
+                link.getLinkStatus().setStatusText(ONLYBETAERROR);
+                FAILED409 = true;
+                return AvailableStatus.UNCHECKABLE;
+            }
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(There is no such file available|<title>LuckyShare \\- Download</title>)")) {
-            // Some links only work via account and are shown as "offline" without account
+            // Some links only work via account and are shown as "offline"
+            // without account
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa != null) {
                 login(aa, false);
-                URLConnectionAdapter con = null;
                 try {
                     con = br.openGetConnection(link.getDownloadURL());
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
@@ -101,6 +119,7 @@ public class LuckyShareNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (oldStyle() && FAILED409) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR); }
         String dllink = downloadLink.getDownloadURL();
         final String filesizelimit = br.getRegex(">Files with filesize over ([^<>\"\\'/]+) are available only for Premium Users").getMatch(0);
         if (filesizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
@@ -163,14 +182,14 @@ public class LuckyShareNet extends PluginForHost {
         dl.startDownload();
     }
 
-    private int getWaitTime(Browser b) {
+    private int getWaitTime(final Browser b) {
         int wait = 30;
         String waittime = b.getRegex("\"time\":(\\d+)").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
         return wait;
     }
 
-    private void prepBrowser(Browser b) {
+    private void prepBrowser(final Browser b) {
         if (AGENT == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
@@ -180,9 +199,14 @@ public class LuckyShareNet extends PluginForHost {
         b.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         b.setReadTimeout(3 * 60 * 1000);
         b.setConnectTimeout(3 * 60 * 1000);
+        try {
+            /* not available in old stable */
+            br.setAllowedResponseCodes(new int[] { 409 });
+        } catch (Throwable e) {
+        }
     }
 
-    private void prepareHeader(Browser b, String s) {
+    private void prepareHeader(final Browser b, final String s) {
         b.getHeaders().put("Accept-Encoding", "deflate");
         b.getHeaders().put("Accept-Charset", null);
         b.getHeaders().put("Accept", "*/*");
@@ -192,7 +216,7 @@ public class LuckyShareNet extends PluginForHost {
         b.getHeaders().put("Cache-Control", null);
     }
 
-    private String getHash(Browser b, String s) {
+    private String getHash(final Browser b, final String s) {
         try {
             b.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             b.getPage("http://luckyshare.net/download/request/type/time/file/" + new Regex(s, "(\\d+)$").getMatch(0));
@@ -277,6 +301,7 @@ public class LuckyShareNet extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
+        if (oldStyle() && FAILED409) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR); }
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
@@ -292,6 +317,20 @@ public class LuckyShareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private boolean oldStyle() {
+        String style = System.getProperty("ftpStyle", null);
+        if ("new".equalsIgnoreCase(style)) return false;
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        int rev = Integer.parseInt(prev);
+        if (rev < 10000) return true;
+        return false;
     }
 
     @Override

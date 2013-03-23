@@ -50,28 +50,13 @@ public class MltpldCm extends PluginForDecrypt {
                 br.getPage(redirect);
             }
         }
-        if (br.containsHTML(">Unfortunately, the link you have clicked is not available")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        if (br.containsHTML(">UNKNOWN ERROR<")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        if (br.containsHTML("<title>Index of")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        if (br.containsHTML(">Please select file")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
         if (!parameter.contains("_")) {
-            final String[] redirectLinks = br.getRegex(Pattern.compile("id=\"url_\\d+\"><a href=\"(http://(www\\.)?multiupload\\.(com|nl)/.*?)\"")).getColumn(0);
+            final String[] redirectLinks = br.getRegex(Pattern.compile("id=\"url_\\d+\"><a href=\"(http://(www\\.)?multiupload\\.nl/.*?)\"")).getColumn(0);
             if (redirectLinks == null || redirectLinks.length == 0) {
-                logger.warning("redirectLinks list is null...");
-                return null;
+                logger.warning("redirectLinks list is null, only returning direct link...");
+                return decryptedLinks;
             }
+            decryptedLinks.add(createDownloadlink(parameter.replace("multiupload.nl/", "multiuploaddecrypted.nl/")));
             for (final String redirectLink : redirectLinks) {
                 br.getPage(redirectLink);
                 String finallink = br.getRedirectLocation();
@@ -82,6 +67,22 @@ public class MltpldCm extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(finallink));
             }
         } else {
+            if (br.containsHTML(">Unfortunately, the link you have clicked is not available")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            if (br.containsHTML(">UNKNOWN ERROR<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            if (br.containsHTML("<title>Index of")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            if (br.containsHTML(">Please select file")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String finallink = br.getRedirectLocation();
             if (finallink == null) return null;
             decryptedLinks.add(createDownloadlink(finallink));

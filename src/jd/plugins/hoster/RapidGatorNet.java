@@ -38,6 +38,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -193,7 +194,8 @@ public class RapidGatorNet extends PluginForHost {
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         br.setFollowRedirects(false);
-        if (br.containsHTML(PREMIUMONLYTEXT)) link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
+        // Only show message if user has no active premium account
+        if (br.containsHTML(PREMIUMONLYTEXT) && AccountController.getInstance().getValidAccount(this) == null) link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
         return AvailableStatus.TRUE;
     }
 
