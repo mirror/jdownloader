@@ -206,11 +206,7 @@ public class ScribdCom extends PluginForHost {
         // "next_screen=download_lightbox&source=read&doc_id=" + fileId);
         final String correctedXML = xmlbrowser.toString().replace("\\", "");
         // Check if the selected format is available
-        final String formatCheckText = getConfiguredReplacedServer(dlinfo[1]);
-        if (!correctedXML.contains("/document_downloads/") || !correctedXML.contains(formatCheckText)) {
-            if (correctedXML.contains("premium: true")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.errors.nofreedownloadlink", "Download is only available for premium users!"));
-            throw new PluginException(LinkStatus.ERROR_FATAL, dlinfo[1] + " format is not available for this file!");
-        }
+        if (correctedXML.contains("premium: true")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.errors.nofreedownloadlink", "Download is only available for premium users!"));
         dlinfo[0] = "http://www.scribd.com/document_downloads/" + fileId + "?secret_password=&extension=" + dlinfo[1];
         br.getPage(dlinfo[0]);
         if (br.containsHTML("Sorry, downloading this document in the requested format has been disallowed")) throw new PluginException(LinkStatus.ERROR_FATAL, dlinfo[1] + " format is not available for this file!");

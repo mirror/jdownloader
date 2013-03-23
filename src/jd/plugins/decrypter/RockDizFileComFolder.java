@@ -42,7 +42,14 @@ public class RockDizFileComFolder extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML("No such user exist")) return decryptedLinks;
         String[] links = br.getRegex("\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12})").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if ((links == null || links.length == 0) && !br.containsHTML("<div style=\"float:left;\">")) {
+            logger.info("Empty folder: " + parameter);
+            return decryptedLinks;
+        }
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
         return decryptedLinks;

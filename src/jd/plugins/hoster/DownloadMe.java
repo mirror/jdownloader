@@ -156,11 +156,14 @@ public class DownloadMe extends PluginForHost {
         final String id = getJson("id");
         if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        showMessage(link, "Phase 2/3: Generating downloadlink");
         String dllink = null;
-        // Try to get downloadlink for up to 2 minutes
-        for (int i = 1; i <= 24; i++) {
-            logger.info("Trying to find link, try " + i + " / 24");
+        showMessage(link, "Phase 2/3: Generating downloadlink");
+        long lastProgress = 0;
+        long currentProgress = 0;
+        long lastProgressChange = 0;
+        // Try to get downloadlink for up to 10 minutes
+        for (int i = 1; i <= 120; i++) {
+            logger.info("Trying to find link, try " + i + " / 120");
             br.getPage("https://www.download.me/dlapi/file?id=" + id);
             final String data = br.getRegex("\"data\":\\{(.*?)\\}\\}").getMatch(0);
             final String status = getJson("status", data);
@@ -169,9 +172,24 @@ public class DownloadMe extends PluginForHost {
                 if (link.getLinkStatus().getRetryCount() == 2) throw new PluginException(LinkStatus.ERROR_FATAL, "Downloadlink generation failed");
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadlink generation failed");
             }
+            if (i > 1) {
+                // Try to detect if
+                currentProgress = Long.parseLong(getJson("progress"));
+                if (currentProgress == lastProgress && ((System.currentTimeMillis() - lastProgressChange) >= 60000)) {
+                    logger.info("Download seems to be stuck on the download.me server, aborting...");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, download stuck on download.me servers", 10 * 60 * 1000l);
+                } else if (currentProgress > lastProgress) {
+                    lastProgress = currentProgress;
+                    lastProgressChange = System.currentTimeMillis();
+                }
+                if (currentProgress == Long.parseLong(getJson("size"))) {
+                    logger.info("File successfully transfered to the download.me servers, download should start soon...");
+                    break;
+                }
+            }
             dllink = getJson("dlurl");
             if (dllink != null) {
-                logger.info("Found dllink, continuing...");
+                logger.info("File successfully transfered to the download.me servers, download should start soon...");
                 break;
             }
             this.sleep(5000l, link);

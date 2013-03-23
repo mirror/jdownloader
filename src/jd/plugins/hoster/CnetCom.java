@@ -46,7 +46,7 @@ public class CnetCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Whoops\\! You broke the Internet\\!<|>No, really,  it looks like you clicked on a borked link)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Whoops\\! You broke the Internet\\!<|>No, really,  it looks like you clicked on a borked link)") || br.getURL().contains("/most-popular/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- CNET Download\\.com</title>").getMatch(0);
         String filesize = br.getRegex(">File size:</span>([^<>\"]*?)</li>").getMatch(0);

@@ -35,7 +35,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cobrashare.sk" }, urls = { "http://[\\w\\.]*?cobrashare\\.sk(/downloadFile\\.php\\?id=.+|:[0-9]+/CobraShare-v.0.9/download/.+id=.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cobrashare.sk" }, urls = { "http://[\\w\\.]*?cobrashare\\.sk(/downloadFile\\.php\\?id=.+|:[0-9]+/CobraShare\\-v\\.0\\.9/download/.+id=.+)" }, flags = { 2 })
 public class CobraShareSk extends PluginForHost {
 
     public CobraShareSk(PluginWrapper wrapper) {

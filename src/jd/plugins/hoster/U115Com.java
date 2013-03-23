@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -43,17 +45,20 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://(www\\.)?(u\\.)?115\\.com/file/[a-z0-9]+" }, flags = { 2 })
 public class U115Com extends PluginForHost {
 
-    private final String        ua                    = RandomUserAgent.generate();
-    private static final String MAINPAGE              = "http://115.com/";
-    private static final String UNDERMAINTENANCEURL   = "http://u.115.com/weihu.html";
-    private static final String UNDERMAINTENANCETEXT  = "The servers are under maintenance";
-    private static final String ACCOUNTNEEDEDUSERTEXT = "Account is needed to download this link";
-    private static Object       LOCK                  = new Object();
-    private boolean             pluginloaded          = false;
+    private final String        ua                                 = RandomUserAgent.generate();
+    private static final String MAINPAGE                           = "http://115.com/";
+    private static final String UNDERMAINTENANCEURL                = "http://u.115.com/weihu.html";
+    private static final String UNDERMAINTENANCETEXT               = "The servers are under maintenance";
+    private static final String ACCOUNTNEEDEDUSERTEXT              = "Account is needed to download this link";
+    private static Object       LOCK                               = new Object();
+    private boolean             pluginloaded                       = false;
+    private boolean             downloadCompleted                  = false;
+    private String              DELETEFILEFROMACCOUNTAFTERDOWNLOAD = "DELETEFILEFROMACCOUNTAFTERDOWNLOAD";
 
     public U115Com(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
+        this.setConfigElements();
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -206,34 +211,60 @@ public class U115Com extends PluginForHost {
         final String fileID = br.getRegex("file_id:   \\'(\\d+)\\'").getMatch(0);
         if (userID == null || fileID == null || plainfilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        // Check if we find the new id, maybe the file has already been added to
+        // Check if we find the new id, maybe the file has already been
+        // added to
         // the account
-        String newFileID = findNewIdByFilename(plainfilename);
-        if (newFileID == null) {
+        String[] fileIDs = findIdsByFilename(plainfilename);
+        if (fileIDs[1] == null) {
             // Add file to account
             br.getPage("http://115.com/?ct=pickcode&ac=collect&user_id=" + userID + "&tid=" + fileID + "&is_temp=0&aid=1&cid=0");
             if (!br.containsHTML("\"state\":true")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            newFileID = findNewIdByFilename(plainfilename);
-            if (newFileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            fileIDs = findIdsByFilename(plainfilename);
+            if (fileIDs[1] == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Finally...download it
-        br.getPage("http://115.com/?ct=pickcode&ac=download&pickcode=" + newFileID + "&_t=" + System.currentTimeMillis());
+        br.getPage("http://115.com/?ct=pickcode&ac=download&pickcode=" + fileIDs[1] + "&_t=" + System.currentTimeMillis());
         String dllink = findLink();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+            try {
+                if (!dl.externalDownloadStop()) this.downloadCompleted = true;
+            } catch (final Throwable e) {
+            }
+        } catch (Exception e) {
+            this.downloadCompleted = false;
+            throw e;
+        } finally {
+            if (this.downloadCompleted && this.getPluginConfig().getBooleanProperty(DELETEFILEFROMACCOUNTAFTERDOWNLOAD, false)) {
+                logger.info("Download finished, trying to delete the file from the account...");
+                boolean fileDeleted = true;
+                try {
+                    br.postPage("http://115.com/?ct=file&ac=delete", "aid=1&pid=0&tid=" + fileIDs[0]);
+                } catch (final Exception e) {
+                    fileDeleted = false;
+                }
+                if (!br.containsHTML("\"data\":\\{\"f\":true\\}")) fileDeleted = false;
+                if (fileDeleted) {
+                    logger.info("File successfully deleted from account...");
+                } else {
+                    logger.warning("Warning, file could not be deleted from account...");
+                }
+            }
         }
-        dl.startDownload();
         // TODO: Maybe delete file from account after successfull download?!
     }
 
-    private String findNewIdByFilename(final String plainfilename) throws IOException {
+    private String[] findIdsByFilename(final String plainfilename) throws IOException {
         // Access filelist in account
         br.getPage("http://web.api.115.com/files?aid=1&cid=0&o=&asc=0&offset=0&show_dir=1&limit=66&source=&format=json&_t=" + System.currentTimeMillis());
-        String newFileID = null;
+        String[] fileIDs = new String[2];
         // Search new ID of the added file via filename
         String[] files = br.getRegex("(\\{\"fid\":\".*?\\})").getColumn(0);
         for (final String file : files) {
@@ -241,11 +272,12 @@ public class U115Com extends PluginForHost {
             if (currentFilename == null) continue;
             currentFilename = unescape(currentFilename);
             if (currentFilename.equals(plainfilename)) {
-                newFileID = new Regex(file, "\"pc\":\"([a-z0-9]+)\"").getMatch(0);
+                fileIDs[0] = new Regex(file, "\"fid\":\"([a-z0-9]+)\"").getMatch(0);
+                fileIDs[1] = new Regex(file, "\"pc\":\"([a-z0-9]+)\"").getMatch(0);
                 break;
             }
         }
-        return newFileID;
+        return fileIDs;
     }
 
     public String findLink() throws Exception {
@@ -261,6 +293,10 @@ public class U115Com extends PluginForHost {
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
+    }
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DELETEFILEFROMACCOUNTAFTERDOWNLOAD, JDL.L("plugins.hoster.u115com.deleteFileFromAccountAfterSuccessfulDownload", "Delete file from account after successful download.")).setDefaultValue(false));
     }
 
     @Override
