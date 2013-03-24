@@ -160,7 +160,8 @@ public class DownloadMe extends PluginForHost {
         showMessage(link, "Phase 2/3: Generating downloadlink");
         long lastProgress = 0;
         long currentProgress = 0;
-        long lastProgressChange = 0;
+        long filesize = 0;
+        long lastProgressChange = System.currentTimeMillis();
         // Try to get downloadlink for up to 10 minutes
         for (int i = 1; i <= 120; i++) {
             logger.info("Trying to find link, try " + i + " / 120");
@@ -179,6 +180,7 @@ public class DownloadMe extends PluginForHost {
             final String size = getJson("size");
             if (prgr != null && size != null) {
                 currentProgress = Long.parseLong(prgr);
+                filesize = Long.parseLong(getJson("size"));
                 if (currentProgress == lastProgress && ((System.currentTimeMillis() - lastProgressChange) >= 60000)) {
                     logger.info("Download seems to be stuck on the download.me server, aborting...");
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, download stuck on download.me servers", 10 * 60 * 1000l);
@@ -186,7 +188,7 @@ public class DownloadMe extends PluginForHost {
                     lastProgress = currentProgress;
                     lastProgressChange = System.currentTimeMillis();
                 }
-                if (currentProgress == Long.parseLong(size)) {
+                if (filesize > 0 && currentProgress == filesize) {
                     logger.info("File successfully transfered to the download.me servers, download should start soon...");
                     break;
                 }
