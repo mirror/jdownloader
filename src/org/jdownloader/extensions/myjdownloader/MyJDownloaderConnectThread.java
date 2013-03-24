@@ -112,12 +112,15 @@ public class MyJDownloaderConnectThread extends Thread {
                 boolean closeSocket = true;
                 try {
                     connectionSocket = new Socket();
-                    connectionSocket.setSoTimeout(60000);
+                    connectionSocket.setSoTimeout(120000);
                     connectionSocket.setTcpNoDelay(false);
                     connectionSocket.connect(new InetSocketAddress(this.config.getAPIURL(), this.config.getAPIPort()), 30000);
                     connectionSocket.getOutputStream().write(("JD" + api.getConnectToken()).getBytes("ISO-8859-1"));
                     int validToken = connectionSocket.getInputStream().read();
-                    if (validToken == 0) {
+                    if (validToken == 4) {
+                        System.out.println("KeepAlive");
+                        closeSocket = true;
+                    } else if (validToken == 0) {
                         loginError++;
                         System.out.println("Token seems to be invalid!");
                         api.invalidateConnectToken();
@@ -126,7 +129,6 @@ public class MyJDownloaderConnectThread extends Thread {
                         // System.out.println("Connection got established");
                         closeSocket = false;
                         final byte[] serverSecret = api.getServerSecret();
-                        final byte[] jdSecret = api.getJDSecret();
                         final Socket clientSocket = connectionSocket;
                         Thread connectionThread = new Thread("MyJDownloaderConnection:" + THREADCOUNTER.incrementAndGet()) {
                             @Override
