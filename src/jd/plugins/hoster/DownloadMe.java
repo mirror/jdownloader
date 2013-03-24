@@ -173,18 +173,22 @@ public class DownloadMe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadlink generation failed");
             }
             if (i > 1) {
-                // Try to detect if
-                currentProgress = Long.parseLong(getJson("progress"));
-                if (currentProgress == lastProgress && ((System.currentTimeMillis() - lastProgressChange) >= 60000)) {
-                    logger.info("Download seems to be stuck on the download.me server, aborting...");
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, download stuck on download.me servers", 10 * 60 * 1000l);
-                } else if (currentProgress > lastProgress) {
-                    lastProgress = currentProgress;
-                    lastProgressChange = System.currentTimeMillis();
-                }
-                if (currentProgress == Long.parseLong(getJson("size"))) {
-                    logger.info("File successfully transfered to the download.me servers, download should start soon...");
-                    break;
+                try {
+                    // Try to detect if
+                    currentProgress = Long.parseLong(getJson("progress"));
+                    if (currentProgress == lastProgress && ((System.currentTimeMillis() - lastProgressChange) >= 60000)) {
+                        logger.info("Download seems to be stuck on the download.me server, aborting...");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, download stuck on download.me servers", 10 * 60 * 1000l);
+                    } else if (currentProgress > lastProgress) {
+                        lastProgress = currentProgress;
+                        lastProgressChange = System.currentTimeMillis();
+                    }
+                    if (currentProgress == Long.parseLong(getJson("size"))) {
+                        logger.info("File successfully transfered to the download.me servers, download should start soon...");
+                        break;
+                    }
+                } catch (final Exception e) {
+                    logger.info("New progress handling failed...");
                 }
             }
             dllink = getJson("dlurl");
