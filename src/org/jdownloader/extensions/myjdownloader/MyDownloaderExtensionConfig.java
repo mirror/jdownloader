@@ -10,15 +10,15 @@ public interface MyDownloaderExtensionConfig extends ExtensionConfigInterface {
 
     @DefaultStringValue("api.jdownloader.org")
     @AboutConfig
-    public String getAPIURL();
+    public String getAPIServerURL();
 
-    public void setAPIURL(String url);
+    public void setAPIServerURL(String url);
 
-    @DefaultIntValue(10101)
+    @DefaultIntValue(80)
     @AboutConfig
-    public int getAPIPort();
+    public int getAPIServerPort();
 
-    public void setAPIPort(int port);
+    public void setAPIServerPort(int port);
 
     public String getUsername();
 

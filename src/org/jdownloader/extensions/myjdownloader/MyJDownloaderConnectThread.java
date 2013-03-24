@@ -114,7 +114,7 @@ public class MyJDownloaderConnectThread extends Thread {
                     connectionSocket = new Socket();
                     connectionSocket.setSoTimeout(120000);
                     connectionSocket.setTcpNoDelay(false);
-                    connectionSocket.connect(new InetSocketAddress(this.config.getAPIURL(), this.config.getAPIPort()), 30000);
+                    connectionSocket.connect(new InetSocketAddress(this.config.getAPIServerURL(), this.config.getAPIServerPort()), 30000);
                     connectionSocket.getOutputStream().write(("JD" + api.getConnectToken()).getBytes("ISO-8859-1"));
                     int validToken = connectionSocket.getInputStream().read();
                     if (validToken == 4) {
@@ -321,7 +321,7 @@ public class MyJDownloaderConnectThread extends Thread {
 
     protected HashMap<String, Object> getJDToken() throws IOException {
         Browser br = new Browser();
-        return JSonStorage.restoreFromString(br.getPage("http://" + config.getAPIURL() + ":" + config.getAPIPort() + "/myjdownloader/getJDToken?" + Encoding.urlEncode(config.getUsername()) + "&" + Hash.getSHA256(config.getPassword())), new TypeRef<HashMap<String, Object>>() {
+        return JSonStorage.restoreFromString(br.getPage("http://" + config.getAPIServerURL() + ":" + config.getAPIServerPort() + "/myjdownloader/getJDToken?" + Encoding.urlEncode(config.getUsername()) + "&" + Hash.getSHA256(config.getPassword())), new TypeRef<HashMap<String, Object>>() {
         });
     }
 

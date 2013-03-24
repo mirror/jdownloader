@@ -84,7 +84,7 @@ public class MyJDownloaderAPI {
         long timeStamp = TIMESTAMP.incrementAndGet();
         url = url + "&timestamp=" + timeStamp + "&apiverson=" + APIVersion;
         String signature = getSignature(getServerSecret(config.getUsername(), config.getPassword()), url.getBytes("UTF-8"));
-        String completeurl = "http://" + config.getAPIURL() + ":" + config.getAPIPort() + url + "&signature=" + signature;
+        String completeurl = "http://" + config.getAPIServerURL() + ":" + config.getAPIServerPort() + url + "&signature=" + signature;
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(completeurl);
