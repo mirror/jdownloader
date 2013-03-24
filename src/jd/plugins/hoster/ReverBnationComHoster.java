@@ -71,29 +71,39 @@ public class ReverBnationComHoster extends PluginForHost {
     }
 
     private String getDllink(final DownloadLink link) throws IOException, PluginException {
+        String finallink = null;
         final Regex infoRegex = new Regex(link.getDownloadURL(), "reverbnationcomid(\\d+)reverbnationcomartist(\\d+)");
-        br.postPage("http://www.reverbnation.com/audio_player/add_to_beginning/" + infoRegex.getMatch(0) + "?from_page_object=artist_" + infoRegex.getMatch(1), "");
-        final String damnString = br.getRegex("from_page_object=(String_)?-?(.*?)\\\\\"").getMatch(1);
-        if (damnString == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        // folgender Request macht unten den redirect
-        br.postPage("http://www.reverbnation.com/audio_player/set_now_playing_index/0", "");
-        br.getPage("http://www.reverbnation.com/controller/audio_player/get_tk");
-        final String crap = br.toString().trim();
-        if (crap.length() > 300) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        // bps berechnen
-        final String bps = getBps(crap, infoRegex.getMatch(0));
-        br.getPage("http://www.reverbnation.com/controller/audio_player/liby/_" + infoRegex.getMatch(0) + "?from_page_object=String_-" + damnString + "&" + crap + "&bps=" + bps);
-        final String finallink = br.getRedirectLocation();
-        if (finallink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        // wichtige Header
-        br.getHeaders().put("Referer", "http://cache.reverbnation.com/audio_player/inline_audioplayer_v2xx.swf?4037");
-        br.getHeaders().put("x-flash-version", "10,1,53,64");
-        br.getHeaders().put("Pragma", null);
-        br.getHeaders().put("Cache-Control", null);
-        br.getHeaders().put("Accept", "*/*");
-        br.getHeaders().put("Accept-Language", "de-DE");
-        br.getHeaders().put("Accept-Charset", null);
-        br.getHeaders().put("Connection", "Keep-Alive");
+        if (link.getBooleanProperty("downloadstream")) {
+            br.getPage(link.getDownloadURL());
+            final String pass = br.getRegex("pass: \"([a-z0-9]+)\"").getMatch(0);
+            if (pass == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            br.getPage("http://www.reverbnation.com/audio_player/html_player_stream/" + pass + "?client=234s3rwas&song_id=" + infoRegex.getMatch(0));
+            finallink = br.getRedirectLocation();
+        } else {
+            br.postPage("http://www.reverbnation.com/audio_player/add_to_beginning/" + infoRegex.getMatch(0) + "?from_page_object=artist_" + infoRegex.getMatch(1), "");
+            final String damnString = br.getRegex("from_page_object=(String_)?-?(.*?)\\\\\"").getMatch(1);
+            if (damnString == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            // folgender Request macht unten den redirect
+            br.postPage("http://www.reverbnation.com/audio_player/set_now_playing_index/0", "");
+            br.getPage("http://www.reverbnation.com/controller/audio_player/get_tk");
+            final String crap = br.toString().trim();
+            if (crap.length() > 300) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            // bps berechnen
+            final String bps = getBps(crap, infoRegex.getMatch(0));
+            br.getPage("http://www.reverbnation.com/controller/audio_player/liby/_" + infoRegex.getMatch(0) + "?from_page_object=String_-" + damnString + "&" + crap + "&bps=" + bps);
+            // http://www.reverbnation.com/audio_player/html_player_stream/fa0c9265ab882df20aa0faf6920745ca?client=234s3rwas&song_id=10525727
+            finallink = br.getRedirectLocation();
+            if (finallink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            // wichtige Header
+            br.getHeaders().put("Referer", "http://cache.reverbnation.com/audio_player/inline_audioplayer_v2xx.swf?4037");
+            br.getHeaders().put("x-flash-version", "10,1,53,64");
+            br.getHeaders().put("Pragma", null);
+            br.getHeaders().put("Cache-Control", null);
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("Accept-Language", "de-DE");
+            br.getHeaders().put("Accept-Charset", null);
+            br.getHeaders().put("Connection", "Keep-Alive");
+        }
         return finallink;
     }
 
@@ -120,6 +130,12 @@ public class ReverBnationComHoster extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // Probably no correct file
+        if (dl.getConnection().getLongContentLength() < 40000) {
+            if (downloadLink.getBooleanProperty("downloadstream")) throw new PluginException(LinkStatus.ERROR_FATAL, "This song is not downloadable");
+            downloadLink.setProperty("downloadstream", true);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         String amzName = dl.getConnection().getHeaderField("x-amz-meta-filename");
         if (amzName != null) {

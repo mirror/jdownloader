@@ -43,7 +43,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "http://(www\\.)?datafile.com/d/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile.com/d/[A-Za-z0-9]+" }, flags = { 2 })
 public class DataFileCom extends PluginForHost {
 
     public DataFileCom(PluginWrapper wrapper) {
@@ -73,9 +73,8 @@ public class DataFileCom extends PluginForHost {
         if (br.containsHTML("<div class=\"error\\-msg\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Deleted file
         if (br.containsHTML(">Sorry but this file has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("id=\"download\\-link\" class=\"\" style=\"margin\\-top: auto; margin\\-bottom: auto;\">([^<>\"]*?)</a>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<div class=\"file\\-name\" >([^<>\"]*?)</div>").getMatch(0);
-        String filesize = br.getRegex(">Filesize: <span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
+        final String filename = br.getRegex("class=\"file\\-name\">([^<>\"]*?)</div>").getMatch(0);
+        final String filesize = br.getRegex(">Filesize:<span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -98,10 +97,17 @@ public class DataFileCom extends PluginForHost {
         if (dllink == null) {
             final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
             br.setFollowRedirects(false);
-            final String waitTime = br.getRegex("var countdown = (\\d+);").getMatch(0);
-            if (waitTime == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final int wait = Integer.parseInt(waitTime);
-            if (wait > 120) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+            final Regex waitTime = br.getRegex("class=\"time\">(\\d+):(\\d+):(\\d+)</span>");
+            int tmphrs = 0, tmpmin = 0, tmpsecs = 0;
+            String tempHours = waitTime.getMatch(0);
+            if (tempHours != null) tmphrs = Integer.parseInt(tempHours);
+            String tempMinutes = waitTime.getMatch(1);
+            if (tempMinutes != null) tmpmin = Integer.parseInt(tempMinutes);
+            String tempSeconds = waitTime.getMatch(2);
+            if (tempSeconds != null) tmpsecs = Integer.parseInt(tempSeconds);
+            final long wait = (tmphrs * 60 * 60 * 1000) + (tmpmin * 60 * 1000) + (tmpsecs * 1001);
+            if (wait == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (wait > 120000) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
             long timeBefore = System.currentTimeMillis();
             final String rcID = br.getRegex("api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
             if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -116,16 +122,16 @@ public class DataFileCom extends PluginForHost {
                 if (i == 1) {
                     waitTime(timeBefore, downloadLink, wait);
                 }
-                postPage("https://www.datafile.com/files/ajax.html", "doaction=getlink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
-                if (br.containsHTML("\"text\":\"Captcha not valid\"")) {
+                postPage("https://www.datafile.com/files/ajax.html", "doaction=getFileDownloadLink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
+                if (br.containsHTML("\"The two words is not valid")) {
                     rc.reload();
                     continue;
                 }
                 break;
             }
-            if (br.containsHTML("\"text\":\"Captcha not valid\"")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("\"The two words is not valid")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (br.containsHTML("\"errorType\":null")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown error...");
-            dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
@@ -133,16 +139,20 @@ public class DataFileCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        String finalname = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        String finalFixedName = new Regex(finalname, "([^<>\"]*?)\"; creation\\-date=").getMatch(0);
+        if (finalFixedName != null) finalname = finalFixedName;
+        downloadLink.setFinalFileName(finalFixedName);
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
-    private void waitTime(long timeBefore, final DownloadLink downloadLink, int wait) throws PluginException {
-        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+    private void waitTime(long timeBefore, final DownloadLink downloadLink, long wait) throws PluginException {
+        long passedTime = (System.currentTimeMillis() - timeBefore) - 1000;
         /** Ticket Time */
         wait -= passedTime;
-        logger.info("Waittime detected, waiting " + wait + " - " + passedTime + " seconds from now on...");
-        if (wait > 0) sleep(wait * 1000l, downloadLink);
+        logger.info("Waittime detected, waiting " + wait + " - " + passedTime + " milliseconds from now on...");
+        if (wait > 0) sleep(wait, downloadLink);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
