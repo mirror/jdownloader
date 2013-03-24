@@ -854,13 +854,18 @@ public class FileMatesCom extends PluginForHost {
         if (cloudflare != null) {
             String math = new Regex(correctedBR, "\\$\\(\\'#jschl_answer\\'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
             if (math == null) {
+                String variableName = new Regex(correctedBR, "(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
+                if (variableName != null) variableName = variableName.trim();
+                math = new Regex(correctedBR, variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
+            }
+            if (math == null) {
                 logger.warning("Couldn't find 'math'");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator author.
             ScriptEngineManager mgr = new ScriptEngineManager();
             ScriptEngine engine = mgr.getEngineByName("JavaScript");
-            cloudflare.put("jschl_answer", engine.eval(math).toString().replace(".0", ""));
+            cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + 13")).longValue()));
             Thread.sleep(5500);
             sendForm(cloudflare);
             if (br.getFormbyProperty("id", "ChallengeForm") != null) {
