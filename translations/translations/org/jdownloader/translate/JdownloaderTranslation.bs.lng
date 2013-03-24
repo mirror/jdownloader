@@ -74,6 +74,7 @@ downloadlink_status_error_retry=Nepoznata greška
 downloadlink_status_error_temp_unavailable=Privremeno nedostupan
 downloadlink_status_incomplete=Nepotpuno
 downloadlink_status_waitinguserio=Čekanje na unos od strane korisnika
+getNextSortIdentifier_sort_warning_rly_title_=Sortirati Garbilac Linkova?
 gui_config_reconnect_showcase_currentip=Vaš trenutni IP:
 gui_config_reconnect_showcase_lastip=IP prije Ponovnog konektovanja:
 gui_config_reconnect_showcase_message_none=(Još nije testirano)
