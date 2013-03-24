@@ -298,7 +298,7 @@ public class MyJDownloaderConnectThread extends Thread {
                     System.out.println("Could not connect! Server down?");
                     connectError++;
                 } catch (SocketTimeoutException e) {
-                    System.out.println("ReadTimeout! No possible Connection found?");
+                    System.out.println("ReadTimeout!");
                 } finally {
                     try {
                         if (closeSocket) connectionSocket.close();
