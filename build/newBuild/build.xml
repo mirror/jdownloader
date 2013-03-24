@@ -394,7 +394,7 @@
 		<buildAddon package="improveddock" include="improveddock" />
 
 		<buildAddon package="JDTray" include="jdtrayicon" />
-
+		<buildAddon package="MyJDownloader" include="myjdownloader" />
 		<buildAddon package="JDGrowl" include="growl" />
 		<buildAddon package="AntiShutdown" include="antistandby" />
 
