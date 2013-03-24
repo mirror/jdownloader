@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -61,22 +62,28 @@ public class ClpfshD extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = cryptedLink.getCryptedUrl();
         br.clearCookies(getHost());
+        br.setFollowRedirects(true);
         final Regex regexInfo = new Regex(br.getPage(parameter), PATTERN_TITEL);
-        final String tmpStr = regexInfo.getMatch(0);
-        if (tmpStr == null) { return null; }
+        String tmpStr = regexInfo.getMatch(0);
+        if (tmpStr == null) {
+            tmpStr = br.getRegex("<h2>([^<]+)</h2>").getMatch(0);
+            if (tmpStr != null) tmpStr = br.getRegex("title=\"(" + tmpStr + "[^\"]+)\"").getMatch(0);
+        }
+        if (tmpStr == null) return null;
         String name = tmpStr.substring(0, tmpStr.lastIndexOf("-"));
-        final String cType = tmpStr.substring(tmpStr.lastIndexOf("-") + 1, tmpStr.length()).toLowerCase();
-        if (name == null || cType == null) { return null; }
+        String cType = tmpStr.substring(tmpStr.lastIndexOf("-") + 1, tmpStr.length()).toLowerCase(Locale.ENGLISH);
+        if (name == null || cType == null) return null;
+        cType = cType.trim();
 
-        int vidId = -1;
+        String vidId = null;
         if (new Regex(parameter, PATTERN_STANDARD_VIDEO).matches()) {
-            vidId = Integer.parseInt(new Regex(parameter, PATTERN_STANDARD_VIDEO).getMatch(0));
+            vidId = new Regex(parameter, PATTERN_STANDARD_VIDEO).getMatch(0);
         } else if (new Regex(parameter, PATTERN_CAHNNEL_VIDEO).matches()) {
-            vidId = Integer.parseInt(new Regex(parameter, PATTERN_CAHNNEL_VIDEO).getMatch(0));
+            vidId = new Regex(parameter, PATTERN_CAHNNEL_VIDEO).getMatch(0);
         } else if (new Regex(parameter, PATTERN_SPECIAL_VIDEO).matches()) {
-            vidId = Integer.parseInt(new Regex(parameter, PATTERN_SPECIAL_VIDEO).getMatch(0));
+            vidId = br.getRegex("vid\\s*:\\s*\"(\\d+)\"").getMatch(0);
         } else if (new Regex(parameter, PATTERN_MUSIK_VIDEO).matches()) {
-            vidId = Integer.parseInt(new Regex(parameter, PATTERN_MUSIK_VIDEO).getMatch(0));
+            vidId = new Regex(parameter, PATTERN_MUSIK_VIDEO).getMatch(0);
         } else {
             logger.severe("No VidID found");
             return decryptedLinks;
@@ -88,7 +95,7 @@ public class ClpfshD extends PluginForDecrypt {
         if (pathToflv == null) {
             page = br.getPage(XML_PATH + vidId);
             pathToflv = getDllink(page);
-            if (pathToflv == null) { return null; }
+            if (pathToflv == null) return null;
         }
         final DownloadLink downloadLink = createDownloadlink("clipfish://" + pathToflv);
         name = Encoding.htmlDecode(name.trim());
