@@ -20,12 +20,12 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.crypto.AWSign;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.Base64InputStream;
 import org.jdownloader.extensions.myjdownloader.MyDownloaderExtensionConfig;
-import org.seamless.util.io.IO;
 
 public class MyJDownloaderAPI {
 
@@ -100,13 +100,14 @@ public class MyJDownloaderAPI {
                     final byte[] KEY = Arrays.copyOfRange(serverSecret, 16, 32);
                     final SecretKeySpec skeySpec = new SecretKeySpec(KEY, "AES");
                     cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-                    response = IO.readBytes(new CipherInputStream(new Base64InputStream(con.getInputStream()), cipher));
+
+                    response = IO.readStream(-1, new CipherInputStream(new Base64InputStream(con.getInputStream()), cipher));
                     String responseSTRING = new String(response, "UTF-8");
                     String timestampJSON = new Regex(responseSTRING, "\"timestamp\"\\s*?:\\s*?(\\d+)").getMatch(0);
                     if (timestampJSON == null || timeStamp != Long.parseLong(timestampJSON)) throw new InvalidConnectException();
                     return responseSTRING;
                 } else {
-                    response = IO.readBytes(con.getInputStream());
+                    response = IO.readStream(-1, con.getInputStream());
                     return new String(response, "UTF-8");
                 }
             }
