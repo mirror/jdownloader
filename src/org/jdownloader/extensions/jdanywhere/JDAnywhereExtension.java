@@ -50,6 +50,7 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
             remoteAPI.unregister(fpa);
             remoteAPI.unregister(lca);
             remoteAPI.unregister(eva);
+
         } catch (final Throwable e) {
             LogController.CL().log(e);
             throw new StopException(e.getMessage());
@@ -70,16 +71,14 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
     protected void start() throws StartException {
         try {
             JDAnywhereController remoteAPI = JDAnywhereController.getInstance();
-            int port = getSettings().getPort();
-            String user = getSettings().getUsername();
-            String pass = getSettings().getPassword();
-            remoteAPI.register(cma = new CaptchaApi(), port, user, pass);
-            remoteAPI.register(coma = new ContentApi(), port, user, pass);
-            remoteAPI.register(dba = new DashboardApi(), port, user, pass);
-            remoteAPI.register(dla = new DownloadLinkApi(), port, user, pass);
-            remoteAPI.register(fpa = new FilePackageApi(), port, user, pass);
-            remoteAPI.register(lca = new LinkCrawlerApi(), port, user, pass);
-            remoteAPI.register(eva = new EventsAPI(), port, user, pass);
+
+            remoteAPI.register(cma = new CaptchaApi());
+            remoteAPI.register(coma = new ContentApi());
+            remoteAPI.register(dba = new DashboardApi());
+            remoteAPI.register(dla = new DownloadLinkApi());
+            remoteAPI.register(fpa = new FilePackageApi());
+            remoteAPI.register(lca = new LinkCrawlerApi());
+            remoteAPI.register(eva = new EventsAPI());
         } catch (final Throwable e) {
             LogController.CL().log(e);
             throw new StartException(e);
@@ -115,30 +114,6 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
 
     public JDAnywhereConfig getConfig() {
         return getSettings();
-    }
-
-    public String getUsername() {
-        return getSettings().getUsername();
-    }
-
-    void setUsername(String username) {
-        getSettings().setUsername(username);
-    }
-
-    public String getPassword() {
-        return getSettings().getPassword();
-    }
-
-    void setPassword(String password) {
-        getSettings().setPassword(password);
-    }
-
-    public int getPort() {
-        return getSettings().getPort();
-    }
-
-    void setPort(int port) {
-        getSettings().setPort(port);
     }
 
 }

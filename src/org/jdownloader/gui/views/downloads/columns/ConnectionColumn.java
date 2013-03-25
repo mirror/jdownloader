@@ -46,6 +46,8 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
     private final int         DEFAULT_ICON_COUNT = 4;
 
+    private ImageIcon         skipped;
+
     public ConnectionColumn() {
         super(_GUI._.ConnectionColumn_ConnectionColumn(), null);
         panel = new RendererMigPanel("ins 0 0 0 0", "[]", "[grow,fill]");
@@ -65,6 +67,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
         }
 
+        skipped = NewTheme.I().getIcon("skipped", 16);
         resumeIndicator = NewTheme.I().getIcon("refresh", 16);
         directConnection = NewTheme.I().getIcon("modem", 16);
         proxyConnection = NewTheme.I().getIcon("proxy_rotate", 16);
@@ -171,6 +174,11 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             DownloadInterface dli = dlLink.getDownloadInstance();
             SingleDownloadController sdc = dlLink.getDownloadLinkController();
             int index = 0;
+            if (dlLink.isSkipped()) {
+                labels[index].setIcon(skipped);
+                labels[index].setVisible(true);
+                index++;
+            }
             if (dlLink.isResumeable()) {
                 labels[index].setIcon(resumeIndicator);
                 labels[index].setVisible(true);
@@ -234,6 +242,13 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             DownloadInterface dli = link.getDownloadInstance();
             SingleDownloadController sdc = link.getDownloadLinkController();
             {
+
+                if (link.isSkipped()) {
+                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsSkipped(), skipped, JLabel.LEADING));
+                    SwingUtils.setOpaque(lbl, false);
+                    lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+                }
+
                 /* is the Link resumeable */
                 if (link.isResumeable()) {
                     panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsResumeable(), resumeIndicator, JLabel.LEADING));

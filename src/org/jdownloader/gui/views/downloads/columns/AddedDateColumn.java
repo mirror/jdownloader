@@ -30,6 +30,7 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
     @Override
     public boolean isEnabled(AbstractNode obj) {
         if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
+
         return obj.isEnabled();
     }
 

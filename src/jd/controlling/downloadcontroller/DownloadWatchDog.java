@@ -47,6 +47,8 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 
 import org.appwork.controlling.State;
+import org.appwork.controlling.StateEvent;
+import org.appwork.controlling.StateEventListener;
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
 import org.appwork.exceptions.WTFException;
@@ -64,6 +66,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
@@ -184,6 +187,35 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         DownloadController.getInstance().addListener(this);
         ShutdownController.getInstance().addShutdownVetoListener(this);
         FileCreationManager.getInstance().getEventSender().addListener(this);
+        stateMachine.addListener(new StateEventListener() {
+
+            @Override
+            public void onStateUpdate(StateEvent event) {
+            }
+
+            @Override
+            public void onStateChange(StateEvent event) {
+                if (event.getNewState() == RUNNING_STATE) {
+                    DownloadController.getInstance().set(new DownloadLinkWalker() {
+
+                        @Override
+                        public void handle(DownloadLink link) {
+                            link.setSkipped(false);
+                        }
+
+                        @Override
+                        public boolean accept(FilePackage fp) {
+                            return true;
+                        }
+
+                        @Override
+                        public boolean accept(DownloadLink link) {
+                            return true;
+                        }
+                    });
+                }
+            };
+        });
     }
 
     /**
@@ -443,7 +475,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         /* no plugin available, lets skip the link */
                         continue linkLoop;
                     }
-                    if (!forceDownload && !nextDownloadLink.isEnabled()) {
+                    if (!forceDownload && (!nextDownloadLink.isEnabled() || nextDownloadLink.isSkipped())) {
                         /* ONLY when not forced */
                         /* link is disabled, lets skip it */
                         continue linkLoop;
@@ -795,6 +827,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
             }
             final DownloadLink dl = (DownloadLink) stop;
+            if (dl.isSkipped()) return true;
             if (!dl.isEnabled()) { return true; }
             if (dl.getLinkStatus().isFinished()) { return true; }
             return false;
@@ -810,7 +843,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             continue;
                         }
                     }
-                    if (dl.isEnabled() && dl.getLinkStatus().isFinished()) {
+                    if ((!dl.isSkipped() && dl.isEnabled()) && dl.getLinkStatus().isFinished()) {
                         continue;
                     }
                     return false;
@@ -1181,7 +1214,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                         for (FilePackage fp : DownloadController.getInstance().getPackages()) {
                                             synchronized (fp) {
                                                 for (DownloadLink fpLink : fp.getChildren()) {
-                                                    if (fpLink.getDefaultPlugin() == null || !fpLink.isEnabled() || (fpLink.getAvailableStatus() == AvailableStatus.FALSE) || fpLink.getLinkStatus().isFinished() || fpLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE)) continue;
+                                                    if (fpLink.getDefaultPlugin() == null || !fpLink.isEnabled() || fpLink.isSkipped() || (fpLink.getAvailableStatus() == AvailableStatus.FALSE) || fpLink.getLinkStatus().isFinished() || fpLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE)) continue;
                                                     long prio = fpLink.getPriority();
                                                     java.util.List<DownloadLink> list = optimizedList.get(prio);
                                                     if (list == null) {
@@ -1217,6 +1250,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                             if (!linkStatus.isPluginActive()) {
                                                 /* enabled and not in progress */
                                                 if (linkStatus.hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) || linkStatus.hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE)) {
+
                                                     /*
                                                      * download or hoster temp. unavail
                                                      */
@@ -1358,6 +1392,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             synchronized (forcedLinks) {
                                 forcedLinks.clear();
                             }
+
                             stateMachine.setStatus(STOPPED_STATE);
                         }
                     }

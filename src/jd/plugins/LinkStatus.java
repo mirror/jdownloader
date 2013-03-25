@@ -318,6 +318,7 @@ public class LinkStatus implements Serializable {
         if (resetRetryCounter) retryCount = 0;
         value = 0;
         resetWaitTime();
+
     }
 
     public void reset() {

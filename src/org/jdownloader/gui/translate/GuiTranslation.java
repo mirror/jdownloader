@@ -2266,4 +2266,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Show & allow all Captchas" })
     String StatusBarImpl_lazyGetDownloadWatchdogIndicator_release();
 
+    @Default(lngs = { "en" }, values = { "Download has been skipped. Restart Downloads to try again!" })
+    String ConnectionColumn_DownloadIsSkipped();
+
+    @Default(lngs = { "en" }, values = { "Refresh" })
+    String CaptchaDialog_layoutDialogContent_refresh();
+
 }

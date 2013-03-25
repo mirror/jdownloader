@@ -1,9 +1,12 @@
 package jd.gui.swing.dialog;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -128,21 +131,23 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         return hideAllCaptchas;
     }
 
-    private DomainInfo   hosterInfo;
-    protected JComponent iconPanel;
+    private DomainInfo hosterInfo;
+    protected JPanel   iconPanel;
 
-    private Image[]      images;
+    private Image[]    images;
 
-    protected Point      offset;
+    protected Point    offset;
 
-    private Timer        paintTimer;
+    private Timer      paintTimer;
 
-    private Plugin       plugin;
-    protected double     scaleFaktor;
+    private Plugin     plugin;
+    protected double   scaleFaktor;
 
-    protected boolean    stopDownloads = false;
+    protected boolean  stopDownloads = false;
 
-    private DialogType   type;
+    private DialogType type;
+
+    protected boolean  refresh;
 
     public AbstractCaptchaDialog(int flags, String title, DialogType type, DomainInfo domainInfo, String explain, Image... images) {
         super(flags, title, null, _GUI._.AbstractCaptchaDialog_AbstractCaptchaDialog_continue(), _GUI._.AbstractCaptchaDialog_AbstractCaptchaDialog_cancel());
@@ -637,16 +642,38 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         config = JsonConfig.create(Application.getResource("cfg/CaptchaDialogDimensions_" + Hash.getMD5(getTitle())), LocationStorage.class);
 
         HeaderScrollPane sp;
+        final JButton refreshBtn = new JButton(_GUI._.CaptchaDialog_layoutDialogContent_refresh(), NewTheme.I().getIcon("refresh", 20));
+        refreshBtn.addActionListener(new ActionListener() {
 
-        iconPanel = new JComponent() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                refresh = true;
+                setReturnmask(false);
+                dispose();
+            }
+        });
+        iconPanel = new JPanel(new MigLayout("ins 0", "[grow]", "[grow]")) {
 
             /**
              * 
              */
             private static final long serialVersionUID = 1L;
 
+            protected void paintChildren(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g;
+                Composite comp = g2.getComposite();
+                try {
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.85f));
+                    super.paintChildren(g);
+
+                } finally {
+                    g2.setComposite(comp);
+                }
+            }
+
             @Override
             protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
 
                 BufferedImage scaled = IconIO.getScaledInstance(images[frame], getWidth() - 10, getHeight() - 10, Interpolation.BICUBIC, true);
                 g.drawImage(scaled, (getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, new Color(col), null);
@@ -656,6 +683,8 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             }
 
         };
+        iconPanel.setOpaque(false);
+        iconPanel.add(refreshBtn, "alignx right,aligny bottom");
         iconPanel.addMouseMotionListener(new MouseAdapter() {
 
             @Override
@@ -704,6 +733,14 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
         }
         return panel;
+    }
+
+    public boolean isRefresh() {
+        return refresh;
+    }
+
+    public void setRefresh(boolean refresh) {
+        this.refresh = refresh;
     }
 
     public void mouseClicked(final MouseEvent e) {

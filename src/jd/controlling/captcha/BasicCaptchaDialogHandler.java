@@ -29,7 +29,7 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
     }
 
     @Override
-    protected void showDialog(DialogType dialogType, int flag, Image[] images) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopDownloadsException, HideAllCaptchasException {
+    protected void showDialog(DialogType dialogType, int flag, Image[] images) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopDownloadsException, HideAllCaptchasException, RefreshException {
         CaptchaDialog d = new CaptchaDialog(flag, dialogType, getHost(), images, captchaChallenge.getExplain());
         d.setPlugin(captchaChallenge.getPlugin());
         d.setCountdownTime(CaptchaSettings.CFG.getCountdown());
@@ -42,6 +42,7 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
             if (d.isHideCaptchasForPackage()) throw new HideCaptchasByPackageException();
             if (d.isStopDownloads()) throw new StopDownloadsException();
             if (d.isHideAllCaptchas()) throw new HideAllCaptchasException();
+            if (d.isRefresh()) throw new RefreshException();
             throw e;
         }
 

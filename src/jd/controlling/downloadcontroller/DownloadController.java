@@ -56,6 +56,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
+import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -779,6 +780,25 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     @Override
     protected void _controllerPackageNodeStructureChanged(FilePackage pkg, QueuePriority priority) {
         broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE, pkg));
+    }
+
+    public void set(DownloadLinkWalker filter) {
+
+        final boolean readL = readLock();
+        try {
+            for (final FilePackage fp : packages) {
+                if (!filter.accept(fp)) continue;
+                synchronized (fp) {
+                    for (DownloadLink dl : fp.getChildren()) {
+                        if (filter.accept(dl)) {
+                            filter.handle(dl);
+                        }
+                    }
+                }
+            }
+        } finally {
+            readUnlock(readL);
+        }
     }
 
 }
