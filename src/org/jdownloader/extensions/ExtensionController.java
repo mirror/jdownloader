@@ -34,7 +34,9 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.logging.LogController;
 
 public class ExtensionController {
-    private static final ExtensionController INSTANCE = new ExtensionController();
+    private static final String              TMP_INVALIDEXTENSIONS = "tmp/invalidextensions";
+
+    private static final ExtensionController INSTANCE              = new ExtensionController();
 
     /**
      * get the only existing instance of ExtensionController. This is a singleton
@@ -52,7 +54,8 @@ public class ExtensionController {
     private LogSource                      logger;
 
     /**
-     * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private ExtensionController() {
         eventSender = new ExtensionControllerEventSender();
@@ -81,6 +84,7 @@ public class ExtensionController {
 
     protected void validateCache() {
         cacheInvalidated = false;
+        Application.getResource(TMP_INVALIDEXTENSIONS).delete();
     }
 
     public void init() {
@@ -170,17 +174,15 @@ public class ExtensionController {
 
     private synchronized java.util.List<LazyExtension> load() {
         java.util.List<LazyExtension> ret = new ArrayList<LazyExtension>();
-        try {
-            if (Application.isJared(ExtensionController.class)) {
-                ret = loadJared();
-            } else {
-                ret = loadUnpacked();
-            }
-            JSonStorage.saveTo(getCache(), ret);
-            validateCache();
-        } catch (final Throwable e) {
-            Log.exception(e);
+
+        if (Application.isJared(ExtensionController.class)) {
+            ret = loadJared();
+        } else {
+            ret = loadUnpacked();
         }
+        JSonStorage.saveTo(getCache(), ret);
+        validateCache();
+
         return ret;
     }
 
@@ -437,6 +439,12 @@ public class ExtensionController {
             if (class1.getName().equals(l.getClassname())) { return l; }
         }
         return null;
+    }
+
+    public void invalidateCacheIfRequired() {
+        if (Application.getResource(TMP_INVALIDEXTENSIONS).exists()) {
+            invalidateCache();
+        }
     }
 
 }

@@ -9,7 +9,7 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 public class ReScanPluginsCommand extends AbstractStartupCommand {
 
     public ReScanPluginsCommand() {
-        super("scanextensions", "scanplugins");
+        super("scanextensions", "scanplugins", "scan");
     }
 
     @Override

@@ -22,6 +22,7 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class CrawlerPluginController extends PluginController<PluginForDecrypt> {
 
@@ -45,6 +46,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     protected static void validateCache() {
         CACHE_INVALIDATED = false;
+        Application.getResource(HostPluginController.TMP_INVALIDPLUGINS).delete();
     }
 
     /**
@@ -73,7 +75,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {
@@ -319,6 +322,12 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             if (p.getDisplayName().equalsIgnoreCase(displayName)) return p;
         }
         return null;
+    }
+
+    public static void invalidateCacheIfRequired() {
+        if (Application.getResource(HostPluginController.TMP_INVALIDPLUGINS).exists()) {
+            invalidateCache();
+        }
     }
 
 }

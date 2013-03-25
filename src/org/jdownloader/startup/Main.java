@@ -38,8 +38,11 @@ import org.appwork.utils.IOErrorHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.logging.ExtLogManager;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class Main {
 
@@ -206,10 +209,15 @@ public class Main {
 
         PARAMETER_HANDLER = new ParameterHandler();
         PARAMETER_HANDLER.onStartup(args);
+
+        // Rescan plugincached if required
+        ExtensionController.getInstance().invalidateCacheIfRequired();
+        HostPluginController.getInstance().invalidateCacheIfRequired();
+        CrawlerPluginController.invalidateCacheIfRequired();
         try {
 
             // ensure that there is a Jdownloader.jar and call it to keep jd_home up2date
-            if (!Application.isJared(Main.class)) {
+            if (!Application.isJared(Main.class) && Application.getRessourceURL("org/jdownloader/update/JDUpdateClient.class") == null) {
                 // Developer Mode. Let's call JDownloader.jar Updater in .jd_home
 
                 File jdjar = Application.getResource("JDownloader.jar");
