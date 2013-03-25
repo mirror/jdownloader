@@ -620,13 +620,13 @@ public class TbCm extends PluginForDecrypt {
 
                 if (cfg.getBooleanProperty("IDINFILENAME_V2", false) && !cfg.getBooleanProperty("ISASFILENAME", false)) {
                     String id = new Regex(url, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
-                    if (id != null) YT_FILENAME = YT_FILENAME + " - " + id.toUpperCase(Locale.ENGLISH);
+                    if (id != null) YT_FILENAME = YT_FILENAME + " - " + id;
                 }
 
                 /* prefer videoID as filename? */
                 if (cfg.getBooleanProperty("ISASFILENAME", false)) {
                     String id = new Regex(url, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
-                    if (id != null) YT_FILENAME = id.toUpperCase(Locale.ENGLISH);
+                    if (id != null) YT_FILENAME = id;
                 }
 
                 /* check for wished formats first */

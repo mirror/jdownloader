@@ -125,16 +125,9 @@ public class CraMitIn extends PluginForHost {
         }
         boolean resumable = true;
         int maxchunks = 1;
-        final Form freeform = new Form();
-        freeform.setAction(br.getURL());
-        freeform.setMethod(MethodType.POST);
-        freeform.put("free_method", "FREE+DOWNLOAD");
-        freeform.put("op", "download1");
-        freeform.put("fname", downloadLink.getName());
-        freeform.put("usr_login", "");
-        freeform.put("referer", "");
-        freeform.put("rand_input", "");
-        freeform.put("id", new Regex(downloadLink.getDownloadURL(), "cramit\\.in/([a-z0-9]{12})").getMatch(0));
+        /** They like to make changes here to kill our plugin */
+        final Form freeform = br.getForm(0);
+        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(freeform);
         doSomething();
         checkErrors(downloadLink);

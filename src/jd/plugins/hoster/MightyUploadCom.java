@@ -55,7 +55,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "mightyupload.com" }, urls = { "https?://(www\\.)?mightyupload\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "mightyupload.com" }, urls = { "https?://(www\\.)?mightyupload\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class MightyUploadCom extends PluginForHost {
 
     // Site Setters
@@ -754,16 +754,7 @@ public class MightyUploadCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        // link cleanup, but respect users protocol choosing.
-        if (!supportsHTTPS) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
-        }
-        // strip video hosting url's to reduce possible duped links.
-        link.setUrlDownload(link.getDownloadURL().replace("/vidembed-", "/"));
-        // output the hostmask as we wish based on COOKIE_HOST url!
-        String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
-        String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
-        link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
+        link.setUrlDownload("http://www.mightyupload.com/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
     }
 
     private Browser prepBrowser(Browser prepBr) {

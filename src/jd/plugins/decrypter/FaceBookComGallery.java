@@ -105,16 +105,18 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 br.getPage(parameter);
                 final String setID = new Regex(parameter, "facebook\\.com/media/set/\\?set=(.+)").getMatch(0);
                 final String profileID = new Regex(parameter, "(\\d+)$").getMatch(0);
-                String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                String fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
                 final String ajaxpipeToken = br.getRegex("\"ajaxpipe_token\":\"([^<>\"]*?)\"").getMatch(0);
-                final String lastFbid = br.getRegex("last_fbid\\\\\":(\\d+)").getMatch(0);
                 final String user = br.getRegex("\"user\":\"(\\d+)\"").getMatch(0);
-                if (ajaxpipeToken == null || lastFbid == null || user == null) {
+                if (ajaxpipeToken == null || user == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
+                if (fpName == null) fpName = "Facebook_album_of_user_" + user;
+                fpName = Encoding.htmlDecode(fpName.trim());
+                boolean dynamicLoadAlreadyDecrypted = false;
 
-                ArrayList<String> allLinks = new ArrayList<String>();
+                final ArrayList<String> allLinks = new ArrayList<String>();
 
                 // Redirects from "http" to "https" can happen
                 br.setFollowRedirects(true);
@@ -123,68 +125,47 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
                     String[] links;
                     if (i > 1) {
-                        // http://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=AXjh0532-0XYi1NU&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A382732800822%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A602545822%2C%22viewmode%22%3Anull%2C%22set%22%3A%22a.382730160822.172329.602545822%22%2C%22type%22%3A%223%22%7D&__user=100002060730823&__a=1&__req=l&__adt=4
-                        br.getPage("http://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + lastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%221%22%7D&__user=" + user + "&__a=1&__req=l&__adt=" + i);
-                        System.out.println("http://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + lastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%221%22%7D&__user=" + user + "&__a=1&__req=l&__adt=" + i);
-                        links = br.getRegex("data\\-starred\\-src=\\\\\"(http:[^<>\"]*?)\\\\\"").getColumn(0);
+                        final String currentLastFbid = br.getRegex("\"last_fbid\\\\\":\\\\\"(\\d+)\\\\\\\"").getMatch(0);
+                        // If we have exactly 60 pictures then we reload one
+                        // time and got all, 2nd time will then be 0 more links
+                        // -> Stop
+                        if (currentLastFbid == null && dynamicLoadAlreadyDecrypted) {
+                            break;
+                        } else if (currentLastFbid == null) {
+                            logger.warning("Decrypter broken for link: " + parameter);
+                            return null;
+                        }
+                        final String loadLink = "http://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A%22" + currentLastFbid + "%22%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%223%22%2C%22pager_fired_on_init%22%3Atrue%7D&__user=" + user + "&__a=1&__dyn=798aD5z5CF-&__req=jsonp_" + i + "&__adt=" + i;
+                        br.getPage(loadLink);
+                        links = br.getRegex("data\\-non\\-starred-src=\\\\\"(http:[^<>\"]*?)\\\\\"").getColumn(0);
                         currentMaxPicCount = 32;
+                        dynamicLoadAlreadyDecrypted = true;
                     } else {
                         links = br.getRegex("data\\-starred\\-src=\"(http://[^<>\"]*?)\"").getColumn(0);
-                    }
-                    boolean doExtended = false;
-                    if (links == null || links.length == 0) {
-                        // Can't grab direct links? Try extended mode
-                        links = br.getRegex("ajaxify=(\"|\\\\\")https?(://|:\\\\/\\\\/)www\\.facebook\\.com(/|\\\\/)photo\\.php\\?fbid=(\\d+)\\&amp;").getColumn(3);
-                        doExtended = true;
                     }
                     if (links == null || links.length == 0) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
                     boolean stop = false;
-                    if (doExtended) {
-                        logger.info("Doing extended decrypt, this takes time...");
-                        // Old way
-                        for (String fbid : links) {
-                            br.getPage("http://www.facebook.com/photo.php?fbid=" + fbid + "&set=" + setID + "&type=1");
-                            String finallink = br.getRegex("class=\"imageStage\"><img class=\"fbPhotoImage img\" id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
-                            if (finallink == null) finallink = br.getRegex("\"(https?://fbcdn\\-sphotos\\-a\\.akamaihd\\.net/[^<>\"]*?)\"").getMatch(0);
-                            if (finallink == null) {
-                                logger.warning("Decrypter broken for link: " + parameter);
-                                return null;
-                            }
-                            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-                        }
-                        // This way only works on the first page
-                        stop = true;
-                    } else {
-                        logger.info("Decrypting page " + i + " of??");
-                        for (final String directlink : links) {
-                            final String finallink = Encoding.htmlDecode(directlink.trim().replace("\\", ""));
-                            if (allLinks.contains(finallink)) {
-                                logger.info("Seems like we're done and decrypted all links, stopping at page: " + i);
-                                stop = true;
-                                break;
-                            } else {
-                                allLinks.add(finallink);
-                            }
-                            final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-                            dl.setAvailable(true);
-                            decryptedLinks.add(dl);
-                        }
-                        // 28 links = max number of links per segment
-                        if (links.length < currentMaxPicCount) stop = true;
-                        if (stop) {
-                            logger.info("Seems like we're done and decrypted all links, stopping at page: " + i);
-                            break;
-                        }
+                    logger.info("Decrypting page " + i + " of ??");
+                    for (final String directlink : links) {
+                        final String finallink = Encoding.htmlDecode(directlink.trim().replace("\\", ""));
+                        allLinks.add(finallink);
+                        final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+                        dl.setAvailable(true);
+                        decryptedLinks.add(dl);
+                    }
+                    // 28 links = max number of links per segment
+                    if (links.length < currentMaxPicCount) stop = true;
+                    if (stop) {
+                        logger.info("Seems like we're done and decrypted all links, stopping at page: " + i);
+                        break;
                     }
                 }
-                if (fpName != null) {
-                    FilePackage fp = FilePackage.getInstance();
-                    fp.setName(fpName.trim());
-                    fp.addLinks(decryptedLinks);
-                }
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName.trim());
+                fp.addLinks(decryptedLinks);
             }
             return decryptedLinks;
         }
