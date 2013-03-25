@@ -10,6 +10,8 @@ import jd.plugins.FilePackage;
 
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
+import org.jdownloader.api.captcha.CaptchaAPI;
+import org.jdownloader.api.captcha.CaptchaAPIImpl;
 
 public class PollingAPIImpl implements PollingAPI {
 
@@ -30,6 +32,9 @@ public class PollingAPIImpl implements PollingAPI {
         }
         if (queryParams.containsKey("linkGrabberState")) {
             result.add(getLinkGrabberState());
+        }
+        if (queryParams.containsKey("captchasWaiting")) {
+            result.add(getCaptchasWaiting());
         }
 
         return result;
@@ -108,6 +113,19 @@ public class PollingAPIImpl implements PollingAPI {
 
         QueryResponseMap eventData = new QueryResponseMap();
         eventData.put("data", status);
+        prs.setEventData(eventData);
+
+        return prs;
+    }
+
+    private CaptchaAPI captchaAPI = new CaptchaAPIImpl();
+
+    private PollingResultAPIStorable getCaptchasWaiting() {
+        PollingResultAPIStorable prs = new PollingResultAPIStorable();
+        prs.setEventName("captchasWaiting");
+
+        QueryResponseMap eventData = new QueryResponseMap();
+        eventData.put("data", captchaAPI.list());
         prs.setEventData(eventData);
 
         return prs;

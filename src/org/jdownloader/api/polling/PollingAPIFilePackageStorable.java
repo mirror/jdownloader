@@ -29,6 +29,10 @@ public class PollingAPIFilePackageStorable implements Storable {
         return fp.getView().getDone();
     }
 
+    public Boolean getFinished() {
+        return fp.getView().isFinished();
+    }
+
     public Long getSize() {
         return fp.getView().getSize();
     }

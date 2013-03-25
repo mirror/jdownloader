@@ -103,6 +103,12 @@ public class AccountAPIImpl implements AccountAPI {
     }
 
     @Override
+    public String getPremiumHosterUrl(String hoster) {
+        if (hoster == null) { return null; }
+        return AccountController.createFullBuyPremiumUrl(HostPluginController.getInstance().get(hoster).getPremiumUrl(), "captcha/webinterface");
+    }
+
+    @Override
     public void premiumHosterIcon(RemoteAPIRequest request, RemoteAPIResponse response, String premiumHoster) {
         OutputStream out = null;
         try {

@@ -128,8 +128,6 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
             ces.setInfoMap(infoMap);
             result.add(ces);
         }
-
         return result;
     }
-
 }

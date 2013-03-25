@@ -76,7 +76,6 @@ public class RemoteAPIController {
         register(new LinkCollectorAPIImpl());
         register(new ContentAPIImpl());
         register(new PollingAPIImpl());
-
     }
 
     public HttpRequestHandler getRequestHandler() {

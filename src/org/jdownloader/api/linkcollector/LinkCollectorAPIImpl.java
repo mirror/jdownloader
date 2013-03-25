@@ -15,9 +15,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
-import org.appwork.remoteapi.RemoteAPIRequest;
-import org.appwork.remoteapi.RemoteAPIRequest.REQUESTTYPE;
-import org.appwork.utils.net.httpserver.requests.PostRequest;
+import org.jdownloader.controlling.Priority;
 
 public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
@@ -146,7 +144,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             if (queryParams._getQueryParam("availability", Boolean.class, false)) {
                 infomap.put("availability", cl.getLinkState().toString());
             }
-
             infomap.put("packageUUID", cl.getParentNode().getUniqueID().getID());
 
             cls.setInfoMap(infomap);
@@ -160,10 +157,21 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public Boolean addLinks(String links, String packageName, String extractPassword, String downloadPassword) {
+        return addLinks(links, packageName, extractPassword, downloadPassword, false);
+    }
+
+    @Override
+    public Boolean addLinksAndStartDownload(String links, String packageName, String extractPassword, String downloadPassword) {
+        return addLinks(links, packageName, extractPassword, downloadPassword, true);
+    }
+
+    private Boolean addLinks(String links, String packageName, String extractPassword, String downloadPassword, boolean autostart) {
         LinkCollector lc = LinkCollector.getInstance();
 
         LinkCollectingJob lcj = new LinkCollectingJob(links);
-        lc.addCrawlerJob(lcj);
+        lcj.setAutoStart(autostart);
+        if (autostart) lcj.setPriority(Priority.HIGHEST);
+
         if (packageName != null) {
             lcj.setPackageName(packageName);
         }
@@ -175,16 +183,18 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             passwords.add(extractPassword);
             lcj.setExtractPasswords(passwords);
         }
+
+        lc.addCrawlerJob(lcj);
         return true;
     }
 
-    @Override
-    public Boolean uploadLinkContainer(RemoteAPIRequest request) {
-        if (request.getRequestType() == REQUESTTYPE.POST) {
-            PostRequest post = (PostRequest) request.getHttpRequest();
-        }
-        return false;
-    }
+    // @Override
+    // public Boolean uploadLinkContainer(RemoteAPIRequest request) {
+    // if (request.getRequestType() == REQUESTTYPE.POST) {
+    // PostRequest post = (PostRequest) request.getHttpRequest();
+    // }
+    // return false;
+    // }
 
     @Override
     public Long getChildrenChanged(Long structureWatermark) {

@@ -5,7 +5,6 @@ import java.util.List;
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.RemoteAPIInterface;
-import org.appwork.remoteapi.RemoteAPIRequest;
 
 @ApiNamespace("linkcollector")
 public interface LinkCollectorAPI extends RemoteAPIInterface {
@@ -72,7 +71,16 @@ public interface LinkCollectorAPI extends RemoteAPIInterface {
      */
     Boolean addLinks(String link, String packageName, String archivePassword, String linkPassword);
 
-    Boolean uploadLinkContainer(RemoteAPIRequest request);
+    /** Same as addLinks, but autostarts the downloads if crawling was successful
+     * @param links
+     * @param packageName
+     * @param extractPassword
+     * @param downloadPassword
+     * @return
+     */
+    Boolean addLinksAndStartDownload(String links, String packageName, String extractPassword, String downloadPassword);
+
+    // Boolean uploadLinkContainer(RemoteAPIRequest request);
 
     Long getChildrenChanged(Long structureWatermark);
 

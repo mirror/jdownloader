@@ -32,4 +32,6 @@ public interface AccountAPI extends RemoteAPIInterface {
     QueryResponseMap listPremiumHosterUrls();
 
     boolean updateAccount(Long accountId, String username, String password);
+
+    String getPremiumHosterUrl(String hoster);
 }
