@@ -2,7 +2,6 @@ package org.jdownloader.api;
 
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.SessionRemoteAPI;
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.jdownloader.api.accounts.AccountAPIImpl;
@@ -23,26 +22,8 @@ public class RemoteAPIController {
         return INSTANCE;
     }
 
-    private boolean apiEnabled;
-
-    public boolean isApiEnabled() {
-        return apiEnabled;
-    }
-
-    public int getApiPort() {
-        return apiPort;
-    }
-
-    public boolean isApiLocal() {
-        return apiLocal;
-    }
-
-    private int                                apiPort;
-    private boolean                            apiLocal;
-
-    private SessionRemoteAPI<RemoteAPISession> rapi       = null;
-    private RemoteAPISessionControllerImp      sessionc   = null;
-    private int                                registered = 0;
+    private SessionRemoteAPI<RemoteAPISession> rapi     = null;
+    private RemoteAPISessionControllerImp      sessionc = null;
     private EventsAPIImpl                      eventsapi;
 
     /**
@@ -53,9 +34,6 @@ public class RemoteAPIController {
     }
 
     private RemoteAPIController() {
-        apiEnabled = JsonConfig.create(RemoteAPIConfig.class).getAPIEnabled();
-        apiPort = JsonConfig.create(RemoteAPIConfig.class).getAPIPort();
-        apiLocal = JsonConfig.create(RemoteAPIConfig.class).getAPIlocalhost();
         rapi = new SessionRemoteAPI<RemoteAPISession>();
         sessionc = new RemoteAPISessionControllerImp();
         eventsapi = new EventsAPIImpl();
@@ -65,7 +43,6 @@ public class RemoteAPIController {
             rapi.register(eventsapi);
         } catch (Throwable e) {
             Log.exception(e);
-            apiEnabled = false;
         }
         register(new CaptchaAPIImpl());
         register(new JDAPIImpl());
@@ -82,31 +59,20 @@ public class RemoteAPIController {
         return sessionc;
     }
 
-    public synchronized void register(final RemoteAPIInterface x, boolean forceRegister) {
-        if (apiEnabled || forceRegister) {
-            try {
-                rapi.register(x);
-                registered++;
-                if (registered == 1) {
-                    /* we start httpServer when first interface gets registered */
-                    HttpServer.getInstance().registerRequestHandler(apiPort, apiLocal, sessionc);
-                }
-            } catch (final Throwable e) {
-                Log.exception(e);
-            }
-        }
-    }
-
     public synchronized void register(final RemoteAPIInterface x) {
         if (x == null) return;
-        register(x, false);
+        try {
+            rapi.register(x);
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
+
     }
 
     public synchronized void unregister(final RemoteAPIInterface x) {
         if (x == null) return;
         try {
             rapi.unregister(x);
-            registered--;
         } catch (final Throwable e) {
             Log.exception(e);
         }
