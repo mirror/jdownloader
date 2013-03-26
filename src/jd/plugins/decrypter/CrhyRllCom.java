@@ -112,6 +112,10 @@ public class CrhyRllCom extends PluginForDecrypt {
                 // not available == offline, no need to show error message
                 return decryptedLinks;
             }
+            if (br.getURL().contains("crunchyroll.com/showmedia_wall?next=")) {
+                logger.info("Link can only be decrypted if you own and add a crunchyroll.com account: " + cryptedLink.getCryptedUrl());
+                return decryptedLinks;
+            }
 
             // Get the episode name
             final String title = this.nameFromVideoUrl(cryptedLink.getCryptedUrl());
@@ -243,7 +247,8 @@ public class CrhyRllCom extends PluginForDecrypt {
 
         String name = null;
         try {
-            // Use a feature where you are redirected to the full-url if you go to a shortened version
+            // Use a feature where you are redirected to the full-url if you go
+            // to a shortened version
             br.setFollowRedirects(false);
             br.getPage("http://www.crunchyroll.com/a/a-" + videoId);
             name = this.nameFromVideoUrl(br.getRedirectLocation());
@@ -271,12 +276,14 @@ public class CrhyRllCom extends PluginForDecrypt {
     }
 
     /**
-     * Try and find the Android details for the given link. If the details are successfully found, then set the properties of the link.
+     * Try and find the Android details for the given link. If the details are
+     * successfully found, then set the properties of the link.
      * 
      * @param downloadLink
      *            The DownloadLink file to check
      * @param br
-     *            The browser to use to load the XML file with. If null, uses different browser
+     *            The browser to use to load the XML file with. If null, uses
+     *            different browser
      */
     public void setAndroid(final DownloadLink downloadLink, Browser br) throws IOException, PluginException {
         if (br == null) {
@@ -288,7 +295,8 @@ public class CrhyRllCom extends PluginForDecrypt {
         final String mediaId = androidUrl.getMatch(0);
         if (mediaId == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid URL (could not find media id)"); }
 
-        // If the download does not yet have a filename, set a temporary filename
+        // If the download does not yet have a filename, set a temporary
+        // filename
         String filename = "CrunchyRoll." + mediaId + SUFFIX_ANDROID;
         if (downloadLink.getFinalFileName() == null) {
             downloadLink.setFinalFileName(filename + EXT_UNKNOWN);
@@ -359,14 +367,17 @@ public class CrhyRllCom extends PluginForDecrypt {
     }
 
     /**
-     * Try and find the RTMP details for the given link. If the details are successfully found, then set the properties of the link.
-     * rtmphost = TcUrl. rtmpfile = playpath. rtmpswf = swfVfy (without full path). filename = output filename without extension.
-     * qualityname = text definition of the quality found ("360p", "480p", etc).
+     * Try and find the RTMP details for the given link. If the details are
+     * successfully found, then set the properties of the link. rtmphost =
+     * TcUrl. rtmpfile = playpath. rtmpswf = swfVfy (without full path).
+     * filename = output filename without extension. qualityname = text
+     * definition of the quality found ("360p", "480p", etc).
      * 
      * @param downloadLink
      *            The DownloadLink file to check
      * @param br
-     *            The browser to use to load the XML file with. If null, uses different browser
+     *            The browser to use to load the XML file with. If null, uses
+     *            different browser
      */
     public void setRTMP(final DownloadLink downloadLink, Browser br) throws IOException, PluginException {
         if (br == null) {

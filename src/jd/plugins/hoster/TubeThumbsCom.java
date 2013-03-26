@@ -69,6 +69,8 @@ public class TubeThumbsCom extends PluginForHost {
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|H1>Not Found</H1>|was not found on this server\\.<P>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Category stuff -> Offline
+        if (br.containsHTML(">Porn Videos :: Popular Tube Categories</h2>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div id=\"video\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\">").getMatch(0);

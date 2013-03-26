@@ -64,7 +64,7 @@ public class MyXvidsCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title>My X Videos \\- Daily Amateur Porn Tube \\- </title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.myxvids.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"title\">              <h2>(.*?)</h2>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>My X Videos \\- Daily Amateur Porn Tube \\- (.*?)</title>").getMatch(0);
         DLLINK = br.getRegex("var playlist = \\[ \\{ url: \\'(http://.*?)\\' \\} \\]").getMatch(0);

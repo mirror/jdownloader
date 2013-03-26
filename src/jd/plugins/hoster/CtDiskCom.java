@@ -107,16 +107,19 @@ public class CtDiskCom extends PluginForHost {
             }
             br.submitForm(free);
             if (br.containsHTML(">验证码输入错误，请返回页面重新输入")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
+            String continueLink = br.getRegex("\"\\&downlink=(/downhtml/[^<>\"]*?)\";").getMatch(0);
+            if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage("http://www.400gb.com" + continueLink);
 
-        if (dllink == null) {
-            dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\" id=\"local_free\">").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\"").getMatch(0);
-                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\" id=\"local_free\">").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\"").getMatch(0);
+                    if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = Encoding.Base64Decode(Encoding.htmlDecode(dllink));
+                if (!dllink.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = Encoding.Base64Decode(Encoding.htmlDecode(dllink));
-            if (!dllink.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         // Check if link is working. If not try mirror. Limits can be
@@ -170,7 +173,12 @@ public class CtDiskCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            login(account, false);
+            br.getPage("http://home.400gb.com/mydisk.php");
+            /** Only re-login if cookies are not valid anymore */
+            if (br.containsHTML("alert\\(\"请先 登录 或 注册会员后再继续使用本功能")) {
+                login(account, true);
+            }
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -213,7 +221,7 @@ public class CtDiskCom extends PluginForHost {
             final String downHTML = br.getRegex("(\\'|\")(/downhtml/[^<>\"]*?\\.html)(\\'|\")").getMatch(1);
             if (downHTML == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage("http://www.400gb.com" + downHTML);
-            final String vipLinks = br.getRegex("<div class=\"viplist\">(.*?)<div class=\"freelist\">").getMatch(0);
+            final String vipLinks = br.getRegex("<div class=\"viplist\">(.*?)<table class=\"intro_text\"").getMatch(0);
             if (vipLinks == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dllink = new Regex(vipLinks, "<a href=\"(.*?)\"").getMatch(0);
         }

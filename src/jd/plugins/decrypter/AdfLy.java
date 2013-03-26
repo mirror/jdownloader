@@ -57,6 +57,10 @@ public class AdfLy extends PluginForDecrypt {
                 logger.info("adf.ly link offline: " + parameter);
                 return decryptedLinks;
             }
+            if (br.containsHTML("Sorry, there has been a problem\\.")) {
+                logger.info("adf.ly link offline: " + parameter);
+                return decryptedLinks;
+            }
             finallink = br.getRedirectLocation();
             if (finallink == null) {
                 finallink = br.getRegex("\\.attr\\((\"|\\')href(\"|\\'), \\'(.*?)\\'\\)").getMatch(2);

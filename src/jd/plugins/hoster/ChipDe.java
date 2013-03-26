@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.(eu|asia)/.{2})/.*?_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.(eu|asia)/.{2})/(?!download\\-manager\\-for\\-free\\-zum\\-download).*?_\\d+\\.html" }, flags = { 0 })
 public class ChipDe extends PluginForHost {
 
     public ChipDe(PluginWrapper wrapper) {

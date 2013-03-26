@@ -49,7 +49,7 @@ public class MangaInnCom extends PluginForDecrypt {
         final DecimalFormat df = new DecimalFormat("0000");
         for (final String page : pages) {
             if (!page.equals("1")) br.getPage(parameter + "/page_" + page);
-            final String finallink = br.getRegex("\"(http://static\\d+\\.mangainn\\.com/mangas/\\d+/\\d+/[^<>\"]*?)\"").getMatch(0);
+            final String finallink = br.getRegex("\"(http://static(\\d+)?\\.mangainn\\.com/mangas/\\d+/\\d+/[^<>\"]*?)\"").getMatch(0);
             final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
             dl.setFinalFileName(fpName + "_" + df.format(Integer.parseInt(page)) + finallink.substring(finallink.lastIndexOf(".")));
             dl.setAvailable(true);

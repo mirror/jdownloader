@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl//?(?!action/).+|chomikujpagedecrypt\\.pl/.*?,\\d+$)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl//?[^<>\"]+|chomikujpagedecrypt\\.pl/.*?,\\d+$)" }, flags = { 0 })
 public class ChoMikujPl extends PluginForDecrypt {
 
     public ChoMikujPl(PluginWrapper wrapper) {
@@ -54,10 +54,15 @@ public class ChoMikujPl extends PluginForDecrypt {
     private static final String PAGEDECRYPTLINK          = "http://chomikujpagedecrypt\\.pl/.*?\\d+";
     private static final String ENDINGS                  = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip)";
     private static final String VIDEOENDINGS             = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
+    private static final String UNSUPPORTED              = "http://(www\\.)?chomikuj\\.pl//?(action/[^<>\"]+|(Media|Kontakt|PolitykaPrywatnosci|Empty|Abuse|Sugestia|LostPassword|zmiany|Regulamin|Platforma)\\.aspx|favicon\\.ico)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("chomikujpagedecrypt.pl/", "chomikuj.pl/").replace("chomikuj.pl//", "chomikuj.pl/");
+        if (parameter.matches(UNSUPPORTED)) {
+            logger.info("Unsupported/invalid link: " + parameter);
+            return decryptedLinks;
+        }
         String linkending = null;
         if (parameter.contains(",")) linkending = parameter.substring(parameter.lastIndexOf(","));
         if (linkending == null) linkending = parameter.substring(parameter.lastIndexOf("/") + 1);

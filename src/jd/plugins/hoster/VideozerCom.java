@@ -87,7 +87,7 @@ public class VideozerCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Video is not available \\- It has been removed by the uploader")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("<div class=\"error_404\">")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         br.getPage("http://www.videozer.com/player_control/settings.php?v=" + new Regex(downloadLink.getDownloadURL(), "videozer\\.com/video/(.+)").getMatch(0) + "&fv=v1.1.14");
         if (br.containsHTML("(\"The page you have requested cannot be found|>The web page you were attempting to view may not exist or may have moved|>Please try to check the web address for typos)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("\"video\":\\{\"title\":\"(.*?)\"").getMatch(0);

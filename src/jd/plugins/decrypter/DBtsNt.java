@@ -63,7 +63,12 @@ public class DBtsNt extends PluginForDecrypt {
                 return decryptedLinks;
             }
         } else if (type.equals("liveset")) {
+            br.setFollowRedirects(true);
             br.getPage(parameter.toString());
+            if (br.getURL().contains("audiobeats.net/error?")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             fpName = br.getRegex("rel=\"alternate\" type=\"application/rss\\+xml\" title=\"(.*?)\"").getMatch(0);
             String scloudID = br.getRegex("return ShowSoundcloud\\((\\d+)\\);\"").getMatch(0);
             if (scloudID != null) {

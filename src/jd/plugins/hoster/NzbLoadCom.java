@@ -82,7 +82,7 @@ public class NzbLoadCom extends PluginForHost {
         final Regex params = new Regex(downloadLink.getDownloadURL(), "http://(www\\.)?nzbload\\.com/en/download/([a-z0-9]+)/(\\d+)");
         final Browser br2 = br.cloneBrowser();
         br2.getPage("http://www.nzbload.com/tpl/download/" + params.getMatch(1) + ".js?version=1.050");
-        final String sleep = br2.getRegex("updateTimer = setTimeout\\(\\'checkProgress\\(\\);\\', (\\d+)\\);").getMatch(0);
+        final String sleep = br2.getRegex("redirectAfter\\(\\'/en/start\\', (\\d+)\\);").getMatch(0);
         if (sleep == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         br.getPage("http://www.nzbload.com/data/download.json?overwrite=start-download&t=" + System.currentTimeMillis() + "&sub=" + params.getMatch(1) + "&params[0]=" + params.getMatch(2));
@@ -91,7 +91,7 @@ public class NzbLoadCom extends PluginForHost {
         final String hash = get("hash");
         if (expiry == null || hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        sleep(Long.parseLong(sleep) + 500, downloadLink);
+        sleep(Long.parseLong(sleep) * 1000 + 500, downloadLink);
 
         String sessionSecret = areYouAHuman();
         String rcID = br.getRegex("challenge\\?k=([^\"]+)\"").getMatch(0);

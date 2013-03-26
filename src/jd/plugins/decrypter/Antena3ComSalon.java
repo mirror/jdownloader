@@ -35,7 +35,6 @@ public class Antena3ComSalon extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-    private static final String     SERIES         = "http://(www\\.)?antena3.com/videos/[A-Za-z0-9\\-]+\\.html";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink link, ProgressController progress) throws Exception {
@@ -44,7 +43,8 @@ public class Antena3ComSalon extends PluginForDecrypt {
             logger.info("Link offline: " + link.toString());
             return decryptedLinks;
         }
-        if (link.toString().matches(SERIES)) {
+        // No player -> Series link
+        if (!br.containsHTML("var player_capitulo=")) {
             final String[] videoPages = br.getRegex("<ul class=\"page\\d+\">(.*?)</ul>").getColumn(0);
             for (final String vList : videoPages) {
                 final String[] episodeList = new Regex(vList, "alt=\"[^<>\"/]+\"[\t\n\r ]+href=\"(/videos/[^<>\"]*?)\"").getColumn(0);
@@ -121,9 +121,14 @@ public class Antena3ComSalon extends PluginForDecrypt {
     }
 
     private String getXML() throws Exception {
-        String urlxml = br.getRegex("<link rel=\"video_src\" href=\"http://www.antena3.com/static/swf/A3Player.swf\\?xml=(.*?)\"/>").getMatch(0);
-        if (urlxml == null) urlxml = br.getRegex("name=\"flashvars\" value=\"xml=(http://[^<>\"]*?)\"").getMatch(0);
-        if (urlxml == null) urlxml = br.getRegex("player_capitulo\\.xml=\'([^\']+)\'").getMatch(0);
+        /** If it fails here, check if we still need those old regexes */
+        // String urlxml =
+        // br.getRegex("<link rel=\"video_src\" href=\"http://www.antena3.com/static/swf/A3Player.swf\\?xml=(.*?)\"/>").getMatch(0);
+        // if (urlxml == null) urlxml =
+        // br.getRegex("name=\"flashvars\" value=\"xml=(http://[^<>\"]*?)\"").getMatch(0);
+        // if (urlxml == null) urlxml =
+        // br.getRegex("player_capitulo\\.xml=\'([^\']+)\'").getMatch(0);
+        String urlxml = br.getRegex("player_capitulo\\.xml=\'([^\']+)\'").getMatch(0);
         if (urlxml == null) return null;
         return br.getPage(urlxml);
     }

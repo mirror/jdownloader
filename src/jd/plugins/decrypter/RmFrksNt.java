@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rom-freaks.net" }, urls = { "http://[\\w\\.]*?rom-freaks\\.net/(download-[0-9]+-file-.+|link-[0-9]-[0-9]+-file-.+|.+desc-name.+)\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rom-freaks.net" }, urls = { "http://(www\\.)?rom\\-freaks\\.net/(download\\-[0-9]+\\-file\\-.+|link\\-[0-9]\\-[0-9]+\\-file\\-.+|.+desc\\-name.+)\\.html" }, flags = { 0 })
 public class RmFrksNt extends PluginForDecrypt {
 
     public RmFrksNt(PluginWrapper wrapper) {

@@ -292,8 +292,7 @@ public class RapidGatorNet extends PluginForHost {
             if (freedlsizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.rapidgatornet.only4premium", "No free download link for this file"));
             final String reconnectWait = br.getRegex("Delay between downloads must be not less than (\\d+) min\\.<br>Don`t want to wait\\? <a style=\"").getMatch(0);
             if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWait) + 1) * 60 * 1000l);
-            String fid = new Regex(downloadLink.getDownloadURL(), "rapidgator\\.net/file/(\\d{3,})").getMatch(0);
-            if (fid == null) fid = br.getRegex("var fid = (\\d+);").getMatch(0);
+            String fid = br.getRegex("var fid = (\\d+);").getMatch(0);
             if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // far as I can tell it's not needed.
             final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);

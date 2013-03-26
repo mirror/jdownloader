@@ -65,7 +65,7 @@ public class DatPiffCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.datpiffcom.only4premium", ONLYREGISTEREDUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        if (br.containsHTML("(>Download Unavailable<|>A zip file has not yet been generated<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Download Unavailable<|>A zip file has not yet been generated<|>Mixtape Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (!link.getDownloadURL().contains(".php?id=")) {
             logger.warning("downID not found, link is broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
