@@ -60,7 +60,7 @@ public class FileForthCom extends PluginForHost {
     private static final String  MAINTENANCE         = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static Object LOCK                = new Object();
+    private static Object        LOCK                = new Object();
     private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
     // DEV NOTES
@@ -181,8 +181,7 @@ public class FileForthCom extends PluginForHost {
         }
 
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -633,4 +632,16 @@ public class FileForthCom extends PluginForHost {
         }
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
 }

@@ -44,8 +44,7 @@ public class MovieSandCom extends PluginForHost {
     }
 
     /**
-     * Other way to get direct downloadlinks: http://www.moviesand.com/emconfig/
-     * +videoID
+     * Other way to get direct downloadlinks: http://www.moviesand.com/emconfig/ +videoID
      */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {

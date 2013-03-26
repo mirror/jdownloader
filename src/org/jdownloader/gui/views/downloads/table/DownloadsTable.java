@@ -22,6 +22,7 @@ import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
+import jd.SecondLevelLaunch;
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
@@ -83,8 +84,26 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
         loaderPanel.add(loader);
 
-        JProgressBar ph = new JProgressBar();
-        ph.setString(_GUI._.DownloadsTable_DownloadsTable_object_wait_for_loading_links());
+        final JProgressBar ph = new JProgressBar();
+
+        ph.setString(_GUI._.DownloadsTable_DownloadsTable_init_plugins());
+
+        SecondLevelLaunch.HOST_PLUGINS_COMPLETE.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        ph.setString(_GUI._.DownloadsTable_DownloadsTable_object_wait_for_loading_links());
+
+                    }
+
+                };
+            }
+        });
+
         ph.setStringPainted(true);
         ph.setIndeterminate(true);
         loaderPanel.add(ph, "alignx center");

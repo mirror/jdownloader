@@ -56,7 +56,7 @@ public class FileFlushCom extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://fileflush.com";
-    private static Object LOCK        = new Object();
+    private static Object       LOCK        = new Object();
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(en|ru|fr|es|de)/file/", "file/"));
@@ -295,4 +295,16 @@ public class FileFlushCom extends PluginForHost {
         return -1;
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
 }

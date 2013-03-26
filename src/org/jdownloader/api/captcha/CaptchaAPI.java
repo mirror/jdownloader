@@ -2,8 +2,6 @@ package org.jdownloader.api.captcha;
 
 import java.util.List;
 
-import jd.controlling.IOPermission;
-
 import org.appwork.remoteapi.ApiDoc;
 import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.RemoteAPIInterface;
@@ -27,6 +25,6 @@ public interface CaptchaAPI extends RemoteAPIInterface {
 
     public boolean solve(final long id, String result);
 
-    public boolean abort(final long id, IOPermission.CAPTCHA what);
+    public boolean abort(final long id);
 
 }

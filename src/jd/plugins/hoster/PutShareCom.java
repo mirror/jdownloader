@@ -63,7 +63,7 @@ public class PutShareCom extends PluginForHost {
 
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static Object LOCK                = new Object();
+    private static Object       LOCK                = new Object();
 
     public PutShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -624,4 +624,16 @@ public class PutShareCom extends PluginForHost {
         }
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
 }

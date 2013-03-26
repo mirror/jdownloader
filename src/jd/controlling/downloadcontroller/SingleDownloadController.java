@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.controlling.AccountController;
-import jd.controlling.IOPermission;
 import jd.controlling.proxy.ProxyInfo;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -63,7 +62,7 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
 
-public class SingleDownloadController extends BrowserSettingsThread implements StateMachineInterface, IOPermission {
+public class SingleDownloadController extends BrowserSettingsThread implements StateMachineInterface {
 
     private static final Object             DUPELOCK          = new Object();
 
@@ -81,8 +80,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     private SingleDownloadControllerHandler handler           = null;
 
     private StateMachine                    stateMachine;
-
-    private IOPermission                    ioP               = null;
 
     private DownloadSpeedManager            connectionHandler = null;
 
@@ -675,7 +672,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             }
             livePlugin = downloadLink.getLivePlugin();
             if (livePlugin != null && originalPlugin != null) {
-                livePlugin.setIOPermission(ioP);
+
                 livePlugin.setLogger(downloadLogger);
 
                 /*
@@ -685,7 +682,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 if (originalPlugin != livePlugin) {
                     /* we have 2 different plugins -> multihoster */
                     originalPlugin.setBrowser(new Browser());
-                    originalPlugin.setIOPermission(ioP);
+
                     originalPlugin.setLogger(downloadLogger);
                     originalPlugin.setDownloadLink(downloadLink);
                 }
@@ -774,26 +771,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     public StateMachine getStateMachine() {
         return stateMachine;
-    }
-
-    protected void setIOPermission(IOPermission ioP) {
-        this.ioP = ioP;
-    }
-
-    @Override
-    public boolean isCaptchaAllowed(String hoster) {
-        IOPermission lIOP = ioP;
-        if (lIOP != null) return lIOP.isCaptchaAllowed(hoster);
-        return true;
-    }
-
-    @Override
-    public void setCaptchaAllowed(String hoster, CAPTCHA mode) {
-        IOPermission lIOP = ioP;
-        if (lIOP != null) {
-            lIOP.setCaptchaAllowed(hoster, mode);
-            return;
-        }
     }
 
 }

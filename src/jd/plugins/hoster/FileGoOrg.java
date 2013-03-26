@@ -89,8 +89,7 @@ public class FileGoOrg extends PluginForHost {
         // first try to get the streaming link (skips captcha)
         try {
             /**
-             * We could also use: http://filego.org/fghtml5.php?id=ID or
-             * http://filego.org/fgdivx.php?id=ID
+             * We could also use: http://filego.org/fghtml5.php?id=ID or http://filego.org/fgdivx.php?id=ID
              */
             br.getPage("http://filego.org/fgflash.php?id=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
             final String[] hits = br.getRegex("\\'(http://s\\d+\\.filego\\.org/[^<>\";]*?\\.mp4)\\'").getColumn(0);
@@ -230,4 +229,16 @@ public class FileGoOrg extends PluginForHost {
         return -1;
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
 }

@@ -19,6 +19,7 @@ import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.TransferHandler;
 
+import jd.SecondLevelLaunch;
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -86,8 +87,26 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
         loaderPanel.add(loader);
 
-        JProgressBar ph = new JProgressBar();
-        ph.setString(_GUI._.LinkGrabberTable_LinkGrabberTable_object_wait_for_loading_links());
+        final JProgressBar ph = new JProgressBar();
+
+        ph.setString(_GUI._.DownloadsTable_DownloadsTable_init_plugins());
+
+        SecondLevelLaunch.CRAWLERLIST_COMPLETE.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        ph.setString(_GUI._.LinkGrabberTable_LinkGrabberTable_object_wait_for_loading_links());
+
+                    }
+
+                };
+            }
+        });
+
         ph.setStringPainted(true);
         ph.setIndeterminate(true);
         loaderPanel.add(ph, "alignx center");

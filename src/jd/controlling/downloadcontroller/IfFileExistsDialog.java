@@ -52,7 +52,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     }
 
     @Override
-    protected String getDontShowAgainKey() {
+    public String getDontShowAgainKey() {
         return "IfFileExistsDialog_" + packageID;
     }
 

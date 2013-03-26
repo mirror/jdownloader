@@ -6,8 +6,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.controlling.IOPermission;
-
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIException;
@@ -151,21 +149,12 @@ public class CaptchaAPIImpl implements CaptchaAPI {
         return true;
     }
 
-    public boolean abort(long id, IOPermission.CAPTCHA what) {
+    public boolean abort(long id) {
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
         if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
 
-        ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
-
-        IOPermission io = challenge.getIoPermission();
-        if (io != null) {
-            if (IOPermission.CAPTCHA.BLOCKTHIS == what) {
-
-                job.kill();
-            } else {
-                io.setCaptchaAllowed(challenge.getPlugin().getHost(), what);
-            }
-        }
+        // ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
+        job.kill();
         return true;
     }
 

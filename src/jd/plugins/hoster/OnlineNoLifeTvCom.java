@@ -194,8 +194,8 @@ public class OnlineNoLifeTvCom extends PluginForHost {
             return AvailableStatus.TRUE;
         } else {
             /*
-             * Hier wird über die Kekse(Premium/Free) bestimmt welche Videoqualität man bekommt. Spart oben in den dlmethoden einige Zeilen an Code. Die Methode
-             * "setBrowserExclusive()" muss dabei deaktiviert sein.
+             * Hier wird über die Kekse(Premium/Free) bestimmt welche Videoqualität man bekommt. Spart oben in den dlmethoden einige Zeilen
+             * an Code. Die Methode "setBrowserExclusive()" muss dabei deaktiviert sein.
              */
 
             long ts = System.currentTimeMillis();

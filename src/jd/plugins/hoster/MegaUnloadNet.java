@@ -44,7 +44,7 @@ public class MegaUnloadNet extends PluginForHost {
         this.enablePremium();
     }
 
-    private static Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
     private static final String MAINPAGE = "http://megaunload.net/";
 
     @Override
@@ -81,8 +81,7 @@ public class MegaUnloadNet extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /**
-         * More connections possible but then we get server errors, SAME limits
-         * for free and registered (well they call it "premium")
+         * More connections possible but then we get server errors, SAME limits for free and registered (well they call it "premium")
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -14);
         if (dl.getConnection().getContentType().contains("html")) {

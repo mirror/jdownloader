@@ -85,8 +85,8 @@ public class DirectHTTP extends PluginForHost {
 
         /**
          * 
-         * DO NOT use in Plugins at the moment, cause the current nightly is not able to use this function, directHTTP is included in jar and not updatable at
-         * the moment
+         * DO NOT use in Plugins at the moment, cause the current nightly is not able to use this function, directHTTP is included in jar
+         * and not updatable at the moment
          */
         public void findID() throws PluginException {
             this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
@@ -391,8 +391,8 @@ public class DirectHTTP extends PluginForHost {
                  * hotfix for synthetica license issues, as some java versions have broken aes support
                  */
                 /*
-                 * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this sourcecode, you have to
-                 * remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
+                 * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this
+                 * sourcecode, you have to remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
                  */
                 String[] li = { "Licensee=AppWork UG", "LicenseRegistrationNumber=289416475", "Product=Synthetica", "LicenseType=Small Business License", "ExpireDate=--.--.----", "MaxVersion=2.999.999" };
                 javax.swing.UIManager.put("Synthetica.license.info", li);
@@ -682,7 +682,8 @@ public class DirectHTTP extends PluginForHost {
         if (custom != null && custom.size() > 0) {
             for (final Object header : custom) {
                 /*
-                 * this is needed because we no longer serialize the stuff, we use json as storage and it does not differ between String[] and ArrayList<String>
+                 * this is needed because we no longer serialize the stuff, we use json as storage and it does not differ between String[]
+                 * and ArrayList<String>
                  */
                 if (header instanceof ArrayList) {
                     br.getHeaders().put((String) ((ArrayList<?>) header).get(0), (String) ((ArrayList<?>) header).get(1));
@@ -729,4 +730,8 @@ public class DirectHTTP extends PluginForHost {
         }
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }

@@ -36,7 +36,7 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.decryptednaszaplasa/profile/\\d+/gallery/album/\\d+/\\d+\\?naszaplasalink" }, flags = { 2 })
 public class NaszaKlasa extends PluginForHost {
 
-    private static Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
     private static final String MAINPAGE = "www.nk.pl";
     private static final String USERTEXT = "Only downloadable for registered users!";
 

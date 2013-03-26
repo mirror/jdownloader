@@ -2,6 +2,7 @@ package org.jdownloader.captcha.v2.solver.gui;
 
 import jd.controlling.captcha.BasicCaptchaDialogHandler;
 import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
@@ -33,7 +34,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     }
 
     @Override
-    public void solve(final SolverJob<String> job) throws InterruptedException {
+    public void solve(final SolverJob<String> job) throws InterruptedException, SkipException {
         synchronized (this) {
 
             if (job.getChallenge() instanceof BasicCaptchaChallenge) {

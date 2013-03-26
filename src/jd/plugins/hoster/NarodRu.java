@@ -68,8 +68,7 @@ public class NarodRu extends PluginForHost {
         String passCode = null;
         for (int i = 1; i <= 10; i++) {
             /*
-             * first check because of our little workaround we no longer need a
-             * captcha ;)
+             * first check because of our little workaround we no longer need a captcha ;)
              */
             if (br.containsHTML("href=\"/disk/start/")) break;
             br.getPage("http://narod.ru/disk/getcapchaxml/?rnd=1");
@@ -154,5 +153,10 @@ public class NarodRu extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
     }
 }

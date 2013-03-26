@@ -140,8 +140,7 @@ public class NoPremiumPl extends PluginForHost {
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, response, true, 0);
         /*
-         * I realy wanted to use Content Disposition below, but it just don't
-         * work for resume at hotfile
+         * I realy wanted to use Content Disposition below, but it just don't work for resume at hotfile
          */
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
             br.followConnection();

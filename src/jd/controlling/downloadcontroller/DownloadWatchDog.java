@@ -29,14 +29,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
-import jd.controlling.IOPermission;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IPController;
-import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -63,7 +61,6 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.DownloadLinkWalker;
@@ -76,7 +73,7 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
 
-public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener, IOPermission, FileCreationListener {
+public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener, FileCreationListener {
 
     /*
      * inner class to provide everything thats needed in order to start a download
@@ -146,8 +143,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private DownloadSpeedManager                                            dsm                    = null;
 
     private GeneralSettings                                                 config;
-
-    private HashSet<String>                                                 captchaBlockedHoster   = new HashSet<String>();
 
     private final static DownloadWatchDog                                   INSTANCE               = new DownloadWatchDog();
 
@@ -407,12 +402,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (linksForce == null || linksForce.size() == 0) return;
         IOEQ.add(new Runnable() {
             public void run() {
+
+                for (DownloadLink l : linksForce) {
+                    l.setSkipped(false);
+                }
                 if (DownloadWatchDog.this.stateMachine.isState(STOPPING_STATE)) {
                     /*
                      * controller will shutdown soon or is paused, so no sense in forcing downloads now
                      */
                     return;
                 }
+
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
                      * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
@@ -1109,8 +1109,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     /* only allow to start when in FinalState(NOT_RUNNING) */
                     return;
                 }
-                /* new download session, we allow all captchas */
-                setCaptchaAllowed(null, CAPTCHA.OK);
+
                 /* set state to running */
                 stateMachine.setStatus(RUNNING_STATE);
                 /* remove stopsign if it is reached */
@@ -1146,7 +1145,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
              */
             dci.proxy.increaseActiveDownloads(dci.link.getHost());
         }
-        download.setIOPermission(this);
+
         download.getStateMachine().executeOnceOnState(new Runnable() {
 
             public void run() {
@@ -1482,37 +1481,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 return false;
             }
         });
-    }
-
-    public synchronized boolean isCaptchaAllowed(String hoster) {
-        if (captchaBlockedHoster.contains(null)) return false;
-        return !captchaBlockedHoster.contains(hoster);
-
-    }
-
-    public synchronized void setCaptchaAllowed(String hoster, CAPTCHA mode) {
-        switch (mode) {
-        case OK:
-            if (hoster != null && hoster.length() > 0) {
-                captchaBlockedHoster.remove(hoster);
-            } else {
-                captchaBlockedHoster.clear();
-            }
-            break;
-        case BLOCKALL:
-            captchaBlockedHoster.add(null);
-            break;
-        case BLOCKHOSTER:
-            captchaBlockedHoster.add(hoster);
-            break;
-        }
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                JDGui.getInstance().getStatusBar().updateDownloadwatchdogCaptchaIndicator(captchaBlockedHoster);
-            }
-        };
     }
 
     public void onNewFile(Object obj, final File[] list) {

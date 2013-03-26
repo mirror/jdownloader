@@ -185,7 +185,7 @@ public class RestartController implements ShutdownVetoListener {
             ConfirmDialog cd = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmToExit_(), _UPDATE._.RestartController_confirmToExit_msg(), AWUTheme.I().getIcon("exit", 32), null, null) {
 
                 @Override
-                protected String getDontShowAgainKey() {
+                public String getDontShowAgainKey() {
                     return "Exit - Are you sure?";
                 }
 

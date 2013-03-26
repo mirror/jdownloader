@@ -3,6 +3,12 @@ package org.jdownloader.captcha.v2;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
+import jd.controlling.captcha.SkipRequest;
+import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
@@ -14,13 +20,20 @@ public abstract class Challenge<T> {
         return id;
     }
 
+    abstract public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge);
+
     @SuppressWarnings("unchecked")
     public Challenge(String method, String explain2) {
         typeID = method;
         explain = explain2;
 
-        final Type superClass = this.getClass().getGenericSuperclass();
-        if (superClass instanceof Class) { throw new IllegalArgumentException("Wrong Construct"); }
+        Type superClass = this.getClass().getGenericSuperclass();
+        while (superClass instanceof Class) {
+
+            superClass = ((Class<?>) superClass).getGenericSuperclass();
+            if (superClass == null) throw new IllegalArgumentException("Wrong Construct");
+
+        }
         resultType = (Class<T>) ((ParameterizedType) superClass).getActualTypeArguments()[0];
     }
 
@@ -58,4 +71,28 @@ public abstract class Challenge<T> {
     }
 
     private ResponseList<T> result;
+
+    public static String getHost(Challenge<?> challenge) {
+
+        if (challenge instanceof ImageCaptchaChallenge) { return ((ImageCaptchaChallenge) challenge).getPlugin().getHost();
+
+        }
+        return null;
+    }
+
+    public static DownloadLink getDownloadLink(Challenge<?> challenge) {
+
+        Plugin plugin = getPlugin(challenge);
+        if (plugin == null) return null;
+        if (plugin instanceof PluginForHost) { return ((PluginForHost) plugin).getDownloadLink(); }
+        return null;
+    }
+
+    private static Plugin getPlugin(Challenge<?> challenge) {
+
+        if (challenge instanceof ImageCaptchaChallenge) { return ((ImageCaptchaChallenge) challenge).getPlugin();
+
+        }
+        return null;
+    }
 }

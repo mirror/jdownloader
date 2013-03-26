@@ -86,8 +86,7 @@ public class DumpRo extends PluginForHost {
     }
 
     /*
-     * /* public String getVersion() { return getVersion("$Revision$");
-     * }
+     * /* public String getVersion() { return getVersion("$Revision$"); }
      */
 
 }

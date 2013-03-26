@@ -51,8 +51,7 @@ public class KeezMoviesCom extends PluginForHost {
     }
 
     /**
-     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in
-     * JavaScript by Chris Veness
+     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
      * 
      * @see <a
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>

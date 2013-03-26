@@ -49,7 +49,7 @@ public class DoriDroNet extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("doridrodecrypted.net/", "doridro.net/"));
     }
 
-    private static Object LOCK        = new Object();
+    private static Object       LOCK        = new Object();
     private static final String COOKIE_HOST = "http://doridro.net/";
 
     @Override
@@ -127,4 +127,8 @@ public class DoriDroNet extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }

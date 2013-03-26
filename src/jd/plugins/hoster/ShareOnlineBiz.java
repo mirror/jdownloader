@@ -327,8 +327,7 @@ public class ShareOnlineBiz extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /*
-         * because of You have got max allowed threads from same download
-         * session
+         * because of You have got max allowed threads from same download session
          */
         return 10;
     }
@@ -406,8 +405,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     if (System.currentTimeMillis() - ret < waitNoFreeSlot) {
                         if (downloadLink.getLinkStatus().getRetryCount() >= 5) {
                             /*
-                             * reset counter this error does not cause plugin to
-                             * stop
+                             * reset counter this error does not cause plugin to stop
                              */
                             downloadLink.getLinkStatus().setRetryCount(0);
                         }
@@ -423,8 +421,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     if (System.currentTimeMillis() - ret < waitOverloadedServer) {
                         if (downloadLink.getLinkStatus().getRetryCount() >= 5) {
                             /*
-                             * reset counter this error does not cause plugin to
-                             * stop
+                             * reset counter this error does not cause plugin to stop
                              */
                             downloadLink.getLinkStatus().setRetryCount(0);
                         }
@@ -592,8 +589,7 @@ public class ShareOnlineBiz extends PluginForHost {
             if (valid == false) valid = a != null && !"not_available".equalsIgnoreCase(a);
             if (valid == false) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             /*
-             * check expire date, expire >0 (normal handling) expire<0 (never
-             * expire)
+             * check expire date, expire >0 (normal handling) expire<0 (never expire)
              */
             final Long validUntil = Long.parseLong(infos.get("expire_date"));
             if (validUntil > 0 && System.currentTimeMillis() / 1000 > validUntil) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired! || Account abgelaufen!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -657,4 +653,16 @@ public class ShareOnlineBiz extends PluginForHost {
         return true;
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
 }

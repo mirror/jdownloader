@@ -64,8 +64,7 @@ public class LetitBitNet extends PluginForHost {
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
     /*
-     * For linkcheck and premium download we're using their API:
-     * http://api.letitbit.net/reg/static/api.pdf
+     * For linkcheck and premium download we're using their API: http://api.letitbit.net/reg/static/api.pdf
      */
     public static final String   APIKEY                            = "VjR1U3JGUkNx";
     public static final String   APIPAGE                           = "http://api.letitbit.net/";
@@ -147,8 +146,8 @@ public class LetitBitNet extends PluginForHost {
     }
 
     /**
-     * Important: Always sync this code with the vip-file.com, shareflare.net
-     * and letitbit.net plugins Limits: 20 * 50 = 1000 links per minute
+     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per
+     * minute
      * */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -164,8 +163,7 @@ public class LetitBitNet extends PluginForHost {
                 links.clear();
                 while (true) {
                     /*
-                     * we test 50 links at once (probably we could check even
-                     * more)
+                     * we test 50 links at once (probably we could check even more)
                      */
                     if (index == urls.length || links.size() > 50) {
                         break;
@@ -403,8 +401,7 @@ public class LetitBitNet extends PluginForHost {
             final Browser br2 = br.cloneBrowser();
             prepareBrowser(br2);
             /*
-             * this causes issues in 09580 stable, no workaround known, please
-             * update to latest jd version
+             * this causes issues in 09580 stable, no workaround known, please update to latest jd version
              */
             br2.getHeaders().put("Content-Length", "0");
             br2.postPage(ajaxmainurl + "/ajax/download3.php", "");
@@ -525,8 +522,7 @@ public class LetitBitNet extends PluginForHost {
                     }
                 }
                 /*
-                 * we must save the cookies, because letitbit only allows 100
-                 * logins per 24hours
+                 * we must save the cookies, because letitbit only allows 100 logins per 24hours
                  */
                 br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie(COOKIE_HOST, "log");
@@ -601,8 +597,7 @@ public class LetitBitNet extends PluginForHost {
             if (dlUrl == null && br.containsHTML("If you already have a premium")) {
                 if (freshLogin == false) {
                     /*
-                     * no fresh login, ip could have changed, remove cookies and
-                     * retry with fresh login
+                     * no fresh login, ip could have changed, remove cookies and retry with fresh login
                      */
                     synchronized (LOCK) {
                         account.setProperty("cookies", null);
@@ -627,8 +622,7 @@ public class LetitBitNet extends PluginForHost {
             if (br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             if (br.containsHTML("callback_tied_to_another")) {
                 /*
-                 * premium code is bound to a registered account,must login with
-                 * username/password
+                 * premium code is bound to a registered account,must login with username/password
                  */
                 AccountInfo ai = account.getAccountInfo();
                 if (ai != null) ai.setStatus("You must login with username/password!");
@@ -732,8 +726,7 @@ public class LetitBitNet extends PluginForHost {
 
     private void prepareBrowser(final Browser br) {
         /*
-         * last time they did not block the user-agent, we just need this stuff
-         * below ;)
+         * last time they did not block the user-agent, we just need this stuff below ;)
          */
         if (br == null) { return; }
         br.getHeaders().put("Accept", "*/*");
@@ -776,4 +769,16 @@ public class LetitBitNet extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LetitBitNet.ENABLEUNLIMITEDSIMULTANMAXFREEDLS, JDL.L("plugins.hoster.letitbitnet.enableunlimitedsimultanfreedls", "Enable unlimited (20) max simultanious free downloads for non-skymonk mode (can cause problems, use at your own risc)")).setDefaultValue(false));
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
 }

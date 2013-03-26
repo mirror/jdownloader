@@ -2272,4 +2272,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Refresh" })
     String CaptchaDialog_layoutDialogContent_refresh();
 
+    @Default(lngs = { "en" }, values = { "Links have been skipped" })
+    String ChallengeDialogHandler_viaGUI_skipped_help_title();
+
+    @Default(lngs = { "en" }, values = { "Congrats! You found the 'Skip Captcha Downloads'-Feature!\r\nOne or more Downloadlinks have been skipped to avoid further Captcha Dialogs.\r\nIf you want to Download these links anyway, there are three options:\r\n\r\n  1. Restart Downloads\r\n  2. Rightclick -> More ->Reset Downloadlink\r\n  3. Rightclick -> Start Download" })
+    String ChallengeDialogHandler_viaGUI_skipped_help_msg();
+
+    @Default(lngs = { "en" }, values = { "Rebuilding Plugincache..." })
+    String DownloadsTable_DownloadsTable_init_plugins();
+
 }

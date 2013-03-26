@@ -34,7 +34,6 @@ import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
 import jd.SecondLevelLaunch;
-import jd.controlling.IOPermission.CAPTCHA;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerEvent;
@@ -310,22 +309,22 @@ public class StatusBarImpl extends JPanel implements StateEventListener {
         };
     }
 
-    public void updateDownloadwatchdogCaptchaIndicator(HashSet<String> captchaBlockedHoster) {
-        // reconnectIndicator = new ReconnectProgress();
-        // // IconedProcessIndicator;
-        // reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());
-        // reconnectIndicator.setIndeterminate(false);
-        // reconnectIndicator.setEnabled(false);
-        this.captchaBlockedHoster = new HashSet<String>(captchaBlockedHoster);
-        if (captchaBlockedHoster.size() == 0 && downloadWatchdogIndicator != null) {
-            removeProcessIndicator(lazyGetDownloadWatchdogIndicator());
-        } else if (captchaBlockedHoster.size() > 0) {
-            addProcessIndicator(lazyGetDownloadWatchdogIndicator());
-
-        }
-
-        ;
-    }
+    // public void updateDownloadwatchdogCaptchaIndicator(HashSet<String> captchaBlockedHoster) {
+    // // reconnectIndicator = new ReconnectProgress();
+    // // // IconedProcessIndicator;
+    // // reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());
+    // // reconnectIndicator.setIndeterminate(false);
+    // // reconnectIndicator.setEnabled(false);
+    // this.captchaBlockedHoster = new HashSet<String>(captchaBlockedHoster);
+    // if (captchaBlockedHoster.size() == 0 && downloadWatchdogIndicator != null) {
+    // removeProcessIndicator(lazyGetDownloadWatchdogIndicator());
+    // } else if (captchaBlockedHoster.size() > 0) {
+    // addProcessIndicator(lazyGetDownloadWatchdogIndicator());
+    //
+    // }
+    //
+    // ;
+    // }
 
     private JComponent lazyGetDownloadWatchdogIndicator() {
         if (downloadWatchdogIndicator != null) return downloadWatchdogIndicator;
@@ -356,7 +355,7 @@ public class StatusBarImpl extends JPanel implements StateEventListener {
                         }
 
                         public void actionPerformed(ActionEvent e) {
-                            DownloadWatchDog.getInstance().setCaptchaAllowed(null, CAPTCHA.OK);
+                            // DownloadWatchDog.getInstance().setCaptchaAllowed(null, CAPTCHA.OK);
                         }
 
                     });

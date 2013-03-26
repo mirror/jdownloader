@@ -104,11 +104,8 @@ public class VKontakteRuHoster extends PluginForHost {
             String filename = br.getRegex("var video_title = \\'([^<>\"]*?)\\';").getMatch(0);
             if (filename == null || server == null || uid == null || vtag == null || vkid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             /**
-             * Example max 480p:
-             * http://vk.com/video_ext.php?oid=98473820&id=161498981
-             * &hash=54de03caea4e60d4&hd=1 Only flv link:
-             * http://vk.com/video_ext
-             * .php?oid=98473820&id=162869788&hash=43ea1d4351a0ec1f
+             * Example max 480p: http://vk.com/video_ext.php?oid=98473820&id=161498981 &hash=54de03caea4e60d4&hd=1 Only flv link:
+             * http://vk.com/video_ext .php?oid=98473820&id=162869788&hash=43ea1d4351a0ec1f
              */
             String quality = null;
             String inbetween = "u" + uid + "/videos/" + vtag;
@@ -142,9 +139,8 @@ public class VKontakteRuHoster extends PluginForHost {
             br.postPage("http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
             final String correctedBR = br.toString().replace("\\", "");
             /**
-             * Try to get best quality and test links till a working link is
-             * found as it can happen that the found link is offline but others
-             * are online
+             * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but
+             * others are online
              */
             final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
             for (String q : qs) {
@@ -204,8 +200,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         /**
-         * Chunks disabled because (till now) this plugin only exists to
-         * download pictures
+         * Chunks disabled because (till now) this plugin only exists to download pictures
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, FINALLINK, true, MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {

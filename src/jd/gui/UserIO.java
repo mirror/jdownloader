@@ -24,6 +24,8 @@ import javax.swing.JFileChooser;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.gui.swing.dialog.MultiSelectionDialog;
@@ -41,7 +43,9 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -274,11 +278,21 @@ public class UserIO {
                 e = e + " - " + explain;
             }
 
-            ClickCaptchaChallenge c = new ClickCaptchaChallenge(linkCrawler, imagefile, e, plugin);
+            ClickCaptchaChallenge c = new ClickCaptchaChallenge(imagefile, e, plugin) {
+
+                @Override
+                public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
+                    return false;
+                }
+
+            };
             try {
                 ChallengeResponseController.getInstance().handle(c);
             } catch (InterruptedException e1) {
                 return null;
+            } catch (SkipException e1) {
+                Dialog.getInstance().showExceptionDialog("Error", "Not implemented yet", e1);
+                e1.printStackTrace();
             }
             // CaptchaHandler captchaController = new CaptchaHandler(linkCrawler, null, captchaFiles, null, e, plugin);
             // captchaController.setCaptchaType(CaptchaDialogInterface.CaptchaType.CLICK);

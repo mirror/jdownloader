@@ -8,6 +8,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import jd.controlling.captcha.SkipException;
+
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
@@ -102,7 +104,7 @@ public abstract class ChallengeSolver<T> {
         threadPool.allowCoreThreadTimeOut(true);
     }
 
-    public abstract void solve(SolverJob<T> solverJob) throws InterruptedException, SolverException;
+    public abstract void solve(SolverJob<T> solverJob) throws InterruptedException, SolverException, SkipException;
 
     public Class<T> getResultType() {
         return resultType;

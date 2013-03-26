@@ -252,8 +252,7 @@ public class Youtube extends PluginForHost {
                 String checkConnection = br.getRegex("iframeUri: '(https.*?)'").getMatch(0);
                 if (checkConnection != null) {
                     /*
-                     * dont know if this is important but seems to set pstMsg to
-                     * 1 ;)
+                     * dont know if this is important but seems to set pstMsg to 1 ;)
                      */
                     checkConnection = unescape(checkConnection);
                     br.cloneBrowser().getPage(checkConnection);

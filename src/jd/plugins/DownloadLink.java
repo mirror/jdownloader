@@ -522,7 +522,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void abort() {
         SingleDownloadController dlc = getDownloadLinkController();
-        if (dlc != null) dlc.abortDownload();
+        if (dlc != null) {
+
+            dlc.abortDownload();
+        }
     }
 
     /**
@@ -574,6 +577,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         linkStatus.reset();
         addDownloadTime(-1);
         this.availableStatus = AvailableStatus.UNCHECKED;
+        setSkipped(false);
         this.setEnabled(true);
         deleteFile(true, true);
         setFinalFileName(null);
@@ -713,10 +717,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * changes the enabled status of this DownloadLink, aborts download if its currently running
      */
     public void setSkipped(boolean isSkipped) {
-        this.getLinkStatus().removeStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        // this.getLinkStatus().removeStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         boolean changed = this.skipped != isSkipped;
+        if (!changed) return;
         this.skipped = isSkipped;
-        if (isSkipped == false) {
+        if (isSkipped == true) {
             abort();
         }
         if (isSkipped == true) {

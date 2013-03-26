@@ -186,8 +186,7 @@ public class ZeveraCom extends PluginForHost {
             return;
         } else {
             /*
-             * download is not contentdisposition, so remove this host from
-             * premiumHosts list
+             * download is not contentdisposition, so remove this host from premiumHosts list
              */
             br.followConnection();
         }
@@ -248,8 +247,7 @@ public class ZeveraCom extends PluginForHost {
             String[] hosts = new Regex(hostsSup, "([^,]+)").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             /*
-             * set ArrayList<String> with all supported multiHosts of this
-             * service
+             * set ArrayList<String> with all supported multiHosts of this service
              */
             ai.setProperty("multiHostSupport", supportedHosts);
         } catch (Throwable e) {

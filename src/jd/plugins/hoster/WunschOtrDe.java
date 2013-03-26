@@ -87,8 +87,7 @@ public class WunschOtrDe extends PluginForHost {
             br.getPage("http://wunsch-otr.de/warteschlange.inc.php?frame=ja&dontplay=");
             for (int i = 0; i <= 400; i++) {
                 /**
-                 * Weil auch alle anderen Downloads hier aufgelistet sind müssen
-                 * wir sichergehen, dass wir den richtigen Link bekommen
+                 * Weil auch alle anderen Downloads hier aufgelistet sind müssen wir sichergehen, dass wir den richtigen Link bekommen
                  */
                 dllink = br.getRegex("title=\"Du kannst nun Downloaden\" border=\"0\" /></a></td> <td>~\\d+</td> <td><a href=\"(http://wunsch\\-otr\\.de/\\?file=" + downloadLink.getName() + ")\"").getMatch(0);
                 if (dllink == null) {

@@ -57,8 +57,7 @@ public class YourFreePornUs extends PluginForHost {
         if (br.getURL().contains("/error/video_missing") || br.containsHTML(">This video cannot be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = null;
         /**
-         * Limit reached? We don't care, we can get the filename from the url
-         * and still start the download
+         * Limit reached? We don't care, we can get the filename from the url and still start the download
          */
         if (!br.containsHTML(VIDEOTHERE)) {
             filename = new Regex(downloadLink.getDownloadURL(), "yourfreeporn\\.us/video/\\d+/([a-z0-9\\-_]+)").getMatch(0);

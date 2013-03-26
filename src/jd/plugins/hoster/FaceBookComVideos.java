@@ -187,8 +187,7 @@ public class FaceBookComVideos extends PluginForHost {
             loginForm.put("pass", Encoding.urlEncode(account.getPass()));
             br.submitForm(loginForm);
             /**
-             * Facebook thinks we're an unknown device, now we prove we're not
-             * ;)
+             * Facebook thinks we're an unknown device, now we prove we're not ;)
              */
             if (br.containsHTML("/checkpoint/")) {
                 br.getPage("https://www.facebook.com/checkpoint/");

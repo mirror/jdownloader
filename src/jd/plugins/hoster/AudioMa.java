@@ -15,7 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
-import java.io.IOException;
+
+import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -25,7 +26,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
 
 @HostPlugin(revision = "$Revision: 18859 $", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/song/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
 public class AudioMa extends PluginForHost {

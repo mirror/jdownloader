@@ -44,11 +44,10 @@ public class WyslijPlikPl extends PluginForHost {
     /*
      * Note:
      * 
-     * Simultan DL Limits are not implemented yet: - no limits for up to 250mb
-     * files - 5 300MB Downloads - 3 500MB Downloads - 1 1GB Download
+     * Simultan DL Limits are not implemented yet: - no limits for up to 250mb files - 5 300MB Downloads - 3 500MB Downloads - 1 1GB
+     * Download
      * 
-     * Well that's what i found in the faq - so the limits depend on the
-     * filesize Would also need more testlinks to bigger files...
+     * Well that's what i found in the faq - so the limits depend on the filesize Would also need more testlinks to bigger files...
      */
     @Override
     public int getMaxSimultanFreeDownloadNum() {
@@ -78,8 +77,7 @@ public class WyslijPlikPl extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         /*
-         * there won't be a error-message if dl does not exist, so check whether
-         * dl link is available
+         * there won't be a error-message if dl does not exist, so check whether dl link is available
          */
         if (br.containsHTML("<a href='http://\\w{2}\\.wyslijplik\\.pl/get\\.php\\?gid=\\w{8}'.*?</a>")) {
             String filename = br.getRegex("<td width='230'><a href='.*?'  title=\"(.*?)\\.\"><b>").getMatch(0);

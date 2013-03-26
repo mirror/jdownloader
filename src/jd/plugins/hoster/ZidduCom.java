@@ -86,8 +86,7 @@ public class ZidduCom extends PluginForHost {
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
         /*
-         * Folgendes nicht optimal da bei .isContentDisposition == false immer
-         * angenommen wird dass das Captcha falsch war.
+         * Folgendes nicht optimal da bei .isContentDisposition == false immer angenommen wird dass das Captcha falsch war.
          */
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
@@ -119,4 +118,8 @@ public class ZidduCom extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }

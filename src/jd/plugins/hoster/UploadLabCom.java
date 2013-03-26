@@ -65,8 +65,7 @@ public class UploadLabCom extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /**
-         * Limits not tested because download never worked (always 404 server
-         * error)
+         * Limits not tested because download never worked (always 404 server error)
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -88,8 +87,7 @@ public class UploadLabCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         /**
-         * Limits not tested because download never worked (always 404 server
-         * error)
+         * Limits not tested because download never worked (always 404 server error)
          */
         return 1;
     }

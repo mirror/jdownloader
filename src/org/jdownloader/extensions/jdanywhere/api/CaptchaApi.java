@@ -3,14 +3,13 @@ package org.jdownloader.extensions.jdanywhere.api;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.controlling.IOPermission;
-
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.extensions.jdanywhere.api.interfaces.CAPTCHA;
 import org.jdownloader.extensions.jdanywhere.api.interfaces.ICaptchaApi;
 import org.jdownloader.extensions.jdanywhere.api.storable.CaptchaJob;
 
@@ -52,8 +51,8 @@ public class CaptchaApi implements ICaptchaApi {
         return cpAPI.solve(id, result);
     }
 
-    public boolean abort(long id, IOPermission.CAPTCHA what) {
-        return cpAPI.abort(id, what);
+    public boolean abort(long id, CAPTCHA what) {
+        return cpAPI.abort(id);
     }
 
 }

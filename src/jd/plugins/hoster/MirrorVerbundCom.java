@@ -79,8 +79,7 @@ public class MirrorVerbundCom extends PluginForHost {
         dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/dl_g/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             /**
-             * Limit erreicht? Wir müssen keine 2 Stunden warten, 30 Minuten
-             * reichen
+             * Limit erreicht? Wir müssen keine 2 Stunden warten, 30 Minuten reichen
              */
             if (br.containsHTML("(>Du darfst als Gast max\\.|Mehr Infos auf der Startseite</b>)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
             String warte = br.getRegex("\\'(warte\\.php\\?co2=[^<>\"\\']+)\\'").getMatch(0);

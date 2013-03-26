@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 
 import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
@@ -88,7 +90,29 @@ public class ChallengeResponseController {
     private List<SolverJob<?>>          activeJobs = new ArrayList<SolverJob<?>>();
     private HashMap<Long, SolverJob<?>> idToJobMap = new HashMap<Long, SolverJob<?>>();
 
-    public <T> void handle(final Challenge<T> c) throws InterruptedException {
+    /**
+     * When one job gets a skiprequest, we have to check all pending jobs if this skiprequest affects them as well. if so, we have to skip
+     * them as well.
+     * 
+     * @param skipRequest
+     * @param solver
+     * @param challenge
+     */
+    public <T> void setSkipRequest(SkipRequest skipRequest, ChallengeSolver<T> solver, Challenge<T> sourceChallenge) {
+        synchronized (activeJobs) {
+
+            for (SolverJob<?> job : activeJobs) {
+                if (job.getChallenge() == sourceChallenge) {
+                    job.setSkipRequest(skipRequest);
+                } else if (job.getChallenge().canBeSkippedBy(skipRequest, solver, sourceChallenge)) {
+                    job.setSkipRequest(skipRequest);
+                }
+            }
+
+        }
+    }
+
+    public <T> void handle(final Challenge<T> c) throws InterruptedException, SkipException {
 
         ArrayList<ChallengeSolver<T>> solver = null;
         LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
@@ -128,13 +152,14 @@ public class ChallengeResponseController {
                 logger.info("Notified");
 
             }
-
+            if (job.getSkipRequest() != null) { throw new SkipException(job.getSkipRequest()); }
             logger.info("All Responses: " + job.getResponses());
-            logger.info("Solvong Done. Result: " + job.getResponse());
+            logger.info("Solving Done. Result: " + job.getResponse());
         } catch (InterruptedException e) {
             // for example downloads have been stopped
 
             job.kill();
+            throw e;
         } finally {
             try {
                 synchronized (activeJobs) {
@@ -165,4 +190,5 @@ public class ChallengeResponseController {
     public SolverJob<?> getJobById(long id) {
         return idToJobMap.get(id);
     }
+
 }

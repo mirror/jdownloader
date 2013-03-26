@@ -26,7 +26,7 @@ public class Oceanus extends PluginForDecrypt {
         PluginForHost oceanus = JDUtilities.getNewPluginForHostInstance("oceanus.ch");
         oceanus.setLogger(getLogger());
         oceanus.setBrowser(getBrowser());
-        oceanus.setIOPermission(getIOPermission());
+
         Long uploadID = getUploadId(parameter.getCryptedUrl());
         if (uploadID != null) {
             String downloadXML = ((jd.plugins.hoster.Oceanus) oceanus).sendDownloadRequest(uploadID);

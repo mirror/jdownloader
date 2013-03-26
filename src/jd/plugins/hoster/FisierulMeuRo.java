@@ -48,8 +48,7 @@ public class FisierulMeuRo extends PluginForHost {
 
     // @Override
     /*
-     * /* public String getVersion() { return getVersion("$Revision$");
-     * }
+     * /* public String getVersion() { return getVersion("$Revision$"); }
      */
 
     // @Override

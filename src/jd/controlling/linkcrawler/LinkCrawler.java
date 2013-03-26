@@ -16,7 +16,6 @@ import java.util.regex.Pattern;
 
 import jd.config.Property;
 import jd.controlling.IOEQ;
-import jd.controlling.IOPermission;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.http.Browser;
 import jd.parser.html.HTMLParser;
@@ -44,7 +43,7 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 
-public class LinkCrawler implements IOPermission {
+public class LinkCrawler {
 
     private LazyHostPlugin              directHTTP                  = null;
     private LazyHostPlugin              ftp                         = null;
@@ -65,7 +64,6 @@ public class LinkCrawler implements IOPermission {
     private LinkCrawlerHandler          handler                     = null;
     protected static ThreadPoolExecutor threadPool                  = null;
 
-    private HashSet<String>             captchaBlockedHoster        = new HashSet<String>();
     private LinkCrawlerFilter           filter                      = null;
     private volatile boolean            allowCrawling               = true;
     private AtomicInteger               crawlerGeneration           = new AtomicInteger(0);
@@ -789,7 +787,7 @@ public class LinkCrawler implements IOPermission {
                         lct.setVerbose(true);
                         lct.setDebug(true);
                     }
-                    wplg.setIOPermission(this);
+
                     wplg.setBrowser(new Browser());
                     wplg.setLogger(logger);
                     String url = possibleCryptedLink.getURL();
@@ -1092,7 +1090,7 @@ public class LinkCrawler implements IOPermission {
                 LogController.CL().log(e1);
                 return;
             }
-            wplg.setIOPermission(this);
+
             wplg.setBrowser(new Browser());
             LogSource logger = null;
             Logger oldLogger = null;
@@ -1213,6 +1211,7 @@ public class LinkCrawler implements IOPermission {
                 }
                 long startTime = System.currentTimeMillis();
                 try {
+                    wplg.setCrawler(this);
                     wplg.setLinkCrawlerAbort(new LinkCrawlerAbort(generation, this));
                     decryptedPossibleLinks = wplg.decryptLink(cryptedLink);
                     /* in case we return normally, clear the logger */
@@ -1441,41 +1440,4 @@ public class LinkCrawler implements IOPermission {
         return this.handler;
     }
 
-    /**
-     * checks if the given host is allowed to ask for Captcha.
-     * 
-     * if a parentCrawler does exist, the state of the parentCrawler is returned
-     */
-    public synchronized boolean isCaptchaAllowed(String hoster) {
-        if (this.parentCrawler != null) return this.parentCrawler.isCaptchaAllowed(hoster);
-        if (captchaBlockedHoster.contains(null)) return false;
-        return !captchaBlockedHoster.contains(hoster);
-    }
-
-    /**
-     * sets captchaAllowed state for given host.
-     * 
-     * if a parentCrawler does exist, the state is set in the parentCrawler
-     */
-    public synchronized void setCaptchaAllowed(String hoster, CAPTCHA mode) {
-        if (this.parentCrawler != null) {
-            this.parentCrawler.setCaptchaAllowed(hoster, mode);
-            return;
-        }
-        switch (mode) {
-        case OK:
-            if (hoster != null && hoster.length() > 0) {
-                captchaBlockedHoster.remove(hoster);
-            } else {
-                captchaBlockedHoster.clear();
-            }
-            break;
-        case BLOCKALL:
-            captchaBlockedHoster.add(null);
-            break;
-        case BLOCKHOSTER:
-            captchaBlockedHoster.add(hoster);
-            break;
-        }
-    }
 }

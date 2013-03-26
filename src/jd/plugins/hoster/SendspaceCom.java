@@ -67,8 +67,7 @@ public class SendspaceCom extends PluginForHost {
      * For premium we use their API: http://www.sendspace.com/dev_method.html
      */
     /**
-     * Usage: create a token, log in and then use the functions via method
-     * "apiRequest(String url, String data)
+     * Usage: create a token, log in and then use the functions via method "apiRequest(String url, String data)
      * */
     @Override
     public String getAGBLink() {
@@ -558,4 +557,16 @@ public class SendspaceCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
 }

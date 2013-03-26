@@ -24,9 +24,11 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
 import jd.config.SubConfiguration;
-import jd.controlling.IOPermission;
 import jd.controlling.ProgressController;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerAbort;
 import jd.controlling.linkcrawler.LinkCrawlerDistributer;
 import jd.http.Browser;
@@ -34,7 +36,9 @@ import jd.nutils.encoding.Encoding;
 
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -46,12 +50,13 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
  */
 public abstract class PluginForDecrypt extends Plugin {
 
-    private IOPermission           ioPermission = null;
-    private LinkCrawlerDistributer distributer  = null;
+    private LinkCrawlerDistributer distributer = null;
 
-    private LazyCrawlerPlugin      lazyC        = null;
-    private CrawledLink            currentLink  = null;
+    private LazyCrawlerPlugin      lazyC       = null;
+    private CrawledLink            currentLink = null;
     private LinkCrawlerAbort       linkCrawlerAbort;
+
+    private LinkCrawler            crawler;
 
     /**
      * @return the distributer
@@ -75,21 +80,6 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     public void setDistributer(LinkCrawlerDistributer distributer) {
         this.distributer = distributer;
-    }
-
-    /**
-     * @return the ioPermission
-     */
-    public IOPermission getIOPermission() {
-        return ioPermission;
-    }
-
-    /**
-     * @param ioPermission
-     *            the ioPermission to set
-     */
-    public void setIOPermission(IOPermission ioPermission) {
-        this.ioPermission = ioPermission;
     }
 
     public PluginForDecrypt() {
@@ -290,7 +280,9 @@ public abstract class PluginForDecrypt extends Plugin {
             Browser brc = br.cloneBrowser();
             try {
                 brc.getDownload(captchaFile, captchaAddress);
+
             } catch (Exception e) {
+
                 logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
@@ -327,24 +319,67 @@ public abstract class PluginForDecrypt extends Plugin {
      * @return
      * @throws DecrypterException
      */
-    protected String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
+    protected String getCaptchaCode(String method, File file, int flag, final CryptedLink link, String defaultValue, String explain) throws DecrypterException {
 
         String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
 
         if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
             file = new File(orgCaptchaImage);
         }
-        BasicCaptchaChallenge c = new BasicCaptchaChallenge(ioPermission, method, file, defaultValue, explain, this, flag);
+        BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag) {
+            @Override
+            public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
+                boolean ret;
+                switch (skipRequest) {
+
+                case BLOCK_ALL_CAPTCHAS:
+
+                    return true;
+
+                case BLOCK_HOSTER:
+
+                    return PluginForDecrypt.this.getHost().equals(Challenge.getHost(challenge));
+
+                default:
+                    return false;
+
+                }
+            }
+        };
         try {
             ChallengeResponseController.getInstance().handle(c);
         } catch (InterruptedException e) {
             logger.warning(Exceptions.getStackTrace(e));
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        } catch (SkipException e) {
+            Thread th = Thread.currentThread();
+            handleSkipRequest(e, link);
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
 
         if (!c.isSolved()) throw new DecrypterException(DecrypterException.CAPTCHA);
         return c.getResult().getValue();
 
+    }
+
+    public void handleSkipRequest(SkipException e, CryptedLink link) {
+        LinkCrawler linkCrawler = getCrawler();
+        switch (e.getSkipRequest()) {
+        case BLOCK_ALL_CAPTCHAS:
+
+            break;
+        case BLOCK_HOSTER:
+
+            break;
+
+        case BLOCK_PACKAGE:
+
+            break;
+
+        case SINGLE:
+
+            break;
+        }
     }
 
     protected void setBrowserExclusive() {
@@ -390,6 +425,14 @@ public abstract class PluginForDecrypt extends Plugin {
         LinkCrawlerAbort llinkCrawlerAbort = linkCrawlerAbort;
         if (llinkCrawlerAbort != null) return llinkCrawlerAbort.isAbort();
         return Thread.currentThread().isInterrupted();
+    }
+
+    public void setCrawler(LinkCrawler linkCrawler) {
+        crawler = linkCrawler;
+    }
+
+    public LinkCrawler getCrawler() {
+        return crawler;
     }
 
 }

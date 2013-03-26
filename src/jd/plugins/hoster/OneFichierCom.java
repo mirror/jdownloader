@@ -281,8 +281,7 @@ public class OneFichierCom extends PluginForHost {
         // that there are no credits available
         if ("error".equalsIgnoreCase(timeStamp) || ("0".equals(timeStamp) && freeCredits == null)) {
             /**
-             * Only used if the API fails and is wrong but that usually doesn't
-             * happen!
+             * Only used if the API fails and is wrong but that usually doesn't happen!
              */
             logger.info("Using site login because API is either wrong or no free credits...");
             br.postPage("https://www.1fichier.com/en/login.pl", "lt=on&Login=Login&secure=on&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + account.getPass());
@@ -407,8 +406,7 @@ public class OneFichierCom extends PluginForHost {
         }
         if ("FREE".equals(account.getStringProperty("type")) && account.getBooleanProperty("freeAPIdisabled")) {
             /**
-             * Only used if the API fails and is wrong but that usually doesn't
-             * happen!
+             * Only used if the API fails and is wrong but that usually doesn't happen!
              */
             doFree(link);
         } else {

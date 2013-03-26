@@ -2,6 +2,7 @@ package org.jdownloader.captcha.v2.solver.gui;
 
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.ClickCaptchaDialogHandler;
+import jd.controlling.captcha.SkipException;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.captcha.v2.ChallengeSolver;
@@ -26,7 +27,7 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
     }
 
     @Override
-    public void solve(SolverJob<ClickedPoint> solverJob) throws InterruptedException {
+    public void solve(SolverJob<ClickedPoint> solverJob) throws InterruptedException, SkipException {
         synchronized (DialogBasicCaptchaSolver.getInstance()) {
             if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
                 solverJob.waitFor(config.getJAntiCaptchaTimeout(), JACSolver.getInstance());

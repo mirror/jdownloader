@@ -48,7 +48,7 @@ public class FileJungleCom extends PluginForHost {
 
     private static final String CAPTCHAFAILED       = "\"error\":\"incorrect\\-captcha\\-sol\"";
     private static final String MAINPAGE            = "http://filejungle.com/";
-    private static Object LOCK                = new Object();
+    private static Object       LOCK                = new Object();
     private static final String DLYOURFILESUSERTEXT = "You can only download files which YOU uploaded!";
     private static final String DLYOURFILESTEXT     = "(>You can only retrieve files from FileJungle after logging in to your file manager|>Only files you have uploaded personally can be retrieved)";
 
@@ -73,8 +73,7 @@ public class FileJungleCom extends PluginForHost {
                 links.clear();
                 while (true) {
                     /*
-                     * we test 100 links at once - its tested with 500 links,
-                     * probably we could test even more at the same time...
+                     * we test 100 links at once - its tested with 500 links, probably we could test even more at the same time...
                      */
                     if (index == urls.length || links.size() > 100) {
                         break;
@@ -85,8 +84,7 @@ public class FileJungleCom extends PluginForHost {
                 int c = 0;
                 for (final DownloadLink dl : links) {
                     /*
-                     * append fake filename, because api will not report
-                     * anything else
+                     * append fake filename, because api will not report anything else
                      */
                     if (c > 0) {
                         sb.append("%0D%0A");
@@ -345,4 +343,16 @@ public class FileJungleCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
 }

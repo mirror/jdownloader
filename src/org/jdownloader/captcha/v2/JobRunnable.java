@@ -2,6 +2,8 @@ package org.jdownloader.captcha.v2;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+import jd.controlling.captcha.SkipException;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
@@ -56,6 +58,11 @@ public class JobRunnable<T> implements Runnable {
                 if (timeout != null) timeout.resetAndStart();
 
                 solver.solve(job);
+
+            } catch (SkipException e) {
+
+                ChallengeResponseController.getInstance().setSkipRequest(e.getSkipRequest(), solver, job.getChallenge());
+
             } catch (Throwable e) {
                 getJob().getLogger().log(e);
 

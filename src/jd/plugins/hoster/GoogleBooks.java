@@ -124,4 +124,8 @@ public class GoogleBooks extends PluginForHost {
 
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }

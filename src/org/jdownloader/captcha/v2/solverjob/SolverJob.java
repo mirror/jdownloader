@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipRequest;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
@@ -30,6 +31,8 @@ public class SolverJob<T> {
     private HashSet<ChallengeSolver<T>>   solverList;
 
     private LogSource                     logger;
+
+    private SkipRequest                   skipRequest;
 
     // private boolean canceled = false;
 
@@ -223,6 +226,22 @@ public class SolverJob<T> {
 
     public LogSource getLogger() {
         return logger;
+    }
+
+    public SkipRequest getSkipRequest() {
+        return skipRequest;
+    }
+
+    public void setSkipRequest(SkipRequest skipRequest) {
+        synchronized (this) {
+
+            if (this.skipRequest != null) return;
+            this.skipRequest = skipRequest;
+            if (skipRequest != null) {
+                getLogger().info("Got Skip Request:" + skipRequest);
+                kill();
+            }
+        }
     }
 
     // public void cancel() {

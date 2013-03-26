@@ -56,8 +56,7 @@ public class SlutLoadCom extends PluginForHost {
         }
         if (dllink == null) {
             /**
-             * Some videos are officially not available but still work when
-             * embedded in other sites, lets try to download those too
+             * Some videos are officially not available but still work when embedded in other sites, lets try to download those too
              */
             br.getPage("http://emb.slutload.com/xplayerconfig/" + new Regex(downloadLink.getDownloadURL(), "slutload\\.com/watch/([A-Za-z0-9]+)").getMatch(0) + ".css");
 

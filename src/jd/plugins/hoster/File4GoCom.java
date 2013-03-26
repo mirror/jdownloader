@@ -96,14 +96,10 @@ public class File4GoCom extends PluginForHost {
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
         /*
-         * Skip these: br.getHeaders().put("X-Requested-With",
-         * "XMLHttpRequest");
-         * br.postPage("http://www.file4go.com/recebe_id.php",
-         * "acao=cadastrar&id=" + new Regex(downloadLink.getDownloadURL(),
-         * "([a-z0-9]+)$").getMatch(0)); String dllink =
-         * br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0); if (dllink ==
-         * null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-         * dllink = dllUrl + dllink;
+         * Skip these: br.getHeaders().put("X-Requested-With", "XMLHttpRequest"); br.postPage("http://www.file4go.com/recebe_id.php",
+         * "acao=cadastrar&id=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0)); String dllink =
+         * br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0); if (dllink == null) throw new
+         * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); dllink = dllUrl + dllink;
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         /* resume no longer supported */
@@ -222,4 +218,16 @@ public class File4GoCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
 }

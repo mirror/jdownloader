@@ -105,11 +105,15 @@ public class SecondLevelLaunch {
 
     private static LogSource           LOG;
 
-    public static SingleReachableState INIT_COMPLETE = new SingleReachableState("INIT_COMPLETE");
-    public static SingleReachableState GUI_COMPLETE  = new SingleReachableState("GUI_COMPLETE");
+    public static SingleReachableState INIT_COMPLETE         = new SingleReachableState("INIT_COMPLETE");
+    public static SingleReachableState GUI_COMPLETE          = new SingleReachableState("GUI_COMPLETE");
+    public static SingleReachableState HOST_PLUGINS_COMPLETE = new SingleReachableState("HOST_PLG_COMPLETE");
+    public static SingleReachableState DOWNLOADLIST_COMPLETE = new SingleReachableState("DOWNLOADLIST_COMPLETE");
+    public static SingleReachableState CRAWLERLIST_COMPLETE  = new SingleReachableState("CRAWLERLIST_COMPLETE");
+    public static SingleReachableState EXTENSIONS_COMPLETE   = new SingleReachableState("EXTENSIONS_COMPLETE");
 
     private static File                FILE;
-    public final static long           startup       = System.currentTimeMillis();
+    public final static long           startup               = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;
 
@@ -453,6 +457,7 @@ public class SecondLevelLaunch {
                     @Override
                     public void run() {
                         try {
+
                             boolean jared = Application.isJared(SecondLevelLaunch.class);
                             ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipTimeout());
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
@@ -467,11 +472,15 @@ public class SecondLevelLaunch {
                                 CrawlerPluginController.invalidateCache();
                             }
                             HostPluginController.getInstance().ensureLoaded();
+                            HOST_PLUGINS_COMPLETE.setReached();
+
                             /* load links */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init DownloadLinks");
                             DownloadController.getInstance().initDownloadLinks();
+                            DOWNLOADLIST_COMPLETE.setReached();
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Linkgrabber");
                             LinkCollector.getInstance().initLinkCollector();
+                            CRAWLERLIST_COMPLETE.setReached();
                             /* start remote api */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init RemoteAPI");
                             RemoteAPIController.getInstance();
@@ -484,6 +493,7 @@ public class SecondLevelLaunch {
                                 ExtensionController.getInstance().invalidateCache();
                             }
                             ExtensionController.getInstance().init();
+                            EXTENSIONS_COMPLETE.setReached();
                             /* init clipboardMonitoring stuff */
                             if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
                                 ClipboardMonitoring.getINSTANCE().startMonitoring();

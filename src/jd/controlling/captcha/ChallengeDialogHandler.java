@@ -5,13 +5,10 @@ import java.awt.image.BufferedImage;
 import java.net.MalformedURLException;
 import java.util.logging.Logger;
 
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.DialogType;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
@@ -25,7 +22,6 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
-import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 
@@ -48,7 +44,7 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
         return host;
     }
 
-    public void run() throws InterruptedException {
+    public void run() throws InterruptedException, SkipException {
 
         viaGUI();
 
@@ -65,8 +61,8 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
         return logger;
     }
 
-    private void viaGUI() throws InterruptedException {
-        if (captchaChallenge.getIoPermission() != null && !captchaChallenge.getIoPermission().isCaptchaAllowed(getHost().getTld())) { return; }
+    private void viaGUI() throws InterruptedException, SkipException {
+
         DialogType dialogType = null;
         try {
 
@@ -98,77 +94,93 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
 
             /* no external response available */
             if (e.isCausedByInterrupt()) throw new InterruptedException("Dialog Interrupted");
-
-            switch (dialogType) {
-            case CRAWLER:
-
-                break;
-            case HOSTER:
-                ((PluginForHost) captchaChallenge.getPlugin()).getDownloadLink().setSkipped(true);
-                break;
-            }
+            throw new SkipException(SkipRequest.SINGLE);
+            // switch (dialogType) {
+            // case CRAWLER:
+            //
+            // break;
+            // case HOSTER:
+            // ((PluginForHost) captchaChallenge.getPlugin()).getDownloadLink().setSkipped(true);
+            //
+            // HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPED", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
+            // _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(),
+            // NewTheme.I().getIcon("skipped", 32));
+            // break;
+            // }
         } catch (HideCaptchasByHostException e) {
             // if (captchaChallenge.getIoPermission() != null) {
             // captchaChallenge.getIoPermission().setCaptchaAllowed(getHost().getTld(), CAPTCHA.BLOCKHOSTER);
             // }
-            switch (dialogType) {
-            case CRAWLER:
-
-                break;
-            case HOSTER:
-                DownloadController.getInstance().set(new DownloadLinkWalker() {
-
-                    @Override
-                    public boolean accept(DownloadLink link) {
-                        boolean ret = link.getHost().equals(getHost().getTld());
-
-                        ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
-                        return ret;
-                    }
-
-                    @Override
-                    public boolean accept(FilePackage fp) {
-                        return true;
-                    }
-
-                    @Override
-                    public void handle(DownloadLink link) {
-                        link.setSkipped(true);
-                    }
-
-                });
-                break;
-
-            }
+            throw new SkipException(SkipRequest.BLOCK_HOSTER);
+            // switch (dialogType) {
+            // case CRAWLER:
+            //
+            // break;
+            // case HOSTER:
+            // DownloadController.getInstance().set(new DownloadLinkWalker() {
+            //
+            // @Override
+            // public boolean accept(DownloadLink link) {
+            // boolean ret = link.getHost().equals(getHost().getTld());
+            //
+            // ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
+            // return ret;
+            // }
+            //
+            // @Override
+            // public boolean accept(FilePackage fp) {
+            // return true;
+            // }
+            //
+            // @Override
+            // public void handle(DownloadLink link) {
+            // link.setSkipped(true);
+            // }
+            //
+            // });
+            // HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPED", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
+            // _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(),
+            // NewTheme.I().getIcon("skipped", 32));
+            //
+            // break;
+            //
+            // }
 
         } catch (HideCaptchasByPackageException e) {
-            switch (dialogType) {
-            case CRAWLER:
 
-                break;
-            case HOSTER:
-                DownloadController.getInstance().set(new DownloadLinkWalker() {
-
-                    @Override
-                    public boolean accept(DownloadLink link) {
-                        boolean ret = link.getFilePackage() == ((PluginForHost) captchaChallenge.getPlugin()).getDownloadLink().getFilePackage();
-                        ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
-                        return ret;
-                    }
-
-                    @Override
-                    public boolean accept(FilePackage fp) {
-                        return true;
-                    }
-
-                    @Override
-                    public void handle(DownloadLink link) {
-                        link.setSkipped(true);
-                    }
-
-                });
-                break;
-            }
+            throw new SkipException(SkipRequest.BLOCK_PACKAGE);
+            // switch (dialogType) {
+            // case CRAWLER:
+            //
+            // break;
+            // case HOSTER:
+            // DownloadController.getInstance().set(new DownloadLinkWalker() {
+            //
+            // @Override
+            // public boolean accept(DownloadLink link) {
+            // boolean ret = link.getFilePackage() == ((PluginForHost) captchaChallenge.getPlugin()).getDownloadLink().getFilePackage();
+            // ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
+            // return ret;
+            // }
+            //
+            // @Override
+            // public boolean accept(FilePackage fp) {
+            // return true;
+            // }
+            //
+            // @Override
+            // public void handle(DownloadLink link) {
+            // link.setSkipped(true);
+            // }
+            //
+            // });
+            //
+            // HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPED", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
+            // _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(),
+            // NewTheme.I().getIcon("skipped", 32));
+            //
+            // break;
+            // }
 
         } catch (StopDownloadsException e) {
             switch (dialogType) {
@@ -182,33 +194,38 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
 
             DownloadWatchDog.getInstance().stopDownloads();
         } catch (HideAllCaptchasException e) {
-            switch (dialogType) {
-            case CRAWLER:
-
-                break;
-            case HOSTER:
-                DownloadController.getInstance().set(new DownloadLinkWalker() {
-
-                    @Override
-                    public boolean accept(DownloadLink link) {
-
-                        boolean ret = ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
-                        return ret;
-                    }
-
-                    @Override
-                    public boolean accept(FilePackage fp) {
-                        return true;
-                    }
-
-                    @Override
-                    public void handle(DownloadLink link) {
-                        link.setSkipped(true);
-                    }
-
-                });
-                break;
-            }
+            throw new SkipException(SkipRequest.BLOCK_ALL_CAPTCHAS);
+            // switch (dialogType) {
+            // case CRAWLER:
+            //
+            // break;
+            // case HOSTER:
+            // DownloadController.getInstance().set(new DownloadLinkWalker() {
+            //
+            // @Override
+            // public boolean accept(DownloadLink link) {
+            //
+            // boolean ret = ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
+            // return ret;
+            // }
+            //
+            // @Override
+            // public boolean accept(FilePackage fp) {
+            // return true;
+            // }
+            //
+            // @Override
+            // public void handle(DownloadLink link) {
+            // link.setSkipped(true);
+            // }
+            //
+            // });
+            // HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPED", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
+            // _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(),
+            // NewTheme.I().getIcon("skipped", 32));
+            //
+            // break;
+            // }
 
         } catch (MalformedURLException e) {
             throw new WTFException();

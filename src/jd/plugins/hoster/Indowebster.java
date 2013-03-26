@@ -101,8 +101,7 @@ public class Indowebster extends PluginForHost {
             link.setFinalFileName(Encoding.htmlDecode(realName));
         }
         /**
-         * If we reach this line the password should be correct even if the
-         * download fails
+         * If we reach this line the password should be correct even if the download fails
          */
         if (passCode != null) {
             link.setProperty("pass", passCode);

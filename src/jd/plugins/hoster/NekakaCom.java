@@ -55,7 +55,7 @@ public class NekakaCom extends PluginForHost {
         return "http://www.nekaka.com";
     }
 
-    private static Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
     private static final String MAINPAGE = "http://nekaka.com/";
 
     @Override
@@ -91,8 +91,7 @@ public class NekakaCom extends PluginForHost {
     public void doFree(DownloadLink downloadLink, boolean fetchAgain) throws Exception, PluginException {
         if (fetchAgain) {
             /*
-             * we need to fetch page again, because on first getpage, the login
-             * cookie might not be set
+             * we need to fetch page again, because on first getpage, the login cookie might not be set
              */
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
@@ -183,4 +182,16 @@ public class NekakaCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
 }

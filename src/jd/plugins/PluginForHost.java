@@ -16,9 +16,11 @@
 
 package jd.plugins;
 
+import java.awt.MouseInfo;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -30,7 +32,9 @@ import javax.swing.JComponent;
 import jd.PluginWrapper;
 import jd.captcha.JACMethod;
 import jd.config.SubConfiguration;
-import jd.controlling.IOPermission;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.nutils.Formatter;
@@ -39,7 +43,9 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterfaceFactory;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -47,9 +53,15 @@ import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.controlling.DownloadLinkWalker;
+import org.jdownloader.gui.helpdialogs.HelpDialog;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -62,17 +74,16 @@ import org.jdownloader.translate._JDT;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
-    private static Pattern[] PATTERNS     = new Pattern[] {
-                                          /**
-                                           * these patterns should split filename and fileextension (extension must include the point)
-                                           */
-                                          // multipart rar archives
+    private static Pattern[] PATTERNS = new Pattern[] {
+                                      /**
+                                       * these patterns should split filename and fileextension (extension must include the point)
+                                       */
+                                      // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
-    private IOPermission     ioPermission = null;
 
-    private LazyHostPlugin   lazyP        = null;
+    private LazyHostPlugin   lazyP    = null;
 
     public LazyHostPlugin getLazyP() {
         return lazyP;
@@ -170,13 +181,130 @@ public abstract class PluginForHost extends Plugin {
             if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
                 file = new File(orgCaptchaImage);
             }
-            BasicCaptchaChallenge c = new BasicCaptchaChallenge(ioPermission, method, file, defaultValue, explain, this, flag);
+            BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag) {
+
+                @Override
+                public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
+                    boolean ret;
+                    switch (skipRequest) {
+
+                    case BLOCK_ALL_CAPTCHAS:
+
+                        return true;
+
+                    case BLOCK_HOSTER:
+
+                        return PluginForHost.this.getHost().equals(Challenge.getHost(challenge));
+
+                    case BLOCK_PACKAGE:
+
+                        ret = link.getFilePackage() == Challenge.getDownloadLink(challenge).getFilePackage();
+                        ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
+                        return ret;
+
+                    default:
+                        return false;
+
+                    }
+                }
+
+            };
             ChallengeResponseController.getInstance().handle(c);
 
             if (!c.isSolved()) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return c.getResult().getValue();
         } catch (InterruptedException e) {
             logger.warning(Exceptions.getStackTrace(e));
+
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } catch (SkipException e) {
+
+            switch (e.getSkipRequest()) {
+
+            case BLOCK_ALL_CAPTCHAS:
+
+                DownloadController.getInstance().set(new DownloadLinkWalker() {
+
+                    @Override
+                    public boolean accept(DownloadLink link) {
+
+                        boolean ret = ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
+                        return ret;
+                    }
+
+                    @Override
+                    public boolean accept(FilePackage fp) {
+                        return true;
+                    }
+
+                    @Override
+                    public void handle(DownloadLink link) {
+                        link.setSkipped(true);
+                    }
+
+                });
+                HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+
+                break;
+
+            case BLOCK_HOSTER:
+                DownloadController.getInstance().set(new DownloadLinkWalker() {
+
+                    @Override
+                    public boolean accept(DownloadLink link) {
+                        boolean ret = link.getHost().equals(getHost());
+
+                        ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
+                        return ret;
+                    }
+
+                    @Override
+                    public boolean accept(FilePackage fp) {
+                        return true;
+                    }
+
+                    @Override
+                    public void handle(DownloadLink link) {
+                        link.setSkipped(true);
+                    }
+
+                });
+                HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                break;
+
+            case BLOCK_PACKAGE:
+                DownloadController.getInstance().set(new DownloadLinkWalker() {
+
+                    @Override
+                    public boolean accept(DownloadLink link) {
+                        boolean ret = link.getFilePackage() == getDownloadLink().getFilePackage();
+                        ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
+                        return ret;
+                    }
+
+                    @Override
+                    public boolean accept(FilePackage fp) {
+                        return true;
+                    }
+
+                    @Override
+                    public void handle(DownloadLink link) {
+                        link.setSkipped(true);
+                    }
+
+                });
+
+                HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+
+                break;
+
+            case SINGLE:
+                getDownloadLink().setSkipped(true);
+
+                HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                break;
+
+            }
 
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } finally {
@@ -631,25 +759,69 @@ public abstract class PluginForHost extends Plugin {
         return getHost();
     }
 
-    /**
-     * @param ioPermission
-     *            the ioPermission to set
-     */
-    public void setIOPermission(IOPermission ioPermission) {
-        this.ioPermission = ioPermission;
-    }
-
-    /**
-     * @return the ioPermission
-     */
-    public IOPermission getIOPermission() {
-        return ioPermission;
-    }
-
     public DomainInfo getDomainInfo() {
         String host = getCustomFavIconURL();
         if (host == null) host = getHost();
         return DomainInfo.getInstance(host);
+    }
+
+    public static void main(String[] args) throws IOException {
+        try {
+            File home = new File(Application.getRessourceURL(PluginForHost.class.getName().replace(".", "/") + ".class").toURI()).getParentFile().getParentFile().getParentFile().getParentFile();
+
+            File hostPluginsDir = new File(home, "src/jd/plugins/hoster/");
+
+            for (File f : hostPluginsDir.listFiles()) {
+                if (f.getName().endsWith(".java")) {
+
+                    StringBuilder method = new StringBuilder();
+                    String src = IO.readFileToString(f);
+
+                    if (src.toLowerCase().contains("captcha")) {
+
+                        if (new Regex(src, "(boolean\\s+hasCaptcha\\(\\s*DownloadLink .*?\\,\\s*Account .*?\\))").matches()) {
+                            continue;
+                        }
+
+                        if (src.contains("enablePremium")) {
+                            method.append("\r\n/* NO OVERRIDE!! We need to stay 0.9*compatible */");
+                            method.append("\r\npublic boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {");
+                            method.append("\r\nif (acc == null) {");
+                            method.append("\r\n/* no account, yes we can expect captcha */");
+                            method.append("\r\nreturn true;");
+                            method.append("\r\n}");
+
+                            method.append("\r\n if (Boolean.TRUE.equals(acc.getBooleanProperty(\"free\"))) {");
+                            method.append("\r\n/* free accounts also have captchas */");
+                            method.append("\r\nreturn true;");
+                            method.append("\r\n}");
+                            method.append("\r\nreturn false;");
+                            method.append("\r\n}");
+
+                        } else {
+                            method.append("\r\n/* NO OVERRIDE!! We need to stay 0.9*compatible */");
+                            method.append("\r\npublic boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {");
+                            method.append("\r\nreturn true;");
+                            method.append("\r\n}");
+                        }
+
+                    } else {
+
+                    }
+
+                    if (method.length() > 0) {
+
+                        src = src.substring(0, src.lastIndexOf("}")) + method.toString() + "\r\n}";
+                        f.delete();
+                        IO.writeStringToFile(f, src);
+                    }
+
+                }
+            }
+            System.out.println(1);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
     }
 
     /* can we expect a captcha if we try to load link with acc */
