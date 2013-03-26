@@ -109,7 +109,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String                PROPERTY_PRIORITY         = "PRIORITY";
     private static final String                PROPERTY_FINISHTIME       = "FINISHTIME";
     private static final String                PROPERTY_ENABLED          = "ENABLED";
-    private static final String                PROPERTY_SKIPPED          = "SKIPPED";
     private static final String                PROPERTY_PWLIST           = "PWLIST";
     private static final String                PROPERTY_LINKDUPEID       = "LINKDUPEID";
     private static final String                PROPERTY_SPEEDLIMIT       = "SPEEDLIMIT";
@@ -184,7 +183,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     transient private AbstractNodeNotifier     propertyListener;
     transient DomainInfo                       domainInfo                = null;
     transient Boolean                          resumeable                = null;
-    private boolean                            skipped;
+    private boolean                            skipped                   = false;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -723,11 +722,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         this.skipped = isSkipped;
         if (isSkipped == true) {
             abort();
-        }
-        if (isSkipped == true) {
-            setProperty(PROPERTY_SKIPPED, Property.NULL);
-        } else {
-            setProperty(PROPERTY_SKIPPED, isSkipped);
         }
         if (changed) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SKIPPED, isSkipped));
     }
