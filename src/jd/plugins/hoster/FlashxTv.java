@@ -87,6 +87,7 @@ public class FlashxTv extends PluginForHost {
         regex = "config=(http://play.flashx.tv/nuevo/[^\"]+)\"";
         String thirdLink = br.getRegex(regex).getMatch(0);
         if (thirdLink == null) thirdLink = getPlainData(regex);
+        if (thirdLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(thirdLink);
 
         String dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
