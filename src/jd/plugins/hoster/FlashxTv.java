@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -69,15 +72,23 @@ public class FlashxTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String firstlink = br.getRegex("\"(http://flashx\\.tv/player/embed_player\\.php\\?[^<>\"]*?)\"").getMatch(0);
+        // 1
+        String regex = "\"(http://flashx\\.tv/player/embed_player\\.php\\?[^<>\"]*?)\"";
+        final String firstlink = br.getRegex(regex).getMatch(0);
         if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(firstlink);
-        final String seclink = br.getRegex("\"(http://play\\.flashx\\.tv/player/[^<>\"]*?)\"").getMatch(0);
+        // 2
+        regex = "\"(http://play\\.flashx\\.tv/player/[^\"]+)\"";
+        String seclink = br.getRegex(regex).getMatch(0);
+        if (seclink == null) seclink = getPlainData(regex);
         if (seclink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(seclink);
-        String thirdLink = br.getRegex("(http://play\\.flashx\\.tv/nuevo/player/cst\\.php\\?hash=[A-Za-z0-9]+)").getMatch(0);
-        if (thirdLink == null) thirdLink = "http://play.flashx.tv/nuevo/player/fxconfig.php?hash=" + new Regex(seclink, "hash=([^\\&]+)\\&").getMatch(0);
+        // 3
+        regex = "config=(http://play.flashx.tv/nuevo/[^\"]+)\"";
+        String thirdLink = br.getRegex(regex).getMatch(0);
+        if (thirdLink == null) thirdLink = getPlainData(regex);
         br.getPage(thirdLink);
+
         String dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
@@ -104,6 +115,27 @@ public class FlashxTv extends PluginForHost {
                 }
             }
         }
+    }
+
+    private String getPlainData(String regex) {
+        String encrypted = br.getRegex("<script language=javascript>(.*?)</script>").getMatch(0);
+        String decrypted = null;
+        if (encrypted != null) {
+            Object result = new Object();
+            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            try {
+                engine.eval("var decrypted = '';");
+                engine.eval("var document = new Object();");
+                engine.eval("document.write = function(s) { decrypted += s; }");
+                engine.eval(encrypted);
+                result = engine.get("decrypted");
+            } catch (final Throwable e) {
+                return null;
+            }
+            if (result != null) decrypted = new Regex(result.toString(), regex).getMatch(0);
+        }
+        return decrypted;
     }
 
     @Override
