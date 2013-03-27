@@ -2,6 +2,7 @@ package org.jdownloader.api;
 
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.SessionRemoteAPI;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.jdownloader.api.accounts.AccountAPIImpl;
@@ -41,9 +42,14 @@ public class RemoteAPIController {
             sessionc.registerSessionRequestHandler(rapi);
             rapi.register(sessionc);
             rapi.register(eventsapi);
+
+            if (JsonConfig.create(RemoteAPIConfig.class).isDeprecatedApiEnabled()) {
+                HttpServer.getInstance().registerRequestHandler(3128, true, sessionc);
+            }
         } catch (Throwable e) {
             Log.exception(e);
         }
+
         register(new CaptchaAPIImpl());
         register(new JDAPIImpl());
         register(new DownloadsAPIImpl());

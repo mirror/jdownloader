@@ -23,4 +23,10 @@ public interface RemoteAPIConfig extends ConfigInterface {
     ArrayList<String> getExternInterfaceAuth();
 
     void setExternInterfaceAuth(ArrayList<String> auth);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isDeprecatedApiEnabled();
+
+    void setDeprecatedApiEnabled(boolean b);
 }
