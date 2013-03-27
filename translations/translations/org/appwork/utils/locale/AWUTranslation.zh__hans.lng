@@ -74,6 +74,7 @@ ProxyDialog_direct=直接连接
 ProxyDialog_hostport_help=输入域名或者 IP 地址
 ProxyDialog_password=密码:
 ProxyDialog_password_help=输入密码...
+ProxyDialog_requires_auth=需要授权
 ProxyDialog_title=添加新代理
 ProxyDialog_type=类型
 ProxyDialog_username=用户名:
