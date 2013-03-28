@@ -1,3 +1,5 @@
+RestartController_confirmToExit_=Έξοδος;
+RestartController_confirmToExit_msg=Θέλετε σίγουρα να τερματίσετε τον JDownloader;
 close_jd=Ανεπαρκή δικαιώματα για την εγγραφή στο %s1.\nΔοκιμάστε να τερματίσετε όλες τις διεργασίες του JDownloader και της Java και ξαναπροσπαθήστε!\nΠαρακαλούμε επικοινωνήστε με την Υποστήριξη εάν το πρόβλημα εξακολουθεί να υπάρχει μετά από Επανεκκίνηση του συστήματος.
 confirmdialog_new_update_available_answer_later=Αργότερα
 confirmdialog_new_update_available_answer_later_install=Αργότερα
