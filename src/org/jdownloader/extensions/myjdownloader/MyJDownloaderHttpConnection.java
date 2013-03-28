@@ -15,8 +15,10 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64OutputStream;
 import org.appwork.utils.net.ChunkedOutputStream;
 import org.appwork.utils.net.DeChunkingOutputStream;
@@ -25,6 +27,7 @@ import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.JSonRequest;
+import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.myjdownloader.api.MyJDownloaderAPI;
 
@@ -32,7 +35,8 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
 
     private final ArrayList<HttpRequestHandler> requestHandler;
     private final MyJDownloaderAPI              api;
-    private final byte[]                        serverSecret;
+
+    private LogSource                           logger;
 
     public MyJDownloaderHttpConnection(Socket clientConnection, MyJDownloaderAPI api) throws IOException {
         super(null, clientConnection);
@@ -40,40 +44,45 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         requestHandler.add(new OptionsRequestHandler());
         requestHandler.add(RemoteAPIController.getInstance().getRequestHandler());
         this.api = api;
-        try {
-            serverSecret = api.getServerSecret();
-        } catch (NoSuchAlgorithmException e) {
-            throw new IOException(e);
-        }
+        logger = api.getLogger();
+
     }
 
-    private OutputStream os        = null;
-    private byte[]       aesSecret = null;
+    protected PostRequest buildPostRequest() {
+        return new MyJDownloaderPostRequest(this);
+    }
+
+    private OutputStream os                     = null;
+    private byte[]       payloadEncryptionToken = null;
 
     @Override
     public List<HttpRequestHandler> getHandler() {
         return requestHandler;
     }
 
-    @Override
-    public byte[] getAESJSon_IV(String ID) {
-        if (ID != null) {
-            if (ID.equalsIgnoreCase("jd")) {
-                return Arrays.copyOfRange(aesSecret, 0, 16);
-            } else if (ID.equalsIgnoreCase("server")) { return Arrays.copyOfRange(serverSecret, 0, 16); }
-        }
-        return null;
+    // @Override
+    // public byte[] getAESJSon_IV(String ID) {
+    // if (ID != null) {
+    // if (ID.equalsIgnoreCase("jd")) {
+    // return Arrays.copyOfRange(payloadEncryptionToken, 0, 16);
+    // } else if (ID.equalsIgnoreCase("server")) { return Arrays.copyOfRange(serverSecret, 0, 16); }
+    // }
+    // return null;
+    // }
+
+    public byte[] getPayloadEncryptionToken() {
+        return payloadEncryptionToken;
     }
 
-    @Override
-    public byte[] getAESJSon_KEY(String ID) {
-        if (ID != null) {
-            if (ID.equalsIgnoreCase("jd")) {
-                return Arrays.copyOfRange(aesSecret, 16, 32);
-            } else if (ID.equalsIgnoreCase("server")) { return Arrays.copyOfRange(serverSecret, 16, 32); }
-        }
-        return null;
-    }
+    // @Override
+    // public byte[] getAESJSon_KEY(String ID) {
+    // if (ID != null) {
+    // if (ID.equalsIgnoreCase("jd")) {
+    // return Arrays.copyOfRange(payloadEncryptionToken, 16, 32);
+    // } else if (ID.equalsIgnoreCase("server")) { return Arrays.copyOfRange(serverSecret, 16, 32); }
+    // }
+    // return null;
+    // }
 
     @Override
     protected HttpRequest buildRequest() throws IOException {
@@ -95,11 +104,11 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         }
     }
 
-    @Override
     public boolean isJSonRequestValid(JSonRequest aesJsonRequest) {
         if (aesJsonRequest == null) return false;
         if (StringUtils.isEmpty(aesJsonRequest.getUrl())) return false;
         /* TODO: fixme, timestamp replay */
+        logger.info("Go Request " + JSonStorage.toString(aesJsonRequest));
         return true;
     }
 
@@ -108,8 +117,8 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         String remove = new Regex(requestLine, "( /t_([a-zA-z0-9]{40})/)").getMatch(0);
         String requestConnectToken = new Regex(requestLine, "( /t_([a-zA-z0-9]{40})/)").getMatch(1);
         try {
-            aesSecret = api.getAESSecret(requestConnectToken);
-            if (aesSecret == null) throw new IOException("Could not generate AESSecret " + requestLine);
+            payloadEncryptionToken = api.getAESSecret(requestConnectToken);
+            if (payloadEncryptionToken == null) throw new IOException("Could not generate AESSecret " + requestLine);
         } catch (NoSuchAlgorithmException e) {
             throw new IOException(e);
         }
@@ -134,12 +143,13 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                 }
                 final boolean useDeChunkingOutputStream = deChunk;
                 final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                final IvParameterSpec ivSpec = new IvParameterSpec(Arrays.copyOfRange(aesSecret, 0, 16));
-                final SecretKeySpec skeySpec = new SecretKeySpec(Arrays.copyOfRange(aesSecret, 16, 32), "AES");
+                final IvParameterSpec ivSpec = new IvParameterSpec(Arrays.copyOfRange(payloadEncryptionToken, 0, 16));
+                final SecretKeySpec skeySpec = new SecretKeySpec(Arrays.copyOfRange(payloadEncryptionToken, 16, 32), "AES");
                 cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
                 /* remove content-length because we use chunked+base64+aes */
                 response.getResponseHeaders().remove(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH);
-                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "application/aesjson-jd; charset=utf-8"));
+                // response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE,
+                // "application/aesjson-jd; charset=utf-8"));
                 /* set chunked transfer header */
                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING, HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED));
                 this.sendResponseHeaders();

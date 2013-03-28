@@ -86,7 +86,7 @@ public class J17DragAndDropDelegater extends TransferHandler {
             int start = input.getSelectionStart();
             int end = input.getSelectionEnd();
 
-            sb.append(old.substring(0, start));
+            sb.append(old.substring(0, Math.min(old.length(), start)));
             if (!StringUtils.isEmpty(html)) {
                 sb.append(html);
             }
@@ -95,7 +95,7 @@ public class J17DragAndDropDelegater extends TransferHandler {
                 if (sb.length() > 0 && (text.startsWith("http") || text.startsWith("ftp://"))) sb.append("\r\n");
                 sb.append(text);
             }
-            sb.append(old.substring(end));
+            sb.append(old.substring(Math.min(old.length(), end)));
 
             String txt = sb.toString();
             dialog.parse(txt);

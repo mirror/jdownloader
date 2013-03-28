@@ -24,8 +24,10 @@ import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.crypto.AWSign;
 import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64InputStream;
 import org.jdownloader.extensions.myjdownloader.MyDownloaderExtensionConfig;
+import org.jdownloader.logging.LogController;
 
 public class MyJDownloaderAPI {
 
@@ -34,9 +36,15 @@ public class MyJDownloaderAPI {
     protected volatile String                   connectToken = null;
 
     protected final MyDownloaderExtensionConfig config;
+    private LogSource                           logger;
 
     public MyJDownloaderAPI(MyDownloaderExtensionConfig config) {
         this.config = config;
+        logger = LogController.getInstance().getLogger(getClass().getName());
+    }
+
+    public LogSource getLogger() {
+        return logger;
     }
 
     protected byte[] getServerSecret(String username, String password) throws IOException, NoSuchAlgorithmException {
