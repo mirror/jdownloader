@@ -90,18 +90,13 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             contentReleaseLinks = br.getRegex(">Download:?</(.*?)</div>").getMatch(0);
             // Nothing found? Get all links from title till comment field
             if (contentReleaseLinks == null) contentReleaseLinks = br.getRegex("<h2 class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
-            if (contentReleaseLinks == null) {
-                logger.warning("contentReleaseLinks == null");
-                return null;
-            }
         } else {
-            // <em>Download all screenhots:</em>
-            // <font size="3px">
-            contentReleaseLinks = br.getRegex(">Download all screenhots:(.*?)Previews:<").getMatch(0);
-            if (contentReleaseLinks == null) {
-                logger.warning("contentReleaseLinks == null");
-                return null;
-            }
+            // Get all links from title till comment field
+            contentReleaseLinks = br.getRegex("<h2 class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
+        }
+        if (contentReleaseLinks == null) {
+            logger.warning("contentReleaseLinks == null");
+            return null;
         }
         final String[] links = new Regex(contentReleaseLinks, "<a href=\"(https?://(www\\.)?[^\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {

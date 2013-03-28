@@ -43,6 +43,11 @@ public class OneThousandEbComFolder extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
 
+        if (br.containsHTML("class=\"noBodyBox\">主人尚未上传文件到当前文件夹 </div>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+
         int maxCount = 1, minCount = 1;
         String lastPage = br.getRegex("class=\"pager\\-golast\"><a href=\"/([A-Za-z0-9\\-_]+\\.htm)?\\?p=(\\d+)\"").getMatch(1);
         if (lastPage != null) maxCount = Integer.parseInt(lastPage);

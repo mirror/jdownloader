@@ -45,7 +45,7 @@ import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/(?:(?!(?>\\btrack\\b|\\btag\\b|\\bartist\\b))[\\w\\-])+/(?!activity)[\\w\\-]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/(?:(?!(?>\\btrack\\b|\\btag\\b|\\bartist\\b))(?!developers|categories)[\\w\\-])+/(?!activity)[\\w\\-]+/" }, flags = { 0 })
 public class MxCloudCom extends PluginForDecrypt {
 
     private String MAINPAGE = "http://www.mixcloud.com";
@@ -79,6 +79,10 @@ public class MxCloudCom extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             logger.info("Unsupported or offline link: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("<title>404 Error page")) {
+            logger.info("Offline link: " + parameter);
             return decryptedLinks;
         }
         String theName = br.getRegex("class=\"cloudcast\\-name\" itemprop=\"name\">(.*?)</h1>").getMatch(0);

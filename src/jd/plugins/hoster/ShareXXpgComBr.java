@@ -39,7 +39,8 @@ public class ShareXXpgComBr extends PluginForHost {
     }
 
     /**
-     * Important: brazil proxy is needed, else you are redirected to another site!!!
+     * Important: brazil proxy is needed, else you are redirected to
+     * http://www3.xpg.uol.com.br/404.html
      */
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {

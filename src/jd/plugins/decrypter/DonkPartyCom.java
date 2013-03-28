@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -40,12 +39,12 @@ public class DonkPartyCom extends PluginForDecrypt {
         br.getPage(parameter);
         String tempID = br.getRedirectLocation();
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
+            final DownloadLink dl = createDownloadlink(tempID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML("Media not found\\!<")) {
-            logger.info("Decrypter broken for link: " + parameter);
+        if (br.containsHTML("Media not found\\!<") || br.containsHTML("<title>Donk Party</title>")) {
+            logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         String filename = br.getRegex("<span style=\"font\\-weight: bold; font\\-size: 18px;\">(.*?)</span><br").getMatch(0);
@@ -87,8 +86,12 @@ public class DonkPartyCom extends PluginForDecrypt {
                     br.getPage(id);
                     String finallink = br.getRegex("video_url: '(http[^\"']+)").getMatch(0);
                     if (finallink != null) {
-                        // browser & flash will fill in other args (in the format of other plugins), but it doesn't seem necessary as download works.
-                        // finallink + ?time=20130315100520&ahv=272678ee4d246a2c3ce8866ddd9af032&cv=5bde6b6fb56417ef49ba402c6e181a56&ref=http://www.myxvids.com/embed/ + id
+                        // browser & flash will fill in other args (in the
+                        // format of other plugins), but it doesn't seem
+                        // necessary as download works.
+                        // finallink +
+                        // ?time=20130315100520&ahv=272678ee4d246a2c3ce8866ddd9af032&cv=5bde6b6fb56417ef49ba402c6e181a56&ref=http://www.myxvids.com/embed/
+                        // + id
                         DownloadLink dl = createDownloadlink("directhttp://" + finallink);
                         dl.setFinalFileName(filename + ".mp4");
                         decryptedLinks.add(dl);
