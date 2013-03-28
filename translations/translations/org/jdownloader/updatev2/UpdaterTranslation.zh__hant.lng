@@ -6,6 +6,7 @@ confirmdialog_new_update_available_for_install_message_extensions=加入 %s1 個
 confirmdialog_new_update_available_for_install_message_launcher=一個更新已準備好安裝，我們建議立即安裝它！\r\n您是否想立即安裝它？
 confirmdialog_new_update_available_for_install_message_plugin=一個新的 JDownloader 外掛更新可用。要安裝，不需要重新啟動！\r\n您是否想現在安裝更新？
 confirmdialog_new_update_available_frametitle=有可用的更新
+confirmdialog_new_update_available_frametitle_extensions=管理附加元件
 confirmdialog_new_update_available_message=一個新更新可用。您是否想現在下載它？
 confirmdialog_new_update_available_message_sized=一個新更新可用。您是否想現在下載它？\n\n更新大小：%s1
 error_last_chance_connection_message=JDownloader 無法連接到網際網路。\r\n請確保正確設定了您的防火牆、防毒軟體和代理！\r\n如果您不能解決這個問題，聯絡我們的技術支援。
