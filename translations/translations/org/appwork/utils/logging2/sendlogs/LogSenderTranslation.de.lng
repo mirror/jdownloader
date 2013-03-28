@@ -1,0 +1,13 @@
+LogAction=Log erstellen
+LogAction_actionPerformed_givelogid_=Bitte sende diese Log-ID an deinen Supporter!
+LogAction_actionPerformed_wait_=Bitte warten...
+LogAction_actionPerformed_zip_title_=Erstelle Log-Packet
+LogAction_getString_uploading_=Logs werden vorbereitet
+LogAction_tooltip=Erstellt einen Log
+LogModel_getStringValue_between_=Zwischen %s1 und %s2
+LogModel_initColumns_time_=Zeit
+LogModel_initColumns_x_=Überprüfen
+LogTable_onContextMenu_disable_=Auswahl aufheben
+LogTable_onContextMenu_enable_=Auswählen
+SendLogDialog_SendLogDialog_title_=Sende einen Fehlerbericht
+SendLogDialog_layoutDialogContent_desc_=Wann trat das Problem auf? Bitte überprüfe alle Eingaben, die eine Überlegung wert sind!
