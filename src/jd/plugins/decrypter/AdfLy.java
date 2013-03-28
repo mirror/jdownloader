@@ -29,19 +29,20 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "http://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/(?!link\\-deleted\\.php)[^<>\"/#]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/(?!link\\-deleted\\.php)[^<>\"/#]+" }, flags = { 0 })
 public class AdfLy extends PluginForDecrypt {
 
     public AdfLy(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static Object LOCK = new Object();
+    private static final String HOSTS = "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)";
+    private static Object       LOCK  = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String finallink = null;
-        final String parameter = param.toString().replace("www.", "");
+        final String parameter = param.toString().replace("www.", "").replace("https://", "http://");
         br.setFollowRedirects(false);
         br.setReadTimeout(3 * 60 * 1000);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0");
@@ -61,6 +62,13 @@ public class AdfLy extends PluginForDecrypt {
                 logger.info("adf.ly link offline: " + parameter);
                 return decryptedLinks;
             }
+            /* javascript vars 20130328 */
+            String countdown = getWaittime();
+            // they also have secondary zzz variable within 'function adf_counter()', but it's the same.
+            String zzz = br.getRegex("var zzz\\s?+=\\s?+'?([\\d,\\.]+)'?;").getMatch(0);
+            String easyUrl = br.getRegex("var easyUrl\\s?+=\\s?+'?(true|false)'?;").getMatch(0);
+            String url = br.getRegex("var url\\s?+=\\s?+'?([^\';]+)'?;").getMatch(0);
+
             finallink = br.getRedirectLocation();
             if (finallink == null) {
                 finallink = br.getRegex("\\.attr\\((\"|\\')href(\"|\\'), \\'(.*?)\\'\\)").getMatch(2);
@@ -72,66 +80,70 @@ public class AdfLy extends PluginForDecrypt {
             if (finallink == null) {
                 finallink = br.getRegex("close_bar.*?self\\.location = \\'(.*?)\\';").getMatch(0);
             }
-
-            String extendedProtectionPage = br.getRegex("\\'(https?://adf\\.ly/go(/|\\.php\\?)[^<>\"\\']*?)\\'").getMatch(0);
-            if (extendedProtectionPage == null) {
-                extendedProtectionPage = br.getRegex("var url = \\'(/go(/|\\.php\\?)[^<>\"\\']*?)\\'").getMatch(0);
-                if (extendedProtectionPage != null) {
-                    extendedProtectionPage = "http://adf.ly" + extendedProtectionPage;
+            /* 20130130 */
+            if (finallink == null && (countdown != null && zzz != null && easyUrl != null)) {
+                if (countdown.equalsIgnoreCase("7") && easyUrl.equalsIgnoreCase("false")) {
+                    br.postPage("/shortener/go", "zzz=" + Encoding.urlEncode(zzz));
+                    finallink = br.getRegex("(http[^\"']+)").getMatch(0);
                 }
             }
-            if (extendedProtectionPage == null && finallink == null) break;
-            if (extendedProtectionPage != null) {
-                int wait = 7;
-                String waittime = getWaittime();
-                if (waittime != null && Integer.parseInt(waittime) <= 20) wait = Integer.parseInt(waittime);
-                if (skipWait) {
-                    skipWait();
-                    // Wait a seconds. Not waiting can cause the skipWait
-                    // feature to fail
-                    sleep(1 * 10001l, param);
-                } else {
-                    sleep(wait * 1000l, param);
+            /* old stuff still exists! tested and working as of 20130328 */
+            if (!finallink.startsWith("/") && finallink.matches(HOSTS + ".+")) {
+                String extendedProtectionPage = br.getRegex("(" + HOSTS + "/go(/|\\.php\\?)[^<>\"\\']+)").getMatch(0);
+                if (extendedProtectionPage == null) {
+                    extendedProtectionPage = br.getRegex("(/go(/|\\.php\\?)[^<>\"\\']+)").getMatch(0);
+                    if (extendedProtectionPage != null) {
+                        extendedProtectionPage = "http://adf.ly" + extendedProtectionPage;
+                    }
                 }
-                br.getPage(extendedProtectionPage);
-                String tempLink = br.getRedirectLocation();
-                if (tempLink != null) {
-                    tempLink = tempLink.replace("www.", "");
-                    // Redirected to the same link or blocked...try again
-                    if (tempLink.equals(parameter) || tempLink.contains("adf.ly/locked/") || tempLink.contains("adf.ly/blocked")) {
-                        logger.info("Blocked, re-trying with waittime...");
-                        skipWait = false;
-                        try {
-                            br.clearCookies("http://adf.ly/");
-                        } catch (final Exception e) {
-
-                        }
-                        continue;
+                if (extendedProtectionPage == null)
+                    break;
+                else {
+                    int wait = 7;
+                    String waittime = getWaittime();
+                    // because of possible page action via ajax request, we use old wait time.
+                    if (waittime == null) waittime = countdown;
+                    if (waittime != null && Integer.parseInt(waittime) <= 20) wait = Integer.parseInt(waittime);
+                    if (skipWait) {
+                        skipWait();
+                        // Wait a seconds. Not waiting can cause the skipWait feature to fail
+                        sleep(1 * 10001l, param);
                     } else {
-                        // We found a link to continue with
-                        finallink = tempLink;
+                        sleep(wait * 1000l, param);
+                    }
+                    br.getPage(extendedProtectionPage);
+                    String tempLink = br.getRedirectLocation();
+                    if (tempLink != null) {
+                        tempLink = tempLink.replace("www.", "");
+                        // Redirected to the same link or blocked...try again
+                        if (tempLink.equals(parameter) || tempLink.contains("adf.ly/locked/") || tempLink.contains("adf.ly/blocked")) {
+                            logger.info("Blocked, re-trying with waittime...");
+                            skipWait = false;
+                            try {
+                                br.clearCookies("http://adf.ly/");
+                            } catch (final Exception e) {
+
+                            }
+                            continue;
+                        } else {
+                            // We found a link to continue with
+                            finallink = tempLink;
+                            break;
+                        }
+                    } else {
+                        // Everything should have worked correctly, try to get final link
+                        finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(http://[^<>\"\\']+)\"").getMatch(0);
                         break;
                     }
-                } else {
-                    // Everything should have worked correctly, try to get final
-                    // link
-                    finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(http://[^<>\"\\']+)\"").getMatch(0);
-                    break;
                 }
+            } else {
+                break;
             }
         }
-        /* 20130130 */
-        if (finallink == null) {
-            String query = br.getRegex("var zzz\\s?=\\s?\'([^\']+)\'").getMatch(0);
-            String path = br.getRegex("url\\s?:\\s?\'([^\']+)\'").getMatch(0);
-            if (path != null && query != null) {
-                br.getPage("http://adf.ly" + path + "?zzz=" + Encoding.urlEncode(query));
-                finallink = br.getRegex("zzz\":\"([^\"]+)\"").getMatch(0);
-                if (finallink != null) finallink = finallink.replace("\\", "");
-            } else if (query != null) finallink = query;
-        }
-        if (finallink != null) {
-            decryptedLinks.add(createDownloadlink(finallink));
+        if (finallink != null && finallink.contains("/link-deleted.php")) {
+            logger.info(parameter + " has been removed from adf.ly service provider.");
+        } else if (finallink != null) {
+            decryptedLinks.add(createDownloadlink(finallink.replace("\\", "")));
         } else {
             logger.warning("adf.ly single regex broken for link: " + parameter);
             logger.info("Adding all available links on page");
@@ -161,7 +173,7 @@ public class AdfLy extends PluginForDecrypt {
     }
 
     private String getWaittime() {
-        return br.getRegex("var countdown = (\\d+);").getMatch(0);
+        return br.getRegex("var countdown\\s?+=\\s?+'?(\\d+)'?;").getMatch(0);
     }
 
 }
