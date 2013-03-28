@@ -13,7 +13,6 @@ import jd.http.URLConnectionAdapter;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -43,7 +42,7 @@ public class Test {
     public static void main(String[] args) throws APIException, MyJDownloaderException, DialogClosedException, DialogCanceledException {
         final Browser br = new Browser();
         br.setAllowedResponseCodes(200);
-        JSonStorage.setMapper(new JacksonMapper());
+        // JSonStorage.setMapper(new JacksonMapper());
         // br.forceDebug(true);
         // Log.L.setLevel(Level.ALL);
         AbstractMyJDClient api = new AbstractMyJDClient() {
