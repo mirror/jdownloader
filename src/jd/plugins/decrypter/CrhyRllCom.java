@@ -118,7 +118,8 @@ public class CrhyRllCom extends PluginForDecrypt {
             }
 
             // Get the episode name
-            final String title = this.nameFromVideoUrl(cryptedLink.getCryptedUrl());
+            String title = this.nameFromVideoUrl(cryptedLink.getCryptedUrl());
+            if (title == null) title = new Regex(cryptedLink.getCryptedUrl(), "/([^<>\"/]+)$").getMatch(0);
             if (title == null) { throw new DecrypterException("Invalid video URL"); }
 
             // Get the link to the XML file

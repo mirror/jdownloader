@@ -71,7 +71,7 @@ public class FlickrCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("div class=\"Four04Case\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("div class=\"Four04Case\">") || br.containsHTML(">This member is no longer active on Flickr")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = getFilename();
         if (filename == null) {
             downloadLink.getLinkStatus().setStatusText("Only downloadable for registered users [Add a flickt account to download such links!]");
