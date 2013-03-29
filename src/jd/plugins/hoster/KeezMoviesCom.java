@@ -40,7 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/(video/[\\w\\-]+|embed_player\\.php\\?id=\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/(video/[\\w\\-]+|embed_player\\.php\\?v?id=\\d+)" }, flags = { 2 })
 public class KeezMoviesCom extends PluginForHost {
 
     private String DLLINK    = null;
@@ -171,6 +171,7 @@ public class KeezMoviesCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        // DEV NOTE: you can get the DLLINK from the embed page without need for crypto!
         setBrowserExclusive();
         br.setFollowRedirects(false);
         String filename = null;

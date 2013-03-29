@@ -88,6 +88,10 @@ public class JBbergCom extends PluginForDecrypt {
 
             br2.postPage("http://www.jheberg.net/redirect-ajax/", "slug=" + Encoding.urlEncode(linkID) + "&host=" + singleLink.substring(singleLink.lastIndexOf("/") + 1));
             final String finallink = br2.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+            // not sure of best action here, but seems some are either down or require account?. Continue with the results
+            if (br2.containsHTML("url\":\"not authorized\"")) {
+                continue;
+            }
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

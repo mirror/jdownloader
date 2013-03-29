@@ -89,7 +89,7 @@ public class FourSexFourCom extends PluginForDecrypt {
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
-        externID = br.getRegex("(https?://www\\.keezmovies\\.com/embed_player\\.php\\?id=\\d+)").getMatch(0);
+        externID = br.getRegex("(https?://www\\.keezmovies\\.com/embed_player\\.php\\?v?id=\\d+)").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(externID);
             dl.setFinalFileName(filename);

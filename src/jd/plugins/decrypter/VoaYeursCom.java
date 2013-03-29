@@ -270,7 +270,7 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("(http://(www\\.)?keezmovies\\.com/embed_player\\.php\\?id=\\d+)\"").getMatch(0);
+        externID = br.getRegex("(http://(www\\.)?keezmovies\\.com/embed_player\\.php\\?v?id=\\d+)\"").getMatch(0);
         if (externID != null) {
             br.getPage(externID);
             externID = br.getRegex("<share>(http://[^<>\"]*?)</share>").getMatch(0);

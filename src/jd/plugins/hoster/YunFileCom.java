@@ -128,12 +128,12 @@ public class YunFileCom extends PluginForHost {
             br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + "/" + code + ".html");
             if (br.containsHTML("Not HTML Code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else {
-            // br.getPage("http://yunfile.com/file/down/" + userid + "/" +
-            // fileid + ".html");
+            // br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + ".html");
             br.getPage(domain + "/file/down/" + userid + "/" + fileid + ".html");
         }
-        String vid = br.getRegex("form\\.vid\\.value = \"([a-z0-9]+)\"").getMatch(0);
         String vid1 = br.getRegex("name=\"vid1\" value=\"([a-z0-9]+)\"").getMatch(0);
+        String vid = br.getRegex("form\\.vid\\.value = \"([a-z0-9]+)\"").getMatch(0);
+        if (vid == null && vid1 != null) vid = br.getRegex("var v" + vid1 + " = \"([^\"]+)").getMatch(0);
         String action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/view\\?fid=[a-z0-9]+)\"").getMatch(0);
         final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
 

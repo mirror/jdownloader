@@ -65,11 +65,14 @@ public class AdfLy extends PluginForDecrypt {
             /* javascript vars 20130328 */
             String countdown = getWaittime();
             // they also have secondary zzz variable within 'function adf_counter()', but it's the same.
-            String zzz = br.getRegex("var zzz\\s?+=\\s?+'?([\\d,\\.]+)'?;").getMatch(0);
+            String zzz = br.getRegex("var zzz\\s?+=\\s?+'?([\\d,\\.]+|http[^'\"]+)'?;").getMatch(0);
+            if (zzz.matches("(https?|ftp)://.+")) finallink = zzz;
             String easyUrl = br.getRegex("var easyUrl\\s?+=\\s?+'?(true|false)'?;").getMatch(0);
             String url = br.getRegex("var url\\s?+=\\s?+'?([^\';]+)'?;").getMatch(0);
 
-            finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                finallink = br.getRedirectLocation();
+            }
             if (finallink == null) {
                 finallink = br.getRegex("\\.attr\\((\"|\\')href(\"|\\'), \\'(.*?)\\'\\)").getMatch(2);
             }
@@ -88,7 +91,7 @@ public class AdfLy extends PluginForDecrypt {
                 }
             }
             /* old stuff still exists! tested and working as of 20130328 */
-            if (!finallink.startsWith("/") && finallink.matches(HOSTS + ".+")) {
+            if (finallink != null && (!finallink.startsWith("/") && finallink.matches(HOSTS + ".+"))) {
                 String extendedProtectionPage = br.getRegex("(" + HOSTS + "/go(/|\\.php\\?)[^<>\"\\']+)").getMatch(0);
                 if (extendedProtectionPage == null) {
                     extendedProtectionPage = br.getRegex("(/go(/|\\.php\\?)[^<>\"\\']+)").getMatch(0);

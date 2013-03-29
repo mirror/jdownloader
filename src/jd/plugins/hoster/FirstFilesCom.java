@@ -129,8 +129,7 @@ public class FirstFilesCom extends PluginForHost {
         String[] fileInfo = new String[3];
         // scan the first page
         scanInfo(fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission
-        // critical
+        // scan the second page. filesize[1] and md5hash[2] are not mission critical
         if (fileInfo[0] == null) {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
@@ -163,10 +162,10 @@ public class FirstFilesCom extends PluginForHost {
                 if (fileInfo[0] == null) {
                     fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                     if (fileInfo[0] == null) {
-                        fileInfo[0] = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        fileInfo[0] = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\'\n\r\t]+)").getMatch(1);
                         // traits from download1 page below.
                         if (fileInfo[0] == null) {
-                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\'\n\r\t]+)").getMatch(1);
                             // next two are details from sharing box
                             if (fileInfo[0] == null) {
                                 fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
@@ -357,22 +356,23 @@ public class FirstFilesCom extends PluginForHost {
 
     /** Remove HTML code which could break the plugin */
     public void correctBR() throws NumberFormatException, PluginException {
-        correctedBR = br.toString();
-        ArrayList<String> someStuff = new ArrayList<String>();
+        correctedBR = br.toString().replace("&nbsp;", " ");
         ArrayList<String> regexStuff = new ArrayList<String>();
+
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
+
+        // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
+
         for (String aRegex : regexStuff) {
-            String lolz[] = br.getRegex(aRegex).getColumn(0);
-            if (lolz != null) {
-                for (String dingdang : lolz) {
-                    someStuff.add(dingdang);
+            String results[] = new Regex(correctedBR, aRegex).getColumn(0);
+            if (results != null) {
+                for (String result : results) {
+                    correctedBR = correctedBR.replace(result, "");
                 }
             }
-        }
-        for (String fun : someStuff) {
-            correctedBR = correctedBR.replace(fun, "");
         }
     }
 

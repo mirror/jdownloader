@@ -101,7 +101,7 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://pornhost.com/" + externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("(https?://www\\.keezmovies\\.com/embed_player\\.php\\?id=\\d+)").getMatch(0);
+        externID = br.getRegex("(https?://www\\.keezmovies\\.com/embed_player\\.php\\?v?id=\\d+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
