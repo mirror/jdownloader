@@ -1,3 +1,4 @@
+AddContainerAction_delete_container_title=Izbrisati Kontejner Dokumente?
 DownloadWatchDog_onShutdownRequest_=U toku su Download-i!
 DownloadWatchDog_onShutdownRequest_msg=Želite li da zaustavite aktivne download-e da zatvorite JDownloader?
 DownloadWatchDog_onShutdownRequest_nonresumable=Nema pokrenutih download-a koji se mogu nastaviti!
