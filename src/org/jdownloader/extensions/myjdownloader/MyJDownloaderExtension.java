@@ -3,21 +3,29 @@ package org.jdownloader.extensions.myjdownloader;
 import jd.plugins.AddonPanel;
 
 import org.appwork.txtresource.TranslateInterface;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.logging.LogController;
 
 public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtensionConfig, TranslateInterface> {
 
     private MyJDownloaderConfigPanel   configPanel;
     private MyJDownloaderConnectThread thread = null;
+    private LogSource                  logger;
 
     @Override
     protected void stop() throws StopException {
         MyJDownloaderConnectThread lThread = thread;
         thread = null;
+
         if (lThread != null && lThread.isAlive()) lThread.interruptConnectThread();
+    }
+
+    public synchronized void setEnabled(boolean enabled) throws StartException, StopException {
+        super.setEnabled(enabled);
     }
 
     @Override
@@ -33,8 +41,12 @@ public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtens
     @Override
     protected void initExtension() throws StartException {
         setTitle("my.jdownloader.org");
-
+        logger = LogController.getInstance().getLogger(getClass().getName());
         configPanel = new MyJDownloaderConfigPanel(this, getSettings());
+    }
+
+    public LogSource getLogger() {
+        return logger;
     }
 
     @Override

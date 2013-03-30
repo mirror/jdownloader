@@ -27,7 +27,7 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64InputStream;
 import org.jdownloader.extensions.myjdownloader.MyDownloaderExtensionConfig;
-import org.jdownloader.logging.LogController;
+import org.jdownloader.extensions.myjdownloader.MyJDownloaderExtension;
 
 public class MyJDownloaderAPI {
 
@@ -37,10 +37,12 @@ public class MyJDownloaderAPI {
 
     protected final MyDownloaderExtensionConfig config;
     private LogSource                           logger;
+    private MyJDownloaderExtension              extension;
 
-    public MyJDownloaderAPI(MyDownloaderExtensionConfig config) {
-        this.config = config;
-        logger = LogController.getInstance().getLogger(getClass().getName());
+    public MyJDownloaderAPI(MyJDownloaderExtension myJDownloaderExtension) {
+        extension = myJDownloaderExtension;
+        this.config = extension.getSettings();
+        logger = extension.getLogger();
     }
 
     public LogSource getLogger() {
@@ -95,6 +97,7 @@ public class MyJDownloaderAPI {
         String completeurl = "http://" + config.getAPIServerURL() + ":" + config.getAPIServerPort() + url + "&signature=" + signature;
         URLConnectionAdapter con = null;
         try {
+            logger.info("GET " + completeurl);
             con = br.openGetConnection(completeurl);
             if (con.getResponseCode() == 403) throw new InvalidConnectException();
             if (con.isOK()) {
@@ -111,12 +114,16 @@ public class MyJDownloaderAPI {
 
                     response = IO.readStream(-1, new CipherInputStream(new Base64InputStream(con.getInputStream()), cipher));
                     String responseSTRING = new String(response, "UTF-8");
+                    logger.info("RESPONSE(decrypted): " + completeurl + "\r\n" + responseSTRING);
                     String timestampJSON = new Regex(responseSTRING, "\"timestamp\"\\s*?:\\s*?(\\d+)").getMatch(0);
                     if (timestampJSON == null || timeStamp != Long.parseLong(timestampJSON)) throw new InvalidConnectException();
                     return responseSTRING;
                 } else {
                     response = IO.readStream(-1, con.getInputStream());
-                    return new String(response, "UTF-8");
+                    String ret = new String(response, "UTF-8");
+
+                    logger.info("RESPONSE(plain): " + completeurl + "\r\n" + ret);
+                    return ret;
                 }
             }
         } finally {
@@ -129,10 +136,12 @@ public class MyJDownloaderAPI {
     }
 
     protected String getConnectToken(String username, String password) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+        logger.info("Login " + username);
         String url = "/my/jdconnect?user=" + Encoding.urlEncode(config.getUsername());
         String response = getRequest(url);
         String token = new Regex(response, "\"token\"\\s*?:\\s*?\"([a-fA-F0-9]+)\"").getMatch(0);
         if (token == null) throw new IOException("Unknown Response: " + response);
+        logger.info("Login OK: " + token);
         return token;
     }
 

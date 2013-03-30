@@ -18,7 +18,9 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.myjdownloader.api.MyJDownloaderAPI;
 
 public class MyJDownloaderConnectThread extends Thread {
@@ -31,13 +33,15 @@ public class MyJDownloaderConnectThread extends Thread {
     private Socket                        connectionSocket;
     private ArrayList<HttpRequestHandler> requestHandler;
     private final MyJDownloaderAPI        api;
+    private LogSource                     logger;
 
     public MyJDownloaderConnectThread(MyJDownloaderExtension myJDownloaderExtension) {
         setName("MyJDownloaderConnectThread");
         this.setDaemon(true);
         this.myJDownloaderExtension = myJDownloaderExtension;
         config = myJDownloaderExtension.getSettings();
-        api = new MyJDownloaderAPI(config);
+        api = new MyJDownloaderAPI(myJDownloaderExtension);
+        logger = myJDownloaderExtension.getLogger();
     }
 
     @Override
@@ -46,9 +50,10 @@ public class MyJDownloaderConnectThread extends Thread {
             try {
                 if (loginError > 5 || connectError > 5) {
                     try {
+                        Dialog.getInstance().showErrorDialog("MyJDownloader Error. loginErrors: " + loginError + " connectErrors:" + connectError + "\r\nMyJDownloader Extension is disabled now.");
                         myJDownloaderExtension.setEnabled(false);
                     } catch (final Throwable e) {
-                        e.printStackTrace();
+                        logger.log(e);
                     }
                     return;
                 }
@@ -58,7 +63,7 @@ public class MyJDownloaderConnectThread extends Thread {
                     if (StringUtils.isEmpty(connectToken)) { throw new WTFException("Login failed"); }
                 } catch (final Throwable e) {
                     loginError++;
-                    e.printStackTrace();
+                    logger.log(e);
                     Thread.sleep(1000);
                     continue mainLoop;
                 }
@@ -67,19 +72,21 @@ public class MyJDownloaderConnectThread extends Thread {
                     connectionSocket = new Socket();
                     connectionSocket.setSoTimeout(120000);
                     connectionSocket.setTcpNoDelay(false);
-                    connectionSocket.connect(new InetSocketAddress(this.config.getAPIServerURL(), this.config.getAPIServerPort()), 30000);
+                    InetSocketAddress ia = new InetSocketAddress(this.config.getAPIServerURL(), this.config.getAPIServerPort());
+                    logger.info("Connect " + ia);
+                    connectionSocket.connect(ia, 30000);
                     connectionSocket.getOutputStream().write(("JD" + api.getConnectToken()).getBytes("ISO-8859-1"));
                     int validToken = connectionSocket.getInputStream().read();
                     if (validToken == 4) {
-                        System.out.println("KeepAlive");
+                        logger.info("KeepAlive");
                         closeSocket = true;
                     } else if (validToken == 0) {
                         loginError++;
-                        System.out.println("Token seems to be invalid!");
+                        logger.info("Token seems to be invalid!");
                         api.invalidateConnectToken();
                     } else if (validToken == 1) {
                         connectError = 0;
-                        // System.out.println("Connection got established");
+                        // logger.info("Connection got established");
                         closeSocket = false;
 
                         final Socket clientSocket = connectionSocket;
@@ -90,20 +97,20 @@ public class MyJDownloaderConnectThread extends Thread {
                                     MyJDownloaderHttpConnection httpConnection = new MyJDownloaderHttpConnection(clientSocket, api);
                                     httpConnection.run();
                                 } catch (final Throwable e) {
-                                    e.printStackTrace();
+                                    logger.log(e);
                                 }
                             }
                         };
                         connectionThread.setDaemon(true);
                         connectionThread.start();
                     } else {
-                        System.out.println("Something else!?!?! WTF!" + validToken);
+                        logger.info("Something else!?!?! WTF!" + validToken);
                     }
                 } catch (ConnectException e) {
-                    System.out.println("Could not connect! Server down?");
+                    logger.info("Could not connect! Server down?");
                     connectError++;
                 } catch (SocketTimeoutException e) {
-                    System.out.println("ReadTimeout!");
+                    logger.info("ReadTimeout!");
                 } finally {
                     try {
                         if (closeSocket) connectionSocket.close();
@@ -112,7 +119,7 @@ public class MyJDownloaderConnectThread extends Thread {
                 }
 
             } catch (final Throwable e) {
-                e.printStackTrace();
+                logger.log(e);
             }
         }
     }
