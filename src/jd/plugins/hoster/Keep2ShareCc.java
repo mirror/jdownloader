@@ -29,6 +29,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -91,13 +92,21 @@ public class Keep2ShareCc extends PluginForHost {
         }
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            if (br.containsHTML(DOWNLOADPOSSIBLE)) {
+            if (br.containsHTML(DOWNLOADPOSSIBLE) || br.containsHTML(">If you want downloading file on slow speed")) {
                 dllink = getDllink();
             } else {
                 if (br.containsHTML("Traffic limit exceed\\!<br>|Download count files exceed!<br>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
                 final String uniqueID = br.getRegex("name=\"slow_id\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (uniqueID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.postPage(br.getURL(), "slow_id=" + uniqueID);
+                final Regex reconWaittime = br.getRegex("Please wait (\\d{2}):(\\d{2}):(\\d{2}) to download this file");
+                if (reconWaittime.getMatches().length == 1) {
+                    int hours = 0, minutes = 0, seconds = 0;
+                    hours = Integer.parseInt(reconWaittime.getMatch(0));
+                    minutes = Integer.parseInt(reconWaittime.getMatch(1));
+                    seconds = Integer.parseInt(reconWaittime.getMatch(2));
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (hours * 60 * 60 * 1000) + (minutes * 60 * 1000) + (seconds * 1001));
+                }
                 if (br.containsHTML("Free account does not allow to download more than one file at the same time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     logger.info("Detected captcha method \"Re Captcha\" for this host");

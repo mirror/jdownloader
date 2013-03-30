@@ -56,6 +56,7 @@ public class XxxMsnCamCom extends PluginForHost {
         DLLINK = br.getRegex("\\.addVariable\\(\"(file|link)\",\"(http://[^<>\"\\']+)\"").getMatch(1);
         if (DLLINK == null) DLLINK = br.getRegex("videoFile: '(http[^\']+)'").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\"(http://(\\w+\\.)?xxxmsncam\\.com/hostedvids/\\d+{4}/\\d+{2}/\\d+{2}/[^<>\"\\'/]+(\\.flv|\\.mp4))").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("video_url=(http://[^<>\"]*?)\\&").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();

@@ -137,14 +137,10 @@ public class PornRabbitComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("(\\'|\")(http://(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)(\\'|\")").getMatch(1);
+        externID = br.getRegex("\"(http://(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
-            br.getPage(externID);
-            externID = br.getRegex("var urlAddress = \"(http://[^<>\"]*?)\";").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink(externID));
-                return decryptedLinks;
-            }
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
         }
         externID = br.getRegex("player\\.empflix\\.com/video/(\\d+)\"").getMatch(0);
         if (externID != null) {

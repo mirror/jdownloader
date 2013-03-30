@@ -37,6 +37,10 @@ public class FourSexFourCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML("megaporn\\.com/e/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?extremetube\\.com/embed_player\\.php\\?id=\\d+)\"").getMatch(0);
         if (externID != null) {
             br.getPage(externID);

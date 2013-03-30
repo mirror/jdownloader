@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myxvids.com" }, urls = { "http://(www\\.)?myxvids\\.com/video/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myxvids.com" }, urls = { "http://(www\\.)?myxvids\\.com/(videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)" }, flags = { 0 })
 public class MyXvidsCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -48,15 +49,9 @@ public class MyXvidsCom extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+    public void correctDownloadLink(DownloadLink link) {
+        final String embedID = new Regex(link.getDownloadURL(), "embed/(\\d+)$").getMatch(0);
+        if (embedID != null) link.setUrlDownload("http://www.myxvids.com/videos/" + embedID + "/" + System.currentTimeMillis() + "/");
     }
 
     @Override
@@ -65,19 +60,12 @@ public class MyXvidsCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().equals("http://www.myxvids.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"title\">              <h2>(.*?)</h2>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>My X Videos \\- Daily Amateur Porn Tube \\- (.*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("var playlist = \\[ \\{ url: \\'(http://.*?)\\' \\} \\]").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("var video_url = \\'(http://.*?)\\'").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("\\'(http://(www\\.)?myxvids\\.com/flv/.*?)\\'").getMatch(0);
-            }
-        }
+        String filename = br.getRegex("<title>([^<>\"]*?) \\- myXvids\\.com</title>").getMatch(0);
+        DLLINK = br.getRegex("video_url: \\'(http://.*?)\\'").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.subSequence(DLLINK.length() - 4, DLLINK.length()));
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -95,6 +83,17 @@ public class MyXvidsCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

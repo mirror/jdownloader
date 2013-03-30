@@ -55,40 +55,9 @@ public class WastedAmateursCom extends PluginForDecrypt {
             return null;
         }
         filename = filename.trim();
-        tempID = br.getRegex("\\'(http://(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)\\'").getMatch(0);
+        tempID = br.getRegex("\"(http://(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
         if (tempID != null) {
-            br.getPage(tempID);
-            String finallink = br.getRegex("var urlAddress = \"(http://.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("\"linkUrl\":\"(http://.*?)\"").getMatch(0);
-                if (finallink == null) {
-                    finallink = br.getRegex("<b>PAGE URL:</b><br>\\[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-                    if (finallink == null) {
-                        finallink = br.getRegex("\" style=\"color: #FFFFFF\">(http://.*?)</a>").getMatch(0);
-                        if (finallink == null) {
-                            String id = br.getRegex("src=\"(http[^ \"']+myxvids\\.com/embed/\\d+)").getMatch(0);
-                            if (id != null) {
-                                br.getPage(id);
-                                finallink = br.getRegex("video_url: '(http[^\"']+)").getMatch(0);
-                                if (finallink != null) {
-                                    // browser & flash will fill in other args (in the format of other plugins), but it doesn't seem necessary as download works.
-                                    // finallink + ?time=20130315100520&ahv=272678ee4d246a2c3ce8866ddd9af032&cv=5bde6b6fb56417ef49ba402c6e181a56&ref=http://www.myxvids.com/embed + id
-                                    DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-                                    dl.setFinalFileName(filename + ".mp4");
-                                    decryptedLinks.add(dl);
-                                    return decryptedLinks;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            DownloadLink dl = createDownloadlink(finallink);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createDownloadlink(tempID));
             return decryptedLinks;
         }
         tempID = br.getRegex("http://flash\\.serious\\-cash\\.com/flvplayer\\.swf\" width=\"\\d+\" height=\"\\d+\" allowfullscreen=\"true\" flashvars=\"file=(.*?)\\&").getMatch(0);
