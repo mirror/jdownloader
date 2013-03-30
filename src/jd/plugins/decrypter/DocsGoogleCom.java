@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 20105 $", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20105 $", interfaceVersion = 2, names = { "docs.google.com" }, urls = { "https?://(www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+" }, flags = { 0 })
 public class DocsGoogleCom extends PluginForDecrypt {
 
     /**
