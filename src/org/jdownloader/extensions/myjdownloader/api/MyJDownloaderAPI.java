@@ -92,7 +92,6 @@ public class MyJDownloaderAPI {
     protected String getRequest(String url) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
         Browser br = new Browser();
         long timeStamp = TIMESTAMP.incrementAndGet();
-        timeStamp = 1364636928531l;
         url = url + "&timestamp=" + timeStamp + "&apiverson=" + APIVersion;
         String signature = getSignature(getServerSecret(config.getUsername(), config.getPassword()), url.getBytes("UTF-8"));
         String completeurl = "http://" + config.getAPIServerURL() + ":" + config.getAPIServerPort() + url + "&signature=" + signature;
