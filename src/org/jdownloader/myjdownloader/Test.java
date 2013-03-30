@@ -111,6 +111,9 @@ public class Test {
         // List<FilePackageAPIStorable> ret = api.link(DownloadsAPI.class, "downloads").queryPackages(new APIQuery());
         List<CaptchaJob> list = api.link(CaptchaAPI.class, "captcha").list();
         System.out.println(list);
+
+        Long uptime = api.callAction("/jd/uptime", long.class);
+        System.out.println(uptime);
         // System.out.println(ret);
         api.disconnect();
         // System.out.println(jdapi.uptime());
