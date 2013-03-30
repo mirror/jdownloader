@@ -136,7 +136,7 @@ public class MyJDownloaderAPI {
     }
 
     protected String getConnectToken(String username, String password) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-        logger.info("Login " + username);
+        logger.info("Login " + username + ":" + password);
         String url = "/my/jdconnect?user=" + Encoding.urlEncode(config.getUsername());
         String response = getRequest(url);
         String token = new Regex(response, "\"token\"\\s*?:\\s*?\"([a-fA-F0-9]+)\"").getMatch(0);
