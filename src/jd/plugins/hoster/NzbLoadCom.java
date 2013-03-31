@@ -80,6 +80,7 @@ public class NzbLoadCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final Regex params = new Regex(downloadLink.getDownloadURL(), "http://(www\\.)?nzbload\\.com/en/download/([a-z0-9]+)/(\\d+)");
+        br.clearCookies(br.getHost());
         final Browser br2 = br.cloneBrowser();
         br2.getPage("http://www.nzbload.com/tpl/download/" + params.getMatch(1) + ".js?version=1.050");
         final String sleep = br2.getRegex("redirectAfter\\(\\'/en/start\\', (\\d+)\\);").getMatch(0);
@@ -95,6 +96,7 @@ public class NzbLoadCom extends PluginForHost {
 
         String sessionSecret = areYouAHuman();
         String rcID = br.getRegex("challenge\\?k=([^\"]+)\"").getMatch(0);
+        if (rcID == null) rcID = br.getRegex("Recaptcha\\.create\\(\"([^\"]+)\"").getMatch(0);
         if (rcID == null || sessionSecret == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -104,7 +106,7 @@ public class NzbLoadCom extends PluginForHost {
         for (int i = 0; i <= 5; i++) {
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
-            br.postPage("https://ws.areyouahuman.com/ayahwebservices/index.php/ayahwebservice/recordAccessibilityString", "session_secret=" + sessionSecret + "&challenge=" + rc.getChallenge() + "&response=" + c + "&ordinal=" + i);
+            br.postPage("https://ws.areyouahuman.com/ayahwebservices/index.php/ayahwebservice/recordAccessibilityString", "session_secret=" + sessionSecret + "&challenge=" + rc.getChallenge() + "&response=" + c + "&ordinal=" + (c.length() - 1));
             br.postPage("http://www.nzbload.com/action/download.json?act=verify_captcha&t=" + System.currentTimeMillis(), "session_secret=" + sessionSecret);
             if (br.containsHTML("\"success\":false")) {
                 rc.reload();
@@ -260,4 +262,5 @@ public class NzbLoadCom extends PluginForHost {
         }
         return false;
     }
+
 }

@@ -17,7 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,20 +35,21 @@ import jd.plugins.download.DownloadInterface;
 
 /*
  * vrt.be network
- * new content handling --> data-video-src
+ * old content handling --> var vars12345 = Array();
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactie\\.be/(permalink/\\d\\.\\d+(\\?video=\\d\\.\\d+)?|cm/vrtnieuws([^/]+)?/(mediatheek|videozone).+)", "http://(www\\.)?sporza\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|sporza)([^/]+)?/(mediatheek|videozone).+)" }, flags = { 0, 0 })
-public class DeredactieBe extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cobra.be" }, urls = { "http://(www\\.)?cobra\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|cobra)([^/]+)?/(mediatheek|videozone).+)" }, flags = { 0 })
+public class CobraBe extends PluginForHost {
 
-    public DeredactieBe(PluginWrapper wrapper) {
+    public CobraBe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String DLLINK  = null;
+    private String JSARRAY = null;
 
     @Override
     public String getAGBLink() {
-        return "http://deredactie.be/";
+        return "http://www.vrt.be/privacy-beleid";
     }
 
     @Override
@@ -63,15 +66,14 @@ public class DeredactieBe extends PluginForHost {
         // Link offline
         if (br.containsHTML("(>Pagina \\- niet gevonden<|>De pagina die u zoekt kan niet gevonden worden)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        HashMap<String, String> mediaValue = new HashMap<String, String>();
-        for (String[] s : br.getRegex("data\\-video\\-([^=]+)=\"([^\"]+)\"").getMatches()) {
-            mediaValue.put(s[0], s[1]);
-        }
-        // Nothing to download
-        if (mediaValue == null || mediaValue.size() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        JSARRAY = br.getRegex("(var vars\\d+.*?\\[\'w\'\\]\\s?=\\s?\'\\d+\';)").getMatch(0);
+        if (JSARRAY == null) makeJsArray();
 
-        DLLINK = mediaValue.get("src");
-        final String filename = mediaValue.get("title");
+        if (JSARRAY == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        JSARRAY = JSARRAY.replaceAll("vars\\d+", "vars12345");
+
+        DLLINK = getMediaUrl("src");
+        final String filename = getMediaUrl("title");
         if (DLLINK == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
@@ -86,8 +88,8 @@ public class DeredactieBe extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                DLLINK = mediaValue.get("rtmp-server");
-                DLLINK = DLLINK != null && mediaValue.get("rtmp-path") != null ? DLLINK + "@" + mediaValue.get("rtmp-path") : null;
+                DLLINK = getMediaUrl("rtmpServer");
+                DLLINK = DLLINK != null && getMediaUrl("rtmpPath") != null ? DLLINK + "@" + getMediaUrl("rtmpPath") : null;
                 if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
@@ -96,6 +98,15 @@ public class DeredactieBe extends PluginForHost {
                 con.disconnect();
             } catch (Throwable e) {
             }
+        }
+    }
+
+    private void makeJsArray() {
+        String sporza = br.getRegex("(data\\-video\\-id=.*?data\\-video\\-width\\s?=\\s?\"\\d+\")").getMatch(0);
+        if (sporza != null) {
+            sporza = sporza.replace("rtmp-server", "rtmpServer").replace("rtmp-path", "rtmpPath");
+            sporza = sporza.replaceAll("data\\-video-([^=]+)\\s?=\\s?\"([^\"]+)?\"", "vars12345['$1'] = '$2';");
+            if (sporza.contains("vars12345")) JSARRAY = "var vars12345 = Array();\n" + sporza;
         }
     }
 
@@ -116,11 +127,23 @@ public class DeredactieBe extends PluginForHost {
         }
     }
 
+    private String getMediaUrl(String s) {
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        JSARRAY += "\nvar out = vars12345['" + s + "'];";
+        try {
+            engine.eval(JSARRAY);
+            return String.valueOf(engine.get("out"));
+        } catch (final Throwable e) {
+        }
+        return null;
+    }
+
     private void setupRTMPConnection(final DownloadInterface dl) {
         final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         rtmp.setPlayPath(DLLINK.split("@")[1]);
         rtmp.setUrl(DLLINK.split("@")[0]);
-        rtmp.setSwfVfy("http://www.deredactie.be/html/flash/common/player.5.10.swf");
+        rtmp.setSwfVfy("http://www.cobra.be/html/flash/common/player.5.10.swf");
         rtmp.setResume(true);
         rtmp.setRealTime();
     }

@@ -120,11 +120,10 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             br.getPage(parameter);
         }
 
-        String channelId = br.getRegex("channelId=(.*?)\\&").getMatch(0);
         String playerForm = br.getRegex("playerForm=(.*?)\\&").getMatch(0);
         String mediaId = br.getRegex("mediaId=(.*?)\\&").getMatch(0);
         if ("bluefishtv.com".equals(PROVIDER)) mediaId = br.getRegex("mediaId=([^\"]+)").getMatch(0);
-        if (channelId == null || playerForm == null || mediaId == null) { return null; }
+        if (playerForm == null || mediaId == null) return null;
 
         int page = 0;
         String quality;
@@ -160,7 +159,8 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         // try and catch, da Anzahl der Seitenaufrufe(Variable page) unbekannt
         while (next) {
             // Get -> RC4 encrypted http stream to byte array
-            String req = "http://cache2.delvenetworks.com/ps/c/v1/" + getHmacSHA256("RC4\n" + Encoding.Base64Decode(KEY)) + "/" + getHmacSHA256("Channel") + "/" + getHmacSHA256(channelId) + "/" + page++;
+            String req = "http://cache2.delvenetworks.com/ps/c/v1/" + getHmacSHA256("RC4\n" + Encoding.Base64Decode(KEY)) + "/" + getHmacSHA256("Media") + "/" + getHmacSHA256(mediaId) + (page > 0 ? "/" + page : "");
+            page++;
 
             byte[] enc = null;
             try {

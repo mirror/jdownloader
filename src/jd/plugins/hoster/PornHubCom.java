@@ -5,6 +5,7 @@ import java.security.InvalidKeyException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -16,6 +17,7 @@ import jd.gui.UserIO;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -106,16 +108,26 @@ public class PornHubCom extends PluginForHost {
             values.put(s.split(":")[0], Encoding.htmlDecode(s.split(":", 2)[1]));
         }
 
+        int q = 0;
+        for (Entry<String, String> next : values.entrySet()) {
+            String key = next.getKey();
+            if (!key.startsWith("quality_")) continue;
+            String quality = new Regex(key, "quality_(\\d+)p").getMatch(0);
+            if (quality == null) continue;
+            if (Integer.parseInt(quality) > q) {
+                q = Integer.parseInt(quality);
+                dlUrl = values.get("quality_" + q + "p");
+            }
+        }
+
         String isEncrypted = values.get("encrypted");
-        dlUrl = values.get("video_url");
         if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
-            String encrypted = values.get("video_url");
             String key = values.get("video_title");
             try {
-                dlUrl = new BouncyCastleAESCounterModeDecrypt().decrypt(encrypted, key, 256);
+                dlUrl = new BouncyCastleAESCounterModeDecrypt().decrypt(dlUrl, key, 256);
             } catch (Throwable e) {
                 /* Fallback for stable version */
-                dlUrl = AESCounterModeDecrypt(encrypted, key, 256);
+                dlUrl = AESCounterModeDecrypt(dlUrl, key, 256);
             }
             if (dlUrl != null && (dlUrl.startsWith("Error:") || !dlUrl.startsWith("http"))) {
                 logger.warning("pornhub.com: " + dlUrl);
