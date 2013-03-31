@@ -60,7 +60,7 @@ public class FastShareCz extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<title>FastShare\\.cz</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>([^<>\"]*?) \\- FastShare\\.cz</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?) \\| FastShare\\.cz</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h2><b><span style=color:black;>([^<>\"]*?)</b></h2>").getMatch(0);
         String filesize = br.getRegex("<tr><td>Velikost: </td><td style=font\\-weight:bold>([^<>\"]*?)</td></tr>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("Velikost: ([0-9]+ .*?),").getMatch(0);
