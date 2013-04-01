@@ -83,7 +83,12 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 filename = br.getRegex("<h2 class=\"clip_title\">([^<>\"]*?)</h2>").getMatch(0);
             } else {
                 // Testlink: http://www.twitch.tv/fiegsy/b/296921448
-                filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+                filename = br.getRegex("<span class='real_title js\\-title'>(.*?)</span>").getMatch(0);
+                if (filename == null) filename = br.getRegex("<h2 class='js\\-title'>(.*?)</h2>").getMatch(0);
+                // they don't give full title with this regex, badddd
+                // eg. http://www.twitch.tv/fgtvlive/c/2006335
+                // returns: 'FgtvLive' from <meta property="og:title" content="FgtvLive"/>
+                // filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             }
             if (parameter.contains("/b/")) {
                 br.getPage("http://api.justin.tv/api/broadcast/by_archive/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".xml");
@@ -91,18 +96,20 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 br.getPage("http://api.justin.tv/api/broadcast/by_chapter/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".xml");
             }
             final String[] links = br.getRegex("<video_file_url>(http://[^<>\"]*?)</video_file_url>").getColumn(0);
-            int counter = 1;
             if (links == null || links.length == 0 || filename == null) {
                 logger.warning("Decrypter broken: " + parameter);
                 return null;
             }
             filename = Encoding.htmlDecode(filename.trim());
             filename = filename.replaceAll("[\r\n#]+", "");
+            int counter = 1;
+            String format = String.format("%%0%dd", (int) Math.log10(links.length) + 1);
+
             for (String dl : links) {
                 final DownloadLink dlink = createDownloadlink(dl.replace("twitch.tv/", "twitchdecrypted.tv/").replace("justin.tv/", "justindecrypted.tv/"));
                 dlink.setProperty("directlink", "true");
                 if (links.length != 1) {
-                    dlink.setFinalFileName(filename + " - Part " + counter + ".flv");
+                    dlink.setFinalFileName(filename + " - Part " + String.format(format, counter) + ".flv");
                 } else {
                     dlink.setFinalFileName(filename + ".flv");
                 }
