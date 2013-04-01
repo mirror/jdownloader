@@ -374,7 +374,7 @@ public class FourSaveFileCom extends PluginForHost {
 
     public String getDllink() {
         String dllink = br.getRedirectLocation();
-        if (dllink == null) dllink = new Regex(correctedBR, "(\"|\\')(http://[a-z0-9]+\\.4savefile\\.com(:\\d+)?/files/\\d+/[a-z0-9]+/[^<>\"\\'/]*?)(\"|\\')").getMatch(1);
+        if (dllink == null) dllink = new Regex(correctedBR, "(\"|\\')(http://[a-z0-9]+\\.4savefile\\.com(:\\d+)?/d/[a-z0-9]+/[^<>\"\\'/]*?)(\"|\\')").getMatch(1);
         if (dllink == null) {
             String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
             if (cryptedScripts != null && cryptedScripts.length != 0) {
