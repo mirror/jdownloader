@@ -76,7 +76,7 @@ public class SecureUploadEu extends PluginForHost {
      * */
     // XfileSharingProBasic Version 2.5.7.3
     // mods: filesize regex, getdllink,login
-    // non account: 2 * 1
+    // non account: 1 * 1
     // free account: untested, set same as free
     // premium account: 10 * 20
     // protocol: no https
@@ -190,7 +190,7 @@ public class SecureUploadEu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -654,7 +654,7 @@ public class SecureUploadEu extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, -2, "freelink2");
+            doFree(downloadLink, false, 1, "freelink2");
         } else {
             dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {

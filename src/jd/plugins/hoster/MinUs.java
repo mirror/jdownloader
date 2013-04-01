@@ -82,7 +82,7 @@ public class MinUs extends PluginForHost {
         // Sometimes servers are pretty slow
         br.setReadTimeout(3 * 60);
         String finallink = br.getRegex("class=\"btn\\-action btn\\-download no\\-counter\"[\t\n\r ]+target=\"_blank\"[\t\n\r ]+href=\"(http://i\\.minus\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("\"(http://i\\.minus\\.com/\\d+/[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) finallink = br.getRegex("\"(http?://i\\.minus\\.com/\\d+/[^<>\"]+|https?://i\\d+\\.minus\\.com/[^<>\"]+)\"").getMatch(0);
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

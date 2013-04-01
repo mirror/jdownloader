@@ -40,8 +40,7 @@ public class MltpldCm extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             String redirect = br.getRedirectLocation();
-            // lets just return the result back into JD, and proper plugin can
-            // pick it up if we have support.
+            // lets just return the result back into JD, and proper plugin can pick it up if we have support.
             if (!redirect.matches("http.+multiupload\\.(com|nl)/.+")) {
                 decryptedLinks.add(createDownloadlink(redirect));
                 return decryptedLinks;

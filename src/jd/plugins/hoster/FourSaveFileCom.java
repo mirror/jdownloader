@@ -58,6 +58,7 @@ public class FourSaveFileCom extends PluginForHost {
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String         COOKIE_HOST                  = "http://4savefile.com";
+    private static final String  DOMAINS                      = "(4savefile\\.com)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -374,7 +375,7 @@ public class FourSaveFileCom extends PluginForHost {
 
     public String getDllink() {
         String dllink = br.getRedirectLocation();
-        if (dllink == null) dllink = new Regex(correctedBR, "(\"|\\')(http://[a-z0-9]+\\.4savefile\\.com(:\\d+)?/d/[a-z0-9]+/[^<>\"\\'/]*?)(\"|\\')").getMatch(1);
+        if (dllink == null) dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
         if (dllink == null) {
             String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
             if (cryptedScripts != null && cryptedScripts.length != 0) {
