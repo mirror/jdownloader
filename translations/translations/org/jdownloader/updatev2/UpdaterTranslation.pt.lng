@@ -1,3 +1,5 @@
+RestartController_confirmToExit_=Sair?
+RestartController_confirmToExit_msg=Quer sair do JDownloader?
 close_jd=Permissões insuficientes para escrever %s1.\nExperimente fechar todos os processos do JDownloader e do Java e tente novamente.\nContacte o suporte se este problema persistir após reiniciar o sistema.
 confirmdialog_new_update_available_answer_later=Mais tarde
 confirmdialog_new_update_available_answer_later_install=Mais tarde
