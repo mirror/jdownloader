@@ -38,11 +38,11 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download.php\\?id=|dl/.*?/free/2/).+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download.php\\?id=|dl/.*?/free/2/).+" }, flags = { 2 })
 public class FilesMonsterCom extends PluginForHost {
 
-    private static final String POSTTHATREGEX        = "\"(http://filesmonster\\.com/dl/.*?/free/.*?)\"";
-    private static final String POSTTHATREGEX2       = "(http://(www\\.)?filesmonster\\.com/dl/.*?/free/.+)";
+    private static final String POSTTHATREGEX        = "\"(https?://filesmonster\\.com/dl/.*?/free/.*?)\"";
+    private static final String POSTTHATREGEX2       = "(https?://(www\\.)?filesmonster\\.com/dl/.*?/free/.+)";
     private static final String TEMPORARYUNAVAILABLE = "Download not available at the moment";
     private static final String REDIRECTFNF          = "DL_FileNotFound";
     private static final String PREMIUMONLYUSERTEXT  = "Only downloadable via premium";

@@ -267,7 +267,7 @@ public class RyuShareCom extends PluginForHost {
                     if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
                     dlForm.put("capcode", result);
                     /** wait time is often skippable for reCaptcha handling */
-                    skipWaittime = true;
+                    skipWaittime = false;
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(passCode, dlForm, downloadLink);

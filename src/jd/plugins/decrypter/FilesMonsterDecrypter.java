@@ -31,7 +31,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.comDecrypt" }, urls = { "http://(www\\.)?filesmonster\\.com/(download\\.php\\?id=[A-Za-z0-9_-]+|dl/.*?/free/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.comDecrypt" }, urls = { "https?://(www\\.)?filesmonster\\.com/(download\\.php\\?id=[A-Za-z0-9_-]+|dl/.*?/free/)" }, flags = { 0 })
 public class FilesMonsterDecrypter extends PluginForDecrypt {
 
     public FilesMonsterDecrypter(PluginWrapper wrapper) {
@@ -47,8 +47,9 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
         String parameter = param.toString();
+        String protocol = new Regex(parameter, "(https?)://").getMatch(0);
         String fid = new Regex(parameter, "filesmonster\\.com/dl/(.*?)/free/").getMatch(0);
-        if (fid != null) parameter = "http://filesmonster.com/download.php?id=" + fid;
+        if (fid != null) parameter = protocol + "://filesmonster.com/download.php?id=" + fid;
         br.getPage(parameter);
         // Link offline
         if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<)")) {
@@ -70,10 +71,10 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         String[] decryptedStuff = null;
         final String postThat = br.getRegex("\"(/dl/.*?)\"").getMatch(0);
         if (postThat != null) {
-            br.postPage("http://filesmonster.com" + postThat, "");
+            br.postPage(postThat, "");
             final String findOtherLinks = br.getRegex("'(/dl/rft/.*?)\\'").getMatch(0);
             if (findOtherLinks != null) {
-                br.getPage("http://filesmonster.com" + findOtherLinks);
+                br.getPage(findOtherLinks);
                 decryptedStuff = br.getRegex("\\{(.*?)\\}").getColumn(0);
             }
         } else {
@@ -95,7 +96,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                     logger.warning("FilesMonsterDecrypter failed while decrypting link:" + parameter);
                     return null;
                 }
-                String dllink = "http://filesmonsterdecrypted.com/dl/" + theImportantPartOfTheMainLink + "/free/2/" + filelinkPart;
+                String dllink = protocol + "://filesmonsterdecrypted.com/dl/" + theImportantPartOfTheMainLink + "/free/2/" + filelinkPart;
                 final DownloadLink finalOne = createDownloadlink(dllink);
                 finalOne.setFinalFileName(Encoding.htmlDecode(filename));
                 finalOne.setDownloadSize(Integer.parseInt(filesize));
