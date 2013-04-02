@@ -18,7 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -247,26 +249,43 @@ public class CatShareNet extends PluginForHost {
         try {
             login(account, true);
         } catch (PluginException e) {
+            ai.setStatus("Login failed or not Premium");
+            UserIO.getInstance().requestMessageDialog(0, "CatShare.net Premium Error", "Login failed or not Premium!\r\nPlease check your Username and Password!");
             account.setValid(false);
             return ai;
         }
-        String expire = br.getRegex(">Konto premium ważne do : <strong>(\\d{4}\\-\\d+{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})<").getMatch(0);
-        if (expire == null) {
-            expire = br.getRegex("(\\d{4}\\-\\d+{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
-            }
-        }
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
-        account.setValid(true);
+
         final String dailyLimitLeft = br.getRegex("<li><a href=\"/premium\">([^<>\"\\']+)</a></li>").getMatch(0);
         if (dailyLimitLeft != null) {
             ai.setTrafficMax(DAILYLIMITMAX);
             ai.setTrafficLeft(SizeFormatter.getSize(dailyLimitLeft));
         } else
             ai.setUnlimitedTraffic();
+
+        String expire = br.getRegex(">Konto premium ważne do : <strong>(\\d{4}\\-\\d+{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})<").getMatch(0);
+        if (expire == null) {
+            expire = br.getRegex("(\\d{4}\\-\\d+{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            if (expire == null) {
+                // for the last day of the premium period
+                if (br.containsHTML("Konto premium ważne do : <strong>-</strong></span>")) {
+                    // 0 days left
+                    expire = br.getRegex("<a href=\"/premium\">Konto:[ \t\n\r]+ Premium \\(<b>(\\d) dni</b>\\)+[ \t\n\r]+</a>").getMatch(0);
+                }
+                if (expire == null) {
+                    ai.setExpired(true);
+                    account.setValid(false);
+                    return ai;
+                }
+            }
+        }
+        if (expire.equals("0") && (dailyLimitLeft != null)) {
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+            String dateNow = formatter.format(Calendar.getInstance().getTime());
+            dateNow = dateNow + " 23:59:59";
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(dateNow, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+        } else
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+        account.setValid(true);
         try {
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
@@ -308,7 +327,7 @@ public class CatShareNet extends PluginForHost {
                 br.submitForm(login);
                 br.getPage("/");
                 if (!br.containsHTML("Konto:[\r\t\n ]+Premium \\(<b>\\d+ dni</b>\\)")) {
-                    logger.warning("Couldn't determin premium status!");
+                    logger.warning("Couldn't determine premium status or account is Free not Premium!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /** Save cookies */
@@ -321,6 +340,7 @@ public class CatShareNet extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
+                if (e.getErrorMessage() == null) e.setErrorMessage("Premium Account is invalid: it's free or not recognized!");
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }
