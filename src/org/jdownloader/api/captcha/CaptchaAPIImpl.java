@@ -52,74 +52,59 @@ public class CaptchaAPIImpl implements CaptchaAPI {
         return ret;
     }
 
-    public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id, final boolean returnAsDataURL) {
+    public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id) {
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
         if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
 
         ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
         try {
-            if (returnAsDataURL) {
-                OutputStream out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), true);
-                String mime = FileResponse.getMimeType(challenge.getImageFile().getName());
-                String header = "{\r\n\"data\":\"" + mime + ";base64,";
-                out.write(header.getBytes("UTF-8"));
-                Base64OutputStream b64os = new Base64OutputStream(out);
-                FileInputStream fis = null;
-                ReusableByteArrayOutputStream ros = null;
-                try {
-                    fis = new FileInputStream(challenge.getImageFile());
-                    ros = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(1024);
-                    int read = 0;
-                    while ((read = fis.read(ros.getInternalBuffer())) >= 0) {
-                        if (read > 0) {
-                            b64os.write(ros.getInternalBuffer(), 0, read);
-                        } else {
-                            synchronized (this) {
-                                try {
-                                    this.wait(500);
-                                } catch (final InterruptedException e) {
-                                    throw new IOException(e);
-                                }
+            OutputStream out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), true);
+            String mime = FileResponse.getMimeType(challenge.getImageFile().getName());
+            String header = "{\r\n\"data\":\"" + mime + ";base64,";
+            out.write(header.getBytes("UTF-8"));
+            Base64OutputStream b64os = new Base64OutputStream(out);
+            FileInputStream fis = null;
+            ReusableByteArrayOutputStream ros = null;
+            try {
+                fis = new FileInputStream(challenge.getImageFile());
+                ros = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(1024);
+                int read = 0;
+                while ((read = fis.read(ros.getInternalBuffer())) >= 0) {
+                    if (read > 0) {
+                        b64os.write(ros.getInternalBuffer(), 0, read);
+                    } else {
+                        synchronized (this) {
+                            try {
+                                this.wait(500);
+                            } catch (final InterruptedException e) {
+                                throw new IOException(e);
                             }
                         }
                     }
-                    b64os.flush();
-                    out.write("\"\r\n}".getBytes("UTF-8"));
-                } finally {
-                    try {
-                        /*
-                         * we need to close the b64 stream which closes the RemoteAPI Outputstream
-                         */
-                        b64os.close();
-                    } catch (final Throwable e) {
-                    }
-                    try {
-                        fis.close();
-                    } catch (final Throwable e) {
-                    }
-                    try {
-                        ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(ros);
-                    } catch (final Throwable e) {
-                    }
                 }
-            } else {
-                final FileResponse fr = new FileResponse(request, response, challenge.getImageFile()) {
-
-                    protected boolean useContentDisposition() {
-                        /* we want the image to be displayed in browser */
-                        return false;
-                    }
-                };
-                fr.sendFile();
+                b64os.flush();
+                out.write("\"\r\n}".getBytes("UTF-8"));
+            } finally {
+                try {
+                    /*
+                     * we need to close the b64 stream which closes the RemoteAPI Outputstream
+                     */
+                    b64os.close();
+                } catch (final Throwable e) {
+                }
+                try {
+                    fis.close();
+                } catch (final Throwable e) {
+                }
+                try {
+                    ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(ros);
+                } catch (final Throwable e) {
+                }
             }
         } catch (IOException e) {
             Log.exception(e);
             throw new RemoteAPIException(e);
         }
-    }
-
-    public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id) {
-        get(request, response, id, false);
     }
 
     @SuppressWarnings("unchecked")

@@ -38,12 +38,8 @@ public class CaptchaApi implements ICaptchaApi {
         return ret;
     }
 
-    public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id, final boolean returnAsDataURL) {
-        cpAPI.get(request, response, id, returnAsDataURL);
-    }
-
     public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id) {
-        cpAPI.get(request, response, id, false);
+        cpAPI.get(request, response, id);
     }
 
     @Override

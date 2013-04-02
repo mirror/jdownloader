@@ -21,8 +21,6 @@ public interface CaptchaAPI extends RemoteAPIInterface {
 
     public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id);
 
-    public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id, final boolean returnAsDataURL);
-
     public boolean solve(final long id, String result);
 
     public boolean abort(final long id);
