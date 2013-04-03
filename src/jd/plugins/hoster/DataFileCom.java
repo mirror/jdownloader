@@ -198,7 +198,7 @@ public class DataFileCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://www.datafile.com/login.html", "btn=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://www.datafile.com/login.html", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=1&btn=Submit");
                 if (!br.containsHTML("Premium:\\&nbsp;\\(<span class=")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();

@@ -37,7 +37,7 @@ public class UpldsCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.megaunload.net/";
+        return "http://www.uplds.com/";
     }
 
     @Override

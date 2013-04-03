@@ -33,10 +33,8 @@ public class XFileShareProFolder extends PluginForDecrypt {
 
     // DEV NOTES
     // other: keep last /.+ for fpName. Not needed otherwise.
-    // other: group sister sites or aliased domains together, for easy
-    // maintenance.
-    // TODO: add spanning folders + page support, at this stage it's not
-    // important.
+    // other: group sister sites or aliased domains together, for easy maintenance.
+    // TODO: add spanning folders + page support, at this stage it's not important.
     // TODO: remove old xfileshare folder plugins after next major update.
 
     public XFileShareProFolder(PluginWrapper wrapper) {
