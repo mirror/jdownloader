@@ -129,6 +129,7 @@ plugins_errors_nointernetconn=沒有網路連線？
 plugins_errors_pluginerror=外掛錯誤。回報錯誤
 plugins_errors_wrongpassword=密碼錯誤
 reconnectmanager_wizard=重新連線精靈
+settings_sidebar_tooltip_enable_extension=啟用/停用這個附加元件
 system_download_doCRC2=CRC 檢查正在執行 (%s1)
 system_download_doCRC2_failed=CRC 檢查失敗 (%s1)
 system_download_doCRC2_success=CRC 檢查成功 (%s1)
