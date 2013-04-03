@@ -330,11 +330,14 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
     @Override
     protected DefaultButtonPanel getDefaultButtonPanel() {
         final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[]", "0[grow,fill]0") {
-            {
+
+            @Override
+            public void addOKButton(JButton okButton) {
                 final ExtButton refreshBtn = new ExtButton(new AppAction() {
                     {
-                        setSmallIcon(NewTheme.I().getIcon("refresh", 20));
+                        setSmallIcon(NewTheme.I().getIcon("refresh", 18));
                         setTooltipText(_GUI._.CaptchaDialog_layoutDialogContent_refresh());
+
                     }
 
                     @Override
@@ -352,8 +355,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
                 };
                 //
-
-                super.add(refreshBtn, "alignx right,tag ok,sizegroup confirms");
+                refreshBtn.setRolloverEffectEnabled(true);
+                super.add(refreshBtn, "alignx right,width 28!");
+                super.addOKButton(okButton);
             }
 
             @Override
