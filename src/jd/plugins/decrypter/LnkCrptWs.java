@@ -1074,7 +1074,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 final int h = imgcs[3] + imgcs[15] + imgcs[27];
                 int dX = 0;
                 int dY = 0;
-                kcImages[pieces] = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+                kcImages[pieces] = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
                 go = kcImages[pieces].getGraphics();
                 if (element.equals("kc_sample_image")) {
                     kcSampleImg = pieces;
