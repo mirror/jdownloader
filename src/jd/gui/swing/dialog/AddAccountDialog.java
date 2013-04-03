@@ -21,27 +21,26 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
 
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.BuyAction;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.swing.HelpNotifier;
-import org.appwork.utils.swing.HelpNotifierCallbackListener;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -51,6 +50,10 @@ import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.accounts.AccountFactory;
+import org.jdownloader.plugins.accounts.EditAccountPanel;
+import org.jdownloader.plugins.accounts.Notifier;
+import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -63,20 +66,21 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         try {
             Dialog.getInstance().showDialog(dialog);
             if (dialog.getHoster() == null) return;
-            final Account ac = new Account(dialog.getUsername(), dialog.getPassword());
+            final Account ac = dialog.getAccount();
             ac.setHoster(dialog.getHoster().getDisplayName());
 
             if (!addAccount(ac)) {
                 showDialog(dialog.getHoster().getPrototype(null), ac);
             }
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        } catch (UpdateRequiredClassNotFoundException e) {
+
+        } catch (Throwable e) {
             Log.exception(e);
         }
 
+    }
+
+    private Account getAccount() {
+        return editAccountPanel.getAccount();
     }
 
     public static boolean addAccount(final Account ac) throws DialogClosedException, DialogCanceledException {
@@ -149,16 +153,16 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     private SearchComboBox<LazyHostPlugin> hoster;
 
-    private JTextField                     name;
-
-    JPasswordField                         pass;
-    private final PluginForHost            plugin;
+    private PluginForHost                  plugin;
 
     private Account                        defaultAccount;
-    private static String                  EMPTYPW = "                 ";
+
+    private EditAccountPanel               editAccountPanel;
+
+    private JPanel                         content;
 
     private AddAccountDialog(final PluginForHost plugin, Account acc) {
-        super(UserIO.NO_ICON, _GUI._.jd_gui_swing_components_AccountDialog_title(), null, null, null);
+        super(UserIO.NO_ICON, _GUI._.jd_gui_swing_components_AccountDialog_title(), null, _GUI._.lit_save(), null);
         this.defaultAccount = acc;
         this.plugin = plugin;
     }
@@ -168,29 +172,17 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         return this.getReturnmask();
     }
 
-    public LazyHostPlugin getHoster() {
-        return (LazyHostPlugin) this.hoster.getSelectedItem();
-    }
-
-    public String getPassword() {
-        if (this.pass == null) return null;
-        if (EMPTYPW.equals(new String(this.pass.getPassword()))) return null;
-        return new String(this.pass.getPassword());
-    }
-
-    public String getUsername() {
-        if (_GUI._.jd_gui_swing_components_AccountDialog_help_username().equals(this.name.getText())) return null;
-        return this.name.getText();
-    }
-
     @Override
     public JComponent layoutDialogContent() {
         final List<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
         final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
+
         for (LazyHostPlugin lhp : allPLugins) {
             if (lhp.isPremium()) plugins.add(lhp);
         }
+
+        if (plugins.size() == 0) throw new RuntimeException("No Plugins Loaded Exception");
         // final HostPluginWrapper[] array = plugins.toArray(new
         // HostPluginWrapper[plugins.size()]);
 
@@ -203,18 +195,48 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
             }
 
             @Override
+            public void onChanged() {
+                super.onChanged();
+
+                try {
+                    if (getSelectedItem() == null || content == null) return;
+                    PluginForHost plg = ((LazyHostPlugin) getSelectedItem()).newInstance(PluginClassLoader.getInstance().getChild());
+                    if (plg != plugin) {
+                        plugin = plg;
+                        updatePanel();
+                        checkOK();
+                    }
+
+                } catch (UpdateRequiredClassNotFoundException e1) {
+                    Dialog.getInstance().showErrorDialog(_GUI._.AddAccountDialog_actionPerformed_outdated(((LazyHostPlugin) getSelectedItem()).getHost()));
+                }
+
+            }
+
+            @Override
             protected String getTextForValue(LazyHostPlugin value) {
                 if (value == null) return "";
                 return value.getDisplayName();
             }
         };
-        hoster.addActionListener(new ActionListener() {
 
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                checkOK();
+        final JButton link = new JButton(NewTheme.I().getIcon("money", 16));
+        link.setText(_GUI._.gui_menu_action_premium_buy_name());
+        link.setToolTipText(_GUI._.gui_menu_action_premium_buy_name());
+        link.addActionListener(new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {
+                if (plugin == null || StringUtils.isEmpty(plugin.getLazyP().getPremiumUrl())) return;
+                CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(plugin.getLazyP().getPremiumUrl(), "accountmanager/table"));
             }
         });
+        link.setFocusable(false);
+
+        content = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]"));
+        content.add(header(_GUI._.AddAccountDialog_layoutDialogContent_choosehoster_()), "gapleft 15,spanx,pushx,growx");
+        content.add(this.hoster, "gapleft 32,height 24!");
+        content.add(link, "height 20!,gapleft 32");
+        content.add(header(_GUI._.AddAccountDialog_layoutDialogContent_enterlogininfo()), "gapleft 15,spanx,pushx,growx,gaptop 15");
+
         if (this.plugin != null) {
             try {
                 LazyHostPlugin lazyp = plugin.getLazyP();
@@ -230,56 +252,69 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 }
             }
         }
-        final JButton link = new JButton(NewTheme.I().getIcon("money", 16));
-        link.setToolTipText(_GUI._.gui_menu_action_premium_buy_name());
-        link.addActionListener(new ActionListener() {
-            public void actionPerformed(final ActionEvent e) {
-                new BuyAction(getHoster()).actionPerformed(null);
-            }
-        });
-        link.setFocusable(false);
-        final JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2", "[][grow,fill]"));
-        panel.add(new JLabel(_GUI._.jd_gui_swing_components_AccountDialog_hoster()));
-        panel.add(this.hoster, "split 2,height 24!");
-        panel.add(link, "height 24!");
 
-        panel.add(new JLabel(_GUI._.jd_gui_swing_components_AccountDialog_name()));
-        panel.add(this.name = new JTextField());
+        return content;
+    }
 
-        HelpNotifier.register(name, new HelpNotifierCallbackListener() {
+    protected int getPreferredWidth() {
+        // TODO Auto-generated method stub
+        return 450;
+    }
 
-            public void onHelpNotifyShown(JComponent c) {
-                checkOK();
-            }
+    public LazyHostPlugin getHoster() {
+        return (LazyHostPlugin) this.hoster.getSelectedItem();
+    }
 
-            public void onHelpNotifyHidden(JComponent c) {
-                checkOK();
-            }
-        }, _GUI._.jd_gui_swing_components_AccountDialog_help_username());
+    protected void updatePanel() {
+        try {
+            if (content == null) return;
+            PluginForHost plg = plugin;
+            if (plg == null) {
+                LazyHostPlugin p = HostPluginController.getInstance().get("netload.in");
+                if (p == null) {
 
-        panel.add(new JLabel(_GUI._.jd_gui_swing_components_AccountDialog_pass()));
-        panel.add(this.pass = new JPasswordField(), "");
-        HelpNotifier.register(pass, new HelpNotifierCallbackListener() {
+                    p = HostPluginController.getInstance().list().get(0);
+                }
 
-            public void onHelpNotifyShown(JComponent c) {
-                checkOK();
+                hoster.setSelectedItem(p);
+
+                plg = p.newInstance(PluginClassLoader.getInstance().getChild());
+
             }
 
-            public void onHelpNotifyHidden(JComponent c) {
-                checkOK();
+            AccountFactory accountFactory = plg.getAccountFactory();
+            if (editAccountPanel != null) {
+                defaultAccount = editAccountPanel.getAccount();
+                content.remove(editAccountPanel.getComponent());
             }
-        }, EMPTYPW);
-        if (defaultAccount != null) {
-            name.setText(defaultAccount.getUser());
+            editAccountPanel = accountFactory.getPanel();
+            content.add(editAccountPanel.getComponent(), "gapleft 32,spanx");
+            editAccountPanel.setAccount(defaultAccount);
+            editAccountPanel.setNotifyCallBack(new Notifier() {
+
+                @Override
+                public void onNotify() {
+                    checkOK();
+                }
+
+            });
+            checkOK();
+            getDialog().pack();
+
+        } catch (UpdateRequiredClassNotFoundException e) {
+            e.printStackTrace();
         }
-        checkOK();
-        return panel;
+    }
+
+    private JComponent header(String buyAndAddPremiumAccount_layoutDialogContent_get) {
+        JLabel ret = SwingUtils.toBold(new JLabel(buyAndAddPremiumAccount_layoutDialogContent_get));
+        ret.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ret.getForeground()));
+        return ret;
     }
 
     private void checkOK() {
-        boolean ok = getPassword() != null || getUsername() != null;
-        if (hoster.getSelectedItem() == null) ok = false;
-        this.okButton.setEnabled(ok);
+
+        this.okButton.setEnabled(hoster != null && hoster.getSelectedItem() != null && editAccountPanel.validateInputs());
     }
 
     @Override

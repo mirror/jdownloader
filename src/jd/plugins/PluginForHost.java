@@ -64,6 +64,7 @@ import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.accounts.AccountFactory;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
@@ -1078,6 +1079,17 @@ public abstract class PluginForHost extends Plugin {
      */
     public JComponent layoutPremiumInfoPanel(AbstractDialog dialog) {
         return null;
+    }
+
+    /**
+     * Can be overridden to support special accounts like login tokens instead of username/password
+     * 
+     * @return
+     */
+    public AccountFactory getAccountFactory() {
+        // this should be plugincode as soon as we can ignore 0.9 compatibility
+        if (getHost().equalsIgnoreCase("letitbit.net")) { return new LetitBitAccountFactory(); }
+        return new DefaultAccountFactory();
     }
 
 }

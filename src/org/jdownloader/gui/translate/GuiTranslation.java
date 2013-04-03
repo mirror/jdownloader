@@ -2281,4 +2281,22 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Rebuilding Plugincache..." })
     String DownloadsTable_DownloadsTable_init_plugins();
 
+    @Default(lngs = { "en" }, values = { "1. Choose a Hoster" })
+    String AddAccountDialog_layoutDialogContent_choosehoster_();
+
+    @Default(lngs = { "en" }, values = { "2. Enter your Acount's Login Information" })
+    String AddAccountDialog_layoutDialogContent_enterlogininfo();
+
+    @Default(lngs = { "en" }, values = { "Save" })
+    String lit_save();
+
+    @Default(lngs = { "en" }, values = { "The %s1 plugin is outdated. Please run an update!" })
+    String AddAccountDialog_actionPerformed_outdated(String host);
+
+    @Default(lngs = { "en" }, values = { "or Premium Key" })
+    String LetitBitAccountFactory_LetitBitPanel_key();
+
+    @Default(lngs = { "en" }, values = { "Enter a premiumkey instead of username +  password..." })
+    String LetitBitAccountFactory_LetitBitPanel_key_help();
+
 }

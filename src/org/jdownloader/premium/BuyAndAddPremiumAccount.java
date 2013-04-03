@@ -15,11 +15,11 @@ import jd.SecondLevelLaunch;
 import jd.gui.swing.dialog.AddAccountDialog;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Account;
+import jd.plugins.PluginForHost;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -30,13 +30,18 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.accounts.EditAccountPanel;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements BuyAndAddPremiumDialogInterface {
 
     private DomainInfo       info;
-    private ExtTextField     user;
-    private ExtPasswordField pass;
+
     private String           id;
+
+    private EditAccountPanel creater;
 
     public BuyAndAddPremiumAccount(DomainInfo info, String id) {
         super(0, _GUI._.BuyAndAddPremiumAccount_BuyAndAddPremiumAccount_title_(), null, null, null);
@@ -53,12 +58,11 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
         if (e.getSource() == this.okButton) {
             Log.L.fine("Answer: Button<OK:" + this.okButton.getText() + ">");
 
-            Account ac = new Account(user.getText(), new String(pass.getPassword()));
+            Account ac = creater.getAccount();
             ac.setHoster(info.getTld());
             try {
                 if (!AddAccountDialog.addAccount(ac)) {
-                    user.requestFocus();
-                    user.selectAll();
+
                     return;
                 } else {
                     this.dispose();
@@ -103,7 +107,7 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
         try {
             SecondLevelLaunch.statics();
 
-            cp = new BuyAndAddPremiumAccount(DomainInfo.getInstance("filesonic.com"), "test");
+            cp = new BuyAndAddPremiumAccount(DomainInfo.getInstance("letitbit.net"), "test");
 
             LookAndFeelController.getInstance().setUIManager();
 
@@ -131,12 +135,15 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
         ExtButton bt = new ExtButton(new OpenURLAction(info, id == null ? "BuyAndAddDialog" : id));
         ret.add(bt, "gapleft 27");
         ret.add(header(_GUI._.BuyAndAddPremiumAccount_layoutDialogContent_enter()), "gapleft 15,pushx,growx");
-        user = new ExtTextField();
-        pass = new ExtPasswordField();
-        user.setHelpText(_GUI._.BuyAndAddPremiumAccount_layoutDialogContent_username(info.getTld()));
-        pass.setHelpText(_GUI._.BuyAndAddPremiumAccount_layoutDialogContent_pass());
-        ret.add(user, "gapleft 27");
-        ret.add(pass, "gapleft 27");
+        PluginForHost plg;
+        try {
+            plg = HostPluginController.getInstance().get(info.getTld()).newInstance(PluginClassLoader.getInstance().getChild());
+        } catch (UpdateRequiredClassNotFoundException e) {
+            throw new WTFException(e);
+        }
+        creater = plg.getAccountFactory().getPanel();
+        ret.add(creater.getComponent(), "gapleft 27");
+
         return ret;
     }
 

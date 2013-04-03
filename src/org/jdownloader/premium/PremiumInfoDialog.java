@@ -34,7 +34,7 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
         try {
             SecondLevelLaunch.statics();
 
-            cp = new PremiumInfoDialog(DomainInfo.getInstance("wupload.com"));
+            cp = new PremiumInfoDialog(DomainInfo.getInstance("rapidshare.com"));
 
             LookAndFeelController.getInstance().setUIManager();
 

@@ -330,6 +330,31 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
     @Override
     protected DefaultButtonPanel getDefaultButtonPanel() {
         final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[]", "0[grow,fill]0") {
+            {
+                final ExtButton refreshBtn = new ExtButton(new AppAction() {
+                    {
+                        setSmallIcon(NewTheme.I().getIcon("refresh", 20));
+                        setTooltipText(_GUI._.CaptchaDialog_layoutDialogContent_refresh());
+                    }
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        refresh = true;
+                        setReturnmask(false);
+                        dispose();
+                    }
+                }) {
+
+                    @Override
+                    public int getTooltipDelay(Point mousePositionOnScreen) {
+                        return 500;
+                    }
+
+                };
+                //
+
+                super.add(refreshBtn, "alignx right,tag ok,sizegroup confirms");
+            }
 
             @Override
             public void addCancelButton(final JButton cancelButton) {
@@ -642,16 +667,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         config = JsonConfig.create(Application.getResource("cfg/CaptchaDialogDimensions_" + Hash.getMD5(getTitle())), LocationStorage.class);
 
         HeaderScrollPane sp;
-        final JButton refreshBtn = new JButton(_GUI._.CaptchaDialog_layoutDialogContent_refresh(), NewTheme.I().getIcon("refresh", 20));
-        refreshBtn.addActionListener(new ActionListener() {
 
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                refresh = true;
-                setReturnmask(false);
-                dispose();
-            }
-        });
         iconPanel = new JPanel(new MigLayout("ins 0", "[grow]", "[grow]")) {
 
             /**
@@ -684,7 +700,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
         };
         iconPanel.setOpaque(false);
-        iconPanel.add(refreshBtn, "alignx right,aligny bottom");
+        // iconPanel.add(refreshBtn, "alignx right,aligny bottom");
         iconPanel.addMouseMotionListener(new MouseAdapter() {
 
             @Override
