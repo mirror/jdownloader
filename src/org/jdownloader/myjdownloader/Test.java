@@ -109,16 +109,17 @@ public class Test {
         };
         LoginData li = Dialog.getInstance().showDialog(new LoginDialog(0));
         api.setServerRoot("http://192.168.2.110:10101");
-        api.setServerRoot("http://localhost:10101");
+        api.setLogins(li.getUsername(), li.getPassword());
 
-        CaptchaChallenge challenge = api.getChallenge();
+        // CaptchaChallenge challenge = api.getChallenge();
 
-        String response = Dialog.getInstance().showInputDialog(0, "Captcha", "Enter", null, createImage(challenge), null, null);
-        challenge.setCaptchaResponse(response);
+        // String response = Dialog.getInstance().showInputDialog(0, "Captcha", "Enter", null, createImage(challenge), null, null);
+        // challenge.setCaptchaResponse(response);
 
-        api.register(li.getUsername(), li.getPassword(), challenge);
+        // api.register(li.getUsername(), li.getPassword(), challenge);
 
-        api.connect(li.getUsername(), li.getPassword());
+        api.requestConfirmationEmail();
+        api.connect();
         JDAPI jda;
 
         // List<FilePackageAPIStorable> ret = api.link(DownloadsAPI.class, "downloads").queryPackages(new APIQuery());
