@@ -28,11 +28,11 @@ import org.jdownloader.api.captcha.CaptchaAPI;
 import org.jdownloader.api.captcha.CaptchaJob;
 import org.jdownloader.api.jd.JDAPI;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
-import org.jdownloader.myjdownloader.client.CaptchaChallenge;
 import org.jdownloader.myjdownloader.client.exceptions.APIException;
 import org.jdownloader.myjdownloader.client.exceptions.InvalidResponseCodeException;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderUnexpectedIOException;
+import org.jdownloader.myjdownloader.client.json.CaptchaChallenge;
 
 public class Test {
     /**
@@ -112,7 +112,7 @@ public class Test {
 
         };
         LoginData li = Dialog.getInstance().showDialog(new LoginDialog(0));
-        api.setServerRoot("http://192.168.2.110:10101");
+        api.setServerRoot("http://localhost:10101");
         CaptchaChallenge challenge = api.getChallenge();
 
         String response = Dialog.getInstance().showInputDialog(0, "Captcha", "Enter", "Bla", createImage(challenge), null, null);
