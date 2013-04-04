@@ -26,9 +26,8 @@ import org.appwork.utils.swing.dialog.LoginDialog.LoginData;
 import org.jdownloader.api.jd.JDAPI;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
 import org.jdownloader.myjdownloader.client.exceptions.APIException;
-import org.jdownloader.myjdownloader.client.exceptions.InvalidResponseCodeException;
+import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
-import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderUnexpectedIOException;
 import org.jdownloader.myjdownloader.client.json.CaptchaChallenge;
 
 public class Test {
@@ -45,14 +44,14 @@ public class Test {
      */
     public static void main(String[] args) throws APIException, MyJDownloaderException, DialogClosedException, DialogCanceledException, IOException {
         final Browser br = new Browser();
-        br.setAllowedResponseCodes(200);
+        br.setAllowedResponseCodes(503, 401, 407, 403, 500, 429);
         // JSonStorage.setMapper(new JacksonMapper());
         // br.forceDebug(true);
         // Log.L.setLevel(Level.ALL);
         AbstractMyJDClient api = new AbstractMyJDClient() {
 
             @Override
-            protected String post(String query, String object) throws MyJDownloaderException {
+            protected String post(String query, String object) throws ExceptionResponse {
                 try {
 
                     String ret = br.postPageRaw(getServerRoot() + query, object == null ? "" : object);
@@ -61,7 +60,7 @@ public class Test {
 
                     if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) {
 
-                    throw new InvalidResponseCodeException(ret, con.getResponseCode());
+                    throw new ExceptionResponse(ret, con.getResponseCode());
 
                     }
                     System.out.println(con);
@@ -71,14 +70,14 @@ public class Test {
 
                     if (e.getConnection() != null && e.getConnection().getResponseCode() > 0 && e.getConnection().getResponseCode() != 200) {
 
-                    throw new InvalidResponseCodeException(null, e.getConnection().getResponseCode());
+                    throw new ExceptionResponse(null, e.getConnection().getResponseCode());
 
                     }
 
-                    throw new MyJDownloaderUnexpectedIOException(e);
+                    throw new ExceptionResponse(e);
                 } catch (IOException e) {
 
-                    throw new MyJDownloaderUnexpectedIOException(e);
+                    throw new ExceptionResponse(e);
                 } finally {
                     URLConnectionAdapter con = br.getRequest().getHttpConnection();
                     System.out.println(con);
@@ -112,20 +111,13 @@ public class Test {
         api.setServerRoot("http://192.168.2.110:10101");
         api.setServerRoot("http://localhost:10101");
 
-        // CaptchaChallenge challenge = api.getChallenge();
-        //
-        // String response = Dialog.getInstance().showInputDialog(0, "Captcha", "Enter", null, createImage(challenge), null, null);
-        // challenge.setCaptchaResponse(response);
-        // try {
-        // api.register(li.getUsername(), li.getPassword(), challenge);
-        //
-        // } catch (RegisterException e) {
-        // if (e.getResponse().getStatus() == Status.EMAIL_EXISTS) {
-        //
-        // // api.requestConfirmationEmail(li.getUsername(), li.getPassword(), challenge);
-        // }
-        // throw e;
-        // }
+        CaptchaChallenge challenge = api.getChallenge();
+
+        String response = Dialog.getInstance().showInputDialog(0, "Captcha", "Enter", null, createImage(challenge), null, null);
+        challenge.setCaptchaResponse(response);
+
+        api.register(li.getUsername(), li.getPassword(), challenge);
+
         api.connect(li.getUsername(), li.getPassword());
         JDAPI jda;
 
