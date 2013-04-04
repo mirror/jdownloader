@@ -62,7 +62,7 @@ public class AkaFileCom extends PluginForHost {
     // primary website url, take note of redirects
     private static final String        COOKIE_HOST                  = "http://akafile.com";
     // domain names used within download links.
-    private static final String        DOMAINS                      = "(akafile\\.com)";
+    private static final String        DOMAINS                      = "(akafile\\.com|akafile\\.info)";
     private static final String        PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private static final String        MAINTENANCE                  = ">This server is in maintenance mode";
     private static final boolean       videoHoster                  = false;
@@ -193,21 +193,6 @@ public class AkaFileCom extends PluginForHost {
             link.getLinkStatus().setStatusText(PREMIUMONLY2);
             return AvailableStatus.UNCHECKABLE;
         }
-        String[] fileInfo = new String[3];
-        // scan the first page
-        scanInfo(fileInfo);
-        if (fileInfo[0] == null || fileInfo[0].equals("")) {
-            if (correctedBR.contains("You have reached the download(\\-| )limit")) {
-                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-                return AvailableStatus.UNCHECKABLE;
-            }
-            logger.warning("filename equals null, throwing \"plugin defect\"");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
-        fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(fileInfo[0].trim());
-        if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         return AvailableStatus.TRUE;
     }
 
@@ -439,7 +424,6 @@ public class AkaFileCom extends PluginForHost {
         // cleanup rules.
 
         // generic cleanup
-        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
@@ -456,6 +440,7 @@ public class AkaFileCom extends PluginForHost {
     private String getDllink() {
         dllink = br.getRedirectLocation();
         if (dllink == null) {
+            // "http://cen.akafile.info:182/d/xtrdrarp6dgu4ln6oid3fmnwzrccsyw7ojgr7wiyxbnrawgjo4dhcpbg/Les.Miserables-iND.part2.rar"
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);

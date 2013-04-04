@@ -73,7 +73,7 @@ public class CtDiskCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>提示：本文件已到期。成为VIP后才能下载所有文件|<title>成为VIP即可下载全部视频和文件</title>|>注意：高级VIP可下载所有文件|color=\"#FF0000\" face=\"黑体\">点击立即成为VIP</font>|>Woops\\!找不到文件 \\- 免费高速下载|>对不起，这个文件已到期或被删除。您可以注册城通会)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = null;
-        if (br.getURL().contains("bego.cc/")) {
+        if (br.getURL().contains("bego.cc/") || br.getURL().contains("pipipan.com/")) {
             filename = br.getRegex("<div class=\"file_title\">([^<>\"]*?)</div>").getMatch(0);
         } else {
             filename = br.getRegex("<div class=\"top_title\"[^>]+>(.*?)<").getMatch(0);

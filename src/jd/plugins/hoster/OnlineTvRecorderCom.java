@@ -28,6 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -42,6 +44,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onlinetvrecorder.com" }, urls = { "http://(www\\.)?81\\.95\\.11\\.\\d{1,2}/download/\\d+/\\d+/\\d+/[a-z0-9]{32}/de/[^<>\"/]+" }, flags = { 2 })
 public class OnlineTvRecorderCom extends PluginForHost {
@@ -49,6 +52,7 @@ public class OnlineTvRecorderCom extends PluginForHost {
     public OnlineTvRecorderCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
+        this.setConfigElements();
     }
 
     @Override
@@ -56,9 +60,10 @@ public class OnlineTvRecorderCom extends PluginForHost {
         return "http://www.onlinetvrecorder.com/";
     }
 
-    private String  DLLINK      = null;
-    private boolean DOWNLOADNOW = false;
-    private int     CURRENTTIME = 0;
+    private String       DLLINK        = null;
+    private boolean      DOWNLOADNOW   = false;
+    private int          CURRENTTIME   = 0;
+    private final String NIGHTDOWNLOAD = "NIGHTDOWNLOAD";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
@@ -72,13 +77,14 @@ public class OnlineTvRecorderCom extends PluginForHost {
         final String filename = new Regex(downloadLink.getDownloadURL(), "/([^<>\"/]+)$").getMatch(0);
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
 
+        final boolean downloadInNightOnly = this.getPluginConfig().getBooleanProperty(NIGHTDOWNLOAD, true);
         Calendar cal = new GregorianCalendar();
         CURRENTTIME = cal.get(Calendar.HOUR_OF_DAY) * 60 * 60;
         CURRENTTIME += cal.get(Calendar.MINUTE) * 60;
         CURRENTTIME += cal.get(Calendar.SECOND);
         int minTime = 0; // 00:00Uhr
         int maxTime = 8 * 60 * 60; // 08:00Uhr
-        if (CURRENTTIME > minTime && CURRENTTIME < maxTime) {
+        if ((CURRENTTIME > minTime && CURRENTTIME < maxTime) || !downloadInNightOnly) {
             // In case the link redirects to the finallink
             URLConnectionAdapter con = null;
             try {
@@ -279,6 +285,10 @@ public class OnlineTvRecorderCom extends PluginForHost {
             }
 
         }
+    }
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NIGHTDOWNLOAD, JDL.L("plugins.hoster.onlinetvrecorder.downloadInNight", "Only download in the night")).setDefaultValue(true));
     }
 
     @Override

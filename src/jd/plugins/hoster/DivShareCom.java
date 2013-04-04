@@ -52,66 +52,10 @@ public class DivShareCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        br.setFollowRedirects(true);
-        if (link.getDownloadURL().contains("direct")) {
-            String dllink;
-            dllink = br.getURL();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            link.setFinalFileName(null);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-            dl.startDownload();
-
-        } else {
-            String infolink = link.getDownloadURL();
-            // Check ob ein Passwort verlangt wird, wenn keins verlangt wird
-            // wird der Link sofort geändert und geladen (unten ists dann
-            // infolink2)!
-            if (br.containsHTML("This file is password protected.")) {
-                Form form = br.getForm(0);
-                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                String passCode = null;
-                if (link.getStringProperty("pass", null) == null) {
-                    passCode = getUserInput(null, link);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = link.getStringProperty("pass", null);
-                }
-                form.put("gallery_password", passCode);
-                br.submitForm(form);
-                if (br.containsHTML("This file is password protected.")) {
-                    logger.warning("Wrong password!");
-                    link.setProperty("pass", null);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                if (passCode != null) {
-                    link.setProperty("pass", passCode);
-                }
-            }
-            String infolink2 = infolink.replaceAll("divshare\\.com/(download|image)", "divshare.com/download/launch");
-            br.getPage(infolink2);
-            String dllink = br.getRegex("\"(http://storagestart(\\d+)?\\.divshare\\.com/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null && br.containsHTML("application/mp3")) {
-                String id = br.getRegex("divshare.com/download/([0-9a-f]+)").getMatch(0);
-                String id2 = br.getRegex("divshare.com/download/.*?-([0-9a-f]+)").getMatch(0);
-                dllink = "http://storagestart2.divshare.com/launch.php?f=" + id + "&s=" + id2;
-            }
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
-
-        }
-
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<title>DivShare \\- Password-Protected File</title>")) {
             Form pw = br.getForm(0);
@@ -187,6 +131,64 @@ public class DivShareCom extends PluginForHost {
             downloadLink.setDownloadSize(SizeFormatter.getSize(size.replaceAll(",", "\\.")));
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        br.setFollowRedirects(true);
+        if (link.getDownloadURL().contains("direct")) {
+            String dllink;
+            dllink = br.getURL();
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setFinalFileName(null);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+            dl.startDownload();
+
+        } else {
+            String infolink = link.getDownloadURL();
+            // Check ob ein Passwort verlangt wird, wenn keins verlangt wird
+            // wird der Link sofort geändert und geladen (unten ists dann
+            // infolink2)!
+            if (br.containsHTML("This file is password protected.")) {
+                Form form = br.getForm(0);
+                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                String passCode = null;
+                if (link.getStringProperty("pass", null) == null) {
+                    passCode = getUserInput(null, link);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = link.getStringProperty("pass", null);
+                }
+                form.put("gallery_password", passCode);
+                br.submitForm(form);
+                if (br.containsHTML("This file is password protected.")) {
+                    logger.warning("Wrong password!");
+                    link.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                if (passCode != null) {
+                    link.setProperty("pass", passCode);
+                }
+            }
+            String infolink2 = infolink.replaceAll("divshare\\.com/(download|image)", "divshare.com/download/launch");
+            br.getPage(infolink2);
+            String dllink = br.getRegex("\"(http://[a-z0-9]+\\.divshare\\.com/launch[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null && br.containsHTML("application/mp3")) {
+                String id = br.getRegex("divshare.com/download/([0-9a-f]+)").getMatch(0);
+                String id2 = br.getRegex("divshare.com/download/.*?-([0-9a-f]+)").getMatch(0);
+                dllink = "http://storagestart2.divshare.com/launch.php?f=" + id + "&s=" + id2;
+            }
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+
+        }
+
     }
 
     @Override

@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2013  JD-Team support@jdownloader.org
+//Copyright (C) 2010  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -30,20 +30,16 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahni.si" }, urls = { "http://(www\\.)?(stiahni|stahni)\\.si/download\\.php\\?id=\\d+" }, flags = { 0 })
-public class StiahniSi extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-byte.net" }, urls = { "http://(www\\.)?share\\-byte\\.net/[A-Za-z0-9]+" }, flags = { 0 })
+public class ShareByteNet extends PluginForHost {
 
-    public StiahniSi(PluginWrapper wrapper) {
+    public ShareByteNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.stiahni.si/contact.php";
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("stahni.si/", "stiahni.si/"));
+        return "http://share-byte.net/tos.html";
     }
 
     @Override
@@ -51,9 +47,9 @@ public class StiahniSi extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Súbor nebol nájdený<|>Súbor nikto nestiahol viac ako")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(">Download: <a href=\"#\">([^<>\"]*?)</a>").getMatch(0);
-        String filesize = br.getRegex(">Size</td>[\t\n\r ]+<td class=\"value\">([^<>\"]*?)</td>").getMatch(0);
+        if (br.containsHTML("The file you are attempting to download does not exist or has been removed") || br.getURL().equals("http://www.share-byte.net/file-404.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("<b>Name:</b>([^<>\"]*?)</div>").getMatch(0);
+        final String filesize = br.getRegex("<b>Size:</b>([^<>\"]*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -63,20 +59,11 @@ public class StiahniSi extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(">Všetky free sloty sú obsadené")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment", 10 * 60 * 1000l);
-        final String waittime = br.getRegex("var limit='(\\d+):00'").getMatch(0);
-        int wait = 60;
-        if (waittime != null) wait = Integer.parseInt(waittime) * 60;
-        sleep(wait * 1001l, downloadLink);
-        br.setFollowRedirects(false);
-        br.getPage("http://www.stiahni.si/fetch.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        final String s = br.getRegex("t\\[1\\] = \"([a-z0-9]+)\"").getMatch(0);
+        if (s == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://cdn.share-byte.net/d.php", "s=" + s + "&k=" + new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            // too many concurrent connections?? or something else not sure.
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

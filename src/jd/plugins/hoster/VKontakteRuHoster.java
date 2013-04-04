@@ -94,6 +94,7 @@ public class VKontakteRuHoster extends PluginForHost {
             }
         } else if (link.getDownloadURL().matches(VIDEOLINK)) {
             MAXCHUNKS = 0;
+            br.setFollowRedirects(true);
 
             br.getPage("http://vk.com/video_ext.php?oid=" + link.getStringProperty("userid", null) + "&id=" + link.getStringProperty("videoid", null) + "&hash=" + link.getStringProperty("embedhash", null));
             // final String brReplaced = br.toString().replace("\\", "");
