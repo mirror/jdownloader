@@ -1,11 +1,16 @@
 package org.jdownloader.myjdownloader;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -23,6 +28,7 @@ import org.jdownloader.api.captcha.CaptchaAPI;
 import org.jdownloader.api.captcha.CaptchaJob;
 import org.jdownloader.api.jd.JDAPI;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
+import org.jdownloader.myjdownloader.client.CaptchaChallenge;
 import org.jdownloader.myjdownloader.client.exceptions.APIException;
 import org.jdownloader.myjdownloader.client.exceptions.InvalidResponseCodeException;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
@@ -38,8 +44,9 @@ public class Test {
      * @throws MyJDownloaderException
      * @throws DialogCanceledException
      * @throws DialogClosedException
+     * @throws IOException
      */
-    public static void main(String[] args) throws APIException, MyJDownloaderException, DialogClosedException, DialogCanceledException {
+    public static void main(String[] args) throws APIException, MyJDownloaderException, DialogClosedException, DialogCanceledException, IOException {
         final Browser br = new Browser();
         br.setAllowedResponseCodes(200);
         // JSonStorage.setMapper(new JacksonMapper());
@@ -105,6 +112,13 @@ public class Test {
 
         };
         LoginData li = Dialog.getInstance().showDialog(new LoginDialog(0));
+        api.setServerRoot("http://192.168.2.110:10101");
+        CaptchaChallenge challenge = api.getChallenge();
+
+        String response = Dialog.getInstance().showInputDialog(0, "Captcha", "Enter", "Bla", createImage(challenge), null, null);
+        challenge.setCaptchaResponse(response);
+        api.register(li.getUsername(), li.getPassword(), challenge);
+
         api.connect(li.getUsername(), li.getPassword());
         JDAPI jda;
 
@@ -117,5 +131,11 @@ public class Test {
         // System.out.println(ret);
         api.disconnect();
         // System.out.println(jdapi.uptime());
+    }
+
+    private static ImageIcon createImage(CaptchaChallenge challenge) throws IOException {
+        BufferedImage image = ImageIO.read(new ByteArrayInputStream(Base64.decode(challenge.getImage().substring(challenge.getImage().lastIndexOf(",")))));
+
+        return new ImageIcon(image);
     }
 }
