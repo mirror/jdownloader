@@ -1,3 +1,4 @@
+RestartController_confirmToExit_=確定離開嗎？
 RestartController_confirmToExit_msg=確定要退出 JDownloader 嗎？
 close_jd=沒有足夠權限寫入 %s1。\r\n嘗試關閉所有執行中的 JDownloader 和 Java 處理程序，並在之後重試一次！\r\n如果問題在系統重新啟動後仍然發生，請聯絡您的技術支援。
 confirmdialog_new_update_available_answer_later_install=稍候
