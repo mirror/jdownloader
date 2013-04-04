@@ -32,7 +32,9 @@ import org.jdownloader.myjdownloader.client.exceptions.APIException;
 import org.jdownloader.myjdownloader.client.exceptions.InvalidResponseCodeException;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderUnexpectedIOException;
+import org.jdownloader.myjdownloader.client.exceptions.RegisterException;
 import org.jdownloader.myjdownloader.client.json.CaptchaChallenge;
+import org.jdownloader.myjdownloader.client.json.RegisterResponse.Status;
 
 public class Test {
     /**
@@ -112,13 +114,20 @@ public class Test {
 
         };
         LoginData li = Dialog.getInstance().showDialog(new LoginDialog(0));
-        api.setServerRoot("http://localhost:10101");
+        api.setServerRoot("http://192.168.2.110:10101");
         CaptchaChallenge challenge = api.getChallenge();
 
-        String response = Dialog.getInstance().showInputDialog(0, "Captcha", "Enter", "Bla", createImage(challenge), null, null);
+        String response = Dialog.getInstance().showInputDialog(0, "Captcha", "Enter", null, createImage(challenge), null, null);
         challenge.setCaptchaResponse(response);
-        api.register(li.getUsername(), li.getPassword(), challenge);
+        try {
+            api.register(li.getUsername(), li.getPassword(), challenge);
 
+        } catch (RegisterException e) {
+            if (e.getResponse().getStatus() == Status.EMAIL_EXISTS) {
+                api.connect(li.getUsername(), li.getPassword());
+                api.requestConfirmationEmail(challenge);
+            }
+        }
         api.connect(li.getUsername(), li.getPassword());
         JDAPI jda;
 
