@@ -72,6 +72,11 @@ public class RDMdthk extends PluginForDecrypt {
         String ID = new Regex(parameter, "\\?documentId=(\\d+)").getMatch(0);
         // mediathek.daserste.de
         if (ID == null) ID = new Regex(parameter, realBaseUrl + "/[^/]+/[^/]+/(\\d+)").getMatch(0);
+        if (ID == null) ID = new Regex(parameter, realBaseUrl + "/suche/(\\d+)").getMatch(0);
+        if (ID == null) {
+            logger.info("ARDMediathek: MediaID is null! Regex broken?");
+            return null;
+        }
 
         String next = br.getRegex("href=\"(/ard/servlet/ajax\\-cache/\\d+/view=switch/documentId=" + ID + "/index.html)").getMatch(0);
         if (next != null) br.getPage(next);

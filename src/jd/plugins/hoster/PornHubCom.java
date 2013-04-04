@@ -108,15 +108,19 @@ public class PornHubCom extends PluginForHost {
             values.put(s.split(":")[0], Encoding.htmlDecode(s.split(":", 2)[1]));
         }
 
-        int q = 0;
-        for (Entry<String, String> next : values.entrySet()) {
-            String key = next.getKey();
-            if (!key.startsWith("quality_")) continue;
-            String quality = new Regex(key, "quality_(\\d+)p").getMatch(0);
-            if (quality == null) continue;
-            if (Integer.parseInt(quality) > q) {
-                q = Integer.parseInt(quality);
-                dlUrl = values.get("quality_" + q + "p");
+        if (values == null || values.size() < 1) return;
+        dlUrl = values.get("video_url");
+        if (dlUrl == null) {
+            int q = 0;
+            for (Entry<String, String> next : values.entrySet()) {
+                String key = next.getKey();
+                if (!(key.startsWith("quality_"))) continue;
+                String quality = new Regex(key, "quality_(\\d+)p").getMatch(0);
+                if (quality == null) continue;
+                if (Integer.parseInt(quality) > q) {
+                    q = Integer.parseInt(quality);
+                    dlUrl = values.get("quality_" + q + "p");
+                }
             }
         }
 
