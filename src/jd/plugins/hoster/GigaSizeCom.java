@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigasize.com" }, urls = { "http://[\\w\\.]*?gigasize\\.com/get/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigasize.com" }, urls = { "https?://(www\\.)?gigasize\\.com/get/[a-z0-9]+" }, flags = { 2 })
 public class GigaSizeCom extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.gigasize.com/page.php?p=terms";
@@ -46,6 +46,10 @@ public class GigaSizeCom extends PluginForHost {
         super(wrapper);
         enablePremium("http://www.gigasize.com/register.php");
         setStartIntervall(5000l);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload("http://www.gigasize.com/get/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
     @Override
@@ -120,6 +124,7 @@ public class GigaSizeCom extends PluginForHost {
         brc.getPage(adsCaptcha);
         final String captchaURL = brc.getRegex("img src=\"(http:.*?)\"").getMatch(0);
         final String captchaKEY = brc.getRegex("Code:.*?code\">(.*?)<").getMatch(0);
+        if (captchaURL == null || captchaKEY == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String captchaCODE = null;
         Browser brt = br;
         br = brc;
