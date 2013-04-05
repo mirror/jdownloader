@@ -11,8 +11,14 @@ public class RemoteAPISessionControllerImp extends HttpSessionController<RemoteA
     private final HashMap<String, RemoteAPISession> sessions = new HashMap<String, RemoteAPISession>();
 
     @Override
-    public RemoteAPISession getSession(org.appwork.utils.net.httpserver.requests.HttpRequest request, final String id) {
+    public RemoteAPISession getSession(final org.appwork.utils.net.httpserver.requests.HttpRequest request, final String id) {
         if (request.getConnection() instanceof MyJDownloaderHttpConnection) { return new RemoteAPISession(this) {
+
+            @Override
+            public String getSessionID() {
+                return ((MyJDownloaderHttpConnection) (request.getConnection())).getRequestConnectToken();
+            }
+
             @Override
             public boolean isAlive() {
                 return true;

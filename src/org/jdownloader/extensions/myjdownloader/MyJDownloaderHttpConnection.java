@@ -54,6 +54,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
 
     private OutputStream os                     = null;
     private byte[]       payloadEncryptionToken = null;
+    private String       requestConnectToken;
 
     @Override
     public List<HttpRequestHandler> getHandler() {
@@ -72,6 +73,10 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
 
     public byte[] getPayloadEncryptionToken() {
         return payloadEncryptionToken;
+    }
+
+    public String getRequestConnectToken() {
+        return requestConnectToken;
     }
 
     // @Override
@@ -115,7 +120,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     @Override
     protected String preProcessRequestLine(String requestLine) throws IOException {
         String remove = new Regex(requestLine, "( /t_([a-zA-z0-9]{40})/)").getMatch(0);
-        String requestConnectToken = new Regex(requestLine, "( /t_([a-zA-z0-9]{40})/)").getMatch(1);
+        requestConnectToken = new Regex(requestLine, "( /t_([a-zA-z0-9]{40})/)").getMatch(1);
         try {
             payloadEncryptionToken = api.getAESSecret(requestConnectToken);
             if (payloadEncryptionToken == null) throw new IOException("Could not generate AESSecret " + requestLine);
