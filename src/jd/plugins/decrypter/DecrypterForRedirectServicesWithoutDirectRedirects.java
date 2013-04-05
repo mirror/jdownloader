@@ -266,7 +266,8 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             }
         } else if (parameter.contains("newgrounds.com/")) {
             if (parameter.contains("/audio/listen/")) {
-                finallink = br.getRegex("\\(\"filename=(.*?)\\&length").getMatch(0);
+                finallink = "http://www.newgrounds.com/audio/download/" + new Regex(parameter, "(\\d+)$").getMatch(0);
+                dh = true;
             } else {
                 finallink = br.getRegex("\"src\":[\t\n\r ]+\"(http:[^<>\"]*?)\"").getMatch(0);
                 if (finallink != null) finallink = finallink.replace("\\", "");

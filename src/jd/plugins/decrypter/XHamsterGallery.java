@@ -46,8 +46,7 @@ public class XHamsterGallery extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String fpname = br.getRegex("title=\\'Start SlideShow\\'></a><h1>([^<>\"]*?)</h1>").getMatch(0);
-        if (fpname == null) fpname = br.getRegex("<title>(.*?) \\- \\d+ Pics \\- xHamster\\.com</title>").getMatch(0);
+        String fpname = br.getRegex("<title>(.*?) \\- \\d+ Pics \\- xHamster\\.com</title>").getMatch(0);
         String[] pagesTemp = br.getRegex("\\'" + parameterWihoutHtml + "-\\d+\\.html\\'>(\\d+)</a>").getColumn(0);
         if (pagesTemp != null && pagesTemp.length != 0) {
             for (String aPage : pagesTemp)
@@ -56,14 +55,12 @@ public class XHamsterGallery extends PluginForDecrypt {
         for (String currentPage : allPages) {
             final String thePage = parameterWihoutHtml + "-" + currentPage + ".html";
             br.getPage(thePage);
-            // Ehefotze </h1> <small>[249
-            // pictures]</small></td></tr></table></div>
-            final String allLinks = br.getRegex("<small>\\[\\d+ pictures\\]</small>( > \\d+)?</td></tr></table></div>(.*?)<table cellpadding=\"0\" cellspacing=\"0\" class=\\'listDescr\\' width=\"97%\">[\t\n\r ]+<colgroup><col width=\"160\"><col></colgroup>").getMatch(1);
+            final String allLinks = br.getRegex("class=\\'iListing\\'>(.*?)id=\\'galleryInfoBox\\'>").getMatch(0);
             if (allLinks == null) {
                 logger.warning("Decrypter failed on page " + currentPage + " for link: " + thePage);
                 return null;
             }
-            final String[] thumbNails = new Regex(allLinks, "\"(http://p\\d+\\.xhamster\\.com/\\d+/\\d+/\\d+/\\d+_160\\.jpg)\"").getColumn(0);
+            final String[] thumbNails = new Regex(allLinks, "(\"|\\')(http://p\\d+\\.xhamster\\.com/\\d+/\\d+/\\d+/\\d+_160\\.jpg)(\"|\\')").getColumn(1);
             if (thumbNails == null || thumbNails.length == 0) {
                 logger.warning("Decrypter failed on page " + currentPage + " for link: " + thePage);
                 return null;

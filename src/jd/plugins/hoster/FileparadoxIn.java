@@ -74,7 +74,7 @@ public class FileparadoxIn extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.8.7
     // mods:
-    // non account: 2 * 1
+    // non account: 1 * 1
     // free account: untested, set same as free
     // premium account: 1 * 10
     // protocol: no https
@@ -195,7 +195,7 @@ public class FileparadoxIn extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -711,7 +711,7 @@ public class FileparadoxIn extends PluginForHost {
         login(account, false);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, -2, "freelink2");
+            doFree(downloadLink, true, 1, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
 

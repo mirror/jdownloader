@@ -49,7 +49,7 @@ public class Freaksharenet extends PluginForHost {
     private static final String  WAIT1              = "WAIT1";
     private static AtomicInteger MAXPREMDLS         = new AtomicInteger(-1);
     private static final String  MAXDLSLIMITMESSAGE = "Sorry, you cant download more then";
-    private static final String  LIMITREACHED       = "Your Traffic is used up for today";
+    private static final String  LIMITREACHED       = "Your Traffic is used up for today|Der Traffic für heute ist verbraucht";
 
     public Freaksharenet(final PluginWrapper wrapper) {
         super(wrapper);
@@ -61,6 +61,36 @@ public class Freaksharenet extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("freakshare.net", "freakshare.com"));
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        /*
+         * set english language in phpsession
+         */
+        br.getPage("http://freakshare.com/index.php?language=EN");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("We are back soon")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        if (br.containsHTML("(Sorry but this File is not avaible|Sorry, this Download doesnt exist anymore)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("No Downloadserver\\. Please try again")) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML(LIMITREACHED)) {
+            String nameFromLink = new Regex(downloadLink.getDownloadURL(), "freakshare\\.com/files/[a-z0-9]+/(.*?)\\.html").getMatch(0);
+            if (nameFromLink != null) downloadLink.setName(Encoding.htmlDecode(nameFromLink));
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.freaksharecom.limitreached", "Limit reached: No full availablecheck possible at the moment!"));
+            return AvailableStatus.TRUE;
+        }
+
+        final String filename = br.getRegex("\"box_heading\" style=\"text\\-align:center;\">(.*?)\\- .*?</h1>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+        final String filesize = br.getRegex("\"box_heading\" style=\"text\\-align:center;\">.*?\\- (.*?)</h1>").getMatch(0);
+        if (filesize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception {
@@ -328,35 +358,6 @@ public class Freaksharenet extends PluginForHost {
         } else {
             MAXPREMDLS.set(-1);
         }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        /*
-         * set english language in phpsession
-         */
-        br.getPage("http://freakshare.com/index.php?language=EN");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("We are back soon")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        if (br.containsHTML("(Sorry but this File is not avaible|Sorry, this Download doesnt exist anymore)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("No Downloadserver\\. Please try again")) return AvailableStatus.UNCHECKABLE;
-        if (br.containsHTML(LIMITREACHED)) {
-            String nameFromLink = new Regex(downloadLink.getDownloadURL(), "freakshare\\.com/files/[a-z0-9]+/(.*?)\\.html").getMatch(0);
-            if (nameFromLink != null) downloadLink.setName(Encoding.htmlDecode(nameFromLink));
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.freaksharecom.limitreached", "Limit reached: No full check possible at the moment!"));
-            return AvailableStatus.TRUE;
-        }
-        final String filename = br.getRegex("\"box_heading\" style=\"text\\-align:center;\">(.*?)\\- .*?</h1>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-        final String filesize = br.getRegex("\"box_heading\" style=\"text\\-align:center;\">.*?\\- (.*?)</h1>").getMatch(0);
-        if (filesize != null) {
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override

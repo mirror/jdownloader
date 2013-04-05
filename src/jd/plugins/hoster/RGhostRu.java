@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 //rghost.ru by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.ru" }, urls = { "http://(www\\.)?((tr\\.)?rghost\\.net|rghost\\.ru|phonon\\.rghost\\.ru)/([0-9]+/private/[a-z0-9]+|download/[0-9]+|users/[A-Za-z0-9\\-_]+/releases/[A-Za-z0-9\\-_]+/files/\\d+|[0-9]+(\\?key=[a-z0-9]+)?)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.ru" }, urls = { "http://(www\\.)?(((tr|pl)\\.)?rghost\\.net|rghost\\.ru|phonon\\.rghost\\.ru)/([0-9]+/private/[a-z0-9]+|download/[0-9]+|users/[A-Za-z0-9\\-_]+/releases/[A-Za-z0-9\\-_]+/files/\\d+|[0-9]+(\\?key=[a-z0-9]+)?)" }, flags = { 0 })
 public class RGhostRu extends PluginForHost {
 
     private static final String PWTEXT = "Password: <input id=\"password\" name=\"password\" type=\"password\"";
@@ -54,7 +54,7 @@ public class RGhostRu extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("tr.rghost.net/", "rghost.net/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("((tr|pl)\\.)rghost.net/", "rghost.net/"));
     }
 
     @Override

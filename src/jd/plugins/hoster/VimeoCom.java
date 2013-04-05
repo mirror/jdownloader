@@ -274,9 +274,8 @@ public class VimeoCom extends PluginForHost {
                         return;
                     }
                 }
-                br.getPage(MAINPAGE);
-                br.getPage(MAINPAGE + "/log_in");
-                final String xsrft = br.getRegex("xsrft: '(.*?)'").getMatch(0);
+                br.getPage("https://vimeo.com/log_in");
+                final String xsrft = br.getRegex("xsrft: \\'(.*?)\\'").getMatch(0);
                 if (xsrft == null) {
                     account.setProperty("cookies", null);
                     logger.warning("Login is broken!");
@@ -288,7 +287,7 @@ public class VimeoCom extends PluginForHost {
                     account.setProperty("cookies", null);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.postPage(MAINPAGE + "/log_in", "action=login&service=vimeo&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&token=" + Encoding.urlEncode(xsrft));
+                br.postPage("https://vimeo.com/log_in", "action=login&service=vimeo&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&token=" + Encoding.urlEncode(xsrft));
                 if (br.getCookie(MAINPAGE, "vimeo") == null) {
                     account.setProperty("cookies", null);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

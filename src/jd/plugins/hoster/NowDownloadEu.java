@@ -46,17 +46,19 @@ public class NowDownloadEu extends PluginForHost {
         return "http://www.nowdownload.eu/terms.php";
     }
 
-    private static final String MAINPAGE = "http://www.nowdownload.eu";
+    private static final String MAINPAGE = "http://www.nowdownload.co";
     private static final String ua       = RandomUserAgent.generate();
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("nowdownload.co/", "nowdownload.eu/"));
+        link.setUrlDownload(link.getDownloadURL().replace("nowdownload.eu/", "nowdownload.co/"));
         link.setUrlDownload(link.getDownloadURL().replace("/dl2/", "/dl/"));
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        // Fix existing links, .eu domain is blocked in Italy
+        correctDownloadLink(link);
         br.getHeaders().put("User-Agent", ua);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
@@ -103,7 +105,7 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     private String getDllink() {
-        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.nowdownload\\.eu/dl/[^<>\"]*?)\"").getMatch(0);
+        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.nowdownload\\.(eu|co)/dl/[^<>\"]*?)\"").getMatch(0);
         return dllink;
     }
 

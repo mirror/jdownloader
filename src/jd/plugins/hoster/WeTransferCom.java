@@ -31,13 +31,11 @@ import jd.utils.JDHexUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "http(s)?://(www\\.)?(wtrns\\.fr/[\\w\\-]+|wetransfer\\.com/dl(/\\w+/[0-9a-f]+|\\.php\\?code=\\w+\\&hash=[0-9a-f]+))" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-z0-9]+/[a-z0-9]+)" }, flags = { 0 })
 public class WeTransferCom extends PluginForHost {
 
     private String HASH   = null;
-
     private String CODE   = null;
-
     private String DLLINK = null;
 
     public WeTransferCom(final PluginWrapper wrapper) {
@@ -80,55 +78,64 @@ public class WeTransferCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
         String dlink = link.getDownloadURL();
-        if (dlink.matches("http://wtrns\\.fr/[\\w\\-]+")) {
+        if (dlink.matches("http://(wtrns\\.fr|we\\.tl)/[\\w\\-]+")) {
             br.setFollowRedirects(false);
             br.getPage(dlink);
             dlink = br.getRedirectLocation();
             if (dlink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         }
-        HASH = new Regex(dlink, "(hash=|/dl/\\w+/)([0-9a-f]+)").getMatch(1);
-        CODE = new Regex(dlink, "(code=|/dl/)(\\w+)").getMatch(1);
+        HASH = new Regex(dlink, "([0-9a-f]+)$").getMatch(0);
+        CODE = new Regex(dlink, "wetransfer\\.com/downloads/([a-z0-9]+)/").getMatch(0);
         if (HASH == null || CODE == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        // AMF-Request
-        br.getHeaders().put("Pragma", null);
-        br.getHeaders().put("Accept-Charset", null);
-        br.getHeaders().put("Accept", "*/*");
-        br.getHeaders().put("Content-Type", "application/x-amf");
-        br.getHeaders().put("Referer", "https://www.wetransfer.com/index.swf?nocache=" + String.valueOf(System.currentTimeMillis() / 1000));
-        br.postPageRaw("https://v1.wetransfer.com/amfphp/gateway.php", getAMFRequest());
+        br.getPage("https://www.wetransfer.com/api/v1/transfers/" + CODE + "/download?recipient_id=&security_hash=" + HASH + "&password=&ie=false");
+        DLLINK = br.getRegex("\"direct_link\":\"(http[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK != null) {
+            String filename = new Regex(Encoding.htmlDecode(DLLINK), "filename=\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        } else {
+            /** Old way */
+            // AMF-Request
+            br.getHeaders().put("Pragma", null);
+            br.getHeaders().put("Accept-Charset", null);
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("Content-Type", "application/x-amf");
+            br.getHeaders().put("Referer", "https://www.wetransfer.com/index.swf?nocache=" + String.valueOf(System.currentTimeMillis() / 1000));
+            br.postPageRaw("https://v1.wetransfer.com/amfphp/gateway.php", getAMFRequest());
 
-        /* TODO: remove me after 0.9xx public */
-        br.getHeaders().put("Content-Type", null);
+            /* TODO: remove me after 0.9xx public */
+            br.getHeaders().put("Content-Type", null);
 
-        // successfully request?
-        final int rC = br.getHttpConnection().getResponseCode();
-        if (rC != 200) {
-            logger.warning("File not found! Link: " + dlink);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+            // successfully request?
+            final int rC = br.getHttpConnection().getResponseCode();
+            if (rC != 200) {
+                logger.warning("File not found! Link: " + dlink);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
-        final StringBuffer sb = new StringBuffer();
-        for (final byte element : br.toString().getBytes()) {
-            if (element < 127) {
-                if (element > 31) {
-                    sb.append((char) element);
-                } else {
-                    sb.append("#");
+            final StringBuffer sb = new StringBuffer();
+            for (final byte element : br.toString().getBytes()) {
+                if (element < 127) {
+                    if (element > 31) {
+                        sb.append((char) element);
+                    } else {
+                        sb.append("#");
+                    }
                 }
             }
+            final String result = sb.toString();
+            if (new Regex(result, "(download_error_no_download|download_error_file_expired)").matches()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+
+            final String filename = new Regex(result, "#filename[#]+\\$?([^<>#]+)").getMatch(0);
+            final String filesize = new Regex(result, "#size[#]+(\\d+)[#]+").getMatch(0);
+            DLLINK = new Regex(result, "#awslink[#]+\\??([^<>#]+)").getMatch(0);
+
+            if (filename == null || filesize == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        final String result = sb.toString();
-        if (new Regex(result, "(download_error_no_download|download_error_file_expired)").matches()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-
-        final String filename = new Regex(result, "#filename[#]+\\$?([^<>#]+)").getMatch(0);
-        final String filesize = new Regex(result, "#size[#]+(\\d+)[#]+").getMatch(0);
-        DLLINK = new Regex(result, "#awslink[#]+\\??([^<>#]+)").getMatch(0);
-
-        if (filename == null || filesize == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
 
         return AvailableStatus.TRUE;
     }

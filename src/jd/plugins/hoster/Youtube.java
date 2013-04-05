@@ -249,13 +249,17 @@ public class Youtube extends PluginForHost {
                 br.getPage("http://www.youtube.com/");
                 /* first call to google */
                 br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252Findex&hl=en_US&ltmpl=sso");
-                String checkConnection = br.getRegex("iframeUri: '(https.*?)'").getMatch(0);
+                String checkConnection = br.getRegex("iframeUri: \\'(https.*?)\\'").getMatch(0);
                 if (checkConnection != null) {
                     /*
                      * dont know if this is important but seems to set pstMsg to 1 ;)
                      */
                     checkConnection = unescape(checkConnection);
-                    br.cloneBrowser().getPage(checkConnection);
+                    try {
+                        br.cloneBrowser().getPage(checkConnection);
+                    } catch (final Exception e) {
+                        logger.info("checkConnection failed, continuing anyways...");
+                    }
                 }
                 final Form form = br.getForm(0);
                 form.put("pstMsg", "1");
@@ -308,6 +312,21 @@ public class Youtube extends PluginForHost {
                     stepform.remove("nojssubmit");
                     br.submitForm(stepform);
                     br.getPage("http://www.youtube.com/signin?action_handle_signin=true");
+                } else if (br.containsHTML("class=\"gaia captchahtml desc\"")) {
+                    if (true) {
+                        account.setValid(false);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.youtube.logincaptcha.failed", "The captcha login verification is broken. Please contact our support."));
+                    }
+                    final String captchaLink = br.getRegex("<img src=\\'(https?://accounts\\.google\\.com/Captcha\\?[^<>\"]*?)\\'").getMatch(0);
+                    if (captchaLink == null) {
+                        account.setValid(false);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.youtube.logincaptcha.failed", "The captcha login verification is broken. Please contact our support."));
+                    }
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "youtube.com", "http://youtube.com", true);
+                    final String c = getCaptchaCode(captchaLink, dummyLink);
+                    // Lots of stuff needed here
+                    br.postPage("https://accounts.google.com/LoginVerification", "");
+
                 } else {
                     br.setFollowRedirects(true);
                     br.getPage(br.getRedirectLocation());

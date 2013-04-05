@@ -102,7 +102,13 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 }
                 // Account is valid, let's add it to the premium overview
                 if (addAcc) AccountController.getInstance().addAccount(facebookPlugin, aa);
+                // Redirects from "http" to "https" can happen
+                br.setFollowRedirects(true);
                 br.getPage(parameter);
+                String mainpage = "http://www.facebook.com";
+                if (br.getURL().contains("https://")) {
+                    mainpage = "https://www.facebook.com";
+                }
                 final String setID = new Regex(parameter, "facebook\\.com/media/set/\\?set=(.+)").getMatch(0);
                 final String profileID = new Regex(parameter, "(\\d+)$").getMatch(0);
                 String fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
@@ -115,17 +121,15 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 if (fpName == null) fpName = "Facebook_album_of_user_" + user;
                 fpName = Encoding.htmlDecode(fpName.trim());
                 boolean dynamicLoadAlreadyDecrypted = false;
-
                 final ArrayList<String> allLinks = new ArrayList<String>();
 
-                // Redirects from "http" to "https" can happen
-                br.setFollowRedirects(true);
                 for (int i = 1; i <= 50; i++) {
                     int currentMaxPicCount = 28;
 
                     String[] links;
                     if (i > 1) {
-                        final String currentLastFbid = br.getRegex("\"last_fbid\\\\\":\\\\\"(\\d+)\\\\\\\"").getMatch(0);
+                        String currentLastFbid = br.getRegex("\"last_fbid\\\\\":\\\\\"(\\d+)\\\\\\\"").getMatch(0);
+                        if (currentLastFbid == null) currentLastFbid = br.getRegex("\"last_fbid\\\\\":(\\d+)").getMatch(0);
                         // If we have exactly 60 pictures then we reload one
                         // time and got all, 2nd time will then be 0 more links
                         // -> Stop
@@ -135,13 +139,13 @@ public class FaceBookComGallery extends PluginForDecrypt {
                             logger.warning("Decrypter broken for link: " + parameter);
                             return null;
                         }
-                        final String loadLink = "http://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A%22" + currentLastFbid + "%22%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%223%22%2C%22pager_fired_on_init%22%3Atrue%7D&__user=" + user + "&__a=1&__dyn=798aD5z5CF-&__req=jsonp_" + i + "&__adt=" + i;
+                        final String loadLink = mainpage + "/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A%22" + currentLastFbid + "%22%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%223%22%2C%22pager_fired_on_init%22%3Atrue%7D&__user=" + user + "&__a=1&__dyn=798aD5z5CF-&__req=jsonp_" + i + "&__adt=" + i;
                         br.getPage(loadLink);
-                        links = br.getRegex("data\\-non\\-starred-src=\\\\\"(http:[^<>\"]*?)\\\\\"").getColumn(0);
+                        links = br.getRegex("data\\-non\\-starred-src=\\\\\"(https?:[^<>\"]*?)\\\\\"").getColumn(0);
                         currentMaxPicCount = 32;
                         dynamicLoadAlreadyDecrypted = true;
                     } else {
-                        links = br.getRegex("data\\-starred\\-src=\"(http://[^<>\"]*?)\"").getColumn(0);
+                        links = br.getRegex("data\\-starred\\-src=\"(https?://[^<>\"]*?)\"").getColumn(0);
                     }
                     if (links == null || links.length == 0) {
                         logger.warning("Decrypter broken for link: " + parameter);
