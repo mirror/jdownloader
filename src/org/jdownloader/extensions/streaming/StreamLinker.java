@@ -70,7 +70,7 @@ public class StreamLinker {
 
                 }
 
-                OutputStream ops = response.getOutputStream();
+                OutputStream ops = response.getOutputStream(true);
                 if (chunked) {
                     ops = new ChunkedOutputStream(ops);
                 }

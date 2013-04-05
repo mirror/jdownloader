@@ -71,9 +71,8 @@ public abstract class Transcoder {
         // "g:\\audio" + sessionID + ".mp3"
         try {
             /*
-             * [mpeg4 @ 0000000001e4d860] Invalid and inefficient vfw-avi packed B frames detected [NULL @ 0000000001e43d00] Unable to find
-             * a suitable output format for 'http://127.0.0.1:3128/ffmpeg/1346828391987' http://127.0.0.1:3128/ffmpeg/1346828391987: Invalid
-             * argument
+             * [mpeg4 @ 0000000001e4d860] Invalid and inefficient vfw-avi packed B frames detected [NULL @ 0000000001e43d00] Unable to find a suitable output
+             * format for 'http://127.0.0.1:3128/ffmpeg/1346828391987' http://127.0.0.1:3128/ffmpeg/1346828391987: Invalid argument
              */
 
             String[] results;
@@ -142,7 +141,7 @@ public abstract class Transcoder {
 
                     addException(e);
                     try {
-                        response.getOutputStream().write(Exceptions.getStackTrace(e).getBytes("UTF-8"));
+                        response.getOutputStream(true).write(Exceptions.getStackTrace(e).getBytes("UTF-8"));
                     } catch (Exception e1) {
 
                     }
@@ -168,7 +167,7 @@ public abstract class Transcoder {
                     addException(e);
 
                     try {
-                        response.getOutputStream().write(Exceptions.getStackTrace(e).getBytes());
+                        response.getOutputStream(true).write(Exceptions.getStackTrace(e).getBytes());
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
@@ -216,8 +215,7 @@ public abstract class Transcoder {
                     ret.append(sep);
                 } else if (line.startsWith("\uFEFF")) {
                     /*
-                     * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
-                     * http://bugs.sun.com/view_bug.do?bug_id=6378911
+                     * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058 http://bugs.sun.com/view_bug.do?bug_id=6378911
                      */
 
                     line = line.substring(1);
@@ -261,8 +259,7 @@ public abstract class Transcoder {
                     ret.append(sep);
                 } else if (line.startsWith("\uFEFF")) {
                     /*
-                     * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
-                     * http://bugs.sun.com/view_bug.do?bug_id=6378911
+                     * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058 http://bugs.sun.com/view_bug.do?bug_id=6378911
                      */
 
                     line = line.substring(1);

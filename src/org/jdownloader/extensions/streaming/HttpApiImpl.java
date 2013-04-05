@@ -60,11 +60,11 @@ import org.jdownloader.logging.LogController;
 
 public class HttpApiImpl implements HttpRequestHandler {
 
-    private StreamingExtension extension;
-    private LogSource          logger;
-    private MediaServer        mediaServer;
-    private TranscodeStreamManager   transcodeManager;
-    private DownloadStreamManager    downloadManager;
+    private StreamingExtension     extension;
+    private LogSource              logger;
+    private MediaServer            mediaServer;
+    private TranscodeStreamManager transcodeManager;
+    private DownloadStreamManager  downloadManager;
 
     public HttpApiImpl(StreamingExtension extension, MediaServer mediaServer) {
         this.extension = extension;
@@ -229,7 +229,7 @@ public class HttpApiImpl implements HttpRequestHandler {
                 if (ct != null) response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, ct));
                 if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_FEATURES, dlnaFeatures));
                 if (transferMode != null) response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_TRANSFERMODE, transferMode));
-                response.getOutputStream();
+                response.getOutputStream(true);
                 response.closeConnection();
                 return true;
             } else if (request instanceof GetRequest) {
@@ -249,7 +249,7 @@ public class HttpApiImpl implements HttpRequestHandler {
             handleException(e, dlink, mediaItem);
             logger.log(e);
             try {
-                response.getOutputStream().write(Exceptions.getStackTrace(e).getBytes("UTF-8"));
+                response.getOutputStream(true).write(Exceptions.getStackTrace(e).getBytes("UTF-8"));
             } catch (UnsupportedEncodingException e1) {
 
             } catch (IOException e1) {
@@ -311,7 +311,7 @@ public class HttpApiImpl implements HttpRequestHandler {
         response.setResponseCode(ResponseCode.SUCCESS_OK);
 
         // JPegImage.JPEG_TN
-        if (!(request instanceof HeadRequest)) response.getOutputStream().write(data);
+        if (!(request instanceof HeadRequest)) response.getOutputStream(true).write(data);
 
         response.closeConnection();
     }
