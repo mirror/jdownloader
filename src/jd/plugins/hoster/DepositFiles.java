@@ -435,7 +435,7 @@ public class DepositFiles extends PluginForHost {
                 if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
         final URLConnectionAdapter con = dl.getConnection();
         if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
             if (!con.isContentDisposition()) {
