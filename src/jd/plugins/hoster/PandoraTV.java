@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2012  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -37,7 +37,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pandora.tv" }, urls = { "http://channel\\.pandora\\.tv/channel/video\\.ptv?.+" }, flags = { 0 })
+//http://en.channel.pandora.tv/channel/video.ptv?ch_userid=keigoo&prgid=36487732&categid=32224359&page=36
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pandora.tv" }, urls = { "http://(.+)?channel\\.pandora\\.tv/channel/video\\.ptv\\?.+" }, flags = { 0 })
 public class PandoraTV extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.pandora.tv";
@@ -80,7 +81,7 @@ public class PandoraTV extends PluginForHost {
             urlpath = hqurl.replaceAll("\\\\/", "/");
         }
         /* KEY1 */
-        br.getPage("http://channel.pandora.tv/channel/cryptKey.ptv?dummy=" + dummy + "?");
+        br.getPage("/channel/cryptKey.ptv?dummy=" + dummy + "?");
         final String keyOne = br.getRegex("\"(.*?)\"").getMatch(0, 1);
         /* set JS Cookies */
         final String pcid = KEY_EncryptionCreate("PCID", "cookie");
@@ -89,7 +90,10 @@ public class PandoraTV extends PluginForHost {
         br.setCookie(MAINPAGE, "RC", rc);
         /* KEY2 */
         final String keys = KEY_EncryptionCreate(keyOne, "encrypt");
-        br.getPage(DLPAGE + urlpath + keys + "&class=normal&country=DE&method=differ");
+        /* set country code, from session cookie */
+        final String country = br.getCookie(this.getHost(), "ipCountry");
+        if (country == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        br.getPage(DLPAGE + urlpath + keys + "&class=normal&country=" + country + "&method=differ");
         if (br.containsHTML("error") || br.getRequest().getHttpConnection().getResponseCode() != 200) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         final String dllink = br.getRegex("\"(.*?)\"").getMatch(0, 1);
         dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
