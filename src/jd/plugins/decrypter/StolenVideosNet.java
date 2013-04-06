@@ -51,6 +51,7 @@ public class StolenVideosNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         tempID = br.getRegex("\"file=(http://hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv)\\&").getMatch(0);
+        if (tempID == null) tempID = br.getRegex("\"(http://[a-z0-9]+\\.yourvoyeurvideos\\.com/mp4/\\d+\\.mp4)\"").getMatch(0);
         if (tempID != null) {
             DownloadLink dl = createDownloadlink("directhttp://" + tempID);
             decryptedLinks.add(dl);

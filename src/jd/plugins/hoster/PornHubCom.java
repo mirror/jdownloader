@@ -25,7 +25,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "http://(www\\.)?((de|fr|it|es|pt)\\.)?pornhub\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|embed/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "http://(www\\.)?((de|fr|it|es|pt)\\.)?pornhub\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|embed/\\d+|embed_player\\.php\\?id=\\d+)" }, flags = { 0 })
 public class PornHubCom extends PluginForHost {
 
     private String dlUrl = null;
@@ -36,7 +36,7 @@ public class PornHubCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("((de|fr|it|es|pt)\\.)pornhub\\.com/", "pornhub.com/"));
-        link.setUrlDownload(link.getDownloadURL().replaceAll("embed/", "view_video.php?viewkey="));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("/embed/", "/view_video.php?viewkey="));
     }
 
     @Override
@@ -85,6 +85,14 @@ public class PornHubCom extends PluginForHost {
         br.setCookie("http://pornhub.com/", "age_verified", "1");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        // Convert embed links to normal links
+        if (downloadLink.getDownloadURL().matches("http://(www\\.)?pornhub\\.com/embed_player\\.php\\?id=\\d+")) {
+            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String newLink = br.getRegex("<link_url>(http://(www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=\\d+)</link_url>").getMatch(0);
+            if (newLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.setUrlDownload(newLink);
+            br.getPage(downloadLink.getDownloadURL());
+        }
         if (br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String file_name = br.getRegex("<title>([^<>]*?) \\- Pornhub\\.com</title>").getMatch(0);

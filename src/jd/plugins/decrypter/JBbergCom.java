@@ -25,6 +25,7 @@ import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -78,15 +79,21 @@ public class JBbergCom extends PluginForDecrypt {
         br2.getHeaders().put("Accept", "*/*");
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         for (final String singleLink : links) {
-            br.getPage(COOKIE_HOST + singleLink);
+            final String currentLink = COOKIE_HOST + singleLink;
+            try {
+                br.getPage(currentLink);
 
-            // Waittime can be skipped
-            // int wait = 10;
-            // final String waittime = br.getRegex("startNumber: (\\d+),").getMatch(0);
-            // if (waittime != null) wait = Integer.parseInt(waittime);
-            // sleep(wait * 1001l, param);
+                // Waittime can be skipped
+                // int wait = 10;
+                // final String waittime = br.getRegex("startNumber: (\\d+),").getMatch(0);
+                // if (waittime != null) wait = Integer.parseInt(waittime);
+                // sleep(wait * 1001l, param);
 
-            br2.postPage("http://www.jheberg.net/redirect-ajax/", "slug=" + Encoding.urlEncode(linkID) + "&host=" + singleLink.substring(singleLink.lastIndexOf("/") + 1));
+                br2.postPage("http://www.jheberg.net/redirect-ajax/", "slug=" + Encoding.urlEncode(linkID) + "&host=" + singleLink.substring(singleLink.lastIndexOf("/") + 1));
+            } catch (final BrowserException e) {
+                logger.info("A link failed because of a browser exception (probably timeout): " + currentLink);
+                continue;
+            }
             final String finallink = br2.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             // not sure of best action here, but seems some are either down or require account?. Continue with the results
             if (br2.containsHTML("url\":\"not authorized\"")) {

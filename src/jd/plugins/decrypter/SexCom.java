@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sex.com" }, urls = { "http://(www\\.)?sex\\.com/pin/\\d+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sex.com" }, urls = { "http://(www\\.)?sex\\.com/(pin|picture)/\\d+/" }, flags = { 0 })
 public class SexCom extends PluginForDecrypt {
 
     public SexCom(PluginWrapper wrapper) {
@@ -35,7 +35,8 @@ public class SexCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("/pin/", "/picture/");
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Page Not Found<")) {
             logger.info("Link offline: " + parameter);

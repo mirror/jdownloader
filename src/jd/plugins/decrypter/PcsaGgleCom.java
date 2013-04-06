@@ -23,14 +23,12 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "picasaweb.google.com" }, urls = { "http(s)?://(www\\.)?picasaweb\\.google\\.com/(?!accounts|lh/explore).*?/.*?(\\?feat=(featured#[0-9]+|featured#)|#[0-9]+|#|\\?authkey=[A-Za-z0-9\\-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "picasaweb.google.com" }, urls = { "https?://(www\\.)?picasaweb\\.google\\.com/(?!accounts|lh/explore).*?/.*?(\\?feat=(featured#[0-9]+|featured#)|#[0-9]+|#|\\?authkey=[A-Za-z0-9\\-]+)" }, flags = { 0 })
 public class PcsaGgleCom extends PluginForDecrypt {
 
     public PcsaGgleCom(PluginWrapper wrapper) {
@@ -44,7 +42,10 @@ public class PcsaGgleCom extends PluginForDecrypt {
         String parameter = param.toString().replace("https://", "http://");
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("(Hier gibt es nichts zu sehen|Entweder haben Sie keinen Zugriff auf diese Fotos oder es gibt unter dieser Adresse keine)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(Hier gibt es nichts zu sehen|Entweder haben Sie keinen Zugriff auf diese Fotos oder es gibt unter dieser Adresse keine)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (Regex.matches(parameter, singlelink)) {
             String picid = new Regex(parameter, ".*?#(\\d+)").getMatch(0);
             String directLinkRegex = "\"" + picid + "\",\"albumId\":\".*?\",\"access\":\"public\",.*?media\":\\{\"content\":\\[\\{\"url\":\"(http.*?)\"";

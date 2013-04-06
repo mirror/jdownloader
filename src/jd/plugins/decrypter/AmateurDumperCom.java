@@ -42,9 +42,9 @@ public class AmateurDumperCom extends PluginForDecrypt {
             logger.info("Link broken: " + parameter);
             return decryptedLinks;
         }
-        String tempID = br.getRedirectLocation();
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
+        String externID = br.getRedirectLocation();
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -60,55 +60,61 @@ public class AmateurDumperCom extends PluginForDecrypt {
             return null;
         }
         filename = filename.trim();
-        tempID = br.getRegex("\"(http://(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
-        if (tempID != null) {
-            decryptedLinks.add(createDownloadlink(tempID));
+        externID = br.getRegex("(\\'|\")(http://(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)(\\'|\")").getMatch(1);
+        if (externID != null) {
+            br.getPage(externID);
+            final String finallink = br.getRegex("\"(http://(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
         }
-        tempID = br.getRegex("flash\\.serious\\-cash\\.com/flvplayer\\.swf\".*?flashvars=\"file=([^<>\"]*?)\\&").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://http://flash.serious-cash.com/" + tempID + ".flv");
+        externID = br.getRegex("flash\\.serious\\-cash\\.com/flvplayer\\.swf\".*?flashvars=\"\\&file=([^<>\"]*?)\\&").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("directhttp://http://flash.serious-cash.com/" + externID + ".flv");
             decryptedLinks.add(dl);
             dl.setFinalFileName(filename + ".flv");
             return decryptedLinks;
         }
-        tempID = br.getRegex("file=(http://(www\\.)?hostave\\d+\\.net/.*?)\\&screenfile").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
-            dl.setFinalFileName(filename + ".flv");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-
-        }
-        tempID = br.getRegex("var urlAddress = \"(http://.*?)\"").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        tempID = br.getRegex("\\&file=(http://static\\.mofos\\.com/.*?)\\&enablejs").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        externID = br.getRegex("file=(http://(www\\.)?hostave\\d+\\.net/.*?)\\&screenfile").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
 
         }
-        tempID = br.getRegex("addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-        if (tempID == null) tempID = br.getRegex("\\'(http://(www\\.)?amateurdumper\\.com/videos/.*?)\\'").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        externID = br.getRegex("var urlAddress = \"(http://.*?)\"").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\\&file=(http://static\\.mofos\\.com/.*?)\\&enablejs").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
 
         }
-        tempID = br.getRegex("src=\"http://videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
-        if (tempID != null) {
-            br.getPage("http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(tempID));
-            tempID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
-            if (tempID != null) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        externID = br.getRegex("addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+        if (externID == null) externID = br.getRegex("\\'(http://(www\\.)?amateurdumper\\.com/videos/.*?)\\'").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+
+        }
+        externID = br.getRegex("src=\"http://videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
+        if (externID != null) {
+            br.getPage("http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID));
+            externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+            if (externID != null) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
                 dl.setFinalFileName(filename + ".flv");
                 decryptedLinks.add(dl);
                 return decryptedLinks;
@@ -119,7 +125,7 @@ public class AmateurDumperCom extends PluginForDecrypt {
             logger.info("Link broken: " + parameter);
             return decryptedLinks;
         }
-        if (tempID == null) {
+        if (externID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

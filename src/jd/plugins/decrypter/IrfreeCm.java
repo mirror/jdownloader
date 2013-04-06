@@ -29,18 +29,24 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "irfree.com" }, urls = { "http://(www\\.)?irfree\\.(com|eu)(/.+/.*)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "irfree.com" }, urls = { "http://(www\\.)?irfree\\.(com|eu)/.+/.*" }, flags = { 0 })
 public class IrfreeCm extends PluginForDecrypt {
 
     public IrfreeCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)?irfree\\.(com|eu)//?(templates|applications|engine|user|tutorials|images|tv\\-shows).+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> passwords;
         br.setFollowRedirects(true);
         String parameter = param.toString().replace("irfree.eu/", "irfree.com/");
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (br.containsHTML("(The article cannot be found\\.|>Ooops, Error\\!<)")) {
             logger.info("Link offline: " + parameter);

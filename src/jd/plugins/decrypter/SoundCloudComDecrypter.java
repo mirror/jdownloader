@@ -54,11 +54,16 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             parameter = newparameter;
         } else if (parameter.matches("https?://api\\.soundcloud\\.com/tracks/\\d+")) {
             br.getPage("https://api.soundcloud.com/tracks/" + new Regex(parameter, "(\\d+)$").getMatch(0) + "?client_id=" + SoundCloudComDecrypter.CLIENTID + "&format=json");
-            final String newparameter = br.getRegex("\"permalink_url\":\"(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+)\"").getMatch(0);
+            if (br.containsHTML("\"error_message\":\"404 \\- Not Found\"")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            String newparameter = br.getRegex("\"permalink_url\":\"(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[a-z0-9\\-_]+)?)\"").getMatch(0);
             if (newparameter == null) {
                 logger.warning("Decrypter failed on redirect link: " + parameter);
                 return null;
             }
+            newparameter = newparameter.replace("http://", "https://");
             parameter = newparameter;
         }
         br.setFollowRedirects(true);

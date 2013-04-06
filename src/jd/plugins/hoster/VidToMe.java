@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -55,7 +57,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 19283 $", interfaceVersion = 2, names = { "vidto.me" }, urls = { "https?://(www\\.)?vidto\\.me/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 19283 $", interfaceVersion = 2, names = { "vidto.me" }, urls = { "https?://(www\\.)?vidto\\.me/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class VidToMe extends PluginForHost {
 
     // Site Setters
@@ -77,9 +79,14 @@ public class VidToMe extends PluginForHost {
     // account|paid account) allow own connection threshold.
     private static final boolean       allowConcurrent              = true;
 
+    private final String               quality                      = "quality";
+
+    /** The list of server values displayed to the user */
+    private final String[]             qualitylist                  = new String[] { "720p", "360p", "240p" };
+
     // DEV NOTES
     // XfileShare Version 3.0.2.0
-    // mods:
+    // mods: quality selection
     // protocol: no https
     // captchatype: recaptcha, but never used as of vidembed
     // other: no redirects
@@ -114,6 +121,7 @@ public class VidToMe extends PluginForHost {
     public VidToMe(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.setConfigElements();
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -143,17 +151,6 @@ public class VidToMe extends PluginForHost {
         String[] fileInfo = new String[3];
         // scan the first page
         scanInfo(fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission
-        // critical
-        if (fileInfo[0] == null) {
-            Form download1 = getFormByKey("op", "download1");
-            if (download1 != null) {
-                download1 = cleanForm(download1);
-                download1.remove("method_premium");
-                sendForm(download1);
-                scanInfo(fileInfo);
-            }
-        }
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -164,36 +161,15 @@ public class VidToMe extends PluginForHost {
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(fileInfo[0].trim());
+        link.setFinalFileName(Encoding.htmlDecode(fileInfo[0].trim()));
         if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         return AvailableStatus.TRUE;
     }
 
     private String[] scanInfo(String[] fileInfo) {
         // standard traits from base page
-        fileInfo[0] = new Regex(correctedBR, "class=\"main\\-video\\-head\">Watch ([^<>\"]*?) online</h2>").getMatch(0);
-        if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-            if (fileInfo[0] == null) {
-                fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (fileInfo[0] == null) {
-                    // can cause new line finds, so check if it matches.
-                    // fileInfo[0] = new Regex(correctedBR,
-                    // "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                    // traits from download1 page below.
-                    if (fileInfo[0] == null) {
-                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                        // next two are details from sharing box
-                        if (fileInfo[0] == null) {
-                            fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
-                            if (fileInfo[0] == null) {
-                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        fileInfo[0] = new Regex(correctedBR, "<h2 class=\"video\\-page\\-head\">([^<>\"]*?)</h2>").getMatch(0);
+        if (fileInfo[0] == null) fileInfo[0] = new Regex(correctedBR, "name=\"fname\" value=\"([^<>\"]*?)\"").getMatch(0);
         // String fileExtension = new Regex(correctedBR,
         // "<META NAME=\"description\" CONTENT=\"[^>\"]+ ([^\"]+)\">").getMatch(0);
         // if (fileExtension == null) fileExtension = new Regex(correctedBR,
@@ -227,10 +203,8 @@ public class VidToMe extends PluginForHost {
     @SuppressWarnings("unused")
     private void doFree(final DownloadLink downloadLink, Account account) throws Exception, PluginException {
         passCode = downloadLink.getStringProperty("pass");
-        // First, bring up saved final links
-        dllink = checkDirectLink(downloadLink);
-        // Second, check for streaming links on the first page
-        if (dllink == null) dllink = getDllink();
+        // Check for streaming links on the first page
+        dllink = getDllink(downloadLink);
         // Third, do they provide video hosting?
         if (dllink == null && videoHoster) {
             final Browser brv = br.cloneBrowser();
@@ -250,7 +224,7 @@ public class VidToMe extends PluginForHost {
                 waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 checkErrors(downloadLink, false);
-                dllink = getDllink();
+                dllink = getDllink(downloadLink);
             }
         }
         if (dllink == null) {
@@ -344,7 +318,7 @@ public class VidToMe extends PluginForHost {
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
-                dllink = getDllink();
+                dllink = getDllink(downloadLink);
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -420,7 +394,7 @@ public class VidToMe extends PluginForHost {
         }
     }
 
-    private String getDllink() {
+    private String getDllink(final DownloadLink dl) {
         dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
@@ -428,7 +402,7 @@ public class VidToMe extends PluginForHost {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
-                        dllink = decodeDownloadLink(crypted);
+                        dllink = decodeDownloadLink(crypted, dl);
                         if (dllink != null) break;
                     }
                 }
@@ -513,7 +487,7 @@ public class VidToMe extends PluginForHost {
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
     }
 
-    private String decodeDownloadLink(final String s) {
+    private String decodeDownloadLink(final String s, final DownloadLink dl) {
         String decoded = null;
 
         try {
@@ -533,24 +507,80 @@ public class VidToMe extends PluginForHost {
         } catch (Exception e) {
         }
 
-        String finallink = null;
-        if (decoded != null) {
-            finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
-                if (finallink == null) {
-                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-                    if (finallink == null) {
-                        // multiple resolutions found! only returns the first of
-                        // course! but atm it seems they place the highest
-                        // resolution
-                        // first.
-                        finallink = new Regex(decoded, ",file:(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + ")(:\\d{1,4})?/[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
-                    }
+        final String finallink = getConfiguredQualityDownloadlink(dl, decoded);
+        return finallink;
+    }
+
+    private String getConfiguredQualityDownloadlink(final DownloadLink dl, final String source) {
+        String dllink = null;
+        switch (getPluginConfig().getIntegerProperty(quality, -1)) {
+        case 0:
+            logger.fine("Quality 720p is configured");
+            dllink = get720p(dl, source);
+            if (dllink == null) {
+                get360p(dl, source);
+                if (dllink == null) {
+                    get240p(dl, source);
                 }
             }
+            break;
+        case 1:
+            logger.fine("Quality 360p is configured");
+            dllink = get360p(dl, source);
+            if (dllink == null) {
+                get720p(dl, source);
+                if (dllink == null) {
+                    get240p(dl, source);
+                }
+            }
+            break;
+        case 2:
+            logger.fine("Quality 240p is configured");
+            dllink = get240p(dl, source);
+            if (dllink == null) {
+                get360p(dl, source);
+                if (dllink == null) {
+                    get720p(dl, source);
+                }
+            }
+            break;
+        default:
+            logger.fine("No quality is configured, returning default quality (720p)");
+            dllink = get720p(dl, source);
+            if (dllink == null) {
+                get360p(dl, source);
+                if (dllink == null) {
+                    get240p(dl, source);
+                }
+            }
+            break;
         }
-        return finallink;
+        return dllink;
+    }
+
+    private String get720p(final DownloadLink dl, final String source) {
+        addQualityToFilename(dl, "720p");
+        return new Regex(source, "label:\"720p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
+    }
+
+    private String get360p(final DownloadLink dl, final String source) {
+        addQualityToFilename(dl, "360p");
+        return new Regex(source, "label:\"360p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
+    }
+
+    private String get240p(final DownloadLink dl, final String source) {
+        addQualityToFilename(dl, "240p");
+        return new Regex(source, "label:\"240p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
+    }
+
+    private void addQualityToFilename(final DownloadLink dl, final String quality) {
+        final String currentFilename = dl.getFinalFileName();
+        String ext = null;
+        if (currentFilename.contains(".")) ext = currentFilename.substring(currentFilename.lastIndexOf("."));
+        if (ext != null)
+            dl.setFinalFileName(currentFilename.replace(ext, "") + "_" + quality + ext);
+        else
+            dl.setFinalFileName(currentFilename.replace(ext, "") + "_" + quality);
     }
 
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
@@ -688,7 +718,7 @@ public class VidToMe extends PluginForHost {
             dllink = checkDirectLink(downloadLink);
             if (dllink == null) {
                 getPage(downloadLink.getDownloadURL());
-                dllink = getDllink();
+                dllink = getDllink(downloadLink);
                 if (dllink == null) {
                     checkErrors(downloadLink, true);
                     Form dlform = br.getFormbyProperty("name", "F1");
@@ -697,7 +727,7 @@ public class VidToMe extends PluginForHost {
                     if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     sendForm(dlform);
                     checkErrors(downloadLink, true);
-                    dllink = getDllink();
+                    dllink = getDllink(downloadLink);
                 }
             }
             if (dllink == null) {
@@ -1209,4 +1239,9 @@ public class VidToMe extends PluginForHost {
         }
         return false;
     }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), quality, qualitylist, JDL.L("plugins.host.vidtome.qualityselection", "Select your prefered quality: ")).setDefaultValue(0));
+    }
+
 }

@@ -42,7 +42,7 @@ public class TopProtectNet extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.postPage("http://top-protect.net/linkid.php", "linkid=" + new Regex(parameter, "top\\-protect\\.net/linkidwoc\\.php\\?linkid=([a-z]+)").getMatch(0) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
         final String fpName = br.getRegex("Titre:[\t\n\r ]+</td>[\t\n\r ]+<td style=\\'border:1px\\'>([^<>\"/]+)</td>").getMatch(0);
-        String[] links = br.getRegex("target=_blank>(http://[^<>\"\\']+)").getColumn(0);
+        String[] links = br.getRegex("target=_blank>(https?://[^<>\"\\']+)").getColumn(0);
         if (links == null || links.length == 0) {
             if (br.containsHTML("href= target=_blank></a><br></br><a")) {
                 logger.info("Link offline: " + parameter);

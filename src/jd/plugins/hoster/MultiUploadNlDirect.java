@@ -76,26 +76,31 @@ public class MultiUploadNlDirect extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             if (!br.containsHTML("img/logo_multi\\.gif\"")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No direct download available at the moment, try later or use another mirror for this link", 60 * 60 * 1000l); }
-            final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0);
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            final String id = br.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
-            if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            rc.setId(id);
-            rc.load();
-            for (int i = 1; i <= 5; i++) {
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
-                br.postPage("http://www.multiupload.nl/" + fid + "?c=" + fid, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                if (br.containsHTML("response\":\"0\"")) {
-                    rc.reload();
-                    continue;
+            // First check if download is possible without captcha
+            dllink = br.getRegex("id=\"downloadbutton_\" style=\"\"><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(https?://www\\d+\\.multiupload\\.nl:\\d+/files/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0);
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                final String id = br.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
+                if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                rc.setId(id);
+                rc.load();
+                for (int i = 1; i <= 5; i++) {
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode(cf, downloadLink);
+                    br.postPage("http://www.multiupload.nl/" + fid + "?c=" + fid, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                    if (br.containsHTML("response\":\"0\"")) {
+                        rc.reload();
+                        continue;
+                    }
+                    break;
                 }
-                break;
+                dllink = br.getRegex("\"href\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = dllink.replace("\\", "");
             }
-            dllink = br.getRegex("\"href\":\"(http:[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dllink = dllink.replace("\\", "");
         }
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);

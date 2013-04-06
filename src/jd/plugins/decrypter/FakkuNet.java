@@ -43,6 +43,10 @@ public class FakkuNet extends PluginForDecrypt {
         br.setFollowRedirects(false);
         if (new Regex(parameter, "http://(www\\.)?fakku\\.net/viewmanga\\.php\\?id=\\d+").matches()) {
             br.getPage(parameter + "&mode=download");
+            if (br.getRedirectLocation() != null) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("<title>(.*?) \\| Download</title>").getMatch(0);
             String[] links = br.getRegex("\"(/redirect\\.php\\?type=m\\&id=[A-Za-z0-9]+)\"").getColumn(0);
             if (links == null || links.length == 0) {

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -82,11 +83,11 @@ public class GglBks extends PluginForDecrypt {
             }
             decryptedLinks.add(link);
         }
-        br.getPage(param);
-        String fpName = br.getRegex("<div id=\"titlebar\"><h1 class=title dir=ltr>(.*?)</h1>").getMatch(0);
+        br.getPage(url);
+        final String fpName = br.getRegex("name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName);
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

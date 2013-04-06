@@ -56,6 +56,10 @@ public class Scrd extends PluginForDecrypt {
         final String parameter = param.toString();
         // Captcha
         br.getPage(parameter);
+        if (br.containsHTML("><body>You are being <a href=\"http://secured\\.in/\">redirected")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.getRegex("Sicherheitscode").matches()) {
             logger.fine("The current page is captcha protected, getting captcha ID...");
             for (int i = 0; i <= 3; i++) {

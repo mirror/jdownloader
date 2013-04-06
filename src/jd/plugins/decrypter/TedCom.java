@@ -23,6 +23,11 @@ public class TedCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = parameter.toString();
         br.getPage(url);
+        String externalLink = br.getRegex("class=\"external\" href=\"(http://(www\\.)?youtube\\.com/[^<>\"]*?)\"").getMatch(0);
+        if (externalLink != null) {
+            decryptedLinks.add(createDownloadlink(externalLink));
+            return decryptedLinks;
+        }
         String talkInfo = br.getRegex(">var talkDetails = \\{(.*?)<div class=\"talk\\-wrapper\">").getMatch(0);
         talkInfo = Encoding.htmlDecode(talkInfo).replace("\\", "");
         if (talkInfo == null) {

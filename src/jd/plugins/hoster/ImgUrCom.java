@@ -62,7 +62,11 @@ public class ImgUrCom extends PluginForHost {
         if (urls == null || urls.length == 0) { return false; }
         try {
             for (DownloadLink dl : urls) {
-                URLConnectionAdapter con = br.openGetConnection(dl.getDownloadURL());
+                final URLConnectionAdapter con = br.openGetConnection(dl.getDownloadURL());
+                if (con.getContentType().contains("html")) {
+                    dl.setAvailable(false);
+                    continue;
+                }
                 String filename = getFileNameFromHeader(con);
                 // at times they do not give you filename extension, url from /download/ page
                 if (dl.getProperty("imgUID") != null)

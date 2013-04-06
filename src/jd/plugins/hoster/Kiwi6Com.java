@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kiwi6.com" }, urls = { "http://(www\\.)?kiwi6\\.com/file/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kiwi6.com" }, urls = { "http://((www\\.)?kiwi6\\.com/file/[a-z0-9]+|(www\\.)?[a-z0-9]+\\.kiwi6\\.com/hotlink/[a-z0-9]+)" }, flags = { 0 })
 public class Kiwi6Com extends PluginForHost {
 
     public Kiwi6Com(PluginWrapper wrapper) {
@@ -42,6 +43,10 @@ public class Kiwi6Com extends PluginForHost {
         return "http://kiwi6.com/pages/tos";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload("http://kiwi6.com/file/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -51,7 +56,10 @@ public class Kiwi6Com extends PluginForHost {
         final String artist = br.getRegex("=\"/artists/([^<>\"]*?)\"").getMatch(0);
         String filename = br.getRegex("<h2>About <i>([^<>\"]*?)</i>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- Listen and download mp3").getMatch(0);
-        final String filesize = br.getRegex(">Download MP3</a></h1>([^<>\"]*?)</div>").getMatch(0);
+        // For MP3s
+        String filesize = br.getRegex(">Download MP3</a></h1>([^<>\"]*?)</div>").getMatch(0);
+        // For all the other links
+        if (filesize == null) filesize = br.getRegex(">Download File</a></h1>([^<>\"]*?)</div>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (artist != null) {
             link.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(filename.trim()) + ".mp3");

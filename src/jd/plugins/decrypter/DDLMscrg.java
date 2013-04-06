@@ -64,7 +64,7 @@ public class DDLMscrg extends PluginForDecrypt {
                 }
                 add += 500;
             }
-            String[] allLinks = br.getRegex("<tr class=\"download_links_parts\">.*?<a href=\"(.*?)\"").getColumn(0);
+            String[] allLinks = br.getRegex("\"(https?://[^<>\"]*?)\" target=\"_blank\" style=\"border:0px;\">[\t\n\r ]+<img src=\"images/download_links_button\\.png\"").getColumn(0);
             if (allLinks == null || allLinks.length == 0) {
                 logger.warning("Could not find the links...");
                 return null;
@@ -74,8 +74,7 @@ public class DDLMscrg extends PluginForDecrypt {
         } else if (parameter.matches(DECRYPTER_DDLMSC_MAIN)) {
             logger.info("The user added a DECRYPTER_DDLMSC_MAIN link...");
             br.getPage(parameter);
-            String fpName = br.getRegex("<title>DDL-Music v3.0 // Eric Clapton - (.*?)</title>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("\\'\\);\">\\&gt;\\&gt; (.*?)</div>").getMatch(0);
+            String fpName = br.getRegex("<title>DDL\\-Music v3.0 // ([^<>\"]*?) // Download</title>").getMatch(0);
             if (br.containsHTML(">Download nicht gefunden")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;

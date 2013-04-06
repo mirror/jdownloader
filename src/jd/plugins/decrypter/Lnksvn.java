@@ -67,7 +67,7 @@ public class Lnksvn extends PluginForDecrypt {
         br.setRequestIntervalLimit("linksave.in", 1000);
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        if (br.containsHTML("Ordner nicht gefunden<|e>404 \\- Not Found<")) {
+        if (br.containsHTML(">Error 404 \\- Ordner nicht gefunden")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

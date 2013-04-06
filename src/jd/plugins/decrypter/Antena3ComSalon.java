@@ -45,20 +45,29 @@ public class Antena3ComSalon extends PluginForDecrypt {
         }
         // No player -> Series link
         if (!br.containsHTML("var player_capitulo=")) {
+            final String linkpart = new Regex(link.toString(), "videos/(.*?)\\.html").getMatch(0);
             final String[] videoPages = br.getRegex("<ul class=\"page\\d+\">(.*?)</ul>").getColumn(0);
             for (final String vList : videoPages) {
                 final String[] episodeList = new Regex(vList, "alt=\"[^<>\"/]+\"[\t\n\r ]+href=\"(/videos/[^<>\"]*?)\"").getColumn(0);
-                if (episodeList == null || episodeList.length == 0) {
+                final String[] seriesList = new Regex(vList, "<a title=\"[^<>\"/]*?\" href=\"(/videos/" + linkpart + "[^<>\"]*?)\"").getColumn(0);
+                if ((episodeList == null || episodeList.length == 0) && (seriesList == null || seriesList.length == 0)) {
                     logger.warning("Decrypter broken for link: " + link.toString());
                     return null;
                 }
-                for (final String video : episodeList) {
-                    br.getPage("http://www.antena3.com" + video);
-                    try {
-                        decryptSingleVideo(link);
-                    } catch (final DecrypterException e) {
-                        if ("Offline".equals(e.getMessage())) return decryptedLinks;
-                        throw e;
+                if (episodeList != null && episodeList.length != 0) {
+                    for (final String video : episodeList) {
+                        br.getPage("http://www.antena3.com" + video);
+                        try {
+                            decryptSingleVideo(link);
+                        } catch (final DecrypterException e) {
+                            if ("Offline".equals(e.getMessage())) return decryptedLinks;
+                            throw e;
+                        }
+                    }
+                }
+                if (seriesList != null && seriesList.length != 0) {
+                    for (final String seriesLink : seriesList) {
+                        decryptedLinks.add(createDownloadlink("http://www.antena3.com" + seriesLink));
                     }
                 }
             }

@@ -38,9 +38,9 @@ public class DreamAmateursCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        String tempID = br.getRedirectLocation();
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
+        String externID = br.getRedirectLocation();
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -56,50 +56,56 @@ public class DreamAmateursCom extends PluginForDecrypt {
             return null;
         }
         filename = filename.trim();
-        tempID = br.getRegex("\"(http://(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
-        if (tempID != null) {
-            decryptedLinks.add(createDownloadlink(tempID));
+        externID = br.getRegex("(\\'|\")(http://(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)(\\'|\")").getMatch(1);
+        if (externID != null) {
+            br.getPage(externID);
+            final String finallink = br.getRegex("\"(http://(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
         }
-        tempID = br.getRegex("file=(http://hostave4\\.net/.*?)\\&screenfile").getMatch(0);
-        if (tempID != null) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        externID = br.getRegex("file=(http://hostave4\\.net/.*?)\\&screenfile").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
 
         }
-        tempID = br.getRegex("file=(.*?)\\&link=http%3A%2F%2F").getMatch(0);
-        if (tempID != null) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + "http://flash.serious-cash.com/" + tempID + ".flv");
+        externID = br.getRegex("file=(.*?)\\&link=http%3A%2F%2F").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + "http://flash.serious-cash.com/" + externID + ".flv");
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
 
         }
-        tempID = br.getRegex("src=\"http://videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
-        if (tempID != null) {
-            br.getPage("http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(tempID));
-            tempID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
-            if (tempID != null) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        externID = br.getRegex("src=\"http://videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
+        if (externID != null) {
+            br.getPage("http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID));
+            externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+            if (externID != null) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
                 dl.setFinalFileName(filename + ".flv");
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
 
         }
-        tempID = br.getRegex("\\&file=(http://(www\\.)?revengetv\\.net/[^<>\"]*?)\\&beginimage").getMatch(0);
-        if (tempID != null) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        externID = br.getRegex("\\&file=(http://(www\\.)?revengetv\\.net/[^<>\"]*?)\\&beginimage").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
 
         }
-        tempID = br.getRegex("flashvars=\"file=(http://(www\\.)?hostave3\\.net/[^<>\"]*?)\\&screenfile=").getMatch(0);
-        if (tempID != null) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        externID = br.getRegex("flashvars=\"file=(http://(www\\.)?hostave3\\.net/[^<>\"]*?)\\&screenfile=").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -109,7 +115,7 @@ public class DreamAmateursCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (tempID == null) {
+        if (externID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

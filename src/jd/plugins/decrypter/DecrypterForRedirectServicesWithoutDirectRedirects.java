@@ -567,7 +567,8 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             dh = true;
             finalfilename = new Regex(parameter, "\\?type=vid\\&name=(.+)").getMatch(0);
         } else if (parameter.contains("adv.li/")) {
-            finallink = br.getRegex("_url=\\'(http://[^<>\"]*?)\\'").getMatch(0);
+            finallink = br.getRedirectLocation();
+            if (finallink == null) finallink = br.getRegex("_url=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
         } else if (parameter.contains("protetorbr.com/")) {
             if (br.getRedirectLocation() != null) {
                 br.getPage(br.getRedirectLocation());
