@@ -1,6 +1,7 @@
 RestartController_confirmToExit_=確定離開嗎？
 RestartController_confirmToExit_msg=確定要退出 JDownloader 嗎？
 close_jd=沒有足夠權限寫入 %s1。\r\n嘗試關閉所有執行中的 JDownloader 和 Java 處理程序，並在之後重試一次！\r\n如果問題在系統重新啟動後仍然發生，請聯絡您的技術支援。
+confirmdialog_new_update_available_answer_later=稍候
 confirmdialog_new_update_available_answer_later_install=稍候
 confirmdialog_new_update_available_answer_now=立刻下載
 confirmdialog_new_update_available_answer_now_install=立刻安裝
@@ -16,6 +17,7 @@ error_last_chance_connection_message=JDownloader 無法連接到網際網路。\
 error_last_chance_connection_title=沒有網路連線！
 error_last_chance_message=JDownloader 不能安裝最新更新。\r\n請重新安裝 JDownloader 或聯絡我們的技術支援！
 error_last_chance_title=更新錯誤！
+errordialog_cannot_write=沒有足夠權限安裝 %s1。\r\n請聯繫我們的技術支援！
 errordialog_cannot_write2=缺少寫入權限安裝更新。請聯絡您的技術支援！
 errordialog_defaultio=在更新時發生一個 IO 錯誤。請重試或者聯絡我們的技術支援。
 errordialog_frametitle=發生一個錯誤
