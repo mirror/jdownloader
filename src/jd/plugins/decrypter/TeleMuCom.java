@@ -17,6 +17,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -46,7 +48,7 @@ public class TeleMuCom extends PluginForDecrypt {
         // cookie does not work, then I add it here)
         br.setCookie(parameter, "dle_user_id", "9756");
         br.setCookie(parameter, "dle_password", "23d45b337ff85d0a326a79082f7c6f50");
-        br.setCookie(parameter, "dle_hash", "95f83a05e35908232e0483673a77179d");
+        br.setCookie(parameter, "dle_hash", "7c129fda950295919ce7e98df4b29d4e");
 
         br.getPage(parameter);
         String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
@@ -149,16 +151,34 @@ public class TeleMuCom extends PluginForDecrypt {
         strName = strName.replace(":", ",");
 
         strName = strName.replace("VA - ", "");
-        strName = strName.replace("FLAC", "");
-        strName = strName.replace("flac", "");
 
-        strName = strName.replace("APE", "");
-        strName = strName.replace("ape", "");
+        Pattern pattern = null;
+        Matcher matcher = null;
+        // Remove the exact words mp3, flac, lossless and ape
+        pattern = Pattern.compile("(?<!\\p{L})mp3(?!\\p{L})|(?<!\\p{L})ape(?!\\p{L})|(?<!\\p{L})flac(?!\\p{L})|(?<!\\p{L})lossless(?!\\p{L})", Pattern.CASE_INSENSITIVE);
+        matcher = pattern.matcher(strName);
+        strName = matcher.replaceAll("");
 
-        strName = strName.replace("[Multi]", "");
-        strName = strName.replace("[MULTI]", "");
+        // Replace the [ ] with nothing because the string in this bracket has been removed
+        pattern = Pattern.compile("\\[ *\\]", Pattern.CASE_INSENSITIVE);
+        matcher = pattern.matcher(strName);
+        strName = matcher.replaceAll("");
 
-        strName = strName.replace("MP3", "");
+        // Replace the ( ) with nothing because the string in this parenthesis has been removed
+        pattern = Pattern.compile("^\\[.*\\] ", Pattern.CASE_INSENSITIVE);
+        matcher = pattern.matcher(strName);
+        strName = matcher.replaceAll("");
+
+        // Replace the ( ) with nothing because the string in this parenthesis has been removed
+        pattern = Pattern.compile("\\( *\\)", Pattern.CASE_INSENSITIVE);
+        matcher = pattern.matcher(strName);
+        strName = matcher.replaceAll("");
+
+        // Replace several space characters in one
+        pattern = Pattern.compile("\\s{2,}", Pattern.CASE_INSENSITIVE);
+        matcher = pattern.matcher(strName);
+        strName = matcher.replaceAll(" ");
+
         return strName;
     }
 }
