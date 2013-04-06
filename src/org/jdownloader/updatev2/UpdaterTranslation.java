@@ -15,6 +15,12 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Ask me later", "Später erneut fragen" })
     String update_dialog_later();
 
+    @Default(lngs = { "en", "de" }, values = { "JDownloader cannot connect to %s1! Your Proxy Server requires authentication. \r\nCheck your credentials...", "JDownloader kann nicht nach %s1 verbinden! Dein Proxyserver benötigt Anmeldedaten.\r\nBitte überprüfe die Zugangsdaten..." })
+    String TranslationProxyDialogAuthRequired(String host);
+
+    @Default(lngs = { "en", "de" }, values = { "JDownloader cannot connect to %s1! Please check your connection settings...", "JDownloader kann nicht nach %s1 verbinden! Bitte überprüfe die Verbindungseinstellungen..." })
+    String TranslationProxyDialogNoConnection(String host);
+
     @Default(lngs = { "en", "de" }, values = { "Updates are ready for Installation. Do you want to run the update now?", "Updates können jetzt installiert werden. Soll das Update jetzt gestartet werden?" })
     String update_dialog_msg_x_updates_available();
 
