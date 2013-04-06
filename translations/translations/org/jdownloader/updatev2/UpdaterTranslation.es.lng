@@ -1,5 +1,7 @@
 RestartController_confirmToExit_=¿Relamente desea salir?
 RestartController_confirmToExit_msg=¿Realmente desea salir de JDownloader?
+TranslationProxyDialogAuthRequired=JDownloader no se puede conectar con %s1! Su Servidor Proxy requiere autenticación\nVerifique sus credenciales...
+TranslationProxyDialogNoConnection=JDownloader no se puede conectar con %s1! Por favor verifique la configuración de la conexión...
 close_jd=Falta de permisos para escribir %s1. Intente cerrar todos los procesos de JDownloader y Java e inténtelo mas tarde! Por favor, contacte nuestro soporte si el problema persiste después de reiniciar el sistema.
 confirmdialog_new_update_available_answer_later=Más tarde
 confirmdialog_new_update_available_answer_later_install=Más tarde
