@@ -97,7 +97,7 @@ public class FourTubeCom extends PluginForHost {
         String dllink = downloadLink.getDownloadURL();
         br.setFollowRedirects(true);
         br.getPage(dllink);
-        if (br.containsHTML("Page not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("Page not found|This Video Is No Longer Available")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = dllink.substring(dllink.lastIndexOf("/") + 1);
