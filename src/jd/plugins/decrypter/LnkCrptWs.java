@@ -31,6 +31,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,7 +50,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JSlider;
 import javax.swing.Timer;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputAdapter;
 
 import jd.PluginWrapper;
@@ -68,7 +73,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
@@ -76,11 +83,266 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends PluginForDecrypt {
+
+    public static class AdsCaptcha {
+        private final Browser br;
+        public Browser        acBr;
+        private String        challenge;
+        private String        publicKey;
+        private String        captchaAddress;
+        private String        captchaId;
+        private String        result;
+
+        public AdsCaptcha(final Browser br) {
+            this.br = br;
+        }
+
+        public Form getResult() throws Exception {
+            try {
+                load();
+            } catch (final Throwable e) {
+                e.printStackTrace();
+                throw new PluginException(LinkStatus.ERROR_FATAL, e.getMessage());
+            } finally {
+                try {
+                    acBr.getHttpConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+            Form ret = new Form();
+            if (result == null) return null;
+            ret.put("aera", result);
+            ret.put("adscaptcha_challenge_field", challenge);
+            ret.put("adscaptcha_response_field", result);
+            return ret;
+        }
+
+        private boolean isStableEnviroment() {
+            String prev = JDUtilities.getRevision();
+            if (prev == null || prev.length() < 3) {
+                prev = "0";
+            } else {
+                prev = prev.replaceAll(",|\\.", "");
+            }
+            final int rev = Integer.parseInt(prev);
+            if (rev < 10000) return true;
+            return false;
+        }
+
+        private void load() throws Exception {
+            acBr = br.cloneBrowser();
+            if (!checkIfSupported()) throw new Exception("AdsCaptcha: Captcha type not supported!");
+            acBr.getPage(captchaAddress);
+            getChallenge();
+            getPublicKey();
+            if (challenge == null || publicKey == null) throw new Exception("AdsCaptcha: challenge and/or publickey equal null!");
+
+            if (!isStableEnviroment()) {
+                SliderCaptchaDialog sc = new SliderCaptchaDialog(0, "AdsCaptcha - " + br.getHost(), imageUrls());
+                sc.displayDialog();
+                result = sc.getReturnValue();
+            } else {
+                throw new Exception("AdsCaptcha: currently not available in JD1!");
+            }
+        }
+
+        private void getChallenge() {
+            challenge = acBr.getRegex("Challenge:\\s*(\'|\")?([0-9a-f\\-]+)(\'|\")?").getMatch(1);
+        }
+
+        private void getPublicKey() {
+            publicKey = acBr.getRegex("Key:\\s*(\'|\")?([0-9a-f\\-]+)(\'|\")?").getMatch(1);
+            if (publicKey == null) publicKey = new Regex(captchaAddress, "PublicKey=([0-9a-f\\-]+)\\&").getMatch(0);
+        }
+
+        private boolean checkIfSupported() throws Exception {
+            captchaAddress = acBr.getRegex("src=\'(http://api\\.adscaptcha\\.com/Get\\.aspx\\?CaptchaId=\\d+\\&PublicKey=[^\'<>]+)").getMatch(0);
+            captchaId = new Regex(captchaAddress, "CaptchaId=(\\d+)\\&").getMatch(0);
+            if (captchaAddress == null || captchaId == null) throw new Exception("AdsCaptcha: Captcha address not found!");
+            if (!"3671".equals(captchaId)) return false;
+            return true;
+        }
+
+        private URL[] imageUrls() throws Exception {
+            acBr.getPage("http://api.minteye.com/Slider/SliderData.ashx?cid=" + challenge + "&CaptchaId=" + captchaId + "&PublicKey=" + publicKey + "&w=180&h=150");
+            String urls[] = acBr.getRegex("\\{\'src\':\\s\\'(https?://[^\']+)\'\\}").getColumn(0);
+            if (urls == null || urls.length == 0) throw new Exception("AdsCaptcha: Image urls not found!");
+            URL out[] = new URL[urls.length];
+            int i = 0;
+            for (String u : urls) {
+                out[i++] = new URL(u);
+            }
+            return out;
+        }
+
+        public String getChallengeId() {
+            return challenge;
+        }
+
+        public String getCaptchaUrl() {
+            return captchaAddress;
+        }
+
+        public String getResultValue() {
+            return result;
+        }
+
+    }
+
+    private static class SliderCaptchaDialog extends AbstractDialog<String> {
+        private JSlider       slider;
+        private JPanel        p;
+        private int           images = 0;
+        private URL           imageUrls[];
+        private int           pos    = 0;
+        private JPanel        picture;
+        private BufferedImage image[];
+        private Image         finalImage;
+        private Thread        download;
+        private JLabel        dLabel;
+        private JLabel        cLabel;
+        private JProgressBar  bar;
+
+        public SliderCaptchaDialog(int flag, String title, URL[] imageUrls) {
+            super(flag | Dialog.STYLE_HIDE_ICON | Dialog.LOGIC_COUNTDOWN, title, null, null, null);
+            setCountdownTime(120);
+            this.images = imageUrls.length - 1;
+            this.imageUrls = imageUrls;
+        }
+
+        @Override
+        public JComponent layoutDialogContent() {
+            bar = new JProgressBar(0, images);
+            dLabel = new JLabel("Please wait while downloading captchas: " + bar.getValue() + "/" + images);
+            cLabel = new JLabel("Slide to fit");
+
+            download = new Thread("Captcha download") {
+                public void run() {
+                    InputStream stream = null;
+                    try {
+                        image = new BufferedImage[imageUrls.length];
+                        for (int i = 0; i < image.length; i++) {
+                            sleep(50);
+                            try {
+                                image[i] = ImageIO.read(stream = imageUrls[i].openStream());
+                                bar.setValue(i + 1);
+                            } finally {
+                                try {
+                                    stream.close();
+                                } catch (final Throwable e) {
+                                }
+                            }
+                        }
+                    } catch (IOException e) {
+                        Log.exception(e);
+                    } catch (InterruptedException e) {
+                        Log.exception(e);
+                    }
+                }
+            };
+            download.start();
+
+            slider = new JSlider(0, images, 0);
+            slider.addChangeListener(new ChangeListener() {
+
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    pos = ((JSlider) e.getSource()).getValue();
+                    resizeImage();
+                    p.repaint();
+                }
+            });
+
+            /* setup panels */
+            p = new JPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]"));
+            picture = new JPanel() {
+                /**
+                 * 
+                 */
+                private static final long serialVersionUID = 1L;
+
+                @Override
+                public Dimension getPreferredSize() {
+                    if (finalImage != null) {
+                        return new Dimension(finalImage.getWidth(dialog), finalImage.getHeight(dialog));
+                    } else {
+                        return super.getPreferredSize();
+                    }
+                }
+
+                @Override
+                protected void paintComponent(final Graphics g) {
+                    super.paintComponent(g);
+                    if (finalImage != null) {
+                        g.setColor(Color.WHITE);
+                        g.drawImage(finalImage, 0, 0, this);
+                    }
+                }
+            };
+
+            bar.setStringPainted(true);
+            bar.addChangeListener(new ChangeListener() {
+                private int pos = 0;
+
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    pos = ((JProgressBar) e.getSource()).getValue();
+                    if (pos < images) {
+                        dLabel.setText("Please wait while downloading captchas: " + bar.getValue() + "/" + images);
+                        dLabel.paintImmediately(dLabel.getVisibleRect());
+                    } else {
+                        resizeImage();
+                        dialog.setSize(315, 350);
+                        if (SwingGui.getInstance() == null) {
+                            dialog.setLocation(Screen.getCenterOfComponent(null, dialog));
+                        } else if (SwingGui.getInstance().getMainFrame().getExtendedState() == 1 || !SwingGui.getInstance().getMainFrame().isVisible()) {
+                            dialog.setLocation(Screen.getDockBottomRight(dialog));
+                        } else {
+                            dialog.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance().getMainFrame(), dialog));
+                        }
+                        setupCaptchaDialog();
+                    }
+                }
+
+            });
+
+            p.add(dLabel);
+            p.add(bar);
+
+            return p;
+        }
+
+        private void setupCaptchaDialog() {
+            p.remove(dLabel);
+            p.remove(bar);
+            p.add(cLabel);
+            p.add(picture);
+            p.add(slider);
+            p.repaint();
+        }
+
+        private void resizeImage() {
+            if (image == null || image.length == 0) {
+                finalImage = null;
+            } else {
+                finalImage = image[pos].getScaledInstance(300, 250, Image.SCALE_SMOOTH);
+            }
+        }
+
+        @Override
+        protected String createReturnValue() {
+            if (!download.isInterrupted()) download.interrupt();
+            if (Dialog.isOK(getReturnmask())) return String.valueOf(pos);
+            return null;
+        }
+
+    }
 
     public static class SolveMedia {
         private final Browser br;
@@ -1496,6 +1758,10 @@ public class LnkCrptWs extends PluginForDecrypt {
     /**
      * TODO: can be removed with next major update cause of recaptcha change
      */
+
+    public AdsCaptcha getAdsCaptcha(final Browser br) {
+        return new AdsCaptcha(br);
+    }
 
     public SolveMedia getSolveMedia(final Browser br) {
         return new SolveMedia(br);

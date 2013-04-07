@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -30,7 +29,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.LnkCrptWs;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -118,27 +120,23 @@ public class GigaSizeCom extends PluginForHost {
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("limit-download-free")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only premium users are entitled to dowload files larger than 1GB from Gigasize"); }
         // Unknown hoster expire time
         if (br.containsHTML("(?i)>You've reached your <strong>DOWNLOAD LIMIT<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download limit reached", 1 * 60 * 60 * 1000l);
-        String adsCaptcha = br.getRegex("iframe src=\\'(http://api\\.adsca.*?)\\'").getMatch(0);
-        if (adsCaptcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        Browser brc = br.cloneBrowser();
-        brc.getPage(adsCaptcha);
-        final String captchaURL = brc.getRegex("img src=\"(http:.*?)\"").getMatch(0);
-        final String captchaKEY = brc.getRegex("Code:.*?code\">(.*?)<").getMatch(0);
-        if (captchaURL == null || captchaKEY == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String captchaCODE = null;
-        Browser brt = br;
-        br = brc;
-        try {
-            brc.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
-            captchaCODE = getCaptchaCode(captchaURL, downloadLink);
-        } finally {
-            br = brt;
+
+        Form captchaForm = br.getFormbyProperty("id", "downloadForm");
+        if (br.containsHTML("//api\\.adscaptcha\\.com/")) {
+            final PluginForDecrypt adsplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+            final jd.plugins.decrypter.LnkCrptWs.AdsCaptcha ac = ((LnkCrptWs) adsplug).getAdsCaptcha(br);
+            captchaForm = ac.getResult();
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_FATAL, "User abort ...");
         }
-        br.postPage("http://www.gigasize.com/getoken", "fileId=" + getID(downloadLink) + "&adUnder=&adscaptcha_response_field=" + captchaCODE + "&adscaptcha_challenge_field=" + captchaKEY);
+        captchaForm.setAction("/getoken");
+        captchaForm.setMethod(Form.MethodType.POST);
+        captchaForm.put("fileId", getID(downloadLink));
+        br.submitForm(captchaForm);
+
         if (!br.containsHTML("status\":1")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         sleep(30 * 1000l, downloadLink);
-        String token = br.getPage("http://www.gigasize.com/formtoken");
-        br.postPage("http://www.gigasize.com/getoken", "fileId=" + getID(downloadLink) + "&token=" + token + "&rnd=" + System.currentTimeMillis());
+        String token = br.getPage("/formtoken");
+        br.postPage("/getoken", "fileId=" + getID(downloadLink) + "&token=" + token + "&rnd=" + System.currentTimeMillis());
         String url = br.getRegex("redirect\":\"(http:.*?)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         url = url.replaceAll("\\\\/", "/");
