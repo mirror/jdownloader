@@ -59,7 +59,8 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
     }
 
     private void parsePage(ArrayList<DownloadLink> ret, String parameter) {
-        String[] links = br.getRegex("\"(/file/\\d+/[^\"]+)").getColumn(0);
+        String[] links = br.getRegex("\"(/file/([a-z0-9]{32}|\\d+)/[^\"]+)").getColumn(0);
+
         if (links == null || links.length == 0) {
             logger.warning("Empty folder, or possible plugin defect. Please confirm this issue within your browser, if the plugin is truely broken please report issue to JDownloader Development Team. " + parameter);
             return;
