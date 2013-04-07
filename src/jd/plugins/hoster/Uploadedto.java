@@ -496,7 +496,7 @@ public class Uploadedto extends PluginForHost {
             /**
              * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting if a limit is reached
              */
-            if (true && account != null) {
+            if (account != null && this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, false)) {
                 final String lastdownloadString = account.getStringProperty("LASTDOWNLOAD2");
                 long lastdownload = 0;
                 if (lastdownloadString != null && lastdownloadString.length() > 0) {
@@ -507,7 +507,7 @@ public class Uploadedto extends PluginForHost {
                     logger.info("Limit must still exist on account, disabling it");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
-            } else if (account == null && true) {
+            } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false)) {
                 /**
                  * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
                  */
