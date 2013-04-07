@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -42,10 +43,14 @@ public class PrimeShareTv extends PluginForHost {
         return "http://primeshare.tv/help/terms";
     }
 
+    private static final String AGENT = RandomUserAgent.generate();
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        // They tried to block us via useragent
+        br.getHeaders().put("User-Agent", AGENT);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>File not exist<|>The file you have requested does not)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex info = br.getRegex("<h1>Watch\\&nbsp;[\t\n\r ]+\\(([^<>\"]*?)(\\[\\.\\.\\.\\])?\\)\\&nbsp;<strong>\\((.*?)\\)</strong></h1>");

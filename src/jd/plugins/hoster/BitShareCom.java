@@ -226,6 +226,10 @@ public class BitShareCom extends PluginForHost {
             br2.postPage(JSONHOST + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
             if (br2.containsHTML("Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             if (br2.containsHTML("Sorry, you cant download more then")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
+            if (br2.containsHTML("ERROR#SESSION ERROR\\!")) {
+                logger.info("Session error, retrying...");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             dllink = br2.getRegex(DLLINKREGEX).getMatch(0);
             if (dllink == null) {
                 logger.severe(br2.toString());

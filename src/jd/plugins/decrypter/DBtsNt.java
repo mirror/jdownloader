@@ -79,6 +79,14 @@ public class DBtsNt extends PluginForDecrypt {
                     logger.info("Grabbing scloudlink succeeded");
                     decryptedLinks.add(createDownloadlink(scloudLink));
                 }
+                try {
+                    if (this.isAbort()) {
+                        logger.info("Decrypting stopped by user...");
+                        return decryptedLinks;
+                    }
+                } catch (Throwable e) {
+                    /* does not exist in 09581 */
+                }
             }
             if (!decryptLiveset(parameter.toString(), decryptedLinks)) return null;
         } else if (type.equals("event") || type.equals("artist")) {
@@ -92,6 +100,14 @@ public class DBtsNt extends PluginForDecrypt {
                 if (!decryptLiveset(aLiveset, decryptedLinks)) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
+                }
+                try {
+                    if (this.isAbort()) {
+                        logger.info("Decrypting stopped by user...");
+                        return decryptedLinks;
+                    }
+                } catch (Throwable e) {
+                    /* does not exist in 09581 */
                 }
                 Thread.sleep(1000);
             }
@@ -125,6 +141,13 @@ public class DBtsNt extends PluginForDecrypt {
                     } catch (final Exception e) {
                         logger.info("Continuing: Link sems to be offline: " + aLink);
                         continue;
+                    }
+                    try {
+                        if (this.isAbort()) {
+                            break;
+                        }
+                    } catch (Throwable e) {
+                        /* does not exist in 09581 */
                     }
                     try {
                         Thread.sleep(1000);

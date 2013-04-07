@@ -451,7 +451,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String[][] regexesPage1 = { { "id=\"video_cont((\\-)?\\d+_\\d+)\"", "0" } };
         final String[][] regexesAllOthers = { { "\\[((\\-)?\\d+, \\d+), \\'http", "0" } };
-        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 12, 12, 12, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=-" + communityAlbumID + "&offset=12");
+        final ArrayList<String> decryptedData = decryptMultiplePages2(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 12, 12, 12, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=-" + communityAlbumID + "&offset=12");
         final int numberOfFoundVideos = decryptedData.size();
         logger.info("Found " + numberOfFoundVideos + " videos...");
         /**
@@ -467,6 +467,66 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<String> decryptMultiplePages(final String parameter, final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws IOException {
+        ArrayList<String> decryptedData = new ArrayList<String>();
+        logger.info("Decrypting " + numberOfEntries + " entries for linktype: " + type);
+        int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntries) - alreadyOnPage) / increase);
+        if (maxLoops < 0) maxLoops = 0;
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        int addedLinks = 0;
+
+        for (int i = 0; i <= maxLoops; i++) {
+            if (i > 0) {
+                br.postPage(postPage, postData + offset);
+                for (String regex[] : regexesAllOthers) {
+                    String correctedBR = br.toString().replace("\\", "");
+                    String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
+                    if (theData == null || theData.length == 0) {
+                        addedLinks = 0;
+                        break;
+                    }
+                    addedLinks = theData.length;
+                    for (String data : theData) {
+                        decryptedData.add(data);
+                    }
+                }
+                offset += increase;
+            } else {
+                for (String regex[] : regexesPageOne) {
+                    String correctedBR = br.toString().replace("\\", "");
+                    String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
+                    if (theData == null || theData.length == 0) {
+                        addedLinks = 0;
+                        break;
+                    }
+                    addedLinks = theData.length;
+                    for (String data : theData) {
+                        decryptedData.add(data);
+                    }
+                }
+            }
+            if (addedLinks < increase || decryptedData.size() == Integer.parseInt(numberOfEntries)) {
+                logger.info("Fail safe #1 activated, stopping page parsing at page " + i + " of " + maxLoops);
+                break;
+            }
+            if (decryptedData.size() > Integer.parseInt(numberOfEntries)) {
+                logger.warning("Somehow this decrypter got more than the total number of video -> Maybe a bug -> Please report: " + parameter);
+                logger.info("Decrypter " + decryptedData.size() + "entries...");
+                break;
+            }
+            logger.info("Parsing page " + i + " of " + maxLoops);
+        }
+        if (decryptedData == null || decryptedData.size() == 0) {
+            logger.warning("Decrypter couldn't find theData for linktype: " + type + "\n");
+            logger.warning("Decrypter broken for link: " + parameter + "\n");
+            return null;
+        }
+        logger.info("Found " + decryptedData.size() + " links for linktype: " + type);
+
+        return decryptedData;
+    }
+
+    // Same as above with additional errorhandling for community video links
+    private ArrayList<String> decryptMultiplePages2(final String parameter, final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws IOException {
         ArrayList<String> decryptedData = new ArrayList<String>();
         logger.info("Decrypting " + numberOfEntries + " entries for linktype: " + type);
         int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntries) - alreadyOnPage) / increase);

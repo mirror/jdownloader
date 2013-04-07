@@ -65,7 +65,7 @@ public class CloudNesCom extends PluginForHost {
     private static final boolean SUPPORTSHTTPS                = false;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
     // fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -74,11 +74,11 @@ public class CloudNesCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.0
     // mods:
-    // non account: 20 * 20
+    // non account: 1 * 1
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
     // protocol: no https
-    // captchatype: recaptcha
+    // captchatype: null
     // other:
 
     @Override
@@ -190,7 +190,7 @@ public class CloudNesCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     @SuppressWarnings("unused")
