@@ -37,9 +37,9 @@ public class Mv2kTo extends PluginForDecrypt {
     }
 
     /**
-     * Description of the regexes array: 1= nowvideo.co,streamcloud.com 2=flashx.tv,veervid.com,ginbig
-     * .com,vidbux.com,xvidstage.com,vidstream.in ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos .net,putlocker
-     * .com,vureel.com,vidbox.net,watchfreeinhd.com and many others 3=zalaa.com,sockshare.com 4=stream2k.com 5=flashx.tv, yesload.net
+     * Description of the regexes array: 1= nowvideo.co,streamcloud.com 2=flashx.tv,veervid.com,ginbig .com,vidbux.com,xvidstage.com,vidstream.in
+     * ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos .net,putlocker .com,vureel.com,vidbox.net,watchfreeinhd.com and many others
+     * 3=zalaa.com,sockshare.com 4=stream2k.com 5=flashx.tv, yesload.net
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -111,15 +111,17 @@ public class Mv2kTo extends PluginForDecrypt {
             if (i < mirrors.length) {
                 String next = mirrors[i];
                 if (initalMirror.equalsIgnoreCase(next)) i++;
-                next = mirrors[i];
-                if (!next.startsWith("http://") || !next.startsWith("https://")) {
-                    if (!next.startsWith("/")) next = "/" + next;
+                if (i < mirrors.length) {
+                    next = mirrors[i];
+                    if (!next.startsWith("http://") || !next.startsWith("https://")) {
+                        if (!next.startsWith("/")) next = "/" + next;
+                    }
+                    br.getPage(next);
+                    br2 = br.cloneBrowser();
+                    String mirrorParts[] = br.getRegex("<a href=\"(movie\\.php\\?id=\\d+\\&part=\\d)\">").getColumn(0);
+                    if (mirrorParts != null && mirrorParts.length > 1) part = mirrorParts.length;
+                    System.arraycopy(mirrorParts, 0, parts, 0, parts.length);
                 }
-                br.getPage(next);
-                br2 = br.cloneBrowser();
-                String mirrorParts[] = br.getRegex("<a href=\"(movie\\.php\\?id=\\d+\\&part=\\d)\">").getColumn(0);
-                if (mirrorParts != null && mirrorParts.length > 1) part = mirrorParts.length;
-                System.arraycopy(mirrorParts, 0, parts, 0, parts.length);
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
