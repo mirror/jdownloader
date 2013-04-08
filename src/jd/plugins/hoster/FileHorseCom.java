@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehorse.com" }, urls = { "http://(www\\.)?filehorse\\.com/download\\-[a-z0-9\\-]+/(\\d+/)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehorse.com" }, urls = { "http://(www\\.)?(mac\\.)?filehorse\\.com/download\\-[a-z0-9\\-]+/(\\d+/)?" }, flags = { 0 })
 public class FileHorseCom extends PluginForHost {
 
     public FileHorseCom(PluginWrapper wrapper) {
@@ -48,7 +48,7 @@ public class FileHorseCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>404 Error \\- Page Not Found<|>Page Not Found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?) Download for").getMatch(0);
-        String filesize = br.getRegex("alt=\"download\" />Download <span>\\(([^<>\"]*?)\\)</span>").getMatch(0);
+        String filesize = br.getRegex("id=\"btn_file_size\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
