@@ -19,7 +19,7 @@ package jd.gui.swing.jdgui.views;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.JMenuBar;
+import javax.swing.JPanel;
 
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
@@ -31,7 +31,7 @@ import org.jdownloader.images.NewTheme;
 public abstract class ClosableView extends View {
 
     private static final long serialVersionUID = 8698758386841005256L;
-    private JMenuBar          menubar;
+    private JPanel            menubar;
     private ExtButton         closeButton;
 
     public ClosableView() {
@@ -42,9 +42,9 @@ public abstract class ClosableView extends View {
      * has to be called to init the close menu
      */
     public void init() {
-        menubar = new JMenuBar();
+        menubar = new JPanel();
         int count = menubar.getComponentCount();
-        initMenu(menubar);
+        initMenuPanel(menubar);
         closeButton = new ExtButton() {
             {
                 setRolloverEffectEnabled(true);
@@ -91,7 +91,7 @@ public abstract class ClosableView extends View {
      * 
      * @param menubar
      */
-    protected void initMenu(JMenuBar menubar) {
+    protected void initMenuPanel(JPanel menubar) {
     }
 
     /**

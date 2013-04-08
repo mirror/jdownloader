@@ -37,9 +37,8 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
@@ -125,7 +124,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
         }
     }
 
-    private JLabel                              top;
+    private JTextField                          top;
 
     private IRCConnection                       conn;
     private long                                lastAction;
@@ -614,8 +613,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             private static final long serialVersionUID = 3966113588850405974L;
 
             @Override
-            protected void initMenu(final JMenuBar menubar) {
-                menubar.add(ChatExtension.this.top = new JLabel(_.jd_plugins_optional_jdchat_JDChat_topic_default()));
+            protected void initMenuPanel(final JPanel menubar) {
+                ChatExtension.this.top = new JTextField(_.jd_plugins_optional_jdchat_JDChat_topic_default());
+                menubar.add(top);
                 ChatExtension.this.top.setToolTipText(_.jd_plugins_optional_jdchat_JDChat_topic_tooltip());
             }
 
