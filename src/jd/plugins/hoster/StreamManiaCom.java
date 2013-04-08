@@ -148,6 +148,15 @@ public class StreamManiaCom extends PluginForHost {
         dl = null;
         showMessage(link, "Phase 1/2: Get download link");
         String genlink = br.getPage("http://www.streammania.com/api/get_ddl.php?login=" + user + "&password=" + pw + "&url=" + url);
+        String maxChunksString = br.getRequest().getResponseHeader("X-MaxChunks");
+        int maxChunks = 1;
+        if (maxChunksString != null) {
+            try {
+                maxChunks = -(Integer.parseInt(maxChunksString));
+            } catch (final Throwable e) {
+                logger.severe(e.getMessage());
+            }
+        }
         if (!genlink.startsWith("http://")) {
             logger.severe("Streammania(Error): " + genlink);
             /*
@@ -164,7 +173,7 @@ public class StreamManiaCom extends PluginForHost {
         }
         /* TODO: add support for chunks */
         showMessage(link, "Phase 2/2: Start download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, maxChunks);
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
