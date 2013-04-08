@@ -108,13 +108,13 @@ public class NzbLoadCom extends PluginForHost {
             String c = getCaptchaCode(cf, downloadLink);
             br.postPage("https://ws.areyouahuman.com/ayahwebservices/index.php/ayahwebservice/recordAccessibilityString", "session_secret=" + sessionSecret + "&challenge=" + rc.getChallenge() + "&response=" + c + "&ordinal=" + (c.length() - 1));
             br.postPage("http://www.nzbload.com/action/download.json?act=verify_captcha&t=" + System.currentTimeMillis(), "session_secret=" + sessionSecret);
-            if (br.containsHTML("\"success\":false")) {
+            if (br.containsHTML("\"success\":true")) { // ob true oder false, in jedem Falle gehts hier trotzdem weiter :-) 20130408
                 rc.reload();
                 continue;
             }
             break;
         }
-        if (br.containsHTML("\"success\":false")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("\"success\":true")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.getPage("http://www.nzbload.com/data/download.json?overwrite=get_url&t=" + System.currentTimeMillis() + "&sub=" + params.getMatch(1) + "&params[0]=" + params.getMatch(2) + "&params[1]=" + hash + "&params[2]=" + expiry + "&params[3]=" + downloadLink.getName());
         if (br.containsHTML("Free users can download 1 file at the same time")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
         if (br.containsHTML("\"Free users can download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
@@ -138,7 +138,7 @@ public class NzbLoadCom extends PluginForHost {
             String next = ayah.getRegex("src=\'(http[^\']+)\'").getMatch(0);
             if (next != null) {
                 next = next.replaceAll("\\\\", "");
-                sessionSecret = new Regex(next, "/(ip\\-.*?)$").getMatch(0);
+                sessionSecret = new Regex(next, "/([\\w\\-\\.]+)$").getMatch(0);
                 // rcId
                 br.getPage("https://ws.areyouahuman.com/ws/chooseGame/1/1/" + sessionSecret + "/11-5");
                 // tell the webservice we're falling back to recaptcha
