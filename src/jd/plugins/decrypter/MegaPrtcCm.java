@@ -41,26 +41,36 @@ public class MegaPrtcCm extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        // Captcha handling
-        for (int i = 0; i <= 5; i++) {
-            if (!br.containsHTML("captcha\\.php")) {
+        if (br.containsHTML("name=\"captcha\" id=\"captcha\\-form\"")) {
+            // Captcha handling
+            for (int i = 0; i <= 5; i++) {
+                if (!br.containsHTML("captcha\\.php")) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                String captchalink = "http://www.mega-protect.com/captcha.php";
+                String code = getCaptchaCode(captchalink, param);
+                br.getPage(parameter + "?captcha=" + code);
+                if (br.containsHTML("(Code incorrect|captcha.php)")) continue;
+                break;
+            }
+            if (br.containsHTML("(Code incorrect|captcha.php)")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            String finallink = br.getRegex("style=\"text-align: center;\">.*?<a href=(.*?)>").getMatch(0);
+            if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            String captchalink = "http://www.mega-protect.com/captcha.php";
-            String code = getCaptchaCode(captchalink, param);
-            br.getPage(parameter + "?captcha=" + code);
-            if (br.containsHTML("(Code incorrect|captcha.php)")) continue;
-            break;
+            decryptedLinks.add(createDownloadlink(finallink));
+        } else {
+            final String[] links = br.getRegex(">(http://(www\\.)?mega\\-protect\\.com/[^<>\"]*?\\.php)</a>").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String finallink : links) {
+                decryptedLinks.add(createDownloadlink(finallink));
+            }
         }
-        if (br.containsHTML("(Code incorrect|captcha.php)")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String finallink = br.getRegex("style=\"text-align: center;\">.*?<a href=(.*?)>").getMatch(0);
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 

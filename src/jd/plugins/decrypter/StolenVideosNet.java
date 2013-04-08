@@ -39,8 +39,7 @@ public class StolenVideosNet extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String tempID = br.getRedirectLocation();
-        String filename = br.getRegex("<title>Welcome to Stolen XXX Videos \\- Viewing Media \\-([^<>\"]*?)\\- Daily Free XXX Porn Videos</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Viewing Media \\-([^<>\"]*?) \\- Welcome to Stolen XXX Videos \\- Daily Free XXX Porn Videos</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?)\\-  Stolen XXX Videos \\- Daily Free XXX Porn Videos</title>").getMatch(0);
         if (tempID != null && tempID.length() < 40) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

@@ -40,7 +40,7 @@ public class MuchaCarneCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String parameter = param.toString();
         br.getPage(parameter);
-        if ("http://www.muchacarne.com/".equals(br.getURL())) {
+        if ("http://www.muchacarne.com/".equals(br.getURL()) || br.containsHTML("http\\-equiv=\"refresh\" content=\"\\d+;url=http://muchacarne\\.xxx/\">")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

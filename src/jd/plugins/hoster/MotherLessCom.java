@@ -181,8 +181,11 @@ public class MotherLessCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", ua);
         br.setFollowRedirects(true);
+        String betterName = null;
         if ("video".equals(parameter.getStringProperty("dltype"))) {
             getVideoLink(parameter);
+            betterName = new Regex(parameter.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+            if (betterName != null) betterName += ".flv";
         } else if ("image".equals(parameter.getStringProperty("dltype"))) {
             getPictureLink(parameter);
         }
@@ -192,9 +195,9 @@ public class MotherLessCom extends PluginForHost {
             con = br.openGetConnection(DLLINK);
             if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String name = getFileNameFromHeader(con);
-            String name2 = new Regex(name, "/([^/].*?\\.flv)").getMatch(0);
-            if (name2 == null) name2 = name;
-            parameter.setName(name2);
+            if (betterName == null) betterName = new Regex(name, "/([^/].*?\\.flv)").getMatch(0);
+            if (betterName != null) name = betterName;
+            parameter.setName(betterName);
             parameter.setDownloadSize(con.getLongContentLength());
             return AvailableStatus.TRUE;
         } finally {

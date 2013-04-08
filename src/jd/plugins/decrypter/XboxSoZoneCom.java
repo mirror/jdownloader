@@ -48,18 +48,26 @@ public class XboxSoZoneCom extends PluginForDecrypt {
         if (fpName == null) {
             fpName = br.getRegex("<title>([^<>\"]*?) \\&bull; .*?</title>").getMatch(0);
         }
+        final String[] externalLinks = br.getRegex("\"(http://(www\\.)?cloudstor\\.es/f/[A-Za-z0-9]+/)\"").getColumn(0);
         final String[] links = br.getRegex("\"(/dl\\-start/\\d+/(\\d+/)?)\"").getColumn(0);
-        if (links == null || links.length == 0) {
+        if ((links == null || links.length == 0) && (externalLinks == null || externalLinks.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        String host = new Regex(parameter, "(http://.*?\\.com)").getMatch(0);
-        for (String finallink : links) {
-            final DownloadLink finaldownloadlink = createDownloadlink(host + finallink);
-            finaldownloadlink.setName(String.valueOf(new Random().nextInt(100000)));
-            // Needed to download it later
-            finaldownloadlink.setProperty("mainlink", parameter);
-            decryptedLinks.add(finaldownloadlink);
+        if (links != null && links.length != 0) {
+            String host = new Regex(parameter, "(http://.*?\\.com)").getMatch(0);
+            for (String finallink : links) {
+                final DownloadLink finaldownloadlink = createDownloadlink(host + finallink);
+                finaldownloadlink.setName(String.valueOf(new Random().nextInt(100000)));
+                // Needed to download it later
+                finaldownloadlink.setProperty("mainlink", parameter);
+                decryptedLinks.add(finaldownloadlink);
+            }
+        }
+        if (externalLinks != null && externalLinks.length != 0) {
+            for (final String finallink : externalLinks) {
+                decryptedLinks.add(createDownloadlink(finallink));
+            }
         }
         final DownloadLink finaldownloadlink = createDownloadlink(parameter.replace("http://", "xboxisopremiumonly://"));
         finaldownloadlink.setProperty("premiumonly", true);

@@ -69,15 +69,9 @@ public class MadThumbsCom extends PluginForHost {
         br.setCookie("http://www.madthumbs.com/", "language", "en");
         br.getPage(downloadLink.getDownloadURL());
         if (!br.containsHTML("mt_main\\.player_page\\.init")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("vid_title:\"(.*?)\"").getMatch(0);
+        String filename = br.getRegex("title: \"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?) \\- MadThumbs\\&trade;</title> ").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\- MadThumbs\"").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<div class=\"title\"><h1 class=\"fl\"><a href=\"\">(.*?)</a></h1></div>").getMatch(0);
-                }
-            }
+            filename = br.getRegex("<title>(.*?) \\- MadThumbs\\&trade;</title>").getMatch(0);
         }
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         String[] param = null;

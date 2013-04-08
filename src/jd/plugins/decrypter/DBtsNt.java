@@ -57,7 +57,10 @@ public class DBtsNt extends PluginForDecrypt {
             progress.increase(1);
             String link = "/link?id=" + id;
             try {
-                if (!decryptSingleLink(parameter.toString(), decryptedLinks, link)) return null;
+                if (!decryptSingleLink(parameter.toString(), decryptedLinks, link)) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
             } catch (Exception e) {
                 logger.info("Link seems to be offline: " + parameter);
                 return decryptedLinks;
@@ -67,6 +70,10 @@ public class DBtsNt extends PluginForDecrypt {
             br.getPage(parameter.toString());
             if (br.getURL().contains("audiobeats.net/error?")) {
                 logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            if (br.containsHTML(">Forbidden access<")) {
+                logger.info("Server flooded, server blocked: " + parameter);
                 return decryptedLinks;
             }
             fpName = br.getRegex("rel=\"alternate\" type=\"application/rss\\+xml\" title=\"(.*?)\"").getMatch(0);
@@ -88,13 +95,24 @@ public class DBtsNt extends PluginForDecrypt {
                     /* does not exist in 09581 */
                 }
             }
-            if (!decryptLiveset(parameter.toString(), decryptedLinks)) return null;
+            if (!decryptLiveset(parameter.toString(), decryptedLinks)) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
         } else if (type.equals("event") || type.equals("artist")) {
 
             br.getPage(parameter.toString());
+            if (br.containsHTML(">Forbidden access<")) {
+                logger.info("Server flooded, server blocked: " + parameter);
+                return decryptedLinks;
+            }
+
             String[] allLivesets = br.getRegex("\"(/liveset\\?id=\\d+)").getColumn(0);
 
-            if (allLivesets == null || allLivesets.length == 0) return null;
+            if (allLivesets == null || allLivesets.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             if (fpName == null) fpName = br.getRegex("<title>AudioBeats\\.net \\- (.*?)</title>").getMatch(0);
             for (String aLiveset : allLivesets) {
                 if (!decryptLiveset(aLiveset, decryptedLinks)) {
@@ -208,4 +226,8 @@ public class DBtsNt extends PluginForDecrypt {
         return true;
     }
 
+    /* NOTE: no override to keep compatible to old stable */
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
 }

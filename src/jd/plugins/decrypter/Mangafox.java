@@ -72,15 +72,24 @@ public class Mangafox extends PluginForDecrypt {
                 format = String.format("%%0%dd", (int) Math.log10(numberOfPages) + 1);
             }
             // We load each page and retrieve the URL of the picture
-            FilePackage fp = FilePackage.getInstance();
+            final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
+            int skippedPics = 0;
             for (int i = 1; i <= numberOfPages; i++) {
                 br.getPage(url + "/" + i + ".html");
                 String pageNumber = String.format(format, i);
-                String[][] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\"><img src=\"(http://.*?(.[a-z]+))\"").getMatches();
+                final String[][] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\"><img src=\"(http://.*?(.[a-z]+))\"").getMatches();
+                if (unformattedSource == null || unformattedSource.length == 0) {
+                    skippedPics++;
+                    if (skippedPics > 5) {
+                        logger.info("Too many links were skipped, stopping...");
+                        break;
+                    }
+                    continue;
+                }
                 String source = unformattedSource[0][0];
                 String extension = unformattedSource[0][1];
-                DownloadLink link = createDownloadlink("directhttp://" + source);
+                final DownloadLink link = createDownloadlink("directhttp://" + source);
                 link.setFinalFileName(title + " – page " + pageNumber + extension);
                 fp.add(link);
                 try {
