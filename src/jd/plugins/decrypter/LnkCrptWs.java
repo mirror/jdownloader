@@ -26,6 +26,8 @@ import java.awt.MediaTracker;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -83,6 +85,7 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -198,9 +201,9 @@ public class LnkCrptWs extends PluginForDecrypt {
     private static class SliderCaptchaDialog extends AbstractDialog<String> {
         private JSlider       slider;
         private JPanel        p;
-        private int           images = 0;
+        private int           images          = 0;
         private URL           imageUrls[];
-        private int           pos    = 0;
+        private int           pos             = 0;
         private JPanel        picture;
         private BufferedImage image[];
         private Image         finalImage;
@@ -208,9 +211,10 @@ public class LnkCrptWs extends PluginForDecrypt {
         private JLabel        dLabel;
         private JLabel        cLabel;
         private JProgressBar  bar;
+        private final JButton dynamicOkButton = new JButton(_AWU.T.ABSTRACTDIALOG_BUTTON_OK());
 
         public SliderCaptchaDialog(int flag, String title, URL[] imageUrls) {
-            super(flag | Dialog.STYLE_HIDE_ICON | Dialog.LOGIC_COUNTDOWN, title, null, null, null);
+            super(flag | Dialog.STYLE_HIDE_ICON | Dialog.LOGIC_COUNTDOWN | Dialog.BUTTONS_HIDE_OK, title, null, null, null);
             setCountdownTime(120);
             this.images = imageUrls.length - 1;
             this.imageUrls = imageUrls;
@@ -333,6 +337,36 @@ public class LnkCrptWs extends PluginForDecrypt {
             } else {
                 finalImage = image[pos].getScaledInstance(300, 250, Image.SCALE_SMOOTH);
             }
+        }
+
+        @Override
+        protected void addButtons(final JPanel buttonBar) {
+            dynamicOkButton.addActionListener(this);
+            p.addContainerListener(new ContainerListener() {
+
+                @Override
+                public void componentAdded(ContainerEvent e) {
+                    System.out.println("componentAdded " + e.getChild().getClass().getName());
+                }
+
+                @Override
+                public void componentRemoved(ContainerEvent e) {
+                    if (e.getChild().getClass().getName().endsWith("JProgressBar")) {
+                        System.out.println("componentRemoved " + e.getChild().getClass().getName());
+                        buttonBar.add(dynamicOkButton, "cell 0 0,tag ok,sizegroup confirms");
+                    }
+                }
+            });
+
+        }
+
+        @Override
+        public void actionPerformed(final ActionEvent e) {
+            if (e.getSource() == dynamicOkButton) {
+                Log.L.fine("Answer: Button<OK:" + dynamicOkButton.getText() + ">");
+                setReturnmask(true);
+            } else if (e.getActionCommand().equals("enterPushed")) return;
+            super.actionPerformed(e);
         }
 
         @Override
