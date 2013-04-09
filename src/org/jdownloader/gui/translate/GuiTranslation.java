@@ -2299,4 +2299,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter a premiumkey instead of username +  password..." })
     String LetitBitAccountFactory_LetitBitPanel_key_help();
 
+    @Default(lngs = { "en" }, values = { "Cancel" })
+    String lit_cancel();
+
+    @Default(lngs = { "en" }, values = { "Cancel & Stop further Crawling" })
+    String AbstractCaptchaDialog_createPopup_cancel_linkgrabbing();
+
+    @Default(lngs = { "en" }, values = { "Cancel, but continue without asking for Captchas" })
+    String AbstractCaptchaDialog_createPopup_cancel_stop_showing_crawlercaptchs();
+
 }

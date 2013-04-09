@@ -27,6 +27,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerAbort;
@@ -36,6 +37,8 @@ import jd.nutils.encoding.Encoding;
 
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.blacklist.CrawlerBlackListEntry;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
@@ -346,6 +349,11 @@ public abstract class PluginForDecrypt extends Plugin {
                 }
             }
         };
+
+        if (CaptchaBlackList.getInstance().matches(c)) {
+            logger.warning("Cancel. Blacklist Matching");
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
         try {
             ChallengeResponseController.getInstance().handle(c);
         } catch (InterruptedException e) {
@@ -353,33 +361,40 @@ public abstract class PluginForDecrypt extends Plugin {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         } catch (SkipException e) {
             Thread th = Thread.currentThread();
-            handleSkipRequest(e, link);
+            System.out.println(th);
+            System.out.println("Job: " + currentLink.getSourceJob() + " - crawler: " + crawler);
+            switch (e.getSkipRequest()) {
+            case BLOCK_ALL_CAPTCHAS:
+                CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(crawler));
+                break;
+            case BLOCK_HOSTER:
+
+                break;
+
+            case BLOCK_PACKAGE:
+
+                break;
+
+            case SINGLE:
+
+                break;
+            case REFRESH:
+
+                // refresh is not supported from the pluginsystem right now.
+                return "GiveMeANewCaptcha!";
+
+            case STOP_CURRENT_ACTION:
+                LinkCollector.getInstance().abort();
+                // Just to be sure
+                CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(crawler));
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
 
         if (!c.isSolved()) throw new DecrypterException(DecrypterException.CAPTCHA);
         return c.getResult().getValue();
 
-    }
-
-    public void handleSkipRequest(SkipException e, CryptedLink link) {
-        LinkCrawler linkCrawler = getCrawler();
-        switch (e.getSkipRequest()) {
-        case BLOCK_ALL_CAPTCHAS:
-
-            break;
-        case BLOCK_HOSTER:
-
-            break;
-
-        case BLOCK_PACKAGE:
-
-            break;
-
-        case SINGLE:
-
-            break;
-        }
     }
 
     protected void setBrowserExclusive() {

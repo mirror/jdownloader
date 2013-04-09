@@ -55,6 +55,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
@@ -202,7 +203,8 @@ public abstract class PluginForHost extends Plugin {
                         ret = link.getFilePackage() == Challenge.getDownloadLink(challenge).getFilePackage();
                         ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
                         return ret;
-
+                    case REFRESH:
+                    case SINGLE:
                     default:
                         return false;
 
@@ -210,6 +212,12 @@ public abstract class PluginForHost extends Plugin {
                 }
 
             };
+
+            if (CaptchaBlackList.getInstance().matches(c)) {
+                logger.warning("Cancel. Blacklist Matching");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+
             ChallengeResponseController.getInstance().handle(c);
 
             if (!c.isSolved()) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -304,7 +312,9 @@ public abstract class PluginForHost extends Plugin {
 
                 HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
                 break;
-
+            case REFRESH:
+                // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
+                break;
             }
 
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);

@@ -28,7 +28,7 @@ public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptc
     }
 
     @Override
-    protected void showDialog(DialogType dialogType, int flag, Image[] images) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopDownloadsException, HideAllCaptchasException, RefreshException {
+    protected void showDialog(DialogType dialogType, int flag, Image[] images) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopCurrentActionException, HideAllCaptchasException, RefreshException {
 
         ClickCaptchaDialog d = new ClickCaptchaDialog(flag, dialogType, getHost(), images, captchaChallenge.getExplain());
         d.setPlugin(captchaChallenge.getPlugin());
@@ -39,7 +39,7 @@ public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptc
         } catch (DialogCanceledException e) {
             if (d.isHideCaptchasForHost()) throw new HideCaptchasByHostException();
             if (d.isHideCaptchasForPackage()) throw new HideCaptchasByPackageException();
-            if (d.isStopDownloads()) throw new StopDownloadsException();
+            if (d.isStopDownloads()) throw new StopCurrentActionException();
             if (d.isHideAllCaptchas()) throw new HideAllCaptchasException();
             if (d.isRefresh()) throw new RefreshException();
             throw e;

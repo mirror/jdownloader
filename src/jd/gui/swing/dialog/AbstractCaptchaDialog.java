@@ -149,8 +149,12 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
     protected boolean  refresh;
 
+    protected boolean  stopCrawling;
+
+    protected boolean  stopShowingCrawlerCaptchas;
+
     public AbstractCaptchaDialog(int flags, String title, DialogType type, DomainInfo domainInfo, String explain, Image... images) {
-        super(flags, title, null, _GUI._.AbstractCaptchaDialog_AbstractCaptchaDialog_continue(), _GUI._.AbstractCaptchaDialog_AbstractCaptchaDialog_cancel());
+        super(flags, title, null, _GUI._.AbstractCaptchaDialog_AbstractCaptchaDialog_continue(), type == DialogType.CRAWLER ? _GUI._.lit_cancel() : _GUI._.AbstractCaptchaDialog_AbstractCaptchaDialog_cancel());
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogUniquePositionByHosterEnabled()) {
             setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog_" + domainInfo.getTld()));
         } else {
@@ -270,12 +274,30 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
             mi = new JMenuItem(new AppAction() {
                 {
-                    setName("Skip & Cancel LinkCrawler");
+                    setName(_GUI._.AbstractCaptchaDialog_createPopup_cancel_linkgrabbing());
+                    setSmallIcon(NewTheme.I().getIcon("stop", 16));
                 }
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
+                    stopCrawling = true;
+                    setReturnmask(false);
+                    dispose();
+                }
 
+            });
+
+            popup.add(mi);
+
+            mi = new JMenuItem(new AppAction() {
+                {
+                    setName(_GUI._.AbstractCaptchaDialog_createPopup_cancel_stop_showing_crawlercaptchs());
+                    setSmallIcon(NewTheme.I().getIcon("find", 16));
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    stopShowingCrawlerCaptchas = true;
                     setReturnmask(false);
                     dispose();
                 }
@@ -292,6 +314,14 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
         popup.setPreferredSize(pref);
         popup.show(cancelButton, +insets[1] - pref.width + cancelButton.getWidth() + 8 + 5, +cancelButton.getHeight());
+    }
+
+    public boolean isStopCrawling() {
+        return stopCrawling;
+    }
+
+    public boolean isStopShowingCrawlerCaptchas() {
+        return stopShowingCrawlerCaptchas;
     }
 
     @Override

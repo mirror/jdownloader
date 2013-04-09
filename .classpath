@@ -113,5 +113,6 @@
 			<attribute name="javadoc_location" value="file:/C:/Users/Thomas/Downloads/cling-distribution-2.0-SNAPSHOT/core/apidocs/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry combineaccessrules="false" kind="src" path="/MyJDownloaderClient"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
