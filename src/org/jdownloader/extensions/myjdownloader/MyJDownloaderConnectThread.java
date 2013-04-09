@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
@@ -22,6 +21,8 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.myjdownloader.api.MyJDownloaderAPI;
+import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
+import org.jdownloader.myjdownloader.client.json.DeviceData;
 
 public class MyJDownloaderConnectThread extends Thread {
 
@@ -34,6 +35,7 @@ public class MyJDownloaderConnectThread extends Thread {
     private ArrayList<HttpRequestHandler> requestHandler;
     private final MyJDownloaderAPI        api;
     private LogSource                     logger;
+    private boolean                       sessionValid;
 
     public MyJDownloaderConnectThread(MyJDownloaderExtension myJDownloaderExtension) {
         setName("MyJDownloaderConnectThread");
@@ -58,10 +60,10 @@ public class MyJDownloaderConnectThread extends Thread {
                     return;
                 }
                 try {
-                    /* fetch new jdToken if needed */
-                    String connectToken = api.getConnectToken();
-                    if (StringUtils.isEmpty(connectToken)) { throw new WTFException("Login failed"); }
+                    ensureValidSession();
+                    loginError = 0;
                 } catch (final Throwable e) {
+                    sessionValid = false;
                     loginError++;
                     logger.log(e);
                     Thread.sleep(1000);
@@ -75,7 +77,7 @@ public class MyJDownloaderConnectThread extends Thread {
                     InetSocketAddress ia = new InetSocketAddress(this.config.getAPIServerURL(), this.config.getAPIServerPort());
                     logger.info("Connect " + ia);
                     connectionSocket.connect(ia, 30000);
-                    connectionSocket.getOutputStream().write(("JD" + api.getConnectToken()).getBytes("ISO-8859-1"));
+                    connectionSocket.getOutputStream().write(("JD" + api.getSessionInfo().getSessionToken()).getBytes("ISO-8859-1"));
                     int validToken = connectionSocket.getInputStream().read();
                     if (validToken == 4) {
                         logger.info("KeepAlive");
@@ -83,7 +85,7 @@ public class MyJDownloaderConnectThread extends Thread {
                     } else if (validToken == 0) {
                         loginError++;
                         logger.info("Token seems to be invalid!");
-                        api.invalidateConnectToken();
+                        sessionValid = false;
                     } else if (validToken == 1) {
                         connectError = 0;
                         // logger.info("Connection got established");
@@ -124,6 +126,27 @@ public class MyJDownloaderConnectThread extends Thread {
         }
     }
 
+    protected void ensureValidSession() throws MyJDownloaderException {
+        if (sessionValid) return;
+        /* fetch new jdToken if needed */
+        if (api.getSessionInfo() != null) {
+            try {
+                api.reconnect();
+            } catch (MyJDownloaderException e) {
+                api.setSessionInfo(null);
+                ensureValidSession();
+            }
+        } else {
+            api.connect(config.getEmail(), config.getPassword());
+            DeviceData device = api.connectDevice(new DeviceData(config.getUniqueDeviceID(), "jd", config.getDeviceName()));
+            if (StringUtils.isNotEmpty(device.getId())) {
+                config.setUniqueDeviceID(device.getId());
+            }
+        }
+        // System.out.println(1);
+        sessionValid = true;
+    }
+
     public void interruptConnectThread() {
         try {
             connectionSocket.close();
@@ -133,7 +156,7 @@ public class MyJDownloaderConnectThread extends Thread {
 
     protected HashMap<String, Object> getJDToken() throws IOException {
         Browser br = new Browser();
-        return JSonStorage.restoreFromString(br.getPage("http://" + config.getAPIServerURL() + ":" + config.getAPIServerPort() + "/myjdownloader/getJDToken?" + Encoding.urlEncode(config.getUsername()) + "&" + Hash.getSHA256(config.getPassword())), new TypeRef<HashMap<String, Object>>() {
+        return JSonStorage.restoreFromString(br.getPage("http://" + config.getAPIServerURL() + ":" + config.getAPIServerPort() + "/myjdownloader/getJDToken?" + Encoding.urlEncode(config.getEmail()) + "&" + Hash.getSHA256(config.getPassword())), new TypeRef<HashMap<String, Object>>() {
         });
     }
 

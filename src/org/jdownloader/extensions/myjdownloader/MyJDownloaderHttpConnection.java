@@ -4,7 +4,6 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -121,12 +120,15 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     protected String preProcessRequestLine(String requestLine) throws IOException {
         String remove = new Regex(requestLine, "( /t_([a-zA-z0-9]{40})/)").getMatch(0);
         requestConnectToken = new Regex(requestLine, "( /t_([a-zA-z0-9]{40})/)").getMatch(1);
-        try {
-            payloadEncryptionToken = api.getAESSecret(requestConnectToken);
-            if (payloadEncryptionToken == null) throw new IOException("Could not generate AESSecret " + requestLine);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IOException(e);
-        }
+
+        api.
+        // try {
+        // payloadEncryptionToken = api.getAESSecret(requestConnectToken);
+        // if (payloadEncryptionToken == null) throw new IOException("Could not generate AESSecret " + requestLine);
+        // } catch (NoSuchAlgorithmException e) {
+        // throw new IOException(e);
+        // }
+
         requestLine = requestLine.replaceFirst(remove, " /");
         return requestLine;
     };

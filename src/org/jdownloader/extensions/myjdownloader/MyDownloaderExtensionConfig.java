@@ -22,12 +22,18 @@ public interface MyDownloaderExtensionConfig extends ExtensionConfigInterface {
 
     public void setAPIServerPort(int port);
 
-    public String getUsername();
+    public String getEmail();
 
     public String getPassword();
 
-    public void setUsername(String s);
-
     public void setPassword(String s);
 
+    public String getUniqueDeviceID();
+
+    public void setUniqueDeviceID(String id);
+
+    @AboutConfig
+    public String getDeviceName();
+
+    public void setDeviceName(String name);
 }

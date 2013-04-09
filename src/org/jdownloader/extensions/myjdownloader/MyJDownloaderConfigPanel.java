@@ -17,9 +17,9 @@ public class MyJDownloaderConfigPanel extends ExtensionConfigPanel<MyJDownloader
 
     public MyJDownloaderConfigPanel(MyJDownloaderExtension plg, MyDownloaderExtensionConfig config) {
         super(plg);
-        userName = new TextInput(config.getStorageHandler().getKeyHandler("Username", StringKeyHandler.class));
+        userName = new TextInput(config.getStorageHandler().getKeyHandler("Email", StringKeyHandler.class));
         passWord = new PasswordInput(config.getStorageHandler().getKeyHandler("Password", StringKeyHandler.class));
-        addPair("Username:", null, userName);
+        addPair("Email:", null, userName);
         addPair("Password:", null, passWord);
     }
 

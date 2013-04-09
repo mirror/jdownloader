@@ -1,151 +1,156 @@
 package org.jdownloader.extensions.myjdownloader.api;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
+import java.lang.reflect.Type;
+import java.net.URL;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.crypto.AWSign;
-import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.Base64InputStream;
+import org.appwork.utils.net.BasicHTTP.BasicHTTP;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
 import org.jdownloader.extensions.myjdownloader.MyDownloaderExtensionConfig;
 import org.jdownloader.extensions.myjdownloader.MyJDownloaderExtension;
+import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
+import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
 
-public class MyJDownloaderAPI {
+public class MyJDownloaderAPI extends AbstractMyJDClient {
 
-    private final int                           APIVersion   = 1;
+    private BasicHTTP br;
+    private LogSource logger;
+
+    @Override
+    protected byte[] base64decode(String base64encodedString) {
+
+        return Base64.decode(base64encodedString);
+
+    }
+
+    @Override
+    protected String base64Encode(byte[] encryptedBytes) {
+        return Base64.encodeToString(encryptedBytes, false);
+    }
+
+    @Override
+    public String urlencode(String text) {
+        return Encoding.urlEncode(text);
+    }
+
+    @Override
+    protected String objectToJSon(final Object payload) {
+        return JSonStorage.toString(payload);
+    }
+
+    @Override
+    protected <T> T jsonToObject(final String dec, final Type clazz) {
+        return JSonStorage.restoreFromString(dec, new TypeRef<T>(clazz) {
+        });
+    }
+
+    @Override
+    protected String post(String query, String object) throws ExceptionResponse {
+        try {
+
+            logger.info(object + "");
+            final String ret = br.postPage(new URL(getServerRoot() + query), object == null ? "" : object);
+            logger.info(br.getConnection() + "");
+            logger.info(ret);
+            final HTTPConnection con = br.getConnection();
+
+            if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) {
+
+            throw new ExceptionResponse(ret, con.getResponseCode());
+
+            }
+
+            return ret;
+        } catch (final ExceptionResponse e) {
+            throw e;
+        } catch (final Exception e) {
+            throw new ExceptionResponse(e);
+
+        } finally {
+
+        }
+    }
+
     protected AtomicLong                        TIMESTAMP    = new AtomicLong(System.currentTimeMillis());
     protected volatile String                   connectToken = null;
 
     protected final MyDownloaderExtensionConfig config;
-    private LogSource                           logger;
+
     private MyJDownloaderExtension              extension;
 
     public MyJDownloaderAPI(MyJDownloaderExtension myJDownloaderExtension) {
+        super("JD");
         extension = myJDownloaderExtension;
+
         this.config = extension.getSettings();
+        setServerRoot("http://" + config.getAPIServerURL() + ":" + config.getAPIServerPort());
         logger = extension.getLogger();
+        br = new BasicHTTP();
+        br.setAllowedResponseCodes(200, 503, 401, 407, 403, 500, 429);
+        br.putRequestHeader("Content-Type", "application/json; charset=utf-8");
+
     }
 
     public LogSource getLogger() {
         return logger;
     }
 
-    protected byte[] getServerSecret(String username, String password) throws IOException, NoSuchAlgorithmException {
-        final MessageDigest md = MessageDigest.getInstance("SHA-256");
-        return md.digest((username + password + "server").getBytes("UTF-8"));
-    }
+    // protected String getConnectToken(String username, String password) throws IOException, InvalidKeyException, NoSuchAlgorithmException,
+    // NoSuchPaddingException, InvalidAlgorithmParameterException {
+    // logger.info("Login " + username + ":" + password);
+    // String url = "/my/deviceconnect?email=" + Encoding.urlEncode(config.getUsername()) + "&deviceID=" +
+    // Encoding.urlEncode(config.getUniqueDeviceID()) + "&type=JD&name=" + Encoding.urlEncode(config.getDeviceName());
+    // Browser br = new Browser();
+    // long timeStamp = TIMESTAMP.incrementAndGet();
+    // url = url + "&rid=" + timeStamp;
+    // byte[] loginSecret = getLoginSecret(config.getUsername(), config.getPassword());
+    // String signature = getSignature(loginSecret, url.getBytes("UTF-8"));
+    // String completeurl = "http://" + config.getAPIServerURL() + ":" + config.getAPIServerPort() + url + "&signature=" + signature;
+    // URLConnectionAdapter con = null;
+    // try {
+    // logger.info("GET " + completeurl);
+    // con = br.openGetConnection(completeurl);
+    // if (con.getResponseCode() == 403) throw new InvalidConnectException();
+    // if (con.isOK()) {
+    // byte[] response = null;
+    //
+    // final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+    // final byte[] IV = Arrays.copyOfRange(loginSecret, 0, 16);
+    // final IvParameterSpec ivSpec = new IvParameterSpec(IV);
+    // final byte[] KEY = Arrays.copyOfRange(loginSecret, 16, 32);
+    // final SecretKeySpec skeySpec = new SecretKeySpec(KEY, "AES");
+    // cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+    //
+    // response = IO.readStream(-1, new CipherInputStream(new Base64InputStream(con.getInputStream()), cipher));
+    //
+    // String ret = new String(response, "UTF-8");
+    // DeviceConnectResponse responseObject = JSonStorage.restoreFromString(ret, DeviceConnectResponse.class);
+    // config.setUniqueDeviceID(responseObject.getDeviceid());
+    //
+    // logger.info("RESPONSE(plain): " + completeurl + "\r\n" + ret);
+    // String token = new Regex(ret, "\"token\"\\s*?:\\s*?\"([a-fA-F0-9]+)\"").getMatch(0);
+    // if (token == null) throw new IOException("Unknown Response: " + response);
+    // logger.info("Login OK: " + token);
+    // return token;
+    // // }
+    // }
+    // } finally {
+    // try {
+    // con.disconnect();
+    // } catch (final Throwable e) {
+    // }
+    // }
+    // throw new IOException("Unknown IOException");
+    //
+    // }
 
-    protected byte[] getJDSecret(String username, String password) throws IOException, NoSuchAlgorithmException {
-        final MessageDigest md = MessageDigest.getInstance("SHA-256");
-        return md.digest((username + password + "jd").getBytes("UTF-8"));
-    }
-
-    protected byte[] getAESSecret(byte[] jdSecret, byte[] requestConnectToken) throws NoSuchAlgorithmException {
-        final MessageDigest md = MessageDigest.getInstance("SHA-256");
-        md.update(jdSecret);
-        md.update(requestConnectToken);
-        return md.digest();
-    }
-
-    public byte[] getServerSecret() throws NoSuchAlgorithmException, IOException {
-        return getServerSecret(config.getUsername(), config.getPassword());
-    }
-
-    public byte[] getJDSecret() throws NoSuchAlgorithmException, IOException {
-        return getJDSecret(config.getUsername(), config.getPassword());
-    }
-
-    public byte[] getAESSecret(String requestConnectToken) throws NoSuchAlgorithmException, UnsupportedEncodingException, IOException {
-        if (requestConnectToken == null) return null;
-        return getAESSecret(getJDSecret(), HexFormatter.hexToByteArray(requestConnectToken));
-    }
-
-    public String getConnectToken() throws InvalidKeyException, NoSuchAlgorithmException, IOException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-        if (connectToken != null) return connectToken;
-        connectToken = getConnectToken(config.getUsername(), config.getPassword());
-        return connectToken;
-    }
-
-    public void invalidateConnectToken() {
-        connectToken = null;
-    }
-
-    protected String getRequest(String url) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-        Browser br = new Browser();
-        long timeStamp = TIMESTAMP.incrementAndGet();
-        url = url + "&timestamp=" + timeStamp + "&apiverson=" + APIVersion;
-        String signature = getSignature(getServerSecret(config.getUsername(), config.getPassword()), url.getBytes("UTF-8"));
-        String completeurl = "http://" + config.getAPIServerURL() + ":" + config.getAPIServerPort() + url + "&signature=" + signature;
-        URLConnectionAdapter con = null;
-        try {
-            logger.info("GET " + completeurl);
-            con = br.openGetConnection(completeurl);
-            if (con.getResponseCode() == 403) throw new InvalidConnectException();
-            if (con.isOK()) {
-                byte[] response = null;
-                final String type = con.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
-                if (new Regex(type, "(application/aesjson-)").matches()) {
-                    byte[] serverSecret = getServerSecret(config.getUsername(), config.getPassword());
-                    final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                    final byte[] IV = Arrays.copyOfRange(serverSecret, 0, 16);
-                    final IvParameterSpec ivSpec = new IvParameterSpec(IV);
-                    final byte[] KEY = Arrays.copyOfRange(serverSecret, 16, 32);
-                    final SecretKeySpec skeySpec = new SecretKeySpec(KEY, "AES");
-                    cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-
-                    response = IO.readStream(-1, new CipherInputStream(new Base64InputStream(con.getInputStream()), cipher));
-                    String responseSTRING = new String(response, "UTF-8");
-                    logger.info("RESPONSE(decrypted): " + completeurl + "\r\n" + responseSTRING);
-                    String timestampJSON = new Regex(responseSTRING, "\"timestamp\"\\s*?:\\s*?(\\d+)").getMatch(0);
-                    if (timestampJSON == null || timeStamp != Long.parseLong(timestampJSON)) throw new InvalidConnectException();
-                    return responseSTRING;
-                } else {
-                    response = IO.readStream(-1, con.getInputStream());
-                    String ret = new String(response, "UTF-8");
-
-                    logger.info("RESPONSE(plain): " + completeurl + "\r\n" + ret);
-                    return ret;
-                }
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
-        throw new IOException("Unknown IOException");
-    }
-
-    protected String getConnectToken(String username, String password) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-        logger.info("Login " + username + ":" + password);
-        String url = "/my/jdconnect?user=" + Encoding.urlEncode(config.getUsername());
-        String response = getRequest(url);
-        String token = new Regex(response, "\"token\"\\s*?:\\s*?\"([a-fA-F0-9]+)\"").getMatch(0);
-        if (token == null) throw new IOException("Unknown Response: " + response);
-        logger.info("Login OK: " + token);
-        return token;
-    }
-
-    protected String getSignature(byte[] secret, byte[] content) throws InvalidKeyException, NoSuchAlgorithmException {
-        return HexFormatter.byteArrayToHex(AWSign.HMACSHA256(secret, content));
-    }
+    // protected String getSignature(byte[] secret, byte[] content) throws InvalidKeyException, NoSuchAlgorithmException {
+    // return HexFormatter.byteArrayToHex(AWSign.HMACSHA256(secret, content));
+    // }
 }
