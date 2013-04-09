@@ -84,16 +84,24 @@ public class VimeoCom extends PluginForHost {
             /* withoutDlBtn */
             String sig = br.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);
             String time = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);
+            if (sig == null || time == null) { return qualities; }
             String fmts = br.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
             if (fmts != null) {
                 String quality[] = fmts.replaceAll("\"", "").split(",");
                 qualities = new String[quality.length][4];
                 for (int i = 0; i < quality.length; i++) {
                     qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=" + quality[i];
-                    qualities[i][1] = title + ".mp4";
+                    qualities[i][1] = title;
                     qualities[i][2] = quality[i];
                     qualities[i][3] = null;
                 }
+            } else {
+                // Nothing found so SD should be available at least...
+                qualities = new String[1][4];
+                qualities[0][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=sd&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=&seek=0";
+                qualities[0][1] = title;
+                qualities[0][2] = "sd";
+                qualities[0][3] = null;
             }
         }
         return qualities;

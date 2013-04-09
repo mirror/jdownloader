@@ -104,21 +104,25 @@ public class VKontakteRuHoster extends PluginForHost {
             final String vkid = br.getRegex("\"vkid\":(\\d+)").getMatch(0);
             String filename = br.getRegex("var video_title = \\'([^<>\"]*?)\\';").getMatch(0);
             if (filename == null || server == null || uid == null || vtag == null || vkid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            /**
-             * Example max 480p: http://vk.com/video_ext.php?oid=98473820&id=161498981 &hash=54de03caea4e60d4&hd=1 Only flv link:
-             * http://vk.com/video_ext .php?oid=98473820&id=162869788&hash=43ea1d4351a0ec1f
-             */
             String quality = null;
             String inbetween = "u" + uid + "/videos/" + vtag;
             if (br.containsHTML("\"hd\":3")) {
+                /** http://vk.com/video_ext.php?oid=220692&id=158972513&hash=73774f79545aa0be */
                 quality = ".720.mp4";
+            } else if (br.containsHTML("\"hd\":2")) {
+                /** http://vk.com/video_ext.php?oid=220692&id=159139817&hash=77f796b5a24ff1ef */
+                quality = ".480.mp4";
             } else if (br.containsHTML("\"hd\":1")) {
                 quality = ".360.mp4";
-            } else if (br.containsHTML("\"hd\":2")) {
-                quality = ".480.mp4";
-            } else if (br.containsHTML("\"hd\":0")) {
+            } else if (br.containsHTML("\"hd\":0,\"no_flv\":1")) {
+                quality = ".240.mp4";
+            } else if (br.containsHTML("\"no_flv\":0") && vtag.contains("-")) {
+                /** http://vk.com/video_ext.php?oid=220692&id=126736025&hash=a3d2fb0c6daffa31 */
                 quality = ".vk.flv";
                 inbetween = "assets/video/" + vtag + vkid;
+            } else if (br.containsHTML("\"no_flv\":0")) {
+                /** http://vk.com/video_ext.php?oid=220692&id=137826312&hash=25c45b09a2660b33 */
+                quality = ".flv";
             }
             filename = Encoding.htmlDecode(filename) + quality;
             FINALLINK = "http://" + server + "/" + inbetween + quality;
