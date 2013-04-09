@@ -84,6 +84,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                 };
             }
         });
+
         // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_ENABLED.getEventSender().addListener(this);
         //
         // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);

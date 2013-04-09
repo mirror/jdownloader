@@ -2308,4 +2308,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Cancel, but continue without asking for Captchas" })
     String AbstractCaptchaDialog_createPopup_cancel_stop_showing_crawlercaptchs();
 
+    @Default(lngs = { "en" }, values = { "Total Bytes:" })
+    String DownloadOverview_DownloadOverview_size();
+
+    @Default(lngs = { "en" }, values = { "Bytes loaded:" })
+    String DownloadOverview_DownloadOverview_loaded();
+
+    @Default(lngs = { "en" }, values = { "Downloadspeed:" })
+    String DownloadOverview_DownloadOverview_speed();
+
+    @Default(lngs = { "en" }, values = { "ETA:" })
+    String DownloadOverview_DownloadOverview_eta();
+
 }

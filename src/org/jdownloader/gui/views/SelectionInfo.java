@@ -32,7 +32,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     private MouseEvent                                        mouseEvent;
     private HashSet<AbstractNode>                             rawMap;
 
-    private List<AbstractNode>                                rawSelection;
+    private List<? extends AbstractNode>                      rawSelection;
 
     private List<ChildrenType>                                selectedChildren;
 
@@ -46,21 +46,21 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         this(clicked, pack(clicked));
     }
 
-    public SelectionInfo(AbstractNode contextObject, List<AbstractNode> selection) {
+    public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection) {
         this(contextObject, selection, null);
 
     }
 
-    public SelectionInfo(AbstractNode contextObject, List<AbstractNode> selection, MouseEvent event) {
+    public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event) {
         this(contextObject, selection, event, null);
     }
 
-    public SelectionInfo(AbstractNode contextObject, List<AbstractNode> selection, MouseEvent event, KeyEvent kEvent) {
+    public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event, KeyEvent kEvent) {
 
         this(contextObject, selection, event, kEvent, null);
     }
 
-    public SelectionInfo(AbstractNode contextObject, List<AbstractNode> selection, MouseEvent event, KeyEvent kEvent, PackageControllerTable<PackageType, ChildrenType> table) {
+    public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event, KeyEvent kEvent, PackageControllerTable<PackageType, ChildrenType> table) {
 
         this.contextObject = contextObject;
         rawSelection = selection == null ? new ArrayList<AbstractNode>() : selection;
@@ -281,7 +281,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
      * 
      * @return
      */
-    public List<AbstractNode> getRawSelection() {
+    public List<? extends AbstractNode> getRawSelection() {
         return rawSelection;
     }
 

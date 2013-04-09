@@ -25,14 +25,20 @@ public class CaptchaBlackList {
     public boolean matches(Challenge<?> c) {
         synchronized (entries) {
             ArrayList<BlacklistEntry> cleanups = new ArrayList<BlacklistEntry>();
-            for (BlacklistEntry e : entries) {
-                if (e.canCleanUp()) {
-                    cleanups.add(e);
-                    continue;
+            try {
+                for (BlacklistEntry e : entries) {
+                    if (e.canCleanUp()) {
+                        cleanups.add(e);
+                        continue;
+                    }
+                    if (e.matches(c)) return true;
                 }
-                if (e.matches(c)) return true;
+            } finally {
+                // cleanup is not perfect. if we have a match, following entries will not be cleaned up.. but I think this is better than
+                // running throw all entries for every call.
+                entries.removeAll(cleanups);
             }
-            entries.removeAll(cleanups);
+
         }
         return false;
     }
