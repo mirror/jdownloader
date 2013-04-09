@@ -77,7 +77,7 @@ public class MyJDownloaderConnectThread extends Thread {
                     InetSocketAddress ia = new InetSocketAddress(this.config.getAPIServerURL(), this.config.getAPIServerPort());
                     logger.info("Connect " + ia);
                     connectionSocket.connect(ia, 30000);
-                    connectionSocket.getOutputStream().write(("JD" + api.getSessionInfo().getSessionToken()).getBytes("ISO-8859-1"));
+                    connectionSocket.getOutputStream().write(("DEVICE" + api.getSessionInfo().getSessionToken()).getBytes("ISO-8859-1"));
                     int validToken = connectionSocket.getInputStream().read();
                     if (validToken == 4) {
                         logger.info("KeepAlive");
@@ -138,7 +138,7 @@ public class MyJDownloaderConnectThread extends Thread {
             }
         } else {
             api.connect(config.getEmail(), config.getPassword());
-            DeviceData device = api.connectDevice(new DeviceData(config.getUniqueDeviceID(), "jd", config.getDeviceName()));
+            DeviceData device = api.bindDevice(new DeviceData(config.getUniqueDeviceID(), "jd", config.getDeviceName()));
             if (StringUtils.isNotEmpty(device.getId())) {
                 config.setUniqueDeviceID(device.getId());
             }

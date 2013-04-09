@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,9 +14,9 @@ import javax.crypto.CipherOutputStream;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64OutputStream;
@@ -29,6 +30,7 @@ import org.appwork.utils.net.httpserver.requests.JSonRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.myjdownloader.api.MyJDownloaderAPI;
+import org.jdownloader.myjdownloader.RequestLineParser;
 
 public class MyJDownloaderHttpConnection extends HttpConnection {
 
@@ -53,6 +55,10 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
 
     private OutputStream os                     = null;
     private byte[]       payloadEncryptionToken = null;
+    /**
+     * @deprecated is used for eventsys
+     * @return
+     */
     private String       requestConnectToken;
 
     @Override
@@ -74,6 +80,11 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         return payloadEncryptionToken;
     }
 
+    @Deprecated
+    /**
+     * @deprecated is used for eventsys
+     * @return
+     */
     public String getRequestConnectToken() {
         return requestConnectToken;
     }
@@ -99,8 +110,9 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     @Override
     public void closeConnection() {
         try {
-            getOutputStream().close();
+            getOutputStream(true).close();
         } catch (final Throwable nothing) {
+            nothing.printStackTrace();
         }
         try {
             this.clientSocket.close();
@@ -118,92 +130,100 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
 
     @Override
     protected String preProcessRequestLine(String requestLine) throws IOException {
-        String remove = new Regex(requestLine, "( /t_([a-zA-z0-9]{40})/)").getMatch(0);
-        requestConnectToken = new Regex(requestLine, "( /t_([a-zA-z0-9]{40})/)").getMatch(1);
 
-        api.
-        // try {
-        // payloadEncryptionToken = api.getAESSecret(requestConnectToken);
-        // if (payloadEncryptionToken == null) throw new IOException("Could not generate AESSecret " + requestLine);
-        // } catch (NoSuchAlgorithmException e) {
-        // throw new IOException(e);
-        // }
+        RequestLineParser parser = new RequestLineParser().parse(requestLine.getBytes("UTF-8"));
+        requestConnectToken = parser.getToken();
+        if (StringUtils.equals(parser.getToken(), api.getSessionToken())) {
+            // the request origin is the My JDownloader Server
+            payloadEncryptionToken = api.getServerEncryptionToken();
+        } else {
+            // The request origin is a remote client
 
-        requestLine = requestLine.replaceFirst(remove, " /");
+            try {
+                payloadEncryptionToken = api.getDeviceEncryptionTokenBySession(parser.getToken());
+            } catch (NoSuchAlgorithmException e) {
+                throw new WTFException(e);
+            }
+        }
+
+        requestLine = requestLine.replaceFirst(" /t_[a-zA-z0-9]{40}_.+?/", " /");
         return requestLine;
     };
 
-    public synchronized OutputStream getOutputStream() throws IOException {
+    @Override
+    public synchronized OutputStream getOutputStream(boolean sendHeaders) throws IOException {
         if (this.os != null) return this.os;
-        HTTPHeader contentType = response.getResponseHeaders().get(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
-        if (contentType != null && "application/json".equalsIgnoreCase(contentType.getValue())) {
-            /* check for json response */
-            try {
-                boolean deChunk = false;
-                HTTPHeader transferEncoding = response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING);
-                if (transferEncoding != null) {
-                    if (HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED.equalsIgnoreCase(transferEncoding.getValue())) {
-                        deChunk = true;
-                    } else {
-                        throw new IOException("Unsupported TransferEncoding " + transferEncoding);
+        // HTTPHeader contentType = response.getResponseHeaders().get(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
+        // if (contentType != null && "application/json".equalsIgnoreCase(contentType.getValue())) {
+        /* check for json response */
+        try {
+            boolean deChunk = false;
+            HTTPHeader transferEncoding = response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING);
+            if (transferEncoding != null) {
+                if (HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED.equalsIgnoreCase(transferEncoding.getValue())) {
+                    deChunk = true;
+                } else {
+                    throw new IOException("Unsupported TransferEncoding " + transferEncoding);
+                }
+            }
+            final boolean useDeChunkingOutputStream = deChunk;
+            final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            final IvParameterSpec ivSpec = new IvParameterSpec(Arrays.copyOfRange(payloadEncryptionToken, 0, 16));
+            final SecretKeySpec skeySpec = new SecretKeySpec(Arrays.copyOfRange(payloadEncryptionToken, 16, 32), "AES");
+            cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
+            /* remove content-length because we use chunked+base64+aes */
+            response.getResponseHeaders().remove(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH);
+            // response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE,
+            // "application/aesjson-jd; charset=utf-8"));
+            /* set chunked transfer header */
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING, HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED));
+            this.sendResponseHeaders();
+            this.os = new OutputStream() {
+                private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(clientSocket.getOutputStream(), 16384));
+                Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
+                                                          // public void close() throws IOException {
+                                                          // };
+
+                                                      };
+                OutputStream                outos     = new CipherOutputStream(b64os, cipher);
+
+                {
+                    if (useDeChunkingOutputStream) {
+                        outos = new DeChunkingOutputStream(outos);
                     }
                 }
-                final boolean useDeChunkingOutputStream = deChunk;
-                final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                final IvParameterSpec ivSpec = new IvParameterSpec(Arrays.copyOfRange(payloadEncryptionToken, 0, 16));
-                final SecretKeySpec skeySpec = new SecretKeySpec(Arrays.copyOfRange(payloadEncryptionToken, 16, 32), "AES");
-                cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
-                /* remove content-length because we use chunked+base64+aes */
-                response.getResponseHeaders().remove(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH);
-                // response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE,
-                // "application/aesjson-jd; charset=utf-8"));
-                /* set chunked transfer header */
-                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING, HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED));
-                this.sendResponseHeaders();
-                this.os = new OutputStream() {
-                    private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(clientSocket.getOutputStream(), 16384));
-                    Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
-                                                              public void close() throws IOException {
-                                                              };
 
-                                                          };
-                    OutputStream                outos     = new CipherOutputStream(b64os, cipher);
+                @Override
+                public void close() throws IOException {
+                    outos.close();
+                    b64os.flush();
+                    chunkedOS.close();
+                }
 
-                    {
-                        if (useDeChunkingOutputStream) {
-                            outos = new DeChunkingOutputStream(outos);
-                        }
-                    }
+                @Override
+                public void flush() throws IOException {
+                }
 
-                    @Override
-                    public void close() throws IOException {
-                        outos.close();
-                        b64os.flush();
-                        chunkedOS.close();
-                    }
+                @Override
+                public void write(int b) throws IOException {
+                    outos.write(b);
+                }
 
-                    @Override
-                    public void flush() throws IOException {
-                    }
-
-                    @Override
-                    public void write(int b) throws IOException {
-                        outos.write(b);
-                    }
-
-                    @Override
-                    public void write(byte[] b, int off, int len) throws IOException {
-                        outos.write(b, off, len);
-                    };
-
+                @Override
+                public void write(byte[] b, int off, int len) throws IOException {
+                    outos.write(b, off, len);
                 };
-            } catch (final Throwable e) {
-                throw new IOException(e);
-            }
-        } else {
-            this.sendResponseHeaders();
-            this.os = super.os;
+
+            };
+        } catch (final Throwable e) {
+            throw new IOException(e);
         }
+        // } else {
+        // if (sendHeaders) {
+        // this.sendResponseHeaders();
+        // }
+        // this.os = super.os;
+        // }
         return this.os;
     }
 
