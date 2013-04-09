@@ -346,13 +346,11 @@ public class LnkCrptWs extends PluginForDecrypt {
 
                 @Override
                 public void componentAdded(ContainerEvent e) {
-                    System.out.println("componentAdded " + e.getChild().getClass().getName());
                 }
 
                 @Override
                 public void componentRemoved(ContainerEvent e) {
                     if (e.getChild().getClass().getName().endsWith("JProgressBar")) {
-                        System.out.println("componentRemoved " + e.getChild().getClass().getName());
                         buttonBar.add(dynamicOkButton, "cell 0 0,tag ok,sizegroup confirms");
                     }
                 }
