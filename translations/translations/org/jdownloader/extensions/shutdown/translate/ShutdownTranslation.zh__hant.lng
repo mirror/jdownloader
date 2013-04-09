@@ -4,8 +4,8 @@ addons_jdshutdown_statusmessage_enabled=下載完成後，將會由 JDownloader 
 config_active_by_default=保持關機已啟用
 config_toolbarbutton=工具列按鈕可見
 gui_config_jdshutdown_close=關閉 JD
-gui_config_jdshutdown_forceshutdown=關機 (並不適合全部作業系統)
-gui_config_jdshutdown_hibernate=休眠 （並不適合全部作業系統)
+gui_config_jdshutdown_forceshutdown=強制關機 (並不適合全部作業系統)
+gui_config_jdshutdown_hibernate=休眠 (並不適合全部作業系統)
 gui_config_jdshutdown_mode=模式：
 gui_config_jdshutdown_shutdown=關機
 gui_config_jdshutdown_standby=待命 (並不適合全部作業系統)
@@ -18,7 +18,7 @@ interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">系統將執行�
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">系統將進入待機模式！</font></h2>
 interaction_shutdown_dialog_title_closejd=關閉 JD？
 interaction_shutdown_dialog_title_hibernate=休眠?
-interaction_shutdown_dialog_title_shutdown=關機?
+interaction_shutdown_dialog_title_shutdown=關機？
 interaction_shutdown_dialog_title_standby=待命?
 jd_plugins_optional_jdshutdown=JDShutdown
 jd_plugins_optional_jdshutdown_description=當下載完畢時，自動關機，暫停，休眠您的 PC 或關閉 JDownloader。
