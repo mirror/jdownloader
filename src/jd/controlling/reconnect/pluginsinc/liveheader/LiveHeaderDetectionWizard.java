@@ -43,6 +43,8 @@ import org.appwork.utils.event.ProcessCallBackAdapter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -352,14 +354,17 @@ public class LiveHeaderDetectionWizard {
 
                     if (i < tests.size() - 1) {
 
-                        if (ret.size() == 1) UIOManager.I().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
+                        if (ret.size() == 1) {
+                            if (!UIOManager.I().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use())) {
+                                break;
+                            }
+                        }
                         return ret;
                     }
                 } else {
 
                 }
-            } catch (DialogNoAnswerException e) {
-                break;
+
             } catch (ReconnectException e) {
                 Log.exception(e);
             }
@@ -400,17 +405,15 @@ public class LiveHeaderDetectionWizard {
             specialCollectInfo();
             while (true) {
                 userConfirm();
-                try {
 
-                    if (!IP.isValidRouterIP(gatewayAdressIP)) {
+                if (!IP.isValidRouterIP(gatewayAdressIP)) {
 
-                        UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), NewTheme.I().getIcon("warning", 32), _GUI._.literally_yes(), _GUI._.literally_edit());
-
+                    if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), NewTheme.I().getIcon("warning", 32), _GUI._.literally_yes(), _GUI._.literally_edit())) {
+                        continue;
                     }
-                    break;
-                } catch (DialogCanceledException e) {
-                    continue;
                 }
+                break;
+
             }
             scanRemoteInfo();
             specials();
@@ -713,6 +716,7 @@ public class LiveHeaderDetectionWizard {
             DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
             // dcd.setLoginsText(T._.LiveHeaderDetectionWizard_userConfirm_loginstext());
             DataCompareDialogInterface impl = UIOManager.I().show(DataCompareDialogInterface.class, dcd);
+            dcd.checkCloseReason();
             username = impl.getUsername();
 
             password = impl.getPassword();
@@ -725,8 +729,9 @@ public class LiveHeaderDetectionWizard {
                 gatewayAdressHost = gatewayAdress.getHostName();
                 break;
             } catch (IOException e) {
-                UIOManager.I().showConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), NewTheme.I().getIcon("error", 32), _GUI._.literally_edit(), null);
-
+                ConfirmDialog d;
+                UIOManager.I().show(ConfirmDialogInterface.class, d = new ConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), NewTheme.I().getIcon("error", 32), _GUI._.literally_edit(), null));
+                d.checkCloseReason();
             }
         }
     }
@@ -827,6 +832,7 @@ public class LiveHeaderDetectionWizard {
                     DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
                     dcd.setLoginsText(T._.LiveHeaderDetectionWizard_userConfirm_loginstext());
                     DataCompareDialogInterface impl = UIOManager.I().show(DataCompareDialogInterface.class, dcd);
+                    dcd.checkCloseReason();
                     username = impl.getUsername();
 
                     password = impl.getPassword();
@@ -843,17 +849,16 @@ public class LiveHeaderDetectionWizard {
 
                     }
                 }
-                try {
 
-                    if (!IP.isValidRouterIP(gatewayAdressIP)) {
+                if (!IP.isValidRouterIP(gatewayAdressIP)) {
 
-                        UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), NewTheme.I().getIcon("warning", 32), _GUI._.literally_yes(), _GUI._.literally_edit());
-
+                    if (!UIOManager.I().showConfirmDialog(0, _GUI._.literally_warning(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badip(gatewayAdressHost), NewTheme.I().getIcon("warning", 32), _GUI._.literally_yes(), _GUI._.literally_edit())) {
+                        continue;
                     }
-                    break;
-                } catch (DialogCanceledException e) {
-                    continue;
+
                 }
+                break;
+
             }
             scanRemoteInfo();
             specials();

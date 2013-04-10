@@ -27,7 +27,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
-import org.jdownloader.gui.views.downloads.action.ClearAction;
+import org.jdownloader.gui.views.downloads.action.ClearDownloadListAction;
 import org.jdownloader.gui.views.downloads.action.RemoveOptionsAction;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
@@ -57,7 +57,7 @@ public class BottomBar extends MigPanel {
 
         addLinks = new JButton(new AddLinksAction());
 
-        clearAll = new JButton(new ClearAction());
+        clearAll = new JButton(new ClearDownloadListAction());
         popup = new JButton(new AddOptionsAction(addLinks)) {
             /**
              * 

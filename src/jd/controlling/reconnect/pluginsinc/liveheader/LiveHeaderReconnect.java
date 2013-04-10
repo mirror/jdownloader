@@ -3,7 +3,6 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 import java.awt.Dimension;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
@@ -366,15 +365,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
             if (!settings.isAlreadySendToCollectServer() && ReconnectPluginController.getInstance().getActivePlugin() == this) {
                 if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() > 3) {
 
-                    try {
-                        UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T._.LiveHeaderReconnect_onConfigValueModified_ask_title(), T._.LiveHeaderReconnect_onConfigValueModified_ask_msg(), icon, null, null);
-                        new RouterSendAction(this).actionPerformed(null);
+                    UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T._.LiveHeaderReconnect_onConfigValueModified_ask_title(), T._.LiveHeaderReconnect_onConfigValueModified_ask_msg(), icon, null, null);
+                    new RouterSendAction(this).actionPerformed(null);
 
-                    } catch (DialogClosedException e) {
-                        e.printStackTrace();
-                    } catch (DialogCanceledException e) {
-                        e.printStackTrace();
-                    }
                     settings.setAlreadySendToCollectServer(true);
 
                 }

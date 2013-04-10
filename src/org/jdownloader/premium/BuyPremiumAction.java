@@ -3,8 +3,6 @@ package org.jdownloader.premium;
 import java.awt.event.ActionEvent;
 
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 
@@ -24,13 +22,7 @@ public class BuyPremiumAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
 
-        try {
-            UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, new BuyAndAddPremiumAccount(info, id));
-        } catch (DialogClosedException e1) {
-            e1.printStackTrace();
-        } catch (DialogCanceledException e1) {
-            e1.printStackTrace();
-        }
+        UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, new BuyAndAddPremiumAccount(info, id));
 
     }
 

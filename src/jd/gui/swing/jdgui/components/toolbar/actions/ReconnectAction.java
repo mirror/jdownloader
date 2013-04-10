@@ -6,8 +6,6 @@ import jd.controlling.reconnect.Reconnecter;
 
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -33,17 +31,13 @@ public class ReconnectAction extends AbstractToolbarAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        try {
-            UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.gui_reconnect_confirm(), NewTheme.I().getIcon("reconnect", 32), _GUI._.lit_yes(), _GUI._.lit_no());
+
+        if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.gui_reconnect_confirm(), NewTheme.I().getIcon("reconnect", 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
             new Thread(new Runnable() {
                 public void run() {
                     Reconnecter.getInstance().forceReconnect();
                 }
             }).start();
-        } catch (DialogClosedException e1) {
-            e1.printStackTrace();
-        } catch (DialogCanceledException e1) {
-            e1.printStackTrace();
         }
 
     }

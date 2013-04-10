@@ -1,7 +1,6 @@
 package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import jd.controlling.packagecontroller.AbstractNode;
 
@@ -17,7 +16,7 @@ public class RemoveIncompleteArchives extends AppAction {
 
     public RemoveIncompleteArchives(java.util.List<AbstractNode> selection) {
         setName(_GUI._.RemoveIncompleteArchives_RemoveIncompleteArchives_object_());
-        setIconKey("remove_packages");
+        setIconKey("package_open_error");
     }
 
     public void actionPerformed(ActionEvent e) {

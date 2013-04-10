@@ -42,8 +42,6 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
@@ -202,18 +200,11 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     protected boolean onHeaderSortClick(final MouseEvent event, final ExtColumn<AbstractNode> oldColumn, final String oldIdentifier, ExtColumn<AbstractNode> newColumn) {
         if (((LinkGrabberTableModel) getExtTableModel()).isTristateSorterEnabled()) return false;
-        try {
-            //
-            UIOManager.I().showConfirmDialog(Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.getNextSortIdentifier_sort_warning_rly_title_(), _JDT._.getNextSortIdentifier_sort_warning_rly_msg(newColumn.getName()), NewTheme.I().getIcon("help", 32), _JDT._.basics_yes(), _JDT._.basics_no());
 
-            sortPackageChildren(newColumn.getRowSorter(), getExtTableModel().getNextSortIdentifier(newColumn.getSortOrderIdentifier()));
+        //
+        UIOManager.I().showConfirmDialog(Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.getNextSortIdentifier_sort_warning_rly_title_(), _JDT._.getNextSortIdentifier_sort_warning_rly_msg(newColumn.getName()), NewTheme.I().getIcon("help", 32), _JDT._.basics_yes(), _JDT._.basics_no());
 
-            return true;
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        }
+        sortPackageChildren(newColumn.getRowSorter(), getExtTableModel().getNextSortIdentifier(newColumn.getSortOrderIdentifier()));
 
         return true;
     }

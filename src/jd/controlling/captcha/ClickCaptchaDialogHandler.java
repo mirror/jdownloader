@@ -3,12 +3,12 @@ package jd.controlling.captcha;
 import java.awt.Image;
 
 import jd.gui.swing.dialog.ClickCaptchaDialog;
-import jd.gui.swing.dialog.ClickCaptchaDialogInterface;
 import jd.gui.swing.dialog.DialogType;
 
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition.CloseReason;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
@@ -34,15 +34,17 @@ public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptc
         d.setPlugin(captchaChallenge.getPlugin());
         d.setCountdownTime(CaptchaSettings.CFG.getCountdown());
         dialog = d;
-        try {
-            result = UIOManager.I().show(ClickCaptchaDialogInterface.class, d).getResult();
-        } catch (DialogCanceledException e) {
+        result = UIOManager.I().show(ClickCaptchaDialog.class, d).getResult();
+        if (d.getCloseReason() != CloseReason.OK) {
+
             if (d.isHideCaptchasForHost()) throw new HideCaptchasByHostException();
             if (d.isHideCaptchasForPackage()) throw new HideCaptchasByPackageException();
             if (d.isStopDownloads()) throw new StopCurrentActionException();
             if (d.isHideAllCaptchas()) throw new HideAllCaptchasException();
+            if (d.isStopCrawling()) throw new StopCurrentActionException();
+            if (d.isStopShowingCrawlerCaptchas()) throw new HideAllCaptchasException();
             if (d.isRefresh()) throw new RefreshException();
-            throw e;
+            d.checkCloseReason();
         }
 
     }

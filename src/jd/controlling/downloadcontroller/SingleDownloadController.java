@@ -48,7 +48,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition.CloseReason;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
@@ -452,9 +452,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         IfFileExistsAction doAction = JsonConfig.create(GeneralSettings.class).getIfFileExistsAction();
         switch (doAction) {
         case ASK_FOR_EACH_FILE:
-            try {
-                doAction = UIOManager.I().show(IfFileExistsDialogInterface.class, new IfFileExistsDialog(downloadLink.getFileOutput(), downloadLink.getFilePackage().getName(), downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated())).getAction();
-            } catch (DialogNoAnswerException e1) {
+            IfFileExistsDialog d = new IfFileExistsDialog(downloadLink.getFileOutput(), downloadLink.getFilePackage().getName(), downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated());
+            doAction = UIOManager.I().show(IfFileExistsDialogInterface.class, d).getAction();
+
+            if (d.getCloseReason() != CloseReason.OK) {
                 doAction = IfFileExistsAction.SKIP_FILE;
             }
             break;

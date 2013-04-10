@@ -8,6 +8,7 @@ import javax.swing.AbstractAction;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -17,8 +18,7 @@ import org.jdownloader.images.NewTheme;
 public class WizardUtils {
 
     /**
-     * checks if the user has a modem connection, and asks the user if he want
-     * to do a reconnect wizard run either. returns true if not.
+     * checks if the user has a modem connection, and asks the user if he want to do a reconnect wizard run either. returns true if not.
      * 
      * @return
      */
@@ -69,7 +69,9 @@ public class WizardUtils {
             if (!routerAdress.equals(gateway)) {
                 // ouch. if gateway is not routerIp, we might be in a VPN
                 try {
-                    UIOManager.I().showConfirmDialog(0, _GUI._.ReconnectPluginController_autoFind_gatewaywarning_t(), _GUI._.ReconnectPluginController_autoFind_gatewaywarning(), NewTheme.I().getIcon("warning", 32), _GUI._.literally_continue(), null);
+                    ConfirmDialog cd;
+                    UIOManager.I().show(ConfirmDialogInterface.class, cd = new ConfirmDialog(0, _GUI._.ReconnectPluginController_autoFind_gatewaywarning_t(), _GUI._.ReconnectPluginController_autoFind_gatewaywarning(), NewTheme.I().getIcon("warning", 32), _GUI._.literally_continue(), null));
+                    cd.checkCloseReason();
                 } catch (DialogNoAnswerException e) {
                     return true;
                 }

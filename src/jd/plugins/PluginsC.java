@@ -33,7 +33,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition.CloseReason;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -156,15 +156,14 @@ public abstract class PluginsC {
 
                             }
                         };
-                        try {
 
-                            UIOManager.I().show(ConfirmDialogInterface.class, d);
-
+                        UIOManager.I().show(ConfirmDialogInterface.class, d);
+                        if (d.getCloseReason() == CloseReason.OK) {
                             file.delete();
                             if (d.isDontShowAgainSelected()) {
                                 JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DELETE);
                             }
-                        } catch (DialogNoAnswerException e) {
+                        } else {
                             if (d.isDontShowAgainSelected()) {
                                 JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DONT_DELETE);
                             }

@@ -165,7 +165,9 @@ public class BuyAction extends AbstractAction {
                     if (buyIt == null || StringUtils.isEmpty(buyIt.getPremiumUrl())) return;
                     CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(buyIt.getPremiumUrl(), "accountmanager" + (table == null ? "/context" : "/table")));
                     try {
-                        UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
+                        BuyAndAddPremiumAccount dia;
+                        UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
+                        dia.checkCloseReason();
                     } catch (DialogClosedException e1) {
                         e1.printStackTrace();
                     } catch (DialogCanceledException e1) {

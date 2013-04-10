@@ -10,6 +10,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition.CloseReason;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 
@@ -35,9 +36,10 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
         d.setCountdownTime(CaptchaSettings.CFG.getCountdown());
         dialog = d;
         if (suggest != null) dialog.suggest(suggest);
-        try {
-            result = UIOManager.I().show(CaptchaDialogInterface.class, d).getResult();
-        } catch (DialogCanceledException e) {
+
+        result = UIOManager.I().show(CaptchaDialogInterface.class, d).getResult();
+        if (d.getCloseReason() != CloseReason.OK) {
+
             if (d.isHideCaptchasForHost()) throw new HideCaptchasByHostException();
             if (d.isHideCaptchasForPackage()) throw new HideCaptchasByPackageException();
             if (d.isStopDownloads()) throw new StopCurrentActionException();
@@ -45,7 +47,7 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
             if (d.isStopCrawling()) throw new StopCurrentActionException();
             if (d.isStopShowingCrawlerCaptchas()) throw new HideAllCaptchasException();
             if (d.isRefresh()) throw new RefreshException();
-            throw e;
+            d.checkCloseReason();
         }
 
     }

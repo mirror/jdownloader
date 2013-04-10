@@ -17,7 +17,7 @@ public class RemoveAllAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        new ClearAction().actionPerformed(e);
+        new ClearDownloadListAction().actionPerformed(e);
     }
 
 }

@@ -192,7 +192,7 @@ public class RestartController implements ShutdownVetoListener {
             };
 
             UIOManager.I().show(ConfirmDialogInterface.class, cd);
-
+            cd.checkCloseReason();
         } catch (DialogNoAnswerException e) {
             throw new ShutdownVetoException("Really Exit question denied", this);
         }

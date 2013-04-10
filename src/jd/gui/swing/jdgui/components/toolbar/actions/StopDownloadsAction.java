@@ -10,7 +10,6 @@ import org.appwork.controlling.StateEventListener;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -42,12 +41,9 @@ public class StopDownloadsAction extends AbstractToolbarAction {
                 if (DownloadWatchDog.getInstance().getStateMachine().hasPassed(DownloadWatchDog.STOPPING_STATE)) return;
                 int count = DownloadWatchDog.getInstance().getNonResumableRunningCount();
                 if (count > 0) {
-                    try {
-                        UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.StopDownloadsAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes()), count), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no());
+                    if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.StopDownloadsAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes()), count), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
 
-                    } catch (DialogNoAnswerException e) {
-                        return;
-                    }
+                    return; }
                 }
 
                 DownloadWatchDog.getInstance().stopDownloads();

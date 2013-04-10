@@ -1,9 +1,9 @@
 package jd.controlling.downloadcontroller;
 
-import org.appwork.utils.swing.dialog.UserIODefinition;
+import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition;
 import org.jdownloader.settings.IfFileExistsAction;
 
-public interface IfFileExistsDialogInterface extends UserIODefinition {
+public interface IfFileExistsDialogInterface extends OKCancelCloseUserIODefinition {
 
     public IfFileExistsAction getAction();
 

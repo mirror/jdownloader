@@ -50,8 +50,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.StartException;
@@ -372,11 +370,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 message = _.interaction_shutdown_dialog_msg_shutdown();
 
                 WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_shutdown(), message);
-                try {
-                    UIOManager.I().show(WarningDialogInterface.class, d);
-                } catch (Throwable e) {
 
-                }
+                UIOManager.I().show(WarningDialogInterface.class, d);
+
                 if ((d.getReturnmask() & Dialog.RETURN_OK) == Dialog.RETURN_OK || (d.getReturnmask() & Dialog.RETURN_TIMEOUT) == Dialog.RETURN_TIMEOUT) {
                     shutdown();
                 }
@@ -485,20 +481,16 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
                 public void actionPerformed(ActionEvent e) {
                     super.actionPerformed(e);
-                    try {
-                        if (isSelected()) {
 
-                            UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _.addons_jdshutdown_statusmessage_enabled()));
+                    if (isSelected()) {
 
-                        } else {
-                            UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _.addons_jdshutdown_statusmessage_disabled()));
+                        UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _.addons_jdshutdown_statusmessage_enabled()));
 
-                        }
-                    } catch (DialogClosedException e1) {
-                        e1.printStackTrace();
-                    } catch (DialogCanceledException e1) {
-                        e1.printStackTrace();
+                    } else {
+                        UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _.addons_jdshutdown_statusmessage_disabled()));
+
                     }
+
                 }
 
                 @Override
