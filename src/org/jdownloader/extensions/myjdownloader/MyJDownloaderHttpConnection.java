@@ -130,17 +130,17 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
 
     @Override
     protected String preProcessRequestLine(String requestLine) throws IOException {
-
-        RequestLineParser parser = new RequestLineParser().parse(requestLine.getBytes("UTF-8"));
-        requestConnectToken = parser.getToken();
-        if (StringUtils.equals(parser.getToken(), api.getSessionToken())) {
+        RequestLineParser parser = RequestLineParser.parse(requestLine.getBytes("UTF-8"));
+        if (parser == null) throw new IOException("Invalid my.jdownloader.org request: " + requestLine);
+        requestConnectToken = parser.getSessionToken();
+        if (StringUtils.equals(parser.getSessionToken(), api.getSessionToken())) {
             // the request origin is the My JDownloader Server
             payloadEncryptionToken = api.getServerEncryptionToken();
         } else {
             // The request origin is a remote client
 
             try {
-                payloadEncryptionToken = api.getDeviceEncryptionTokenBySession(parser.getToken());
+                payloadEncryptionToken = api.getDeviceEncryptionTokenBySession(parser.getSessionToken());
             } catch (NoSuchAlgorithmException e) {
                 throw new WTFException(e);
             }

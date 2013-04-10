@@ -138,9 +138,17 @@ public class MyJDownloaderConnectThread extends Thread {
             }
         } else {
             api.connect(config.getEmail(), config.getPassword());
-            DeviceData device = api.bindDevice(new DeviceData(config.getUniqueDeviceID(), "jd", config.getDeviceName()));
-            if (StringUtils.isNotEmpty(device.getId())) {
-                config.setUniqueDeviceID(device.getId());
+            boolean deviceBound = false;
+            try {
+                DeviceData device = api.bindDevice(new DeviceData(config.getUniqueDeviceID(), "jd", config.getDeviceName()));
+                if (StringUtils.isNotEmpty(device.getId())) {
+                    deviceBound = true;
+                    config.setUniqueDeviceID(device.getId());
+                }
+            } finally {
+                if (deviceBound == false) {
+                    api.disconnect();
+                }
             }
         }
         // System.out.println(1);
