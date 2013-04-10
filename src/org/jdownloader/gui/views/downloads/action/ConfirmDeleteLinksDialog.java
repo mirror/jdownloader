@@ -14,7 +14,7 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog implements ConfirmDe
     private JCheckBox deletFilesCb;
 
     public ConfirmDeleteLinksDialog(String msg) {
-        super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), msg, null, _GUI._.literally_yes(), _GUI._.literall_no());
+        super(Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), msg, null, _GUI._.literally_yes(), _GUI._.literall_no());
 
     }
 
@@ -22,15 +22,16 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog implements ConfirmDe
     public JComponent layoutDialogContent() {
         JComponent ret = super.layoutDialogContent();
         deletFilesCb = new JCheckBox();
-        MigPanel p = new MigPanel("ins 0", "[][grow,fill]", "[]");
+        MigPanel p = new MigPanel("ins 15 0 0 0", "[][]", "[]");
         p.add(deletFilesCb);
         p.add(new JLabel(_GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_deletefiles_()));
+        ret.add(p, "newline,alignx right");
         return ret;
 
     }
 
     @Override
-    public boolean isDeletFilesFromDiskEnabled() {
+    public boolean isDeleteFilesFromDiskEnabled() {
         return deletFilesCb.isSelected();
     }
 }

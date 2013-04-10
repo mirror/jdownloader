@@ -4,5 +4,5 @@ import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
 
 public interface ConfirmDeleteLinksDialogInterface extends ConfirmDialogInterface {
 
-    public boolean isDeletFilesFromDiskEnabled();
+    public boolean isDeleteFilesFromDiskEnabled();
 }

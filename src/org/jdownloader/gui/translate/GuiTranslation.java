@@ -2356,7 +2356,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Open Connections" })
     String DownloadOverview_DownloadOverview_connections();
 
-    @Default(lngs = { "en" }, values = { "Do you want to delete all" })
+    @Default(lngs = { "en" }, values = { "Do you want to delete all visible files in your Downloadlist? Once confirmed, this cannot be undone!" })
     String ClearDownloadListAction_actionPerformed_();
 
     @Default(lngs = { "en" }, values = { "Delete downloaded Files from Harddisk as well" })
