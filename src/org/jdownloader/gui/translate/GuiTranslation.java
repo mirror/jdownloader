@@ -2320,4 +2320,40 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "ETA:" })
     String DownloadOverview_DownloadOverview_eta();
 
+    @Default(lngs = { "en" }, values = { "Total | Filtered | Selected" })
+    String DownloadOverview_DownloadOverview_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Choose Information to display" })
+    String OverViewHeader_OverViewHeader_settings_tooltip_();
+
+    @Default(lngs = { "en" }, values = { "Total Information - all Links in the List" })
+    String OverViewHeader_actionPerformed_total_();
+
+    @Default(lngs = { "en" }, values = { "Visible Links Information - do not include filtered Links" })
+    String OverViewHeader_actionPerformed_visible_only_();
+
+    @Default(lngs = { "en" }, values = { "Selected Links Information - only include selected Links & Packages" })
+    String OverViewHeader_actionPerformed_selected_();
+
+    @Default(lngs = { "en" }, values = { "Total Information - all Links in the List" })
+    String DownloadOverview_DownloadOverview_tooltip1();
+
+    @Default(lngs = { "en" }, values = { "Visible Links Information - do not include filtered Links" })
+    String DownloadOverview_DownloadOverview_tooltip2();
+
+    @Default(lngs = { "en" }, values = { "Selected Links Information - only include selected Links & Packages" })
+    String DownloadOverview_DownloadOverview_tooltip3();
+
+    @Default(lngs = { "en" }, values = { "Smart Information - Depends on your selection & filter settings" })
+    String OverViewHeader_actionPerformed_smart_();
+
+    @Default(lngs = { "en" }, values = { "Show Quicksettings" })
+    String OverViewHeader_actionPerformed_quicksettings();
+
+    @Default(lngs = { "en" }, values = { "Running Downloads" })
+    String DownloadOverview_DownloadOverview_running_downloads();
+
+    @Default(lngs = { "en" }, values = { "Open Connections" })
+    String DownloadOverview_DownloadOverview_connections();
+
 }

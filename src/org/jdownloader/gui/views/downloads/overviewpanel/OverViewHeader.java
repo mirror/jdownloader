@@ -9,22 +9,30 @@ import java.awt.event.MouseListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
 
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.SwingUtils;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class OverViewHeader extends MigPanel {
 
-    private JButton bt;
+    private JButton   bt;
+    private ExtButton options;
 
     public OverViewHeader() {
-        super("ins 0 0 1 0", "[]2[][grow,fill][]0", "[grow,fill]");
+        super("ins 0 0 1 0", "[]2[][][grow,fill][]0", "[grow,fill]");
 
         // setBackground(Color.RED);
         // setOpaque(true);
@@ -33,6 +41,42 @@ public class OverViewHeader extends MigPanel {
         LookAndFeelController.getInstance().getLAFOptions().applyDownloadOverviewHeaderColor(lbl);
         add(new JLabel(NewTheme.I().getIcon("download", 16)), "gapleft 1");
         add(lbl, "height 17!");
+
+        options = new ExtButton(new AppAction() {
+            {
+                //
+
+                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("exttable/columnButton", -1), NewTheme.I().getImage("popupButton", -1), 0, 0, 16, 4)));
+                setTooltipText(_GUI._.OverViewHeader_OverViewHeader_settings_tooltip_());
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JPopupMenu pu = new JPopupMenu();
+                CheckboxMenuItem total = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_total_(), CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_TOTAL_INFO_VISIBLE);
+                CheckboxMenuItem filtered = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_visible_only_(), CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE_ONLY_INFO_VISIBLE);
+                CheckboxMenuItem selected = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_selected_(), CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SELECTED_INFO_VISIBLE);
+                pu.add(new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_smart_(), CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE, total, filtered, selected));
+
+                pu.add(new JSeparator(JSeparator.HORIZONTAL));
+                pu.add(total);
+                pu.add(filtered);
+                pu.add(selected);
+                pu.add(new JSeparator(JSeparator.HORIZONTAL));
+                pu.add(new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_quicksettings(), CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE));
+
+                int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+
+                Dimension pref = pu.getPreferredSize();
+                // pref.width = positionComp.getWidth() + ((Component)
+                // e.getSource()).getWidth() + insets[1] + insets[3];
+                // pu.setPreferredSize(new Dimension(optionsgetWidth() + insets[1] + insets[3], (int) pref.getHeight()));
+
+                pu.show(options, -insets[1], -pu.getPreferredSize().height + insets[2]);
+            }
+        });
+        options.setRolloverEffectEnabled(true);
+        add(options, "height 17!,width 24!");
         add(Box.createHorizontalGlue());
         setOpaque(true);
         SwingUtils.setOpaque(lbl, false);

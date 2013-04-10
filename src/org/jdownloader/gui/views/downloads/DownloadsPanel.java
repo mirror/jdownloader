@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.downloads;
 
+import java.awt.Component;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -46,23 +47,9 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         table = new DownloadsTable(tableModel);
         tableScrollPane = new JScrollPane(table);
         tableScrollPane.setBorder(null);
-        overView = new DownloadOverview(table);
+
         bottomBar = new BottomBar(table);
-        overViewScrollBar = new HeaderScrollPane(overView);
 
-        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(overViewScrollBar);
-
-        overViewScrollBar.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-        overViewScrollBar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        overViewScrollBar.setColumnHeaderView(new OverViewHeader() {
-
-            @Override
-            protected void onCloseAction() {
-                setOverViewVisible(false);
-
-            }
-
-        });
         layoutComponents();
 
         CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
@@ -97,7 +84,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         if (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled()) {
             setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[grow,fill]2[]"));
             this.add(tableScrollPane, "pushx,growx,spanx");
-            add(overViewScrollBar, "spanx,height 73!");
+            add(getOverView(), "spanx,height 73!");
             add(bottomBar, "spanx,height 24!");
         } else {
             setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
@@ -105,6 +92,27 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             add(bottomBar, "spanx,height 24!");
         }
 
+    }
+
+    private Component getOverView() {
+        if (overView == null) {
+            overView = new DownloadOverview(table);
+            overViewScrollBar = new DownloadOverviewHeaderScrollPane(overView);
+            LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(overViewScrollBar);
+
+            overViewScrollBar.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+            overViewScrollBar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+            overViewScrollBar.setColumnHeaderView(new OverViewHeader() {
+
+                @Override
+                protected void onCloseAction() {
+                    setOverViewVisible(false);
+
+                }
+
+            });
+        }
+        return overViewScrollBar;
     }
 
     protected void setOverViewVisible(final boolean b) {

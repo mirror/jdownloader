@@ -147,6 +147,36 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setDownloadPanelOverviewVisible(boolean b);
 
     @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isDownloadPanelOverviewTotalInfoVisible();
+
+    void setDownloadPanelOverviewTotalInfoVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isDownloadPanelOverviewVisibleOnlyInfoVisible();
+
+    void setDownloadPanelOverviewVisibleOnlyInfoVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isDownloadPanelOverviewSettingsVisible();
+
+    void setDownloadPanelOverviewSettingsVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isDownloadPanelOverviewSelectedInfoVisible();
+
+    void setDownloadPanelOverviewSelectedInfoVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isDownloadPanelOverviewSmartInfoVisible();
+
+    void setDownloadPanelOverviewSmartInfoVisible(boolean b);
+
+    @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Sidebar QuicktoggleButton")
     @DefaultBooleanValue(true)
     @RequiresRestart

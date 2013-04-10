@@ -18,7 +18,6 @@ package jd.gui.swing.jdgui.components;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
@@ -31,7 +30,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
-import javax.swing.Timer;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -211,15 +209,7 @@ public class StatusBarImpl extends JPanel implements StateEventListener {
         statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
         redoLayout();
-        Timer timer = new Timer(1000, new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
-                statusLabel.setText(_GUI._.BottomBar_actionPerformed_running_downloads(DownloadWatchDog.getInstance().getActiveDownloads(), DownloadWatchDog.getInstance().getDownloadSpeedManager().connections()));
-
-            }
-        });
-        timer.setRepeats(true);
-        timer.start();
         updateDelayer = new DelayedRunnable(ToolTipController.EXECUTER, 1000, 2000) {
 
             @Override

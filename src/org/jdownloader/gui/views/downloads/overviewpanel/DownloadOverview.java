@@ -11,6 +11,8 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.Timer;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
@@ -28,29 +30,34 @@ import jd.plugins.FilePackage;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class DownloadOverview extends MigPanel implements ActionListener, DownloadControllerListener, HierarchyListener {
+public class DownloadOverview extends MigPanel implements ActionListener, DownloadControllerListener, HierarchyListener, GenericConfigEventListener<Boolean> {
 
     private DownloadsTable downloadTable;
-    private JLabel         packageCount;
-    private JLabel         linkCount;
-    private JLabel         size;
-    private JLabel         bytesLoaded;
-    private JLabel         speed;
-    private JLabel         eta;
+    private DataEntry      packageCount;
+    private DataEntry      linkCount;
+    private DataEntry      size;
+    private DataEntry      bytesLoaded;
+    private DataEntry      speed;
+    private DataEntry      eta;
     protected Timer        updateTimer;
 
+    private DataEntry      runningDownloads;
+    private DataEntry      connections;
+
     public DownloadOverview(DownloadsTable table) {
-        super("ins 0", "[][grow,fill][][]", "");
+        super("ins 0", "[][grow,fill][]", "[grow,fill]");
         this.downloadTable = table;
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
 
@@ -58,45 +65,65 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
             setBackground(new Color(c));
             setOpaque(true);
         }
-        MigPanel info = new MigPanel("ins 2 0 0 0 ,wrap 6", "[grow]10[grow]", "[]2[]");
+        MigPanel info = new MigPanel("ins 2 0 0 0", "[grow]10[grow]", "[grow,fill]2[grow,fill]");
         info.setOpaque(false);
-        packageCount = new JLabel();
-        linkCount = new JLabel();
-        // SwingUtils.setOpaque(packageCount, false);
-        // SwingUtils.setOpaque(packageCount, false);
-        // total size
-        size = new JLabel();
-        bytesLoaded = new JLabel();
-        speed = new JLabel();
-        eta = new JLabel();
+
+        packageCount = new DataEntry(_GUI._.DownloadOverview_DownloadOverview_packages());
+        size = new DataEntry(_GUI._.DownloadOverview_DownloadOverview_size());
+        bytesLoaded = new DataEntry(_GUI._.DownloadOverview_DownloadOverview_loaded());
+        runningDownloads = new DataEntry(_GUI._.DownloadOverview_DownloadOverview_running_downloads());
+
+        linkCount = new DataEntry(_GUI._.DownloadOverview_DownloadOverview_links());
+
+        speed = new DataEntry(_GUI._.DownloadOverview_DownloadOverview_speed());
+        eta = new DataEntry(_GUI._.DownloadOverview_DownloadOverview_eta());
+
+        connections = new DataEntry(_GUI._.DownloadOverview_DownloadOverview_connections());
+
         // selected
         // filtered
         // speed
         // eta
-        info.add(createHeaderLabel(_GUI._.DownloadOverview_DownloadOverview_packages()), "alignx right");
-        info.add(packageCount);
-        info.add(createHeaderLabel(_GUI._.DownloadOverview_DownloadOverview_size()), "alignx right");
-        info.add(size);
-        info.add(createHeaderLabel(_GUI._.DownloadOverview_DownloadOverview_loaded()), "alignx right");
-        info.add(bytesLoaded);
-        info.add(createHeaderLabel(_GUI._.DownloadOverview_DownloadOverview_links()), "newline,alignx right");
-        info.add(linkCount);
+        packageCount.addTo(info);
+        size.addTo(info);
+        bytesLoaded.addTo(info);
+        runningDownloads.addTo(info);
+        linkCount.addTo(info, ",newline");
+        speed.addTo(info);
+        eta.addTo(info);
+        connections.addTo(info);
 
-        info.add(createHeaderLabel(_GUI._.DownloadOverview_DownloadOverview_speed()), "alignx right");
-        info.add(speed);
-        info.add(createHeaderLabel(_GUI._.DownloadOverview_DownloadOverview_eta()), "alignx right");
-        info.add(eta);
-        MigPanel settings = new MigPanel("ins 2 0 0 0 ,wrap 2", "[fill][fill]", "[]2[]");
+        // new line
+
+        // DownloadWatchDog.getInstance().getActiveDownloads(), DownloadWatchDog.getInstance().getDownloadSpeedManager().connections()
+
+        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_TOTAL_INFO_VISIBLE.getEventSender().addListener(this);
+        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SELECTED_INFO_VISIBLE.getEventSender().addListener(this);
+        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().addListener(this);
+        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.getEventSender().addListener(this);
+        final MigPanel settings = new MigPanel("ins 2 0 0 0 ,wrap 3", "[][fill][fill]", "[]2[]");
         SwingUtils.setOpaque(settings, false);
+        settings.add(new JSeparator(JSeparator.VERTICAL), "spany,pushy,growy");
         settings.add(new ChunksEditor(true), "height 20!");
         settings.add(new ParalellDownloadsEditor(true));
         settings.add(new ParallelDownloadsPerHostEditor(true));
         settings.add(new SpeedlimitEditor(true));
+        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-        add(info);
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                settings.setVisible(newValue);
+            }
+        });
+        settings.setVisible(CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE.isEnabled());
+        add(info, "pushy,growy");
         add(Box.createHorizontalGlue());
-        add(new JSeparator(JSeparator.VERTICAL), "pushy,growy");
-        add(settings);
+
+        add(settings, "hidemode 3");
         DownloadController.getInstance().addListener(this);
         DownloadsTableModel.getInstance().addTableModelListener(new TableModelListener() {
 
@@ -121,59 +148,70 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
             }
         });
         this.addHierarchyListener(this);
+        onConfigValueModified(null, null);
         // new Timer(1000, this).start();
+        DownloadsTableModel.getInstance().getTable().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                update();
+                onConfigValueModified(null, null);
+            }
+        });
+    }
+
+    private JComponent left(JLabel packageCount22) {
+        // packageCount22.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, packageCount22.getForeground()));
+        return packageCount22;
     }
 
     protected void update() {
         if (!this.isDisplayable()) { return; }
-        final SelectionInfo<FilePackage, DownloadLink> selection = new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getAllPackageNodes());
-        final boolean filtered = DownloadsTableModel.getInstance().isFilteredView();
 
+        final AggregatedNumbers total = CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks())) : null;
+        final AggregatedNumbers filtered = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getAllChildrenNodes())) : null;
+        final AggregatedNumbers selected = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getSelectedObjects())) : null;
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-                long totalBytes = 0l;
-                long loadedBytes = 0l;
-                long downloadSpeed = 0l;
 
-                for (FilePackage dl : selection.getAllPackages()) {
-                    totalBytes += dl.getView().getSize();
-                    loadedBytes += dl.getView().getDone();
+                if (total != null) packageCount.setTotal(total.getPackageCount() + "");
+                if (filtered != null) packageCount.setFiltered(filtered.getPackageCount() + "");
+                if (selected != null) packageCount.setSelected(selected.getPackageCount() + "");
 
-                }
-                downloadSpeed = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
-                final long totalETA = downloadSpeed == 0 ? 0 : (totalBytes - loadedBytes) / downloadSpeed;
-                if (filtered) {
+                if (total != null) linkCount.setTotal(total.getLinkCount() + "");
+                if (filtered != null) linkCount.setFiltered(filtered.getLinkCount() + "");
+                if (selected != null) linkCount.setSelected(selected.getLinkCount() + "");
 
-                    packageCount.setText(DownloadController.getInstance().size() + "/" + selection.getAllPackages().size() + "");
-                    linkCount.setText(DownloadController.getInstance().getAllDownloadLinks().size() + "/" + selection.getSelectedChildren().size() + "");
-                } else {
-                    packageCount.setText(DownloadController.getInstance().size() + "");
-                    linkCount.setText(DownloadController.getInstance().getAllDownloadLinks().size() + "");
-                }
+                if (total != null) size.setTotal(total.getTotalBytesString());
+                if (filtered != null) size.setFiltered(filtered.getTotalBytesString());
+                if (selected != null) size.setSelected(selected.getTotalBytesString());
 
-                size.setText(SizeFormatter.formatBytes(totalBytes));
-                bytesLoaded.setText(SizeFormatter.formatBytes(loadedBytes));
-                if (downloadSpeed > 0) {
-                    speed.setText(SizeFormatter.formatBytes(downloadSpeed) + "/s");
-                    eta.setText(TimeFormatter.formatSeconds(totalETA, 0));
-                } else {
-                    speed.setText(SizeFormatter.formatBytes(downloadSpeed) + "/s");
-                    eta.setText("~");
+                if (total != null) bytesLoaded.setTotal(total.getLoadedBytesString());
+                if (filtered != null) bytesLoaded.setFiltered(filtered.getLoadedBytesString());
+                if (selected != null) bytesLoaded.setSelected(selected.getLoadedBytesString());
 
-                }
+                if (total != null) speed.setTotal(total.getDownloadSpeedString());
+                if (filtered != null) speed.setFiltered(filtered.getDownloadSpeedString());
+                if (selected != null) speed.setSelected(selected.getDownloadSpeedString());
+
+                if (total != null) eta.setTotal(total.getEtaString());
+                if (filtered != null) eta.setFiltered(filtered.getEtaString());
+                if (selected != null) eta.setSelected(selected.getEtaString());
+
+                if (total != null) connections.setTotal(total.getConnections() + "");
+                if (filtered != null) connections.setFiltered(filtered.getConnections() + "");
+                if (selected != null) connections.setSelected(selected.getConnections() + "");
+
+                if (total != null) runningDownloads.setTotal(total.getRunning() + "");
+                if (filtered != null) runningDownloads.setFiltered(filtered.getRunning() + "");
+                if (selected != null) runningDownloads.setSelected(selected.getRunning() + "");
+
             }
+
         };
 
-    }
-
-    private JComponent createHeaderLabel(String label) {
-        JLabel lbl = new JLabel(label);
-        SwingUtils.toBold(lbl);
-
-        lbl.setEnabled(false);
-        return lbl;
     }
 
     @Override
@@ -209,6 +247,7 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
             if (updateTimer == null || !updateTimer.isRunning()) {
                 startUpdateTimer();
             }
+            update();
         }
     }
 
@@ -217,6 +256,30 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
         updateTimer = new Timer(1000, DownloadOverview.this);
         updateTimer.setRepeats(true);
         updateTimer.start();
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                packageCount.updateVisibility();
+                bytesLoaded.updateVisibility();
+                size.updateVisibility();
+                linkCount.updateVisibility();
+                speed.updateVisibility();
+                eta.updateVisibility();
+                connections.updateVisibility();
+                runningDownloads.updateVisibility();
+
+            }
+        };
     }
 
 }
