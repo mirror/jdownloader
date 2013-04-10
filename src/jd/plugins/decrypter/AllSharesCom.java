@@ -92,4 +92,9 @@ public class AllSharesCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
 }

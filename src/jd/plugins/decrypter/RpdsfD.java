@@ -215,4 +215,9 @@ public class RpdsfD extends PluginForDecrypt {
         return ret.toString();
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

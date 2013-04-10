@@ -98,8 +98,7 @@ public class SflnkgNt extends PluginForDecrypt {
 
     public class GeneralSafelinkingHandling {
         /**
-         * A class to handle sites similar to safelinking.net ->Google
-         * "Secure your links with a captcha, a password and much more" to find
+         * A class to handle sites similar to safelinking.net ->Google "Secure your links with a captcha, a password and much more" to find
          * such sites
          */
 
@@ -325,8 +324,7 @@ public class SflnkgNt extends PluginForDecrypt {
             final ScriptEngine engine = manager.getEngineByName("javascript");
             try {
                 /*
-                 * creating pseudo functions: document.location.protocol +
-                 * document.write(value)
+                 * creating pseudo functions: document.location.protocol + document.write(value)
                  */
                 engine.eval("var document = { loc : function() { var newObj = new Object(); function protocol() { return \"" + protocol + "\"; } newObj.protocol = protocol(); return newObj; }, write : function(a) { return a; }}");
                 engine.eval("document.location = document.loc();");
@@ -459,6 +457,11 @@ public class SflnkgNt extends PluginForDecrypt {
             }
         }
         /** End of class inside class */
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
     }
 
 }

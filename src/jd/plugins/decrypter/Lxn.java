@@ -38,11 +38,8 @@ import jd.utils.JDUtilities;
 public class Lxn extends PluginForDecrypt {
 
     static private Object LOCK = new Object(); /*
-                                                * lixin checkt anhand der ip und
-                                                * der globalen phpsessionid,
-                                                * daher müssen parallel zugriffe
-                                                * vermieden werden, sonst ist
-                                                * das captcha imme falsch
+                                                * lixin checkt anhand der ip und der globalen phpsessionid, daher müssen parallel zugriffe
+                                                * vermieden werden, sonst ist das captcha imme falsch
                                                 */
 
     public Lxn(PluginWrapper wrapper) {
@@ -160,6 +157,11 @@ public class Lxn extends PluginForDecrypt {
             return null;
         }
         return null;
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
     }
 
 }

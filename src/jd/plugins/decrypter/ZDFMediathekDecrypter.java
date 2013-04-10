@@ -224,4 +224,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         return title;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

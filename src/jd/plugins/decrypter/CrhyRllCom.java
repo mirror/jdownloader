@@ -277,14 +277,12 @@ public class CrhyRllCom extends PluginForDecrypt {
     }
 
     /**
-     * Try and find the Android details for the given link. If the details are
-     * successfully found, then set the properties of the link.
+     * Try and find the Android details for the given link. If the details are successfully found, then set the properties of the link.
      * 
      * @param downloadLink
      *            The DownloadLink file to check
      * @param br
-     *            The browser to use to load the XML file with. If null, uses
-     *            different browser
+     *            The browser to use to load the XML file with. If null, uses different browser
      */
     public void setAndroid(final DownloadLink downloadLink, Browser br) throws IOException, PluginException {
         if (br == null) {
@@ -368,17 +366,14 @@ public class CrhyRllCom extends PluginForDecrypt {
     }
 
     /**
-     * Try and find the RTMP details for the given link. If the details are
-     * successfully found, then set the properties of the link. rtmphost =
-     * TcUrl. rtmpfile = playpath. rtmpswf = swfVfy (without full path).
-     * filename = output filename without extension. qualityname = text
-     * definition of the quality found ("360p", "480p", etc).
+     * Try and find the RTMP details for the given link. If the details are successfully found, then set the properties of the link.
+     * rtmphost = TcUrl. rtmpfile = playpath. rtmpswf = swfVfy (without full path). filename = output filename without extension.
+     * qualityname = text definition of the quality found ("360p", "480p", etc).
      * 
      * @param downloadLink
      *            The DownloadLink file to check
      * @param br
-     *            The browser to use to load the XML file with. If null, uses
-     *            different browser
+     *            The browser to use to load the XML file with. If null, uses different browser
      */
     public void setRTMP(final DownloadLink downloadLink, Browser br) throws IOException, PluginException {
         if (br == null) {
@@ -467,4 +462,10 @@ public class CrhyRllCom extends PluginForDecrypt {
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Quality not available (try using premium)");
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

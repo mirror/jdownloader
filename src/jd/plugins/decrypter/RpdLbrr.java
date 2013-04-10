@@ -109,4 +109,10 @@ public class RpdLbrr extends PluginForDecrypt {
     public int getMaxConcurrentProcessingInstances() {
         return 1;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
 }

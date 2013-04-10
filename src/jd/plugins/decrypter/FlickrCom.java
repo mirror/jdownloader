@@ -97,8 +97,7 @@ public class FlickrCom extends PluginForDecrypt {
         final int totalEntries = Integer.parseInt(picCount);
 
         /**
-         * Handling for albums/sets: Only decrypt all pages if user did NOT add
-         * a direct page link
+         * Handling for albums/sets: Only decrypt all pages if user did NOT add a direct page link
          * */
         int lastPageCalculated = 0;
         if (!parameter.contains("/page")) {
@@ -186,6 +185,11 @@ public class FlickrCom extends PluginForDecrypt {
         // Account is valid, let's just add it
         if (addAcc) AccountController.getInstance().addAccount(flickrPlugin, aa);
         return true;
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

@@ -66,4 +66,10 @@ public class NzbLoadComFolder extends PluginForDecrypt {
     private String getJson(final String parameter, final String source) {
         return new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

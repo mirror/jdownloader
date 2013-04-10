@@ -158,4 +158,10 @@ public class ReverBnationCom extends PluginForDecrypt {
         String fpName = br.getRegex("<title>([^<>\"]*?) \\- ReverbNation</title>").getMatch(0);
         return fpName;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

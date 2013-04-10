@@ -78,8 +78,7 @@ public class BxNt extends PluginForDecrypt {
      * 
      * @param cryptedUrl
      *            the url of the download page
-     * @return a list that contains the extracted download link, null if the
-     *         download link couldn't be extracted.
+     * @return a list that contains the extracted download link, null if the download link couldn't be extracted.
      * @throws IOException
      */
 
@@ -88,8 +87,7 @@ public class BxNt extends PluginForDecrypt {
      * 
      * @param feedUrl
      *            the url of the rss feed
-     * @return a list of decrypted links, null if the links could not be
-     *         extracted.
+     * @return a list of decrypted links, null if the links could not be extracted.
      * @throws IOException
      */
     private ArrayList<DownloadLink> decryptFeed(String feedUrl) throws IOException {
@@ -178,6 +176,11 @@ public class BxNt extends PluginForDecrypt {
     private boolean feedExists(String feedUrl) throws IOException {
         br.getPage(feedUrl);
         return !br.containsHTML(ERROR);
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

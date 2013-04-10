@@ -113,4 +113,10 @@ public class Rdrctr extends PluginForDecrypt {
         decryptedLinks.add(createDownloadlink(declink));
         return decryptedLinks;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

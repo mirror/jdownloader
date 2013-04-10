@@ -179,4 +179,9 @@ public class AdfLy extends PluginForDecrypt {
         return br.getRegex("var countdown\\s?+=\\s?+'?(\\d+)'?;").getMatch(0);
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

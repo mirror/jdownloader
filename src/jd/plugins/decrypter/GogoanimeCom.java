@@ -95,4 +95,10 @@ public class GogoanimeCom extends PluginForDecrypt {
         else
             return createDownloadlink(parameter);
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

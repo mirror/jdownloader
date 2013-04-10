@@ -39,9 +39,8 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
     }
 
     /*
-     * At the moment this decrypter only decrypts: turbobit.net, hotfile.com
-     * links as "protected.socadvnet.com" only allows crypting links of this
-     * host!
+     * At the moment this decrypter only decrypts: turbobit.net, hotfile.com links as "protected.socadvnet.com" only allows crypting links
+     * of this host!
      */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
@@ -130,4 +129,10 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
 }

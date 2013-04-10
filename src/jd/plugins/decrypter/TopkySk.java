@@ -26,8 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 /**
- * Only direct links are suported + those we have plugins for. => for example
- * mtv doesn't work.
+ * Only direct links are suported + those we have plugins for. => for example mtv doesn't work.
  * 
  * following have been tested: youtube.com, img.zoznam.sk
  * 
@@ -75,4 +74,10 @@ public class TopkySk extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

@@ -71,4 +71,10 @@ public class MetArt extends PluginForDecrypt {
         int wtf = 1;
         return ret;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

@@ -149,4 +149,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^\"]+)").getMatch(0);
         return result;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

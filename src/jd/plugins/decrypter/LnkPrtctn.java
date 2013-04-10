@@ -92,8 +92,7 @@ public class LnkPrtctn extends PluginForDecrypt {
                 br.submitForm(form);
             } else if (matcherpw.find()) {
                 /*
-                 * Herausfinden ob ein Passwort benötigt wird und ggf. abfragen
-                 * (Falls nur ein PW ohne Captcha Abfrage!)
+                 * Herausfinden ob ein Passwort benötigt wird und ggf. abfragen (Falls nur ein PW ohne Captcha Abfrage!)
                  */
                 form = br.getForm(0);
                 password = getUserInput(null, param);
@@ -138,5 +137,10 @@ public class LnkPrtctn extends PluginForDecrypt {
     }
 
     // @Override
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
 
 }

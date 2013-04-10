@@ -185,8 +185,7 @@ public class MdfrFldr extends PluginForDecrypt {
 
     private boolean getUserLogin() throws Exception {
         /*
-         * we have to load the plugins first! we must not reference a plugin
-         * class without loading it before
+         * we have to load the plugins first! we must not reference a plugin class without loading it before
          */
         final PluginForHost hosterPlugin = JDUtilities.getPluginForHost("mediafire.com");
         final Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
@@ -227,4 +226,10 @@ public class MdfrFldr extends PluginForDecrypt {
     private String getXML(final String parameter, final String source) {
         return new Regex(source, "<" + parameter + ">([^<>\"]*?)</" + parameter + ">").getMatch(0);
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

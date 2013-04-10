@@ -85,4 +85,10 @@ public class FrkShrFldr extends PluginForDecrypt {
                 ret.add(createDownloadlink(dl));
         }
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

@@ -154,4 +154,9 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         return ext;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

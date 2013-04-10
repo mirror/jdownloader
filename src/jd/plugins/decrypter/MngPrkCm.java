@@ -145,4 +145,9 @@ public class MngPrkCm extends PluginForDecrypt {
         return grabThis;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

@@ -32,27 +32,19 @@ import jd.plugins.PluginForDecrypt;
 public class MirStkCm extends PluginForDecrypt {
 
     /*
-     * TODO many sites are using this type of script. Rename this plugin into
-     * general/template type plugin naming scheme (find the name of the script
-     * and rename). Do this after next major update, when we can delete plugins
-     * again.
+     * TODO many sites are using this type of script. Rename this plugin into general/template type plugin naming scheme (find the name of
+     * the script and rename). Do this after next major update, when we can delete plugins again.
      */
 
     /*
-     * DEV NOTES: (mirrorshack) - provider has issues at times, and doesn't
-     * unhash stored data values before exporting them into redirects. I've
-     * noticed this with mediafire links for example
-     * http://mirrorstack.com/mf_dbfzhyf2hnxm will at times return
-     * http://www.mediafire.com/?HASH(0x15053b48), you can then reload a couple
-     * times and it will work in jd.. provider problem not plugin. Other example
-     * links I've used seem to work fine. - Please keep code generic as
-     * possible.
+     * DEV NOTES: (mirrorshack) - provider has issues at times, and doesn't unhash stored data values before exporting them into redirects.
+     * I've noticed this with mediafire links for example http://mirrorstack.com/mf_dbfzhyf2hnxm will at times return
+     * http://www.mediafire.com/?HASH(0x15053b48), you can then reload a couple times and it will work in jd.. provider problem not plugin.
+     * Other example links I've used seem to work fine. - Please keep code generic as possible.
      * 
-     * Don't use package name as these type of link protection services export a
-     * list of hoster urls of a single file. When one imports many links
-     * (parts), JD loads many instances of the decrypter and each
-     * url/parameter/instance gets a separate packagename and that sucks. It's
-     * best to use linkgrabbers default auto packagename sorting.
+     * Don't use package name as these type of link protection services export a list of hoster urls of a single file. When one imports many
+     * links (parts), JD loads many instances of the decrypter and each url/parameter/instance gets a separate packagename and that sucks.
+     * It's best to use linkgrabbers default auto packagename sorting.
      */
 
     // 16/12/2012
@@ -173,8 +165,7 @@ public class MirStkCm extends PluginForDecrypt {
     }
 
     /**
-     * just some code for mirrorstack.com which might be useful if mirrorstack
-     * or other sites remove singleLinks from source!
+     * just some code for mirrorstack.com which might be useful if mirrorstack or other sites remove singleLinks from source!
      * 
      * @param parameter
      * @param singleLinks
@@ -199,6 +190,11 @@ public class MirStkCm extends PluginForDecrypt {
                 singleLinks = br.getRegex(regexSingleLink).getColumn(0);
             }
         }
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

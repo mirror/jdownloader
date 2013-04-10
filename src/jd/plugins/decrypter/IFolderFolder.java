@@ -77,4 +77,10 @@ public class IFolderFolder extends PluginForDecrypt {
         String[] links = br.getRegex("\\&#8470;[ \t]*?(\\d+)(</span>.*?)? <a href=").getColumn(0);
         return links;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

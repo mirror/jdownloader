@@ -83,4 +83,10 @@ public class MystereTvComDecrypter extends PluginForDecrypt {
         decryptedLinks.add(createDownloadlink(parameter.replace("mystere-tv.com/", "decryptedmystere-tv.com/")));
         return decryptedLinks;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

@@ -100,4 +100,10 @@ public class HastaTeamCom extends PluginForDecrypt {
 
     private void login(Browser br, Account aa, boolean b) {
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

@@ -84,4 +84,9 @@ public class NnmT extends PluginForDecrypt {
         return links;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

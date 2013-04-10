@@ -92,4 +92,10 @@ public class CtDiskComFolder extends PluginForDecrypt {
             parsePage(ret, parameter, id);
         }
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

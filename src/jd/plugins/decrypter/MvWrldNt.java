@@ -193,4 +193,9 @@ public class MvWrldNt extends PluginForDecrypt {
         return sb.toString();
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
 }

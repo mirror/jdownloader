@@ -628,4 +628,9 @@ public class VKontakteRu extends PluginForDecrypt {
         return hasPassed;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

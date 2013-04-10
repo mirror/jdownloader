@@ -111,4 +111,10 @@ public class HqMatureTubeCom extends PluginForDecrypt {
         logger.warning("hqmaturetube decrypter broken for link: " + parameter);
         return null;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

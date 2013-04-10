@@ -33,9 +33,8 @@ public class VeohComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * This decrypter exists to find embedded videos. If none are there the
-     * video is hosted on veoh.com itself so the link will then be passed over
-     * to the hosterplugin.
+     * This decrypter exists to find embedded videos. If none are there the video is hosted on veoh.com itself so the link will then be
+     * passed over to the hosterplugin.
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -49,6 +48,11 @@ public class VeohComDecrypter extends PluginForDecrypt {
         }
         decryptedLinks.add(createDownloadlink(parameter.replace("veoh.com/", "veohdecrypted.com/")));
         return decryptedLinks;
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

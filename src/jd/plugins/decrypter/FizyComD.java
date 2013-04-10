@@ -132,8 +132,7 @@ public class FizyComD extends PluginForDecrypt {
             }
 
             /*
-             * TODO: parsing content(JSON) after 0.9xx through
-             * org.codehaus.jackson.JsonNode class
+             * TODO: parsing content(JSON) after 0.9xx through org.codehaus.jackson.JsonNode class
              */
             playLists = playLists.replaceAll(":\\s", ":");
             playLists = playLists.replaceAll(",\\s\"", ",\"");
@@ -305,6 +304,11 @@ public class FizyComD extends PluginForDecrypt {
 
     private String getClipData(final String tag) {
         return new Regex(CLIPDATA, "\"" + tag + "\"\\s?:\\s?\"?([^\"]+)\"?(,|\\})").getMatch(0);
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

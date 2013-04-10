@@ -103,4 +103,9 @@ public class BMp3Cm extends PluginForDecrypt {
         return captchaFile;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
 }

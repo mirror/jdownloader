@@ -38,8 +38,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 /**
- * supported: archiv doma, archiv markiza, fun tv, music tv (live stream capture
- * is not supported)
+ * supported: archiv doma, archiv markiza, fun tv, music tv (live stream capture is not supported)
  * 
  * @author butkovip
  * 
@@ -52,8 +51,7 @@ public class VideoMarkizaSk extends PluginForDecrypt {
     }
 
     /**
-     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in
-     * JavaScript by Chris Veness
+     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
      * 
      */
     private String AESCounterModeDecrypt(final String cipherText, final String key, int nBits) {
@@ -170,6 +168,11 @@ public class VideoMarkizaSk extends PluginForDecrypt {
             return null;
         }
         return new SecretKeySpec(keyBytes, "AES");
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

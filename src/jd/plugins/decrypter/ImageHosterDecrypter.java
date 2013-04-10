@@ -285,4 +285,9 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         return dl;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

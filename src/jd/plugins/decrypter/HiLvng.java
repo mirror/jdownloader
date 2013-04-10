@@ -61,4 +61,10 @@ public class HiLvng extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

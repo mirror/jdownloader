@@ -162,4 +162,9 @@ public class MyMailRu extends PluginForDecrypt {
     // segment++;
     // }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

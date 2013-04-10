@@ -60,8 +60,7 @@ public class GigaDe extends PluginForDecrypt {
         if (links != null && links.length != 0) {
             for (String[] singleLink : links) {
                 /**
-                 * Change normal links to HD links, this will work as long as
-                 * they always look the same. If this is changed we can use the
+                 * Change normal links to HD links, this will work as long as they always look the same. If this is changed we can use the
                  * ID (singleLink[0]) to get the HD link
                  */
                 final DownloadLink dl = createDownloadlink("directhttp://" + singleLink[2].replace("-normal.mp4", "-hd.mp4"));
@@ -72,8 +71,7 @@ public class GigaDe extends PluginForDecrypt {
         if (otherLinks != null && otherLinks.length != 0) {
             for (String singleLink : otherLinks) {
                 /**
-                 * Change normal links to HD links, this will work as long as
-                 * they always look the same. If this is changed we can use the
+                 * Change normal links to HD links, this will work as long as they always look the same. If this is changed we can use the
                  * ID (singleLink[0]) to get the HD link
                  */
                 final DownloadLink dl = createDownloadlink("directhttp://" + singleLink.replace("-normal.mp4", "-hd.mp4"));
@@ -87,6 +85,11 @@ public class GigaDe extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

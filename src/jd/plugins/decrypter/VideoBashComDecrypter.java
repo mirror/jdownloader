@@ -26,8 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 /**
- * This decrypted decrypts embedded videos from videobash.com.. If no embedded
- * video is found the link gets passed over to the hosterplugin
+ * This decrypted decrypts embedded videos from videobash.com.. If no embedded video is found the link gets passed over to the hosterplugin
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobash.com" }, urls = { "http://(www\\.)?videobash\\.com/video_show/[a-z0-9\\-]+\\-\\d+" }, flags = { 0 })
 public class VideoBashComDecrypter extends PluginForDecrypt {
@@ -56,6 +55,11 @@ public class VideoBashComDecrypter extends PluginForDecrypt {
         }
         decryptedLinks.add(createDownloadlink(parameter.replace("videobash.com/", "videobashdecrypted.com/")));
         return decryptedLinks;
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

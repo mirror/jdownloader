@@ -249,4 +249,10 @@ public class ImgSrcRu extends PluginForDecrypt {
     private boolean isPasswordProtected() {
         return br.containsHTML(">Album owner has protected his work from unauthorized access");
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

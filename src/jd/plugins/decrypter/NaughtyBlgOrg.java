@@ -146,4 +146,9 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         return filePackageName;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

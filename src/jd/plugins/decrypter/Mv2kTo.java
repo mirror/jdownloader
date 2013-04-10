@@ -37,9 +37,9 @@ public class Mv2kTo extends PluginForDecrypt {
     }
 
     /**
-     * Description of the regexes array: 1= nowvideo.co,streamcloud.com 2=flashx.tv,veervid.com,ginbig .com,vidbux.com,xvidstage.com,vidstream.in
-     * ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos .net,putlocker .com,vureel.com,vidbox.net,watchfreeinhd.com and many others
-     * 3=zalaa.com,sockshare.com 4=stream2k.com 5=flashx.tv, yesload.net
+     * Description of the regexes array: 1= nowvideo.co,streamcloud.com 2=flashx.tv,veervid.com,ginbig
+     * .com,vidbux.com,xvidstage.com,vidstream.in ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos .net,putlocker
+     * .com,vureel.com,vidbox.net,watchfreeinhd.com and many others 3=zalaa.com,sockshare.com 4=stream2k.com 5=flashx.tv, yesload.net
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -130,6 +130,11 @@ public class Mv2kTo extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

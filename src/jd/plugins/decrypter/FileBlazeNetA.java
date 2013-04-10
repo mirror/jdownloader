@@ -193,4 +193,9 @@ public class FileBlazeNetA extends PluginForDecrypt {
         return false;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

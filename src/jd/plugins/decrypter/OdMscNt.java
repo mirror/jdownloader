@@ -118,4 +118,9 @@ public class OdMscNt extends PluginForDecrypt {
         throw new DecrypterException("Login or/and password wrong");
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

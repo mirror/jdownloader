@@ -126,4 +126,9 @@ public class DBankComFolder extends PluginForDecrypt {
         return res;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

@@ -152,4 +152,10 @@ public class MtLnk extends PluginForDecrypt {
             text.write(ch, start, length);
         }
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

@@ -113,4 +113,10 @@ public class FakkuNet extends PluginForDecrypt {
         if (finallink != null) finallink = "directhttp://" + finallink;
         return finallink;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

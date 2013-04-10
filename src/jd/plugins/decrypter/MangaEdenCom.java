@@ -87,4 +87,10 @@ public class MangaEdenCom extends PluginForDecrypt {
         if (finallink == null) return null;
         return finallink;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

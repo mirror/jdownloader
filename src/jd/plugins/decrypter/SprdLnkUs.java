@@ -114,4 +114,10 @@ public class SprdLnkUs extends PluginForDecrypt {
         if (br.containsHTML(captchaWrong)) throw new DecrypterException(DecrypterException.CAPTCHA);
         if (br.containsHTML(passwordWrong)) throw new DecrypterException(DecrypterException.PASSWORD);
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
 }

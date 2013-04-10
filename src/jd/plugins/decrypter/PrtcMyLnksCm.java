@@ -204,4 +204,9 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         return globalStr.toString();
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
 }

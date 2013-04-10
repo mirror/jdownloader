@@ -155,4 +155,10 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         }
         return dllink;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

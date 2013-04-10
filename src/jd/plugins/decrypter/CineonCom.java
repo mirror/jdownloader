@@ -82,4 +82,9 @@ public class CineonCom extends PluginForDecrypt {
         return br.getRedirectLocation();
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

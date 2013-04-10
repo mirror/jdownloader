@@ -82,4 +82,10 @@ public class LlpszNt extends PluginForDecrypt {
         if (finallink != null) finallink = Encoding.urlDecode((finallink), true);
         return finallink;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

@@ -79,4 +79,9 @@ public class LnkSafeNet extends PluginForDecrypt {
         return br.getRegex("src=\"(.*?)\"").getMatch(0);
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

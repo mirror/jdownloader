@@ -104,4 +104,10 @@ public class GldSlTo extends PluginForDecrypt {
             post = "http://goldesel.to/ajax/gDL.php";
         return post;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

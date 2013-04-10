@@ -180,4 +180,10 @@ public class MotherLessCom extends PluginForDecrypt {
             progress.increase(1);
         }
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

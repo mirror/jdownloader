@@ -37,8 +37,8 @@ public class BcVc extends PluginForDecrypt {
     }
 
     /**
-     * Important note: Via browser the videos are streamed via RTMP (maybe even
-     * in one part) but with this method we get HTTP links which is fine.
+     * Important note: Via browser the videos are streamed via RTMP (maybe even in one part) but with this method we get HTTP links which is
+     * fine.
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -90,4 +90,10 @@ public class BcVc extends PluginForDecrypt {
         }
         return res;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

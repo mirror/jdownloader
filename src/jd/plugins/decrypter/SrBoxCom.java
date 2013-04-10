@@ -281,4 +281,10 @@ public class SrBoxCom extends PluginForDecrypt {
             strResult = strName;
         return strResult;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

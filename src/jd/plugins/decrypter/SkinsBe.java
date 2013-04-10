@@ -60,8 +60,7 @@ public class SkinsBe extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
         /**
-         * Add directlink for addedLink (only needed if they do major HTML
-         * changes)
+         * Add directlink for addedLink (only needed if they do major HTML changes)
          */
         // final String addedResolution = new Regex(parameter,
         // "wallpaper\\.skins\\.be/[a-z\\-]+/\\d+/(\\d{3,4}x\\d{3,4})/").getMatch(0);
@@ -76,6 +75,11 @@ public class SkinsBe extends PluginForDecrypt {
         fp.setName(fpName + " Wallpapers");
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

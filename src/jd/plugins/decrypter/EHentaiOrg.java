@@ -94,4 +94,9 @@ public class EHentaiOrg extends PluginForDecrypt {
         return 1;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

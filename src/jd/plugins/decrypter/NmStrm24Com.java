@@ -131,4 +131,10 @@ public class NmStrm24Com extends PluginForDecrypt {
         if (externID != null) { return externID; }
         return null;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

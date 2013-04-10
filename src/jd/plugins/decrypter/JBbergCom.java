@@ -191,4 +191,10 @@ public class JBbergCom extends PluginForDecrypt {
         if (!br.containsHTML("<h1>Bonjour " + username)) return false;
         return true;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
 }

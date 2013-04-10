@@ -31,8 +31,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
 /**
- * French and modified version of protect-my-links.com, decrypterclass
- * PrtcMyLnksCm
+ * French and modified version of protect-my-links.com, decrypterclass PrtcMyLnksCm
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protege-mes-liens.com" }, urls = { "http://(www\\.)?protege\\-mes\\-liens\\.com/(mylink\\.php\\?linkid=|linkidwoc\\.php\\?linkid=)[a-z0-9]+" }, flags = { 0 })
 public class ProtegeMesLiensCom extends PluginForDecrypt {
@@ -86,4 +85,10 @@ public class ProtegeMesLiensCom extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

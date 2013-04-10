@@ -74,4 +74,10 @@ public class Zro10BasicDecrypt extends PluginForDecrypt {
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

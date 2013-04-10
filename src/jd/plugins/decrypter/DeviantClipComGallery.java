@@ -93,4 +93,10 @@ public class DeviantClipComGallery extends PluginForDecrypt {
         }
         return fpName;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

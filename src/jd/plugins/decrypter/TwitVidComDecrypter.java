@@ -33,8 +33,7 @@ public class TwitVidComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Decrypts embedded videos, if no embedded video is found the link gets
-     * passed over to the hosterplugin!
+     * Decrypts embedded videos, if no embedded video is found the link gets passed over to the hosterplugin!
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -54,6 +53,11 @@ public class TwitVidComDecrypter extends PluginForDecrypt {
         }
         decryptedLinks.add(createDownloadlink(parameter.replace("telly.com/", "tellydecrypted.com/")));
         return decryptedLinks;
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

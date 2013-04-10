@@ -114,4 +114,10 @@ public class AnimeRtioCom extends PluginForDecrypt {
         if (tempID != null) return tempID;
         return null;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

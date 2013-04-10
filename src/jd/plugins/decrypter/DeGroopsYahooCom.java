@@ -230,4 +230,9 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
         throw new DecrypterException("Login or/and password for " + DOMAIN + " is wrong!");
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

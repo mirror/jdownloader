@@ -96,4 +96,10 @@ public class EmbedUploadCom extends PluginForDecrypt {
         if (link == null) link = br.getRegex("You should click on the download link : <a href=\\'(http[^<>\"]*?)\\'").getMatch(0);
         return link;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

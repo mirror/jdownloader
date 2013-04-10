@@ -220,4 +220,10 @@ public class ProDjCm extends PluginForDecrypt {
         link.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
         ret.add(link);
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

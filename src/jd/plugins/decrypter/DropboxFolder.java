@@ -78,4 +78,9 @@ public class DropboxFolder extends PluginForDecrypt {
         return jd.plugins.hoster.Youtube.unescape(s);
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

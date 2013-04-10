@@ -86,4 +86,10 @@ public class OneFichierComFolder extends PluginForDecrypt {
             /* setCookie throws exception in 09580 */
         }
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

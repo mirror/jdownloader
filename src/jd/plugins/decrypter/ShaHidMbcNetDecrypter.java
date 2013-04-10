@@ -321,4 +321,9 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         return s;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
 }

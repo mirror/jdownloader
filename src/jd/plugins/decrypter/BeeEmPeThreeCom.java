@@ -72,8 +72,7 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
             return null;
         }
         /**
-         * Set filename if possible as filenames may be cut or broken if not set
-         * here
+         * Set filename if possible as filenames may be cut or broken if not set here
          */
         DownloadLink dl = createDownloadlink("directhttp://" + finallink.trim());
         if (finalFilename != null) dl.setFinalFileName(Encoding.htmlDecode(finalFilename));
@@ -81,4 +80,10 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
 
         return decryptedLinks;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
 }

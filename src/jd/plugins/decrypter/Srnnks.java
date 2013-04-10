@@ -275,8 +275,7 @@ public class Srnnks extends PluginForDecrypt {
                             }
                             if (form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
                                 /*
-                                 * this form contains captcha image, so it must
-                                 * be valid
+                                 * this form contains captcha image, so it must be valid
                                  */
                             } else if (bestdist > 100) {
                                 form = null;
@@ -416,4 +415,10 @@ public class Srnnks extends PluginForDecrypt {
         }
         return new ArrayList<DownloadLink>();
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
 }

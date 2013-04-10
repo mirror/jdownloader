@@ -59,8 +59,7 @@ public class GameOneDeA extends PluginForDecrypt {
          * Replacing & to {@literal &amp;} in InputStreams
          * 
          * @author mhaller
-         * @see <a
-         *      href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
+         * @see <a href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
          */
         public ReplacerInputStream(InputStream in) {
             this.in = in;
@@ -271,6 +270,11 @@ public class GameOneDeA extends PluginForDecrypt {
         } catch (final Throwable e2) {
             return null;
         }
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

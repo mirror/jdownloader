@@ -128,4 +128,9 @@ public class GameTrailersCom extends PluginForDecrypt {
         return Encoding.htmlDecode(s.trim() + "." + ext);
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

@@ -73,4 +73,10 @@ public class BingCom extends PluginForDecrypt {
         m.appendTail(sb);
         return sb.toString();
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

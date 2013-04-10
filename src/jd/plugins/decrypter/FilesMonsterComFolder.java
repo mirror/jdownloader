@@ -98,4 +98,9 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
         }
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

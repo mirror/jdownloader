@@ -101,4 +101,9 @@ public class ImagEarnCom extends PluginForDecrypt {
         return finallink;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

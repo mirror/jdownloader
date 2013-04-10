@@ -415,4 +415,9 @@ public class GrvShrkCm extends PluginForDecrypt {
         return new String(chArray);
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

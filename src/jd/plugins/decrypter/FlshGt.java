@@ -44,4 +44,10 @@ public class FlshGt extends PluginForDecrypt {
         decryptedLinks.add(this.createDownloadlink(url));
         return decryptedLinks;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

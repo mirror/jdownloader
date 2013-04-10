@@ -142,4 +142,9 @@ public class Antena3ComSalon extends PluginForDecrypt {
         return br.getPage(urlxml);
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

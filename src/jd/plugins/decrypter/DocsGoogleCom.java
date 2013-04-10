@@ -40,8 +40,10 @@ public class DocsGoogleCom extends PluginForDecrypt {
     }
 
     // DEV NOTES
-    // https://docs.google.com/folder/d/0B4lNqBSBfg_dbEdISXAyNlBpLUk/edit?pli=1 :: folder view of dir and files, can't seem to view dir unless edit present.
-    // https://docs.google.com/folder/d/0B4lNqBSBfg_dOEVERmQzcU9LaWc/edit?pli=1&docId=0B4lNqBSBfg_deEpXNjJrZy1MSGM :: above sub dir of docs they don't provide data constistantly.
+    // https://docs.google.com/folder/d/0B4lNqBSBfg_dbEdISXAyNlBpLUk/edit?pli=1 :: folder view of dir and files, can't seem to view dir
+    // unless edit present.
+    // https://docs.google.com/folder/d/0B4lNqBSBfg_dOEVERmQzcU9LaWc/edit?pli=1&docId=0B4lNqBSBfg_deEpXNjJrZy1MSGM :: above sub dir of docs
+    // they don't provide data constistantly.
     // - with /edit?pli=1 they provide via javascript section partly escaped
     // - with /list?rm=whitebox&hl=en_GB&forcehl=1&pref=2&pli=1"; - not used and commented out, supported except for scanLinks
     // language determined by the accept-language
@@ -107,6 +109,11 @@ public class DocsGoogleCom extends PluginForDecrypt {
                 ret.add(dl);
             }
         }
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
 
 }

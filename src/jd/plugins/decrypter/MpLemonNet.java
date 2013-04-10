@@ -88,4 +88,10 @@ public class MpLemonNet extends PluginForDecrypt {
         br.getPage("http://mp3lemon.net/download.php?idfile=" + fID);
         return br.getRedirectLocation();
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

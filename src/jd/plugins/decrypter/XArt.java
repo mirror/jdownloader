@@ -72,4 +72,10 @@ public class XArt extends PluginForDecrypt {
         }
         return ret;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

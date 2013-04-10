@@ -132,4 +132,9 @@ public class ClpfshD extends PluginForDecrypt {
         return out;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

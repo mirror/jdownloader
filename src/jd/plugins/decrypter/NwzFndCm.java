@@ -55,4 +55,9 @@ public class NwzFndCm extends PluginForDecrypt {
 
     // @Override
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

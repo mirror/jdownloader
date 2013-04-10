@@ -183,4 +183,9 @@ public class DevArtCm extends PluginForDecrypt {
         return true;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

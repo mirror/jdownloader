@@ -70,4 +70,9 @@ public class MangasXpgComBr extends PluginForDecrypt {
         return br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

@@ -109,4 +109,10 @@ public class SubMangaCom extends PluginForDecrypt {
         logger.warning("Task Complete! : " + parameter);
         return decryptedLinks;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

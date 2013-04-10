@@ -38,11 +38,10 @@ public class KinoDomTv extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCustomCharset("windows-1251");
         br.getPage(parameter);
-        
+
         final String fpName = br.getRegex("<title>(.*?)(?:&raquo;.*)</title>").getMatch(0);
         String xmlLinks = br.getRegex("<param [^>]*?value=\"[^\"]*?file=([a-zA-Z0-9:/\\.\\-]+)[^\"]*?\" */>").getMatch(0);
-        if (xmlLinks == null)
-            xmlLinks = br.getRegex("<embed [^>]*?flashvars=\"[^\"]*?file=([a-zA-Z0-9:/\\.\\-]+)[^\"]*?\" *>").getMatch(0);
+        if (xmlLinks == null) xmlLinks = br.getRegex("<embed [^>]*?flashvars=\"[^\"]*?file=([a-zA-Z0-9:/\\.\\-]+)[^\"]*?\" *>").getMatch(0);
         if (xmlLinks == null) return decryptedLinks;
 
         br.getPage(xmlLinks);
@@ -63,4 +62,10 @@ public class KinoDomTv extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

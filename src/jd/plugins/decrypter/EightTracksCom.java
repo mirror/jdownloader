@@ -177,4 +177,9 @@ public class EightTracksCom extends PluginForDecrypt {
         return ip == null || ip.trim().length() == 0;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

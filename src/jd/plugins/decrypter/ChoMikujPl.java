@@ -77,8 +77,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             final boolean isLinkendingWithoutID = (!linkending.contains(",") && tempExt != null && new Regex(tempExt, Pattern.compile(ENDINGS, Pattern.CASE_INSENSITIVE)).matches());
             if (linkending.matches(",\\d+\\.[A-Za-z0-9]{1,5}") || isLinkendingWithoutID) {
                 /**
-                 * If the ID is missing but it's a single link we have to access
-                 * the link to get it's read link and it's download ID.
+                 * If the ID is missing but it's a single link we have to access the link to get it's read link and it's download ID.
                  */
                 if (isLinkendingWithoutID) {
                     br.getPage(parameter);
@@ -331,8 +330,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             addRegexInt(0, 1, 3, 4, 2);
             if (fileIds == null || fileIds.length == 0) {
                 /**
-                 * Specified for videos (also works for mp3s, maybe also for
-                 * other types)
+                 * Specified for videos (also works for mp3s, maybe also for other types)
                  */
                 fileIds = tempBr.getRegex("<ul class=\"borderRadius tabGradientBg\">[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">([^<>\"\\']*?(<span class=\"e\"> </span>[^<>\"\\']*?)?)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
                 addRegexInt(2, 4, 0, 1, 0);
@@ -365,8 +363,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                         dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
                         dl.setAvailable(true);
                         /**
-                         * If the link is a video it needs other download
-                         * handling
+                         * If the link is a video it needs other download handling
                          */
                         if (id[REGEXSORT.get(1)].trim().matches(VIDEOENDINGS)) dl.setProperty("video", true);
                     } else {
@@ -453,4 +450,10 @@ public class ChoMikujPl extends PluginForDecrypt {
     private String correctFilename(final String filename) {
         return filename.replace("<span class=\"e\"> </span>", "");
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
+
 }

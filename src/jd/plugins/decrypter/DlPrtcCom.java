@@ -106,4 +106,10 @@ public class DlPrtcCom extends PluginForDecrypt {
         if (theForm == null) theForm = br.getForm(0);
         return theForm;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
 }

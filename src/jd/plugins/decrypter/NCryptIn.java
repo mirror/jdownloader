@@ -306,4 +306,10 @@ public class NCryptIn extends PluginForDecrypt {
         }
         return null;
     }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
 }
