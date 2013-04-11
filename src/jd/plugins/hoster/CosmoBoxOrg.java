@@ -311,7 +311,7 @@ public class CosmoBoxOrg extends PluginForHost {
             if (dllink == null) {
                 dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
                 if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
+                    dllink = new Regex(correctedBR, ">Your download is ready! <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
                         if (dllink == null) {
