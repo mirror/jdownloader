@@ -86,10 +86,7 @@ public class CaptchaAPIImpl implements CaptchaAPI {
                 out.write("\"\r\n}".getBytes("UTF-8"));
             } finally {
                 try {
-                    /*
-                     * we need to close the b64 stream which closes the RemoteAPI Outputstream
-                     */
-                    b64os.close();
+                    out.close();
                 } catch (final Throwable e) {
                 }
                 try {
