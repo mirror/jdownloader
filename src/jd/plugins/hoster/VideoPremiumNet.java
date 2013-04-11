@@ -232,6 +232,7 @@ public class VideoPremiumNet extends PluginForHost {
         rtmp.setUrl(url);
         rtmp.setSwfVfy(stream.split("@")[2]);
         rtmp.setPageUrl(downloadLink.getDownloadURL());
+        rtmp.setConn("S:" + stream.split("@")[1]);
         rtmp.setResume(true);
     }
 
