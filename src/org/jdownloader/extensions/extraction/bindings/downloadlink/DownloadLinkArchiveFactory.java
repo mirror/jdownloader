@@ -102,7 +102,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         final Pattern pat = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-            public boolean isChildrenNodeFiltered(DownloadLink node) {
+            public boolean acceptNode(DownloadLink node) {
                 return pat.matcher(node.getFileOutput()).matches() || file.equals(node.getFileOutput());
             }
 

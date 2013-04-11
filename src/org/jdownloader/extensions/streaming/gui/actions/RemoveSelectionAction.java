@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.streaming.gui.actions;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import jd.controlling.packagecontroller.AbstractNode;
 
@@ -14,13 +13,13 @@ public class RemoveSelectionAction extends AppAction {
     /**
      * 
      */
-    private static final long       serialVersionUID = -3008851305036758872L;
+    private static final long            serialVersionUID = -3008851305036758872L;
     private java.util.List<AbstractNode> selection;
-    private DownloadsTable          table;
+    private DownloadsTable               table;
 
     public RemoveSelectionAction(DownloadsTable table, java.util.List<AbstractNode> selection) {
         setIconKey("remove");
-        setName(_GUI._.RemoveSelectionAction_RemoveSelectionAction_object_());
+        setName(_GUI._.RemoveSelectionAction_RemoveSelectionAction_object());
         this.selection = selection;
         this.table = table;
     }

@@ -48,6 +48,10 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
     private ImageIcon         skipped;
 
+    private ImageIcon         forced;
+
+    private DownloadWatchDog  dlWatchdog;
+
     public ConnectionColumn() {
         super(_GUI._.ConnectionColumn_ConnectionColumn(), null);
         panel = new RendererMigPanel("ins 0 0 0 0", "[]", "[grow,fill]");
@@ -66,8 +70,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             panel.add(labels[i]);
 
         }
-
+        dlWatchdog = DownloadWatchDog.getInstance();
         skipped = NewTheme.I().getIcon("skipped", 16);
+        forced = NewTheme.I().getIcon("media-playback-start_forced", 16);
         resumeIndicator = NewTheme.I().getIcon("refresh", 16);
         directConnection = NewTheme.I().getIcon("modem", 16);
         proxyConnection = NewTheme.I().getIcon("proxy_rotate", 16);
@@ -179,6 +184,12 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 labels[index].setVisible(true);
                 index++;
             }
+
+            if (dlWatchdog.isLinkForced(dlLink)) {
+                labels[index].setIcon(forced);
+                labels[index].setVisible(true);
+                index++;
+            }
             if (dlLink.isResumeable()) {
                 labels[index].setIcon(resumeIndicator);
                 labels[index].setVisible(true);
@@ -242,7 +253,11 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             DownloadInterface dli = link.getDownloadInstance();
             SingleDownloadController sdc = link.getDownloadLinkController();
             {
-
+                if (dlWatchdog.isLinkForced(link)) {
+                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsForced(), forced, JLabel.LEADING));
+                    SwingUtils.setOpaque(lbl, false);
+                    lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+                }
                 if (link.isSkipped()) {
                     panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsSkipped(), skipped, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);

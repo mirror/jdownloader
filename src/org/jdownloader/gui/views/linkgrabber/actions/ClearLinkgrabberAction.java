@@ -10,13 +10,13 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class ClearAction extends AppAction {
+public class ClearLinkgrabberAction extends AppAction {
     /**
      * 
      */
     private static final long serialVersionUID = 6027982395476716687L;
 
-    public ClearAction() {
+    public ClearLinkgrabberAction() {
         setIconKey("clear");
         putValue(SHORT_DESCRIPTION, _GUI._.ClearAction_tt_());
     }

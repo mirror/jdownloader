@@ -34,7 +34,7 @@ public class RemoveOfflineAction extends AppAction {
                 public void run() {
                     List<CrawledLink> offline = LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
 
-                        public boolean isChildrenNodeFiltered(CrawledLink node) {
+                        public boolean acceptNode(CrawledLink node) {
                             return LinkState.OFFLINE.equals(node.getLinkState());
                         }
 

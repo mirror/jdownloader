@@ -162,7 +162,7 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
                 }
 
                 @Override
-                public boolean isChildrenNodeFiltered(CrawledLink node) {
+                public boolean acceptNode(CrawledLink node) {
                     return linkIds != null && linkIds.contains(node.getUniqueID().getID());
                 }
             });
@@ -199,7 +199,7 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
                 }
 
                 @Override
-                public boolean isChildrenNodeFiltered(CrawledLink node) {
+                public boolean acceptNode(CrawledLink node) {
                     return linkIds != null && linkIds.contains(node.getUniqueID().getID());
                 }
             });
@@ -261,7 +261,7 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
                 }
 
                 @Override
-                public boolean isChildrenNodeFiltered(CrawledLink node) {
+                public boolean acceptNode(CrawledLink node) {
                     return linkIds != null && linkIds.contains(node.getUniqueID().getID());
                 }
             });

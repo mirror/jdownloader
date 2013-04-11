@@ -101,11 +101,11 @@ public class ContextMenuFactory {
         p.add(o);
         p.add(new JSeparator());
         /* remove menu */
-        p.add(new RemoveSelectionAction(si).toContextMenuAction());
+        p.add(new RemoveSelectionLinkgrabberAction(si).toContextMenuAction());
         m = new JMenu(_GUI._.ContextMenuFactory_linkgrabber_createPopup_cleanup());
         m.setIcon(NewTheme.I().getIcon("clear", 18));
 
-        m.add(new RemoveAllAction().toContextMenuAction());
+        m.add(new RemoveAllLinkgrabberAction().toContextMenuAction());
         m.add(new RemoveNonSelectedAction(si).toContextMenuAction());
         m.add(new RemoveOfflineAction().toContextMenuAction());
         m.add(new RemoveIncompleteArchives(si).toContextMenuAction());

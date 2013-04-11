@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -35,11 +34,10 @@ public class RemoveOptionsAction extends AbstractAction {
     public void actionPerformed(ActionEvent e) {
         JPopupMenu popup = new JPopupMenu();
         java.util.List<AbstractNode> selection = table.getExtTableModel().getSelectedObjects();
-        popup.add(new RemoveAllAction().toContextMenuAction());
+        popup.add(new RemoveAllVisibleDownloadsAction().toContextMenuAction());
         popup.add(new RemoveSelectionAction(table, selection).toContextMenuAction());
         popup.add(new RemoveNonSelectedAction(table, selection).toContextMenuAction());
         popup.add(new RemoveOfflineAction().toContextMenuAction());
-        popup.add(new RemoveIncompleteArchives(selection).toContextMenuAction());
 
         // popup.add(new CleanupDownloads());
         // popup.add(new CleanupPackages());

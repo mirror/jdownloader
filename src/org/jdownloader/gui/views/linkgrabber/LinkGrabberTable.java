@@ -46,7 +46,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ContextMenuFactory;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionLinkgrabberAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
@@ -255,7 +255,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-        new RemoveSelectionAction(new SelectionInfo<CrawledPackage, CrawledLink>(selectedObjects)).actionPerformed(null);
+        new RemoveSelectionLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(selectedObjects)).actionPerformed(null);
         return true;
     }
 

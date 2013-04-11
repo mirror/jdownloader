@@ -14,7 +14,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class RemoveSelectionAction extends AppAction {
+public class RemoveSelectionLinkgrabberAction extends AppAction {
 
     /**
      * 
@@ -22,9 +22,9 @@ public class RemoveSelectionAction extends AppAction {
     private static final long                          serialVersionUID = -3008851305036758872L;
     private SelectionInfo<CrawledPackage, CrawledLink> si;
 
-    public RemoveSelectionAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
+    public RemoveSelectionLinkgrabberAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
         setIconKey("remove");
-        setName(_GUI._.RemoveSelectionAction_RemoveSelectionAction_object_());
+        setName(_GUI._.RemoveSelectionLinkgrabberAction_RemoveSelectionLinkgrabberAction_object_());
         this.si = si;
 
     }

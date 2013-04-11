@@ -2,13 +2,17 @@ package org.jdownloader.gui.views.downloads.context;
 
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.io.File;
 
 import javax.swing.ImageIcon;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.Files;
+import org.appwork.utils.Files.AbstractHandler;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
@@ -36,7 +40,25 @@ public class ForceDownloadAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
+        JDGui.help(_GUI._.ForceDownloadAction_actionPerformed_help_title_(), _GUI._.ForceDownloadAction_actionPerformed_help_msg_(), NewTheme.I().getIcon("robot_info", -1));
         DownloadWatchDog.getInstance().forceDownload(si.getSelectedChildren());
     }
 
+    public static void main(String[] args) {
+        long t = System.currentTimeMillis();
+        Files.walkThroughStructure(new AbstractHandler<RuntimeException>() {
+            private long i;
+            {
+                i = 0l;
+            }
+
+            @Override
+            public void onFile(final File f) throws RuntimeException {
+                i++;
+            }
+
+        }, new File("C:\\Users\\Thomas\\.awupdsys\\avlintern\\source"));
+
+        System.out.println(System.currentTimeMillis() - t);
+    }
 }

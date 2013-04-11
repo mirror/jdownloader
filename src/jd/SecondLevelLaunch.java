@@ -528,7 +528,7 @@ public class SecondLevelLaunch {
                                         List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
                                             @Override
-                                            public boolean isChildrenNodeFiltered(DownloadLink node) {
+                                            public boolean acceptNode(DownloadLink node) {
                                                 return node.isEnabled() && node.getLinkStatus().hasStatus(LinkStatus.TODO);
                                             }
 

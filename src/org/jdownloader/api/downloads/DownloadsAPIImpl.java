@@ -241,7 +241,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 }
 
                 @Override
-                public boolean isChildrenNodeFiltered(DownloadLink node) {
+                public boolean acceptNode(DownloadLink node) {
                     if (linkIds.contains(node.getUniqueID().getID())) return true;
                     return false;
                 }
@@ -274,7 +274,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 }
 
                 @Override
-                public boolean isChildrenNodeFiltered(DownloadLink node) {
+                public boolean acceptNode(DownloadLink node) {
                     if (linkIds.contains(node.getUniqueID().getID())) return true;
                     return false;
                 }
@@ -306,7 +306,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 }
 
                 @Override
-                public boolean isChildrenNodeFiltered(DownloadLink node) {
+                public boolean acceptNode(DownloadLink node) {
                     if (linkIds.contains(node.getUniqueID().getID())) return true;
                     return false;
                 }
@@ -339,7 +339,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 }
 
                 @Override
-                public boolean isChildrenNodeFiltered(DownloadLink node) {
+                public boolean acceptNode(DownloadLink node) {
                     if (linkIds.contains(node.getUniqueID().getID())) return true;
                     return false;
                 }
@@ -397,7 +397,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 }
 
                 @Override
-                public boolean isChildrenNodeFiltered(DownloadLink node) {
+                public boolean acceptNode(DownloadLink node) {
                     if (linkIds.contains(node.getUniqueID().getID())) return true;
                     return false;
                 }

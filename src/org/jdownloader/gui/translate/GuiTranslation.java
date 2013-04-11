@@ -1273,14 +1273,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Offline Links" })
     String RemoveOfflineAction_RemoveOfflineAction_object_();
 
-    @Default(lngs = { "en" }, values = { "All Links" })
-    String RemoveAllAction_RemoveAllAction_object_();
+    @Default(lngs = { "en" }, values = { "Delete all visible Links (Keep filtered)" })
+    String RemoveAllAction_RemoveAllAction_object();
 
     @Default(lngs = { "en" }, values = { "Incomplete Split-Archives" })
     String RemoveIncompleteArchives_RemoveIncompleteArchives_object_();
 
-    @Default(lngs = { "en" }, values = { "Delete" })
-    String RemoveSelectionAction_RemoveSelectionAction_object_();
+    @Default(lngs = { "en" }, values = { "Delete selected Links" })
+    String RemoveSelectionAction_RemoveSelectionAction_object();
 
     @Default(lngs = { "en" }, values = { "Keep only selected Links" })
     String RemoveNonSelectedAction_RemoveNonSelectedAction_object_();
@@ -2356,10 +2356,34 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Open Connections" })
     String DownloadOverview_DownloadOverview_connections();
 
-    @Default(lngs = { "en" }, values = { "Do you want to delete all visible files in your Downloadlist? Once confirmed, this cannot be undone!" })
-    String ClearDownloadListAction_actionPerformed_();
+    @Default(lngs = { "en" }, values = { "Do you want to delete all visible files in your Downloadlist?\r\nBe wise -  Once confirmed, this cannot be undone!\r\nAffected Links(s): %s1; Link(s) left: %s2" })
+    String ClearDownloadListAction_actionPerformed_(int i, int childrenLeft);
 
-    @Default(lngs = { "en" }, values = { "Delete downloaded Files from Harddisk as well" })
-    String ConfirmDeleteLinksDialog_layoutDialogContent_deletefiles_();
+    @Default(lngs = { "en" }, values = { "Delete downloaded Files from Harddisk as well (%s1)" })
+    String ConfirmDeleteLinksDialog_layoutDialogContent_deletefiles_(String bytes);
+
+    @Default(lngs = { "en" }, values = { "Do you want to delete all selected Downloadlinks?\r\nBe wise - Once confirmed, this cannot be undone!\r\nAffected Links(s): %s1; Link(s) left: %s2" })
+    String RemoveSelectionAction_actionPerformed_(int linkCount, int childrenLeft);
+
+    @Default(lngs = { "en" }, values = { "Do you want to delete all not selected Downloadlinks?\r\nBe wise - Once confirmed, this cannot be undone!\r\nAffected Links(s): %s1; Link(s) left: %s2" })
+    String RemoveNonSelectedAction_actionPerformed(int linkCount, int childrenLeft);
+
+    @Default(lngs = { "en" }, values = { "Do you want to delete all offline Downloadlinks?\r\nBe wise - Once confirmed, this cannot be undone!\r\nAffected Links(s): %s1; Link(s) left: %s2" })
+    String RemoveOfflineAction_actionPerformed(int linkCount, int i);
+
+    @Default(lngs = { "en" }, values = { "Start Downloads" })
+    String ForceDownloadAction_actionPerformed_help_title_();
+
+    @Default(lngs = { "en" }, values = { "...you just forced JDownloader to start the selected Link(s) as soon as possible.\r\nThis ignores all limitations you set up (e.g. Maximum simultane Downloads).\r\nIf you just want to start all Downloads from top to bottom, you should use the 'Start Downloads' Button (The Playback Icon) in the Toolbar above." })
+    String ForceDownloadAction_actionPerformed_help_msg_();
+
+    @Default(lngs = { "en" }, values = { "Download is waiting for a prioritized start" })
+    String ConnectionColumn_DownloadIsForced();
+
+    @Default(lngs = { "en" }, values = { "Clear Linkgrabber" })
+    String RemoveAllLinkgrabberAction_RemoveAllLinkgrabberAction_object_();
+
+    @Default(lngs = { "en" }, values = { "Remove selected Links from Linkgrabber" })
+    String RemoveSelectionLinkgrabberAction_RemoveSelectionLinkgrabberAction_object_();
 
 }

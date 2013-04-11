@@ -19,11 +19,11 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveAllAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveAllLinkgrabberAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveIncompleteArchives;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveNonSelectedAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveOfflineAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionLinkgrabberAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ResetPopupAction;
 import org.jdownloader.images.NewTheme;
 
@@ -52,8 +52,8 @@ public class RemoveOptionsAction extends AbstractAction {
         java.util.List<AbstractNode> selection = table.getExtTableModel().getSelectedObjects();
 
         SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(null, selection, null, null, table);
-        popup.add(new RemoveAllAction().toContextMenuAction());
-        popup.add(new RemoveSelectionAction(si) {
+        popup.add(new RemoveAllLinkgrabberAction().toContextMenuAction());
+        popup.add(new RemoveSelectionLinkgrabberAction(si) {
             {
                 setName(_GUI._.RemoveOptionsAction_actionPerformed_selection_());
             }

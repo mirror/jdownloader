@@ -5,7 +5,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import jd.controlling.packagecontroller.AbstractNode;
@@ -30,7 +30,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     private HashMap<PackageType, List<ChildrenType>>          incompleteSelectecPackages;
     private KeyEvent                                          keyEvent;
     private MouseEvent                                        mouseEvent;
-    private HashSet<AbstractNode>                             rawMap;
+    private LinkedHashSet<AbstractNode>                       rawMap;
 
     private List<? extends AbstractNode>                      rawSelection;
 
@@ -70,14 +70,14 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         incompletePackages = new ArrayList<PackageType>();
         incompleteSelectecPackages = new HashMap<PackageType, List<ChildrenType>>();
 
-        rawMap = new HashSet<AbstractNode>();
+        rawMap = new LinkedHashSet<AbstractNode>();
         this.mouseEvent = event;
         this.keyEvent = kEvent;
         this.table = table;
         agregate();
     }
 
-    public SelectionInfo(List<AbstractNode> selection) {
+    public SelectionInfo(List<? extends AbstractNode> selection) {
         this(null, selection, null);
 
     }
@@ -85,8 +85,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     @SuppressWarnings("unchecked")
     public void agregate() {
         java.util.List<AbstractNode> raw = new ArrayList<AbstractNode>(rawSelection);
-        HashSet<AbstractNode> has = rawSelection == null ? new HashSet<AbstractNode>() : new HashSet<AbstractNode>(rawSelection);
-        // HashSet<AbstractNode> notSelectedParents = new HashSet<AbstractNode>();
+        LinkedHashSet<AbstractNode> has = rawSelection == null ? new LinkedHashSet<AbstractNode>() : new LinkedHashSet<AbstractNode>(rawSelection);
+        // LinkedHashSet<AbstractNode> notSelectedParents = new LinkedHashSet<AbstractNode>();
         // if we selected a link, and not its parent, this parent will not be agregated. That's why we add them here.
         for (AbstractNode node : rawSelection) {
             rawMap.add(node);
@@ -101,10 +101,10 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             }
         }
 
-        HashSet<ChildrenType> ret = new HashSet<ChildrenType>();
-        HashSet<PackageType> allPkg = new HashSet<PackageType>();
-        HashSet<PackageType> fullPkg = new HashSet<PackageType>();
-        HashSet<PackageType> incPkg = new HashSet<PackageType>();
+        LinkedHashSet<ChildrenType> ret = new LinkedHashSet<ChildrenType>();
+        LinkedHashSet<PackageType> allPkg = new LinkedHashSet<PackageType>();
+        LinkedHashSet<PackageType> fullPkg = new LinkedHashSet<PackageType>();
+        LinkedHashSet<PackageType> incPkg = new LinkedHashSet<PackageType>();
 
         for (AbstractNode node : raw) {
 

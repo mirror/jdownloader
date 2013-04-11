@@ -197,7 +197,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                 return 0;
             }
 
-            public boolean isChildrenNodeFiltered(DownloadLink node) {
+            public boolean acceptNode(DownloadLink node) {
                 if (!node.isEnabled()) return false;
                 if (node.getLinkStatus().isFailed()) return false;
                 if (AvailableStatus.FALSE == node.getAvailableStatus()) return false;

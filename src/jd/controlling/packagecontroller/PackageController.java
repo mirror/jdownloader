@@ -46,14 +46,24 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     private final WriteLock              writeLock = this.lock.writeLock();
 
     /**
-     * add a Package at given position position in this PackageController. in case the Package is already controlled by this PackageController this function
-     * does move it to the given position
+     * add a Package at given position position in this PackageController. in case the Package is already controlled by this
+     * PackageController this function does move it to the given position
      * 
      * @param pkg
      * @param index
      */
     public void addmovePackageAt(final PackageType pkg, final int index) {
         addmovePackageAt(pkg, index, false);
+    }
+
+    /**
+     * Returns how many children the controller holds.
+     * 
+     * @return
+     * @TODO: Needs optimization!
+     */
+    public int getChildrenCount() {
+        return getChildrenByFilter(null).size();
     }
 
     public void sortPackageChildren(final PackageType pkg, final ChildComparator<ChildType> comparator) {
@@ -259,6 +269,12 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         }
     }
 
+    /**
+     * Returns all children. if filter!=null not all children are returned, but only the accepted ones
+     * 
+     * @param filter
+     * @return
+     */
     public List<ChildType> getChildrenByFilter(AbstractPackageChildrenNodeFilter<ChildType> filter) {
         java.util.List<ChildType> ret = new ArrayList<ChildType>();
         boolean readL = readLock();
@@ -266,11 +282,11 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
             for (PackageType pkg : packages) {
                 synchronized (pkg) {
                     for (ChildType child : pkg.getChildren()) {
-                        if (filter.returnMaxResults() > 0 && ret.size() == filter.returnMaxResults()) {
+                        if (filter != null && filter.returnMaxResults() > 0 && ret.size() == filter.returnMaxResults()) {
                             /* max results found, lets return */
                             return ret;
                         }
-                        if (filter.isChildrenNodeFiltered(child)) {
+                        if (filter == null || filter.acceptNode(child)) {
                             ret.add(child);
                         }
                     }
@@ -465,7 +481,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of the children
+     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of
+     * the children
      * 
      * @param pkg
      * @param children
