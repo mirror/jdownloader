@@ -82,7 +82,7 @@ public class CaptchaAPIImpl implements CaptchaAPI {
                         }
                     }
                 }
-                b64os.flush();
+                b64os.flush(true);
                 out.write("\"\r\n}".getBytes("UTF-8"));
             } finally {
                 try {
