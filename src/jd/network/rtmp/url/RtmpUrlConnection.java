@@ -470,6 +470,12 @@ public class RtmpUrlConnection extends URLConnection {
         parameterMap.put(KEY_RTMP, value);
     }
 
+    public boolean protocolIsRtmpe() {
+        String url = parameterMap.get(KEY_RTMP);
+        if (url != null) if (url.startsWith("rtmpe://") || url.startsWith("RTMPE://")) return true;
+        return false;
+    }
+
     /**
      * Verbose command output.
      * 

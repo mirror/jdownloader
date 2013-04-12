@@ -243,6 +243,12 @@ public class RtmpDump extends RTMPDownload {
     public boolean start(final RtmpUrlConnection rtmpConnection) throws Exception {
         if (!findRtmpDump()) throw new PluginException(LinkStatus.ERROR_FATAL, "Error: rtmpdump executable not found!");
 
+        // rtmpe not supported
+        if (rtmpConnection.protocolIsRtmpe()) {
+            logger.warning("Protocol rtmpe:// not supported");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "rtmpe:// not supported!");
+        }
+
         boolean debug = config.isRtmpDumpDebugModeEnabled();
         if (debug) rtmpConnection.setVerbose();
 
