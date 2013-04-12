@@ -33,7 +33,7 @@ public class SetDownloadPassword<PackageType extends AbstractPackageNode<Childre
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        final List<ChildrenType> newSelection = si.getSelectedChildren();
+        final List<ChildrenType> newSelection = si.getChildren();
         String defaultPW = "";
         AbstractNode node = newSelection.get(0);
         if (node instanceof DownloadLink) {

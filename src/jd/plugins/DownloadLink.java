@@ -46,6 +46,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.utils.JDFileUtils;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
@@ -578,7 +579,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         this.availableStatus = AvailableStatus.UNCHECKED;
         setSkipped(false);
         this.setEnabled(true);
-        deleteFile(true, true);
+        deleteFile(null, true, true);
         setFinalFileName(null);
         PluginForHost plg = liveplugin;
         /* RESET NEEDS to be done */
@@ -596,8 +597,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /**
      * deletes the final downloaded file if finalfile is true deletes the partfile if partfile is true deletes the downloadfolder if its
      * emptry and NOT equal to default downloadfolder
+     * 
+     * @param deleteTo
+     *            TODO
      */
-    public void deleteFile(boolean partfile, boolean finalfile) {
+    public void deleteFile(DeleteTo deleteTo, boolean partfile, boolean finalfile) {
         int maxtries = 5;
         while (getLinkStatus().isPluginActive()) {
             try {
@@ -610,12 +614,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
 
         if (finalfile && new File(this.getFileOutput()).exists()) {
-            if (!new File(this.getFileOutput()).delete()) {
+            File f = new File(this.getFileOutput());
+            if (!internalDeleteFile(deleteTo, f)) {
+                System.out.println(1);
                 LogController.CL().severe("Could not delete file " + this.getFileOutput());
             }
         }
         if (partfile && new File(this.getFileOutput() + ".part").exists()) {
-            if (!new File(this.getFileOutput() + ".part").delete()) {
+            if (!internalDeleteFile(deleteTo, new File(this.getFileOutput() + ".part"))) {
                 LogController.CL().severe("Could not delete file " + this.getFileOutput());
             }
         }
@@ -624,8 +630,26 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         /* try to delete folder (if its empty and NOT the default downloadfolder */
         File dlFolder = new File(this.getFileOutput()).getParentFile();
         if (dlFolder != null && dlFolder.exists() && dlFolder.isDirectory() && dlFolder.listFiles() != null && dlFolder.listFiles().length == 0) {
-            if (!new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).equals(dlFolder)) dlFolder.delete();
+            if (!new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).equals(dlFolder)) internalDeleteFile(deleteTo, dlFolder);
         }
+    }
+
+    private boolean internalDeleteFile(DeleteTo deleteTo, File f) {
+        if (deleteTo == null) return f.delete();
+        switch (deleteTo) {
+        case NULL:
+            return f.delete();
+        case RECYCLE:
+            try {
+                JDFileUtils.moveToTrash(f);
+            } catch (IOException e) {
+                System.out.println(1);
+                LogController.CL().log(e);
+                return false;
+            }
+
+        }
+        return false;
     }
 
     /** returns if partfile or completed file exists on disk */

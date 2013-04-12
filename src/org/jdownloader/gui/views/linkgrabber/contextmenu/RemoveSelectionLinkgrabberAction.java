@@ -34,7 +34,7 @@ public class RemoveSelectionLinkgrabberAction extends AppAction {
         try {
             boolean containsOnline = false;
 
-            for (CrawledLink cl : si.getSelectedChildren()) {
+            for (CrawledLink cl : si.getChildren()) {
                 if (LinkCollector.getInstance().isOfflinePackage(cl.getParentNode())) continue;
                 if (cl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
                     containsOnline = true;
@@ -50,7 +50,7 @@ public class RemoveSelectionLinkgrabberAction extends AppAction {
 
                 public void run() {
 
-                    LinkCollector.getInstance().removeChildren(si.getSelectedChildren());
+                    LinkCollector.getInstance().removeChildren(si.getChildren());
                 }
 
             }, true);

@@ -114,5 +114,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/MyJDownloaderClient"/>
+	<classpathentry kind="lib" path="ressourcen/libs/jna_platform.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -44,7 +44,7 @@ public class SplitPackagesByHost extends AppAction {
 
                 CrawledPackage samePkg = null;
                 boolean samePackage = true;
-                for (AbstractNode child : si.getSelectedChildren()) {
+                for (AbstractNode child : si.getChildren()) {
                     if (child instanceof CrawledLink) {
                         CrawledLink cL = (CrawledLink) child;
                         if (samePkg == null) {

@@ -453,7 +453,7 @@ public class RtmpDump extends RTMPDownload {
                 } else if (e.contains("rtmp_readpacket, failed to read rtmp packet header")) {
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 } else if (e.contains("netstream.play.streamnotfound")) {
-                    downloadLink.deleteFile(true, false);
+                    downloadLink.deleteFile(null, true, false);
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     return true;
                 } else if (error.startsWith(timeoutMessage)) {

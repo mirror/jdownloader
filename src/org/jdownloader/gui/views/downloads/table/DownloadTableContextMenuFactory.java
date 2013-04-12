@@ -30,6 +30,11 @@ import org.jdownloader.gui.views.components.packagetable.context.SetCommentActio
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
 import org.jdownloader.gui.views.downloads.context.CreateDLCAction;
+import org.jdownloader.gui.views.downloads.context.DeleteDisabledSelectedLinks;
+import org.jdownloader.gui.views.downloads.context.DeleteQuickAction;
+import org.jdownloader.gui.views.downloads.context.DeleteSelectedAndFailedLinksAction;
+import org.jdownloader.gui.views.downloads.context.DeleteSelectedFinishedLinksAction;
+import org.jdownloader.gui.views.downloads.context.DeleteSelectedOfflineLinksAction;
 import org.jdownloader.gui.views.downloads.context.ForceDownloadAction;
 import org.jdownloader.gui.views.downloads.context.NewPackageAction;
 import org.jdownloader.gui.views.downloads.context.OpenDirectoryAction;
@@ -49,8 +54,7 @@ public class DownloadTableContextMenuFactory {
     private static final DownloadTableContextMenuFactory INSTANCE = new DownloadTableContextMenuFactory();
 
     /**
-     * get the only existing instance of DownloadTableContextMenuFactory. This
-     * is a singleton
+     * get the only existing instance of DownloadTableContextMenuFactory. This is a singleton
      * 
      * @return
      */
@@ -59,8 +63,7 @@ public class DownloadTableContextMenuFactory {
     }
 
     /**
-     * Create a new instance of DownloadTableContextMenuFactory. This is a
-     * singleton class. Access the only existing instance by using
+     * Create a new instance of DownloadTableContextMenuFactory. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
      */
     private DownloadTableContextMenuFactory() {
@@ -131,10 +134,14 @@ public class DownloadTableContextMenuFactory {
 
         /* remove menu */
         popup.add(new DeleteQuickAction(si));
-        JMenu m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup());
+        JMenu m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup_only());
         m.setIcon(NewTheme.I().getIcon("clear", 18));
-        m.add(createDeleteFromList(si));
-        m.add(createDeleteFromListAndDisk(si));
+        // m.add(new DeleteSelectedLinks(si));
+        m.add(new DeleteDisabledSelectedLinks(si));
+        m.add(new DeleteSelectedAndFailedLinksAction(si));
+        m.add(new DeleteSelectedFinishedLinksAction(si));
+        m.add(new DeleteSelectedOfflineLinksAction(si));
+
         popup.add(m);
 
         return popup;
@@ -148,39 +155,13 @@ public class DownloadTableContextMenuFactory {
         return p;
     }
 
-    private JMenu createDeleteFromListAndDisk(SelectionInfo<FilePackage, DownloadLink> si) {
-        // new DeleteFromDiskAction(si)
-        JMenu ret = new JMenu(_GUI._.DownloadTableContextMenuFactory_createDeleteFromListAndDisk_object_());
-        ret.setIcon(NewTheme.I().getIcon("delete", 18));
-        ret.add(new DeleteAllFromListAndDiskAction(si));
-        ret.add(new DeleteDisabledLinksFromListAndDiskAction(si));
-        ret.add(new DeleteFailedFromListAndDiskAction(si));
-        ret.add(new DeleteSuccessFulFromListAndDiskAction(si));
-        ret.add(new DeleteOfflineFromListAndDiskAction(si));
-        MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTableDeletefromListAndDiskContext(ret, si)));
-        return ret;
-    }
-
-    private JMenu createDeleteFromList(SelectionInfo<FilePackage, DownloadLink> si) {
-        // new DeleteFromDiskAction(si)
-        JMenu ret = new JMenu(_GUI._.DownloadTableContextMenuFactory_createDeleteFromList_object_());
-        ret.setIcon(NewTheme.I().getIcon("list", 18));
-        ret.add(new DeleteAllAction(si));
-        ret.add(new DeleteFailedAction(si));
-        ret.add(new DeleteDisabledLinksAction(si));
-        ret.add(new DeleteSuccessFulAction(si));
-        ret.add(new DeleteOfflineAction(si));
-        MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTableDeletefromListContext(ret, si)));
-        return ret;
-    }
-
     public static java.util.List<Component> fillPropertiesMenu(SelectionInfo<FilePackage, DownloadLink> si, ExtColumn<AbstractNode> column) {
 
         java.util.List<Component> ret = new ArrayList<Component>();
 
         ret.add(new JMenuItem(new CheckStatusAction<FilePackage, DownloadLink>(si).toContextMenuAction()));
 
-        OpenInBrowserAction openInBrowserAction = new OpenInBrowserAction(si.getSelectedChildren());
+        OpenInBrowserAction openInBrowserAction = new OpenInBrowserAction(si.getChildren());
         if (openInBrowserAction.isEnabled()) {
             ret.add(new JMenuItem(openInBrowserAction));
         }

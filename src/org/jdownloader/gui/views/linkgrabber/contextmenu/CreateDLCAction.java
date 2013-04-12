@@ -22,7 +22,7 @@ public class CreateDLCAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
 
-        new DLCFactory().createDLCByCrawledLinks(si.getSelectedChildren());
+        new DLCFactory().createDLCByCrawledLinks(si.getChildren());
     }
 
 }

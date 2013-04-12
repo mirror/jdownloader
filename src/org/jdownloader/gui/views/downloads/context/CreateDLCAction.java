@@ -27,7 +27,7 @@ public class CreateDLCAction extends AppAction {
 
         DLCFactory plugin = new DLCFactory();
         plugin.setLogger(LogController.CL());
-        plugin.createDLC(links.getSelectedChildren());
+        plugin.createDLC(links.getChildren());
 
     }
 

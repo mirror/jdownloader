@@ -27,8 +27,8 @@ public class ResetAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         IOEQ.add(new Runnable() {
             public void run() {
-                if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.gui_downloadlist_reset() + " (" + _GUI._.gui_downloadlist_delete_size_packagev2(si.getSelectedChildren().size()) + ")"))) {
-                    for (DownloadLink link : si.getSelectedChildren()) {
+                if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.gui_downloadlist_reset() + " (" + _GUI._.gui_downloadlist_delete_size_packagev2(si.getChildren().size()) + ")"))) {
+                    for (DownloadLink link : si.getChildren()) {
                         if (link.getLinkStatus().isPluginActive()) {
                             /*
                              * download is still active, let DownloadWatchdog handle the reset

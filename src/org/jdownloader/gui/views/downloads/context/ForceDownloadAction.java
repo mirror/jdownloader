@@ -27,7 +27,7 @@ public class ForceDownloadAction extends AppAction {
         Image add = NewTheme.I().getImage("media-playback-start", 20);
         Image play = NewTheme.I().getImage("prio_3", 14);
         setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, -4, 0, 6, 10)));
-        setName(_GUI._.gui_table_contextmenu_tryforcethisdownload());
+        setName(_GUI._.ForceDownloadAction_ForceDownloadAction());
     }
 
     @Override
@@ -38,7 +38,7 @@ public class ForceDownloadAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
         JDGui.help(_GUI._.ForceDownloadAction_actionPerformed_help_title_(), _GUI._.ForceDownloadAction_actionPerformed_help_msg_(), NewTheme.I().getIcon("robot_info", -1));
-        DownloadWatchDog.getInstance().forceDownload(si.getSelectedChildren());
+        DownloadWatchDog.getInstance().forceDownload(si.getChildren());
     }
 
 }

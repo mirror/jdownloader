@@ -36,7 +36,7 @@ public class CheckStatusAction<PackageType extends AbstractPackageNode<ChildrenT
         IOEQ.add(new Runnable() {
 
             public void run() {
-                List<ChildrenType> children = si.getSelectedChildren();
+                List<ChildrenType> children = si.getChildren();
                 java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(children.size());
                 for (AbstractPackageChildrenNode l : children) {
                     if (l instanceof DownloadLink) {

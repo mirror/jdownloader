@@ -52,7 +52,7 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
     private State getState() {
         if (selection.isEmpty()) return State.ALL_DISABLED;
         Boolean first = null;
-        for (ChildrenType a : selection.getSelectedChildren()) {
+        for (ChildrenType a : selection.getChildren()) {
 
             /* check a child */
             if (first == null) first = a.isEnabled();
@@ -68,7 +68,7 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
 
             public void run() {
                 boolean enable = state.equals(State.ALL_DISABLED);
-                for (ChildrenType a : selection.getSelectedChildren()) {
+                for (ChildrenType a : selection.getChildren()) {
 
                     a.setEnabled(enable);
 

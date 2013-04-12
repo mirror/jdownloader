@@ -32,7 +32,7 @@ public class ResumeAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         IOEQ.add(new Runnable() {
             public void run() {
-                for (DownloadLink link : si.getSelectedChildren()) {
+                for (DownloadLink link : si.getChildren()) {
                     if (!link.getLinkStatus().isPluginActive() && (link.getLinkStatus().isFailed() || link.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE))) {
                         link.getLinkStatus().reset(true);
                         DownloadWatchDog.getInstance().removeIPBlockTimeout(link);

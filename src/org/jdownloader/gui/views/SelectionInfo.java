@@ -34,7 +34,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
     private List<? extends AbstractNode>                      rawSelection;
 
-    private List<ChildrenType>                                selectedChildren;
+    private List<ChildrenType>                                children;
 
     private PackageControllerTable<PackageType, ChildrenType> table;
 
@@ -64,7 +64,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
         this.contextObject = contextObject;
         rawSelection = selection == null ? new ArrayList<AbstractNode>() : selection;
-        selectedChildren = new ArrayList<ChildrenType>();
+        children = new ArrayList<ChildrenType>();
         allPackages = new ArrayList<PackageType>();
         fullPackages = new ArrayList<PackageType>();
         incompletePackages = new ArrayList<PackageType>();
@@ -154,7 +154,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             }
         }
 
-        selectedChildren.addAll(ret);
+        children.addAll(ret);
         allPackages.addAll(allPkg);
         fullPackages.addAll(fullPkg);
         incompletePackages.addAll(incPkg);
@@ -224,8 +224,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         try {
             return getContextPackage();
         } catch (BadContextException e) {
-            if (selectedChildren.size() == 0) throw new BadContextException("Invalid Context");
-            return selectedChildren.get(0).getParentNode();
+            if (children.size() == 0) throw new BadContextException("Invalid Context");
+            return children.get(0).getParentNode();
         }
     }
 
@@ -277,7 +277,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
     /**
      * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe
-     * {@link #getSelectedChildren()} instead
+     * {@link #getChildren()} instead
      * 
      * @return
      */
@@ -290,8 +290,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
      * 
      * @return
      */
-    public List<ChildrenType> getSelectedChildren() {
-        return selectedChildren;
+    public List<ChildrenType> getChildren() {
+        return children;
     }
 
     /**
@@ -323,7 +323,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
      * @return
      */
     public boolean isEmpty() {
-        return selectedChildren == null || selectedChildren.size() == 0;
+        return children == null || children.size() == 0;
     }
 
     /**

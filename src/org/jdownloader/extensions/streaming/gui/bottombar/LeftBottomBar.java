@@ -9,7 +9,6 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.T;
 import org.jdownloader.extensions.streaming.gui.VLCGui;
-import org.jdownloader.extensions.streaming.gui.actions.RemoveOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -44,7 +43,7 @@ public class LeftBottomBar extends MigPanel {
                 super.setBounds(x - 2, y, width + 2, height);
             }
         };
-        popupRemove = new JButton(new RemoveOptionsAction(vlcGui));
+        popupRemove = new JButton(/* todo */);
 
         add(addLinks, "height 24!,aligny top");
 

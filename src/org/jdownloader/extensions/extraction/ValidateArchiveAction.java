@@ -53,7 +53,7 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
         extractor = extractionExtension;
         archives = new ArrayList<Archive>();
 
-        nextLink: for (ChildrenType l : si.getSelectedChildren()) {
+        nextLink: for (ChildrenType l : si.getChildren()) {
             if (l instanceof CrawledLink) {
                 // if (((CrawledLink) l).getLinkState() != LinkState.OFFLINE) {
                 CrawledLinkFactory clf = new CrawledLinkFactory(((CrawledLink) l));

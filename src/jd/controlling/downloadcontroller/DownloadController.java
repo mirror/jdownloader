@@ -34,6 +34,7 @@ import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.parser.Regex;
+import jd.plugins.DeleteTo;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -47,6 +48,9 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.IconDialog;
+import org.appwork.uio.MessageDialogInterface;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -54,14 +58,22 @@ import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition.CloseReason;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.DownloadLinkWalker;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.downloads.action.ConfirmDeleteLinksDialog;
+import org.jdownloader.gui.views.downloads.action.ConfirmDeleteLinksDialogInterface;
+import org.jdownloader.gui.views.downloads.overviewpanel.AggregatedNumbers;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.utils.JDFileUtils;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
 
@@ -801,4 +813,41 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         }
     }
 
+    public static void deleteLinksRequest(final SelectionInfo<FilePackage, DownloadLink> si, String msg) {
+        AggregatedNumbers agg = new AggregatedNumbers(si);
+        if (agg.getLinkCount() == 0) {
+
+            UIOManager.I().show(MessageDialogInterface.class, new IconDialog(0, _GUI._.lit_ups_something_is_wrong(), _GUI._.DownloadController_deleteLinksRequest_nolinks(), NewTheme.I().getIcon("robot_sos", 256), null));
+            return;
+        }
+        boolean confirmed = si.isShiftDown();
+
+        ConfirmDeleteLinksDialog dialog = new ConfirmDeleteLinksDialog(msg + "\r\n" + _GUI._.DeleteSelectionAction_actionPerformed_affected(agg.getLinkCount(), agg.getLoadedBytesString(), DownloadController.getInstance().getChildrenCount() - agg.getLinkCount()), agg.getLoadedBytes());
+        dialog.setRecycleSupported(JDFileUtils.isTrashSupported());
+
+        dialog.setDeleteFilesFromDiskEnabled(si.isShiftDown());
+        final ConfirmDeleteLinksDialogInterface d = UIOManager.I().show(ConfirmDeleteLinksDialogInterface.class, dialog);
+        final boolean deleteFiles = d.isDeleteFilesFromDiskEnabled();
+        confirmed = d.getCloseReason() == CloseReason.OK;
+
+        final boolean toRecycle = d.isDeleteFilesToRecycle();
+
+        if (confirmed) {
+            IOEQ.add(new Runnable() {
+
+                public void run() {
+
+                    DownloadController.getInstance().removeChildren(si.getChildren());
+
+                    if (deleteFiles) {
+                        for (DownloadLink dl : si.getChildren()) {
+                            dl.deleteFile(toRecycle ? DeleteTo.RECYCLE : DeleteTo.NULL, true, true);
+
+                        }
+                    }
+                }
+
+            }, true);
+        }
+    }
 }

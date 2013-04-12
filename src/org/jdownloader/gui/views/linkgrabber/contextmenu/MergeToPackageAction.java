@@ -56,7 +56,7 @@ public class MergeToPackageAction extends AppAction {
                     newPackage.setDownloadFolder(f);
                     // HashSet<String> rawDownloadFolder = new HashSet<String>();
 
-                    LinkCollector.getInstance().moveOrAddAt(newPackage, selection.getSelectedChildren(), 0);
+                    LinkCollector.getInstance().moveOrAddAt(newPackage, selection.getChildren(), 0);
                     return null;
                 }
 

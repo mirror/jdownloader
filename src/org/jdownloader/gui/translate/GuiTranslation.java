@@ -1264,8 +1264,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download Password" })
     String DownloadPasswordColumn_DownloadPasswordColumn_object_();
 
-    @Default(lngs = { "en" }, values = { "Delete and..." })
-    String ContextMenuFactory_createPopup_cleanup();
+    @Default(lngs = { "en" }, values = { "Delete only..." })
+    String ContextMenuFactory_createPopup_cleanup_only();
 
     @Default(lngs = { "en" }, values = { "Other" })
     String ContextMenuFactory_createPopup_other();
@@ -2356,20 +2356,20 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Open Connections" })
     String DownloadOverview_DownloadOverview_connections();
 
-    @Default(lngs = { "en" }, values = { "Do you want to delete all visible files in your Downloadlist?\r\nBe wise -  Once confirmed, this cannot be undone!\r\nAffected Links(s): %s1; Link(s) left: %s2" })
-    String ClearDownloadListAction_actionPerformed_(int i, int childrenLeft);
+    @Default(lngs = { "en" }, values = { "Do you want to delete all visible files in your Downloadlist? Be wise -  Once confirmed, this cannot be undone!" })
+    String ClearDownloadListAction_actionPerformed_();
 
     @Default(lngs = { "en" }, values = { "Delete downloaded Files from Harddisk as well (%s1)" })
     String ConfirmDeleteLinksDialog_layoutDialogContent_deletefiles_(String bytes);
 
-    @Default(lngs = { "en" }, values = { "Do you want to delete all selected Downloadlinks?\r\nBe wise - Once confirmed, this cannot be undone!\r\nAffected Links(s): %s1; Link(s) left: %s2" })
-    String RemoveSelectionAction_actionPerformed_(int linkCount, int childrenLeft);
+    @Default(lngs = { "en" }, values = { "Do you want to delete all selected Downloadlinks? Be wise - Once confirmed, this cannot be undone!" })
+    String RemoveSelectionAction_actionPerformed_();
 
-    @Default(lngs = { "en" }, values = { "Do you want to delete all not selected Downloadlinks?\r\nBe wise - Once confirmed, this cannot be undone!\r\nAffected Links(s): %s1; Link(s) left: %s2" })
-    String RemoveNonSelectedAction_actionPerformed(int linkCount, int childrenLeft);
+    @Default(lngs = { "en" }, values = { "Do you want to delete all not selected Downloadlinks? Be wise - Once confirmed, this cannot be undone!" })
+    String RemoveNonSelectedAction_actionPerformed();
 
-    @Default(lngs = { "en" }, values = { "Do you want to delete all offline Downloadlinks?\r\nBe wise - Once confirmed, this cannot be undone!\r\nAffected Links(s): %s1; Link(s) left: %s2" })
-    String RemoveOfflineAction_actionPerformed(int linkCount, int i);
+    @Default(lngs = { "en" }, values = { "Do you want to delete all offline Downloadlinks? Be wise - Once confirmed, this cannot be undone!" })
+    String RemoveOfflineAction_actionPerformed();
 
     @Default(lngs = { "en" }, values = { "Start Downloads" })
     String ForceDownloadAction_actionPerformed_help_title_();
@@ -2385,5 +2385,41 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Remove selected Links from Linkgrabber" })
     String RemoveSelectionLinkgrabberAction_RemoveSelectionLinkgrabberAction_object_();
+
+    @Default(lngs = { "en" }, values = { "Force Download Start" })
+    String ForceDownloadAction_ForceDownloadAction();
+
+    @Default(lngs = { "en" }, values = { "Move Files to Recycle Bin" })
+    String ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_();
+
+    @Default(lngs = { "en" }, values = { "Delete Files permanently from harddisk" })
+    String ConfirmDeleteLinksDialog_layoutDialogContent_delete_();
+
+    @Default(lngs = { "en" }, values = { "Do NOT delete already downloaded files from harddisk" })
+    String ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete();
+
+    @Default(lngs = { "en" }, values = { "\r\n%s1 Links(s) to delete\r\n%s2 Files on Disk\r\nLinks left in Downloadlist: %s3" })
+    String DeleteSelectionAction_actionPerformed_affected(int linkCount, String bytes, int i);
+
+    @Default(lngs = { "en" }, values = { "Do you want to delete all selected & disabled Downloadlinks?" })
+    String DeleteDisabledLinksFromListAndDiskAction_actionPerformed_object_();
+
+    @Default(lngs = { "en" }, values = { "Do you want to delete all selected & failed Downloadlinks?" })
+    String DeleteFailedFromListAndDiskAction_actionPerformed();
+
+    @Default(lngs = { "en" }, values = { "Do you want to delete all selected & unavailable Downloadlinks?" })
+    String DeleteSelectedOfflineLinksAction_actionPerformed();
+
+    @Default(lngs = { "en" }, values = { "Ups... something is wrong!" })
+    String lit_ups_something_is_wrong();
+
+    @Default(lngs = { "en" }, values = { "There are no Downloadlinks to delete!" })
+    String DownloadController_deleteLinksRequest_nolinks();
+
+    @Default(lngs = { "en" }, values = { "Delete" })
+    String lit_delete();
+
+    @Default(lngs = { "en" }, values = { "Do you want to delete all selected & successfully downloaded Downloadlinks?" })
+    String DeleteSelectedFinishedLinksAction_actionPerformed();
 
 }

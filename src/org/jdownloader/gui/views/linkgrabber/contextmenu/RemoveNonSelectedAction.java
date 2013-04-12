@@ -24,7 +24,7 @@ public class RemoveNonSelectedAction extends AppAction {
     private List<CrawledLink> selection;
 
     public RemoveNonSelectedAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        this.selection = si.getSelectedChildren();
+        this.selection = si.getChildren();
         setName(_GUI._.RemoveNonSelectedAction_RemoveNonSelectedAction_object_());
         setIconKey("ok");
     }

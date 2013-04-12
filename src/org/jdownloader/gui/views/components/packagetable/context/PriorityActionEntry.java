@@ -40,7 +40,7 @@ public class PriorityActionEntry<PackageType extends AbstractPackageNode<Childre
 
                 boolean linkGrabber = false;
                 boolean downloadList = false;
-                for (AbstractNode l : si.getSelectedChildren()) {
+                for (AbstractNode l : si.getChildren()) {
                     if (l instanceof CrawledLink) {
                         linkGrabber = true;
                         ((CrawledLink) l).setPriority(priority);

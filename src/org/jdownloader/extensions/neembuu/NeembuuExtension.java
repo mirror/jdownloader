@@ -316,7 +316,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
     }
 
     private void onExtendLinkgrabberTablePopupMenu(LinkgrabberTableContext context) {
-        context.getMenu().add(new WatchAsYouDownloadLinkgrabberAction(context.getSelectionInfo().isShiftDown(), context.getSelectionInfo().getSelectedChildren()));
+        context.getMenu().add(new WatchAsYouDownloadLinkgrabberAction(context.getSelectionInfo().isShiftDown(), context.getSelectionInfo().getChildren()));
     }
 
     private void onExtendDownloadTablePopupMenu(DownloadTableContext context) {

@@ -1,13 +1,12 @@
-package org.jdownloader.gui.views.downloads.table;
+package org.jdownloader.gui.views.downloads.context;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.downloads.context.DeleteAction;
 
-public class DeleteQuickAction extends DeleteAction {
+public class DeleteQuickAction extends DeleteSelectionAction {
 
     private static final long serialVersionUID = -6140757831031388156L;
 

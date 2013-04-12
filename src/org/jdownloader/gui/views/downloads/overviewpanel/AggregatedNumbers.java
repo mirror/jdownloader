@@ -62,8 +62,8 @@ public class AggregatedNumbers {
         running = 0l;
         connections = 0l;
         packageCount = selection.getAllPackages().size();
-        linkCount = selection.getSelectedChildren().size();
-        for (DownloadLink dl : selection.getSelectedChildren()) {
+        linkCount = selection.getChildren().size();
+        for (DownloadLink dl : selection.getChildren()) {
             totalBytes += dl.getDownloadSize();
             loadedBytes += dl.getDownloadCurrent();
             downloadSpeed += dl.getDownloadSpeed();
@@ -85,5 +85,9 @@ public class AggregatedNumbers {
 
         eta = downloadSpeed == 0 ? 0 : (totalBytes - loadedBytes) / downloadSpeed;
 
+    }
+
+    public long getLoadedBytes() {
+        return loadedBytes;
     }
 }

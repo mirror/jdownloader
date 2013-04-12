@@ -43,7 +43,7 @@ public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType,
         add(SwingUtils.toBold(lbl), "spanx");
         final ExtTableModel<AbstractNode> model = new ExtTableModel<AbstractNode>("linkurleditor") {
             {
-                getTableData().addAll(si.getSelectedChildren());
+                getTableData().addAll(si.getChildren());
             }
 
             @Override
@@ -125,7 +125,7 @@ public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType,
                 StringBuilder sb = new StringBuilder();
                 List<AbstractNode> links = new ArrayList<AbstractNode>();
                 if (selectedObjects.size() == 0) {
-                    links.addAll(si.getSelectedChildren());
+                    links.addAll(si.getChildren());
                 } else {
                     links.addAll(selectedObjects);
 
