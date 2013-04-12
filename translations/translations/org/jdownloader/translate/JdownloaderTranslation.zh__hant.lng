@@ -125,7 +125,7 @@ gui_warning_reconnectunknown=重新連線未知
 jd_controlling_SingleDownloadController_askexists=檔案「%s1」(於任務 %s2 中) 已存在。您想怎麼做？
 jd_controlling_SingleDownloadController_askexists_title=檔案存在
 jd_controlling_reconnect_Reconnector_progress_failed2=重新連線失敗太頻繁！自動重新連線被停用！請檢查您的重新連線設定！
-jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>未選擇重新連接</u></b><br/><p>重新連接是跳過某些強制免費使用者長時間等待的進階方式。<br>在使用進階帳號時這個沒什麼用途。</p><p>在<a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>這裡</a>閱讀更多關於重新連接的資訊</p>
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>未選擇重新連線</u></b><br/><p>重新連線是跳過某些強制免費使用者長時間等待的進階方式。<br>在使用白金帳號時這個功能沒什麼用途。</p><p>在<a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>這裡</a>閱讀更多關於重新連線的資訊</p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=不使用重新連線
 jd_plugins_PluginUtils_askPassword=請輸入 %s1 的密碼
 literally_offline=不存在
