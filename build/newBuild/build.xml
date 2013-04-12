@@ -5,6 +5,7 @@
 	<property name="dep.browser" value="../JDBrowser" />
 	<property name="dep.updateclient" value="../UpdateClientV2" />
 	<property name="dep.jdupdateclient" value="../JDownloaderUpdater" />
+	<property name="dep.myjd" value="../MyJDownloaderClient" />
 	<property name="debug" value="true" />
 
 
@@ -49,6 +50,11 @@
 
 		</javac>
 
+		<javac srcdir="${dep.myjd}/src" excludes="**/test/**" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+			<classpath refid="classpath" />
+
+		</javac>
+		
 		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
