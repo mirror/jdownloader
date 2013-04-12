@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahni.si" }, urls = { "http://(www\\.)?(stiahni|stahni)\\.si/download\\.php\\?id=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahni.si" }, urls = { "http://(www\\.)?(stiahni|stahni)\\.si/(download\\.php\\?id=|/file/)\\d+" }, flags = { 0 })
 public class StiahniSi extends PluginForHost {
 
     public StiahniSi(PluginWrapper wrapper) {
@@ -43,7 +43,7 @@ public class StiahniSi extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("stahni.si/", "stiahni.si/"));
+        link.setUrlDownload("http://www.stiahni.si/download.php?id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
     @Override

@@ -648,6 +648,7 @@ public class RyuShareCom extends PluginForHost {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
                 getPage(link.getDownloadURL());
+                if (br.containsHTML(">Can\\'t connect to Mysql server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
                 dllink = getDllink();
                 if (dllink == null) {
                     checkErrors(link, true, passCode);
