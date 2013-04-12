@@ -14,8 +14,6 @@ public interface MyDownloaderExtensionConfig extends ExtensionConfigInterface {
 
     public void setAPIServerURL(String url);
 
-    //
-
     @DefaultIntValue(80)
     @AboutConfig
     public int getAPIServerPort();
@@ -23,6 +21,8 @@ public interface MyDownloaderExtensionConfig extends ExtensionConfigInterface {
     public void setAPIServerPort(int port);
 
     public String getEmail();
+
+    public void setEmail(String email);
 
     public String getPassword();
 
@@ -33,6 +33,7 @@ public interface MyDownloaderExtensionConfig extends ExtensionConfigInterface {
     public void setUniqueDeviceID(String id);
 
     @AboutConfig
+    @DefaultStringValue("JDownloader")
     public String getDeviceName();
 
     public void setDeviceName(String name);
