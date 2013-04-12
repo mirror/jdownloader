@@ -386,7 +386,7 @@ public class IFileIt extends PluginForHost {
             String finallink = getJson("download_url", br);
             if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             finallink = finallink.replace("\\", "");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -2);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -4);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 10 * 60 * 1000l); }
                 br.followConnection();

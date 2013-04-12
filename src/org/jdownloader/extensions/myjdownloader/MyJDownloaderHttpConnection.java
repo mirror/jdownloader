@@ -153,77 +153,77 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     @Override
     public synchronized OutputStream getOutputStream(boolean sendHeaders) throws IOException {
         if (this.os != null) return this.os;
-        // HTTPHeader contentType = response.getResponseHeaders().get(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
-        // if (contentType != null && "application/json".equalsIgnoreCase(contentType.getValue())) {
-        /* check for json response */
-        try {
-            boolean deChunk = false;
-            HTTPHeader transferEncoding = response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING);
-            if (transferEncoding != null) {
-                if (HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED.equalsIgnoreCase(transferEncoding.getValue())) {
-                    deChunk = true;
-                } else {
-                    throw new IOException("Unsupported TransferEncoding " + transferEncoding);
-                }
-            }
-            final boolean useDeChunkingOutputStream = deChunk;
-            final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            final IvParameterSpec ivSpec = new IvParameterSpec(Arrays.copyOfRange(payloadEncryptionToken, 0, 16));
-            final SecretKeySpec skeySpec = new SecretKeySpec(Arrays.copyOfRange(payloadEncryptionToken, 16, 32), "AES");
-            cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
-            /* remove content-length because we use chunked+base64+aes */
-            response.getResponseHeaders().remove(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH);
-            // response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE,
-            // "application/aesjson-jd; charset=utf-8"));
-            /* set chunked transfer header */
-            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING, HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED));
-            this.sendResponseHeaders();
-            this.os = new OutputStream() {
-                private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(clientSocket.getOutputStream(), 16384));
-                Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
-                                                          // public void close() throws IOException {
-                                                          // };
-
-                                                      };
-                OutputStream                outos     = new CipherOutputStream(b64os, cipher);
-
-                {
-                    if (useDeChunkingOutputStream) {
-                        outos = new DeChunkingOutputStream(outos);
+        HTTPHeader contentType = response.getResponseHeaders().get(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
+        if (contentType != null && "application/json".equalsIgnoreCase(contentType.getValue())) {
+            /* check for json response */
+            try {
+                boolean deChunk = false;
+                HTTPHeader transferEncoding = response.getResponseHeaders().get(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING);
+                if (transferEncoding != null) {
+                    if (HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED.equalsIgnoreCase(transferEncoding.getValue())) {
+                        deChunk = true;
+                    } else {
+                        throw new IOException("Unsupported TransferEncoding " + transferEncoding);
                     }
                 }
+                final boolean useDeChunkingOutputStream = deChunk;
+                final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                final IvParameterSpec ivSpec = new IvParameterSpec(Arrays.copyOfRange(payloadEncryptionToken, 0, 16));
+                final SecretKeySpec skeySpec = new SecretKeySpec(Arrays.copyOfRange(payloadEncryptionToken, 16, 32), "AES");
+                cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
+                /* remove content-length because we use chunked+base64+aes */
+                response.getResponseHeaders().remove(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH);
+                // response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE,
+                // "application/aesjson-jd; charset=utf-8"));
+                /* set chunked transfer header */
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING, HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED));
+                this.sendResponseHeaders();
+                this.os = new OutputStream() {
+                    private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(clientSocket.getOutputStream(), 16384));
+                    Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
+                                                              // public void close() throws IOException {
+                                                              // };
 
-                @Override
-                public void close() throws IOException {
-                    outos.close();
-                    b64os.flush();
-                    chunkedOS.close();
-                }
+                                                          };
+                    OutputStream                outos     = new CipherOutputStream(b64os, cipher);
 
-                @Override
-                public void flush() throws IOException {
-                }
+                    {
+                        if (useDeChunkingOutputStream) {
+                            outos = new DeChunkingOutputStream(outos);
+                        }
+                    }
 
-                @Override
-                public void write(int b) throws IOException {
-                    outos.write(b);
-                }
+                    @Override
+                    public void close() throws IOException {
+                        outos.close();
+                        b64os.flush();
+                        chunkedOS.close();
+                    }
 
-                @Override
-                public void write(byte[] b, int off, int len) throws IOException {
-                    outos.write(b, off, len);
+                    @Override
+                    public void flush() throws IOException {
+                    }
+
+                    @Override
+                    public void write(int b) throws IOException {
+                        outos.write(b);
+                    }
+
+                    @Override
+                    public void write(byte[] b, int off, int len) throws IOException {
+                        outos.write(b, off, len);
+                    };
+
                 };
-
-            };
-        } catch (final Throwable e) {
-            throw new IOException(e);
+            } catch (final Throwable e) {
+                throw new IOException(e);
+            }
+        } else {
+            if (sendHeaders) {
+                this.sendResponseHeaders();
+            }
+            this.os = super.os;
         }
-        // } else {
-        // if (sendHeaders) {
-        // this.sendResponseHeaders();
-        // }
-        // this.os = super.os;
-        // }
         return this.os;
     }
 

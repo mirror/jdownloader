@@ -161,7 +161,6 @@ public class MyVideo extends PluginForHost {
             dl = new RTMPDownload(this, downloadLink, CLIPURL);
             setupRTMPConnection(dl);
             ((RTMPDownload) dl).startDownload();
-
         } else if (CLIPURL.startsWith("http")) {
             br.getHeaders().put("Referer", SWFURL);
             br.getHeaders().put("x-flash-version", "10,3,183,7");
