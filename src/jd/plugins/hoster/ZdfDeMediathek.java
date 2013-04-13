@@ -66,6 +66,7 @@ public class ZdfDeMediathek extends PluginForHost {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         rtmp.setUrl(stream);
         rtmp.setResume(true);
+        rtmp.setRealTime();
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
@@ -127,4 +128,5 @@ public class ZdfDeMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.zdf.loadhd", "Load HD Version")).setDefaultValue(true));
 
     }
+
 }
