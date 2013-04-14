@@ -336,12 +336,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setTooltipEnabled(boolean b);
 
     @AboutConfig
-    @DefaultIntValue(2500)
+    @DefaultIntValue(2000)
     @SpinnerValidator(min = 50, max = 5000, step = 50)
     @RequiresRestart
-    int getTooltipTimeout();
+    int getTooltipDelay();
 
-    void setTooltipTimeout(int t);
+    void setTooltipDelay(int t);
 
     @DefaultBooleanValue(true)
     @AboutConfig

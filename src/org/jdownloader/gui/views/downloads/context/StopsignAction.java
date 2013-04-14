@@ -20,11 +20,16 @@ public class StopsignAction extends AppAction {
 
     public StopsignAction(SelectionInfo<FilePackage, DownloadLink> si) {
         this.si = si;
+
         setIconKey("stopsign");
-        if (DownloadWatchDog.getInstance().isStopMark(si.getRawContext())) {
-            setName(_GUI._.gui_table_contextmenu_stopmark_unset());
+        if (si != null) {
+            if (DownloadWatchDog.getInstance().isStopMark(si.getRawContext())) {
+                setName(_GUI._.gui_table_contextmenu_stopmark_unset());
+            } else {
+                setName(_GUI._.gui_table_contextmenu_stopmark_set());
+            }
         } else {
-            setName(_GUI._.gui_table_contextmenu_stopmark_set());
+            setName(_GUI._.gui_table_contextmenu_stopmark());
         }
     }
 

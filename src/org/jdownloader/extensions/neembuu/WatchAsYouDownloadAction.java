@@ -17,23 +17,22 @@
 package org.jdownloader.extensions.neembuu;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 
 /**
  * 
  * @author Shashank Tulsyan
  */
-public class WatchAsYouDownloadAction extends ContextMenuAction {
+public class WatchAsYouDownloadAction extends AppAction {
 
     private final java.util.List<FilePackage> fps;
-    private final boolean                canHandle;
+    private final boolean                     canHandle;
 
     public WatchAsYouDownloadAction(java.util.List<FilePackage> fps) {
         this.fps = fps;
@@ -48,30 +47,20 @@ public class WatchAsYouDownloadAction extends ContextMenuAction {
             canH = false;
 
         canHandle = canH;
-        init();
-    }
-
-    @Override
-    protected String getIcon() {
-        return "mediaplayer";
-    }
-
-    @Override
-    protected String getName() {
-        return _GUI._.gui_table_contextmenu_watch_as_you_download() + (fps.size() > 1 ? " (" + fps.size() + ")" : "");
+        setIconKey("mediaplayer");
+        setName(_GUI._.gui_table_contextmenu_watch_as_you_download() + (fps.size() > 1 ? " (" + fps.size() + ")" : ""));
     }
 
     public void actionPerformed(ActionEvent e) {
         for (FilePackage fp : fps) {
             if (fp == null) continue;// ignore empty entries.
             fp.setProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.INITIATED_BY_WATCH_ACTION, true);
-            
+
             // resetting all links, everytime, to ensure that not even one file is ignored
             for (DownloadLink link : fp.getChildren()) {
                 if (link.getLinkStatus().isPluginActive()) {
                     /*
-                     * download is still active, let DownloadWatchdog
-                     * handle the reset
+                     * download is still active, let DownloadWatchdog handle the reset
                      */
                     DownloadWatchDog.getInstance().resetSingleDownloadController(link.getDownloadLinkController());
                 } else {
@@ -81,7 +70,7 @@ public class WatchAsYouDownloadAction extends ContextMenuAction {
                     link.reset();
                 }
             }
-            
+
             DownloadWatchDog.getInstance().forceDownload((java.util.List<DownloadLink>) fp.getChildren());
         }
     }

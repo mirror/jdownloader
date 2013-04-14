@@ -196,6 +196,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 super.setBounds(x - 2, y, width + 2, height);
             }
         };
+
         popupConfirm = new JButton(new ConfirmOptionsAction(table, confirmAll)) {
             /**
              * 

@@ -1264,7 +1264,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download Password" })
     String DownloadPasswordColumn_DownloadPasswordColumn_object_();
 
-    @Default(lngs = { "en" }, values = { "Delete only..." })
+    @Default(lngs = { "en" }, values = { "Delete selected" })
     String ContextMenuFactory_createPopup_cleanup_only();
 
     @Default(lngs = { "en" }, values = { "Other" })
@@ -1894,7 +1894,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Successful Links" })
     String DeleteSuccessFulAction_DeleteSuccessFulAction_object_();
 
-    @Default(lngs = { "en" }, values = { "All Selected Links" })
+    @Default(lngs = { "en" }, values = { "DownloadLinks" })
     String DeleteAllAction_DeleteAllAction_object_();
 
     @Default(lngs = { "en" }, values = { "Offline Links" })
@@ -2421,5 +2421,50 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Do you want to delete all selected & successfully downloaded Downloadlinks?" })
     String DeleteSelectedFinishedLinksAction_actionPerformed();
+
+    @Default(lngs = { "en" }, values = { "Downloadlist Rightlick Menu" })
+    String gui_config_menumanager();
+
+    @Default(lngs = { "en" }, values = { "You can customize many menus in JDownloader - Main Toolbar, Context menus,..." })
+    String gui_config_menumanager_desc();
+
+    @Default(lngs = { "en" }, values = { "Open" })
+    String lit_open();
+
+    @Default(lngs = { "en" }, values = { "Delete selected" })
+    String RemoveOptionsAction_actionPerformed_selected();
+
+    @Default(lngs = { "en" }, values = { "More Cleanup and Delete Options..." })
+    String RemoveOptionsAction_RemoveOptionsAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Advanced Options to add Links..." })
+    String AddOptionsAction_AddOptionsAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Add new Links to download..." })
+    String AddLinksAction_AddLinksAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Downloadlist ContextMenu Manager" })
+    String ManagerFrame_ManagerFrame_();
+
+    @Default(lngs = { "en" }, values = { "Sort package by Column" })
+    String SortAction_SortAction_object_empty();
+
+    @Default(lngs = { "en" }, values = { "Enable/Disable Link" })
+    String EnabledAction_EnabledAction_empty();
+
+    @Default(lngs = { "en" }, values = { "Set/Remove Stopmark" })
+    String gui_table_contextmenu_stopmark();
+
+    @Default(lngs = { "en" }, values = { "Submenu: %s1" })
+    String Renderer_getTreeCellRendererComponent_submenu(String name);
+
+    @Default(lngs = { "en" }, values = { "----------------------------" })
+    String Renderer_getTreeCellRendererComponent_seperator();
+
+    @Default(lngs = { "en" }, values = { "Link: %s1" })
+    String Renderer_getTreeCellRendererComponent_link(String name);
+
+    @Default(lngs = { "en" }, values = { ">>Extension Submenu" })
+    String AddonSubMenuLink_AddonSubMenuLink_();
 
 }

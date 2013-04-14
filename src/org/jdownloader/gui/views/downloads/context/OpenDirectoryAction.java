@@ -3,30 +3,26 @@ package org.jdownloader.gui.views.downloads.context;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
-import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 
-public class OpenDirectoryAction extends ContextMenuAction {
+public class OpenDirectoryAction extends AppAction {
 
     private static final long serialVersionUID = 3656369075540437063L;
 
-    private final File        directory;
+    private File              directory;
 
-    public OpenDirectoryAction(File folder) {
-        this.directory = folder;
-        init();
-    }
-
-    @Override
-    protected String getIcon() {
-        return "package_open";
-    }
-
-    @Override
-    protected String getName() {
-        return _GUI._.gui_table_contextmenu_downloaddir();
+    public OpenDirectoryAction(SelectionInfo<FilePackage, DownloadLink> si) {
+        if (si != null) {
+            this.directory = new File(si.getContextPackage().getDownloadDirectory());
+        }
+        setIconKey("package_open");
+        setName(_GUI._.gui_table_contextmenu_downloaddir());
     }
 
     public void actionPerformed(ActionEvent e) {

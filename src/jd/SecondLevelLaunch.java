@@ -459,7 +459,7 @@ public class SecondLevelLaunch {
                         try {
 
                             boolean jared = Application.isJared(SecondLevelLaunch.class);
-                            ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipTimeout());
+                            ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipDelay());
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
                             ChallengeResponseController.getInstance().addSolver(JACSolver.getInstance());
                             ChallengeResponseController.getInstance().addSolver(DialogBasicCaptchaSolver.getInstance());

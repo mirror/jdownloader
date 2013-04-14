@@ -826,7 +826,39 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         dialog.setRecycleSupported(JDFileUtils.isTrashSupported());
 
         dialog.setDeleteFilesFromDiskEnabled(si.isShiftDown());
-        final ConfirmDeleteLinksDialogInterface d = UIOManager.I().show(ConfirmDeleteLinksDialogInterface.class, dialog);
+        final ConfirmDeleteLinksDialogInterface d = si.isAvoidRlyEnabled() ? new ConfirmDeleteLinksDialogInterface() {
+
+            @Override
+            public String getMessage() {
+                return null;
+            }
+
+            @Override
+            public String getTitle() {
+                return null;
+            }
+
+            @Override
+            public CloseReason getCloseReason() {
+                return CloseReason.OK;
+            }
+
+            @Override
+            public boolean isDeleteFilesFromDiskEnabled() {
+                // Fehlerhafte zurücksetzen
+                return si.isShiftDown();
+            }
+
+            @Override
+            public boolean isDeleteFilesToRecycle() {
+                return false;
+            }
+
+            @Override
+            public boolean isRecycleSupported() {
+                return false;
+            }
+        } : UIOManager.I().show(ConfirmDeleteLinksDialogInterface.class, dialog);
         final boolean deleteFiles = d.isDeleteFilesFromDiskEnabled();
         confirmed = d.getCloseReason() == CloseReason.OK;
 

@@ -53,9 +53,4 @@ public class RemoveNonSelectedAction extends AppAction {
         DownloadController.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete), _GUI._.RemoveNonSelectedAction_actionPerformed());
     }
 
-    @Override
-    public boolean isEnabled() {
-        return selection != null && selection.size() > 0;
-    }
-
 }

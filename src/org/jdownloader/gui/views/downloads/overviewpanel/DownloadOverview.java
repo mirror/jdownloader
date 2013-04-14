@@ -16,6 +16,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
+import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
@@ -166,51 +167,55 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
     }
 
     protected void update() {
-        if (!this.isDisplayable()) { return; }
+        if (!this.isDisplayable() || true) { return; }
+        IOEQ.add(new Runnable() {
 
-        final AggregatedNumbers total = CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks())) : null;
-        final AggregatedNumbers filtered = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getAllChildrenNodes())) : null;
-        final AggregatedNumbers selected = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getSelectedObjects())) : null;
-        new EDTRunner() {
+            public void run() {
+                final AggregatedNumbers total = CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks())) : null;
+                final AggregatedNumbers filtered = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getAllChildrenNodes())) : null;
+                final AggregatedNumbers selected = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getSelectedObjects())) : null;
+                new EDTRunner() {
 
-            @Override
-            protected void runInEDT() {
+                    @Override
+                    protected void runInEDT() {
 
-                if (total != null) packageCount.setTotal(total.getPackageCount() + "");
-                if (filtered != null) packageCount.setFiltered(filtered.getPackageCount() + "");
-                if (selected != null) packageCount.setSelected(selected.getPackageCount() + "");
+                        if (total != null) packageCount.setTotal(total.getPackageCount() + "");
+                        if (filtered != null) packageCount.setFiltered(filtered.getPackageCount() + "");
+                        if (selected != null) packageCount.setSelected(selected.getPackageCount() + "");
 
-                if (total != null) linkCount.setTotal(total.getLinkCount() + "");
-                if (filtered != null) linkCount.setFiltered(filtered.getLinkCount() + "");
-                if (selected != null) linkCount.setSelected(selected.getLinkCount() + "");
+                        if (total != null) linkCount.setTotal(total.getLinkCount() + "");
+                        if (filtered != null) linkCount.setFiltered(filtered.getLinkCount() + "");
+                        if (selected != null) linkCount.setSelected(selected.getLinkCount() + "");
 
-                if (total != null) size.setTotal(total.getTotalBytesString());
-                if (filtered != null) size.setFiltered(filtered.getTotalBytesString());
-                if (selected != null) size.setSelected(selected.getTotalBytesString());
+                        if (total != null) size.setTotal(total.getTotalBytesString());
+                        if (filtered != null) size.setFiltered(filtered.getTotalBytesString());
+                        if (selected != null) size.setSelected(selected.getTotalBytesString());
 
-                if (total != null) bytesLoaded.setTotal(total.getLoadedBytesString());
-                if (filtered != null) bytesLoaded.setFiltered(filtered.getLoadedBytesString());
-                if (selected != null) bytesLoaded.setSelected(selected.getLoadedBytesString());
+                        if (total != null) bytesLoaded.setTotal(total.getLoadedBytesString());
+                        if (filtered != null) bytesLoaded.setFiltered(filtered.getLoadedBytesString());
+                        if (selected != null) bytesLoaded.setSelected(selected.getLoadedBytesString());
 
-                if (total != null) speed.setTotal(total.getDownloadSpeedString());
-                if (filtered != null) speed.setFiltered(filtered.getDownloadSpeedString());
-                if (selected != null) speed.setSelected(selected.getDownloadSpeedString());
+                        if (total != null) speed.setTotal(total.getDownloadSpeedString());
+                        if (filtered != null) speed.setFiltered(filtered.getDownloadSpeedString());
+                        if (selected != null) speed.setSelected(selected.getDownloadSpeedString());
 
-                if (total != null) eta.setTotal(total.getEtaString());
-                if (filtered != null) eta.setFiltered(filtered.getEtaString());
-                if (selected != null) eta.setSelected(selected.getEtaString());
+                        if (total != null) eta.setTotal(total.getEtaString());
+                        if (filtered != null) eta.setFiltered(filtered.getEtaString());
+                        if (selected != null) eta.setSelected(selected.getEtaString());
 
-                if (total != null) connections.setTotal(total.getConnections() + "");
-                if (filtered != null) connections.setFiltered(filtered.getConnections() + "");
-                if (selected != null) connections.setSelected(selected.getConnections() + "");
+                        if (total != null) connections.setTotal(total.getConnections() + "");
+                        if (filtered != null) connections.setFiltered(filtered.getConnections() + "");
+                        if (selected != null) connections.setSelected(selected.getConnections() + "");
 
-                if (total != null) runningDownloads.setTotal(total.getRunning() + "");
-                if (filtered != null) runningDownloads.setFiltered(filtered.getRunning() + "");
-                if (selected != null) runningDownloads.setSelected(selected.getRunning() + "");
+                        if (total != null) runningDownloads.setTotal(total.getRunning() + "");
+                        if (filtered != null) runningDownloads.setFiltered(filtered.getRunning() + "");
+                        if (selected != null) runningDownloads.setSelected(selected.getRunning() + "");
 
+                    }
+
+                };
             }
-
-        };
+        });
 
     }
 

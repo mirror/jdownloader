@@ -10,22 +10,20 @@ import javax.swing.JPopupMenu;
 
 import jd.gui.swing.laf.LookAndFeelController;
 
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class AddOptionsAction extends AbstractAction {
+public class AddOptionsAction extends AppAction {
     /**
      * 
      */
     private static final long serialVersionUID = -1041794723138925672L;
     private JButton           positionComp;
 
-    {
-        putValue(SMALL_ICON, NewTheme.I().getIcon("popupButton", -1));
-
-    }
-
     public AddOptionsAction(JButton addLinks) {
+        setSmallIcon(NewTheme.I().getIcon("popupButton", -1));
+        setTooltipText(_GUI._.AddOptionsAction_AddOptionsAction_tt());
         positionComp = addLinks;
     }
 

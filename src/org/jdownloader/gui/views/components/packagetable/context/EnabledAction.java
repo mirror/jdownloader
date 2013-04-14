@@ -31,20 +31,25 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
     private SelectionInfo<PackageType, ChildrenType> selection;
 
     public EnabledAction(SelectionInfo<PackageType, ChildrenType> si) {
-        this.selection = si;
-        switch (state = getState()) {
-        case MIXED:
-            setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("checkbox_undefined", 14), 0, 0, 9, 8)));
-            setName(_GUI._.EnabledAction_EnabledAction_disable());
-            break;
-        case ALL_DISABLED:
+        if (si != null) {
+            this.selection = si;
+            switch (state = getState()) {
+            case MIXED:
+                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("checkbox_undefined", 14), 0, 0, 9, 8)));
+                setName(_GUI._.EnabledAction_EnabledAction_disable());
+                break;
+            case ALL_DISABLED:
+                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("disabled", 14), 0, 0, 9, 8)));
+                setName(_GUI._.EnabledAction_EnabledAction_enable());
+                break;
+            case ALL_ENABLED:
+                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("enabled", 14), 0, 0, 9, 8)));
+                setName(_GUI._.EnabledAction_EnabledAction_disable());
+                break;
+            }
+        } else {
             setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("disabled", 14), 0, 0, 9, 8)));
-            setName(_GUI._.EnabledAction_EnabledAction_enable());
-            break;
-        case ALL_ENABLED:
-            setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("enabled", 14), 0, 0, 9, 8)));
-            setName(_GUI._.EnabledAction_EnabledAction_disable());
-            break;
+            setName(_GUI._.EnabledAction_EnabledAction_empty());
         }
 
     }

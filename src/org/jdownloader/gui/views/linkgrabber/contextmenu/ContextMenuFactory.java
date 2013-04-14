@@ -48,7 +48,7 @@ public class ContextMenuFactory {
     public JPopupMenu createPopup(AbstractNode context, java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent event) {
 
         SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(context, selection, event, null, table);
-
+        si.setContextColumn(column);
         JPopupMenu p = new JPopupMenu();
         JMenu m;
 
@@ -78,7 +78,7 @@ public class ContextMenuFactory {
         for (JMenuItem mm : fillPropertiesMenu(si, column)) {
             properties.add(mm);
         }
-        p.add(new SortAction(si, column).toContextMenuAction());
+        p.add(new SortAction(si).toContextMenuAction());
         p.add(new EnabledAction(si).toContextMenuAction());
 
         p.add(new JSeparator());

@@ -31,7 +31,8 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
         this.si = si;
 
         setName(_GUI._.SetDownloadFolderAction_SetDownloadFolderAction_());
-        path = LinkTreeUtils.getRawDownloadDirectory(si.getContextPackage());
+
+        if (si != null) path = LinkTreeUtils.getRawDownloadDirectory(si.getContextPackage());
         setIconKey("save");
     }
 

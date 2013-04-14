@@ -25,11 +25,16 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
     private ExtColumn<AbstractNode>                  column;
     private SelectionInfo<PackageType, ChildrenType> si;
 
-    public SortAction(SelectionInfo<PackageType, ChildrenType> si, ExtColumn<AbstractNode> column2) {
-        this.column = column2;
-        this.si = si;
-        setIconKey("sort");
-        setName(_GUI._.SortAction_SortAction_object_(column.getName()));
+    public SortAction(SelectionInfo<PackageType, ChildrenType> si) {
+        if (si != null) {
+            this.column = si.getContextColumn();
+            this.si = si;
+            setIconKey("sort");
+            setName(_GUI._.SortAction_SortAction_object_(column.getName()));
+        } else {
+            setIconKey("sort");
+            setName(_GUI._.SortAction_SortAction_object_empty());
+        }
 
     }
 

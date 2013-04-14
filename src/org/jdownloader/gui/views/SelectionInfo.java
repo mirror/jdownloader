@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views;
 
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -12,8 +13,10 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
+import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.BinaryLogic;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
+import org.jdownloader.keyevent.GlobalEventStore;
 
 public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
 
@@ -37,6 +40,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     private List<ChildrenType>                                children;
 
     private PackageControllerTable<PackageType, ChildrenType> table;
+    private ExtColumn<AbstractNode>                           contextColumn;
 
     public PackageControllerTable<PackageType, ChildrenType> getTable() {
         return table;
@@ -71,6 +75,15 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         incompleteSelectecPackages = new HashMap<PackageType, List<ChildrenType>>();
 
         rawMap = new LinkedHashSet<AbstractNode>();
+        if (EventQueue.isDispatchThread()) {
+            if (event == null) {
+                event = GlobalEventStore.getInstance().getLatestMouseEvent();
+            }
+            if (kEvent == null) {
+                kEvent = GlobalEventStore.getInstance().getLatestKeyEvent();
+            }
+        }
+
         this.mouseEvent = event;
         this.keyEvent = kEvent;
         this.table = table;
@@ -276,8 +289,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe
-     * {@link #getChildren()} instead
+     * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe {@link #getChildren()}
+     * instead
      * 
      * @return
      */
@@ -356,4 +369,24 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         return rawMap.contains(l);
     }
 
+    /** is true if ctrl+D is pressed */
+    public boolean isAvoidRlyEnabled() {
+
+        if (keyEvent != null) {
+            if (keyEvent.isControlDown()) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    public void setContextColumn(ExtColumn<AbstractNode> column) {
+        contextColumn = column;
+    }
+
+    public ExtColumn<AbstractNode> getContextColumn() {
+        return contextColumn;
+    }
 }

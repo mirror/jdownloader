@@ -55,10 +55,10 @@ public class BottomBar extends MigPanel {
 
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
 
-        addLinks = new JButton(new AddLinksAction());
+        addLinks = new ExtButton(new AddLinksAction());
 
-        clearAll = new JButton(new ClearDownloadListAction());
-        popup = new JButton(new AddOptionsAction(addLinks)) {
+        clearAll = new ExtButton(new ClearDownloadListAction());
+        popup = new ExtButton(new AddOptionsAction(addLinks)) {
             /**
              * 
              */
@@ -68,7 +68,7 @@ public class BottomBar extends MigPanel {
                 super.setBounds(x - 2, y, width + 2, height);
             }
         };
-        popupRemove = new JButton(new RemoveOptionsAction(table, clearAll)) {
+        popupRemove = new ExtButton(new RemoveOptionsAction(table, clearAll)) {
             /**
              * 
              */

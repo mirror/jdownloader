@@ -21,16 +21,19 @@ public class OpenFileAction extends AppAction {
     private File              file;
 
     public OpenFileAction(final SelectionInfo<FilePackage, DownloadLink> si) {
-        this.file = new File(si.getContextLink().getFileOutput());
+        this.file = si == null ? null : new File(si.getContextLink().getFileOutput());
 
         ImageIcon img;
-
-        if (si.isLinkContext()) {
-            img = (si.getLink().getIcon());
+        if (si != null) {
+            if (si.isLinkContext()) {
+                img = (si.getLink().getIcon());
+            } else {
+                img = (si.getFirstPackage().isExpanded() ? NewTheme.I().getIcon("tree_package_open", 32) : NewTheme.I().getIcon("tree_package_closed", 32));
+            }
+            this.setSmallIcon(img);
         } else {
-            img = (si.getFirstPackage().isExpanded() ? NewTheme.I().getIcon("tree_package_open", 32) : NewTheme.I().getIcon("tree_package_closed", 32));
+            this.setSmallIcon(NewTheme.I().getIcon("file", 20));
         }
-        this.setSmallIcon(img);
         setName(_GUI._.gui_table_contextmenu_openfile());
 
     }

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import javax.swing.ImageIcon;
+import javax.swing.JMenuItem;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -178,8 +179,9 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
                 /*
                  * SwingUtilities.invokeLater(new Runnable() { // @Override
                  * 
-                 * public void run() { JOptionPane.showMessageDialog(SwingGui.getInstance ().getMainFrame(), _NT._.failed_WatchAsYouDownload_Message() + "\n" +
-                 * jdds.toString(), _NT._.failed_WatchAsYouDownload_Title(), JOptionPane.ERROR_MESSAGE); } });
+                 * public void run() { JOptionPane.showMessageDialog(SwingGui.getInstance ().getMainFrame(),
+                 * _NT._.failed_WatchAsYouDownload_Message() + "\n" + jdds.toString(), _NT._.failed_WatchAsYouDownload_Title(),
+                 * JOptionPane.ERROR_MESSAGE); } });
                  */
 
                 LogController.CL().log(Level.SEVERE, "Could not start a watch as you download session", a);
@@ -329,7 +331,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
 
                 }
             }
-            if (fps.size() > 0) context.getMenu().add(new WatchAsYouDownloadAction(new ArrayList<FilePackage>(fps)));
+            if (fps.size() > 0) context.getMenu().add(new JMenuItem(new WatchAsYouDownloadAction(new ArrayList<FilePackage>(fps))));
         }
 
     }
