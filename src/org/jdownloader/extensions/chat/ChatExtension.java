@@ -979,7 +979,6 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
                     try {
                         Thread.sleep(10000);
                     } catch (final InterruptedException e) {
-                        LogController.CL().log(e);
                         return;
                     }
                 }

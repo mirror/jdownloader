@@ -167,10 +167,11 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
     }
 
     protected void update() {
-        if (!this.isDisplayable() || true) { return; }
+        if (!this.isDisplayable()) { return; }
         IOEQ.add(new Runnable() {
 
             public void run() {
+                if (!isDisplayable()) { return; }
                 final AggregatedNumbers total = CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks())) : null;
                 final AggregatedNumbers filtered = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getAllChildrenNodes())) : null;
                 final AggregatedNumbers selected = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getSelectedObjects())) : null;
@@ -178,7 +179,7 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
 
                     @Override
                     protected void runInEDT() {
-
+                        if (!isDisplayable()) { return; }
                         if (total != null) packageCount.setTotal(total.getPackageCount() + "");
                         if (filtered != null) packageCount.setFiltered(filtered.getPackageCount() + "");
                         if (selected != null) packageCount.setSelected(selected.getPackageCount() + "");
@@ -231,13 +232,10 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
 
     @Override
     public void onDownloadControllerEvent(final DownloadControllerEvent event) {
-
         switch (event.getType()) {
         case REFRESH_STRUCTURE:
             update();
-
         }
-        ;
 
     }
 

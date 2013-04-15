@@ -89,6 +89,7 @@ public class NmLdsrg extends PluginForDecrypt {
                 if (passwrds != null) cnl2post += "&passwords=" + Encoding.urlEncode(source);
                 if (source != null) cnl2post += "&source=" + Encoding.urlEncode(source);
                 try {
+                    br.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
                     br.postPage("http://127.0.0.1:9666/flash/addcrypted2", cnl2post);
                     if (br.containsHTML("success")) {
                         logger.info("CNL2 = works!");
@@ -103,7 +104,7 @@ public class NmLdsrg extends PluginForDecrypt {
                 }
                 br.getPage(link);
             }
-
+            br.getHeaders().put("jd.randomNumber", "");
             // CNL failed? Add links via webdecryption!
             final String rcID = br.getRegex("google\\.com/recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
             if (rcID == null) {
