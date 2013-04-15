@@ -64,8 +64,8 @@ public class SubmitYourTapesCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("submityourtapes.com/404.php") || br.containsHTML("(<title>Wops 404 \\.\\.\\.</title>|class=\"style1\">404 \\- this page does not exist|http-equiv=refresh content=\"2; url=http://www\\.submityourtapes\\.com)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(">Embed</a></div>([^<>\"]*?)</div>").getMatch(0);
+        if (br.getURL().contains("submityourtapes.com/404.php") || br.containsHTML("(<title>Wops 404 \\.\\.\\.</title>|class=\"style1\">404 \\- this page does not exist|http-equiv=refresh content=\"2; url=http://www\\.submityourtapes\\.com)") || br.containsHTML(">Error Page")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>SubmitYourTapes \\- ([^<>\"]*?)</title>").getMatch(0);
         DLLINK = br.getRegex("addVariable\\(\"file\", \"(http.*?)\"").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("name=\"FlashVars\" value=\"file=(http.*?)http://(www\\.)?submityourtapes\\.com").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

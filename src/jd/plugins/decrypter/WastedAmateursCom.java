@@ -55,6 +55,13 @@ public class WastedAmateursCom extends PluginForDecrypt {
             return null;
         }
         filename = filename.trim();
+        // myxvids.com 1
+        externID = br.getRegex("\"(http://(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        // myxvids.com 2
         externID = br.getRegex("(\\'|\")(http://(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)(\\'|\")").getMatch(1);
         if (externID != null) {
             br.getPage(externID);

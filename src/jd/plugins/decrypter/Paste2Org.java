@@ -21,14 +21,13 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.RandomUserAgent;
-import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "paste2.org" }, urls = { "http://[\\w\\.]*?paste2\\.org/(p|followup)/[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "paste2.org" }, urls = { "http://(www\\.)?paste2\\.org/[A-Za-z0-9]+" }, flags = { 0 })
 public class Paste2Org extends PluginForDecrypt {
 
     public Paste2Org(PluginWrapper wrapper) {
@@ -39,11 +38,6 @@ public class Paste2Org extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
-        // Workaround for "followup" links
-        if (parameter.contains("followup")) {
-            String id = new Regex(parameter, "followup/(\\d+)").getMatch(0);
-            parameter = "http://paste2.org/p/" + id;
-        }
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
         /* Error handling */
@@ -51,14 +45,13 @@ public class Paste2Org extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String plaintxt = br.getRegex("main-container(.*?)footer-contents").getMatch(0);
-        if (plaintxt == null) plaintxt = br.getRegex("<div class=\"code\\-wrap\">(.*?)</div>").getMatch(0);
+        final String plaintxt = br.getRegex("<ol class=\\'highlight code\\'>(.*?)</div></li></ol>").getMatch(0);
         if (plaintxt == null) {
             logger.info("Paste2 Decrypter: Could not find textfield: " + parameter);
             logger.info("Paste2 Decrypter: Please report this to JDownloader' Development Team.");
             return null;
         }
-        String[] links = HTMLParser.getHttpLinks(plaintxt, "");
+        final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
             logger.info("Found no hosterlinks in plaintext from link " + parameter);
             return decryptedLinks;

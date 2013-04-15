@@ -41,11 +41,23 @@ public class YouSexTubeCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String fid = new Regex(parameter, "you\\-sex\\-tube\\.com/video/(.*?)\\.html").getMatch(0);
         String externID = Encoding.Base64Decode(fid);
-        if (externID != null) {
+        if (externID != null && !externID.equals(fid)) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         br.getPage(parameter);
+        externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
+        if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("(\"|\\')(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)(\"|\\')").getMatch(1);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID.replace("tube8.com/embed/", "tube8.com/")));
+            return decryptedLinks;
+        }
         if (br.getURL().contains("xvideos.com/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

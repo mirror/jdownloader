@@ -12,7 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/(?!category|linkex|\\d{4}/|tag)[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/(?!category|linkex|feed|\\d{4}/|tag)[a-z0-9\\-]+" }, flags = { 0 })
 public class NaughtyBlgOrg extends PluginForDecrypt {
 
     private enum Category {
@@ -90,9 +90,11 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             contentReleaseLinks = br.getRegex(">Download:?</(.*?)</div>").getMatch(0);
             // Nothing found? Get all links from title till comment field
             if (contentReleaseLinks == null) contentReleaseLinks = br.getRegex("<h2 class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
+            if (contentReleaseLinks == null) contentReleaseLinks = br.getRegex("<h2 class=\"post\\-title\">(.*?)class=\"comments\">Comments are closed").getMatch(0);
         } else {
             // Get all links from title till comment field
             contentReleaseLinks = br.getRegex("<h2 class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
+            if (contentReleaseLinks == null) contentReleaseLinks = br.getRegex("<h2 class=\"post\\-title\">(.*?)class=\"comments\">Comments are closed").getMatch(0);
         }
         if (contentReleaseLinks == null) {
             logger.warning("contentReleaseLinks == null");

@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://((www\\.)?(justin\\.tv)|(www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(((www\\.)?(justin\\.tv)|(www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)|(www\\.)?(justin|twitch)\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
 public class JustinTvDecrypt extends PluginForDecrypt {
 
     public JustinTvDecrypt(PluginWrapper wrapper) {
@@ -53,14 +53,16 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             decryptedLinks.add(dlink);
             return decryptedLinks;
         }
+        if (parameter.matches("http://(www\\.)?(justin|twitch)\\.tv/archive/archive_popout\\?id=\\d+")) {
+            parameter = "http://www.justin.tv/" + System.currentTimeMillis() + "/b/" + new Regex(parameter, "(\\d+)$").getMatch(0);
+        }
         if (parameter.contains("/videos")) {
             if (br.containsHTML("<strong id=\"videos_count\">0")) {
                 logger.info("Nothing to decrypt here: " + parameter);
                 return decryptedLinks;
             }
-            final String[] decryptAgainLinks = br.getRegex("<p class=\\'title\\'>[\t\n\r ]+<a href=\\'(/[^<>\"]*?)\\'").getColumn(0);
-            String[] links = br.getRegex("<p class=\"title\"><a href=\"(/.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) links = br.getRegex("<div class=\"left\">[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
+            final String[] decryptAgainLinks = br.getRegex("<p class=\"title\">[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
+            String[] links = br.getRegex("<div class=\"left\">[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
             if ((decryptAgainLinks == null || decryptAgainLinks.length == 0) && (links == null || links.length == 0)) {
                 logger.warning("Decrypter broken: " + parameter);
                 return null;
@@ -92,6 +94,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             }
             if (parameter.contains("/b/")) {
                 br.getPage("http://api.justin.tv/api/broadcast/by_archive/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".xml");
+                if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
             } else {
                 br.getPage("http://api.justin.tv/api/broadcast/by_chapter/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".xml");
             }

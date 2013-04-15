@@ -100,7 +100,7 @@ public class NowVideoEu extends PluginForHost {
     }
 
     /**
-     * Dev note: Never buy premium from them, as freeuser you haveno limits, as premium neither and you can't even download the original
+     * Dev note: Never buy premium from them, as freeuser you have no limits, as premium neither and you can't even download the original
      * videos as premiumuser->Senseless!!
      */
     @SuppressWarnings("unchecked")
@@ -125,7 +125,7 @@ public class NowVideoEu extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("http://www.nowvideo.co/login.php?return=", "register=Login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (br.getURL().contains("login.php?e=1") || !br.getURL().contains("panel.php?logged=1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getURL().contains("login.php?e=1") || !br.getURL().contains("panel.php?login=1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -163,7 +163,7 @@ public class NowVideoEu extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        final String dllink = br.getRegex("\"(http://f\\d+\\.nowvideo\\.co/dl/[^<>\"]*?)\"").getMatch(0);
+        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.nowvideo\\.co/dl/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

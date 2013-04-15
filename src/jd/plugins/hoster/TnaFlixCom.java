@@ -68,7 +68,7 @@ public class TnaFlixCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.setCookie("http://tnaflix.com/", "content_filter2", "type%3Dstraight%26filter%3Dcams");
-        br.setCookie("http://tnaflix.com/", "content_filter3", "type%3Dstraight%2Cgay%26filter%3Dcams");
+        br.setCookie("http://tnaflix.com/", "content_filter3", "type%3Dstraight%2Ctranny%26filter%3Dcams");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("errormsg=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -82,10 +82,7 @@ public class TnaFlixCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("playIcon\">(.*?)</h2>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("videoDescription\">(.*?)</span>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("description\" content=\"(.*?)Watch Free").getMatch(0);
-                }
+                filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

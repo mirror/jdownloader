@@ -43,7 +43,7 @@ public class FilesMailRu extends PluginForHost {
     public static final String  UNAVAILABLE1  = ">В обработке<";
     public static final String  UNAVAILABLE2  = ">In process<";
     private static final String INFOREGEX     = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
-    public static final String  LINKOFFLINE   = "(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)";
+    public static final String  LINKOFFLINE   = "(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>|>Page cannot be displayed<)";
     public static final String  DLMANAGERPAGE = "class=\"download_type_choose_l\"";
 
     public FilesMailRu(PluginWrapper wrapper) {
