@@ -392,4 +392,10 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction action);
 
+    @DefaultIntValue(15)
+    @AboutConfig
+    int getMaxPremiumIcons();
+
+    void setMaxPremiumIcons(int icons);
+
 }

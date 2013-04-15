@@ -39,6 +39,7 @@ import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -46,6 +47,7 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.settings.GeneralSettings;
 
 public class PremiumStatus extends JPanel implements MouseListener {
 
@@ -62,8 +64,8 @@ public class PremiumStatus extends JPanel implements MouseListener {
     private PremiumStatus() {
         super(new MigLayout("ins 0 3 0 0", "", "[20!]"));
 
-        bars = new TinyProgressBar[BARCOUNT];
-        for (int i = 0; i < BARCOUNT; i++) {
+        bars = new TinyProgressBar[Math.max(1, JsonConfig.create(GeneralSettings.class).getMaxPremiumIcons())];
+        for (int i = 0; i < bars.length; i++) {
             bars[i] = new TinyProgressBar();
             bars[i].setOpaque(false);
             bars[i].addMouseListener(this);
@@ -93,8 +95,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
 
                             public void run() {
                                 /*
-                                 * this scheduleritem checks all enabled
-                                 * accounts every 5 mins
+                                 * this scheduleritem checks all enabled accounts every 5 mins
                                  */
                                 try {
                                     refreshAccountStats();
@@ -134,7 +135,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
             @Override
             protected void runInEDT() {
                 if (bars == null) return;
-                for (int i = 0; i < BARCOUNT; i++) {
+                for (int i = 0; i < bars.length; i++) {
                     bars[i].setEnabled(enabled);
                 }
             }
@@ -145,8 +146,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
         for (Account acc : AccountController.getInstance().list()) {
             if (acc.isEnabled() && acc.refreshTimeoutReached()) {
                 /*
-                 * we do not force update here, the internal timeout will make
-                 * sure accounts get fresh checked from time to time
+                 * we do not force update here, the internal timeout will make sure accounts get fresh checked from time to time
                  */
                 AccountChecker.getInstance().check(acc, false);
             }
@@ -176,7 +176,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
             @Override
             public Object edtRun() {
                 try {
-                    for (int i = 0; i < BARCOUNT; i++) {
+                    for (int i = 0; i < bars.length; i++) {
                         if (domains.size() > 0) {
                             bars[i].setDomainInfo(domains.removeFirst());
                         } else {

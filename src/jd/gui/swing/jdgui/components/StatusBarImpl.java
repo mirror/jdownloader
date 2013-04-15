@@ -374,8 +374,6 @@ public class StatusBarImpl extends JPanel implements StateEventListener {
 
     @Override
     public void onStateChange(StateEvent event) {
-        System.out.println(1);
-
         if (!DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
             if (downloadWatchdogIndicator != null) {
                 removeProcessIndicator(lazyGetDownloadWatchdogIndicator());
