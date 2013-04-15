@@ -205,6 +205,8 @@ public class AccountInfo extends Property {
             if (account_validUntil < cur) {
                 this.setExpired(true);
             }
+        } else {
+            this.setExpired(false);
         }
     }
 

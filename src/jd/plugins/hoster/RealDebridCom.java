@@ -206,6 +206,7 @@ public class RealDebridCom extends PluginForHost {
         } else {
             br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink));
         }
+        if (br.containsHTML("\"error\":5,")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
         if (br.containsHTML("\"error\":4,")) {
             if (dllink.contains("https://")) {
                 dllink = dllink.replace("https://", "http://");
@@ -316,6 +317,10 @@ public class RealDebridCom extends PluginForHost {
             ai.setStatus("Premium User");
         } else {
             // unhandled account type here.
+        }
+        if ("01/01/1970 01:00:00".equals(expire)) {
+            ai.setValidUntil(-1);
+            ai.setStatus("Free User");
         }
         try {
             String hostsSup = br.cloneBrowser().getPage(mProt + mName + "/api/hosters.php");

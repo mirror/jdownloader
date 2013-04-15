@@ -340,8 +340,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 synchronized (filePackage) {
                     for (final DownloadLink link : filePackage.getChildren()) {
                         /*
-                         * do not reset if link is offline, finished , already exist or pluginerror (because only plugin updates can fix
-                         * this)
+                         * do not reset if link is offline, finished , already exist or pluginerror (because only plugin updates can fix this)
                          */
                         link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFECT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
                     }
@@ -426,8 +425,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
-                     * link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -509,14 +507,44 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     java.util.List<Account> usableAccounts = accountCache.get(nextDownloadLink.getHost());
                     if (usableAccounts == null) {
                         usableAccounts = new ArrayList<Account>();
+                        ArrayList<Account> originalAccountswithoutCaptcha = new ArrayList<Account>();
+                        ArrayList<Account> originalAccountswithCaptcha = new ArrayList<Account>();
+                        ArrayList<Account> multiHostAccountwithoutCaptcha = new ArrayList<Account>();
+                        ArrayList<Account> multiHostAccountwithCaptcha = new ArrayList<Account>();
                         if (org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled()) {
                             /* Account Handling */
-                            /* we first add all possible multihoster */
-                            LinkedList<Account> accs = AccountController.getInstance().getMultiHostAccounts(nextDownloadLink.getHost());
-                            if (accs != null) usableAccounts.addAll(accs);
-                            /* then we add all possible local accounts */
-                            accs = AccountController.getInstance().getValidAccounts(nextDownloadLink.getHost());
-                            if (accs != null) usableAccounts.addAll(accs);
+                            /* check for accounts from original plugin */
+                            LinkedList<Account> accs = AccountController.getInstance().getValidAccounts(nextDownloadLink.getHost());
+                            if (accs != null) {
+                                PluginForHost originalPlugin = nextDownloadLink.getDefaultPlugin();
+                                for (Account acc : accs) {
+                                    if (originalPlugin.hasCaptcha(nextDownloadLink, acc) == false) {
+                                        originalAccountswithoutCaptcha.add(acc);
+                                    } else {
+                                        originalAccountswithCaptcha.add(acc);
+                                    }
+                                }
+                            }
+                            /* check for accounts from multihost plugins */
+                            accs = AccountController.getInstance().getMultiHostAccounts(nextDownloadLink.getHost());
+                            if (accs != null) {
+                                for (Account acc : accs) {
+                                    PluginForHost multiHostPlugin = pluginCache.get(acc.getHoster());
+                                    if (multiHostPlugin == null) {
+                                        multiHostPlugin = JDUtilities.getPluginForHost(acc.getHoster());
+                                        pluginCache.put(acc.getHoster(), multiHostPlugin);
+                                    }
+                                    if (multiHostPlugin.hasCaptcha(nextDownloadLink, acc) == false) {
+                                        multiHostAccountwithoutCaptcha.add(acc);
+                                    } else {
+                                        multiHostAccountwithCaptcha.add(acc);
+                                    }
+                                }
+                            }
+                            usableAccounts = originalAccountswithoutCaptcha;
+                            usableAccounts.addAll(multiHostAccountwithoutCaptcha);
+                            usableAccounts.addAll(originalAccountswithCaptcha);
+                            usableAccounts.addAll(multiHostAccountwithCaptcha);
                         }
                         usableAccounts.add(null);/* no account */
                         accountCache.put(nextDownloadLink.getHost(), usableAccounts);
@@ -1229,8 +1257,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                         /*
                                          * create a map holding all possible links sorted by their position in list and their priority
                                          * 
-                                         * by doing this we don't have to walk through possible links multiple times to find next download
-                                         * link, as the list itself will already be correct sorted
+                                         * by doing this we don't have to walk through possible links multiple times to find next download link, as the list
+                                         * itself will already be correct sorted
                                          */
                                         HashMap<Long, java.util.List<DownloadLink>> optimizedList = new HashMap<Long, java.util.List<DownloadLink>>();
                                         /*
@@ -1306,9 +1334,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                          */
                                                         if (DownloadWatchDog.this.activeDownloadsbyHosts(link.getHost()) == 0) {
                                                             /*
-                                                             * do not reconnect if the request comes from host with active downloads, this
-                                                             * will prevent reconnect loops for plugins that allow resume and parallel
-                                                             * downloads
+                                                             * do not reconnect if the request comes from host with active downloads, this will prevent
+                                                             * reconnect loops for plugins that allow resume and parallel downloads
                                                              */
                                                             waitingNewIP = true;
                                                             IPController.getInstance().invalidate();
@@ -1325,8 +1352,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                      */
                                                     if (DownloadWatchDog.this.activeDownloadsbyHosts(link.getHost()) == 0) {
                                                         /*
-                                                         * do not reconnect if the request comes from host with active downloads, this will
-                                                         * prevent reconnect loops for plugins that allow resume and parallel downloads
+                                                         * do not reconnect if the request comes from host with active downloads, this will prevent reconnect
+                                                         * loops for plugins that allow resume and parallel downloads
                                                          */
                                                         waitingNewIP = true;
                                                         IPController.getInstance().invalidate();
@@ -1347,8 +1374,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                          */
                                         if (!hasTempDisabledLinks && !hasInProgressLinks && !waitingNewIP && DownloadWatchDog.this.getActiveDownloads() == 0) {
                                             /*
-                                             * no tempdisabled, no in progress, no reconnect and no next download waiting and no active
-                                             * downloads
+                                             * no tempdisabled, no in progress, no reconnect and no next download waiting and no active downloads
                                              */
                                             if (DownloadWatchDog.this.newDLStartAllowed(forcedLinksWaiting())) {
                                                 /*

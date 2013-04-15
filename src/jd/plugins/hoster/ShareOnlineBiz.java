@@ -560,11 +560,6 @@ public class ShareOnlineBiz extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     public HashMap<String, String> loginAPI(Account account, boolean forceLogin) throws IOException, PluginException {
         synchronized (LOCK) {
             HashMap<String, String> infos = ACCOUNTINFOS.get(account);
