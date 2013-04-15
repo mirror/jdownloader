@@ -1,7 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
+import java.util.List;
 
 import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
@@ -20,7 +20,7 @@ public class RemoveAction extends AbstractRemoveAction {
     private static final long   serialVersionUID = 1L;
     private PremiumAccountTable table;
     private boolean             force            = false;
-    private java.util.List<Account>  selection        = null;
+    private List<Account>       selection        = null;
 
     public RemoveAction(PremiumAccountTable table) {
 
@@ -35,18 +35,20 @@ public class RemoveAction extends AbstractRemoveAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (selection == null) selection = table.getExtTableModel().getSelectedObjects();
+        List<Account> selection = this.selection;
+        if (selection == null && this.table != null) selection = table.getExtTableModel().getSelectedObjects();
         if (selection != null && selection.size() > 0) {
+            final List<Account> fselection = selection;
             IOEQ.add(new Runnable() {
                 public void run() {
                     StringBuilder sb = new StringBuilder();
-                    for (Account account : selection) {
+                    for (Account account : fselection) {
                         if (sb.length() > 0) sb.append("\r\n");
                         sb.append(account.getHoster() + "-Account (" + account.getUser() + ")");
                     }
                     try {
-                        if (!force) Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, _GUI._.account_remove_action_title(selection.size()), _GUI._.account_remove_action_msg(selection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
-                        for (Account account : selection) {
+                        if (!force) Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, _GUI._.account_remove_action_title(fselection.size()), _GUI._.account_remove_action_msg(fselection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
+                        for (Account account : fselection) {
                             AccountController.getInstance().removeAccount(account);
                         }
                     } catch (DialogClosedException e1) {
