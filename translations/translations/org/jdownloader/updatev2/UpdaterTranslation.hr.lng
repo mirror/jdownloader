@@ -1,3 +1,5 @@
+RestartController_confirmToExit_=Zaista izlaz?
+RestartController_confirmToExit_msg=Želite li zaista izaći iz JDownloader-a?
 close_jd=Nemate dovoljno ovlasti za upis %s1. \r\nPokušajte zatvoriti sve pokrenute JDownloader & Java procese i pokušajte ponovno kasnije!\r\n Ako se ovaj problem opet pojavi nakon ponovnog podizanja sustava, molimo kontaktirajte našu podršku.
 confirmdialog_new_update_available_answer_later=Kasnije
 confirmdialog_new_update_available_answer_later_install=Kasnije
