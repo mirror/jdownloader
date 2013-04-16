@@ -90,6 +90,46 @@ public class MuchaCarneCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("xhamster\\.com/xembed\\.php\\?video=(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://xhamster.com/movies/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?college\\-girls\\.com/gallery\\-widget/widget\\.php\\?id=\\d+\\&width=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
+        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        // pornhub handling number 2
+        externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            if (br.containsHTML("<link_url>N/A</link_url>") || br.containsHTML("No htmlCode read")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            externID = br.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
+        if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         // For all following ids, a filename is needed
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -133,9 +173,50 @@ public class MuchaCarneCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("xhamster\\.com/xembed\\.php\\?video=(\\d+)\"").getMatch(0);
+        externID = br.getRegex("\\'(http://promo\\.isharemycash\\.com/embeddedflash2?\\.php\\?[^<>\"]*?)\\'").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://xhamster.com/movies/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            br.getPage(externID);
+            externID = br.getRegex("\\'file\\': \\'(http://[^<>\"]*?)\\'").getMatch(0);
+            if (externID == null) {
+                logger.info("Link probably offline: " + parameter);
+                return decryptedLinks;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("src=\"http://videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
+        if (externID != null) {
+            br.getPage("http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID));
+            externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+            if (externID != null) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                dl.setFinalFileName(filename + ".flv");
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+        }
+        externID = br.getRegex("latinteencash\\.com/flash_video\\.swf\" width=\"\\d+\" height=\"\\d+\" flashvars=\"file=(http[^<>\"]*?\\.flv)\\&").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("(http://(www\\.)?scafy\\.com/flv_player/data/playerConfigEmbed/\\d+\\.xml)").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            externID = br.getRegex("path=\"(http://(www\\.)?scafy\\.com/vidfiles/[^<>\"]*?\\.flv)\"").getMatch(0);
+            if (externID != null) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                dl.setFinalFileName(filename + ".flv");
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+        }
+        if (br.containsHTML("megaporn\\.com/")) {
+            logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         if (externID == null) {

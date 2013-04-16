@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //Decrypts embedded videos from dailymotion
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://(www\\.)?dailymotion\\.com/(video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+)" }, flags = { 0 })
 public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     public DailyMotionComDecrypter(PluginWrapper wrapper) {
@@ -35,7 +35,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("www.", "");
+        String parameter = param.toString().replace("www.", "").replace("embed/video/", "video/");
         // embeded link support
         if (parameter.contains(".com/swf/")) {
             decryptedLinks.add(createDownloadlink(parameter.replace("dailymotion.com/", "dailymotiondecrypted.com/").replaceAll("\\.com/swf(/video)?/", ".com/video/")));

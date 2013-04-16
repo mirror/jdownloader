@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "localhostr.com" }, urls = { "https?://(www\\.)?(localhostr\\.com|lh\\.rs)/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "localhostr.com" }, urls = { "https?://(www\\.)?(localhostr\\.com|lh\\.rs|hostr\\.co)/[A-Za-z0-9]+" }, flags = { 0 })
 public class LocalHostrCom extends PluginForHost {
 
     public LocalHostrCom(PluginWrapper wrapper) {
@@ -42,19 +42,21 @@ public class LocalHostrCom extends PluginForHost {
         return "http://localhostr.com/terms/";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("lh.rs/", "localhostr.com/").replace("https://", "http://"));
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload("http://hostr.co/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        // Correct previously added links
+        correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>404<|>File not found|>We can\\'t find the file you\\'re looking for)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fInfo = br.getRegex("<div id=\"download\\-left\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>[\t\n\r ]+<h3>([^<>\"]*?)</h3>");
+        final Regex fInfo = br.getRegex("<h1>([^<>\"]*?)</h1>.*?<h3>([^<>\"]*?)</h3>");
         final Regex gifLinkRegex = br.getRegex("<h1>(.*?)<small style=\"float:right\"> Size  \\d+x\\d+ / (.*?) / \\d+ Views</small></h1>");
-        String filename = br.getRegex("<title>([^<>\"]*?) \\- Localhostr</title>").getMatch(0);
+        String filename = br.getRegex("<title>Download ([^<>\"]*?) \\- Hostr</title>").getMatch(0);
         if (filename == null) {
             filename = fInfo.getMatch(0);
             if (filename == null) filename = gifLinkRegex.getMatch(0);
@@ -68,15 +70,12 @@ public class LocalHostrCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("\"(/file/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://localhostr.com" + dllink;
-        if (br.containsHTML("I know the risk")) {
-            dllink = dllink + "?agree=on";
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dllink = "http://hostr.co" + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "agreed=on", true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

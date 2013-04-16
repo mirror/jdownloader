@@ -54,7 +54,7 @@ public class AdfLy extends PluginForDecrypt {
                     br.getPage(br.getRedirectLocation());
                 }
             }
-            if (br.containsHTML("(<b style=\"font\\-size: 20px;\">Sorry the page you are looking for does not exist|>404 Not Found<|>Not Found<|>Sorry, but the requested page was not found)")) {
+            if (br.containsHTML("(<b style=\"font\\-size: 20px;\">Sorry the page you are looking for does not exist|>404 Not Found<|>Not Found<|>Sorry, but the requested page was not found)") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains("ink-deleted.php"))) {
                 logger.info("adf.ly link offline: " + parameter);
                 return decryptedLinks;
             }

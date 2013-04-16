@@ -30,7 +30,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://(www\\.)?audiobeats\\.net/(liveset|link|event|artist)\\?id=\\d+" }, flags = { 0 })
 public class DBtsNt extends PluginForDecrypt {
@@ -106,14 +105,19 @@ public class DBtsNt extends PluginForDecrypt {
                 logger.info("Server flooded, server blocked: " + parameter);
                 return decryptedLinks;
             }
+            if (fpName == null) fpName = br.getRegex("<title>AudioBeats\\.net \\- (.*?)</title>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("style=\"width:100%\">([^<>\"]*?)</h3>").getMatch(0);
 
-            String[] allLivesets = br.getRegex("\"(/liveset\\?id=\\d+)").getColumn(0);
+            final String[] allLivesets = br.getRegex("\"(/liveset\\?id=\\d+)").getColumn(0);
 
+            if ((allLivesets == null || allLivesets.length == 0) && fpName != null) {
+                logger.info("Link is probably offline (no downloadable content found): " + parameter);
+                return decryptedLinks;
+            }
             if (allLivesets == null || allLivesets.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            if (fpName == null) fpName = br.getRegex("<title>AudioBeats\\.net \\- (.*?)</title>").getMatch(0);
             for (String aLiveset : allLivesets) {
                 if (!decryptLiveset(aLiveset, decryptedLinks)) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -135,6 +139,7 @@ public class DBtsNt extends PluginForDecrypt {
     }
 
     private boolean decryptLiveset(String parameter, ArrayList<DownloadLink> decryptedLinks) throws IOException, DecrypterException {
+        parameter = "http://www.audiobeats.net" + parameter;
         int i = 0;
         do {
             br.getPage(parameter);
@@ -146,12 +151,12 @@ public class DBtsNt extends PluginForDecrypt {
             } else {
                 String[] allLinks = br.getRegex("\"(/link\\?id=\\d+-.*?)\"").getColumn(0);
                 if (allLinks == null || allLinks.length == 0) {
-                    if (decryptedLinks.size() > 0) {
+                    // No links to download
+                    if (br.containsHTML("Sorry this links is reported as dead\\.") || br.containsHTML("<h3>Download Links</h3>")) {
+                        logger.info("Found dead link: " + parameter);
                         return true;
-                    } else {
-                        if (br.containsHTML("Sorry this links is reported as dead\\.")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-                        return false;
                     }
+                    return false;
                 }
                 for (String aLink : allLinks) {
                     try {
