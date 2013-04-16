@@ -53,12 +53,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "likeupload.net" }, urls = { "https?://(www\\.)?likeupload\\.net/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "likeupload.net" }, urls = { "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2 })
 public class LikeUploadNet extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://likeupload.net";
+    private final String         COOKIE_HOST                  = "http://likeupload.org";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -117,6 +117,8 @@ public class LikeUploadNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         prepBrowser(br);
+        // Convert old links
+        correctDownloadLink(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, ">This file doesn\\'t exist, or has been removed|>Download Now With Our").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (new Regex(correctedBR, MAINTENANCE).matches()) {

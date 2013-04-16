@@ -34,23 +34,26 @@ public class TedCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        String videoTitle = br.getRegex("<span id=\"altHeadline\" >([^<>\"]*?)</span>").getMatch(0);
         String plainfilename = br.getRegex("\"http://download\\.ted\\.com/talks/([^<>\"]*?)\\.mp4([^<>\"]+)?\">download the video</a>").getMatch(0);
         if (plainfilename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         plainfilename = Encoding.htmlDecode(plainfilename.trim());
+        if (videoTitle == null) videoTitle = plainfilename;
+        videoTitle = Encoding.htmlDecode(videoTitle);
         br.getPage("http://www.ted.com/download/links/slug/" + plainfilename + "/type/talks/ext/mp4");
         final String[] qualities = { "480p", "light" };
         for (final String quality : qualities) {
             final DownloadLink dl = createDownloadlink("http://download.ted.com/talks/" + plainfilename + "-" + quality + ".mp4?apikey=TEDDOWNLOAD");
-            dl.setFinalFileName(plainfilename + "_" + quality + ".mp4");
+            dl.setFinalFileName(videoTitle + "_" + quality + ".mp4");
             decryptedLinks.add(dl);
         }
         final String dlMP3 = br.getRegex("<dt><a href=\"(http://download\\.ted\\.com/talks/[^<>\"]*?)\">Download to desktop \\(MP3\\)<").getMatch(0);
         if (dlMP3 != null) {
             final DownloadLink dl = createDownloadlink(dlMP3);
-            dl.setFinalFileName(plainfilename + ".mp3");
+            dl.setFinalFileName(videoTitle + ".mp3");
             decryptedLinks.add(dl);
         }
 

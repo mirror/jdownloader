@@ -82,6 +82,10 @@ public class WarServerCz extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        final String crippeledFilename = br.getRegex("href=\"http://(www\\.)?warserver\\.cz/uzivatele/prihlaseni\\?ret=http%3A%2F%2Fwww\\.warserver\\.cz%2Fstahnout%2F\\d+%2F([^<>\"]*?)\"").getMatch(1);
+        final String freeDl = br.getRegex("\\'(\\?do=doDownload[^<>\"]*?)\\'").getMatch(0);
+        if (freeDl == null || crippeledFilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(downloadLink.getDownloadURL() + "/" + crippeledFilename + freeDl);
         final String rcID = br.getRegex("\\?k=([^<>\"]*?)\"").getMatch(0);
         if (rcID == null) {
             if (br.containsHTML("ERROR: Password protected file")) {

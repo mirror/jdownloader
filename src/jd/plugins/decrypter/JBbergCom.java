@@ -96,7 +96,7 @@ public class JBbergCom extends PluginForDecrypt {
             }
             final String finallink = br2.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             // not sure of best action here, but seems some are either down or require account?. Continue with the results
-            if (br2.containsHTML("url\":\"not authorized\"")) {
+            if (br2.containsHTML("url\":\"not authorized\"") || br2.containsHTML("\"url\":\"\"")) {
                 continue;
             }
             if (finallink == null) {
