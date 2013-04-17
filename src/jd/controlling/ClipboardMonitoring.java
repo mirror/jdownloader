@@ -76,6 +76,7 @@ public class ClipboardMonitoring {
     private Clipboard                   clipboard           = null;
     private volatile boolean            skipChangeDetection = false;
     private static WindowsClipboardHack clipboardHack       = null;
+    private static boolean              firstRoundDone      = false;
 
     public synchronized void startMonitoring() {
         if (isMonitoring()) return;
@@ -182,10 +183,14 @@ public class ClipboardMonitoring {
                             }
                         }
                         if (!StringUtils.isEmpty(handleThisRound)) {
-                            LinkCollectingJob job = new LinkCollectingJob(handleThisRound);
-                            job.setExtractPasswords(PasswordUtils.getPasswords(handleThisRound));
-                            job.setCustomSourceUrl(lastBrowserUrl);
-                            LinkCollector.getInstance().addCrawlerJob(job);
+                            if (firstRoundDone) {
+                                LinkCollectingJob job = new LinkCollectingJob(handleThisRound);
+                                job.setExtractPasswords(PasswordUtils.getPasswords(handleThisRound));
+                                job.setCustomSourceUrl(lastBrowserUrl);
+                                LinkCollector.getInstance().addCrawlerJob(job);
+                            } else {
+                                firstRoundDone = true;
+                            }
                         }
                     } catch (final Throwable e) {
                         Log.exception(e);
