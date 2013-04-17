@@ -51,6 +51,10 @@ public class MyCrazyVidsCom extends PluginForDecrypt {
                 logger.info("Cannot decrypt link, either offline or server error: " + parameter);
                 return decryptedLinks;
             }
+            if (br.containsHTML(">404 Not Found<")) {
+                logger.info("Cannot decrypt link, either offline or server error: " + parameter);
+                return decryptedLinks;
+            }
             String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));

@@ -62,7 +62,7 @@ public class XTubeCom extends PluginForHost {
         br.setCookie(MAINPAGE, "cookie_warning", "S");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("?msg=Invalid+Video+ID") || br.containsHTML(">This video has been removed from XTube")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("msg=Invalid+Video+ID") || br.containsHTML(">This video has been removed from XTube")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"font_b_12px\">(.*?)</div><div").getMatch(0);
         String fileID = new Regex(downloadLink.getDownloadURL(), "xtube\\.com/watch\\.php\\?v=(.+)").getMatch(0);
         String ownerName = br.getRegex("\\?field_subscribe_user_id=([^<>\"]*?)\"").getMatch(0);
