@@ -32,6 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDHexUtils;
+import jd.utils.JDUtilities;
 
 // Altes Decrypterplugin bis Revision 14394 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "fromDecrypter://(www\\.)?myvideo\\.(de|at)/watch/\\d+(/\\w+)?" }, flags = { 32 })
@@ -102,6 +103,7 @@ public class MyVideo extends PluginForHost {
         if (input == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         input = input.replaceAll("%0D%0A", "").trim();
         String result;
+        JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         try {
             result = decrypt(input, p.get("ID"));
         } catch (Throwable e) {
@@ -151,8 +153,8 @@ public class MyVideo extends PluginForHost {
     private String decrypt(String cipher, String id) {
         String key = org.appwork.utils.Hash.getMD5(Encoding.Base64Decode(KEY) + org.appwork.utils.Hash.getMD5(id));
         byte[] ciphertext = JDHexUtils.getByteArray(cipher);
-        jd.crypt.RC4 rc4 = new jd.crypt.RC4();
-        byte[] plain = rc4.decrypt(key.getBytes(), ciphertext);
+        jd.plugins.decrypter.LnkCrptWs.KeyCaptchaShowDialogTwo arkfour = new jd.plugins.decrypter.LnkCrptWs.KeyCaptchaShowDialogTwo();
+        byte[] plain = arkfour.D(key.getBytes(), ciphertext);
         return Encoding.htmlDecode(new String(plain));
     }
 
@@ -209,7 +211,6 @@ public class MyVideo extends PluginForHost {
         if (!CLIPURL.contains("token")) {
             rtmp.setProtocol(0);
         }
-
         rtmp.setPlayPath(CLIPPATH);
         rtmp.setApp(app);
         rtmp.setUrl(CLIPURL);
