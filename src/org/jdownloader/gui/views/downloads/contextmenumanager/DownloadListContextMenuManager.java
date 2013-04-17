@@ -117,7 +117,7 @@ public class DownloadListContextMenuManager {
         add(new ActionData(CheckStatusAction.class));
         add(new ActionData(OpenInBrowserAction.class));
         add(new ActionData(URLEditorAction.class));
-        add(new ActionData(PackageNameAction.class, ActionProperty.PACKAGE_CONTEXT));
+        add(new ActionData(PackageNameAction.class, MenuItemProperty.PACKAGE_CONTEXT));
         add(new ActionData(SetDownloadFolderInDownloadTableAction.class));
         add(new ActionData(SetDownloadPassword.class));
         add(new ActionData(SetCommentAction.class));
@@ -129,7 +129,7 @@ public class DownloadListContextMenuManager {
         add(new ActionData(PriorityHigherAction.class));
         add(new ActionData(PriorityHighestAction.class));
 
-        add(new ActionData(OpenFileAction.class, ActionProperty.LINK_CONTEXT));
+        add(new ActionData(OpenFileAction.class, MenuItemProperty.LINK_CONTEXT));
         add(new ActionData(OpenDirectoryAction.class));
 
         add(new ActionData(SortAction.class));

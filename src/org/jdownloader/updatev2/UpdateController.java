@@ -133,6 +133,7 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public String getAppID() {
+        if (handler == null) { return "NotConnected"; }
         return handler.getAppID();
     }
 

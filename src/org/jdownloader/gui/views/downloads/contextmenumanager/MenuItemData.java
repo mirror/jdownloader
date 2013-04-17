@@ -137,19 +137,7 @@ public class MenuItemData implements Storable {
             //
             throw new WTFException("No ACTION");
         }
-        if (actionData.getProperties() != null) {
-            for (ActionProperty ap : actionData.getProperties()) {
-                switch (ap) {
-                case LINK_CONTEXT:
-                    if (!selection.isLinkContext()) return null;
-                    break;
-                case PACKAGE_CONTEXT:
-                    if (!selection.isPackageContext()) return null;
-                    break;
 
-                }
-            }
-        }
         return new JMenuItem(createAction(selection));
 
     }
@@ -186,10 +174,15 @@ public class MenuItemData implements Storable {
     }
 
     protected boolean showItem(MenuItemData inst, SelectionInfo<?, ?> selection) {
-        if (inst.getProperties() == null) return true;
+        if (inst.mergeProperties() == null) return true;
         for (MenuItemProperty p : inst.getProperties()) {
             switch (p) {
-
+            case LINK_CONTEXT:
+                if (selection.isLinkContext()) return false;
+                break;
+            case PACKAGE_CONTEXT:
+                if (selection.isPackageContext()) return false;
+                break;
             case HIDE_IF_DISABLED:
                 break;
             case HIDE_IF_OPENFILE_IS_UNSUPPORTED:
@@ -227,11 +220,17 @@ public class MenuItemData implements Storable {
         if (!showItem(this, selection)) return null;
         JComponent it = createItem(selection);
         if (it == null) return null;
-        if (!it.isEnabled() && getProperties().contains(MenuItemProperty.HIDE_IF_DISABLED)) return null;
+        if (!it.isEnabled() && mergeProperties().contains(MenuItemProperty.HIDE_IF_DISABLED)) return null;
 
         root.add(it);
         return it;
 
     }
 
+    public HashSet<MenuItemProperty> mergeProperties() {
+        HashSet<MenuItemProperty> ret = new HashSet<MenuItemProperty>();
+        if (getProperties() != null) ret.addAll(getProperties());
+        if (actionData != null && actionData.getProperties() != null) ret.addAll(actionData.getProperties());
+        return ret;
+    }
 }

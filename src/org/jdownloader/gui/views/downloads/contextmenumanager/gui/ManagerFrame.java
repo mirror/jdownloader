@@ -1,186 +1,136 @@
 package org.jdownloader.gui.views.downloads.contextmenumanager.gui;
 
-import java.awt.AlphaComposite;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.datatransfer.Transferable;
+import java.awt.event.ActionEvent;
 
-import javax.swing.DropMode;
-import javax.swing.JComponent;
-import javax.swing.JScrollPane;
-import javax.swing.JTree;
-import javax.swing.TransferHandler;
-import javax.swing.event.TreeExpansionEvent;
-import javax.swing.event.TreeWillExpandListener;
-import javax.swing.tree.ExpandVetoException;
+import javax.swing.Box;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreePath;
+
+import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.BasicGui;
 import org.appwork.swing.MigPanel;
-import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.Application;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
+import org.jdownloader.images.NewTheme;
 
 public class ManagerFrame extends BasicGui {
+    public static void main(String[] args) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                Application.setApplication(".jd_home");
+                LookAndFeelController.getInstance().init();
+
+                new ManagerFrame();
+            }
+        };
+
+    }
+
+    private InfoPanel infoPanel;
 
     public ManagerFrame() {
         super(_GUI._.ManagerFrame_ManagerFrame_());
     }
 
-    private static void expandAll(JTree tree, boolean expand) {
-        Object root = tree.getModel().getRoot();
-
-        // Traverse tree from root
-        expandAll(tree, new TreePath(root), expand);
-    }
-
-    private static void expandAll(JTree tree, TreePath parent, boolean expand) {
-        // Traverse children
-        MenuItemData node = (MenuItemData) parent.getLastPathComponent();
-        if (node.getItems() != null) {
-            for (MenuItemData mid : node.getItems()) {
-                TreePath path = parent.pathByAddingChild(mid);
-                expandAll(tree, path, expand);
-            }
-        }
-
-        if (expand) {
-            tree.expandPath(parent);
-        } else {
-            tree.collapsePath(parent);
-        }
-    }
-
     @Override
     protected void layoutPanel() {
-        MigPanel panel = new MigPanel("ins 0", "[grow,fill][]", "[grow,fill]");
+        MigPanel panel = new MigPanel("ins 2,wrap 2", "[grow,fill][300!,fill]", "[grow,fill][]");
+        panel.setOpaque(false);
+        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(panel);
+
         final ManagerTreeModel model = new ManagerTreeModel(new DownloadListContextMenuManager().getMenuData());
-        final JTree tree = new JTree(model) {
-
-            public void paintComponent(Graphics g) {
-
-                super.paintComponent(g);
-
-                ((Graphics2D) g).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.05f));
-                for (int i = 0; i < getHeight() / 24; i++) {
-                    g.setColor(Color.BLACK);
-                    g.fillRect(0, i * 2 * 24, getWidth(), 24);
-                }
-                if (getDropLocation() != null) System.out.println(getDropLocation().getChildIndex());
-
-            }
-        };
-        tree.setExpandsSelectedPaths(true);
-        tree.addTreeWillExpandListener(new TreeWillExpandListener() {
+        final ExtTree tree = new ExtTree(model);
+        tree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
 
             @Override
-            public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
-            }
-
-            @Override
-            public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
-                throw new ExpandVetoException(event);
-            }
-
-        });
-        expandAll(tree, true);
-        tree.putClientProperty("JTree.lineStyle", "Angled");
-        tree.setCellRenderer(new Renderer());
-        tree.setRootVisible(false);
-        tree.setRowHeight(24);
-        tree.setDragEnabled(true);
-        // tree.setDropMode(DropMode.ON_OR_INSERT_ROWS);
-        tree.setDropMode(DropMode.INSERT);
-        tree.setTransferHandler(new TransferHandler() {
-            public boolean canImport(TransferHandler.TransferSupport support) {
-
-                if (!support.isDataFlavorSupported(MenuItemTransferAble.NODE_FLAVOR) || !support.isDrop()) { return false; }
-
-                JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
-
-                return dropLocation.getPath() != null;
-            }
-
-            public int getSourceActions(JComponent c) {
-                return TransferHandler.MOVE;
-            }
-
-            protected Transferable createTransferable(JComponent c) {
-                // NODE_FLAVOR
-                expandAll(tree, true);
-                return new MenuItemTransferAble(tree.getSelectionPath());
-
-            }
-
-            protected void exportDone(JComponent c, Transferable t, int action) {
-                if (action == TransferHandler.MOVE) {
-                    // we need to remove items imported from the appropriate source.
-
+            public void valueChanged(TreeSelectionEvent e) {
+                TreePath sel = tree.getSelectionPath();
+                if (sel == null) {
+                    infoPanel.updateInfo(null);
+                } else {
+                    infoPanel.updateInfo((MenuItemData) sel.getLastPathComponent());
                 }
             }
-
-            public boolean importData(TransferHandler.TransferSupport support) {
-                if (!canImport(support)) { return false; }
-
-                JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
-
-                TreePath path = dropLocation.getPath();
-
-                Transferable transferable = support.getTransferable();
-                try {
-                    System.out.println(dropLocation);
-                    TreePath data = (TreePath) transferable.getTransferData(MenuItemTransferAble.NODE_FLAVOR);
-                    int childIndex = dropLocation.getChildIndex();
-
-                    model.moveTo(data, (MenuItemData) path.getLastPathComponent(), childIndex);
-                    TreePath newPath = path.pathByAddingChild(data.getLastPathComponent());
-                    tree.setSelectionPath(newPath);
-                    expandAll(tree, true);
-                    // if (childIndex == -1) {
-                    // childIndex = tree.getModel().getChildCount(path.getLastPathComponent());
-                    // }
-                    System.out.println(childIndex);
-                    // DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(transferData);
-                    // DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) path.getLastPathComponent();
-                    // model.insertNodeInto(newNode, parentNode, childIndex);
-                    //
-                    // TreePath newPath = path.pathByAddingChild(newNode);
-                    // tree.makeVisible(newPath);
-                    // tree.scrollRectToVisible(tree.getPathBounds(newPath));
-                } catch (Exception e) {
-                    Dialog.getInstance().showExceptionDialog("Error", e.getMessage(), e);
-                    e.printStackTrace();
-                }
-                // String transferData;
-                // try {
-                // transferData = (String) transferable.getTransferData(DataFlavor.stringFlavor);
-                // } catch (IOException e) {
-                // return false;
-                // } catch (UnsupportedFlavorException e) {
-                // return false;
-                // }
-                //
-                // int childIndex = dropLocation.getChildIndex();
-                // if (childIndex == -1) {
-                // childIndex = model.getChildCount(path.getLastPathComponent());
-                // }
-                //
-                // DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(transferData);
-                // DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) path.getLastPathComponent();
-                // model.insertNodeInto(newNode, parentNode, childIndex);
-                //
-                // TreePath newPath = path.pathByAddingChild(newNode);
-                // tree.makeVisible(newPath);
-                // tree.scrollRectToVisible(tree.getPathBounds(newPath));
-
-                return true;
-            }
         });
+        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(tree);
+
         // tree.set
         // tree.setShowsRootHandles(false);
-        panel.add(new JScrollPane(tree));
+        HeaderScrollPane sp = new HeaderScrollPane(tree);
+        sp.setColumnHeaderView(new TreeHeader());
+        panel.add(sp);
+        infoPanel = new InfoPanel();
+        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(infoPanel);
+        sp = new HeaderScrollPane(infoPanel);
+        sp.setColumnHeaderView(new OptionsPaneHeader());
+        panel.add(sp);
+        MigPanel bottom = new MigPanel("ins 0", "[][][grow,fill][][]", "[]");
+        ExtButton save = new ExtButton(new AppAction() {
+            {
+                setName(_GUI._.lit_save());
+                setSmallIcon(NewTheme.I().getIcon("save", 20));
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            }
+
+        });
+
+        ExtButton add = new ExtButton(new AppAction() {
+            {
+                setName(_GUI._.ManagerFrame_layoutPanel_add());
+                setSmallIcon(NewTheme.I().getIcon("add", 20));
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            }
+
+        });
+
+        ExtButton remove = new ExtButton(new AppAction() {
+            {
+                setName(_GUI._.literally_remove());
+                setSmallIcon(NewTheme.I().getIcon("delete", 20));
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            }
+
+        });
+        ExtButton cancel = new ExtButton(new AppAction() {
+            {
+                setName(_GUI._.lit_cancel());
+                setSmallIcon(NewTheme.I().getIcon("cancel", 20));
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            }
+
+        });
+
+        bottom.add(add, "sg 1,tag ok");
+        bottom.add(remove, "sg 1,tag ok");
+        bottom.add(Box.createHorizontalBox());
+        bottom.add(save, "sg 1,tag ok");
+        bottom.add(cancel, "sg 1,tag cancel");
+        bottom.setOpaque(false);
+        panel.add(bottom, "spanx");
+
+        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(sp);
         getFrame().setContentPane(panel);
     }
 

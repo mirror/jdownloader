@@ -108,9 +108,9 @@ public class RestartController implements ShutdownVetoListener {
         ArrayList<String> ret = new ArrayList<String>();
         if (startupParameters != null) {
             for (Entry<String, CommandSwitch> es : startupParameters.getMap().entrySet()) {
-                if (IGNORE_COMMAND_SWITCHES.contains(es.getKey().toLowerCase(Locale.ENGLISH))) continue;
+                if (IGNORE_COMMAND_SWITCHES.contains(es.getKey() == null ? null : es.getKey().toLowerCase(Locale.ENGLISH))) continue;
 
-                ret.add("-" + es.getKey());
+                if (es.getKey() != null) ret.add("-" + es.getKey());
                 for (String p : es.getValue().getParameters()) {
 
                     ret.add(p);

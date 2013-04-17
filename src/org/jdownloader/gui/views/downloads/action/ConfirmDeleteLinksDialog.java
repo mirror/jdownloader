@@ -28,9 +28,9 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog implements ConfirmDe
         JComponent ret = super.layoutDialogContent();
 
         if (isRecycleSupported()) {
-            toRecycleCb = new JComboBox(new String[] { _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_delete_() });
+            toRecycleCb = new JComboBox(new String[] { _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_2(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2() });
         } else {
-            toRecycleCb = new JComboBox(new String[] { _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_delete_() });
+            toRecycleCb = new JComboBox(new String[] { _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2() });
 
         }
 

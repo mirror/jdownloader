@@ -2368,7 +2368,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you want to delete all not selected Downloadlinks? Be wise - Once confirmed, this cannot be undone!" })
     String RemoveNonSelectedAction_actionPerformed();
 
-    @Default(lngs = { "en" }, values = { "Do you want to delete all offline Downloadlinks? Be wise - Once confirmed, this cannot be undone!" })
+    @Default(lngs = { "en" }, values = { "Do you want to remove all offline Downloadlinks? Be wise - Once confirmed, this cannot be undone!" })
     String RemoveOfflineAction_actionPerformed();
 
     @Default(lngs = { "en" }, values = { "Start Downloads" })
@@ -2389,14 +2389,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Force Download Start" })
     String ForceDownloadAction_ForceDownloadAction();
 
-    @Default(lngs = { "en" }, values = { "Move Files to Recycle Bin" })
-    String ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_();
+    @Default(lngs = { "en" }, values = { "Move downloaded Files to Trash & remove Links from JDownloader" })
+    String ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_2();
 
-    @Default(lngs = { "en" }, values = { "Delete Files permanently from harddisk" })
-    String ConfirmDeleteLinksDialog_layoutDialogContent_delete_();
+    @Default(lngs = { "en" }, values = { "Delete downloaded Files permanently from harddisk & remove Links from JDownloader" })
+    String ConfirmDeleteLinksDialog_layoutDialogContent_delete_2();
 
-    @Default(lngs = { "en" }, values = { "Do NOT delete already downloaded files from harddisk" })
-    String ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete();
+    @Default(lngs = { "en" }, values = { "Keep all downloaded Files - just remove Links from JDownloader" })
+    String ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2();
 
     @Default(lngs = { "en" }, values = { "\r\n%s1 Links(s) to delete\r\n%s2 Files on Disk\r\nLinks left in Downloadlist: %s3" })
     String DeleteSelectionAction_actionPerformed_affected(int linkCount, String bytes, int i);
@@ -2466,5 +2466,50 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { ">>Extension Submenu" })
     String AddonSubMenuLink_AddonSubMenuLink_();
+
+    @Default(lngs = { "en" }, values = { "Edit Menu Structure (Use Drag&Drop)" })
+    String ManagerFrame_layoutPanel_menustructure_();
+
+    @Default(lngs = { "en" }, values = { "Edit Menu Node" })
+    String ManagerFrame_layoutPanel_info();
+
+    @Default(lngs = { "en" }, values = { "Add Entry" })
+    String ManagerFrame_layoutPanel_add();
+
+    @Default(lngs = { "en" }, values = { "Submenu" })
+    String InfoPanel_update_submenu();
+
+    @Default(lngs = { "en" }, values = { "Seperator Line" })
+    String InfoPanel_update_seperator_line();
+
+    @Default(lngs = { "en" }, values = { "Link" })
+    String InfoPanel_update_link();
+
+    @Default(lngs = { "en" }, values = { "Action" })
+    String InfoPanel_update_action();
+
+    @Default(lngs = { "en" }, values = { "Properties" })
+    String InfoPanel_InfoPanel_properties_();
+
+    @Default(lngs = { "en" }, values = { "Hide if Action is disabled" })
+    String InfoPanel_InfoPanel_hideIfDisabled();
+
+    @Default(lngs = { "en" }, values = { "Hide if System does not Support opening Files" })
+    String InfoPanel_InfoPanel_hideIfOpenFileIsUnsupported();
+
+    @Default(lngs = { "en" }, values = { "Hide if File/Folder does not exist" })
+    String InfoPanel_InfoPanel_hideIfFileNotExists();
+
+    @Default(lngs = { "en" }, values = { "Only visible if clicked on a Link" })
+    String InfoPanel_InfoPanel_linkContext();
+
+    @Default(lngs = { "en" }, values = { "Only visible if clicked on a Package" })
+    String InfoPanel_InfoPanel_packageContext();
+
+    @Default(lngs = { "en" }, values = { "Ahh... a new dialog?" })
+    String DownloadController_deleteLinksRequest_object_help();
+
+    @Default(lngs = { "en" }, values = { "oh - it seems that you just saw the 'Are you sure...' Dialog! You might think 'OMG what a useless dialog' now.\r\nIf you do, and do not want to see this dialog again, you have two options:\r\n     1. Press the Ctrl Key while Deleting links - this will bypass the dialog.\r\n     2. Go to Advanced Options and disable the dialog forever" })
+    String DownloadController_deleteLinksRequest_object_msg();
 
 }

@@ -7,9 +7,6 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
-import jd.gui.swing.laf.LookAndFeelController;
-
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainer;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainerRoot;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
@@ -17,18 +14,6 @@ import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
 public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
 
     private MenuContainerRoot data;
-
-    public static void main(String[] args) {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                LookAndFeelController.getInstance().init();
-                new ManagerFrame();
-            }
-        };
-
-    }
 
     public ManagerTreeModel(MenuContainerRoot menuContainerRoot) {
         super(null, false);

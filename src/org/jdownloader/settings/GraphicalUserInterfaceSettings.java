@@ -389,4 +389,16 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setLinkgrabberDefaultClearAction(ClearAction action);
 
+    public static enum DeleteLinksDialogOption {
+        HIDE_ALWAYS_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK,
+        HIDE_IF_CTRL_IS_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK,
+        HIDE_IF_CTRL_IS_NOT_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK;
+    }
+
+    @DefaultEnumValue("HIDE_IF_CTRL_IS_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK")
+    @AboutConfig
+    DeleteLinksDialogOption getShowDeleteLinksDialogOption();
+
+    void setShowDeleteLinksDialogOption(DeleteLinksDialogOption option);
+
 }

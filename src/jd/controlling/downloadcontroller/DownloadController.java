@@ -33,6 +33,7 @@ import jd.config.NoOldJDDataBaseFoundException;
 import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageController;
+import jd.gui.swing.jdgui.JDGui;
 import jd.parser.Regex;
 import jd.plugins.DeleteTo;
 import jd.plugins.DownloadLink;
@@ -73,6 +74,7 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.utils.JDFileUtils;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
@@ -826,7 +828,21 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         dialog.setRecycleSupported(JDFileUtils.isTrashSupported());
 
         dialog.setDeleteFilesFromDiskEnabled(si.isShiftDown());
-        final ConfirmDeleteLinksDialogInterface d = si.isAvoidRlyEnabled() ? new ConfirmDeleteLinksDialogInterface() {
+        boolean byPassDialog = false;
+        switch (JsonConfig.create(GraphicalUserInterfaceSettings.class).getShowDeleteLinksDialogOption()) {
+        case HIDE_ALWAYS_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK:
+            byPassDialog = true;
+            break;
+        case HIDE_IF_CTRL_IS_NOT_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK:
+            byPassDialog = !si.isAvoidRlyEnabled();
+            break;
+        case HIDE_IF_CTRL_IS_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK:
+            byPassDialog = si.isAvoidRlyEnabled();
+            break;
+        }
+        // boolean byPassDialog = ;
+        // si.isAvoidRlyEnabled();
+        final ConfirmDeleteLinksDialogInterface d = byPassDialog ? new ConfirmDeleteLinksDialogInterface() {
 
             @Override
             public String getMessage() {
@@ -863,6 +879,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         confirmed = d.getCloseReason() == CloseReason.OK;
 
         final boolean toRecycle = d.isDeleteFilesToRecycle();
+
+        if (!byPassDialog) {
+
+            JDGui.help(_GUI._.DownloadController_deleteLinksRequest_object_help(), _GUI._.DownloadController_deleteLinksRequest_object_msg(), NewTheme.I().getIcon("robot_info", -1));
+        }
 
         if (confirmed) {
             IOEQ.add(new Runnable() {

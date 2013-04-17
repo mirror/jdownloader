@@ -19,7 +19,6 @@ public class MenuItemTransferAble implements Transferable {
 
     @Override
     public DataFlavor[] getTransferDataFlavors() {
-        System.out.println("GET");
         return new DataFlavor[] { NODE_FLAVOR };
     }
 
