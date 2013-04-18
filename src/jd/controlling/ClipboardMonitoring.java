@@ -88,17 +88,23 @@ public class ClipboardMonitoring {
 
             @Override
             public void run() {
+                final int minWaitTimeout = 200;
+                final int maxWaitTimeout = 1000;
+                int waitTimeout = minWaitTimeout;
                 while (Thread.currentThread() == monitoringThread) {
                     try {
                         synchronized (this) {
-                            this.wait(750);
+                            System.out.println(waitTimeout);
+                            this.wait(waitTimeout);
                         }
                         if (Thread.currentThread() != monitoringThread) return;
                     } catch (InterruptedException e) {
                         LogController.CL().finer("Interrupted ClipBoard Monitoring Thread");
                         return;
                     }
+                    waitTimeout = Math.min(waitTimeout + 200, maxWaitTimeout);
                     if (skipChangeDetection) {
+                        waitTimeout = maxWaitTimeout;
                         continue;
                     }
                     try {
@@ -184,6 +190,7 @@ public class ClipboardMonitoring {
                         }
                         if (!StringUtils.isEmpty(handleThisRound)) {
                             if (firstRoundDone) {
+                                waitTimeout = minWaitTimeout;
                                 LinkCollectingJob job = new LinkCollectingJob(handleThisRound);
                                 job.setExtractPasswords(PasswordUtils.getPasswords(handleThisRound));
                                 job.setCustomSourceUrl(lastBrowserUrl);

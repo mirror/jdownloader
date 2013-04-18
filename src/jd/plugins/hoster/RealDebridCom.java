@@ -206,7 +206,10 @@ public class RealDebridCom extends PluginForHost {
         } else {
             br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink));
         }
-        if (br.containsHTML("\"error\":5,")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
+        if (br.containsHTML("\"error\":5,")) {
+            /* no happy hour */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         if (br.containsHTML("\"error\":4,")) {
             if (dllink.contains("https://")) {
                 dllink = dllink.replace("https://", "http://");
@@ -333,7 +336,9 @@ public class RealDebridCom extends PluginForHost {
             // and so does vimeo
             supportedHosts.remove("vimeo.com");
             // supportedHosts.remove("netload.in");
-
+            if (supportedHosts.contains("freakshare.net")) {
+                supportedHosts.add("freakshare.com");
+            }
             /*
              * set ArrayList<String> with all supported multiHosts of this service
              */
