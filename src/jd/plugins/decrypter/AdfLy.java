@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/(?!link\\-deleted\\.php|index)[^<>\"/#]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/(?!link\\-deleted\\.php|index|login)[^<>\"/#]+" }, flags = { 0 })
 public class AdfLy extends PluginForDecrypt {
 
     public AdfLy(PluginWrapper wrapper) {
@@ -59,6 +59,10 @@ public class AdfLy extends PluginForDecrypt {
                 return decryptedLinks;
             }
             if (br.containsHTML("Sorry, there has been a problem\\.")) {
+                logger.info("adf.ly link offline: " + parameter);
+                return decryptedLinks;
+            }
+            if ("http://adf.ly/".equals(br.getRedirectLocation())) {
                 logger.info("adf.ly link offline: " + parameter);
                 return decryptedLinks;
             }

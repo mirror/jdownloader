@@ -43,11 +43,12 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.)?grooveshark\\.com/([#!/%21]+)?((album|artist|playlist|s|user)/.*?/([a-zA-z0-9]+|\\d+)(/music/favorites|/similar)?|popular)" }, flags = { 0 })
 public class GrvShrkCm extends PluginForDecrypt {
 
-    private String                  LISTEN  = "http://grooveshark.com/";
-    private static String           USERUID = UUID.randomUUID().toString().toUpperCase(Locale.ENGLISH);
+    private String                  LISTEN           = "http://grooveshark.com/";
+    private static String           USERUID          = UUID.randomUUID().toString().toUpperCase(Locale.ENGLISH);
     private String                  USERID;
     private String                  USERNAME;
     private ArrayList<DownloadLink> decryptedLinks;
+    private static final String     UNSUPPORTEDLINKS = "http://grooveshark\\.com/(/popular|#/playlist/Unknown/.*?)";
 
     public GrvShrkCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,9 +70,9 @@ public class GrvShrkCm extends PluginForDecrypt {
         decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         parameter = parameter.replaceAll("\\?src=\\d+", "");
-        if (parameter.endsWith("similar")) {
+        if (parameter.endsWith("similar") || parameter.matches(UNSUPPORTEDLINKS)) {
             logger.warning("Link format is not supported: " + parameter);
-            return null;
+            return decryptedLinks;
         }
         /* get Clientrevision */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:9.0.1) Gecko/20100101 Firefox/9.0.1");

@@ -40,7 +40,10 @@ public class FilesMapCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         br.setCookie("http://filesmap.com/", "Language", "en");
-        if (br.getURL().equals("http://www.filesmap.com/") || br.containsHTML("<title>Your files search engine \\- FilesMap\\.com</title>")) return decryptedLinks;
+        if (br.getURL().matches("http://(www\\.)?((es|ar|en|pt|ru|ja|de|fr|tr|pl)?\\.)?filesmap\\.com/?") || br.containsHTML("<title>Your files search engine \\- FilesMap\\.com</title>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (parameter.matches(".*?filesmap\\.com/mp3/.*?")) {
             /** Handling for MP3 links */
             String dlID = br.getRegex("\"http://(www\\.)?goear\\.com/files/local\\.swf\\?file=([A-Za-z0-9]+)\"").getMatch(1);
