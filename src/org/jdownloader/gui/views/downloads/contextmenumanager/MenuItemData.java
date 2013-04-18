@@ -174,8 +174,8 @@ public class MenuItemData implements Storable {
     }
 
     protected boolean showItem(MenuItemData inst, SelectionInfo<?, ?> selection) {
-        if (inst.mergeProperties() == null) return true;
-        for (MenuItemProperty p : inst.getProperties()) {
+
+        for (MenuItemProperty p : inst.mergeProperties()) {
             switch (p) {
             case LINK_CONTEXT:
                 if (selection.isLinkContext()) return false;

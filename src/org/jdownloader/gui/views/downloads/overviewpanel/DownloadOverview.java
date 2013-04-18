@@ -216,7 +216,7 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
 
                 };
             }
-        });
+        }, true);
 
     }
 

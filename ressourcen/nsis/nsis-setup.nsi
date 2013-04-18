@@ -19,7 +19,7 @@ RequestExecutionLevel user
 !macroend
 
 
-!define COMPANY "AppWork UG (haftungsbeschränkt)"
+!define COMPANY "AppWork GmbH"
 !define URL http://www.jdownloader.org
 !define APPNAME "JDownloader"
 !define APPNAME_SHORT "JDownloader" # Name without spaces etc (Jay Downloader -> JayDownloader)
