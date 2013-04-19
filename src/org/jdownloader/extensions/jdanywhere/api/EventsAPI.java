@@ -29,7 +29,6 @@ import jd.plugins.LinkStatus;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
-import org.appwork.remoteapi.EventsAPIEvent;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -39,7 +38,6 @@ import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.extensions.jdanywhere.JDAnywhereController;
 import org.jdownloader.extensions.jdanywhere.api.interfaces.IEventsApi;
 import org.jdownloader.extensions.jdanywhere.api.storable.CaptchaJob;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
@@ -59,7 +57,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                 HashMap<String, Object> data = new HashMap<String, Object>();
                 data.put("message", "Limitspeed");
                 data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
-                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+                // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("SettingsChanged", data), null);
             }
 
             public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
@@ -74,7 +72,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                 HashMap<String, Object> data = new HashMap<String, Object>();
                 data.put("message", "LimitspeedActivated");
                 data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
-                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+                // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("SettingsChanged", data), null);
             }
         }, false);
         CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
@@ -83,7 +81,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                 HashMap<String, Object> data = new HashMap<String, Object>();
                 data.put("message", "MaxDL");
                 data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getValue());
-                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+                // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("SettingsChanged", data), null);
             }
 
             public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
@@ -95,7 +93,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                 HashMap<String, Object> data = new HashMap<String, Object>();
                 data.put("message", "MaxConDL");
                 data.put("data", CFG_GENERAL.MAX_CHUNKS_PER_FILE.getValue());
-                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+                // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("SettingsChanged", data), null);
             }
 
             public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
@@ -107,7 +105,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                 HashMap<String, Object> data = new HashMap<String, Object>();
                 data.put("message", "MaxConHost");
                 data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getValue());
-                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+                // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("SettingsChanged", data), null);
             }
 
             public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
@@ -122,7 +120,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                 HashMap<String, Object> data = new HashMap<String, Object>();
                 data.put("message", "MaxConHostActivated");
                 data.put("data", CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled());
-                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+                // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("SettingsChanged", data), null);
             }
         }, false);
         CFG_GENERAL.AUTO_RECONNECT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
@@ -134,7 +132,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                 HashMap<String, Object> data = new HashMap<String, Object>();
                 data.put("message", "Reconnect");
                 data.put("data", CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled());
-                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+                // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("SettingsChanged", data), null);
             }
         }, false);
         CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
@@ -146,7 +144,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                 HashMap<String, Object> data = new HashMap<String, Object>();
                 data.put("message", "Premium");
                 data.put("data", CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
-                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("SettingsChanged", data), null);
+                // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("SettingsChanged", data), null);
             }
         }, false);
     }
@@ -208,7 +206,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                             data.put("linkID", dl.getUniqueID().getID());
                             data.put("packageID", dl.getFilePackage().getUniqueID().toString());
                             data.put("action", "Reset");
-                            JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkChanged", data), null);
+                            // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("LinkChanged", data), null);
                         } else {
                             data.put("linkID", dl.getUniqueID().getID());
                             data.put("packageID", dl.getFilePackage().getUniqueID().toString());
@@ -227,7 +225,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                                 data.put("action", "AvailabilityChanged");
                                 break;
                             }
-                            JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkstatusChanged", data), null);
+                            // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("LinkstatusChanged", data), null);
                         }
                     } else {
                         LinkStatus linkStatus = dl.getLinkStatus();
@@ -236,12 +234,12 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                             data.put("linkID", dl.getUniqueID().getID());
                             data.put("packageID", dl.getFilePackage().getUniqueID().toString());
                             data.put("action", "Finished");
-                            JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkChanged", data), null);
+                            // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("LinkChanged", data), null);
                             if (dl.getFilePackage().getFinishedDate() > 0) {
                                 data = new HashMap<String, Object>();
                                 data.put("packageID", dl.getFilePackage().getUniqueID().toString());
                                 data.put("action", "PackageFinished");
-                                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("PackageFinished", data), null);
+                                // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("PackageFinished", data), null);
                             }
                         } else {
                             String lastMessage = linkStatusMessages.get(dl.getUniqueID().getID());
@@ -259,7 +257,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
                                 data.put("linkID", dl.getUniqueID().getID());
 
                                 data.put("NewValue", newMessage);
-                                JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("LinkstatusChanged", data), null);
+                                // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("LinkstatusChanged", data), null);
                             }
                         }
                     }
@@ -290,25 +288,25 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
         HashMap<String, Object> data = new HashMap<String, Object>();
         data.put("linkID", link.getUniqueID().toString());
         data.put("packageID", link.getFilePackage().getUniqueID().toString());
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadLinkAdded", data), null);
+        // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("downloadLinkAdded", data), null);
     }
 
     private void downloadApiLinkRemoved(DownloadLink link) {
         HashMap<String, Object> data = new HashMap<String, Object>();
         data.put("linkID", link.getUniqueID().toString());
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadLinkRemoved", data), null);
+        // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("downloadLinkRemoved", data), null);
     }
 
     private void downloadApiPackageAdded(FilePackage fpkg) {
         HashMap<String, Object> data = new HashMap<String, Object>();
         data.put("packageID", fpkg.getUniqueID().toString());
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadPackageAdded", data), null);
+        // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("downloadPackageAdded", data), null);
     }
 
     private void downloadApiPackageRemoved(FilePackage fpkg) {
         HashMap<String, Object> data = new HashMap<String, Object>();
         data.put("packageID", fpkg.getUniqueID().toString());
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("downloadPackageRemoved", data), null);
+        // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("downloadPackageRemoved", data), null);
     }
 
     private void sendEvent(SolverJob<?> job, String type) {
@@ -342,7 +340,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
         HashMap<String, Object> data = new HashMap<String, Object>();
         data.put("message", type);
         data.put("data", apiJob);
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("captcha", data), null);
+        // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("captcha", data), null);
 
     }
 
@@ -350,7 +348,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
         HashMap<String, Object> data = new HashMap<String, Object>();
         data.put("message", "Running State Changed");
         data.put("data", event.getNewState().getLabel());
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("runningstate", data), null);
+        // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("runningstate", data), null);
     }
 
     public void onStateUpdate(StateEvent event) {
@@ -361,7 +359,7 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
             HashMap<String, Object> data = new HashMap<String, Object>();
             data.put("packageID", link.getParentNode().getUniqueID().toString());
             data.put("linkID", link.getUniqueID().toString());
-            JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorLinkAdded", data), null);
+            // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("linkCollectorLinkAdded", data), null);
         }
     }
 
@@ -373,19 +371,19 @@ public class EventsAPI implements DownloadControllerListener, StateEventListener
 
         HashMap<String, Object> data = new HashMap<String, Object>();
         data.put("linkIDs", linkIDs);
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorLinkRemoved", data), null);
+        // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("linkCollectorLinkRemoved", data), null);
     }
 
     private void linkCollectorApiPackageAdded(CrawledPackage cpkg) {
         HashMap<String, Object> data = new HashMap<String, Object>();
         data.put("packageID", cpkg.getUniqueID().toString());
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorPackageAdded", data), null);
+        // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("linkCollectorPackageAdded", data), null);
     }
 
     private void linkCollectorApiPackageRemoved(CrawledPackage cpkg) {
         HashMap<String, Object> data = new HashMap<String, Object>();
         data.put("packageID", cpkg.getUniqueID().toString());
-        JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("linkCollectorPackageRemoved", data), null);
+        // JDAnywhereController.getInstance().getEventsapi().publishEvent(new EventObject("linkCollectorPackageRemoved", data), null);
     }
 
     @Override

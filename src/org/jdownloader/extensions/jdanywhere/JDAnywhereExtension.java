@@ -6,6 +6,7 @@ import org.appwork.txtresource.TranslateInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -42,14 +43,13 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
     @Override
     protected void stop() throws StopException {
         try {
-            JDAnywhereController remoteAPI = JDAnywhereController.getInstance();
-            remoteAPI.unregister(cma);
-            remoteAPI.unregister(coma);
-            remoteAPI.unregister(dba);
-            remoteAPI.unregister(dla);
-            remoteAPI.unregister(fpa);
-            remoteAPI.unregister(lca);
-            remoteAPI.unregister(eva);
+            RemoteAPIController.getInstance().unregister(cma);
+            RemoteAPIController.getInstance().unregister(coma);
+            RemoteAPIController.getInstance().unregister(dba);
+            RemoteAPIController.getInstance().unregister(dla);
+            RemoteAPIController.getInstance().unregister(fpa);
+            RemoteAPIController.getInstance().unregister(lca);
+            RemoteAPIController.getInstance().unregister(eva);
 
         } catch (final Throwable e) {
             LogController.CL().log(e);
@@ -70,15 +70,13 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
     @Override
     protected void start() throws StartException {
         try {
-            JDAnywhereController remoteAPI = JDAnywhereController.getInstance();
-
-            remoteAPI.register(cma = new CaptchaApi());
-            remoteAPI.register(coma = new ContentApi());
-            remoteAPI.register(dba = new DashboardApi());
-            remoteAPI.register(dla = new DownloadLinkApi());
-            remoteAPI.register(fpa = new FilePackageApi());
-            remoteAPI.register(lca = new LinkCrawlerApi());
-            remoteAPI.register(eva = new EventsAPI());
+            RemoteAPIController.getInstance().register(cma = new CaptchaApi());
+            RemoteAPIController.getInstance().register(coma = new ContentApi());
+            RemoteAPIController.getInstance().register(dba = new DashboardApi());
+            RemoteAPIController.getInstance().register(dla = new DownloadLinkApi());
+            RemoteAPIController.getInstance().register(fpa = new FilePackageApi());
+            RemoteAPIController.getInstance().register(lca = new LinkCrawlerApi());
+            RemoteAPIController.getInstance().register(eva = new EventsAPI());
         } catch (final Throwable e) {
             LogController.CL().log(e);
             throw new StartException(e);

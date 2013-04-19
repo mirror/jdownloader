@@ -2,6 +2,8 @@ package org.jdownloader.api;
 
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.SessionRemoteAPI;
+import org.appwork.remoteapi.events.EventPublisher;
+import org.appwork.remoteapi.events.EventsAPI;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
@@ -25,31 +27,21 @@ public class RemoteAPIController {
 
     private SessionRemoteAPI<RemoteAPISession> rapi     = null;
     private RemoteAPISessionControllerImp      sessionc = null;
-    private EventsAPIImpl                      eventsapi;
-
-    /**
-     * @return the eventsapi
-     */
-    public EventsAPIImpl getEventsapi() {
-        return eventsapi;
-    }
+    private EventsAPI                          eventsapi;
 
     private RemoteAPIController() {
         rapi = new SessionRemoteAPI<RemoteAPISession>();
         sessionc = new RemoteAPISessionControllerImp();
-        eventsapi = new EventsAPIImpl();
+
         try {
             sessionc.registerSessionRequestHandler(rapi);
             rapi.register(sessionc);
-            rapi.register(eventsapi);
-
             if (JsonConfig.create(RemoteAPIConfig.class).isDeprecatedApiEnabled()) {
                 HttpServer.getInstance().registerRequestHandler(3128, true, sessionc);
             }
         } catch (Throwable e) {
             Log.exception(e);
         }
-
         register(new CaptchaAPIImpl());
         register(new JDAPIImpl());
         register(new DownloadsAPIImpl());
@@ -59,29 +51,42 @@ public class RemoteAPIController {
         register(new LinkCollectorAPIImpl());
         register(new ContentAPIImpl());
         register(new PollingAPIImpl());
+        register(eventsapi = new EventsAPI());
     }
 
     public HttpRequestHandler getRequestHandler() {
         return sessionc;
     }
 
-    public synchronized void register(final RemoteAPIInterface x) {
-        if (x == null) return;
+    public boolean register(final RemoteAPIInterface x) {
+        if (x == null) return false;
         try {
             rapi.register(x);
+            return true;
         } catch (final Throwable e) {
             Log.exception(e);
+            return false;
         }
 
     }
 
-    public synchronized void unregister(final RemoteAPIInterface x) {
-        if (x == null) return;
+    public boolean unregister(final RemoteAPIInterface x) {
+        if (x == null) return false;
         try {
             rapi.unregister(x);
+            return true;
         } catch (final Throwable e) {
             Log.exception(e);
+            return false;
         }
+    }
+
+    public boolean register(EventPublisher publisher) {
+        return eventsapi.register(publisher);
+    }
+
+    public boolean unregister(EventPublisher publisher) {
+        return eventsapi.unregister(publisher);
     }
 
 }
