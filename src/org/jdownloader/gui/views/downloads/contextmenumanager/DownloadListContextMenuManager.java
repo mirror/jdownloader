@@ -1,6 +1,9 @@
 package org.jdownloader.gui.views.downloads.contextmenumanager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
 
 import javax.swing.JPopupMenu;
 
@@ -176,6 +179,14 @@ public class DownloadListContextMenuManager {
             config.setMenuStructure(ret);
         }
         System.out.println(System.currentTimeMillis() - t);
+        return ret;
+    }
+
+    public List<ActionData> list() {
+        ArrayList<ActionData> ret = new ArrayList<ActionData>();
+        for (Entry<Class<?>, ActionData> set : map.entrySet()) {
+            ret.add(set.getValue());
+        }
         return ret;
     }
 

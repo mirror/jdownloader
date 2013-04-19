@@ -12,6 +12,8 @@ import javax.swing.JComponent;
 import javax.swing.JTree;
 import javax.swing.TransferHandler;
 import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 import javax.swing.event.TreeWillExpandListener;
 import javax.swing.plaf.TreeUI;
 import javax.swing.tree.ExpandVetoException;
@@ -134,6 +136,21 @@ public class ExtTree extends JTree {
         });
     }
 
+    protected TreeModelListener createTreeModelListener() {
+        return new TreeModelHandler() {
+
+            @Override
+            public void treeStructureChanged(TreeModelEvent e) {
+                super.treeStructureChanged(e);
+                expandAll(true);
+                if (getSelectionCount() <= 0) {
+                    setSelectionRow(0);
+                }
+            }
+
+        };
+    }
+
     public void paint(Graphics g) {
         super.paint(g);
 
@@ -173,4 +190,5 @@ public class ExtTree extends JTree {
         // }
 
     }
+
 }

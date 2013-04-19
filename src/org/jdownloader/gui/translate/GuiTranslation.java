@@ -2512,4 +2512,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "oh - it seems that you just saw the 'Are you sure...' Dialog! You might think 'OMG what a useless dialog' now.\r\nIf you do, and do not want to see this dialog again, you have two options:\r\n     1. Press the Ctrl Key while Deleting links - this will bypass the dialog.\r\n     2. Go to Advanced Options and disable the dialog forever" })
     String DownloadController_deleteLinksRequest_object_msg();
 
+    @Default(lngs = { "en" }, values = { "Choose Action" })
+    String ManagerFrame_actionPerformed_addaction_title();
+
+    @Default(lngs = { "en" }, values = { "Please Choose the action you want to add!" })
+    String ManagerFrame_actionPerformed_addaction_msg();
+
 }

@@ -1,8 +1,13 @@
 package org.jdownloader.gui.views.downloads.contextmenumanager.gui;
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
+import java.util.List;
 
 import javax.swing.Box;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.ListCellRenderer;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreePath;
@@ -14,9 +19,14 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.ComboBoxDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
+import org.jdownloader.gui.views.downloads.contextmenumanager.ActionData;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
 import org.jdownloader.images.NewTheme;
@@ -95,6 +105,37 @@ public class ManagerFrame extends BasicGui {
 
             @Override
             public void actionPerformed(ActionEvent e) {
+
+                List<ActionData> actions = new DownloadListContextMenuManager().list();
+
+                ComboBoxDialog d = new ComboBoxDialog(0, _GUI._.ManagerFrame_actionPerformed_addaction_title(), _GUI._.ManagerFrame_actionPerformed_addaction_msg(), actions.toArray(new Object[] {}), 0, null, "Add Action", null, null) {
+                    protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
+                        // TODO Auto-generated method stub
+                        return new ListCellRenderer() {
+
+                            @Override
+                            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                                AppAction mi = new MenuItemData(((ActionData) value)).createAction(null);
+
+                                JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, mi.getName(), index, isSelected, cellHasFocus);
+                                ret.setIcon(mi.getSmallIcon());
+                                return ret;
+                            }
+                        };
+                    }
+                };
+
+                try {
+                    Integer ret = Dialog.getInstance().showDialog(d);
+                    ActionData action = actions.get(ret);
+
+                    TreePath sel = model.addAction(tree.getSelectionPath(), new MenuItemData(action));
+                    tree.setSelectionPath(sel);
+                } catch (DialogClosedException e1) {
+                    e1.printStackTrace();
+                } catch (DialogCanceledException e1) {
+                    e1.printStackTrace();
+                }
             }
 
         });
@@ -107,6 +148,19 @@ public class ManagerFrame extends BasicGui {
 
             @Override
             public void actionPerformed(ActionEvent e) {
+
+                int[] rows = tree.getSelectionRows();
+                model.remove(tree.getSelectionPath());
+
+                if (rows.length > 0) {
+                    if (tree.getRowCount() <= rows[0]) {
+                        rows[0]--;
+                    }
+                    if (rows[0] > 0) {
+                        tree.setSelectionRows(rows);
+                    }
+                }
+
             }
 
         });

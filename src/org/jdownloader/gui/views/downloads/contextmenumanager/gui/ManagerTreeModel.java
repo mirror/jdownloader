@@ -82,4 +82,42 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
         fireTreeStructureChanged(this, new Object[] { data }, null, null);
 
     }
+
+    public void remove(TreePath treePath) {
+        if (treePath != null) {
+            MenuItemData parent = (MenuItemData) treePath.getPathComponent(treePath.getPathCount() - 2);
+            parent.getItems().remove(treePath.getLastPathComponent());
+            fireTreeStructureChanged(this, new Object[] { data }, null, null);
+
+        }
+
+    }
+
+    public TreePath addAction(TreePath treePath, MenuItemData menuItemData) {
+        try {
+            if (treePath != null && treePath.getLastPathComponent() != data) {
+                if (treePath.getLastPathComponent() instanceof MenuContainer) {
+
+                    ((MenuItemData) treePath.getLastPathComponent()).getItems().add(menuItemData);
+
+                    return treePath.pathByAddingChild(menuItemData);
+                } else {
+                    MenuItemData parent = (MenuItemData) treePath.getPathComponent(treePath.getPathCount() - 2);
+                    int index = parent.getItems().indexOf(treePath.getLastPathComponent());
+
+                    parent.getItems().add(index + 1, menuItemData);
+
+                    return treePath.getParentPath().pathByAddingChild(menuItemData);
+
+                }
+
+            } else {
+                data.getItems().add(menuItemData);
+                return new TreePath(new Object[] { data, menuItemData });
+            }
+        } finally {
+            fireTreeStructureChanged(this, new Object[] { data }, null, null);
+        }
+
+    }
 }
