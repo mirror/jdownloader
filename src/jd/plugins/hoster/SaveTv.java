@@ -172,6 +172,11 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) throw (PluginException) e;
+        }
         throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
     }
 

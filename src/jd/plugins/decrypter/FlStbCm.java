@@ -41,7 +41,7 @@ public class FlStbCm extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        FilePackage fp = FilePackage.getInstance();
+        final FilePackage fp = FilePackage.getInstance();
         final String parameter = param.toString();
         // Allows us to get age restricted videos
         br.setCookie("http://filestube.com/", "adultChecked", "1");
@@ -157,6 +157,11 @@ public class FlStbCm extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://www.vidz.com/video/" + System.currentTimeMillis() + "/vidz_porn_videos/?s=" + externID));
                 return decryptedLinks;
             }
+            externID = br.getRegex("id=\"embedContent\" ><a href=\"(http://xhamster[^<>\"]*?)\"").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink(externID));
+                return decryptedLinks;
+            }
             externID = br.getRegex("\"http://(www\\.)?dailymotion\\.com/swf/(\\d+)\"").getMatch(0);
             if (externID != null) {
                 logger.info("Found unsupported dailymotion videolink, stopping...." + parameter);
@@ -194,11 +199,29 @@ public class FlStbCm extends PluginForDecrypt {
                 br.getPage("http://www.ebaumsworld.com/video/player/" + externID + "?env=id1");
                 externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
                 if (externID != null) {
-                    DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                    final DownloadLink dl = createDownloadlink("directhttp://" + externID);
                     dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
                     decryptedLinks.add(dl);
                     return decryptedLinks;
                 }
+            }
+            if (br.containsHTML("freeadultmedia\\.com/hosted/famplayer\\.swf\"")) {
+                final String file = br.getRegex("<param name=\"FlashVars\" value=\"file=(.*?)\\&").getMatch(0);
+                if (file == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                br.getPage("http://www.freeadultmedia.com/famconfig.xml");
+                final String server = br.getRegex("<server>(.*?)</server>").getMatch(0);
+                if (server == null || file == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                final DownloadLink dl = createDownloadlink("directhttp://" + server + file);
+                dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+
             }
             if (br.containsHTML("api\\.kewego\\.com") || br.containsHTML("kewego\\.es/p/")) {
                 logger.info("Cannot decrypt link (not a bug): " + parameter);

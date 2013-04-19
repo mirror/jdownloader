@@ -45,7 +45,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         String parameter = param.toString().replaceAll("://(www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)", "://twitch.tv");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">Sorry, we couldn\\'t find that stream\\.")) {
+        if (br.containsHTML(">Sorry, we couldn\\'t find that stream\\.") || br.containsHTML("/dmca_violation")) {
             // final Regex info = new Regex(parameter,
             // "(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)");
             final DownloadLink dlink = createDownloadlink("http://media" + new Random().nextInt(1000) + ".twitchdecrypted.tv/archives/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".flv");
@@ -57,24 +57,19 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             parameter = "http://www.justin.tv/" + System.currentTimeMillis() + "/b/" + new Regex(parameter, "(\\d+)$").getMatch(0);
         }
         if (parameter.contains("/videos")) {
+            final String username = new Regex(parameter, "/([^<>\"/]*?)/videos").getMatch(0);
             if (br.containsHTML("<strong id=\"videos_count\">0")) {
                 logger.info("Nothing to decrypt here: " + parameter);
                 return decryptedLinks;
             }
-            final String[] decryptAgainLinks = br.getRegex("<p class=\"title\">[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
-            String[] links = br.getRegex("<div class=\"left\">[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
-            if ((decryptAgainLinks == null || decryptAgainLinks.length == 0) && (links == null || links.length == 0)) {
+
+            final String[] decryptAgainLinks = br.getRegex("(\\'|\")(/" + username + "/(b|c)/\\d+)(\\'|\")").getColumn(1);
+            if (decryptAgainLinks == null || decryptAgainLinks.length == 0) {
                 logger.warning("Decrypter broken: " + parameter);
                 return null;
             }
-            if (links != null && links.length != 0) {
-                for (final String dl : links)
-                    decryptedLinks.add(createDownloadlink(HOSTURL + dl));
-            }
-            if (decryptAgainLinks != null && decryptAgainLinks.length != 0) {
-                for (final String dl : decryptAgainLinks)
-                    decryptedLinks.add(createDownloadlink("http://twitch.tv" + dl));
-            }
+            for (final String dl : decryptAgainLinks)
+                decryptedLinks.add(createDownloadlink("http://twitch.tv" + dl));
         } else {
             if (br.getURL().contains("/videos")) {
                 logger.info("Link offline: " + parameter);

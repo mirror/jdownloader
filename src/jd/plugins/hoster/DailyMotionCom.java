@@ -17,13 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -35,21 +35,25 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://(www\\.)?dailymotiondecrypted\\.com/video/[a-z0-9\\-_]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\d+" }, flags = { 2 })
 public class DailyMotionCom extends PluginForHost {
 
     public String               dllink                 = null;
     private static final String MAINPAGE               = "http://www.dailymotion.com/";
-    private static final String REGISTEREDONLY         = "(his content as suitable for mature audiences only|You must be logged in, over 18 years old, and set your family filter OFF, in order to watch it)";
     private static final String REGISTEREDONLYUSERTEXT = "Download only possible for registered users";
-    private static final String COUNTRYBLOCK           = "(Dein Land nicht abrufbar|this content is not available for your country|This video has not been made available in your country by the owner)";
     private static final String COUNTRYBLOCKUSERTEXT   = "This video is not available for your country";
-    private String[]            subtitles              = null;
-    private String              VIDEOSOURCE            = "";
+    /** Settings stuff */
+    private static final String ALLOW_BEST             = "ALLOW_BEST";
+    private static final String ALLOW_LQ               = "ALLOW_LQ";
+    private static final String ALLOW_SD               = "ALLOW_SD";
+    private static final String ALLOW_HQ               = "ALLOW_HQ";
+    private static final String ALLOW_720              = "ALLOW_720";
+    private static final String ALLOW_1080             = "ALLOW_1080";
 
     public DailyMotionCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.dailymotion.com/register");
+        setConfigElements();
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -57,105 +61,49 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         br.setFollowRedirects(true);
         br.setCookie("http://www.dailymotion.com", "family_filter", "off");
         br.setCookie("http://www.dailymotion.com", "lang", "en_US");
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(downloadLink.getDownloadURL());
-            if (con.getResponseCode() == 410) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            br.followConnection();
-        } finally {
+        if (downloadLink.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (downloadLink.getBooleanProperty("countryblock", false)) {
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.countryblocked", COUNTRYBLOCKUSERTEXT));
+            return AvailableStatus.TRUE;
+        } else if (downloadLink.getBooleanProperty("registeredonly", false)) {
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.registeredonly", REGISTEREDONLYUSERTEXT));
+            return AvailableStatus.TRUE;
+        }
+        if (downloadLink.getBooleanProperty("isrtmp", false)) {
+            getRTMPlink();
+        } else {
+            dllink = downloadLink.getStringProperty("directlink");
+            if (dllink == null) {
+                logger.warning("dllink is null...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
-        // 404
-        if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // 403
-        if (br.containsHTML("class=\"forbidden\">Access forbidden</h3>|>You don\\'t have permission to access the requested URL")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // We can't download livestreams
-        if (br.containsHTML("DMSTREAMMODE=live")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        VIDEOSOURCE = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
-        if (VIDEOSOURCE != null) VIDEOSOURCE = Encoding.htmlDecode(VIDEOSOURCE).replace("\\", "");
-        if (VIDEOSOURCE != null) subtitles = new Regex(VIDEOSOURCE, "\"(http://static\\d+\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt\\?\\d+)\"").getColumn(0);
-        String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        }
-        if (filename == null) {
-            logger.warning("filename is null...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename.trim()).replace(":", " - ").replaceAll("/|<|>", "") + ".mp4";
-        filename = correctFilename(filename);
-        if (VIDEOSOURCE != null) {
-            String allLinks = Encoding.htmlDecode(VIDEOSOURCE).replace("\\", "");
-            logger.info("sourcetext: " + allLinks);
-            if (new Regex(allLinks, COUNTRYBLOCK).matches()) {
-                // Video not available for your country, let's get the
-                // downloadUrl from another place
-                logger.info("This video is not available for this country, trying to get the url from another place...");
-                dllink = br.getRegex("addVariable\\(\"video\", \"(http://.*?)\"\\)").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?dailymotion\\.com/cdn/.*?)\"").getMatch(0);
-                if (dllink == null) {
-                    downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.countryblocked", COUNTRYBLOCKUSERTEXT));
-                    downloadLink.setName(filename);
-                    dllink = COUNTRYBLOCK;
-                    return AvailableStatus.TRUE;
-                }
-            } else if (new Regex(allLinks, REGISTEREDONLY).matches()) {
-                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.only4registered", REGISTEREDONLYUSERTEXT));
-                downloadLink.setName(filename);
-                dllink = REGISTEREDONLY;
-                return AvailableStatus.TRUE;
-            } else {
-                // Prefer HD videos
-                getQuality("hd720URL", allLinks);
-                if (dllink == null) {
-                    getQuality("hqURL", allLinks);
-                    if (dllink == null) {
-                        getQuality("sdURL", allLinks);
-                        if (dllink == null) {
-                            getQuality("ldURL", allLinks);
-                            if (dllink == null) {
-                                getQuality("autoURL", allLinks);
-                                if (dllink != null) {
-                                    downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.segmentstream", "Segment streams aren't downloadable yet!"));
-                                    downloadLink.setName(filename);
-                                    return AvailableStatus.TRUE;
-                                }
-                            }
-                        }
-                    }
+                con = br.openGetConnection(dllink);
+                if (con.getResponseCode() == 410 || con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
                 }
             }
         }
-        if (dllink == null) {
-            dllink = downloadLink.getDownloadURL();
-            if (isRtmp()) {
-                downloadLink.setFinalFileName(filename);
-                return AvailableStatus.TRUE;
-            }
-            logger.warning("dllink is null...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = dllink.replace("\\", "");
-        filename = filename.trim();
-        downloadLink.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception {
+    public void doFree(final DownloadLink downloadLink) throws Exception {
         if (dllink.startsWith("rtmp")) {
             String[] stream = dllink.split("@");
             dl = new RTMPDownload(this, downloadLink, stream[0]);
             setupRTMPConnection(stream, dl);
             ((RTMPDownload) dl).startDownload();
         } else {
-            if (dllink.contains("/manifest/")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.dailymotioncom.segmentstream", "Segment streams aren't downloadable yet!"));
             // They do allow resume and unlimited chunks but resuming or using
             // more
             // than 1 chunk causes problems, the file will then b corrupted!
@@ -164,41 +112,15 @@ public class DailyMotionCom extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (dl.startDownload()) {
-                if (subtitles != null && subtitles.length != 0) {
-                    String previousFilename = downloadLink.getName();
-                    downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.downloadingsubtitles", "Downloading subtitles..."));
-                    for (String subtitlelink : subtitles) {
-                        final String language = new Regex(subtitlelink, ".*?\\d+:subtitle_(.{1,4}).srt.*?").getMatch(0);
-                        if (language != null)
-                            downloadLink.setFinalFileName("Subtitle_" + language + ".srt");
-                        else
-                            downloadLink.setFinalFileName("Subtitle_" + Integer.toString(new Random().nextInt(1000)) + ".srt");
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, subtitlelink, false, 1);
-                        if (!dl.getConnection().getContentType().contains("html")) dl.startDownload();
-                    }
-                    downloadLink.setName(previousFilename);
-                }
-            }
+            dl.startDownload();
         }
-    }
-
-    private String correctFilename(String filename) {
-        // Cut filenames if they're too long
-        if (filename.length() > 240) {
-            final String ext = filename.substring(filename.lastIndexOf("."));
-            int extLength = ext.length();
-            filename = filename.substring(0, 240 - extLength);
-            filename += ext;
-        }
-        return filename;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            login(account, this.br);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -227,19 +149,20 @@ public class DailyMotionCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (new Regex(dllink, REGISTEREDONLY).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.dailymotioncom.only4registered", REGISTEREDONLYUSERTEXT));
-        if (new Regex(dllink, COUNTRYBLOCK).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.dailymotioncom.only4registered", COUNTRYBLOCKUSERTEXT));
+        if (downloadLink.getBooleanProperty("countryblock", false)) { throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT); }
+        if (downloadLink.getBooleanProperty("registeredonly", false)) { throw new PluginException(LinkStatus.ERROR_FATAL, REGISTEREDONLYUSERTEXT); }
         doFree(downloadLink);
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        login(account);
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        login(account, this.br);
         requestFileInformation(link);
+        if (link.getBooleanProperty("countryblock", false)) { throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT); }
         doFree(link);
     }
 
-    private void login(Account account) throws Exception {
+    public void login(final Account account, final Browser br) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -248,19 +171,14 @@ public class DailyMotionCom extends PluginForHost {
         if (br.getCookie(MAINPAGE, "sid") == null || br.getCookie(MAINPAGE, "dailymotion_auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    private void getQuality(String quality, String allLinks) {
-        dllink = new Regex(allLinks, "\"" + quality + "\":\"(http[^<>\"\\']+)\"").getMatch(0);
-    }
-
-    private boolean isRtmp() throws IOException {
-        String[] values = br.getRegex("new SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
-        if (values == null || values.length != 2) return false;
-        Browser rtmp = br.cloneBrowser();
+    private void getRTMPlink() throws IOException, PluginException {
+        final String[] values = br.getRegex("new SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
+        if (values == null || values.length != 2) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final Browser rtmp = br.cloneBrowser();
         rtmp.getPage("http://content.grabnetworks.com/v/" + values[1] + "?from=" + dllink);
         dllink = rtmp.getRegex("\"url\":\"(rtmp[^\"]+)").getMatch(0);
-        if (dllink == null) return false;
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink + "@" + values[0];
-        return true;
     }
 
     private void setupRTMPConnection(String[] stream, DownloadInterface dl) {
@@ -268,6 +186,22 @@ public class DailyMotionCom extends PluginForHost {
         rtmp.setUrl(stream[0]);
         rtmp.setSwfVfy(stream[1]);
         rtmp.setResume(true);
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's DailyMotion Plugin helps downloading Videoclips from dailymotion.com. DailyMotion provides different video formats and qualities.";
+    }
+
+    private void setConfigElements() {
+        ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.youtube.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
+        getConfig().addEntry(hq);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_LQ, JDL.L("plugins.hoster.dailymotioncom.checkLQ", "Grab LQ?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SD, JDL.L("plugins.hoster.dailymotioncom.checkSD", "Grab SD?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HQ, JDL.L("plugins.hoster.dailymotioncom.checkHQ", "Grab HQ?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720, JDL.L("plugins.hoster.dailymotioncom.check720", "Grab 720p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080, JDL.L("plugins.hoster.dailymotioncom.check1080", "Grab 1080p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
     }
 
     @Override

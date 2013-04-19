@@ -66,7 +66,7 @@ public class RyuShareCom extends PluginForHost {
     private String               correctedBR         = "";
     private static final String  PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
     private final String         COOKIE_HOST         = "http://ryushare.com";
-    private static final String  MAINTENANCE         = ">This server is in maintenance mode";
+    private static final String  MAINTENANCE         = ">This server is in maintenance mode|No htmlCode read";
     private static final String  MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
@@ -124,8 +124,8 @@ public class RyuShareCom extends PluginForHost {
         prepBrowser();
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (correctedBR.contains(MAINTENANCE)) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
+        if (new Regex(correctedBR, MAINTENANCE).matches()) {
+            link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
         }
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
@@ -436,7 +436,7 @@ public class RyuShareCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
         }
-        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, MAINTENANCE).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {

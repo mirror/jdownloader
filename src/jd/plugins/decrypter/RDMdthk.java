@@ -56,12 +56,12 @@ public class RDMdthk extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("(<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>|Die angeforderte Datei existiert leider nicht)")) {
+        if (!br.containsHTML("var \\$jPlayer =")) {
             logger.info("This link might be offline: " + parameter);
             return decryptedLinks;
         }
 
-        SubConfiguration cfg = SubConfiguration.getConfig("ard.de");
+        final SubConfiguration cfg = SubConfiguration.getConfig("ard.de");
         boolean includeAudio = cfg.getBooleanProperty(AUDIO, true);
         BEST = cfg.getBooleanProperty(Q_BEST, false);
 

@@ -485,6 +485,7 @@ public class TbCm extends PluginForDecrypt {
                     threegp = true;
                 }
 
+                /** User selected nothing -> Decrypt everything */
                 boolean q240p = cfg.getBooleanProperty("ALLOW_240P_V2", true);
                 boolean q360p = cfg.getBooleanProperty("ALLOW_360P_V2", true);
                 boolean q480p = cfg.getBooleanProperty("ALLOW_480P_V2", true);

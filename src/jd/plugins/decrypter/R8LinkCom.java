@@ -40,8 +40,12 @@ public class R8LinkCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
+        if (br.containsHTML(">NOT FOUND<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
         rc.parse();
         rc.load();
         for (int i = 0; i <= 5; i++) {
