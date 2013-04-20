@@ -42,10 +42,13 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // twitchtv belongs to justin.tv
         br.setCookie("http://justin.tv", "fl", "en-us");
-        String parameter = param.toString().replaceAll("://(www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)", "://twitch.tv");
+        // redirects occur to de.domain when browser accept language set to German!
+        br.getHeaders().put("Accept-Language", "en-gb");
+        // currently redirect to www.
+        String parameter = param.toString().replaceAll("://([a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)", "://www.twitch.tv");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">Sorry, we couldn\\'t find that stream\\.") || br.containsHTML("/dmca_violation")) {
+        if (br.containsHTML(">Sorry, we couldn\\'t find that stream\\.|<h1>This channel is closed</h1>")) {
             // final Regex info = new Regex(parameter,
             // "(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)");
             final DownloadLink dlink = createDownloadlink("http://media" + new Random().nextInt(1000) + ".twitchdecrypted.tv/archives/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".flv");
