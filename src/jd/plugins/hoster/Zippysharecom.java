@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -109,12 +108,10 @@ public class Zippysharecom extends PluginForHost {
                 engine.eval("var document = { getElementById : function(a) { var newObj = new Object(); function getAttribute(b) { return " + value + "; } newObj.getAttribute = getAttribute; return newObj;}};");
             }
             result = ((Double) engine.eval(fun)).intValue();
-        } catch (final Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } catch (final Throwable e) {
+            return null;
         }
-        if (result == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        return result.toString();
+        return result == null ? null : result.toString();
     }
 
     @Override
@@ -272,4 +269,5 @@ public class Zippysharecom extends PluginForHost {
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return true;
     }
+
 }
