@@ -60,6 +60,7 @@ public class ImXdNet extends PluginForHost {
         String filename = br.getRegex("<b>檔案名稱:</b></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\| ImXD Public Cloud</title>").getMatch(0);
         String filesize = br.getRegex("<b>檔案大小:</b></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<b>File Size:</b></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
