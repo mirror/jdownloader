@@ -451,7 +451,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String[][] regexesPage1 = { { "id=\"video_cont((\\-)?\\d+_\\d+)\"", "0" } };
         final String[][] regexesAllOthers = { { "\\[((\\-)?\\d+, \\d+), \\'http", "0" } };
-        final ArrayList<String> decryptedData = decryptMultiplePages2(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 12, 12, 12, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=-" + communityAlbumID + "&offset=12");
+        final ArrayList<String> decryptedData = decryptMultiplePagesCommunityVideo(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 12, 12, 12, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=-" + communityAlbumID + "&offset=12");
         final int numberOfFoundVideos = decryptedData.size();
         logger.info("Found " + numberOfFoundVideos + " videos...");
         /**
@@ -526,7 +526,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     // Same as above with additional errorhandling for community video links
-    private ArrayList<String> decryptMultiplePages2(final String parameter, final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws IOException {
+    private ArrayList<String> decryptMultiplePagesCommunityVideo(final String parameter, final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws IOException {
         ArrayList<String> decryptedData = new ArrayList<String>();
         logger.info("Decrypting " + numberOfEntries + " entries for linktype: " + type);
         int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntries) - alreadyOnPage) / increase);

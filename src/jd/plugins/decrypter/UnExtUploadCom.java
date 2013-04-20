@@ -21,11 +21,9 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unextupload.com" }, urls = { "http://[\\w\\.]*?unextupload\\.com/download/[0-9]+" }, flags = { 0 })
 public class UnExtUploadCom extends PluginForDecrypt {
@@ -40,7 +38,10 @@ public class UnExtUploadCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("Файл ненайден, или был удален")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML(">Ссылка на файл не найдена, или она была удалена")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String[] redirectLinks = br.getRegex("target=\"_blank\" href=\"(/.*?)\"").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("\"(/index/redirect/.*?)\"").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) return null;

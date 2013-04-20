@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,16 +26,12 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -52,18 +45,17 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "backin.net" }, urls = { "https?://(www\\.)?backin\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class BackinNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubecloud.net" }, urls = { "https?://(www\\.)?tubecloud\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class TubeCloudNet extends PluginForHost {
 
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://backin.net";
+    private static final String  COOKIE_HOST                  = "http://tubecloud.net";
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(backin\\.net)";
+    private static final String  DOMAINS                      = "(tubecloud\\.net)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -82,9 +74,9 @@ public class BackinNet extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.0
     // mods:
-    // non account: 1 * 20
-    // free account: untested, set same as FREE
-    // premium account: 1 * 20
+    // non account: 2 * 1
+    // free account: chunks * maxdls
+    // premium account: chunks * maxdls
     // protocol: no https
     // captchatype: null
     // other:
@@ -108,9 +100,9 @@ public class BackinNet extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public BackinNet(PluginWrapper wrapper) {
+    public TubeCloudNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -198,7 +190,7 @@ public class BackinNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -233,6 +225,7 @@ public class BackinNet extends PluginForHost {
                     }
                 }
                 // end of backward compatibility
+                waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
@@ -415,11 +408,14 @@ public class BackinNet extends PluginForHost {
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
-                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                    for (String crypted : cryptedScripts) {
-                        dllink = decodeDownloadLink(crypted);
-                        if (dllink != null) break;
+                dllink = new Regex(correctedBR, "file: \"(http://[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                    if (cryptedScripts != null && cryptedScripts.length != 0) {
+                        for (String crypted : cryptedScripts) {
+                            dllink = decodeDownloadLink(crypted);
+                            if (dllink != null) break;
+                        }
                     }
                 }
             }
@@ -498,7 +494,7 @@ public class BackinNet extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"[a-z0-9]+\" style=\"[^<>/\"]*?\">(\\d+)</span> <span style=\"font\\-size:16px").getMatch(0);
+        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
@@ -538,23 +534,18 @@ public class BackinNet extends PluginForHost {
         String newExtension = null;
         // some streaming sites do not provide proper file.extension within
         // headers (Content-Disposition or the fail over getURL()).
-        if (serverFilename == null) {
-            logger.info("Server filename is null, keeping filename: " + oldName);
+        if (serverFilename.contains(".")) {
+            newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
         } else {
-            if (serverFilename.contains(".")) {
-                newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
-            } else {
-                logger.info("HTTP headers don't contain filename.extension information");
-            }
+            logger.info("HTTP headers don't contain filename.extension information");
         }
         if (newExtension != null && !oldName.endsWith(newExtension)) {
             String oldExtension = null;
             if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
-            if (oldExtension != null && oldExtension.length() <= 5) {
+            if (oldExtension != null && oldExtension.length() <= 5)
                 downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
-            } else {
+            else
                 downloadLink.setFinalFileName(oldName + newExtension);
-            }
         }
     }
 
@@ -643,174 +634,6 @@ public class BackinNet extends PluginForHost {
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        final String space[][] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getMatches();
-        if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
-            // free users it's provided by default
-            ai.setUsedSpace(space[0][0] + " " + space[0][1]);
-        } else if (space != null && space.length != 0) {
-            // premium users the Mb value isn't provided for some reason...
-            ai.setUsedSpace(space[0][0] + "Mb");
-        }
-        account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            availabletraffic.trim();
-            // need to set 0 traffic left, as getSize returns positive result,
-            // even when negative value supplied.
-            if (!availabletraffic.startsWith("-")) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-            } else {
-                ai.setTrafficLeft(0);
-            }
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        if (account.getBooleanProperty("nopremium")) {
-            ai.setStatus("Registered (free) User");
-            try {
-                maxPrem.set(20);
-                // free accounts can still have captcha.
-                totalMaxSimultanFreeDownload.set(maxPrem.get());
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
-        } else {
-            final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-                try {
-                    maxPrem.set(20);
-                    account.setMaxSimultanDownloads(maxPrem.get());
-                    account.setConcurrentUsePossible(true);
-                } catch (final Throwable e) {
-                    // not available in old Stable 0.9.581
-                }
-            }
-            ai.setStatus("Premium User");
-        }
-        return ai;
-    }
-
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            try {
-                /** Load cookies */
-                br.setCookiesExclusive(true);
-                prepBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
-                }
-                br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/login.html");
-                final Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!br.getURL().contains("/?op=my_account")) {
-                    getPage("/?op=my_account");
-                }
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
-                    account.setProperty("nopremium", true);
-                } else {
-                    account.setProperty("nopremium", false);
-                }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        passCode = downloadLink.getStringProperty("pass");
-        requestFileInformation(downloadLink);
-        login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
-            requestFileInformation(downloadLink);
-            doFree(downloadLink, false, 1, "freelink2");
-        } else {
-            String dllink = checkDirectLink(downloadLink, "premlink");
-            if (dllink == null) {
-                br.setFollowRedirects(false);
-                getPage(downloadLink.getDownloadURL());
-                dllink = getDllink();
-                if (dllink == null) {
-                    Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(dlform, downloadLink);
-                    checkErrors(downloadLink, true);
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    sendForm(dlform);
-                    checkErrors(downloadLink, true);
-                    dllink = getDllink();
-                }
-            }
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                correctBR();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            fixFilename(downloadLink);
-            downloadLink.setProperty("premlink", dllink);
-            dl.startDownload();
-        }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override

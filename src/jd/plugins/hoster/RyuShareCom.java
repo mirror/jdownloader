@@ -733,6 +733,8 @@ public class RyuShareCom extends PluginForHost {
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
+            // Add 5 seconds to make sure we wait long enough
+            tt += 5;
             logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
             if (tt > 0) sleep(tt * 1000l, downloadLink);
         }

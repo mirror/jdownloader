@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1.2
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "you-sex-tube.com" }, urls = { "http://(www\\.)?you\\-sex\\-tube\\.com/video/.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "you-sex-tube.com" }, urls = { "http://(www\\.)?you\\-sex\\-tube\\.com/(video|porn)/.+" }, flags = { 0 })
 public class YouSexTubeCom extends PluginForDecrypt {
 
     public YouSexTubeCom(PluginWrapper wrapper) {
@@ -38,8 +38,9 @@ public class YouSexTubeCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (!parameter.contains(".html")) parameter += ".html";
         br.setFollowRedirects(true);
-        final String fid = new Regex(parameter, "you\\-sex\\-tube\\.com/video/(.*?)\\.html").getMatch(0);
+        final String fid = new Regex(parameter, "you\\-sex\\-tube\\.com/(video|porn)/(.*?)\\.html").getMatch(1);
         String externID = Encoding.Base64Decode(fid);
         if (externID != null && !externID.equals(fid)) {
             decryptedLinks.add(createDownloadlink(externID));

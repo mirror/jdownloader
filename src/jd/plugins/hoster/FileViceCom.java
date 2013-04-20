@@ -581,7 +581,7 @@ public class FileViceCom extends PluginForHost {
         if (correctedBR.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         /** Error handling for only-premium links */
         if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
-            String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
+            String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?) as a guest").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.info("As free user you can download files up to " + filesizelimit + " only");

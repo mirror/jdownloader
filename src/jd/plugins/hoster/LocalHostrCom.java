@@ -55,7 +55,7 @@ public class LocalHostrCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>404<|>File not found|>We can\\'t find the file you\\'re looking for)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fInfo = br.getRegex("<h1>([^<>\"]*?)</h1>.*?<h3>([^<>\"]*?)</h3>");
-        final Regex gifLinkRegex = br.getRegex("<h1>(.*?)<small style=\"float:right\"> Size  \\d+x\\d+ / (.*?) / \\d+ Views</small></h1>");
+        final Regex gifLinkRegex = br.getRegex("<h1>([^<>\"]*?)<span class=\"bull\">\\&bull;</span> <a class=\"direct\" href=\"[^<>\"]*?\">Direct Link</a> \\(\\d+x\\d+ / ([^<>\"]*?)\\)<a");
         String filename = br.getRegex("<title>Download ([^<>\"]*?) \\- Hostr</title>").getMatch(0);
         if (filename == null) {
             filename = fInfo.getMatch(0);

@@ -181,14 +181,14 @@ public class ScribdCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.setFollowRedirects(true);
-        br.getPage("http://www.scribd.com");
+        br.getPage("https://www.scribd.com");
 
         final String thisToken = br.getRegex("name=\"authenticity_token\" type=\"hidden\" value=\"([a-z0-9]+)\"").getMatch(0);
         if (thisToken == null) {
             logger.warning("Login broken!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        br.postPage("http://www.scribd.com/login", "authenticity_token=" + thisToken + "&login_params%5Bnext_url%5D=&login_params%5Bcontext%5D=join2&form_name=login_lb_form_login_lb&login_or_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
+        br.postPage("https://www.scribd.com/login", "authenticity_token=" + thisToken + "&login_params%5Bnext_url%5D=&login_params%5Bcontext%5D=join2&form_name=login_lb_form_login_lb&login_or_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("Invalid username or password") || !br.containsHTML("\"login\":true")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 

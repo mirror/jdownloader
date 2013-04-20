@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -27,8 +28,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -54,6 +59,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileparadox.in" }, urls = { "https?://(www\\.)?fileparadox\\.in/[a-z0-9]{12}" }, flags = { 2 })
 public class FileparadoxIn extends PluginForHost {
@@ -714,6 +720,29 @@ public class FileparadoxIn extends PluginForHost {
             requestFileInformation(downloadLink);
             doFree(downloadLink, true, 1, "freelink2");
         } else {
+            try {
+                SubConfiguration config = null;
+                try {
+                    config = getPluginConfig();
+                    if (config.getBooleanProperty("premIssueShown", Boolean.FALSE) == false) {
+                        if (config.getProperty("premIssueShown") == null) {
+                            premiumWarning();
+                        } else {
+                            config = null;
+                        }
+                    } else {
+                        config = null;
+                    }
+                } catch (final Throwable e) {
+                } finally {
+                    if (config != null) {
+                        config.setProperty("premIssueShown", Boolean.TRUE);
+                        config.setProperty("premIssueShown", "shown");
+                        config.save();
+                    }
+                }
+            } catch (final Throwable b) {
+            }
             String dllink = checkDirectLink(downloadLink, "premlink");
 
             if (dllink == null) {
@@ -748,6 +777,39 @@ public class FileparadoxIn extends PluginForHost {
             fixFilename(downloadLink);
             downloadLink.setProperty("premlink", dllink);
             dl.startDownload();
+        }
+    }
+
+    private static void premiumWarning() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = "FileParadox Premium-Probleme";
+                            message = "Hi, Falls du Probleme beim Downloaden von FileParadox hast, öffne bitte die 'Mein Account' Seite (klicke ok) und aktiviere 'direct downloads'.\r\n";
+                            message += "Indem du das tust werden FileParadox Links, die du im Browser öffnest sofort heruntergeladen.\r\n";
+                            message += "Dies scheint eine Lösung für die FileParadox Premium Probleme mit JD zu sein. Wenn du Feedback geben willst, besuche bitte unser Supportforum: http://board.jdownloader.org";
+                        } else {
+                            title = "FileParadox Premium Issues";
+                            message = "Hi, If you're experiencing download issues with FileParadox Premium, please visit 'My Account' control panel (click ok) and enable 'direct downloads'.\r\n";
+                            message += "By enabling 'direct downloads' it automatically starts downloading when viewing FileParadox links in your browser.\r\n";
+                            message += "This seems to be a solution for FileParadox Premium download issues. For feedback please visit our forum http://board.jdownloader.org";
+                        }
+                        if (CrossSystem.isOpenBrowserSupported()) {
+                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
+                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("https://fileparadox.in/?op=my_account"));
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
         }
     }
 

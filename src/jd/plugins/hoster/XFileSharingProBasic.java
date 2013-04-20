@@ -538,18 +538,23 @@ public class XFileSharingProBasic extends PluginForHost {
         String newExtension = null;
         // some streaming sites do not provide proper file.extension within
         // headers (Content-Disposition or the fail over getURL()).
-        if (serverFilename.contains(".")) {
-            newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+        if (serverFilename == null) {
+            logger.info("Server filename is null, keeping filename: " + oldName);
         } else {
-            logger.info("HTTP headers don't contain filename.extension information");
+            if (serverFilename.contains(".")) {
+                newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+            } else {
+                logger.info("HTTP headers don't contain filename.extension information");
+            }
         }
         if (newExtension != null && !oldName.endsWith(newExtension)) {
             String oldExtension = null;
             if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
-            if (oldExtension != null && oldExtension.length() <= 5)
+            if (oldExtension != null && oldExtension.length() <= 5) {
                 downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
-            else
+            } else {
                 downloadLink.setFinalFileName(oldName + newExtension);
+            }
         }
     }
 
