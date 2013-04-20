@@ -45,26 +45,38 @@ public class NowDownloadEu extends PluginForHost {
 
     public NowDownloadEu(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.nowdownload.co/premium.php");
+
+        /*
+         * == Fix original link ==
+         * 
+         * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before proceed, to
+         * select one available.
+         */
+
+        DOMAIN = validateHost();
+        DOMAIN = DOMAIN == null ? "eu" : DOMAIN;
+        MAINPAGE = "http://www.nowdownload." + DOMAIN;
+
+        this.enablePremium(MAINPAGE + "/premium.php");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.nowdownload.eu/terms.php";
+        return MAINPAGE + "/terms.php";
     }
 
-    private static final String MAINPAGE = "http://www.nowdownload.co";
+    private String              MAINPAGE = "http://www.nowdownload.eu";
+    private String              DOMAIN   = "eu";
     private static final String ua       = RandomUserAgent.generate();
     private static Object       LOCK     = new Object();
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.nowdownload.co/dl/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        link.setUrlDownload("http://www.nowdownload." + DOMAIN + "/dl/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        // Fix existing links, .eu domain is blocked in Italy
         correctDownloadLink(link);
         br.getHeaders().put("User-Agent", ua);
         br.setFollowRedirects(true);
@@ -109,6 +121,35 @@ public class NowDownloadEu extends PluginForHost {
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private static void workAroundTimeOut(final Browser br) {
+        try {
+            if (br != null) {
+                br.setConnectTimeout(45000);
+                br.setReadTimeout(45000);
+            }
+        } catch (final Throwable e) {
+        }
+    }
+
+    private String validateHost() {
+        final String[] domains = { "co", "ch", "eu" };
+
+        for (int i = 0; i < domains.length; i++) {
+            String domain = domains[i];
+            try {
+                Browser br = new Browser();
+                workAroundTimeOut(br);
+                br.setCookiesExclusive(true);
+                br.getPage("http://www.nowdownload." + domain);
+                br = null;
+                return domain;
+            } catch (Exception e) {
+                logger.warning("NowDownload." + domain + " seems to be offline...");
+            }
+        }
+        return null;
     }
 
     private String getDllink() {
@@ -167,7 +208,7 @@ public class NowDownloadEu extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://www.nowdownload.co/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                br.postPage(MAINPAGE + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (br.getURL().contains("login.php?e=1") || !br.getURL().contains("panel.php?logged=1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
