@@ -115,10 +115,11 @@ public class UpstoRe extends PluginForHost {
             // wait -= passedTime;
             // if (wait > 0) sleep(wait * 1000l, downloadLink);
             br.postPage(downloadLink.getDownloadURL(), "free=Get+download+link&hash=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+            if (br.containsHTML("limit for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
             dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\"(http://d\\d+\\.upstore\\.net/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                final String reconnectWait = br.getRegex("You should wait (\\d+) minutes before downloading next file").getMatch(0);
+                final String reconnectWait = br.getRegex("Please wait (\\d+) minutes before downloading next file").getMatch(0);
                 if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
