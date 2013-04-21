@@ -636,6 +636,10 @@ public class Uploadedto extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
         }
+        if (br.containsHTML("\"err\":\"Sharing this type of file is prohibited")) {
+            logger.info("File offline after captcha...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML("You have reached the max\\. number of possible free downloads|err\":\"limit\\-dl\"")) {
             if (account == null) {
                 logger.info("Limit reached, throwing reconnect exception");

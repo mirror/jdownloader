@@ -69,6 +69,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
         /** Login end... */
 
+        br.setCookie("http://www.dailymotion.com", "family_filter", "off");
+        br.setCookie("http://www.dailymotion.com", "lang", "en_US");
         try {
             br.getPage(PARAMETER);
         } catch (final Exception e) {

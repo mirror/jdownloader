@@ -86,10 +86,11 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             final String nicelookinghost = "mirrorcreator.com";
             logger.info("Found " + redirectLinks.length + " " + nicelookinghost + " links to decrypt...");
             for (String singlelink : redirectLinks) {
+                singlelink = singlelink.replace("\"", "").replace(" ", "");
                 br2 = br.cloneBrowser();
                 String dllink = null;
                 // Handling for links that need to be regexed or that need to be get by redirect
-                if (singlelink.matches("/(redirect?|hlink)/[0-9A-Z]+/[a-z0-9]+")) {
+                if (singlelink.matches("/(redirect?|hlink|rlink)/[0-9A-Z]+/[a-z0-9]+")) {
                     br2.getPage("http://www.mirrorcreator.com" + singlelink.trim());
                     dllink = br2.getRedirectLocation();
                     if (dllink == null) {

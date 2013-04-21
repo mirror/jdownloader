@@ -116,7 +116,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     /**
                      * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
                      */
-                    decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter, progress);
+                    decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter);
                 } else if (parameter.matches(PATTERN_PHOTO_SINGLE)) {
                     /**
                      * Single photo links, those are just passed to the hosterplugin! Example:http://vk.com/photo125005168_269986868
@@ -126,18 +126,19 @@ public class VKontakteRu extends PluginForDecrypt {
                     /**
                      * Photo albums lists/overviews Example: http://vk.com/albums46486585
                      */
-                    decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter, progress);
+                    decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter);
                 } else if (parameter.matches(PATTERN_VIDEO_ALBUM)) {
                     /**
                      * Video-Albums Example: http://vk.com/videos575934598 Example2: http://vk.com/video?section=tagged&id=46468795637
                      */
-                    decryptedLinks = decryptVideoAlbum(decryptedLinks, parameter, progress);
+                    decryptedLinks = decryptVideoAlbum(decryptedLinks, parameter);
                 } else if (parameter.matches(PATTERN_VIDEO_COMMUNITY_ALBUM)) {
                     /** Community-Albums Exaple: http://vk.com/video?gid=41589556 */
-                    decryptCommunityVideoAlbum(decryptedLinks, parameter, progress);
+                    decryptCommunityVideoAlbum(decryptedLinks, parameter);
                 } else {
-                    logger.warning("Found unsupported linktype: " + parameter);
-                    return null;
+                    logger.info("Walllinks are not supported (yet), quitting decrypter...");
+                    return decryptedLinks;
+                    // decryptWallLink(decryptedLinks, parameter);
                 }
             } catch (BrowserException e) {
                 logger.warning("Browser exception thrown: " + e.getMessage());
@@ -240,7 +241,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> decryptPhotoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
+    private ArrayList<DownloadLink> decryptPhotoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
         final String type = "singlephotoalbum";
         if (parameter.contains("#/album")) {
             parameter = "http://vk.com/album" + new Regex(parameter, "#/album((\\-)?\\d+_\\d+)").getMatch(0);
@@ -298,7 +299,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> decryptPhotoAlbums(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
+    private ArrayList<DownloadLink> decryptPhotoAlbums(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
         final String type = "multiplephotoalbums";
         if (parameter.matches(".*?vk\\.com/id\\d+\\?z=albums\\d+")) {
             parameter = "http://vk.com/albums" + new Regex(parameter, "(\\d+)$").getMatch(0);
@@ -324,7 +325,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> decryptVideoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
+    private ArrayList<DownloadLink> decryptVideoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
         final String type = "multiplevideoalbums";
         /* not needed as we already have requested this page */
         // br.getPage(parameter);
@@ -436,7 +437,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return dl;
     }
 
-    private ArrayList<DownloadLink> decryptCommunityVideoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
+    private ArrayList<DownloadLink> decryptCommunityVideoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
         final String communityAlbumID = new Regex(parameter, "(\\d+)$").getMatch(0);
         final String type = "communityvideoalbum";
         if (!parameter.equalsIgnoreCase(br.getURL())) br.getPage(parameter);
@@ -463,6 +464,45 @@ public class VKontakteRu extends PluginForDecrypt {
             final String completeVideolink = "http://vk.com/video" + singleVideo.replace(", ", "");
             decryptedLinks.add(createDownloadlink(completeVideolink));
         }
+        return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> decryptWallLink(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
+        /** Unfinished code!! */
+        final String type = "walllink";
+        if (!parameter.equalsIgnoreCase(br.getURL())) br.getPage(parameter);
+        if (br.containsHTML(">404 Not Found<")) {
+            logger.info("Invalid walllink: " + parameter);
+            return decryptedLinks;
+        }
+        final String userID = br.getRegex("onclick=\"return showPhoto\\(\\'(\\-\\d+)_\\d+\\'").getMatch(0);
+        if (userID == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        int offset = 0;
+        boolean continueDecrypting = true;
+        while (continueDecrypting) {
+            if (offset >= 10) {
+                br.postPage("http://vk.com/al_wall.php", "act=get_wall&al=1&fixed=&offset=" + offset + "&owner_id=" + userID + "&type=all");
+            }
+            final String[] photoLinks = br.getRegex("<a  href=\")(/photo\\-\\d+_\\d+)\"").getColumn(0);
+            if (photoLinks == null || photoLinks.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String photoLink : photoLinks) {
+                final String completeVideolink = "http://vk.com" + photoLink;
+                final DownloadLink dl = createDownloadlink(completeVideolink);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
+            offset += 10;
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(new Regex(parameter, "/([^<>\"/]+)$").getMatch(0));
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
