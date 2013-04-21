@@ -71,8 +71,13 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 } else {
                     cat = "Unknown Cat";
                 }
-                String date = new Date().toString();
-                fp.setName(domain + " - " + cat + " - " + date);
+                // extract thread number from URL
+                String suffix = new Regex(parameter, "/res/([0-9]+)").getMatch(0);
+                if (suffix == null) {
+                    // Fall back to date if we can't resolve
+                    suffix = new Date().toString();
+                }
+                fp.setName(domain + " - " + cat + " - " + suffix);
                 for (String image : images) {
                     if (image.startsWith("/") && !image.startsWith("h")) image = image.replace("//", prot + "://");
                     DownloadLink dl = createDownloadlink(image);
