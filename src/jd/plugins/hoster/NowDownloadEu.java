@@ -54,7 +54,12 @@ public class NowDownloadEu extends PluginForHost {
          */
 
         DOMAIN = validateHost();
-        DOMAIN = DOMAIN == null ? "eu" : DOMAIN;
+
+        if (DOMAIN == null) {
+            AVAILABLE_PRECHECK = false;
+            DOMAIN = "eu";
+        }
+
         MAINPAGE = "http://www.nowdownload." + DOMAIN;
 
         this.enablePremium(MAINPAGE + "/premium.php");
@@ -65,10 +70,11 @@ public class NowDownloadEu extends PluginForHost {
         return MAINPAGE + "/terms.php";
     }
 
-    private String              MAINPAGE = "http://www.nowdownload.eu";
-    private String              DOMAIN   = "eu";
-    private static final String ua       = RandomUserAgent.generate();
-    private static Object       LOCK     = new Object();
+    private String              MAINPAGE           = "http://www.nowdownload.eu";
+    private String              DOMAIN             = "eu";
+    private Boolean             AVAILABLE_PRECHECK = true;
+    private static final String ua                 = RandomUserAgent.generate();
+    private static Object       LOCK               = new Object();
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("http://www.nowdownload." + DOMAIN + "/dl/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
@@ -76,6 +82,20 @@ public class NowDownloadEu extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        if (!AVAILABLE_PRECHECK) {
+            DOMAIN = validateHost();
+
+            if (DOMAIN == null) {
+                link.getLinkStatus().setStatusText("All servers seems to be offline...");
+                return AvailableStatus.FALSE;
+            }
+
+            AVAILABLE_PRECHECK = true;
+
+            MAINPAGE = "http://www.nowdownload." + DOMAIN;
+
+            this.enablePremium(MAINPAGE + "/premium.php");
+        }
         this.setBrowserExclusive();
         correctDownloadLink(link);
         br.getHeaders().put("User-Agent", ua);
