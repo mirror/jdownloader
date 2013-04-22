@@ -14,6 +14,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -36,6 +37,7 @@ public class MenuItemData implements Storable {
     }
 
     public String getClassName() {
+        if (StringUtils.isNotEmpty(className)) return className;
         if (getClass() == MenuItemData.class) return null;
         return getClass().getName();
     }
@@ -116,7 +118,7 @@ public class MenuItemData implements Storable {
     public MenuItemData lazyReal() {
         try {
             if (real != null) return real;
-            if (getClassName() == className || className == null) return this;
+            if (className == null || getClass().getName().equals(className)) return this;
 
             MenuItemData ret = (MenuItemData) Class.forName(className).newInstance();
             ret.setIconKey(getIconKey());

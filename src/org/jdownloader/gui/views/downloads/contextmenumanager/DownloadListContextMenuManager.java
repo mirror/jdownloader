@@ -55,28 +55,21 @@ public class DownloadListContextMenuManager {
 
     private static final int VERSION = 0;
 
+    public List<MenuItemData> listSpecialItems() {
+        ArrayList<MenuItemData> ret = new ArrayList<MenuItemData>();
+
+        ret.add(createSettingsMenu());
+        ret.add(createMoreMenu());
+        ret.add(createDeleteMenu());
+        // ret.add(new AddonSubMenuLink());
+        return ret;
+    }
+
     private MenuContainerRoot setupDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
         mr.setSource(VERSION);
         // mr.add()
-        SettingsMenuContainer settings;
-        mr.add(settings = new SettingsMenuContainer());
-
-        settings.add(new MenuItemData(get(CheckStatusAction.class)));
-        settings.add(new MenuItemData(get(OpenInBrowserAction.class), MenuItemProperty.HIDE_IF_DISABLED));
-        settings.add(new MenuItemData(get(URLEditorAction.class)));
-        settings.add(new SeparatorData());
-        settings.add(new MenuItemData(get(PackageNameAction.class)));
-        settings.add(new MenuItemData(get(SetDownloadFolderInDownloadTableAction.class)));
-        settings.add(new MenuItemData(get(SetDownloadPassword.class)));
-
-        PriorityMenuContainer priority;
-        settings.add(priority = new PriorityMenuContainer());
-        priority.add(new MenuItemData(get(PriorityLowerAction.class)));
-        priority.add(new MenuItemData(get(PriorityDefaultAction.class)));
-        priority.add(new MenuItemData(get(PriorityHighAction.class)));
-        priority.add(new MenuItemData(get(PriorityHigherAction.class)));
-        priority.add(new MenuItemData(get(PriorityHighestAction.class)));
+        mr.add(createSettingsMenu());
 
         mr.add(new SeparatorData());
         mr.add(new MenuItemData(get(OpenFileAction.class), MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING, MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED));
@@ -93,22 +86,61 @@ public class DownloadListContextMenuManager {
 
         // /* addons */
 
-        MoreMenuContainer more;
-        mr.add(more = new MoreMenuContainer());
+        mr.add(createMoreMenu());
+
+        mr.add(new SeparatorData());
+        mr.add(new MenuItemData(get(DeleteQuickAction.class)));
+        mr.add(createDeleteMenu());
+
+        return mr;
+    }
+
+    private MenuItemData createDeleteMenu() {
+        DeleteMenuContainer delete = new DeleteMenuContainer();
+
+        delete.add(new MenuItemData(get(DeleteDisabledSelectedLinks.class)));
+        delete.add(new MenuItemData(get(DeleteSelectedAndFailedLinksAction.class)));
+        delete.add(new MenuItemData(get(DeleteSelectedFinishedLinksAction.class)));
+        delete.add(new MenuItemData(get(DeleteSelectedOfflineLinksAction.class)));
+        return delete;
+    }
+
+    private MenuItemData createMoreMenu() {
+        MoreMenuContainer more = new MoreMenuContainer();
         more.add(new MenuItemData(get(ResumeAction.class)));
         more.add(new MenuItemData(get(ResetAction.class)));
         more.add(new SeparatorData());
         more.add(new MenuItemData(get(NewPackageAction.class)));
         more.add(new MenuItemData(get(CreateDLCAction.class)));
-        mr.add(new SeparatorData());
-        mr.add(new MenuItemData(get(DeleteQuickAction.class)));
-        DeleteMenuContainer delete;
-        mr.add(delete = new DeleteMenuContainer());
-        delete.add(new MenuItemData(get(DeleteDisabledSelectedLinks.class)));
-        delete.add(new MenuItemData(get(DeleteSelectedAndFailedLinksAction.class)));
-        delete.add(new MenuItemData(get(DeleteSelectedFinishedLinksAction.class)));
-        delete.add(new MenuItemData(get(DeleteSelectedOfflineLinksAction.class)));
-        return mr;
+        return more;
+    }
+
+    private MenuItemData createSettingsMenu() {
+        SettingsMenuContainer settings;
+        settings = new SettingsMenuContainer();
+
+        settings.add(new MenuItemData(get(CheckStatusAction.class)));
+        settings.add(new MenuItemData(get(OpenInBrowserAction.class), MenuItemProperty.HIDE_IF_DISABLED));
+        settings.add(new MenuItemData(get(URLEditorAction.class)));
+        settings.add(new SeparatorData());
+        settings.add(new MenuItemData(get(PackageNameAction.class)));
+        settings.add(new MenuItemData(get(SetDownloadFolderInDownloadTableAction.class)));
+        settings.add(new MenuItemData(get(SetDownloadPassword.class)));
+
+        settings.add(createPriorityMenu());
+        return settings;
+
+    }
+
+    private MenuItemData createPriorityMenu() {
+        PriorityMenuContainer priority;
+        priority = new PriorityMenuContainer();
+        priority.add(new MenuItemData(get(PriorityLowerAction.class)));
+        priority.add(new MenuItemData(get(PriorityDefaultAction.class)));
+        priority.add(new MenuItemData(get(PriorityHighAction.class)));
+        priority.add(new MenuItemData(get(PriorityHigherAction.class)));
+        priority.add(new MenuItemData(get(PriorityHighestAction.class)));
+        return priority;
     }
 
     private ActionData get(Class<?> class1) {
@@ -188,6 +220,11 @@ public class DownloadListContextMenuManager {
             ret.add(set.getValue());
         }
         return ret;
+    }
+
+    public void setMenuData(MenuContainerRoot root) {
+
+        config.setMenuStructure(root);
     }
 
 }

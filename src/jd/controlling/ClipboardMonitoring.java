@@ -94,7 +94,6 @@ public class ClipboardMonitoring {
                 while (Thread.currentThread() == monitoringThread) {
                     try {
                         synchronized (this) {
-                            System.out.println(waitTimeout);
                             this.wait(waitTimeout);
                         }
                         if (Thread.currentThread() != monitoringThread) return;

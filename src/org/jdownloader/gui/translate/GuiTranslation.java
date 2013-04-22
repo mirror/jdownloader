@@ -2476,7 +2476,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Edit Menu Node" })
     String ManagerFrame_layoutPanel_info();
 
-    @Default(lngs = { "en" }, values = { "Add Entry" })
+    @Default(lngs = { "en" }, values = { "Add Action" })
     String ManagerFrame_layoutPanel_add();
 
     @Default(lngs = { "en" }, values = { "Submenu" })
@@ -2520,5 +2520,20 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Please Choose the action you want to add!" })
     String ManagerFrame_actionPerformed_addaction_msg();
+
+    @Default(lngs = { "en" }, values = { "Add Submenu" })
+    String ManagerFrame_layoutPanel_addSubmenu();
+
+    @Default(lngs = { "en" }, values = { "Add Special Entry" })
+    String ManagerFrame_layoutPanel_addspecials();
+
+    @Default(lngs = { "en" }, values = { "Custom Submenu" })
+    String ManagerFrame_actionPerformed_customfolder();
+
+    @Default(lngs = { "en" }, values = { "Create a custom Submenu" })
+    String NewSubMenuDialog_NewSubMenuDialog_title();
+
+    @Default(lngs = { "en" }, values = { "Choose Icon and Name..." })
+    String NewSubMenuDialog_layoutDialogContent_name_();
 
 }

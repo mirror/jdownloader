@@ -374,6 +374,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     private ArrayList<File> getAvailableDownloadLists() {
+        logger.info("Collect Lists");
         File[] filesInCfg = Application.getResource("cfg/").listFiles();
         ArrayList<Long> sortedAvailable = new ArrayList<Long>();
         ArrayList<File> ret = new ArrayList<File>();
@@ -392,6 +393,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         if (Application.getResource("cfg/downloadList.zip").exists()) {
             ret.add(Application.getResource("cfg/downloadList.zip"));
         }
+        logger.info("Lists: " + ret);
         return ret;
     }
 
@@ -399,7 +401,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * load all FilePackages/DownloadLinks from Database
      */
     public synchronized void initDownloadLinks() {
+        logger.info("Init DownloadList");
         if (isLoadAllowed() == false) {
+            logger.info("Load List is not allowed");
             /* loading is not allowed */
             return;
         }
@@ -408,9 +412,12 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         for (File downloadList : getAvailableDownloadLists()) {
             try {
                 lpackages = load(downloadList);
+
                 if (lpackages != null) {
+                    logger.info("Links loaded: " + lpackages.size());
                     break;
                 }
+                logger.info("Links Array is null");
             } catch (final Throwable e) {
                 logger.log(e);
             }
@@ -462,6 +469,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     private LinkedList<FilePackage> load(File file) {
+        logger.info("Load List: " + file);
         synchronized (SAVELOADLOCK) {
             LinkedList<FilePackage> ret = null;
             if (file != null && file.exists()) {

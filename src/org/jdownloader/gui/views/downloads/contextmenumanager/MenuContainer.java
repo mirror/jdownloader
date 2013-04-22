@@ -12,6 +12,12 @@ public class MenuContainer extends MenuItemData {
 
     }
 
+    public MenuContainer(String name, String iconKey) {
+        super();
+        setName(name);
+        setIconKey(iconKey);
+    }
+
     @Override
     public JMenu createItem(SelectionInfo<?, ?> selection) {
 

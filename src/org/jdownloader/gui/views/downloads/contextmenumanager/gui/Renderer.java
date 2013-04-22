@@ -44,7 +44,7 @@ public class Renderer implements TreeCellRenderer {
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
         MenuItemData mid = ((MenuItemData) value).lazyReal();
         Rectangle bounds = null;
-
+        System.out.println(1);
         renderer.setFont(defFont);
 
         // renderer.setPreferredSize(dim);

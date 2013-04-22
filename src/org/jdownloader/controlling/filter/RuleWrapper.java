@@ -155,7 +155,8 @@ public class RuleWrapper<T extends FilterRule> {
         if (getFiletypeFilter() != null) {
             if (link.getLinkState() != LinkState.ONLINE) return false;
             String ext = Files.getExtension(link.getName());
-            if (ext == null) return true;
+            // if there is no extension, this filter does not match
+            if (ext == null) return false;
             return getFiletypeFilter().matches(ext);
         }
         return true;
