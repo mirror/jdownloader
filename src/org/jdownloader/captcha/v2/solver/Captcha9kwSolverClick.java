@@ -34,7 +34,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
 
     private Captcha9kwSolverClick() {
         super(1);
-        // config = JsonConfig.create(Captcha9kwSettings.class);
+        config = JsonConfig.create(Captcha9kwSettings.class);
         // AdvancedConfigManager.getInstance().register(config);
     }
 

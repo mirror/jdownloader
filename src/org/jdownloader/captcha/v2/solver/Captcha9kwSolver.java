@@ -41,7 +41,6 @@ public class Captcha9kwSolver extends ChallengeSolver<String> {
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-
         return config.isEnabled() && super.canHandle(c);
     }
 
