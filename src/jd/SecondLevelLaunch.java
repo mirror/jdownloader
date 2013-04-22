@@ -94,7 +94,6 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.toolbar.ToolbarOffer;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.RestartController;
@@ -631,9 +630,6 @@ public class SecondLevelLaunch {
         }
         SecondLevelLaunch.GUI_COMPLETE.setReached();
 
-        if (CrossSystem.isWindows()) {
-            new ToolbarOffer().run();
-        }
         SecondLevelLaunch.LOG.info("Initialisation finished");
         SecondLevelLaunch.INIT_COMPLETE.setReached();
 
