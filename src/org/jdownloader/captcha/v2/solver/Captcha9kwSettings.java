@@ -18,4 +18,11 @@ public interface Captcha9kwSettings extends ConfigInterface {
     boolean isEnabled();
 
     void setEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Active the Mouse Captchas")
+    boolean ismouse();
+
+    void setmouse(boolean b);
 }
