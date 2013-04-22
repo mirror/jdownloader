@@ -472,7 +472,7 @@ public class TbCm extends PluginForDecrypt {
             private static final long serialVersionUID = -3028718522449785181L;
 
             {
-
+                boolean threed = cfg.getBooleanProperty("ALLOW_3D_V2", true);
                 boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4_V2", true);
                 boolean webm = cfg.getBooleanProperty("ALLOW_WEBM_V2", true);
                 boolean threegp = cfg.getBooleanProperty("ALLOW_3GP_V2", true);
@@ -492,13 +492,14 @@ public class TbCm extends PluginForDecrypt {
                 boolean q720p = cfg.getBooleanProperty("ALLOW_720P_V2", true);
                 boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P_V2", true);
                 boolean qOriginal = cfg.getBooleanProperty("ALLOW_ORIGINAL_V2", true);
-                if (q240p == false && q360p == false && q480p == false && q720p == false && q1080p == false && qOriginal == false) {
+                if (q240p == false && q360p == false && q480p == false && q720p == false && q1080p == false && qOriginal == false && threed == false) {
                     q240p = true;
                     q480p = true;
                     q360p = true;
                     q720p = true;
                     q1080p = true;
                     qOriginal = true;
+                    threed = true;
 
                 }
                 // **** FLV *****
@@ -520,9 +521,16 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 // **** 3GP *****
-                if ((threegp && q240p) || best) {
-                    this.put(13, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AMR", "Mono", "240p" });
-                    this.put(17, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "240p" });
+                if (threegp || best) {
+                    if (q240p || best) {
+                        this.put(13, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AAC", "Mono", "240p" });
+                    }
+                    if (q240p || best) {
+                        this.put(17, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "144p" });
+                    }
+                    if (q240p || best) {
+                        this.put(36, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "240p" });
+                    }
                 }
 
                 // **** MP4 *****
@@ -546,8 +554,42 @@ public class TbCm extends PluginForDecrypt {
                     if (q360p || best) {
                         this.put(43, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
                     }
+                    if (q480p || best) {
+                        this.put(44, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "480p" });
+                    }
                     if (q720p || best) {
                         this.put(45, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "720p" });
+                    }
+                    if (q1080p || best) {
+                        this.put(46, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "1080p" });
+                    }
+                }
+                /* 3D */
+                if (threed || best) {
+                    if (webm || best) {
+                        if (q360p || best) {
+                            this.put(100, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
+                        }
+                        if (q360p || best) {
+                            this.put(101, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
+                        }
+                        if (q720p || best) {
+                            this.put(102, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "720p" });
+                        }
+                    }
+                    if (mp4 || best) {
+                        if (q360p || best) {
+                            this.put(82, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
+                        }
+                        if (q240p || best) {
+                            this.put(83, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "240p" });
+                        }
+                        if (q720p || best) {
+                            this.put(84, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
+                        }
+                        if (qOriginal || best) {
+                            this.put(85, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "520p" });
+                        }
                     }
                 }
             }
@@ -1036,7 +1078,9 @@ public class TbCm extends PluginForDecrypt {
             if (fmt_list.containsKey(fmt2)) {
                 String Videoq = links.get(fmt)[1];
                 final Integer q = Integer.parseInt(fmt_list.get(fmt2).split("x")[1]);
-                if (fmt == 40) {
+                if (fmt == 17) {
+                    Videoq = "144p";
+                } else if (fmt == 40) {
                     Videoq = "240p Light";
                 } else if (q > 1080) {
                     Videoq = "Original";
