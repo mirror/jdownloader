@@ -368,5 +368,40 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
                 });
             }
         });
+
+        this.addColumn(new ExtCheckColumn<ProxyInfo>(_GUI._.gui_column_native(), this) {
+
+            private static final long serialVersionUID = -4667150369226691276L;
+
+            @Override
+            public int getMaxWidth() {
+                return 60;
+            }
+
+            @Override
+            public boolean isHidable() {
+                return true;
+            }
+
+            @Override
+            protected boolean getBooleanValue(ProxyInfo value) {
+                return value.isPreferNativeImplementation();
+            }
+
+            @Override
+            public boolean isEditable(ProxyInfo obj) {
+                switch (obj.getType()) {
+                case HTTP:
+                    return true;
+                default:
+                    return false;
+                }
+            }
+
+            @Override
+            protected void setBooleanValue(final boolean value, final ProxyInfo object) {
+                object.setPreferNativeImplementation(value);
+            }
+        });
     }
 }

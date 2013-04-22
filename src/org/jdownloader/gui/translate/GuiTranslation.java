@@ -126,6 +126,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Proxytype" })
     String gui_column_proxytype();
 
+    @Default(lngs = { "en" }, values = { "Native" })
+    String gui_column_native();
+
     @Default(lngs = { "en" }, values = { "Use" })
     String gui_column_use();
 
