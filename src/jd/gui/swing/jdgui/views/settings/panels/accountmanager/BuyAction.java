@@ -40,7 +40,6 @@ public class BuyAction extends AbstractAction {
      * 
      */
     private static final long   serialVersionUID = 1L;
-    private LazyHostPlugin      preSelection     = null;
     private PremiumAccountTable table            = null;
 
     public BuyAction(PremiumAccountTable table) {
@@ -54,7 +53,6 @@ public class BuyAction extends AbstractAction {
     }
 
     public BuyAction(LazyHostPlugin hoster) {
-        this.preSelection = hoster;
         this.putValue(NAME, _GUI._.settings_accountmanager_buy());
         this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("buy", 16));
     }
