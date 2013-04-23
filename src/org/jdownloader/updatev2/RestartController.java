@@ -67,8 +67,7 @@ public class RestartController implements ShutdownVetoListener {
     }
 
     /**
-     * Create a new instance of RestartController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of RestartController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     protected RestartController() {
 
@@ -112,14 +111,13 @@ public class RestartController implements ShutdownVetoListener {
 
                 if (es.getKey() != null) ret.add("-" + es.getKey());
                 for (String p : es.getValue().getParameters()) {
-
                     ret.add(p);
                 }
             }
         }
         if (arguments != null) {
             for (String s : arguments) {
-                ret.add(s);
+                if (s != null) ret.add(s);
             }
         }
 
