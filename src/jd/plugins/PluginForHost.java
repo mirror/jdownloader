@@ -77,20 +77,20 @@ import org.jdownloader.translate._JDT;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
-    private static Pattern[] PATTERNS = new Pattern[] {
-                                      /**
-                                       * these patterns should split filename and fileextension (extension must include the point)
-                                       */
-                                      // multipart rar archives
+    private static Pattern[]      PATTERNS             = new Pattern[] {
+                                                       /**
+                                                        * these patterns should split filename and fileextension (extension must include the point)
+                                                        */
+                                                       // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
-    private LazyHostPlugin   lazyP    = null;
+    private LazyHostPlugin        lazyP                = null;
     /**
      * Is true if the user has answerd a captcha challenge. does not say anything whether if the answer was correct or not
      */
-    private boolean          latestChallengeAnswered;
+    private BasicCaptchaChallenge lastCaptchaChallenge = null;
 
     public LazyHostPlugin getLazyP() {
         return lazyP;
@@ -171,7 +171,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws PluginException {
-        latestChallengeAnswered = false;
         final LinkStatus linkStatus = link.getLinkStatus();
         final String status = linkStatus.getStatusText();
         int latest = linkStatus.getLatestStatus();
@@ -218,49 +217,46 @@ public abstract class PluginForHost extends Plugin {
                 }
 
             };
-
+            lastCaptchaChallenge = c;
             if (CaptchaBlackList.getInstance().matches(c)) {
                 logger.warning("Cancel. Blacklist Matching");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             try {
-
                 ChallengeResponseController.getInstance().handle(c);
             } finally {
-
                 linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
                 linkStatus.addStatus(latest);
                 linkStatus.setStatusText(status);
                 linkStatus.setStatusIcon(null);
-
             }
             if (!c.isSolved()) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            latestChallengeAnswered = true;
             return c.getResult().getValue();
         } catch (InterruptedException e) {
             logger.warning(Exceptions.getStackTrace(e));
-
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } catch (SkipException e) {
 
             switch (e.getSkipRequest()) {
 
             case BLOCK_ALL_CAPTCHAS:
-
                 DownloadController.getInstance().set(new DownloadLinkWalker() {
 
                     @Override
                     public boolean accept(DownloadLink link) {
-
-                        boolean ret = ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
-                        // download is running. do not skip
-                        if (link.getDownloadInstance() != null) return false;
+                        /* no captcha, no need to skip */
+                        if (((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null) == false) return false;
                         // is skipped. no reason to skip again
                         if (link.isSkipped()) return false;
+                        // download is running. do not skip
+                        if (link.getDownloadInstance() != null) return false;
                         // plugin is in progress. captcha has been entered
-                        if (link.getLivePlugin() != null && link.getLivePlugin().isLatestChallengeAnswered()) return false;
-
-                        return ret;
+                        PluginForHost livePlugin = link.getLivePlugin();
+                        if (livePlugin != null) {
+                            BasicCaptchaChallenge captchaChallenge = livePlugin.getLastCaptchaChallenge();
+                            if (captchaChallenge != null && captchaChallenge.isSolved()) return false;
+                        }
+                        return true;
                     }
 
                     @Override
@@ -275,23 +271,27 @@ public abstract class PluginForHost extends Plugin {
 
                 });
                 HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
-
                 break;
-
             case BLOCK_HOSTER:
                 DownloadController.getInstance().set(new DownloadLinkWalker() {
 
                     @Override
                     public boolean accept(DownloadLink link) {
-                        boolean ret = link.getHost().equals(getHost());
+                        // host does not match, no need to skip
+                        if (link.getHost().equals(getHost()) == false) return false;
+                        /* no captcha, no need to skip */
+                        if (((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null) == false) return false;
                         // download is running. do not skip
                         if (link.getDownloadInstance() != null) return false;
                         // is skipped. no reason to skip again
                         if (link.isSkipped()) return false;
                         // plugin is in progress. captcha has been entered
-                        if (link.getLivePlugin() != null && link.getLivePlugin().isLatestChallengeAnswered()) return false;
-                        ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
-                        return ret;
+                        PluginForHost livePlugin = link.getLivePlugin();
+                        if (livePlugin != null) {
+                            BasicCaptchaChallenge captchaChallenge = livePlugin.getLastCaptchaChallenge();
+                            if (captchaChallenge != null && captchaChallenge.isSolved()) return false;
+                        }
+                        return true;
                     }
 
                     @Override
@@ -313,15 +313,21 @@ public abstract class PluginForHost extends Plugin {
 
                     @Override
                     public boolean accept(DownloadLink link) {
-                        boolean ret = link.getFilePackage() == getDownloadLink().getFilePackage();
+                        // different packages, no need to skip
+                        if (link.getFilePackage() != getDownloadLink().getFilePackage()) return false;
+                        /* no captcha, no need to skip */
+                        if (((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null) == false) return false;
                         // download is running. do not skip
                         if (link.getDownloadInstance() != null) return false;
                         // is skipped. no reason to skip again
                         if (link.isSkipped()) return false;
                         // plugin is in progress. captcha has been entered
-                        if (link.getLivePlugin() != null && link.getLivePlugin().isLatestChallengeAnswered()) return false;
-                        ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
-                        return ret;
+                        PluginForHost livePlugin = link.getLivePlugin();
+                        if (livePlugin != null) {
+                            BasicCaptchaChallenge captchaChallenge = livePlugin.getLastCaptchaChallenge();
+                            if (captchaChallenge != null && captchaChallenge.isSolved()) return false;
+                        }
+                        return true;
                     }
 
                     @Override
@@ -342,27 +348,19 @@ public abstract class PluginForHost extends Plugin {
 
             case SINGLE:
                 getDownloadLink().setSkipped(true);
-
                 HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
                 break;
             case TIMEOUT:
                 if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
                     getDownloadLink().setSkipped(true);
-
                     HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
-
                 }
             case REFRESH:
                 // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
                 break;
             }
-
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-    }
-
-    public boolean isLatestChallengeAnswered() {
-        return latestChallengeAnswered;
     }
 
     protected DownloadInterface                dl                                           = null;
@@ -396,6 +394,10 @@ public abstract class PluginForHost extends Plugin {
         return false;
     }
 
+    public BasicCaptchaChallenge getLastCaptchaChallenge() {
+        return lastCaptchaChallenge;
+    }
+
     @Override
     public String getHost() {
         return lazyP.getDisplayName();
@@ -408,6 +410,7 @@ public abstract class PluginForHost extends Plugin {
 
     @Override
     public void clean() {
+        lastCaptchaChallenge = null;
         try {
             dl.getConnection().disconnect();
         } catch (Throwable e) {
@@ -468,8 +471,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList
-     * zurueckgeliefert
+     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList zurueckgeliefert
      * 
      * @param data
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
@@ -515,8 +517,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /*
-     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have
-     * one!
+     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have one!
      */
     public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
@@ -647,14 +648,13 @@ public abstract class PluginForHost extends Plugin {
 
     public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
         try {
-            while (waitForNextStartAllowed(downloadLink)) {
+            try {
+                while (waitForNextStartAllowed(downloadLink)) {
+                }
+            } catch (InterruptedException e) {
+                return;
             }
-        } catch (InterruptedException e) {
-            return;
-        }
-        latestChallengeAnswered = false;
-        putLastTimeStarted(System.currentTimeMillis());
-        try {
+            putLastTimeStarted(System.currentTimeMillis());
             if (account != null) {
                 /* with account */
                 if (account.getHoster().equalsIgnoreCase(downloadLink.getHost())) {
@@ -667,12 +667,12 @@ public abstract class PluginForHost extends Plugin {
                 handleFree(downloadLink);
             }
         } finally {
-            latestChallengeAnswered = false;
             try {
                 downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(dl.getManagedConnetionHandler());
             } catch (final Throwable e) {
+            } finally {
+                clean();
             }
-            clean();
         }
     }
 
@@ -684,8 +684,8 @@ public abstract class PluginForHost extends Plugin {
          * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
          * 
-         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
-         * does not equal link host!
+         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host does not equal link
+         * host!
          * 
          * 
          * 
@@ -901,8 +901,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect
-     * this based on other downloadlinks
+     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect this based on other
+     * downloadlinks
      * 
      * @param cache
      *            TODO
@@ -998,8 +998,7 @@ public abstract class PluginForHost extends Plugin {
                     /* no prototypesplit available yet, create new one */
                     if (pattern != null) {
                         /*
-                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with
-                         * same filename
+                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with same filename
                          */
                         prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
                     } else {

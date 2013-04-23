@@ -489,8 +489,8 @@ public class VeohCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-        link.setProperty("bytes_loaded", Long.valueOf(0l));
-        link.setProperty("parts_finished", Long.valueOf(0l));
+        link.setProperty("bytes_loaded", 0l);
+        link.setProperty("parts_finished", 0l);
     }
 
     @Override

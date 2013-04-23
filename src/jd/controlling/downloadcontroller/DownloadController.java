@@ -32,6 +32,7 @@ import java.util.zip.ZipEntry;
 import jd.config.NoOldJDDataBaseFoundException;
 import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.controlling.packagecontroller.PackageController;
 import jd.gui.swing.jdgui.JDGui;
 import jd.parser.Regex;
@@ -804,22 +805,21 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE, pkg));
     }
 
-    public void set(DownloadLinkWalker filter) {
+    public void set(final DownloadLinkWalker filter) {
+        List<DownloadLink> linksToSet = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-        final boolean readL = readLock();
-        try {
-            for (final FilePackage fp : packages) {
-                if (!filter.accept(fp)) continue;
-                synchronized (fp) {
-                    for (DownloadLink dl : fp.getChildren()) {
-                        if (filter.accept(dl)) {
-                            filter.handle(dl);
-                        }
-                    }
-                }
+            @Override
+            public int returnMaxResults() {
+                return 0;
             }
-        } finally {
-            readUnlock(readL);
+
+            @Override
+            public boolean acceptNode(DownloadLink node) {
+                return filter.accept(node.getFilePackage()) && filter.accept(node);
+            }
+        });
+        for (final DownloadLink link : linksToSet) {
+            filter.handle(link);
         }
     }
 
