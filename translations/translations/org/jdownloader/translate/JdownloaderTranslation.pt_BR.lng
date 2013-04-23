@@ -1,5 +1,6 @@
 AddContainerAction_delete_container_msg=Deseja excluir %s1 após adicionar o(s) link(s) no JDownloader?
 AddContainerAction_delete_container_title=Excluir Arquivos Contêiner?
+DownloadLink_setSkipped_statusmessage=Ignorado
 DownloadWatchDog_onShutdownRequest_=Downloads em progresso!
 DownloadWatchDog_onShutdownRequest_msg=Deseja parar todos os downloads em andamento para sair do JDownloader?
 DownloadWatchDog_onShutdownRequest_nonresumable=Nenhum download resumível em progresso!
