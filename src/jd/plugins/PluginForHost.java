@@ -87,6 +87,10 @@ public abstract class PluginForHost extends Plugin {
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin   lazyP    = null;
+    /**
+     * Is true if the user has answerd a captcha challenge. does not say anything whether if the answer was correct or not
+     */
+    private boolean          latestChallengeAnswered;
 
     public LazyHostPlugin getLazyP() {
         return lazyP;
@@ -167,6 +171,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws PluginException {
+        latestChallengeAnswered = false;
         final LinkStatus linkStatus = link.getLinkStatus();
         final String status = linkStatus.getStatusText();
         int latest = linkStatus.getLatestStatus();
@@ -230,6 +235,7 @@ public abstract class PluginForHost extends Plugin {
 
             }
             if (!c.isSolved()) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            latestChallengeAnswered = true;
             return c.getResult().getValue();
         } catch (InterruptedException e) {
             logger.warning(Exceptions.getStackTrace(e));
@@ -247,6 +253,13 @@ public abstract class PluginForHost extends Plugin {
                     public boolean accept(DownloadLink link) {
 
                         boolean ret = ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
+                        // download is running. do not skip
+                        if (link.getDownloadInstance() != null) return false;
+                        // is skipped. no reason to skip again
+                        if (link.isSkipped()) return false;
+                        // plugin is in progress. captcha has been entered
+                        if (link.getLivePlugin() != null && link.getLivePlugin().isLatestChallengeAnswered()) return false;
+
                         return ret;
                     }
 
@@ -271,7 +284,12 @@ public abstract class PluginForHost extends Plugin {
                     @Override
                     public boolean accept(DownloadLink link) {
                         boolean ret = link.getHost().equals(getHost());
-
+                        // download is running. do not skip
+                        if (link.getDownloadInstance() != null) return false;
+                        // is skipped. no reason to skip again
+                        if (link.isSkipped()) return false;
+                        // plugin is in progress. captcha has been entered
+                        if (link.getLivePlugin() != null && link.getLivePlugin().isLatestChallengeAnswered()) return false;
                         ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
                         return ret;
                     }
@@ -296,6 +314,12 @@ public abstract class PluginForHost extends Plugin {
                     @Override
                     public boolean accept(DownloadLink link) {
                         boolean ret = link.getFilePackage() == getDownloadLink().getFilePackage();
+                        // download is running. do not skip
+                        if (link.getDownloadInstance() != null) return false;
+                        // is skipped. no reason to skip again
+                        if (link.isSkipped()) return false;
+                        // plugin is in progress. captcha has been entered
+                        if (link.getLivePlugin() != null && link.getLivePlugin().isLatestChallengeAnswered()) return false;
                         ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
                         return ret;
                     }
@@ -335,6 +359,10 @@ public abstract class PluginForHost extends Plugin {
 
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
+    }
+
+    public boolean isLatestChallengeAnswered() {
+        return latestChallengeAnswered;
     }
 
     protected DownloadInterface                dl                                           = null;
@@ -624,6 +652,7 @@ public abstract class PluginForHost extends Plugin {
         } catch (InterruptedException e) {
             return;
         }
+        latestChallengeAnswered = false;
         putLastTimeStarted(System.currentTimeMillis());
         try {
             if (account != null) {
@@ -638,6 +667,7 @@ public abstract class PluginForHost extends Plugin {
                 handleFree(downloadLink);
             }
         } finally {
+            latestChallengeAnswered = false;
             try {
                 downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(dl.getManagedConnetionHandler());
             } catch (final Throwable e) {
