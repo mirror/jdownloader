@@ -1,5 +1,6 @@
 package jd.controlling.captcha;
 
+import java.awt.Dialog.ModalExclusionType;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.net.MalformedURLException;
@@ -9,6 +10,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.DialogType;
+import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
@@ -87,7 +89,15 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
             }
 
             // }
-            showDialog(dialogType, f, images);
+
+            ModalExclusionType orgEx = JDGui.getInstance().getMainFrame().getModalExclusionType();
+            try {
+
+                JDGui.getInstance().getMainFrame().setModalExclusionType(ModalExclusionType.TOOLKIT_EXCLUDE);
+                showDialog(dialogType, f, images);
+            } finally {
+                JDGui.getInstance().getMainFrame().setModalExclusionType(orgEx);
+            }
 
             return;
         } catch (DialogNoAnswerException e) {

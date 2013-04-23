@@ -38,6 +38,7 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
         if (suggest != null) dialog.suggest(suggest);
 
         result = UIOManager.I().show(CaptchaDialogInterface.class, d).getResult();
+
         if (d.getCloseReason() != CloseReason.OK) {
 
             if (d.isHideCaptchasForHost()) throw new HideCaptchasByHostException();

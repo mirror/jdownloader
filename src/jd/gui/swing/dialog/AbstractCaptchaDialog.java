@@ -554,7 +554,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
     @Override
     public JComponent layoutDialogContent() {
-
+        // getDialog().setModalityType(ModalityType.MODELESS);
         LAFOptions lafOptions = LookAndFeelController.getInstance().getLAFOptions();
         MigPanel field = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill]");
         // field.setOpaque(false);
