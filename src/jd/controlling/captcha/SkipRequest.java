@@ -6,5 +6,6 @@ public enum SkipRequest {
     BLOCK_ALL_CAPTCHAS,
     BLOCK_PACKAGE,
     REFRESH,
-    STOP_CURRENT_ACTION
+    STOP_CURRENT_ACTION,
+    TIMEOUT
 }

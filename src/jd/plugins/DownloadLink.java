@@ -46,6 +46,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.translate._JDT;
 import org.jdownloader.utils.JDFileUtils;
 
 /**
@@ -740,7 +741,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * changes the enabled status of this DownloadLink, aborts download if its currently running
      */
     public void setSkipped(boolean isSkipped) {
-        // this.getLinkStatus().removeStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        if (isSkipped) {
+            getLinkStatus().setStatusText(_JDT._.DownloadLink_setSkipped_statusmessage());
+        } else if (getLinkStatus() != null && StringUtils.equals(getLinkStatus().getStatusText(), _JDT._.DownloadLink_setSkipped_statusmessage())) {
+            getLinkStatus().setStatusText(null);
+        }
         boolean changed = this.skipped != isSkipped;
         if (!changed) return;
         this.skipped = isSkipped;

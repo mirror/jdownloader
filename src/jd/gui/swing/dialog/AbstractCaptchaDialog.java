@@ -342,11 +342,6 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         }
     }
 
-    @Override
-    public int getCountdownTime() {
-        return JsonConfig.create(GraphicalUserInterfaceSettings.class).getCaptchaDialogTimeout();
-    }
-
     public String getCrawlerStatus() {
         switch (type) {
         case CRAWLER:

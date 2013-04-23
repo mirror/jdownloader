@@ -15,9 +15,23 @@ public interface CaptchaSettings extends ConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("True to enable a countdown in captcha dialogs. Dialog will close automated after the coundown")
-    boolean isCountdownEnabled();
+    boolean isDialogCountdownForDownloadsEnabled();
 
-    void setCountdownEnabled(boolean b);
+    void setDialogCountdownForDownloadsEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("True to enable a countdown in crawler captcha dialogs. Dialog will close automated after the coundown")
+    boolean isDialogCountdownForCrawlerEnabled();
+
+    void setDialogCountdownForCrawlerEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("If the Dialog Countdown is reached, the link will be skipped. Disable this option to retry instead")
+    boolean isSkipDownloadLinkOnCaptchaTimeoutEnabled();
+
+    void setSkipDownloadLinkOnCaptchaTimeoutEnabled(boolean b);
 
     @AboutConfig
     @DefaultIntValue(20)

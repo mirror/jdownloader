@@ -32,6 +32,7 @@ import javax.swing.JComponent;
 import jd.PluginWrapper;
 import jd.captcha.JACMethod;
 import jd.config.SubConfiguration;
+import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -217,9 +218,17 @@ public abstract class PluginForHost extends Plugin {
                 logger.warning("Cancel. Blacklist Matching");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
+            try {
 
-            ChallengeResponseController.getInstance().handle(c);
+                ChallengeResponseController.getInstance().handle(c);
+            } finally {
 
+                linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
+                linkStatus.addStatus(latest);
+                linkStatus.setStatusText(status);
+                linkStatus.setStatusIcon(null);
+
+            }
             if (!c.isSolved()) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return c.getResult().getValue();
         } catch (InterruptedException e) {
@@ -312,17 +321,19 @@ public abstract class PluginForHost extends Plugin {
 
                 HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
                 break;
+            case TIMEOUT:
+                if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
+                    getDownloadLink().setSkipped(true);
+
+                    HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+
+                }
             case REFRESH:
                 // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
                 break;
             }
 
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        } finally {
-            linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
-            linkStatus.addStatus(latest);
-            linkStatus.setStatusText(status);
-            linkStatus.setStatusIcon(null);
         }
     }
 

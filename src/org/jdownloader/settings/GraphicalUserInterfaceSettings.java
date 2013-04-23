@@ -48,12 +48,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     int getDialogDefaultTimeout();
 
-    @DefaultIntValue(20)
-    @AboutConfig
-    int getCaptchaDialogTimeout();
-
-    public void setCaptchaDialogTimeout(int i);
-
     @DefaultEnumValue("ALL")
     org.jdownloader.gui.views.downloads.View getDownloadView();
 

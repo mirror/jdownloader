@@ -67,16 +67,20 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
 
         DialogType dialogType = null;
         try {
-
+            int f = 0;
             if (captchaChallenge.getPlugin() instanceof PluginForHost) {
                 dialogType = DialogType.HOSTER;
+                if (config.isDialogCountdownForDownloadsEnabled() && config.getCountdown() > 0) {
+                    f = f | Dialog.LOGIC_COUNTDOWN;
+                }
             } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
                 dialogType = DialogType.CRAWLER;
+
+                if (config.isDialogCountdownForCrawlerEnabled() && config.getCountdown() > 0) {
+                    f = f | Dialog.LOGIC_COUNTDOWN;
+                }
             }
-            int f = 0;
-            if (config.isCountdownEnabled() && config.getCountdown() > 0) {
-                f = f | Dialog.LOGIC_COUNTDOWN;
-            }
+
             Image[] images = CaptchaDialog.getGifImages(captchaChallenge.getImageFile().toURI().toURL());
             if (images == null || images.length == 0) {
                 BufferedImage img = IconIO.getImage(captchaChallenge.getImageFile().toURI().toURL(), false);
@@ -104,6 +108,8 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
 
             /* no external response available */
             if (e.isCausedByInterrupt()) throw new InterruptedException("Dialog Interrupted");
+
+            if (e.isCausedByTimeout()) { throw new SkipException(SkipRequest.TIMEOUT); }
             throw new SkipException(SkipRequest.SINGLE);
 
         } catch (HideCaptchasByHostException e) {

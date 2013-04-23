@@ -180,10 +180,10 @@ public class MenuItemData implements Storable {
         for (MenuItemProperty p : inst.mergeProperties()) {
             switch (p) {
             case LINK_CONTEXT:
-                if (selection.isLinkContext()) return false;
+                if (!selection.isLinkContext()) return false;
                 break;
             case PACKAGE_CONTEXT:
-                if (selection.isPackageContext()) return false;
+                if (!selection.isPackageContext()) return false;
                 break;
             case HIDE_IF_DISABLED:
                 break;
@@ -220,6 +220,7 @@ public class MenuItemData implements Storable {
     public JComponent addTo(JComponent root, SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
         if (!showItem(this, selection)) return null;
+        System.out.println(1);
         JComponent it = createItem(selection);
         if (it == null) return null;
         if (!it.isEnabled() && mergeProperties().contains(MenuItemProperty.HIDE_IF_DISABLED)) return null;

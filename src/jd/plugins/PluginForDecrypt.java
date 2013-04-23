@@ -368,15 +368,9 @@ public abstract class PluginForDecrypt extends Plugin {
                 CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(crawler));
                 break;
             case BLOCK_HOSTER:
-
-                break;
-
             case BLOCK_PACKAGE:
-
-                break;
-
             case SINGLE:
-
+            case TIMEOUT:
                 break;
             case REFRESH:
 

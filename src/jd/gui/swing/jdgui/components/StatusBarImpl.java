@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -32,7 +31,9 @@ import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
 import jd.SecondLevelLaunch;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerEvent;
 import jd.controlling.linkchecker.LinkCheckerListener;
@@ -43,6 +44,8 @@ import jd.controlling.linkcrawler.LinkCrawlerListener;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
 import jd.gui.swing.laf.LookAndFeelController;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.controlling.StateEvent;
@@ -50,13 +53,13 @@ import org.appwork.controlling.StateEventListener;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.tooltips.ToolTipController;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class StatusBarImpl extends JPanel implements StateEventListener {
+public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
     private static final long      serialVersionUID = 3676496738341246846L;
     private ReconnectProgress      reconnectIndicator;
@@ -97,7 +100,7 @@ public class StatusBarImpl extends JPanel implements StateEventListener {
         reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());
         reconnectIndicator.setIndeterminate(false);
         reconnectIndicator.setEnabled(false);
-        DownloadWatchDog.getInstance().getStateMachine().addListener(this);
+        DownloadWatchDog.getInstance().getEventSender().addListener(this);
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -319,41 +322,35 @@ public class StatusBarImpl extends JPanel implements StateEventListener {
     private JComponent lazyGetDownloadWatchdogIndicator() {
         if (downloadWatchdogIndicator != null) return downloadWatchdogIndicator;
 
-        downloadWatchdogIndicator = new IconedProcessIndicator(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("ocr", 16), NewTheme.I().getImage("download", 16), 0, 0, -2, -2)));
+        downloadWatchdogIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("skipped", 16));
 
-        downloadWatchdogIndicator.setTitle(_GUI._.StatusBarImpl_lazyGetDownloadWatchdogIndicator_title());
-        downloadWatchdogIndicator.setDescription(_GUI._.StatusBarImpl_lazyGetDownloadWatchdogIndicator_desc());
+        downloadWatchdogIndicator.setTitle(_GUI._.StatusBarImpl_skippedLinksMarker_title());
+
         downloadWatchdogIndicator.setIndeterminate(false);
         downloadWatchdogIndicator.setEnabled(true);
         downloadWatchdogIndicator.setValue(100);
         downloadWatchdogIndicator.addMouseListener(new MouseListener() {
 
             public void mouseReleased(MouseEvent e) {
-                if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                    final JPopupMenu popup = new JPopupMenu();
-                    // if (captchaBlockedHoster!=null&&captchaBlockedHoster.size()>0){
-                    popup.add(new AppAction() {
-                        /**
-                         * 
-                         */
-                        private static final long serialVersionUID = -968768342263254431L;
+                DownloadController.getInstance().set(new DownloadLinkWalker() {
 
-                        {
-                            this.setIconKey("ocr");
-                            this.setName(_GUI._.StatusBarImpl_lazyGetDownloadWatchdogIndicator_release());
+                    @Override
+                    public void handle(DownloadLink link) {
+                        link.setSkipped(false);
+                        removeProcessIndicator(downloadWatchdogIndicator);
+                        redoLayout();
+                    }
 
-                        }
+                    @Override
+                    public boolean accept(FilePackage fp) {
+                        return true;
+                    }
 
-                        public void actionPerformed(ActionEvent e) {
-                            // DownloadWatchDog.getInstance().setCaptchaAllowed(null, CAPTCHA.OK);
-                        }
-
-                    });
-
-                    popup.show(downloadWatchdogIndicator, e.getPoint().x, 0 - popup.getPreferredSize().height);
-                    // }
-
-                }
+                    @Override
+                    public boolean accept(DownloadLink link) {
+                        return true;
+                    }
+                });
             }
 
             public void mousePressed(MouseEvent e) {
@@ -373,17 +370,55 @@ public class StatusBarImpl extends JPanel implements StateEventListener {
     }
 
     @Override
-    public void onStateChange(StateEvent event) {
-        if (!DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
+    public void onDownloadWatchdogDataUpdate() {
+
+        if (DownloadWatchDog.getInstance().getSkippedLinksCounter() > 0 && !hasProcessIndicator(lazyGetDownloadWatchdogIndicator())) {
+
+            addProcessIndicator(lazyGetDownloadWatchdogIndicator());
+        } else if (DownloadWatchDog.getInstance().getSkippedLinksCounter() <= 0) {
             if (downloadWatchdogIndicator != null) {
                 removeProcessIndicator(lazyGetDownloadWatchdogIndicator());
             }
         }
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (downloadWatchdogIndicator != null) downloadWatchdogIndicator.setDescription(_GUI._.StatusBarImpl_skippedLinksMarker_desc(DownloadWatchDog.getInstance().getSkippedLinksCounter()));
+            }
+        };
+
+    }
+
+    private boolean hasProcessIndicator(JComponent icon) {
+        return processIndicators.contains(icon);
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsIdle() {
 
     }
 
     @Override
-    public void onStateUpdate(StateEvent event) {
+    public void onDownloadWatchdogStateIsPause() {
+        if (downloadWatchdogIndicator != null) {
+            removeProcessIndicator(lazyGetDownloadWatchdogIndicator());
+        }
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsRunning() {
+        if (downloadWatchdogIndicator != null) {
+            removeProcessIndicator(lazyGetDownloadWatchdogIndicator());
+        }
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsStopped() {
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsStopping() {
     }
 
 }

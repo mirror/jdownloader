@@ -110,8 +110,7 @@ public class CFG_GUI {
      * If enabled, The User Interface will switch to Linkgrabber Tab if a new job has been added
      **/
     public static final BooleanKeyHandler                              LINKGRABBER_AUTO_TAB_SWITCH_ENABLED               = SH.getKeyHandler("LinkgrabberAutoTabSwitchEnabled", BooleanKeyHandler.class);
-    // 20
-    public static final IntegerKeyHandler                              CAPTCHA_DIALOG_TIMEOUT                            = SH.getKeyHandler("CaptchaDialogTimeout", IntegerKeyHandler.class);
+
     // true
     public static final BooleanKeyHandler                              FILE_COUNT_IN_SIZE_COLUMN_VISIBLE                 = SH.getKeyHandler("FileCountInSizeColumnVisible", BooleanKeyHandler.class);
     // true

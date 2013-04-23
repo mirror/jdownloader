@@ -466,4 +466,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you really want to sort all Links and Packages on '%s1'?" })
     String getNextSortIdentifier_sort_warning_rly_msg(String string);
 
+    @Default(lngs = { "en" }, values = { "Skipped" })
+    String DownloadLink_setSkipped_statusmessage();
+
 }

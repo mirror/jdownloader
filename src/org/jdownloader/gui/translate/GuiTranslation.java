@@ -2260,14 +2260,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Skip all captchas" })
     String AbstractCaptchaDialog_createPopup_skip_and_hide_all_captchas_download();
 
-    @Default(lngs = { "en" }, values = { "Skipped Captchas!" })
-    String StatusBarImpl_lazyGetDownloadWatchdogIndicator_title();
+    @Default(lngs = { "en" }, values = { "Skipped Downloads!" })
+    String StatusBarImpl_skippedLinksMarker_title();
 
-    @Default(lngs = { "en" }, values = { "Some or all Downloads with Captchas get skipped. Rightclick to change this!" })
-    String StatusBarImpl_lazyGetDownloadWatchdogIndicator_desc();
-
-    @Default(lngs = { "en" }, values = { "Show & allow all Captchas" })
-    String StatusBarImpl_lazyGetDownloadWatchdogIndicator_release();
+    @Default(lngs = { "en" }, values = { "Skipped Downloads: %s1. Click here to retry them." })
+    String StatusBarImpl_skippedLinksMarker_desc(int i);
 
     @Default(lngs = { "en" }, values = { "Download has been skipped. Restart Downloads to try again!" })
     String ConnectionColumn_DownloadIsSkipped();
