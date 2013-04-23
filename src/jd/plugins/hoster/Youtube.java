@@ -59,6 +59,7 @@ public class Youtube extends PluginForHost {
     private static final String ALLOW_WEBM              = "ALLOW_WEBM_V2";
     private static final String ALLOW_FLV               = "ALLOW_FLV_V2";
     private static final String ALLOW_3GP               = "ALLOW_3GP_V2";
+    private static final String ALLOW_144P              = "ALLOW_144P_V2";
     private static final String ALLOW_240P              = "ALLOW_240P_V2";
     private static final String ALLOW_360P              = "ALLOW_360P_V2";
     private static final String ALLOW_480P              = "ALLOW_480P_V2";
@@ -457,6 +458,7 @@ public class Youtube extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_FLV, JDL.L("plugins.hoster.youtube.checkflv", "Grab FLV?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_3GP, JDL.L("plugins.hoster.youtube.check3gp", "Grab 3GP?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_144P, JDL.L("plugins.hoster.youtube.check144p", "Grab 144p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240P, JDL.L("plugins.hoster.youtube.check240p", "Grab 240p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, JDL.L("plugins.hoster.youtube.check360p", "Grab 360p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480P, JDL.L("plugins.hoster.youtube.check480p", "Grab 480p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));

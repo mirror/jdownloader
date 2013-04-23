@@ -486,6 +486,7 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 /** User selected nothing -> Decrypt everything */
+                boolean q144p = cfg.getBooleanProperty("ALLOW_144P_V2", true);
                 boolean q240p = cfg.getBooleanProperty("ALLOW_240P_V2", true);
                 boolean q360p = cfg.getBooleanProperty("ALLOW_360P_V2", true);
                 boolean q480p = cfg.getBooleanProperty("ALLOW_480P_V2", true);
@@ -525,7 +526,7 @@ public class TbCm extends PluginForDecrypt {
                     if (q240p || best) {
                         this.put(13, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AAC", "Mono", "240p" });
                     }
-                    if (q240p || best) {
+                    if (q144p || best) {
                         this.put(17, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "144p" });
                     }
                     if (q240p || best) {

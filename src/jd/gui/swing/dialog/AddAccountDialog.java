@@ -237,19 +237,20 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         content.add(link, "height 20!,gapleft 32");
         content.add(header(_GUI._.AddAccountDialog_layoutDialogContent_enterlogininfo()), "gapleft 15,spanx,pushx,growx,gaptop 15");
 
+        LazyHostPlugin lazyp = null;
         if (this.plugin != null) {
-            try {
-                LazyHostPlugin lazyp = plugin.getLazyP();
-                if (lazyp != null) this.hoster.setSelectedItem(lazyp);
-            } catch (final Exception e) {
-            }
+            lazyp = plugin.getLazyP();
         } else {
-            LazyHostPlugin plg = HostPluginController.getInstance().get("netload.in");
-            if (plg != null) {
-                try {
-                    hoster.setSelectedItem(plg);
-                } catch (final Exception e) {
-                }
+            lazyp = HostPluginController.getInstance().get("rapidgator.net");
+        }
+        if (lazyp != null) {
+            try {
+                hoster.setPrototypeDisplayValue(lazyp);
+            } catch (final Throwable e) {
+            }
+            try {
+                hoster.setSelectedItem(lazyp);
+            } catch (final Exception e) {
             }
         }
 
@@ -270,7 +271,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
             if (content == null) return;
             PluginForHost plg = plugin;
             if (plg == null) {
-                LazyHostPlugin p = HostPluginController.getInstance().get("netload.in");
+                LazyHostPlugin p = HostPluginController.getInstance().get("rapidgator.net");
                 if (p == null) {
 
                     p = HostPluginController.getInstance().list().get(0);
