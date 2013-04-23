@@ -11,9 +11,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.SecondLevelLaunch;
 import jd.gui.swing.dialog.AddAccountDialog;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 
@@ -23,9 +21,6 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
@@ -100,24 +95,6 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
                 }
             }
         });
-    }
-
-    public static void main(String[] args) {
-        BuyAndAddPremiumAccount cp;
-        try {
-            SecondLevelLaunch.statics();
-
-            cp = new BuyAndAddPremiumAccount(DomainInfo.getInstance("letitbit.net"), "test");
-
-            LookAndFeelController.getInstance().setUIManager();
-
-            Dialog.getInstance().showDialog(cp);
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        }
-        System.exit(0);
     }
 
     @Override

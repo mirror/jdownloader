@@ -4,6 +4,7 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 
@@ -58,6 +59,14 @@ public class BuyAction extends AbstractAction {
         this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("buy", 16));
     }
 
+    public static String getPreselectedHoster() {
+        if ("Europe/Berlin".equalsIgnoreCase(Calendar.getInstance().getTimeZone().getID())) {
+            return "uploaded.to";
+        } else {
+            return "rapidgator.net";
+        }
+    }
+
     public void actionPerformed(ActionEvent e) {
         IOEQ.add(new Runnable() {
             public void run() {
@@ -68,7 +77,7 @@ public class BuyAction extends AbstractAction {
                     if (lhp.isPremium()) plugins.add(lhp);
                 }
                 final LazyHostPlugin[] options = plugins.toArray(new LazyHostPlugin[plugins.size()]);
-                LazyHostPlugin plg = preSelection;
+                LazyHostPlugin plg = HostPluginController.getInstance().get(getPreselectedHoster());
                 if (table != null && plg == null) {
                     java.util.List<Account> selection = table.getExtTableModel().getSelectedObjects();
                     if (selection != null && selection.size() > 0) {
@@ -81,9 +90,6 @@ public class BuyAction extends AbstractAction {
                             }
                         }
                     }
-                }
-                if (plg == null) {
-                    plg = HostPluginController.getInstance().get("uploaded.to");
                 }
                 final LazyHostPlugin defaultSelection = plg;
                 try {

@@ -19,6 +19,7 @@ package jd.gui.swing.dialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -241,7 +242,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         if (this.plugin != null) {
             lazyp = plugin.getLazyP();
         } else {
-            lazyp = HostPluginController.getInstance().get("rapidgator.net");
+            lazyp = HostPluginController.getInstance().get(getPreselectedHoster());
         }
         if (lazyp != null) {
             try {
@@ -255,6 +256,14 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         }
 
         return content;
+    }
+
+    public static String getPreselectedHoster() {
+        if ("Europe/Berlin".equalsIgnoreCase(Calendar.getInstance().getTimeZone().getID())) {
+            return "uploaded.to";
+        } else {
+            return "rapidgator.net";
+        }
     }
 
     protected int getPreferredWidth() {
@@ -271,16 +280,12 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
             if (content == null) return;
             PluginForHost plg = plugin;
             if (plg == null) {
-                LazyHostPlugin p = HostPluginController.getInstance().get("rapidgator.net");
+                LazyHostPlugin p = HostPluginController.getInstance().get(getPreselectedHoster());
                 if (p == null) {
-
                     p = HostPluginController.getInstance().list().get(0);
                 }
-
                 hoster.setSelectedItem(p);
-
                 plg = p.newInstance(PluginClassLoader.getInstance().getChild());
-
             }
 
             AccountFactory accountFactory = plg.getAccountFactory();
