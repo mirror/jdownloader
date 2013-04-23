@@ -337,8 +337,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                     @Override
                     public void handle(DownloadLink link) {
                         link.setSkipped(false);
-                        removeProcessIndicator(downloadWatchdogIndicator);
-                        redoLayout();
+
                     }
 
                     @Override
@@ -351,6 +350,9 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                         return true;
                     }
                 });
+
+                removeProcessIndicator(downloadWatchdogIndicator);
+                redoLayout();
             }
 
             public void mousePressed(MouseEvent e) {
