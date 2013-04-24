@@ -60,7 +60,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> {
             job.getLogger().info("Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout() + " - getTypeID: " + challenge.getTypeID());
             if (config.getwhitelist() != null) {
                 if (config.getwhitelist().length() > 5) {
-                    if (challenge.getTypeID().contains(config.getwhitelist())) {
+                    if (config.getwhitelist().contains(challenge.getTypeID())) {
                         job.getLogger().info("Hoster on whitelist for 9kw.eu. - " + challenge.getTypeID());
                     } else {
                         job.getLogger().info("Hoster not on whitelist for 9kw.eu. - " + challenge.getTypeID());
@@ -70,7 +70,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> {
             }
             if (config.getblacklist() != null) {
                 if (config.getblacklist().length() > 5) {
-                    if (challenge.getTypeID().contains(config.getblacklist())) {
+                    if (config.getblacklist().contains(challenge.getTypeID())) {
                         job.getLogger().info("Hoster on blacklist for 9kw.eu. - " + challenge.getTypeID());
                         return;
                     } else {

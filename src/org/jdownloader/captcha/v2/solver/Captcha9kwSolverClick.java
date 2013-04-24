@@ -59,7 +59,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
             solverJob.getLogger().info("Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout() + " - getTypeID: " + captchaChallenge.getTypeID());
             if (config.getwhitelist() != null) {
                 if (config.getwhitelist().length() > 5) {
-                    if (captchaChallenge.getTypeID().contains(config.getwhitelist())) {
+                    if (config.getwhitelist().contains(captchaChallenge.getTypeID())) {
                         solverJob.getLogger().info("Hoster on whitelist for 9kw.eu. - " + captchaChallenge.getTypeID());
                     } else {
                         solverJob.getLogger().info("Hoster not on whitelist for 9kw.eu. - " + captchaChallenge.getTypeID());
@@ -69,7 +69,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
             }
             if (config.getblacklist() != null) {
                 if (config.getblacklist().length() > 5) {
-                    if (captchaChallenge.getTypeID().contains(config.getblacklist())) {
+                    if (config.getblacklist().contains(captchaChallenge.getTypeID())) {
                         solverJob.getLogger().info("Hoster on blacklist for 9kw.eu. - " + captchaChallenge.getTypeID());
                         return;
                     } else {
