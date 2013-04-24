@@ -298,17 +298,23 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-                LogController.CL(TrayExtension.class).info("JDLightTrayIcon Init complete");
-                guiFrame = JDGui.getInstance().getMainFrame();
-                if (guiFrame != null) {
+                new EDTRunner() {
 
-                    JDGui.getInstance().setClosingHandler(TrayExtension.this);
-                    guiFrame.removeWindowStateListener(TrayExtension.this);
-                    guiFrame.addWindowStateListener(TrayExtension.this);
-                    if (startup && getSettings().isStartMinimizedEnabled()) {
-                        miniIt(true);
+                    @Override
+                    protected void runInEDT() {
+                        LogController.CL(TrayExtension.class).info("JDLightTrayIcon Init complete");
+                        guiFrame = JDGui.getInstance().getMainFrame();
+                        if (guiFrame != null) {
+
+                            JDGui.getInstance().setClosingHandler(TrayExtension.this);
+                            guiFrame.removeWindowStateListener(TrayExtension.this);
+                            guiFrame.addWindowStateListener(TrayExtension.this);
+                            if (startup && getSettings().isStartMinimizedEnabled()) {
+                                miniIt(true);
+                            }
+                        }
                     }
-                }
+                };
             }
 
         });

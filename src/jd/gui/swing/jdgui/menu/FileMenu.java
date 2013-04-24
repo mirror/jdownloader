@@ -10,6 +10,7 @@ import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
 
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
@@ -24,17 +25,23 @@ public class FileMenu extends JMenu {
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-                AddLinksAction ala = new AddLinksAction();
-                ala.putValue(AbstractAction.NAME, _GUI._.AddOptionsAction_actionPerformed_addlinks());
-                add(new JMenuItem(ala));
-                add(new JMenuItem(new AddContainerAction().toContextMenuAction()));
-                add(new JSeparator());
-                add(new RestartAction());
+                new EDTRunner() {
 
-                if (!CrossSystem.isMac()) {
-                    // add exit action, used by tray extension
-                    JMenuItem exitItem = add(new ExitAction());
-                }
+                    @Override
+                    protected void runInEDT() {
+                        AddLinksAction ala = new AddLinksAction();
+                        ala.putValue(AbstractAction.NAME, _GUI._.AddOptionsAction_actionPerformed_addlinks());
+                        add(new JMenuItem(ala));
+                        add(new JMenuItem(new AddContainerAction().toContextMenuAction()));
+                        add(new JSeparator());
+                        add(new RestartAction());
+
+                        if (!CrossSystem.isMac()) {
+                            // add exit action, used by tray extension
+                            add(new ExitAction());
+                        }
+                    }
+                };
             }
 
         });
