@@ -5,6 +5,7 @@ import java.net.URL;
 
 import jd.controlling.captcha.CaptchaSettings;
 import jd.nutils.encoding.Encoding;
+import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
@@ -44,36 +45,67 @@ public class Captcha9kwSolver extends ChallengeSolver<String> {
         return config.isEnabled() && super.canHandle(c);
     }
 
-    // public void solve(final SolverJob<click> job) throws InterruptedException, SolverException {
-
     @Override
     public void solve(final SolverJob<String> job) throws InterruptedException, SolverException {
-        if (StringUtils.isEmpty(config.getApiKey())) return;
+        if (StringUtils.isEmpty(config.getApiKey())) {
+            job.getLogger().info("No ApiKey for 9kw.eu found.");
+            return;
+        }
         if (job.getChallenge() instanceof BasicCaptchaChallenge) {
             job.waitFor(JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout(), JACSolver.getInstance());
             checkInterruption();
             BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
             BasicHTTP http = new BasicHTTP();
 
+            job.getLogger().info("Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout() + " - getTypeID: " + challenge.getTypeID());
+            if (config.getwhitelist() != null) {
+                if (config.getwhitelist().length() > 5) {
+                    if (challenge.getTypeID().contains(config.getwhitelist())) {
+                        job.getLogger().info("Hoster on whitelist for 9kw.eu. - " + challenge.getTypeID());
+                    } else {
+                        job.getLogger().info("Hoster not on whitelist for 9kw.eu. - " + challenge.getTypeID());
+                        return;
+                    }
+                }
+            }
+            if (config.getblacklist() != null) {
+                if (config.getblacklist().length() > 5) {
+                    if (challenge.getTypeID().contains(config.getblacklist())) {
+                        job.getLogger().info("Hoster on blacklist for 9kw.eu. - " + challenge.getTypeID());
+                        return;
+                    } else {
+                        job.getLogger().info("Hoster not on blacklist for 9kw.eu. - " + challenge.getTypeID());
+                    }
+                }
+            }
+
+            String https9kw = "";
+            if (config.ishttps()) {
+                https9kw = "https";
+            } else {
+                https9kw = "http";
+            }
+
             try {
-                String url = "http://www.9kw.eu/index.cgi";
+                String url = https9kw + "://www.9kw.eu/index.cgi";
                 byte[] data = IO.readFile(challenge.getImageFile());
                 http.putRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
 
-                String ret = new String(http.postPage(new URL(url), "action=usercaptchaupload&jd=2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=250&version=1.0&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false))));
-                job.getLogger().info("Send Captcha. Answer: " + ret);
+                String ret = new String(http.postPage(new URL(url), "action=usercaptchaupload&jd=2&source=jd2-" + Encoding.urlEncode(JDUtilities.getRevision()) + "&prio=" + config.getprio() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=" + JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout() + "&version=1.1&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false))));
+                job.getLogger().info("Send Captcha to 9kw.eu. - " + https9kw + " Answer: " + ret);
                 if (!ret.startsWith("OK-")) throw new SolverException(ret);
                 // Error-No Credits
                 String captchaID = ret.substring(3);
                 data = null;
-                Thread.sleep(6000);
+                int count9kw = 3;
+                Thread.sleep(3000);
                 while (true) {
-
                     Thread.sleep(1000);
-                    url = "http://www.9kw.eu/index.cgi?action=usercaptchacorrectdata&jd=2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.0";
-                    job.getLogger().info("Ask " + url);
+                    count9kw++;
+                    url = https9kw + "://www.9kw.eu/index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1";
+                    job.getLogger().info("9kw.eu Ask " + captchaID);
                     ret = new String(http.getPage(new URL(url)));
-                    job.getLogger().info("Answer " + ret);
+                    job.getLogger().info("9kw.eu Answer " + count9kw + "s: " + ret);
                     if (ret.startsWith("OK-answered-")) {
                         job.addAnswer(new CaptchaResponse(this, ret.substring("OK-answered-".length()), 100));
                         return;
@@ -89,6 +121,8 @@ public class Captcha9kwSolver extends ChallengeSolver<String> {
                 System.out.println(1);
             }
 
+        } else {
+            job.getLogger().info("Problem with Captcha9kwSolver.");
         }
 
     }
