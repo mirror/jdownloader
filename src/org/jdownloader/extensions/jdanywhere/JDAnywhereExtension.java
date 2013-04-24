@@ -17,6 +17,7 @@ import org.jdownloader.extensions.jdanywhere.api.DashboardApi;
 import org.jdownloader.extensions.jdanywhere.api.DownloadLinkApi;
 import org.jdownloader.extensions.jdanywhere.api.EventsAPI;
 import org.jdownloader.extensions.jdanywhere.api.FilePackageApi;
+import org.jdownloader.extensions.jdanywhere.api.JDAnywhereEventPublisher;
 import org.jdownloader.extensions.jdanywhere.api.LinkCrawlerApi;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
@@ -24,16 +25,17 @@ import org.jdownloader.updatev2.RestartController;
 
 public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, TranslateInterface> {
 
-    private CaptchaApi            cma;
-    private ContentApi            coma;
-    private DashboardApi          dba;
-    private DownloadLinkApi       dla;
-    private FilePackageApi        fpa;
-    private LinkCrawlerApi        lca;
+    private CaptchaApi               cma;
+    private ContentApi               coma;
+    private DashboardApi             dba;
+    private DownloadLinkApi          dla;
+    private FilePackageApi           fpa;
+    private LinkCrawlerApi           lca;
 
-    private EventsAPI             eva;
+    private EventsAPI                eva;
 
-    private JDAnywhereConfigPanel configPanel;
+    private JDAnywhereConfigPanel    configPanel;
+    private JDAnywhereEventPublisher events;
 
     @Override
     public boolean isDefaultEnabled() {
@@ -50,7 +52,7 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
             RemoteAPIController.getInstance().unregister(fpa);
             RemoteAPIController.getInstance().unregister(lca);
             RemoteAPIController.getInstance().unregister(eva);
-
+            RemoteAPIController.getInstance().unregister(events);
         } catch (final Throwable e) {
             LogController.CL().log(e);
             throw new StopException(e.getMessage());
@@ -77,6 +79,7 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
             RemoteAPIController.getInstance().register(fpa = new FilePackageApi());
             RemoteAPIController.getInstance().register(lca = new LinkCrawlerApi());
             RemoteAPIController.getInstance().register(eva = new EventsAPI());
+            RemoteAPIController.getInstance().register(events = new JDAnywhereEventPublisher());
         } catch (final Throwable e) {
             LogController.CL().log(e);
             throw new StartException(e);

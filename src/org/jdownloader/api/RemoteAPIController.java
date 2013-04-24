@@ -11,6 +11,7 @@ import org.jdownloader.api.accounts.AccountAPIImpl;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
 import org.jdownloader.api.config.AdvancedConfigManagerAPIImpl;
 import org.jdownloader.api.content.ContentAPIImpl;
+import org.jdownloader.api.downloads.DownloadWatchDogEventPublisher;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.jd.JDAPIImpl;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
@@ -52,6 +53,7 @@ public class RemoteAPIController {
         register(new ContentAPIImpl());
         register(new PollingAPIImpl());
         register(eventsapi = new EventsAPI());
+        register(new DownloadWatchDogEventPublisher());
     }
 
     public HttpRequestHandler getRequestHandler() {
