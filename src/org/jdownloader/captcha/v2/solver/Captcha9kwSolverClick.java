@@ -5,6 +5,7 @@ import java.net.URL;
 
 import jd.controlling.captcha.CaptchaSettings;
 import jd.nutils.encoding.Encoding;
+import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
@@ -45,37 +46,66 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
 
     @Override
     public void solve(SolverJob<ClickedPoint> solverJob) throws InterruptedException, SolverException {
-        if (StringUtils.isEmpty(config.getApiKey())) return;
+        if (StringUtils.isEmpty(config.getApiKey())) {
+            solverJob.getLogger().info("No ApiKey for 9kw.eu found.");
+            return;
+        }
         if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
             solverJob.waitFor(JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout(), JACSolver.getInstance());
             checkInterruption();
             ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
             BasicHTTP http = new BasicHTTP();
 
-            // job.getLogger().info("9kw.gettypeid: " + challenge.getTypeID());
-            // challenge.getTypeID() - rapidgator.net
+            solverJob.getLogger().info("Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout() + " - getTypeID: " + captchaChallenge.getTypeID());
+            if (config.getwhitelist() != null) {
+                if (config.getwhitelist().length() > 5) {
+                    if (captchaChallenge.getTypeID().contains(config.getwhitelist())) {
+                        solverJob.getLogger().info("Hoster on whitelist for 9kw.eu. - " + captchaChallenge.getTypeID());
+                    } else {
+                        solverJob.getLogger().info("Hoster not on whitelist for 9kw.eu. - " + captchaChallenge.getTypeID());
+                        return;
+                    }
+                }
+            }
+            if (config.getblacklist() != null) {
+                if (config.getblacklist().length() > 5) {
+                    if (captchaChallenge.getTypeID().contains(config.getblacklist())) {
+                        solverJob.getLogger().info("Hoster on blacklist for 9kw.eu. - " + captchaChallenge.getTypeID());
+                        return;
+                    } else {
+                        solverJob.getLogger().info("Hoster not on blacklist for 9kw.eu. - " + captchaChallenge.getTypeID());
+                    }
+                }
+            }
+
+            String https9kw = "";
+            if (config.ishttps()) {
+                https9kw = "https";
+            } else {
+                https9kw = "http";
+            }
 
             try {
-                String url = "http://www.9kw.eu/index.cgi";
+                String url = https9kw + "://www.9kw.eu/index.cgi";
                 byte[] data = IO.readFile(captchaChallenge.getImageFile());
                 http.putRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
 
-                String ret = new String(http.postPage(new URL(url), "action=usercaptchaupload&jd=2&source=jd2&mouse=1&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=250&version=1.0&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false))));
-                solverJob.getLogger().info("Send Captcha. Answer: " + ret);
+                String ret = new String(http.postPage(new URL(url), "action=usercaptchaupload&jd=2&source=jd2-" + Encoding.urlEncode(JDUtilities.getRevision()) + "&mouse=1&prio=" + config.getprio() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=" + JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout() + "&version=1.1&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false))));
+                solverJob.getLogger().info("Send Captcha to 9kw.eu. - " + https9kw + " Answer: " + ret);
                 if (!ret.startsWith("OK-")) throw new SolverException(ret);
                 // Error-No Credits
                 String captchaID = ret.substring(3);
                 data = null;
-                Thread.sleep(6000);
+                int count9kw = 3;
+                Thread.sleep(3000);
                 while (true) {
-
                     Thread.sleep(1000);
-                    url = "http://www.9kw.eu/index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&mouse=1&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.0";
-                    solverJob.getLogger().info("Ask " + url);
+                    count9kw++;
+                    url = https9kw + "://www.9kw.eu/index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&mouse=1&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1";
+                    solverJob.getLogger().info("9kw.eu Ask " + captchaID);
                     ret = new String(http.getPage(new URL(url)));
-                    solverJob.getLogger().info("Answer " + ret);
+                    solverJob.getLogger().info("9kw.eu Answer " + count9kw + "s: " + ret);
                     if (ret.startsWith("OK-answered-")) {
-                        // solverJob.addAnswer(new ClickCaptchaResponse(this, resultPoint, 100));
                         String antwort = ret.substring("OK-answered-".length());
                         String[] splitResult = antwort.split("x");
 
@@ -93,8 +123,9 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
                 System.out.println(1);
             }
 
+        } else {
+            solverJob.getLogger().info("Problem with Captcha9kwSolverClick.");
         }
 
     }
-
 }
