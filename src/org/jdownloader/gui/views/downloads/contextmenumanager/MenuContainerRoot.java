@@ -20,4 +20,5 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
     public void setVersion(int version) {
         this.version = version;
     }
+
 }

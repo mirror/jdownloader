@@ -7,6 +7,8 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainer;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainerRoot;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
@@ -17,7 +19,20 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
 
     public ManagerTreeModel(MenuContainerRoot menuContainerRoot) {
         super(null, false);
+        // create a new copy
+
+        menuContainerRoot = JSonStorage.restoreFromString(JSonStorage.toString(menuContainerRoot), new TypeRef<MenuContainerRoot>() {
+        });
         data = menuContainerRoot;
+    }
+
+    public void set(MenuContainerRoot menuContainerRoot) {
+        menuContainerRoot = JSonStorage.restoreFromString(JSonStorage.toString(menuContainerRoot), new TypeRef<MenuContainerRoot>() {
+        });
+        data = menuContainerRoot;
+
+        fireTreeStructureChanged(this, new Object[] { data }, null, null);
+
     }
 
     @Override
@@ -120,4 +135,5 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
         }
 
     }
+
 }

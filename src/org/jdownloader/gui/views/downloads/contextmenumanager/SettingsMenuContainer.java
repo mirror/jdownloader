@@ -18,6 +18,7 @@ public class SettingsMenuContainer extends MenuContainer {
     public SettingsMenuContainer() {
         setName(_GUI._.ContextMenuFactory_createPopup_properties_package());
         setIconKey("settings");
+
     }
 
     @Override

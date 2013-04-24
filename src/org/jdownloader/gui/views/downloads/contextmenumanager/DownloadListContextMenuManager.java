@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.contextmenumanager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -10,8 +11,11 @@ import javax.swing.JPopupMenu;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
@@ -30,6 +34,7 @@ import org.jdownloader.gui.views.downloads.context.DeleteSelectedAndFailedLinksA
 import org.jdownloader.gui.views.downloads.context.DeleteSelectedFinishedLinksAction;
 import org.jdownloader.gui.views.downloads.context.DeleteSelectedOfflineLinksAction;
 import org.jdownloader.gui.views.downloads.context.ForceDownloadAction;
+import org.jdownloader.gui.views.downloads.context.MenuManagerAction;
 import org.jdownloader.gui.views.downloads.context.NewPackageAction;
 import org.jdownloader.gui.views.downloads.context.OpenDirectoryAction;
 import org.jdownloader.gui.views.downloads.context.OpenFileAction;
@@ -40,15 +45,32 @@ import org.jdownloader.gui.views.downloads.context.ResumeAction;
 import org.jdownloader.gui.views.downloads.context.SetDownloadFolderInDownloadTableAction;
 import org.jdownloader.gui.views.downloads.context.StopsignAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
+import org.jdownloader.logging.LogController;
 
 public class DownloadListContextMenuManager {
 
-    private ContextMenuConfigInterface config;
+    private ContextMenuConfigInterface                  config;
+    private LogSource                                   logger;
+    private static final DownloadListContextMenuManager INSTANCE = new DownloadListContextMenuManager();
 
-    public DownloadListContextMenuManager() {
+    /**
+     * get the only existing instance of DownloadListContextMenuManager. This is a singleton
+     * 
+     * @return
+     */
+    public static DownloadListContextMenuManager getInstance() {
+        return DownloadListContextMenuManager.INSTANCE;
+    }
+
+    /**
+     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
+     */
+
+    private DownloadListContextMenuManager() {
 
         config = JsonConfig.create(Application.getResource("cfg/menus/DownloadListContextMenu"), ContextMenuConfigInterface.class);
-
+        logger = LogController.getInstance().getLogger(getClass().getName());
         init();
 
     }
@@ -61,11 +83,12 @@ public class DownloadListContextMenuManager {
         ret.add(createSettingsMenu());
         ret.add(createMoreMenu());
         ret.add(createDeleteMenu());
+        ret.add(createPriorityMenu());
         // ret.add(new AddonSubMenuLink());
         return ret;
     }
 
-    private MenuContainerRoot setupDefaultStructure() {
+    public MenuContainerRoot setupDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
         mr.setSource(VERSION);
         // mr.add()
@@ -92,6 +115,9 @@ public class DownloadListContextMenuManager {
         mr.add(new MenuItemData(get(DeleteQuickAction.class)));
         mr.add(createDeleteMenu());
 
+        mr.add(new SeparatorData());
+
+        mr.add(new MenuItemData(get(MenuManagerAction.class)));
         return mr;
     }
 
@@ -149,45 +175,50 @@ public class DownloadListContextMenuManager {
 
     private void init() {
 
-        add(new ActionData(CheckStatusAction.class));
-        add(new ActionData(OpenInBrowserAction.class));
-        add(new ActionData(URLEditorAction.class));
-        add(new ActionData(PackageNameAction.class, MenuItemProperty.PACKAGE_CONTEXT));
-        add(new ActionData(SetDownloadFolderInDownloadTableAction.class));
-        add(new ActionData(SetDownloadPassword.class));
-        add(new ActionData(SetCommentAction.class));
+        add(new ActionData(0, CheckStatusAction.class));
+        add(new ActionData(0, OpenInBrowserAction.class));
+        add(new ActionData(0, URLEditorAction.class));
+        add(new ActionData(0, PackageNameAction.class, MenuItemProperty.PACKAGE_CONTEXT));
+        add(new ActionData(0, SetDownloadFolderInDownloadTableAction.class));
+        add(new ActionData(0, SetDownloadPassword.class));
+        add(new ActionData(0, SetCommentAction.class));
 
         // Priority
-        add(new ActionData(PriorityLowerAction.class));
-        add(new ActionData(PriorityDefaultAction.class));
-        add(new ActionData(PriorityHighAction.class));
-        add(new ActionData(PriorityHigherAction.class));
-        add(new ActionData(PriorityHighestAction.class));
+        add(new ActionData(0, PriorityLowerAction.class));
+        add(new ActionData(0, PriorityDefaultAction.class));
+        add(new ActionData(0, PriorityHighAction.class));
+        add(new ActionData(0, PriorityHigherAction.class));
+        add(new ActionData(0, PriorityHighestAction.class));
 
-        add(new ActionData(OpenFileAction.class, MenuItemProperty.LINK_CONTEXT));
-        add(new ActionData(OpenDirectoryAction.class));
+        add(new ActionData(0, OpenFileAction.class, MenuItemProperty.LINK_CONTEXT));
+        add(new ActionData(0, OpenDirectoryAction.class));
 
-        add(new ActionData(SortAction.class));
-        add(new ActionData(EnabledAction.class));
-        add(new ActionData(ForceDownloadAction.class));
-        add(new ActionData(StopsignAction.class));
-        add(new ActionData(ResumeAction.class));
-        add(new ActionData(ResetAction.class));
-        add(new ActionData(NewPackageAction.class));
-        add(new ActionData(CreateDLCAction.class));
-        add(new ActionData(DeleteQuickAction.class));
-        add(new ActionData(DeleteDisabledSelectedLinks.class));
-        add(new ActionData(DeleteSelectedAndFailedLinksAction.class));
-        add(new ActionData(DeleteSelectedFinishedLinksAction.class));
-        add(new ActionData(DeleteSelectedOfflineLinksAction.class));
-
+        add(new ActionData(0, SortAction.class));
+        add(new ActionData(0, EnabledAction.class));
+        add(new ActionData(0, ForceDownloadAction.class));
+        add(new ActionData(0, StopsignAction.class));
+        add(new ActionData(0, ResumeAction.class));
+        add(new ActionData(0, ResetAction.class));
+        add(new ActionData(0, NewPackageAction.class));
+        add(new ActionData(0, CreateDLCAction.class));
+        add(new ActionData(0, DeleteQuickAction.class));
+        add(new ActionData(0, DeleteDisabledSelectedLinks.class));
+        add(new ActionData(0, DeleteSelectedAndFailedLinksAction.class));
+        add(new ActionData(0, DeleteSelectedFinishedLinksAction.class));
+        add(new ActionData(0, DeleteSelectedOfflineLinksAction.class));
+        add(new ActionData(1, MenuManagerAction.class));
     }
 
     private HashMap<Class<?>, ActionData> map = new HashMap<Class<?>, ActionData>();
+    private MenuContainerRoot             menuData;
 
     private void add(ActionData actionData) {
 
-        map.put(actionData._getClazz(), actionData);
+        try {
+            map.put(actionData._getClazz(), actionData);
+        } catch (ActionClassNotAvailableException e) {
+            logger.log(e);
+        }
     }
 
     public void show() {
@@ -203,13 +234,139 @@ public class DownloadListContextMenuManager {
         return root;
     }
 
-    public MenuContainerRoot getMenuData() {
+    public synchronized MenuContainerRoot getMenuData() {
         long t = System.currentTimeMillis();
+        if (menuData != null) return menuData;
         MenuContainerRoot ret = config.getMenuStructure();
+
         if (ret == null) {
+            // no customizer ever used
             ret = setupDefaultStructure();
-            config.setMenuStructure(ret);
+
+        } else {
+            List<MenuItemData> allItemsInMenu = ret.list();
+
+            HashSet<Class<?>> actionClassesInMenu = new HashSet<Class<?>>();
+            NewActionsContainer neworUpdate = new NewActionsContainer();
+            for (MenuItemData d : allItemsInMenu) {
+                if (d.getActionData() != null) {
+                    if (d.getActionData().getClazzName() != null) {
+                        try {
+                            actionClassesInMenu.add(d.getActionData()._getClazz());
+                        } catch (Exception e1) {
+                            logger.log(e1);
+                        }
+                    }
+                }
+                if (StringUtils.equals(d.getClassName(), NewActionsContainer.class.getName())) {
+                    neworUpdate = (NewActionsContainer) d.lazyReal();
+                }
+            }
+            ArrayList<ActionData> unused = config.getUnusedActions();
+            if (unused == null) {
+                unused = new ArrayList<ActionData>();
+            }
+            ArrayList<ActionData> updatedActions = new ArrayList<ActionData>();
+            ArrayList<ActionData> newActions = new ArrayList<ActionData>();
+            HashSet<Class<?>> actionClassesInUnusedLIst = new HashSet<Class<?>>();
+
+            // find all updated in unused list
+            for (ActionData unusedAction : unused) {
+                try {
+                    ActionData newAd = map.get(unusedAction._getClazz());
+                    actionClassesInUnusedLIst.add(unusedAction._getClazz());
+                    if (newAd == null) {
+                        // action is not available any more
+                    } else if (newAd.getVersion() > unusedAction.getVersion()) {
+                        // action has been updated
+                        if (newAd._getClazz() == MenuManagerAction.class) continue;
+                        updatedActions.add(newAd);
+                    }
+
+                } catch (ActionClassNotAvailableException e) {
+                    logger.log(e);
+                }
+
+            }
+
+            // find new or updated actions
+
+            for (Entry<Class<?>, ActionData> e : map.entrySet()) {
+                if (e.getKey() == MenuManagerAction.class) continue;
+                if (!actionClassesInUnusedLIst.contains(e.getKey())) {
+                    // not in unused list
+                    if (!actionClassesInMenu.contains(e.getKey())) {
+                        // not in menu itself
+                        // this is a new action
+                        newActions.add(e.getValue());
+                    }
+
+                }
+            }
+
+            System.out.println(1);
+            if (updatedActions.size() > 0 || newActions.size() > 0) {
+                MenuContainerRoot defaultTree = setupDefaultStructure();
+                List<List<MenuItemData>> pathes = defaultTree.listPathes();
+                HashSet<Class<?>> actionClassesInDefaultTree = new HashSet<Class<?>>();
+                // HashMap<MenuItemData,> actionClassesInDefaultTree = new HashSet<Class<?>>();
+
+                System.out.println(pathes);
+                for (List<MenuItemData> path : pathes) {
+
+                    MenuItemData d = path.get(path.size() - 1);
+                    if (d.getActionData() != null) {
+                        if (d.getActionData().getClazzName() != null) {
+                            try {
+                                actionClassesInDefaultTree.add(d.getActionData()._getClazz());
+                            } catch (Exception e1) {
+                                logger.log(e1);
+                            }
+                        }
+                    }
+                }
+
+                for (ActionData ad : updatedActions) {
+                    try {
+                        for (List<MenuItemData> path : pathes) {
+                            MenuItemData d = path.get(path.size() - 1);
+                            if (d.getActionData() != null && d.getActionData()._getClazz() == ad._getClazz()) {
+
+                                neworUpdate.add(path);
+
+                            }
+
+                        }
+
+                    } catch (ActionClassNotAvailableException e1) {
+                        logger.log(e1);
+                    }
+                }
+
+                for (ActionData ad : newActions) {
+                    try {
+                        for (List<MenuItemData> path : pathes) {
+                            MenuItemData d = path.get(path.size() - 1);
+                            if (d.getActionData() != null && d.getActionData()._getClazz() == ad._getClazz()) {
+
+                                neworUpdate.add(path);
+
+                            }
+
+                        }
+
+                    } catch (ActionClassNotAvailableException e1) {
+                        logger.log(e1);
+                    }
+                }
+                neworUpdate.add(new SeparatorData());
+                neworUpdate.add(new MenuItemData(get(MenuManagerAction.class)));
+                ret.getItems().add(0, neworUpdate);
+
+            }
+
         }
+        menuData = ret;
         System.out.println(System.currentTimeMillis() - t);
         return ret;
     }
@@ -224,7 +381,45 @@ public class DownloadListContextMenuManager {
 
     public void setMenuData(MenuContainerRoot root) {
 
-        config.setMenuStructure(root);
+        if (JSonStorage.toString(root).equals(JSonStorage.toString(setupDefaultStructure()))) {
+            root = null;
+        }
+        if (root == null) {
+
+            config.setMenuStructure(null);
+            config.setUnusedActions(null);
+            menuData = setupDefaultStructure();
+
+        } else {
+            menuData = root;
+
+            ArrayList<ActionData> list = new ArrayList<ActionData>();
+
+            List<MenuItemData> allItemsInMenu = root.list();
+
+            HashSet<Class<?>> actionClassesInMenu = new HashSet<Class<?>>();
+
+            for (MenuItemData d : allItemsInMenu) {
+                if (d.getActionData() != null) {
+                    if (d.getActionData().getClazzName() != null) {
+                        try {
+                            actionClassesInMenu.add(d.getActionData()._getClazz());
+                        } catch (Exception e1) {
+                            logger.log(e1);
+                        }
+                    }
+                }
+            }
+            for (Entry<Class<?>, ActionData> e : map.entrySet()) {
+                if (!actionClassesInMenu.contains(e.getKey())) {
+                    list.add(e.getValue());
+                }
+            }
+
+            config.setMenuStructure(root);
+            config.setUnusedActions(list);
+        }
+
     }
 
 }

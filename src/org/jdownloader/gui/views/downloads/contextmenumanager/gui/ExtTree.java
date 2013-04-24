@@ -6,9 +6,14 @@ import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.datatransfer.Transferable;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 import javax.swing.DropMode;
 import javax.swing.JComponent;
+import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.TransferHandler;
 import javax.swing.event.TreeExpansionEvent;
@@ -49,14 +54,16 @@ public class ExtTree extends JTree {
     }
 
     private ManagerTreeModel model;
+    private ManagerFrame     managerFrame;
 
     public TreeUI getUI() {
         return (TreeUI) ui;
     }
 
-    public ExtTree(ManagerTreeModel model) {
-        super(model);
-        this.model = model;
+    public ExtTree(ManagerFrame mf) {
+        super(mf.getModel());
+        this.model = mf.getModel();
+        this.managerFrame = mf;
         getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         setOpaque(true);
         setExpandsSelectedPaths(true);
@@ -77,6 +84,58 @@ public class ExtTree extends JTree {
         setCellRenderer(new Renderer());
         setRootVisible(false);
         setRowHeight(24);
+        addKeyListener(new KeyListener() {
+
+            @Override
+            public void keyTyped(KeyEvent e) {
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+                    new RemoveAction(managerFrame).actionPerformed(null);
+                }
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+            }
+        });
+        addMouseListener(new MouseListener() {
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+
+                    JPopupMenu popup = new JPopupMenu();
+
+                    // JMenuItem mi = new JMenuItem(T._.jd_plugins_optional_infobar_InfoDialog_hideWindow());
+                    // mi.setIcon(NewTheme.I().getIcon("close", -1));
+                    // mi.addActionListener(this);
+                    popup.add(new AddActionAction(managerFrame));
+                    popup.add(new AddSubMenuAction(managerFrame));
+                    popup.add(new AddSpecialAction(managerFrame));
+                    popup.add(new RemoveAction(managerFrame));
+                    popup.show(ExtTree.this, e.getPoint().x, e.getPoint().y);
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+            }
+        });
         setDragEnabled(true);
         // setDropMode(DropMode.ON_OR_INSERT_ROWS);
         setDropMode(DropMode.INSERT);

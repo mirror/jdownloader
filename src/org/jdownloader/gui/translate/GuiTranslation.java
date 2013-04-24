@@ -2500,11 +2500,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Hide if File/Folder does not exist" })
     String InfoPanel_InfoPanel_hideIfFileNotExists();
 
-    @Default(lngs = { "en" }, values = { "Only visible if clicked on a Link" })
-    String InfoPanel_InfoPanel_linkContext();
+    @Default(lngs = { "en" }, values = { "Hide if clicked on a Package" })
+    String InfoPanel_InfoPanel_linkContext2();
 
-    @Default(lngs = { "en" }, values = { "Only visible if clicked on a Package" })
-    String InfoPanel_InfoPanel_packageContext();
+    @Default(lngs = { "en" }, values = { "Hide if clicked on a Link" })
+    String InfoPanel_InfoPanel_packageContext2();
 
     @Default(lngs = { "en" }, values = { "Ahh... a new dialog?" })
     String DownloadController_deleteLinksRequest_object_help();
@@ -2532,5 +2532,29 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Choose Icon and Name..." })
     String NewSubMenuDialog_layoutDialogContent_name_();
+
+    @Default(lngs = { "en" }, values = { "Open Menu Manager" })
+    String MenuManagerAction_MenuManagerAction();
+
+    @Default(lngs = { "en" }, values = { "New Actions" })
+    String NewActionsContainer_NewActionsContainer();
+
+    @Default(lngs = { "en" }, values = { "Predefined: \"%s1\"" })
+    String AddSubMenuAction_getListCellRendererComponent(String name);
+
+    @Default(lngs = { "en" }, values = { "---- Seperator Line ----" })
+    String AddSpecialAction_actionPerformed_seperator();
+
+    @Default(lngs = { "en" }, values = { "Choose Menu Item" })
+    String AddSpecialAction_actionPerformed_title();
+
+    @Default(lngs = { "en" }, values = { "Please choose what item you want to add!" })
+    String AddSpecialAction_actionPerformed_msg();
+
+    @Default(lngs = { "en" }, values = { "Add" })
+    String lit_add();
+
+    @Default(lngs = { "en" }, values = { "Reset to Default" })
+    String ManagerFrame_layoutPanel_resettodefault();
 
 }

@@ -47,7 +47,7 @@ public class DownloadTableContextMenuFactory {
      * {@link #getInstance()}.
      */
     private DownloadTableContextMenuFactory() {
-        manager = new DownloadListContextMenuManager();
+        manager = DownloadListContextMenuManager.getInstance();
 
     }
 

@@ -94,4 +94,11 @@ public interface UpdateSettings extends ConfigInterface {
     boolean isAutohideGuiIfThereAreNoUpdatesEnabled();
 
     void setAutohideGuiIfThereAreNoUpdatesEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isProxyDialogOnNoConnectionEnabled();
+
+    void setProxyDialogOnNoConnectionEnabled(boolean b);
+
 }

@@ -10,9 +10,11 @@ import javax.swing.JLabel;
 import javax.swing.JTree;
 import javax.swing.tree.TreeCellRenderer;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.contextmenumanager.ActionClassNotAvailableException;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainer;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuLink;
@@ -42,49 +44,54 @@ public class Renderer implements TreeCellRenderer {
 
     @Override
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-        MenuItemData mid = ((MenuItemData) value).lazyReal();
-        Rectangle bounds = null;
-        System.out.println(1);
-        renderer.setFont(defFont);
+        try {
+            MenuItemData mid = ((MenuItemData) value).lazyReal();
+            Rectangle bounds = null;
+            System.out.println(1);
+            renderer.setFont(defFont);
 
-        // renderer.setPreferredSize(dim);
-        // renderer.setSize(new Dimension(Math.max(200, tree.getParent().getWidth()) - bounds.x - 20, 24));
-        // tree.revalidate();
+            // renderer.setPreferredSize(dim);
+            // renderer.setSize(new Dimension(Math.max(200, tree.getParent().getWidth()) - bounds.x - 20, 24));
+            // tree.revalidate();
 
-        // renderer.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.RED));
-        if (mid instanceof MenuContainer) {
-            if (mid.getIconKey() != null) {
-                renderer.setIcon(NewTheme.I().getIcon(mid.getIconKey(), 20));
-            } else {
-                renderer.setIcon(null);
-
-            }
-            renderer.setFont(bold);
-            renderer.setText(_GUI._.Renderer_getTreeCellRendererComponent_submenu(mid.getName()));
-            return renderer;
-        } else if (mid instanceof SeparatorData) {
-            renderer.setIcon(null);
-            renderer.setText(_GUI._.Renderer_getTreeCellRendererComponent_seperator());
-            return renderer;
-        } else {
-            if (mid instanceof MenuLink) {
-
-                renderer.setText(_GUI._.Renderer_getTreeCellRendererComponent_link(mid.getName()));
+            // renderer.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.RED));
+            if (mid instanceof MenuContainer) {
                 if (mid.getIconKey() != null) {
                     renderer.setIcon(NewTheme.I().getIcon(mid.getIconKey(), 20));
                 } else {
                     renderer.setIcon(null);
+
                 }
+                renderer.setFont(bold);
+                renderer.setText(_GUI._.Renderer_getTreeCellRendererComponent_submenu(mid.getName()));
+                return renderer;
+            } else if (mid instanceof SeparatorData) {
+                renderer.setIcon(null);
+                renderer.setText(_GUI._.Renderer_getTreeCellRendererComponent_seperator());
                 return renderer;
             } else {
-                AppAction action = mid.createAction(null);
-                renderer.setText(action.getName());
-                renderer.setIcon(action.getSmallIcon());
-                return renderer;
-            }
+                if (mid instanceof MenuLink) {
 
+                    renderer.setText(_GUI._.Renderer_getTreeCellRendererComponent_link(mid.getName()));
+                    if (mid.getIconKey() != null) {
+                        renderer.setIcon(NewTheme.I().getIcon(mid.getIconKey(), 20));
+                    } else {
+                        renderer.setIcon(null);
+                    }
+                    return renderer;
+                } else {
+
+                    AppAction action = mid.createAction(null);
+                    renderer.setText(action.getName());
+                    renderer.setIcon(action.getSmallIcon());
+                    return renderer;
+
+                }
+
+            }
+        } catch (ActionClassNotAvailableException e) {
+            throw new WTFException(e);
         }
 
     }
-
 }

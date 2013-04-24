@@ -5,6 +5,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
@@ -33,6 +34,7 @@ public class MenuItemData implements Storable {
     }
 
     public void setActionData(ActionData actionData) {
+        real = null;
         this.actionData = actionData;
     }
 
@@ -43,6 +45,7 @@ public class MenuItemData implements Storable {
     }
 
     public void setClassName(String className) {
+        real = null;
         this.className = className;
     }
 
@@ -60,6 +63,7 @@ public class MenuItemData implements Storable {
     }
 
     public void setType(Type type) {
+        real = null;
         this.type = type;
     }
 
@@ -72,6 +76,7 @@ public class MenuItemData implements Storable {
     }
 
     public void setItems(ArrayList<MenuItemData> items) {
+        real = null;
         this.items = items;
     }
 
@@ -80,6 +85,7 @@ public class MenuItemData implements Storable {
     }
 
     public void setName(String name) {
+        real = null;
         this.name = name;
     }
 
@@ -88,6 +94,7 @@ public class MenuItemData implements Storable {
     }
 
     public void setIconKey(String iconKey) {
+        real = null;
         this.iconKey = iconKey;
     }
 
@@ -95,11 +102,68 @@ public class MenuItemData implements Storable {
         items.add(child);
     }
 
+    /**
+     * add A path
+     * 
+     * @param path
+     * @throws ClassNotFoundException
+     * @throws IllegalAccessException
+     * @throws InstantiationException
+     */
+    public void add(List<MenuItemData> path) {
+        try {
+            MenuItemData lastNode = createInstance(path.get(path.size() - 1));
+
+            for (int i = path.size() - 2; i >= 0; i--) {
+
+                MenuItemData node = path.get(i);
+
+                MenuItemData ret;
+
+                ret = createInstance(node);
+                if (ret instanceof MenuContainerRoot) break;
+                ret.setItems(new ArrayList<MenuItemData>());
+                ret.add(lastNode);
+                lastNode = ret;
+
+            }
+            MenuItemData addAt = this;
+            addBranch(this, lastNode);
+
+        } catch (Exception e) {
+            throw new WTFException(e);
+        }
+    }
+
+    private void addBranch(MenuItemData menuItemData, MenuItemData lastNode) {
+        boolean added = false;
+        for (MenuItemData mu : menuItemData.getItems()) {
+            if (mu.getActionData() != null) continue;
+            if (StringUtils.equals(mu.getClassName(), lastNode.getClassName())) {
+                // subfolder found
+
+                if (lastNode.getItems() != null && lastNode.getItems().size() > 0) {
+
+                    addBranch(mu, lastNode.getItems().get(0));
+                    added = true;
+                } else {
+                    return;
+                }
+
+            }
+        }
+        if (!added) {
+            menuItemData.getItems().add(lastNode);
+
+        }
+    }
+
     public HashSet<MenuItemProperty> getProperties() {
         return properties;
     }
 
     public void setProperties(HashSet<MenuItemProperty> properties) {
+        real = null;
         this.properties = properties;
     }
 
@@ -120,12 +184,8 @@ public class MenuItemData implements Storable {
             if (real != null) return real;
             if (className == null || getClass().getName().equals(className)) return this;
 
-            MenuItemData ret = (MenuItemData) Class.forName(className).newInstance();
-            ret.setIconKey(getIconKey());
-            ret.setName(getName());
-            ret.setItems(getItems());
-            ret.setType(getType());
-            ret.setProperties(getProperties());
+            MenuItemData ret = createInstance(this);
+
             real = ret;
             return ret;
         } catch (Throwable e) {
@@ -133,7 +193,19 @@ public class MenuItemData implements Storable {
         }
     }
 
-    public JComponent createItem(SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    private MenuItemData createInstance(MenuItemData menuItemData) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        if (menuItemData.getClassName() == null) return menuItemData;
+        MenuItemData ret = (MenuItemData) Class.forName(menuItemData.getClassName()).newInstance();
+        ret.setIconKey(menuItemData.getIconKey());
+        ret.setName(menuItemData.getName());
+        ret.setItems(menuItemData.getItems());
+        ret.setType(menuItemData.getType());
+        ret.setProperties(menuItemData.getProperties());
+        return ret;
+
+    }
+
+    public JComponent createItem(SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ActionClassNotAvailableException {
 
         if (actionData == null) {
             //
@@ -144,16 +216,13 @@ public class MenuItemData implements Storable {
 
     }
 
-    public AppAction createAction(SelectionInfo<?, ?> selection) {
+    public AppAction createAction(SelectionInfo<?, ?> selection) throws ActionClassNotAvailableException {
         if (actionData == null) {
             //
             throw new WTFException("No ACTION");
         }
         Class<?> clazz = actionData._getClazz();
-        if (clazz == null) {
-            //
-            throw new WTFException("InValid ActionClass " + actionData.getClazzName());
-        }
+
         if (selection == null) {
 
             try {
@@ -221,7 +290,12 @@ public class MenuItemData implements Storable {
 
         if (!showItem(this, selection)) return null;
         System.out.println(1);
-        JComponent it = createItem(selection);
+        JComponent it;
+        try {
+            it = createItem(selection);
+        } catch (ActionClassNotAvailableException e) {
+            return null;
+        }
         if (it == null) return null;
         if (!it.isEnabled() && mergeProperties().contains(MenuItemProperty.HIDE_IF_DISABLED)) return null;
 
@@ -235,5 +309,38 @@ public class MenuItemData implements Storable {
         if (getProperties() != null) ret.addAll(getProperties());
         if (actionData != null && actionData.getProperties() != null) ret.addAll(actionData.getProperties());
         return ret;
+    }
+
+    public List<MenuItemData> list() {
+        List<MenuItemData> set = new ArrayList<MenuItemData>();
+        set.add(this);
+        if (getItems() != null) {
+            for (MenuItemData d : getItems()) {
+                set.addAll(d.list());
+            }
+
+        }
+        return set;
+    }
+
+    public List<List<MenuItemData>> listPathes() {
+        List<List<MenuItemData>> set = new ArrayList<List<MenuItemData>>();
+
+        if (getItems() != null) {
+            for (MenuItemData d : getItems()) {
+                for (List<MenuItemData> p : d.listPathes()) {
+                    ArrayList<MenuItemData> newPath = new ArrayList<MenuItemData>();
+                    newPath.add(this);
+                    newPath.addAll(p);
+                    set.add(newPath);
+                }
+            }
+
+        } else {
+            ArrayList<MenuItemData> newPath = new ArrayList<MenuItemData>();
+            newPath.add(this);
+            set.add(newPath);
+        }
+        return set;
     }
 }
