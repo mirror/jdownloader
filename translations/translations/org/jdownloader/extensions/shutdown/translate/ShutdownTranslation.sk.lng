@@ -1,17 +1,18 @@
-gui_config_jdshutdown_shutdown=Vypnúť
+addons_jdshutdown_statusmessage_disabled=JDownloader NEvypne tento počítač
+addons_jdshutdown_statusmessage_enabled=JDownloader vypne tento počítač po ukončení sťahovaní
+gui_config_jdshutdown_close=Zatvoriť JD
 gui_config_jdshutdown_forceshutdown=Vypnúť počítač (Nie všetky OS)
-interaction_shutdown_dialog_title_standby=Uspať?
+gui_config_jdshutdown_hibernate=Hibernovať (Nie všetky OS)
+gui_config_jdshutdown_mode=Mód:
+gui_config_jdshutdown_shutdown=Vypnúť
+gui_config_jdshutdown_standby=Úsporný Režim (Nie všetky OS)
+interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloadersa zavrie!</font></h2>
+interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Počítač prejde do režimu dlhodobého spánku!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Počítač sa vypne!</font></h2>
+interaction_shutdown_dialog_msg_standby=<h2><font color="red">Počítač prejde do režimu spánku!</font></h2>
+interaction_shutdown_dialog_title_closejd=Zatvoriť JD?
 interaction_shutdown_dialog_title_hibernate=Hibernovať?
 interaction_shutdown_dialog_title_shutdown=Vypnúť!
-interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloadersa zavrie!</font></h2>
-addons_jdshutdown_statusmessage_disabled=JDownloader NEvypne tento počítač
-gui_config_jdshutdown_hibernate=Hibernovať (Nie všetky OS)
-gui_config_jdshutdown_close=Zatvoriť JD
-gui_config_jdshutdown_standby=Úsporný Režim (Nie všetky OS)
+interaction_shutdown_dialog_title_standby=Uspať?
 jd_plugins_optional_jdshutdown=JD Vypnutie
-interaction_shutdown_dialog_title_closejd=Zatvoriť JD?
-gui_config_jdshutdown_mode=Mód:
-addons_jdshutdown_statusmessage_enabled=JDownloader vypne tento počítač po ukončení sťahovaní
-interaction_shutdown_dialog_msg_standby=<h2><font color="red">Počítač prejde do režimu spánku!</font></h2>
-interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Počítač prejde do režimu dlhodobého spánku!</font></h2>
+lit_shutdownn=Vypnúť

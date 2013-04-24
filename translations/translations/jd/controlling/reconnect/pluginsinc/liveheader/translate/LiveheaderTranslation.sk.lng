@@ -18,3 +18,4 @@ gui_config_routeripfinder_ready=IP nájdená: %s1
 gui_fengshuiconfig_routerip=IP Routra
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Zakázali ste Kontrolu IP. Týmto dramaticky zvýšite množstvo znovupripojení!\n\n\n\nNiekoľko modulov ako Záznam Znovupripojení bolo zakázaných.
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=Kontrola IP zakázaná!
+literally_password=Heslo

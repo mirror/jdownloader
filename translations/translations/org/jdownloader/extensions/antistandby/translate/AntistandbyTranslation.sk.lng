@@ -1,4 +1,1 @@
-gui_config_antistandby_mode=Mód:
-gui_config_antistandby_whiledl=Neprechádzať do režim spánku kým Sťahujem
-gui_config_antistandby_whilejd=Neprechádzať do režim spánku kým beží JD
 jd_plugins_optional_antistandby_jdantistandby=JDBlokátorRežimuSpánku
