@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -471,7 +472,8 @@ public class FilePostCom extends PluginForHost {
                         if (brc.containsHTML("premium")) return;
                     }
                 }
-                br.postPage("https://filepost.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&recaptcha_response_field=");
+                String pw = encodeRFC2396(account.getPass());
+                br.postPage("https://filepost.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + pw + "&remember=on&recaptcha_response_field=");
                 if (br.containsHTML("captcha\":true")) {
                     /* too many logins result in recaptcha login */
                     if (showAccountCaptcha == false) {
@@ -490,7 +492,7 @@ public class FilePostCom extends PluginForHost {
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         DownloadLink dummyLink = new DownloadLink(this, "Account", "filepost.com", "http://filepost.com", true);
                         String c = getCaptchaCode(cf, dummyLink);
-                        br.postPage("https://filepost.com/general/logn_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
+                        br.postPage("https://filepost.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + pw + "&remember=on&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
                     }
                 }
                 if (br.containsHTML("captcha\":true")) {
@@ -527,6 +529,30 @@ public class FilePostCom extends PluginForHost {
             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         } else if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return downloadLink.getAvailableStatus();
+    }
+
+    private String encodeRFC2396(final String input) throws UnsupportedEncodingException {
+        String RFC2396CHARS = "0123456789" + "abcdefghijklmnopqrstuvwxyz" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "-_.!~*'()";
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < input.length(); i++) {
+            final char ch = input.charAt(i);
+            if (ch == ' ') {
+                sb.append("+");
+            } else if (RFC2396CHARS.indexOf(ch) != -1) {
+                sb.append(ch);
+            } else {
+                if (ch > 255) {
+                    /* not allowed, replaced by + */
+                    sb.append("+");
+                } else {
+                    /* hex formatted */
+                    sb.append("%");
+                    sb.append(Integer.toHexString(ch));
+
+                }
+            }
+        }
+        return sb.toString();
     }
 
     @Override
