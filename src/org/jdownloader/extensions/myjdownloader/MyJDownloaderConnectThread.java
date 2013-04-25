@@ -21,6 +21,9 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.myjdownloader.api.MyJDownloaderAPI;
+import org.jdownloader.myjdownloader.client.exceptions.AuthException;
+import org.jdownloader.myjdownloader.client.exceptions.EmailInvalidException;
+import org.jdownloader.myjdownloader.client.exceptions.EmailNotValidatedException;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 import org.jdownloader.myjdownloader.client.json.DeviceData;
 
@@ -53,19 +56,32 @@ public class MyJDownloaderConnectThread extends Thread {
                 if (loginError > 5 || connectError > 5) {
                     try {
                         Dialog.getInstance().showErrorDialog("MyJDownloader Error. loginErrors: " + loginError + " connectErrors:" + connectError + "\r\nMyJDownloader Extension is disabled now.");
-                        myJDownloaderExtension.setEnabled(false);
                     } catch (final Throwable e) {
                         logger.log(e);
+                    } finally {
+                        myJDownloaderExtension.setEnabled(false);
                     }
                     return;
                 }
                 try {
                     ensureValidSession();
                     loginError = 0;
+                } catch (final MyJDownloaderException e) {
+                    sessionValid = false;
+                    logger.log(e);
+                    myJDownloaderExtension.setEnabled(false);
+                    if (e instanceof EmailInvalidException) {
+                        Dialog.getInstance().showMessageDialog(0, "MyJDownloader", "Invalid email!\r\nMyJDownloader Extension is disabled now.");
+                    } else if (e instanceof EmailNotValidatedException) {
+                        Dialog.getInstance().showMessageDialog(0, "MyJDownloader", "Account is not confirmed!\r\nMyJDownloader Extension is disabled now.");
+                    } else if (e instanceof AuthException) {
+                        Dialog.getInstance().showMessageDialog(0, "MyJDownloader", "Wrong Username/Password!\r\nMyJDownloader Extension is disabled now.");
+                    }
+                    return;
                 } catch (final Throwable e) {
+                    logger.log(e);
                     sessionValid = false;
                     loginError++;
-                    logger.log(e);
                     Thread.sleep(1000);
                     continue mainLoop;
                 }
@@ -107,6 +123,7 @@ public class MyJDownloaderConnectThread extends Thread {
                         connectionThread.start();
                     } else {
                         logger.info("Something else!?!?! WTF!" + validToken);
+                        connectError++;
                     }
                 } catch (ConnectException e) {
                     logger.info("Could not connect! Server down?");
