@@ -70,7 +70,7 @@ public class BandCampCom extends PluginForHost {
         String artist = filenameRegex.getMatch(1);
         String filename = filenameRegex.getMatch(0);
         final String trackNum = br.getRegex("\"track_num\":(\\d+)").getMatch(0);
-        DLLINK = br.getRegex("\"file\":\"(http:.*?)\"").getMatch(0);
+        DLLINK = br.getRegex("\"file\":.*?\"(http:.*?)\"").getMatch(0);
         if (filename == null || artist == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
         if (trackNum != null) {
