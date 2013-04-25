@@ -108,6 +108,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         // filteredAdd.setVisible(false);
         LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorHighlightListener() {
+
             public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
                 setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
             }
@@ -123,7 +124,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     @Override
                     protected void runInEDT() {
                         try {
-                            JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
+                            if (CFG_GUI.CFG.isLinkgrabberHighlighOnNewLinksEnabled()) JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
                             if (CFG_GUI.CFG.isLinkgrabberFrameToTopOnNewLinksEnabled()) {
                                 if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
                                     JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);

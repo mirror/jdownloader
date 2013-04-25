@@ -26,7 +26,7 @@ public interface TrayConfig extends ExtensionConfigInterface {
 
     public void setToolTipEnabled(boolean b);
 
-    @DefaultEnumValue("ALWAYS")
+    @DefaultEnumValue("NEVER")
     @AboutConfig
     public LinkgrabberResultsOption getShowLinkgrabbingResultsOption();
 

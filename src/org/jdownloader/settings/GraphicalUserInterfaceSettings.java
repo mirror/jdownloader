@@ -127,6 +127,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isLinkgrabberFrameToTopOnNewLinksEnabled();
 
     @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("If enabled, JDownloader GUI switch to Linkgrabber Tab when new links are added")
+    boolean isLinkgrabberHighlighOnNewLinksEnabled();
+
+    public void setLinkgrabberHighlighOnNewLinksEnabled(boolean b);
+
+    @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Sidebar")
     @DefaultBooleanValue(true)
     @RequiresRestart
