@@ -17,6 +17,8 @@
 
 package jd;
 
+import java.awt.AWTEvent;
+import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -60,7 +62,6 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ToolTipController;
-import org.appwork.swing.event.AWTEventQueueLinker;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -598,13 +599,12 @@ public class SecondLevelLaunch {
                 /* init gui here */
                 try {
                     ShutdownController.getInstance().addShutdownVetoListener(RestartController.getInstance());
-                    AWTEventQueueLinker.link();
 
                     lafInit.waitForEDT();
                     SecondLevelLaunch.LOG.info("InitGUI->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
                     JDGui.getInstance();
 
-                    AWTEventQueueLinker.getInstance().getEventSender().addListener(new CopyPasteSupport());
+                    Toolkit.getDefaultToolkit().addAWTEventListener(new CopyPasteSupport(), AWTEvent.MOUSE_EVENT_MASK);
 
                     SecondLevelLaunch.LOG.info("GUIDONE->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
                 } catch (Throwable e) {

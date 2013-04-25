@@ -1,11 +1,10 @@
 package org.jdownloader.keyevent;
 
 import java.awt.AWTEvent;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-
-import org.appwork.swing.event.AWTEventListener;
-import org.appwork.swing.event.AWTEventQueueLinker;
 
 public class GlobalEventStore implements AWTEventListener {
     private static final GlobalEventStore INSTANCE = new GlobalEventStore();
@@ -31,24 +30,22 @@ public class GlobalEventStore implements AWTEventListener {
      * {@link #getInstance()}.
      */
     private GlobalEventStore() {
-        AWTEventQueueLinker.getInstance().getEventSender().addListener(this);
+        Toolkit.getDefaultToolkit().addAWTEventListener(this, AWTEvent.KEY_EVENT_MASK | AWTEvent.MOUSE_EVENT_MASK);
+
     }
 
     @Override
-    public void onAWTEventAfterDispatch(AWTEvent parameter) {
-    }
+    public void eventDispatched(AWTEvent event) {
+        if (event instanceof KeyEvent) {
+            latestKeyEvent = (KeyEvent) event;
 
-    @Override
-    public void onAWTEventBeforeDispatch(AWTEvent parameter) {
-        if (parameter instanceof KeyEvent) {
-            latestKeyEvent = (KeyEvent) parameter;
-
-        } else if (parameter instanceof MouseEvent) {
-            latestMouseEvent = (MouseEvent) parameter;
+        } else if (event instanceof MouseEvent) {
+            latestMouseEvent = (MouseEvent) event;
         }
     }
 
     public KeyEvent getLatestKeyEvent() {
         return latestKeyEvent;
     }
+
 }
