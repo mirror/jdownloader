@@ -136,4 +136,8 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
 
     }
 
+    public void fireUpdate() {
+        fireTreeStructureChanged(this, new Object[] { data }, null, null);
+    }
+
 }

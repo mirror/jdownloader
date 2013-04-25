@@ -231,7 +231,7 @@ public class Main {
 
                 }
                 ProcessBuilderFactory.create(CrossSystem.getJavaBinary(), "-jar", jdjar.getName(), "-forceupdate", "guiless", "-exitafterupdate").directory(jdjar.getParentFile()).start();
-                System.out.println(1);
+                
             }
         } catch (Exception e) {
             e.printStackTrace();

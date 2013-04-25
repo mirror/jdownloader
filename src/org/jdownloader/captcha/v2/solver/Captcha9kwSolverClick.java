@@ -120,7 +120,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
                 solverJob.getLogger().log(e);
             } finally {
 
-                System.out.println(1);
+                
             }
 
         } else {

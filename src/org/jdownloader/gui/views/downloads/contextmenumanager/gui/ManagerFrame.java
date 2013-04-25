@@ -26,7 +26,7 @@ import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainerRoot;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
 import org.jdownloader.images.NewTheme;
 
-public class ManagerFrame extends BasicGui {
+public class ManagerFrame extends BasicGui implements TreeSelectionListener {
     private static ManagerFrame FRAME;
 
     public static void main(String[] args) {
@@ -70,18 +70,7 @@ public class ManagerFrame extends BasicGui {
         model = new ManagerTreeModel(manager.getMenuData());
         tree = new ExtTree(this);
 
-        tree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
-
-            @Override
-            public void valueChanged(TreeSelectionEvent e) {
-                TreePath sel = tree.getSelectionPath();
-                if (sel == null) {
-                    infoPanel.updateInfo(null);
-                } else {
-                    infoPanel.updateInfo((MenuItemData) sel.getLastPathComponent());
-                }
-            }
-        });
+        tree.getSelectionModel().addTreeSelectionListener(this);
         LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(tree);
 
         // tree.set
@@ -89,7 +78,7 @@ public class ManagerFrame extends BasicGui {
         HeaderScrollPane sp = new HeaderScrollPane(tree);
         sp.setColumnHeaderView(new TreeHeader());
         panel.add(sp);
-        infoPanel = new InfoPanel();
+        infoPanel = new InfoPanel(this);
         LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(infoPanel);
         sp = new HeaderScrollPane(infoPanel);
         sp.setColumnHeaderView(new OptionsPaneHeader());
@@ -211,6 +200,25 @@ public class ManagerFrame extends BasicGui {
             }
         };
 
+    }
+
+    @Override
+    public void valueChanged(TreeSelectionEvent e) {
+        TreePath sel = tree.getSelectionPath();
+        if (sel == null) {
+            infoPanel.updateInfo(null);
+        } else {
+            infoPanel.updateInfo((MenuItemData) sel.getLastPathComponent());
+        }
+    }
+
+    public void fireUpdate() {
+
+        tree.getSelectionModel().removeTreeSelectionListener(this);
+        TreePath[] sel = tree.getSelectionPaths();
+        model.fireUpdate();
+        if (sel != null) tree.setSelectionPaths(sel);
+        tree.getSelectionModel().addTreeSelectionListener(this);
     }
 
 }

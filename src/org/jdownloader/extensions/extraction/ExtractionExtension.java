@@ -697,7 +697,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     public void onNewFile(Object caller, File[] fileList) {
-        System.out.println(1);
+        
         try {
             logger.info("New File by " + caller);
             if (caller instanceof SingleDownloadController) {
@@ -755,7 +755,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         } else if (unspecifiedContext instanceof LinkgrabberTableContext) {
             onExtendPopupMenuLinkgrabberTable((LinkgrabberTableContext) unspecifiedContext);
             // p.add(new
-            // ValidateArchiveAction(selection).toContextMenuAction());
+            // ValidateArchiveAction(selection));
         } else if (unspecifiedContext instanceof LinkgrabberTablePropertiesContext) {
             onExtendPropertiesMenuLinkgrabberTable((LinkgrabberTablePropertiesContext) unspecifiedContext);
         }

@@ -174,7 +174,7 @@ public class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOp
     }
 
     public void setCompleted(Long files, Long bytes) throws SevenZipException {
-        System.out.println(1);
+        
     }
 
     public void setTotal(Long files, Long bytes) throws SevenZipException {

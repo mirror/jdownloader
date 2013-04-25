@@ -20,16 +20,6 @@ public abstract class AppAction extends BasicAction {
 
     }
 
-    public AppAction toButtonAction() {
-        setIconSizes(20);
-        return this;
-    }
-
-    public AppAction toContextMenuAction() {
-        setIconSizes(18);
-        return this;
-    }
-
     public void setIconKey(String iconKey) {
         this.iconKey = iconKey;
         setIconSizes(20);

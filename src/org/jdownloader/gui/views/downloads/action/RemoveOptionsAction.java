@@ -41,7 +41,7 @@ public class RemoveOptionsAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         JPopupMenu popup = new JPopupMenu();
         java.util.List<AbstractNode> selection = table.getExtTableModel().getSelectedObjects();
-        popup.add(new RemoveAllVisibleDownloadsAction().toContextMenuAction());
+        popup.add(new RemoveAllVisibleDownloadsAction());
 
         JMenu m = new JMenu(_GUI._.RemoveOptionsAction_actionPerformed_selected());
         m.setIcon(NewTheme.I().getIcon("delete", 18));
@@ -53,8 +53,8 @@ public class RemoveOptionsAction extends AppAction {
         m.add(new DeleteSelectedOfflineLinksAction(si));
         m.setEnabled(selection.size() > 0);
         popup.add(m);
-        popup.add(new RemoveNonSelectedAction(selection).toContextMenuAction());
-        popup.add(new RemoveOfflineAction().toContextMenuAction());
+        popup.add(new RemoveNonSelectedAction(selection));
+        popup.add(new RemoveOfflineAction());
 
         // popup.add(new CleanupDownloads());
         // popup.add(new CleanupPackages());

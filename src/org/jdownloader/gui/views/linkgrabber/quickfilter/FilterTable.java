@@ -211,10 +211,10 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         popup.add(new ConfirmAction(false, matches));
         popup.add(new MergeToPackageAction(matches));
         popup.add(new CreateDLCAction(matches));
-        popup.add(new RemoveNonSelectedAction(matches).toContextMenuAction());
-        popup.add(new RemoveSelectionLinkgrabberAction(matches).toContextMenuAction());
+        popup.add(new RemoveNonSelectedAction(matches));
+        popup.add(new RemoveSelectionLinkgrabberAction(matches));
         // popup.add(new
-        // RemoveIncompleteArchives(matches).toContextMenuAction());
+        // RemoveIncompleteArchives(matches));
 
         // }
 

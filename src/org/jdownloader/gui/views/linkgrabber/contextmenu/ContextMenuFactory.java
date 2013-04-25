@@ -53,13 +53,13 @@ public class ContextMenuFactory {
         JMenu m;
 
         if (selection != null && selection.size() > 0) {
-            p.add(new ConfirmAction(si.isShiftDown(), si).toContextMenuAction());
+            p.add(new ConfirmAction(si.isShiftDown(), si));
             p.add(new JSeparator());
         }
 
         if (selection == null || selection.size() == 0 || JsonConfig.create(LinkgrabberSettings.class).isContextMenuAddLinksActionAlwaysVisible()) {
-            p.add(new AddLinksAction().toContextMenuAction());
-            p.add(new AddContainerAction().toContextMenuAction());
+            p.add(new AddLinksAction());
+            p.add(new AddContainerAction());
             if (selection == null || selection.size() == 0) { return p; }
             p.add(new JSeparator());
         }
@@ -78,12 +78,12 @@ public class ContextMenuFactory {
         for (JMenuItem mm : fillPropertiesMenu(si, column)) {
             properties.add(mm);
         }
-        p.add(new SortAction(si).toContextMenuAction());
-        p.add(new EnabledAction(si).toContextMenuAction());
+        p.add(new SortAction(si));
+        p.add(new EnabledAction(si));
 
         p.add(new JSeparator());
         if (si.isLinkContext()) {
-            p.add(new OpenUrlAction(si.getLink()).toContextMenuAction());
+            p.add(new OpenUrlAction(si.getLink()));
             p.add(new JSeparator());
         }
         // addons
@@ -94,23 +94,23 @@ public class ContextMenuFactory {
         // others
         JMenu o = new JMenu(_GUI._.ContextMenuFactory_createPopup_other());
         o.setIcon(NewTheme.I().getIcon("batch", 18));
-        o.add(new CreateDLCAction(si).toContextMenuAction());
-        o.add(new MergeToPackageAction(si).toContextMenuAction());
-        o.add(new SplitPackagesByHost(si).toContextMenuAction());
+        o.add(new CreateDLCAction(si));
+        o.add(new MergeToPackageAction(si));
+        o.add(new SplitPackagesByHost(si));
 
         p.add(o);
         p.add(new JSeparator());
         /* remove menu */
-        p.add(new RemoveSelectionLinkgrabberAction(si).toContextMenuAction());
+        p.add(new RemoveSelectionLinkgrabberAction(si));
         m = new JMenu(_GUI._.ContextMenuFactory_linkgrabber_createPopup_cleanup());
         m.setIcon(NewTheme.I().getIcon("clear", 18));
 
-        m.add(new RemoveAllLinkgrabberAction().toContextMenuAction());
-        m.add(new RemoveNonSelectedAction(si).toContextMenuAction());
-        m.add(new RemoveOfflineAction().toContextMenuAction());
-        m.add(new RemoveIncompleteArchives(si).toContextMenuAction());
+        m.add(new RemoveAllLinkgrabberAction());
+        m.add(new RemoveNonSelectedAction(si));
+        m.add(new RemoveOfflineAction());
+        m.add(new RemoveIncompleteArchives(si));
         m.add(new JSeparator());
-        m.add(new ResetPopupAction(panel).toContextMenuAction());
+        m.add(new ResetPopupAction(panel));
         p.add(m);
 
         return p;
@@ -119,12 +119,12 @@ public class ContextMenuFactory {
     public static java.util.List<JMenuItem> fillPropertiesMenu(SelectionInfo<CrawledPackage, CrawledLink> si, ExtColumn<AbstractNode> column) {
 
         java.util.List<JMenuItem> ret = new ArrayList<JMenuItem>();
-        ret.add(new JMenuItem(new CheckStatusAction<CrawledPackage, CrawledLink>(si).toContextMenuAction()));
+        ret.add(new JMenuItem(new CheckStatusAction<CrawledPackage, CrawledLink>(si)));
 
         ret.add(new JMenuItem(new URLEditorAction(si)));
-        ret.add(new JMenuItem(new SetDownloadFolderInLinkgrabberAction(si).toContextMenuAction()));
-        ret.add(new JMenuItem(new SetDownloadPassword(si).toContextMenuAction()));
-        ret.add(new JMenuItem(new SetCommentAction(si).toContextMenuAction()));
+        ret.add(new JMenuItem(new SetDownloadFolderInLinkgrabberAction(si)));
+        ret.add(new JMenuItem(new SetDownloadPassword(si)));
+        ret.add(new JMenuItem(new SetCommentAction(si)));
         ret.add(new PrioritySubMenu(si));
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new LinkgrabberTablePropertiesContext(ret, si, column)));
         return ret;

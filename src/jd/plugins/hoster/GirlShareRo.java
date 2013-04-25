@@ -73,7 +73,7 @@ public class GirlShareRo extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
         }
         if (dl.getConnection().getContentType().contains("html")) {
-            System.out.println(1);
+            
             if (!br.getURL().contains("girlshare.ro")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1001l);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

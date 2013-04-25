@@ -146,7 +146,7 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
     }
 
     public void setCompleted(Long files, Long bytes) throws SevenZipException {
-        System.out.println(1);
+        
     }
 
     public void setTotal(Long files, Long bytes) throws SevenZipException {

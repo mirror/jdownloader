@@ -23,6 +23,7 @@ public class OpenDirectoryAction extends AppAction {
         }
         setIconKey("package_open");
         setName(_GUI._.gui_table_contextmenu_downloaddir());
+        setTooltipText("Open the current downloaddir in explorer");
     }
 
     public void actionPerformed(ActionEvent e) {

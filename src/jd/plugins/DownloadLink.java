@@ -609,7 +609,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (finalfile && new File(this.getFileOutput()).exists()) {
             File f = new File(this.getFileOutput());
             if (!internalDeleteFile(deleteTo, f)) {
-                System.out.println(1);
+                
                 LogController.CL().severe("Could not delete file " + this.getFileOutput());
             }
         }
@@ -636,7 +636,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             try {
                 JDFileUtils.moveToTrash(f);
             } catch (IOException e) {
-                System.out.println(1);
+                
                 LogController.CL().log(e);
                 return false;
             }

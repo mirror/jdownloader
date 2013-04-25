@@ -84,7 +84,7 @@ public class CBSolver extends ChallengeSolver<String> {
                 job.getLogger().log(e);
             } finally {
 
-                System.out.println(1);
+                
             }
 
         }

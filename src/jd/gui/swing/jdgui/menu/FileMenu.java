@@ -32,7 +32,7 @@ public class FileMenu extends JMenu {
                         AddLinksAction ala = new AddLinksAction();
                         ala.putValue(AbstractAction.NAME, _GUI._.AddOptionsAction_actionPerformed_addlinks());
                         add(new JMenuItem(ala));
-                        add(new JMenuItem(new AddContainerAction().toContextMenuAction()));
+                        add(new JMenuItem(new AddContainerAction()));
                         add(new JSeparator());
                         add(new RestartAction());
 

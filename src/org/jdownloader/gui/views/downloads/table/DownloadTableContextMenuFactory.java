@@ -85,7 +85,7 @@ public class DownloadTableContextMenuFactory {
         // popup.add(new OpenDirectoryAction(new File(si.getFirstPackage().getDownloadDirectory())));
         // }
         //
-        // popup.add(new SortAction(si, column).toContextMenuAction());
+        // popup.add(new SortAction(si, column));
         //
         // popup.add(new EnabledAction<FilePackage, DownloadLink>(si));
         // popup.add(new JSeparator());
@@ -133,8 +133,8 @@ public class DownloadTableContextMenuFactory {
 
     private JPopupMenu emtpy(JPopupMenu p) {
 
-        p.add(new AddLinksAction().toContextMenuAction());
-        p.add(new AddContainerAction().toContextMenuAction());
+        p.add(new AddLinksAction());
+        p.add(new AddContainerAction());
 
         return p;
     }
@@ -143,7 +143,7 @@ public class DownloadTableContextMenuFactory {
 
         java.util.List<Component> ret = new ArrayList<Component>();
 
-        ret.add(new JMenuItem(new CheckStatusAction<FilePackage, DownloadLink>(si).toContextMenuAction()));
+        ret.add(new JMenuItem(new CheckStatusAction<FilePackage, DownloadLink>(si)));
 
         OpenInBrowserAction openInBrowserAction = new OpenInBrowserAction(si);
         if (openInBrowserAction.isEnabled()) {
@@ -158,9 +158,9 @@ public class DownloadTableContextMenuFactory {
             ret.add(new JMenuItem(new PackageNameAction(si)));
         }
 
-        ret.add(new JMenuItem(new SetDownloadFolderInDownloadTableAction(si).toContextMenuAction()));
-        ret.add(new JMenuItem(new SetDownloadPassword<FilePackage, DownloadLink>(si).toContextMenuAction()));
-        ret.add(new JMenuItem(new SetCommentAction<FilePackage, DownloadLink>(si).toContextMenuAction()));
+        ret.add(new JMenuItem(new SetDownloadFolderInDownloadTableAction(si)));
+        ret.add(new JMenuItem(new SetDownloadPassword<FilePackage, DownloadLink>(si)));
+        ret.add(new JMenuItem(new SetCommentAction<FilePackage, DownloadLink>(si)));
 
         ret.add(new PrioritySubMenu<FilePackage, DownloadLink>(si));
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTablePropertiesContext(ret, si, column)));

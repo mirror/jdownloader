@@ -36,17 +36,17 @@ public class FilterTable extends AbstractFilterTable {
      */
     @Override
     protected JPopupMenu onContextMenu(JPopupMenu popup, LinkgrabberFilterRule contextObject, java.util.List<LinkgrabberFilterRule> selection, ExtColumn<LinkgrabberFilterRule> column, MouseEvent ev) {
-        popup.add(new JMenuItem(new NewAction(this).toContextMenuAction()));
-        popup.add(new JMenuItem(new RemoveAction(this, selection, false).toContextMenuAction()));
+        popup.add(new JMenuItem(new NewAction(this)));
+        popup.add(new JMenuItem(new RemoveAction(this, selection, false)));
 
-        popup.add(new JMenuItem(new DuplicateAction(contextObject, this).toContextMenuAction()));
+        popup.add(new JMenuItem(new DuplicateAction(contextObject, this)));
         popup.addSeparator();
         DefaultRulesAction defaults = new DefaultRulesAction(false);
         if (defaults.getMenuComponentCount() > 0) {
             popup.add(defaults);
             popup.addSeparator();
         }
-        popup.add(new ExportAction(selection).toContextMenuAction());
+        popup.add(new ExportAction(selection));
         return popup;
     }
 

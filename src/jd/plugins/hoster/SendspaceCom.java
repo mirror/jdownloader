@@ -161,7 +161,7 @@ public class SendspaceCom extends PluginForHost {
                     Thread.sleep(90000);
                     return requestFileInformation(downloadLink);
                 }
-                // System.out.println(1);
+                // 
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

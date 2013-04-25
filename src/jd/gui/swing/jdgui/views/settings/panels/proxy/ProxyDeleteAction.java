@@ -23,7 +23,7 @@ public class ProxyDeleteAction extends AbstractRemoveAction {
     public ProxyDeleteAction(final java.util.List<ProxyInfo> selected, boolean force) {
         super();
         this.selected = selected;
-        toContextMenuAction();
+      
     }
 
     @Override

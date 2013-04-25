@@ -19,6 +19,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.images.NewTheme;
 
 public class MenuItemData implements Storable {
     private HashSet<MenuItemProperty> properties;
@@ -201,6 +202,8 @@ public class MenuItemData implements Storable {
         ret.setItems(menuItemData.getItems());
         ret.setType(menuItemData.getType());
         ret.setProperties(menuItemData.getProperties());
+        // do avoid lazy real loops
+        ret.real = ret;
         return ret;
 
     }
@@ -211,8 +214,15 @@ public class MenuItemData implements Storable {
             //
             throw new WTFException("No ACTION");
         }
-
-        return new JMenuItem(createAction(selection));
+        AppAction action = createAction(selection);
+        JMenuItem ret = new JMenuItem(action);
+        if (StringUtils.isNotEmpty(name)) {
+            ret.setText(name);
+        }
+        if (StringUtils.isNotEmpty(iconKey)) {
+            ret.setIcon(NewTheme.I().getIcon(iconKey, 20));
+        }
+        return ret;
 
     }
 
@@ -289,7 +299,7 @@ public class MenuItemData implements Storable {
     public JComponent addTo(JComponent root, SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
         if (!showItem(this, selection)) return null;
-        System.out.println(1);
+
         JComponent it;
         try {
             it = createItem(selection);
@@ -342,5 +352,16 @@ public class MenuItemData implements Storable {
             set.add(newPath);
         }
         return set;
+    }
+
+    public String _getDescription() {
+        if (getActionData() != null) {
+            try {
+                return createAction(null).getTooltipText();
+            } catch (Exception e) {
+
+            }
+        }
+        return null;
     }
 }

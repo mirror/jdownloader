@@ -31,7 +31,7 @@ public class RemoveAction extends AbstractRemoveAction {
 
         this.force = force;
         this.selection = selection;
-        toContextMenuAction();
+
     }
 
     public void actionPerformed(ActionEvent e) {

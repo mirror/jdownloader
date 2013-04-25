@@ -2455,13 +2455,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Set/Remove Stopmark" })
     String gui_table_contextmenu_stopmark();
 
-    @Default(lngs = { "en" }, values = { "Submenu: %s1" })
+    @Default(lngs = { "en" }, values = { "%s1" })
     String Renderer_getTreeCellRendererComponent_submenu(String name);
 
     @Default(lngs = { "en" }, values = { "----------------------------" })
     String Renderer_getTreeCellRendererComponent_seperator();
 
-    @Default(lngs = { "en" }, values = { "Link: %s1" })
+    @Default(lngs = { "en" }, values = { "%s1" })
     String Renderer_getTreeCellRendererComponent_link(String name);
 
     @Default(lngs = { "en" }, values = { ">>Extension Submenu" })
@@ -2556,5 +2556,20 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Reset to Default" })
     String ManagerFrame_layoutPanel_resettodefault();
+
+    @Default(lngs = { "en" }, values = { "Change Icon" })
+    String InfoPanel_changeicon();
+
+    @Default(lngs = { "en" }, values = { "(%s2) %s1" })
+    String InfoPanel_updateInfo_header_actionlabel(String name, String infoPanel_update_action);
+
+    @Default(lngs = { "en" }, values = { "Custom name" })
+    String InfoPanel_InfoPanel_itemname_();
+
+    @Default(lngs = { "en" }, values = { "Custom Icon" })
+    String InfoPanel_InfoPanel_icon();
+
+    @Default(lngs = { "en" }, values = { "Org. name: %s1" })
+    String Renderer_getTreeCellRendererComponent_orgname_(String name);
 
 }

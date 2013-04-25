@@ -870,7 +870,7 @@ public abstract class PluginForHost extends Plugin {
 
                 }
             }
-            System.out.println(1);
+            
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }

@@ -28,7 +28,7 @@ public class RemoveAction extends AbstractRemoveAction {
     public RemoveAction(AuthTable authTable, java.util.List<AuthenticationInfo> selection, boolean force) {
         this.table = authTable;
         this.selection = selection;
-        toContextMenuAction();
+      
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -50,7 +50,7 @@ public class DefaultRulesAction extends JMenu {
                 }, true);
             }
 
-        }.toContextMenuAction()));
+        }));
     }
 
     protected abstract class DefaultRule extends AppAction {

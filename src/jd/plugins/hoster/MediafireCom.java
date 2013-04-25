@@ -843,7 +843,7 @@ public class MediafireCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
-        System.out.println(1);
+        
         downloadLink.setProperty("type", Property.NULL);
         if (downloadLink.getBooleanProperty("offline")) return AvailableStatus.FALSE;
         final String fid = getFID(downloadLink);

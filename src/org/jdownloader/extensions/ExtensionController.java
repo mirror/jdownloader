@@ -199,7 +199,7 @@ public class ExtensionController {
             logger.info(Arrays.toString(addons));
             HashSet<File> dupes = new HashSet<File>();
             HashSet<URL> urlDupes = new HashSet<URL>();
-            System.out.println(1);
+            
             main: for (File jar : addons) {
                 try {
 

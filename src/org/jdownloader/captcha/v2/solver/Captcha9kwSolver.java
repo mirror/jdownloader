@@ -118,7 +118,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> {
                 job.getLogger().log(e);
             } finally {
 
-                System.out.println(1);
+                
             }
 
         } else {

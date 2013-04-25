@@ -53,7 +53,7 @@ public class DefaultRulesAction extends JMenu {
                     }, true);
                 }
 
-            }.toContextMenuAction()));
+            }));
         } else {
             /* here are the deny default rules */
         }

@@ -238,7 +238,7 @@ public class DownloadListContextMenuManager {
         long t = System.currentTimeMillis();
         if (menuData != null) return menuData;
         MenuContainerRoot ret = config.getMenuStructure();
-
+        ret.validate();
         if (ret == null) {
             // no customizer ever used
             ret = setupDefaultStructure();
@@ -255,13 +255,16 @@ public class DownloadListContextMenuManager {
                             actionClassesInMenu.add(d.getActionData()._getClazz());
                         } catch (Exception e1) {
                             logger.log(e1);
+
                         }
                     }
                 }
+
                 if (StringUtils.equals(d.getClassName(), NewActionsContainer.class.getName())) {
                     neworUpdate = (NewActionsContainer) d.lazyReal();
                 }
             }
+
             ArrayList<ActionData> unused = config.getUnusedActions();
             if (unused == null) {
                 unused = new ArrayList<ActionData>();
@@ -304,7 +307,6 @@ public class DownloadListContextMenuManager {
                 }
             }
 
-            System.out.println(1);
             if (updatedActions.size() > 0 || newActions.size() > 0) {
                 MenuContainerRoot defaultTree = setupDefaultStructure();
                 List<List<MenuItemData>> pathes = defaultTree.listPathes();

@@ -375,7 +375,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             // mapped to an INterface
 
             this.translationEntries = tmp;
-            // System.out.println(1);
+            // 
 
         }
         getEventSender().fireEvent(new TranslatorExtensionEvent(this, org.jdownloader.extensions.translator.TranslatorExtensionEvent.Type.LOADED_TRANSLATION));

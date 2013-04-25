@@ -151,7 +151,7 @@ public class MyJDownloaderConnectThread extends Thread {
                 }
             }
         }
-        // System.out.println(1);
+        // 
         sessionValid = true;
     }
 

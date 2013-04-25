@@ -80,14 +80,14 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
      */
     @Override
     protected JPopupMenu onContextMenu(JPopupMenu popup, PackagizerRule contextObject, java.util.List<PackagizerRule> selection, ExtColumn<PackagizerRule> column, MouseEvent ev) {
-        popup.add(new JMenuItem(new NewAction(this).toContextMenuAction()));
-        popup.add(new JMenuItem(new RemoveAction(this, selection, false).toContextMenuAction()));
+        popup.add(new JMenuItem(new NewAction(this)));
+        popup.add(new JMenuItem(new RemoveAction(this, selection, false)));
 
-        popup.add(new JMenuItem(new DuplicateAction(contextObject, this).toContextMenuAction()));
+        popup.add(new JMenuItem(new DuplicateAction(contextObject, this)));
         popup.addSeparator();
         popup.add(new DefaultRulesAction());
         popup.addSeparator();
-        popup.add(new ExportAction(selection).toContextMenuAction());
+        popup.add(new ExportAction(selection));
         return popup;
     }
 

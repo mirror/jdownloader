@@ -49,7 +49,7 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
         setName(T._.ValidateArchiveAction_ValidateArchiveAction_object_());
         setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("archive", 18), NewTheme.I().getImage("ok", 11), -1, 0, 6, 8)));
         this.si = si;
-        // System.out.println(1);
+        // 
         extractor = extractionExtension;
         archives = new ArrayList<Archive>();
 

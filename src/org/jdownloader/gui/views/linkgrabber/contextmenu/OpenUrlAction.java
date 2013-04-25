@@ -20,7 +20,7 @@ public class OpenUrlAction extends AppAction {
     public OpenUrlAction(CrawledLink link) {
         setName(_GUI._.OpenUrlAction_OpenUrlAction_());
         setIconKey("browse");
-        toContextMenuAction();
+      
         this.link = link;
     }
 
