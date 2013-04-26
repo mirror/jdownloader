@@ -240,12 +240,13 @@ public class DownloadListContextMenuManager {
         long t = System.currentTimeMillis();
         if (menuData != null) return menuData;
         MenuContainerRoot ret = config.getMenuStructure();
-        ret.validate();
+
         if (ret == null) {
             // no customizer ever used
             ret = setupDefaultStructure();
 
         } else {
+            ret.validate();
             List<MenuItemData> allItemsInMenu = ret.list();
 
             HashSet<Class<?>> actionClassesInMenu = new HashSet<Class<?>>();
