@@ -1,5 +1,6 @@
 AddContainerAction_delete_container_msg=您是否想在加入連結到 JDownloader 後刪除 %s1 嗎？
 AddContainerAction_delete_container_title=刪除容器檔案嗎？
+DownloadLink_setSkipped_statusmessage=已略過
 DownloadWatchDog_onShutdownRequest_=下載正在進行中！
 DownloadWatchDog_onShutdownRequest_msg=您想停止執行下載退出 JDownloader 嗎？
 DownloadWatchDog_onShutdownRequest_nonresumable=非斷點續傳下載正在進行中！
