@@ -81,18 +81,22 @@ public class JACSolver extends ChallengeSolver<String> {
 
                 double vp = 0.0;
                 if (lcs == null) {
-                    vp = 100.0;
+
                 } else {
+
                     for (final LetterComperator element : lcs) {
                         if (element == null) {
-                            vp = 100.0;
+                            vp = 0;
                             break;
                         }
-                        vp = Math.max(vp, element.getValityPercent());
+
+                        vp += element.getValityPercent();
                     }
+                    vp /= lcs.length;
                 }
 
-                job.addAnswer(new CaptchaResponse(this, captchaCode, (int) vp));
+                // we need to invert th
+                job.addAnswer(new CaptchaResponse(this, captchaCode, 120 - (int) vp));
 
             }
         } catch (IOException e) {
