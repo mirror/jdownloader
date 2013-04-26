@@ -63,8 +63,22 @@ public interface CaptchaSettings extends ConfigInterface {
     @AboutConfig
     @DefaultIntValue(15000)
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Milliseconds after which a Captcha Dialog will appear even if Auto AntiCaptcha is still running")
-    int getJAntiCaptchaTimeout();
+    int getCaptchaDialogJAntiCaptchaTimeout();
 
-    void setJAntiCaptchaTimeout(int ms);
+    void setCaptchaDialogJAntiCaptchaTimeout(int ms);
+
+    @AboutConfig
+    @DefaultIntValue(0)
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Milliseconds after which a Captcha Dialog will appear even if Auto 9kw Service is still running")
+    int getCaptchaDialog9kwTimeout();
+
+    void setCaptchaDialog9kwTimeout(int ms);
+
+    @AboutConfig
+    @DefaultIntValue(0)
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Milliseconds after which a Captcha Dialog will appear even if Auto CaptchaBroptherhood Service is still running")
+    int getCaptchaDialogCaptchaBroptherhoodTimeout();
+
+    void setCaptchaDialogCaptchaBroptherhoodTimeout(int ms);
 
 }

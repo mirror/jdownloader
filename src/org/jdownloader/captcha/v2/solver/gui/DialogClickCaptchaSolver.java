@@ -30,7 +30,7 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
     public void solve(SolverJob<ClickedPoint> solverJob) throws InterruptedException, SkipException {
         synchronized (DialogBasicCaptchaSolver.getInstance()) {
             if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
-                solverJob.waitFor(config.getJAntiCaptchaTimeout(), JACSolver.getInstance());
+                solverJob.waitFor(config.getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
                 checkInterruption();
                 ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
                 checkInterruption();

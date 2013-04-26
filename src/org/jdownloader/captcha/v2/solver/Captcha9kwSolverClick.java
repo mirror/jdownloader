@@ -50,12 +50,12 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
             return;
         }
         if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
-            solverJob.waitFor(JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout(), JACSolver.getInstance());
+            solverJob.waitFor(JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
             checkInterruption();
             ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
             BasicHTTP http = new BasicHTTP();
 
-            solverJob.getLogger().info("Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout() + " - getTypeID: " + captchaChallenge.getTypeID());
+            solverJob.getLogger().info("Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + " - getTypeID: " + captchaChallenge.getTypeID());
             if (config.getwhitelist() != null) {
                 if (config.getwhitelist().length() > 5) {
                     if (config.getwhitelist().contains(captchaChallenge.getTypeID())) {
@@ -89,7 +89,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
                 byte[] data = IO.readFile(captchaChallenge.getImageFile());
                 http.putRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
 
-                String ret = new String(http.postPage(new URL(url), "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&mouse=1&prio=" + config.getprio() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=" + JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout() + "&version=1.1&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false))));
+                String ret = new String(http.postPage(new URL(url), "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&mouse=1&prio=" + config.getprio() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=" + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + "&version=1.1&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false))));
                 solverJob.getLogger().info("Send Captcha to 9kw.eu. - " + https9kw + " Answer: " + ret);
                 if (!ret.startsWith("OK-")) throw new SolverException(ret);
                 // Error-No Credits
