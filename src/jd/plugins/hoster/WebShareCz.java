@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "http://(www\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}\\-)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "https?://(www\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}\\-)" }, flags = { 0 })
 public class WebShareCz extends PluginForHost {
 
     public WebShareCz(PluginWrapper wrapper) {
@@ -52,7 +52,7 @@ public class WebShareCz extends PluginForHost {
         br.setFollowRedirects(false);
         String dllink = br.getRegex("<a style=\"text-decoration: none;\" id=\"download_link\" href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://dl\\d+\\.webshare\\.cz/\\d+/[A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://dl\\d+\\.webshare\\.cz/\\d+/[A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
             if (dllink == null) {
                 String fun = br.getRegex("var l\\s?=\\s?\"?\'?(.*?)\'?\"?\\;").getMatch(0);
                 dllink = fun != null ? Encoding.Base64Decode(fun) : null;

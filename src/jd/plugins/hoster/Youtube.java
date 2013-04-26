@@ -59,6 +59,7 @@ public class Youtube extends PluginForHost {
     private static final String ALLOW_WEBM              = "ALLOW_WEBM_V2";
     private static final String ALLOW_FLV               = "ALLOW_FLV_V2";
     private static final String ALLOW_3GP               = "ALLOW_3GP_V2";
+    private static final String ALLOW_3D                = "ALLOW_3D_V2";
     private static final String ALLOW_144P              = "ALLOW_144P_V2";
     private static final String ALLOW_240P              = "ALLOW_240P_V2";
     private static final String ALLOW_360P              = "ALLOW_360P_V2";
@@ -87,8 +88,7 @@ public class Youtube extends PluginForHost {
         int i;
         for (i = 0; i < s.length(); i++) {
             ch = s.charAt(i);
-            // prevents StringIndexOutOfBoundsException with ending char equals
-            // case trigger
+            // prevents StringIndexOutOfBoundsException with ending char equals case trigger
             if (s.length() != i + 1) {
                 switch (ch) {
                 case '%':
@@ -465,6 +465,8 @@ public class Youtube extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720P, JDL.L("plugins.hoster.youtube.check720p", "Grab 720p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080P, JDL.L("plugins.hoster.youtube.check1080p", "Grab 1080p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_ORIGINAL, JDL.L("plugins.hoster.youtube.checkoriginal", "Grab Original?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_3D, JDL.L("plugins.hoster.youtube.preferd", "Prefer 3D Videos?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_THUMBNAIL_MAX, JDL.L("plugins.hoster.youtube.grabrhumbnailmax", "Grab max. resulution thumbnail?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_THUMBNAIL_HQ, JDL.L("plugins.hoster.youtube.grabrhumbnailhq", "Grab HQ (480x360) thumbnail?")).setDefaultValue(false));

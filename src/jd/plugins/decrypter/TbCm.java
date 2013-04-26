@@ -472,7 +472,7 @@ public class TbCm extends PluginForDecrypt {
             private static final long serialVersionUID = -3028718522449785181L;
 
             {
-                boolean threed = cfg.getBooleanProperty("ALLOW_3D_V2", true);
+                boolean threeD = cfg.getBooleanProperty("ALLOW_3D_V2", true);
                 boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4_V2", true);
                 boolean webm = cfg.getBooleanProperty("ALLOW_WEBM_V2", true);
                 boolean threegp = cfg.getBooleanProperty("ALLOW_3GP_V2", true);
@@ -493,16 +493,16 @@ public class TbCm extends PluginForDecrypt {
                 boolean q720p = cfg.getBooleanProperty("ALLOW_720P_V2", true);
                 boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P_V2", true);
                 boolean qOriginal = cfg.getBooleanProperty("ALLOW_ORIGINAL_V2", true);
-                if (q240p == false && q360p == false && q480p == false && q720p == false && q1080p == false && qOriginal == false && threed == false) {
+                if (q240p == false && q360p == false && q480p == false && q720p == false && q1080p == false && qOriginal == false && threeD == false) {
                     q240p = true;
                     q480p = true;
                     q360p = true;
                     q720p = true;
                     q1080p = true;
                     qOriginal = true;
-                    threed = true;
-
+                    threeD = true;
                 }
+
                 // **** FLV *****
                 if (mp3.get()) {
                     this.put(0, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
@@ -535,7 +535,7 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 // **** MP4 *****
-                if (mp4 || best) {
+                if (!threeD && (mp4 || best)) {
                     if (q360p || best) {
                         this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
                     }
@@ -551,7 +551,7 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 // **** WebM *****
-                if (webm || best) {
+                if (!threeD && (webm || best)) {
                     if (q360p || best) {
                         this.put(43, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
                     }
@@ -565,8 +565,9 @@ public class TbCm extends PluginForDecrypt {
                         this.put(46, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "1080p" });
                     }
                 }
-                /* 3D */
-                if (threed || best) {
+
+                // **** 3D *****/
+                if (threeD || best) {
                     if (webm || best) {
                         if (q360p || best) {
                             this.put(100, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
@@ -628,8 +629,7 @@ public class TbCm extends PluginForDecrypt {
                 final HashMap<Integer, String[]> LinksFound = this.getLinks(url, prem, this.br, 0);
                 String error = br.getRegex("<div id=\"unavailable\\-message\" class=\"\">[\t\n\r ]+<span class=\"yt\\-alert\\-vertical\\-trick\"></span>[\t\n\r ]+<div class=\"yt\\-alert\\-message\">([^<>\"]*?)</div>").getMatch(0);
                 // Removed due wrong offline detection
-                // if (error == null) error =
-                // br.getRegex("<div class=\"yt\\-alert\\-message\">(.*?)</div>").getMatch(0);
+                // if (error == null) error = br.getRegex("<div class=\"yt\\-alert\\-message\">(.*?)</div>").getMatch(0);
                 if (error == null) error = br.getRegex("\\&reason=([^<>\"/]*?)\\&").getMatch(0);
                 if (br.containsHTML(UNSUPPORTEDRTMP)) error = "RTMP video download isn't supported yet!";
                 if ((LinksFound == null || LinksFound.isEmpty()) && error != null) {
@@ -809,8 +809,7 @@ public class TbCm extends PluginForDecrypt {
                             name = YT_FILENAME + desc + convertTo.getExtFirst();
                             thislink.setProperty("name", name);
                         } else {
-                            // because demuxer will fail when mp3 file already
-                            // exists
+                            // because demuxer will fail when mp3 file already exists
                             name = YT_FILENAME + desc + ".tmp";
                             thislink.setProperty("name", name);
                         }
