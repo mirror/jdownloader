@@ -5,7 +5,6 @@ import java.net.URL;
 
 import jd.controlling.captcha.CaptchaSettings;
 import jd.nutils.encoding.Encoding;
-import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
@@ -90,7 +89,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
                 byte[] data = IO.readFile(captchaChallenge.getImageFile());
                 http.putRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
 
-                String ret = new String(http.postPage(new URL(url), "action=usercaptchaupload&jd=2&source=jd2-" + Encoding.urlEncode(JDUtilities.getRevision()) + "&mouse=1&prio=" + config.getprio() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=" + JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout() + "&version=1.1&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false))));
+                String ret = new String(http.postPage(new URL(url), "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&mouse=1&prio=" + config.getprio() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=" + JsonConfig.create(CaptchaSettings.class).getJAntiCaptchaTimeout() + "&version=1.1&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false))));
                 solverJob.getLogger().info("Send Captcha to 9kw.eu. - " + https9kw + " Answer: " + ret);
                 if (!ret.startsWith("OK-")) throw new SolverException(ret);
                 // Error-No Credits
@@ -120,7 +119,6 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
                 solverJob.getLogger().log(e);
             } finally {
 
-                
             }
 
         } else {

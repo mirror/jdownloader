@@ -44,6 +44,14 @@ public interface Captcha9kwSettings extends ConfigInterface {
     void setprio(int seconds);
 
     @AboutConfig
+    @DefaultIntValue(0)
+    @SpinnerValidator(min = 0, max = 9999)
+    @DescriptionForConfigEntry("Max. Captchas per hour")
+    int gethour();
+
+    void sethour(int seconds);
+
+    @AboutConfig
     @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Only https requests to 9kw.eu")
     boolean ishttps();
