@@ -7,6 +7,7 @@ import org.appwork.remoteapi.ApiSessionRequired;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.config.annotations.AllowStorage;
 import org.jdownloader.extensions.jdanywhere.api.storable.RunningObjectStorable;
 
@@ -43,7 +44,7 @@ public interface IDashboardApi extends RemoteAPIInterface {
 
     // returns the SpeedMeter from UI without the DownloadSpeed / AverageSpeed Text as an PNG
     // used in iPhone-App
-    public abstract void speedMeter(RemoteAPIRequest request, RemoteAPIResponse response);
+    public abstract void speedMeter(RemoteAPIRequest request, RemoteAPIResponse response) throws InternalApiException;
 
     public abstract List<RunningObjectStorable> runningLinks();
 

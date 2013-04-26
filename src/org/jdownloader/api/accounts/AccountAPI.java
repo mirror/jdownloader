@@ -8,6 +8,7 @@ import org.appwork.remoteapi.QueryResponseMap;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.exceptions.InternalApiException;
 
 @ApiNamespace("accounts")
 public interface AccountAPI extends RemoteAPIInterface {
@@ -27,7 +28,7 @@ public interface AccountAPI extends RemoteAPIInterface {
 
     public boolean setEnabledState(boolean enabled, Long[] ids);
 
-    void premiumHosterIcon(RemoteAPIRequest request, RemoteAPIResponse response, String premiumHoster);
+    void premiumHosterIcon(RemoteAPIRequest request, RemoteAPIResponse response, String premiumHoster) throws InternalApiException;
 
     QueryResponseMap listPremiumHosterUrls();
 

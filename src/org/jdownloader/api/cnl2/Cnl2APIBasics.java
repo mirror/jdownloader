@@ -6,6 +6,7 @@ import org.appwork.remoteapi.ApiRawMethod;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.exceptions.InternalApiException;
 
 @ApiNamespace("")
 public interface Cnl2APIBasics extends RemoteAPIInterface, FlashGotAPI {
@@ -16,7 +17,7 @@ public interface Cnl2APIBasics extends RemoteAPIInterface, FlashGotAPI {
      * this method returns the needed crossdomain.xml file for the flash stuff
      * @param response
      */
-    public void crossdomainxml(RemoteAPIResponse response);
+    public void crossdomainxml(RemoteAPIResponse response) throws InternalApiException;
 
     @ApiMethodName("jdcheck.js")
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
@@ -24,7 +25,7 @@ public interface Cnl2APIBasics extends RemoteAPIInterface, FlashGotAPI {
      * this method sets a js variable to signal that jdownloader is running
      * @param response
      */
-    public void jdcheckjs(RemoteAPIResponse response);
+    public void jdcheckjs(RemoteAPIResponse response) throws InternalApiException;
 
     @ApiMethodName("flash")
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
@@ -33,7 +34,7 @@ public interface Cnl2APIBasics extends RemoteAPIInterface, FlashGotAPI {
      * @param response
      * @param request
      */
-    public void alive(RemoteAPIResponse response, RemoteAPIRequest request);
+    public void alive(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException;
 
     @ApiMethodName("favicon.ico")
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
@@ -41,6 +42,6 @@ public interface Cnl2APIBasics extends RemoteAPIInterface, FlashGotAPI {
      * this returns the jdownloader logo as favicon
      * @param response
      */
-    public void favicon(RemoteAPIResponse response);
+    public void favicon(RemoteAPIResponse response) throws InternalApiException;
 
 }

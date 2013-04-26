@@ -6,11 +6,11 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.RemoteAPI;
-import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.exceptions.InternalApiException;
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.ReusableByteArrayOutputStream;
@@ -52,9 +52,9 @@ public class CaptchaAPIImpl implements CaptchaAPI {
         return ret;
     }
 
-    public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id) {
+    public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id) throws InternalApiException, RemoteAPIException {
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
+        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new RemoteAPIException(CaptchaAPI.Error.NOT_AVAILABLE); }
 
         ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
         try {
@@ -100,15 +100,15 @@ public class CaptchaAPIImpl implements CaptchaAPI {
             }
         } catch (IOException e) {
             Log.exception(e);
-            throw new RemoteAPIException(e);
+            throw new InternalApiException(e);
         }
     }
 
     @SuppressWarnings("unchecked")
-    public boolean solve(long id, String result) {
+    public boolean solve(long id, String result) throws RemoteAPIException {
 
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
+        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new RemoteAPIException(CaptchaAPI.Error.NOT_AVAILABLE); }
 
         ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
 
@@ -124,16 +124,16 @@ public class CaptchaAPIImpl implements CaptchaAPI {
 
             ((SolverJob<ClickedPoint>) job).addAnswer(new ClickCaptchaResponse(this, res, 100));
         } else {
-            throw new RemoteAPIException(ResponseCode.ERROR_BAD_REQUEST, "Unknown ChallengeType " + challenge.getClass());
+            throw new RemoteAPIException(CaptchaAPI.Error.UNKNOWN_CHALLENGETYPE, challenge.getClass().getName());
 
         }
 
         return true;
     }
 
-    public boolean abort(long id) {
+    public boolean abort(long id) throws RemoteAPIException {
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
+        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new RemoteAPIException(CaptchaAPI.Error.NOT_AVAILABLE); }
 
         // ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
         job.kill();

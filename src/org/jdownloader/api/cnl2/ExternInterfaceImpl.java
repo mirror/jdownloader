@@ -26,9 +26,9 @@ import net.sf.image4j.codec.ico.ICOEncoder;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
-import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -56,7 +56,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     private final static String jdpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
 
-    public void crossdomainxml(RemoteAPIResponse response) {
+    public void crossdomainxml(RemoteAPIResponse response) throws InternalApiException {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\"?>\r\n");
         sb.append("<!DOCTYPE cross-domain-policy SYSTEM \"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd\">\r\n");
@@ -71,8 +71,9 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
      * 
      * @param response
      * @param string
+     * @throws InternalApiException
      */
-    private void writeString(RemoteAPIResponse response, RemoteAPIRequest request, String string, boolean wrapCallback) {
+    private void writeString(RemoteAPIResponse response, RemoteAPIRequest request, String string, boolean wrapCallback) throws InternalApiException {
         OutputStream out = null;
         try {
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "text/html", false));
@@ -83,7 +84,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             }
             out.write(string.getBytes("UTF-8"));
         } catch (Throwable e) {
-            throw new RemoteAPIException(e);
+            throw new InternalApiException(e);
         } finally {
             try {
                 out.close();
@@ -92,14 +93,14 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
     }
 
-    public void jdcheckjs(RemoteAPIResponse response) {
+    public void jdcheckjs(RemoteAPIResponse response) throws InternalApiException {
         StringBuilder sb = new StringBuilder();
         sb.append("jdownloader=true;\r\n");
         sb.append("var version='" + JDUtilities.getRevision() + "';\r\n");
         writeString(response, null, sb.toString(), false);
     }
 
-    public void addcrypted2(RemoteAPIResponse response, RemoteAPIRequest request) {
+    public void addcrypted2(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
             askPermission(request);
             String crypted = HttpRequest.getParameterbyKey(request, "crypted");
@@ -188,7 +189,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         return decrypt(baseDecoded, key).trim();
     }
 
-    public void add(RemoteAPIResponse response, RemoteAPIRequest request) {
+    public void add(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
             askPermission(request);
             String urls = HttpRequest.getParameterbyKey(request, "urls");
@@ -199,7 +200,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
     }
 
-    public void addcrypted(RemoteAPIResponse response, RemoteAPIRequest request) {
+    public void addcrypted(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
             askPermission(request);
             String dlcContent = HttpRequest.getParameterbyKey(request, "crypted");
@@ -272,11 +273,11 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     }
 
-    public void alive(RemoteAPIResponse response, RemoteAPIRequest request) {
+    public void alive(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         writeString(response, request, "JDownloader\r\n", true);
     }
 
-    public void favicon(RemoteAPIResponse response) {
+    public void favicon(RemoteAPIResponse response) throws InternalApiException {
         OutputStream out = null;
         try {
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "image/x-icon", false));
@@ -284,7 +285,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             ImageIcon logo = NewTheme.I().getIcon("logo/jd_logo_128_128", 32);
             ICOEncoder.write(IconIO.toBufferedImage(logo.getImage()), out);
         } catch (Throwable e) {
-            throw new RemoteAPIException(e);
+            throw new InternalApiException(e);
         } finally {
             try {
                 out.close();
@@ -293,7 +294,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
     }
 
-    public void flashgot(RemoteAPIResponse response, RemoteAPIRequest request) {
+    public void flashgot(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
             askPermission(request);
             StringBuilder sb = new StringBuilder();
@@ -394,7 +395,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             writeString(response, request, sb.toString(), true);
         } catch (final Throwable e) {
             e.printStackTrace();
-            throw new RemoteAPIException(e);
+            throw new InternalApiException(e);
         }
     }
 }

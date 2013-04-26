@@ -2,6 +2,8 @@ package org.jdownloader.extensions.myjdownloader.api;
 
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.nutils.encoding.Encoding;
@@ -77,12 +79,14 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         }
     }
 
-    protected AtomicLong                        TIMESTAMP    = new AtomicLong(System.currentTimeMillis());
-    protected volatile String                   connectToken = null;
+    protected AtomicLong                        TIMESTAMP      = new AtomicLong(System.currentTimeMillis());
+    protected volatile String                   connectToken   = null;
 
     protected final MyDownloaderExtensionConfig config;
 
     private MyJDownloaderExtension              extension;
+    private ArrayList<RIDEntry>                 rids;
+    private long                                minAcceptedRID = Long.MIN_VALUE;
 
     public MyJDownloaderAPI(MyJDownloaderExtension myJDownloaderExtension) {
         super("JD");
@@ -94,11 +98,46 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         br = new BasicHTTP();
         br.setAllowedResponseCodes(200, 503, 401, 407, 403, 500, 429);
         br.putRequestHeader("Content-Type", "application/json; charset=utf-8");
+        rids = new ArrayList<RIDEntry>();
 
     }
 
     public LogSource getLogger() {
         return logger;
+    }
+
+    public boolean validateRID(long rid) {
+
+        // lowest RID
+        long lowestRid = Long.MIN_VALUE;
+        RIDEntry next;
+        for (Iterator<RIDEntry> it = rids.iterator(); it.hasNext();) {
+            next = it.next();
+            if (next.getRid() == rid) {
+                // dupe rid is always bad
+                logger.warning("received an RID Dupe. Possible Replay Attack avoided");
+                return false;
+            }
+            if (System.currentTimeMillis() - next.getTimestamp() > 15000) {
+                it.remove();
+                if (next.getRid() > lowestRid) {
+                    lowestRid = next.getRid();
+                }
+
+            }
+        }
+        if (lowestRid > minAcceptedRID) {
+            this.minAcceptedRID = lowestRid;
+        }
+        if (rid <= minAcceptedRID) {
+            // rid too low
+            logger.warning("received an outdated RID. Possible Replay Attack avoided");
+            return false;
+        }
+        RIDEntry ride = new RIDEntry(rid);
+        rids.add(ride);
+
+        return true;
     }
 
     // protected String getConnectToken(String username, String password) throws IOException, InvalidKeyException, NoSuchAlgorithmException,

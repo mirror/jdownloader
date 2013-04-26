@@ -17,9 +17,9 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
 import org.appwork.remoteapi.RemoteAPI;
-import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
@@ -109,7 +109,7 @@ public class AccountAPIImpl implements AccountAPI {
     }
 
     @Override
-    public void premiumHosterIcon(RemoteAPIRequest request, RemoteAPIResponse response, String premiumHoster) {
+    public void premiumHosterIcon(RemoteAPIRequest request, RemoteAPIResponse response, String premiumHoster) throws InternalApiException {
         OutputStream out = null;
         try {
             /* we force content type to image/png and allow caching of the image */
@@ -122,7 +122,7 @@ public class AccountAPIImpl implements AccountAPI {
 
         } catch (IOException e) {
             Log.exception(e);
-            throw new RemoteAPIException(e);
+            throw new InternalApiException(e);
         } finally {
             try {
                 out.close();

@@ -8,6 +8,8 @@ import org.appwork.remoteapi.ApiSessionRequired;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.exceptions.InternalApiException;
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.jdownloader.extensions.jdanywhere.api.storable.CaptchaJob;
 
 @ApiNamespace("jdanywhere/captcha")
@@ -22,10 +24,10 @@ public interface ICaptchaApi extends RemoteAPIInterface {
     @ApiDoc("returns a list of all available captcha jobs")
     public List<CaptchaJob> list();
 
-    public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id);
+    public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id) throws InternalApiException, RemoteAPIException;
 
-    public boolean solve(final long id, String result);
+    public boolean solve(final long id, String result) throws RemoteAPIException;
 
-    public boolean abort(final long id, CAPTCHA what);
+    public boolean abort(final long id, CAPTCHA what) throws RemoteAPIException;
 
 }

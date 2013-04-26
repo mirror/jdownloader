@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.exceptions.InternalApiException;
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
@@ -38,16 +40,16 @@ public class CaptchaApi implements ICaptchaApi {
         return ret;
     }
 
-    public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id) {
+    public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id) throws InternalApiException, RemoteAPIException {
         cpAPI.get(request, response, id);
     }
 
     @Override
-    public boolean solve(long id, String result) {
+    public boolean solve(long id, String result) throws RemoteAPIException {
         return cpAPI.solve(id, result);
     }
 
-    public boolean abort(long id, CAPTCHA what) {
+    public boolean abort(long id, CAPTCHA what) throws RemoteAPIException {
         return cpAPI.abort(id);
     }
 

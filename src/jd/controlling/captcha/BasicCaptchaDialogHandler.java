@@ -53,7 +53,7 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
 
     }
 
-    public void suggest(final String value) {
+    public void setSuggest(final String value) {
         suggest = value;
         new EDTRunner() {
 
@@ -65,6 +65,10 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
             }
         };
 
+    }
+
+    public String getSuggest() {
+        return suggest;
     }
 
     // public void setResponse(CaptchaResult resp) {

@@ -16,6 +16,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
+import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -28,6 +30,7 @@ import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.JSonRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.myjdownloader.api.MyJDownloaderAPI;
 import org.jdownloader.myjdownloader.RequestLineParser;
@@ -64,6 +67,19 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     @Override
     public List<HttpRequestHandler> getHandler() {
         return requestHandler;
+    }
+
+    protected void onException(Throwable e, final HttpRequest request, final HttpResponse response) throws IOException {
+        BasicRemoteAPIException apiException;
+        if (!(e instanceof BasicRemoteAPIException)) {
+            apiException = new InternalApiException(e);
+        } else {
+            apiException = (BasicRemoteAPIException) e;
+        }
+        this.response = new HttpResponse(this);
+
+        apiException.handle(this.response);
+
     }
 
     // @Override
@@ -123,7 +139,9 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     public boolean isJSonRequestValid(JSonRequest aesJsonRequest) {
         if (aesJsonRequest == null) return false;
         if (StringUtils.isEmpty(aesJsonRequest.getUrl())) return false;
-        /* TODO: fixme, timestamp replay */
+        if (!StringUtils.equals(getRequest().getRequestedURL(), aesJsonRequest.getUrl())) { return false; }
+        if (!api.validateRID(aesJsonRequest.getRid())) { return false; }
+
         logger.info("Go Request " + JSonStorage.toString(aesJsonRequest));
         return true;
     }

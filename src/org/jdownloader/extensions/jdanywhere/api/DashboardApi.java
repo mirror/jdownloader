@@ -23,9 +23,9 @@ import jd.plugins.FilePackage;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.RemoteAPI;
-import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
@@ -210,7 +210,7 @@ public class DashboardApi implements IDashboardApi {
      * org.appwork.remoteapi.RemoteAPIResponse)
      */
     @Override
-    public void speedMeter(RemoteAPIRequest request, RemoteAPIResponse response) {
+    public void speedMeter(RemoteAPIRequest request, RemoteAPIResponse response) throws InternalApiException {
         OutputStream out = null;
         try {
             SpeedMeterPanel speedMeter = MainToolBar.getInstance().getSpeedMeter();
@@ -231,7 +231,7 @@ public class DashboardApi implements IDashboardApi {
             ImageIO.write(bufferedImage, "png", out);
         } catch (IOException e) {
             Log.exception(e);
-            throw new RemoteAPIException(e);
+            throw new InternalApiException(e);
         } finally {
             try {
                 out.close();

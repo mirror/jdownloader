@@ -65,7 +65,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
                     @Override
                     public void onSolverJobReceivedNewResponse(AbstractResponse<?> response) {
                         ResponseList<String> resp = job.getResponse();
-                        handler.suggest(resp.getValue());
+                        handler.setSuggest(resp.getValue());
                         job.getLogger().info("Received Suggestion: " + resp);
 
                     }
@@ -78,7 +78,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
                 try {
                     ResponseList<String> resp = job.getResponse();
                     if (resp != null) {
-                        handler.suggest(resp.getValue());
+                        handler.setSuggest(resp.getValue());
                     }
                     checkInterruption();
                     if (!captchaChallenge.getImageFile().exists()) {
@@ -86,6 +86,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
                         job.getLogger().info("Cannot solve. image does not exist");
                         return;
                     }
+
                     handler.run();
 
                     if (StringUtils.isNotEmpty(handler.getCaptchaCode())) {
