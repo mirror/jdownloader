@@ -137,7 +137,7 @@ public class GUISettings extends AbstractConfigPanel {
                     protected void runInEDT() {
                         JDGui.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
 
-                        DownloadListContextMenuManager.getInstance();
+                        DownloadListContextMenuManager.getInstance().show();
                     }
                 };
 

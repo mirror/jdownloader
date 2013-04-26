@@ -176,7 +176,7 @@ public class ManagerFrame extends BasicGui implements TreeSelectionListener {
         int[] rows = tree.getSelectionRows();
         model.remove(tree.getSelectionPath());
 
-        if (rows.length > 0) {
+        if (rows != null && rows.length > 0) {
             if (tree.getRowCount() <= rows[0]) {
                 rows[0]--;
             }

@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -23,8 +24,13 @@ public class MenuManagerAction extends AppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        new EDTRunner() {
 
-        ManagerFrame.show();
+            @Override
+            protected void runInEDT() {
+                ManagerFrame.show();
+            }
+        };
 
     }
 

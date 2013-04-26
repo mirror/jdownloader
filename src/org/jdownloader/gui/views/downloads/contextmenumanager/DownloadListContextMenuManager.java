@@ -222,6 +222,8 @@ public class DownloadListContextMenuManager {
     }
 
     public void show() {
+
+        new MenuManagerAction(null).actionPerformed(null);
     }
 
     public JPopupMenu build(SelectionInfo<FilePackage, DownloadLink> si) {
