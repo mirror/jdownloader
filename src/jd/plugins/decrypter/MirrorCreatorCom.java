@@ -51,6 +51,9 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         if (!parameter.endsWith("/")) parameter += "/";
         parameter = "http://www." + parameter;
         param.setCryptedUrl(parameter);
+
+        String uid = new Regex(parameter, "/([A-Z0-9]{8})/").getMatch(0);
+
         br.getPage(parameter);
         /* Error handling */
         if (br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error \\- Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <)")) {
@@ -61,7 +64,6 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         // they comment in fakes, so we will just try them all!
         String[] links = br.getRegex("(/[^<>\"/]*?=[a-z0-9]{25,32})\"").getColumn(0);
         if (links == null || links.length == 0) {
-            String uid = new Regex(parameter, "/([A-Z0-9]{8})/").getMatch(0);
             links = br.getRegex("\"(/[^\"]+uid=" + uid + "[^\"]+)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("A critical error happened! Please inform the support. : " + param.toString());
@@ -70,8 +72,8 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         }
         for (String link : links) {
             Browser br2 = br.cloneBrowser();
-            br2.getPage("http://www.mirrorcreator.com" + link);
-            String[] redirectLinks = br2.getRegex("(/(redirect?|hlink)/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
+            br2.getPage(link);
+            String[] redirectLinks = br2.getRegex("(/[^/]+/" + uid + "/[a-z0-9]+)").getColumn(0);
             if (redirectLinks == null || redirectLinks.length == 0) {
                 redirectLinks = br2.getRegex("><a href=(.*?)target=").getColumn(0);
                 if (redirectLinks == null || redirectLinks.length == 0) {
@@ -83,15 +85,14 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 logger.warning("Excausted redirect search, Please report issue to JDownloader Development team. : " + param.toString());
                 return null;
             }
-            final String nicelookinghost = "mirrorcreator.com";
-            logger.info("Found " + redirectLinks.length + " " + nicelookinghost + " links to decrypt...");
+            logger.info("Found " + redirectLinks.length + " " + this.getHost() + " links to decrypt...");
             for (String singlelink : redirectLinks) {
                 singlelink = singlelink.replace("\"", "").replace(" ", "");
                 br2 = br.cloneBrowser();
                 String dllink = null;
                 // Handling for links that need to be regexed or that need to be get by redirect
-                if (singlelink.matches("/(redirect?|hlink|rlink)/[0-9A-Z]+/[a-z0-9]+")) {
-                    br2.getPage("http://www.mirrorcreator.com" + singlelink.trim());
+                if (singlelink.matches("/[^/]+/" + uid + "/[a-z0-9]+")) {
+                    br2.getPage(singlelink.trim());
                     dllink = br2.getRedirectLocation();
                     if (dllink == null) {
                         dllink = br2.getRegex("Please <a href=(\"|\\')?(http.*?)(\"|\\')? ").getMatch(1);
