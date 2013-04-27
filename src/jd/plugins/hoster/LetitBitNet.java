@@ -22,11 +22,15 @@ import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -41,6 +45,7 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -469,20 +474,105 @@ public class LetitBitNet extends PluginForHost {
 
     private boolean submitFreeForm() throws Exception {
         // this finds the form to "click" on the next "free download" button
-        Form[] allforms = br.getForms();
-        if (allforms == null || allforms.length == 0) return false;
         Form down = null;
-        for (Form singleform : allforms) {
-            // id=\"phone_submit_form\" is in the 2nd free form when you have a
-            // russian IP
-            if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && !singleform.containsHTML("/sms/check") && !singleform.containsHTML("id=\"phone_submit_form\"")) {
-                down = singleform;
-                break;
+        for (Form singleform : br.getForms()) {
+            // id=\"phone_submit_form\" is in the 2nd free form when you have a russian IP
+            if (singleform.getAction() != null) {
+                if (!"".equals(singleform.getAction())) {
+                    if (singleform.containsHTML("class=\"Instead_parsing_Use_API_Luke\"")) decryptingForm(singleform);
+                    if (singleform.getInputField("md5crypt") != null) {
+                        if (!singleform.containsHTML("/sms/check") && !singleform.containsHTML("id=\"phone_submit_form\"")) {
+                            down = singleform;
+                            break;
+                        }
+                    }
+                }
             }
         }
         if (down == null) return false;
         br.submitForm(down);
         return true;
+    }
+
+    private void decryptingForm(Form encryptedForm) {
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+
+        HashMap<String, String> encValues = new HashMap<String, String>(getFormIds(encryptedForm));
+        HashMap<String, String> inputFieldMap = new HashMap<String, String>();
+
+        String js = encryptedForm.getRegex("(eval.*?)</script>").getMatch(0);
+        String jsFn = new Regex(js, "eval\\((?!function)(.*?)\\)$").getMatch(0);
+        js = js.replace("eval(" + jsFn + ")", "");
+        String packedJs[] = js.split(";;");
+
+        try {
+            // execute js
+            for (String pJs : packedJs) {
+                engine.eval(pJs);
+            }
+            String res = jsbeautifier(engine.eval(jsFn).toString());
+            if (res == null) return;// js processing broken!
+            engine.put("br", br);
+            engine.put("encValues", encValues);
+            engine.put("formMap", inputFieldMap);
+            // $.cookie(key) --> call Java Method br.getCookie(key);
+            engine.eval("var $ = { cookie : function(a) { return String(unescape(br.getCookie(br.getHost(), a))); }}");
+            // decrypting Form
+            engine.eval(res);
+            // remove encrypted Inputfields
+            final Iterator<InputField> it = encryptedForm.getInputFields().iterator();
+            while (it.hasNext()) {
+                final InputField ipf = it.next();
+                if (ipf.getKey() == null) it.remove();
+            }
+            // put decrypted Inputfields
+            for (Entry<String, String> next : inputFieldMap.entrySet()) {
+                encryptedForm.put(next.getKey(), next.getValue());
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String jsbeautifier(String s) {
+        String lines[] = s.split("[\r\n]");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i < lines.length - 1; i++) {
+            if (lines[i].contains("alert(")) {
+                String newLine = new Regex(lines[i], "^([^\\(]+\\()").getMatch(0);
+                if (newLine == null) return null;
+                sb.append(newLine + "id){return String(encValues.get(id));};\n");
+                continue;
+            }
+            if (lines[i].contains("form.append")) {
+                String key = new Regex(lines[i], "name:([^,]+),").getMatch(0);
+                String value = new Regex(lines[i], "value:([^,]+),").getMatch(0);
+                if (key == null || value == null) return null;
+                key = key.trim();
+                value = value.trim();
+                sb.append("formMap.put(" + key + "," + value + ");\n");
+                continue;
+            }
+            if ("".equals(lines[i])) continue;
+            if (lines[i].contains("form")) continue;
+            if (lines[i].contains("setTimeout")) continue;
+            sb.append(lines[i] + "\n");
+        }
+        if (sb.length() == 0) return null;
+        return sb.toString();
+    }
+
+    private HashMap<String, String> getFormIds(Form encForm) {
+        HashMap<String, String> ret = new HashMap<String, String>();
+        String key = null;
+        for (final InputField ipf : encForm.getInputFields()) {
+            key = ipf.get("id");
+            if (key == null) key = ipf.get("ID");
+            if (key == null) continue;
+            ret.put(key, ipf.getValue());
+        }
+        return ret;
     }
 
     private String getFinalLink(final String source) throws PluginException {
