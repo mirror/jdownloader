@@ -57,6 +57,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         try {
 
             logger.info(object + "");
+            logger.info(getServerRoot() + query + " Data: " + object);
             final String ret = br.postPage(new URL(getServerRoot() + query), object == null ? "" : object);
             logger.info(br.getConnection() + "");
             logger.info(ret);
