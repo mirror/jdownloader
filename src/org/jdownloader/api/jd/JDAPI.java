@@ -1,10 +1,12 @@
 package org.jdownloader.api.jd;
 
-import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.RemoteAPIInterface;
+import org.appwork.remoteapi.annotations.ApiNamespace;
 
 @ApiNamespace("jd")
 public interface JDAPI extends RemoteAPIInterface {
+
+    public void doSomethingCool();
 
     public long uptime();
 

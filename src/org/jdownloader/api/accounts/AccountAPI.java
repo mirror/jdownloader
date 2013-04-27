@@ -3,11 +3,11 @@ package org.jdownloader.api.accounts;
 import java.util.List;
 
 import org.appwork.remoteapi.APIQuery;
-import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.QueryResponseMap;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 
 @ApiNamespace("accounts")

@@ -3,11 +3,11 @@ package org.jdownloader.api.captcha;
 import java.util.List;
 
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
-import org.appwork.remoteapi.ApiDoc;
-import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.annotations.ApiDoc;
+import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.APIError;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.remoteapi.exceptions.RemoteAPIException;

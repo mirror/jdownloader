@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views;
 
-import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -16,7 +15,6 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.BinaryLogic;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
-import org.jdownloader.keyevent.GlobalEventStore;
 
 public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
 
@@ -75,18 +73,13 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         incompleteSelectecPackages = new HashMap<PackageType, List<ChildrenType>>();
 
         rawMap = new LinkedHashSet<AbstractNode>();
-        if (EventQueue.isDispatchThread()) {
-            if (event == null) {
-                event = GlobalEventStore.getInstance().getLatestMouseEvent();
-            }
-            if (kEvent == null) {
-                kEvent = GlobalEventStore.getInstance().getLatestKeyEvent();
-            }
-        }
+
+        // System.out.println(kEvent);
 
         this.mouseEvent = event;
         this.keyEvent = kEvent;
         this.table = table;
+        // System.out.println(isShiftDown());
         agregate();
     }
 
@@ -354,6 +347,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
      * @return
      */
     public boolean isShiftDown() {
+        // System.out.println(keyEvent.getModifiers());
+        // System.out.println(keyEvent.isShiftDown());
         if (keyEvent != null && BinaryLogic.containsSome(keyEvent.getModifiers(), ActionEvent.SHIFT_MASK)) { return true; }
         if (mouseEvent != null && mouseEvent.isShiftDown()) return true;
         return false;

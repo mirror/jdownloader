@@ -2,9 +2,9 @@ package org.jdownloader.extensions.jdanywhere.api.interfaces;
 
 import java.util.List;
 
-import org.appwork.remoteapi.ApiNamespace;
-import org.appwork.remoteapi.ApiSessionRequired;
 import org.appwork.remoteapi.RemoteAPIInterface;
+import org.appwork.remoteapi.annotations.ApiNamespace;
+import org.appwork.remoteapi.annotations.ApiSessionRequired;
 import org.jdownloader.extensions.jdanywhere.api.storable.DownloadLinkStorable;
 
 @ApiNamespace("jdanywhere/downloadLink")

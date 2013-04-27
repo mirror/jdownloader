@@ -1,10 +1,10 @@
 package org.jdownloader.api.cnl2;
 
-import org.appwork.remoteapi.ApiMethodName;
-import org.appwork.remoteapi.ApiRawMethod;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.annotations.ApiMethodName;
+import org.appwork.remoteapi.annotations.ApiRawMethod;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 
 public interface FlashGotAPI extends RemoteAPIInterface {

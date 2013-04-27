@@ -16,6 +16,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.remoteapi.exceptions.ApiInterfaceNotAvailable;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.JSonStorage;
@@ -67,6 +68,10 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     @Override
     public List<HttpRequestHandler> getHandler() {
         return requestHandler;
+    }
+
+    protected void onUnhandled(final HttpRequest request, final HttpResponse response) throws IOException {
+        onException(new ApiInterfaceNotAvailable(), request, response);
     }
 
     protected void onException(Throwable e, final HttpRequest request, final HttpResponse response) throws IOException {

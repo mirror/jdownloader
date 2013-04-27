@@ -3,8 +3,8 @@ package org.jdownloader.api.downloads;
 import java.util.List;
 
 import org.appwork.remoteapi.APIQuery;
-import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.RemoteAPIInterface;
+import org.appwork.remoteapi.annotations.ApiNamespace;
 
 @ApiNamespace("downloads")
 public interface DownloadsAPI extends RemoteAPIInterface {

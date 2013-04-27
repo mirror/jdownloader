@@ -3,8 +3,8 @@ package org.jdownloader.api.linkcollector;
 import java.util.List;
 
 import org.appwork.remoteapi.APIQuery;
-import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.RemoteAPIInterface;
+import org.appwork.remoteapi.annotations.ApiNamespace;
 
 @ApiNamespace("linkcollector")
 public interface LinkCollectorAPI extends RemoteAPIInterface {

@@ -84,7 +84,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.keyevent.GlobalEventStore;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.FrameStatus;
 import org.jdownloader.settings.FrameStatus.ExtendedState;
@@ -157,7 +156,7 @@ public class JDGui extends SwingGui {
         this.initLocationAndDimension();
         this.mainFrame.setVisible(true);
         initToolTipSettings();
-        GlobalEventStore.getInstance();
+
         if (this.mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
             ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) this.mainFrame.getRootPane().getUI()).setMaximizedBounds(this.mainFrame);
         }

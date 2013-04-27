@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.remoteapi.APIQuery;
-import org.appwork.remoteapi.ApiDoc;
-import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.RemoteAPIInterface;
+import org.appwork.remoteapi.annotations.ApiDoc;
+import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.storage.config.annotations.AllowStorage;
 import org.jdownloader.settings.advanced.AdvancedConfigAPIEntry;
 

@@ -2,10 +2,10 @@ package org.jdownloader.extensions.jdanywhere.api.interfaces;
 
 import java.io.FileNotFoundException;
 
-import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 
 @ApiNamespace("jdanywhere/content")

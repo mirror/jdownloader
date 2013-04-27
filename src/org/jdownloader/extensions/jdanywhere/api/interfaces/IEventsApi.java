@@ -1,7 +1,7 @@
 package org.jdownloader.extensions.jdanywhere.api.interfaces;
 
-import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.RemoteAPIInterface;
+import org.appwork.remoteapi.annotations.ApiNamespace;
 
 @ApiNamespace("jdanywhere/events")
 public interface IEventsApi extends RemoteAPIInterface {
