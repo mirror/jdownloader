@@ -57,8 +57,9 @@ public class VideoWeedCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("error_msg=The video is being transfered")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -68,14 +69,14 @@ public class VideoWeedCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>This file no longer exists on our servers\\.<|The video file was removed)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("name=\"title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("videoweed\\.com/file/[a-z0-9]+\\&title=(.*?)\\+-\\+VideoWeed\\.com\"").getMatch(0);
+            filename = br.getRegex("videoweed\\.com/file/[a-z0-9]+\\&title=(.*?)\\+\\-\\+VideoWeed\\.com\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<td><strong>Title: </strong>(.*?)</td>").getMatch(0);
                 if (filename == null) {
@@ -87,10 +88,15 @@ public class VideoWeedCom extends PluginForHost {
         String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
         if (key == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.videoweed.es/api/player.api.php?user=undefined&codes=1&file=" + new Regex(downloadLink.getDownloadURL(), "videoweed\\.es/file/(.+)").getMatch(0) + "&pass=undefined&key=" + Encoding.urlEncode(key));
-        dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename.replace(filename.substring(filename.length() - 4, filename.length()), "") + ".flv");
+        if (br.containsHTML("error_msg=The video is being transfered")) {
+            downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
+            return AvailableStatus.TRUE;
+        }
+        dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

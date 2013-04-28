@@ -61,29 +61,29 @@ public class NovaUpMovcom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(parameter.getDownloadURL());
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("This file no longer exists on our servers") || br.getURL().contains("novamov.com/index.php")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         // onlinecheck für Videolinks
-        if (parameter.getDownloadURL().contains("video")) {
+        if (downloadLink.getDownloadURL().contains("video")) {
             String filename = br.getRegex("name=\"title\" content=\"Watch(.*?)online\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>Watch(.*?)online \\| NovaMov - Free and reliable flash video hosting</title>").getMatch(0);
             }
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            filename = filename.trim() + ".flv";
-            parameter.setFinalFileName(filename);
-            if (br.containsHTML(TEMPORARYUNAVAILABLE)) {
-                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.novaupmovcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT));
+            filename = filename.trim();
+            downloadLink.setFinalFileName(filename.replace(filename.substring(filename.length() - 4, filename.length()), "") + ".flv");
+            getVideoLink();
+            if (br.containsHTML("error_msg=The video is being transfered")) {
+                downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
                 return AvailableStatus.TRUE;
             }
-            getVideoLink();
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final URLConnectionAdapter con = br.openGetConnection(DLLINK);
             try {
-                parameter.setDownloadSize(con.getLongContentLength());
+                downloadLink.setDownloadSize(con.getLongContentLength());
             } finally {
                 con.disconnect();
             }
@@ -96,8 +96,8 @@ public class NovaUpMovcom extends PluginForHost {
             }
             final String filesize = br.getRegex("strong>File size :</strong>(.*?)</div>").getMatch(0);
             if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            parameter.setName(filename.trim());
-            parameter.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "")));
+            downloadLink.setName(filename.trim());
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "")));
         }
 
         return AvailableStatus.TRUE;
@@ -108,8 +108,7 @@ public class NovaUpMovcom extends PluginForHost {
         final String addedlink = link.getDownloadURL();
         if (link.getDownloadURL().contains("video")) {
             requestFileInformation(link);
-            // This should never happen
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("error_msg=The video is being transfered")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
         } else {
             // handling für "nicht"-video Links
             if (br.containsHTML(TEMPORARYUNAVAILABLE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.novaupmovcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT), 30 * 60 * 1000l); }
