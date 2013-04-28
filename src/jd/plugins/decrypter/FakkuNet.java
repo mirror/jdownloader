@@ -67,6 +67,7 @@ public class FakkuNet extends PluginForDecrypt {
                 }
             }
         } else if (new Regex(parameter, "http://(www\\.)?fakku\\.net/viewonline\\.php\\?id=\\d+").matches()) {
+            br.setFollowRedirects(true);
             br.getPage(parameter);
             String fpName = br.getRegex("\",\"name\":\"([^<>\"\\']+)\"").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<title>([^<>\"\\']+) \\| Read Online</title>").getMatch(0);
@@ -78,7 +79,7 @@ public class FakkuNet extends PluginForDecrypt {
             fpName = Encoding.htmlDecode(fpName.trim());
             final String correctedBR = br.toString().replace("\\", "");
             final DecimalFormat df = new DecimalFormat("000");
-            String allThumbs[] = new Regex(correctedBR, "\"manga/((n|f)/[^<>\"\\'/]+)/thumbs/").getColumn(0);
+            String allThumbs[] = new Regex(correctedBR, "manga/([a-z]{1}/[^<>\"\\'/]+)/thumbs/").getColumn(0);
             if (allThumbs == null || allThumbs.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

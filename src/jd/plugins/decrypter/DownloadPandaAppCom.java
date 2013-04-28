@@ -45,11 +45,16 @@ public class DownloadPandaAppCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        // Check if there was a redirect to another site
+        if (!br.getURL().contains("pandaapp.com/")) {
+            decryptedLinks.add(createDownloadlink(br.getURL()));
+            return decryptedLinks;
+        }
         final String fpName = br.getRegex("<div class=\"title\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
-        String[] links = br.getRegex("\"(http://[^<>\"]*?)\" class=\"btn_netdisk\"").getColumn(0);
+        String[] links = br.getRegex("\\&target=(http[^<>\"]*?)\"").getColumn(0);
         if (links != null && links.length != 0) {
             for (String singleLink : links)
-                decryptedLinks.add(createDownloadlink(singleLink));
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(singleLink)));
         }
         final String controller = br.getRegex("\\&controller=([^<>\"/]*?)\\&").getMatch(0);
         if (controller != null) {

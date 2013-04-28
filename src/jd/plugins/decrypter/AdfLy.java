@@ -54,7 +54,7 @@ public class AdfLy extends PluginForDecrypt {
                     br.getPage(br.getRedirectLocation());
                 }
             }
-            if (br.containsHTML("(<b style=\"font\\-size: 20px;\">Sorry the page you are looking for does not exist|>404 Not Found<|>Not Found<|>Sorry, but the requested page was not found)") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains("ink-deleted.php"))) {
+            if (br.containsHTML("(<b style=\"font\\-size: 20px;\">Sorry the page you are looking for does not exist|>404 Not Found<|>Not Found<|>Sorry, but the requested page was not found)") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains("ink-deleted.php") || br.getRedirectLocation().contains("/suspended"))) {
                 logger.info("adf.ly link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -70,7 +70,7 @@ public class AdfLy extends PluginForDecrypt {
             String countdown = getWaittime();
             // they also have secondary zzz variable within 'function adf_counter()', but it's the same.
             String zzz = br.getRegex("var zzz\\s?+=\\s?+'?([\\d,\\.]+|http[^'\"]+)'?;").getMatch(0);
-            if (zzz.matches("(https?|ftp)://.+")) finallink = zzz;
+            if (zzz != null && zzz.matches("(https?|ftp)://.+")) finallink = zzz;
             String easyUrl = br.getRegex("var easyUrl\\s?+=\\s?+'?(true|false)'?;").getMatch(0);
             String url = br.getRegex("var url\\s?+=\\s?+'?([^\';]+)'?;").getMatch(0);
 

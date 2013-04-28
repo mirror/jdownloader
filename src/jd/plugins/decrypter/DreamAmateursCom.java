@@ -118,6 +118,14 @@ public class DreamAmateursCom extends PluginForDecrypt {
             return decryptedLinks;
 
         }
+        externID = br.getRegex("so\\.addVariable\\(\\'file\\',\\'(http://(www\\.)?dreamamateurs\\.com/videos/[^<>\"]*?)\\'\\)").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+
+        }
         if (br.containsHTML("\\&file=http://embed\\.kickassratios\\.com/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

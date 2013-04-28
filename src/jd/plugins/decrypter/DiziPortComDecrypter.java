@@ -38,6 +38,10 @@ public class DiziPortComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML(">sayfa bulunamadÄ±")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String sid = br.getRegex("\\&sid=(.*?)\"").getMatch(0);
         if (sid != null) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");

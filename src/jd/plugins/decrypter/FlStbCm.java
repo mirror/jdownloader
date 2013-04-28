@@ -78,7 +78,14 @@ public class FlStbCm extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            String externID = br.getRegex("name=\"src\" value=\"http://(www\\.)?youtube\\.com/(v/|watch\\?v=)([^<>\"\\'/\\&]+)(\\&|\")").getMatch(2);
+            String externID = null;
+            // Check if there was a redirect to another site
+            if (!br.getURL().contains("filestube.com/")) {
+                externID = br.getURL();
+                decryptedLinks.add(createDownloadlink(externID));
+                return decryptedLinks;
+            }
+            externID = br.getRegex("name=\"src\" value=\"http://(www\\.)?youtube\\.com/(v/|watch\\?v=)([^<>\"\\'/\\&]+)(\\&|\")").getMatch(2);
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + externID));
                 return decryptedLinks;

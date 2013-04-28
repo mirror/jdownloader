@@ -242,7 +242,7 @@ public class PremiumizeMe extends PluginForHost {
         br = newBrowser();
         br.getPage("https://api.premiumize.me/pm-api/v1.php?method=accountstatus&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()));
         handleAPIErrors(br, account, null);
-        if (br.containsHTML("type\":\"free\"")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free accounts are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        if (br.containsHTML("type\":\"free\"")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "This is a free account. Free accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
     }
 
     private void showMessage(DownloadLink link, String message) {

@@ -52,6 +52,11 @@ public class AdltDlCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        // Offline3
+        if (parameter.contains("adultddl.ws/1970/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex(" title=\"Comment on ([^<>\"\\']+)\"").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>([^<>\"\\']+) \\| AdultDDL</title>").getMatch(0);
         final String streamLink = br.getRegex("\\'(http://(www\\.)?putlocker\\.com/embed/[A-Z0-9]+)\\'").getMatch(0);

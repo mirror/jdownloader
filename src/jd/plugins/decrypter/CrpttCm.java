@@ -140,10 +140,14 @@ public class CrpttCm extends PluginForDecrypt {
             String url = param.toString();
             if (!url.endsWith("/")) url += "/";
 
-            String[] temp = new Regex(url, Pattern.compile("http://crypt-it.com/(.*?)/(.*?)/", Pattern.CASE_INSENSITIVE)).getRow(0);
-            String mode = temp[0];
-            String folder = temp[1];
+            String[] temp = new Regex(url, Pattern.compile("http://(www\\.)?crypt\\-it\\.com/(.*?)/(.*?)/", Pattern.CASE_INSENSITIVE)).getRow(0);
+            String mode = temp[1];
+            String folder = temp[2];
             br.getPage("http://crypt-it.com/" + mode + "/" + folder);
+            if (br.containsHTML("Down for maintenance")) {
+                logger.info("crypt-it.com is down for maintenance, cannot decrypt link: " + param.toString());
+                return decryptedLinks;
+            }
             String pass = "";
             if (br.containsHTML(PATTERN_PASSWORD_FOLDER)) {
                 pass = param.getDecrypterPassword();

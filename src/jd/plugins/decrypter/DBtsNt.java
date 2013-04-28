@@ -139,7 +139,7 @@ public class DBtsNt extends PluginForDecrypt {
     }
 
     private boolean decryptLiveset(String parameter, ArrayList<DownloadLink> decryptedLinks) throws IOException, DecrypterException {
-        parameter = "http://www.audiobeats.net" + parameter;
+        if (!parameter.startsWith("http://")) parameter = "http://www.audiobeats.net" + parameter;
         int i = 0;
         do {
             br.getPage(parameter);
@@ -149,7 +149,7 @@ public class DBtsNt extends PluginForDecrypt {
                 } catch (InterruptedException e) {
                 }
             } else {
-                String[] allLinks = br.getRegex("\"(/link\\?id=\\d+-.*?)\"").getColumn(0);
+                String[] allLinks = br.getRegex("\"(/link\\?id=\\d+\\-.*?)\"").getColumn(0);
                 if (allLinks == null || allLinks.length == 0) {
                     // No links to download
                     if (br.containsHTML("Sorry this links is reported as dead\\.") || br.containsHTML("<h3>Download Links</h3>")) {

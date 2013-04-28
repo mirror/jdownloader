@@ -96,8 +96,8 @@ public class YunFileCom extends PluginForHost {
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
-        URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
-        if (con.getResponseCode() == 503) {
+        final URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
+        if (con.getResponseCode() == 503 || con.getResponseCode() == 404) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
