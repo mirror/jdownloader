@@ -35,7 +35,7 @@ import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainer;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemProperty;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuLink;
-import org.jdownloader.gui.views.downloads.contextmenumanager.SeparatorData;
+import org.jdownloader.gui.views.downloads.contextmenumanager.SeperatorData;
 import org.jdownloader.images.NewTheme;
 
 public class InfoPanel extends MigPanel implements ActionListener {
@@ -54,6 +54,8 @@ public class InfoPanel extends MigPanel implements ActionListener {
     private JLabel       iconlabel;
 
     private ManagerFrame managerFrame;
+
+    private JCheckBox    hidden;
 
     public InfoPanel(ManagerFrame m) {
         super("ins 5,wrap 2", "[grow,fill][]", "[22!][]");
@@ -77,7 +79,8 @@ public class InfoPanel extends MigPanel implements ActionListener {
         linkContext.addActionListener(this);
         packageContext = new JCheckBox();
         packageContext.addActionListener(this);
-
+        hidden = new JCheckBox();
+        hidden.addActionListener(this);
         name = new ExtTextField() {
 
             @Override
@@ -166,6 +169,8 @@ public class InfoPanel extends MigPanel implements ActionListener {
         add(linkContext, "spanx");
         add(label(_GUI._.InfoPanel_InfoPanel_packageContext2()));
         add(packageContext, "spanx");
+        add(label(_GUI._.InfoPanel_InfoPanel_hidden()));
+        add(hidden, "spanx");
     }
 
     private JLabel label(String infoPanel_InfoPanel_hideIfDisabled) {
@@ -201,7 +206,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
             link(mid, linkContext, MenuItemProperty.LINK_CONTEXT);
 
             link(mid, packageContext, MenuItemProperty.PACKAGE_CONTEXT);
-
+            link(mid, hidden, MenuItemProperty.ALWAYS_HIDDEN);
             // renderer.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.RED));
             updateHeaderLabel(mid);
 
@@ -226,7 +231,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
 
             // label.setText(_GUI._.InfoPanel_updateInfo_header_actionlabel(, ));
 
-        } else if (mid instanceof SeparatorData) {
+        } else if (mid instanceof SeperatorData) {
 
             name = _GUI._.Renderer_getTreeCellRendererComponent_seperator();
 
@@ -279,7 +284,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
                 if (hideIfOutputNotExists.isSelected()) newProperties.add(MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING);
                 if (linkContext.isSelected()) newProperties.add(MenuItemProperty.LINK_CONTEXT);
                 if (packageContext.isSelected()) newProperties.add(MenuItemProperty.PACKAGE_CONTEXT);
-
+                if (hidden.isSelected()) newProperties.add(MenuItemProperty.ALWAYS_HIDDEN);
                 item.setProperties(newProperties);
             }
         }.waitForEDT();

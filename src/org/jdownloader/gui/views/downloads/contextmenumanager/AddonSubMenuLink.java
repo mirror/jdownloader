@@ -23,7 +23,7 @@ public class AddonSubMenuLink extends MenuItemData implements MenuLink {
 
     public JComponent addTo(JComponent root, SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
-        if (!showItem(this, selection)) return null;
+        if (!showItem(selection)) return null;
         if (selection.getContextPackage() instanceof FilePackage) {
             int count = root.getComponentCount();
             MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTableContext(root, (SelectionInfo<FilePackage, DownloadLink>) selection, selection.getContextColumn())));

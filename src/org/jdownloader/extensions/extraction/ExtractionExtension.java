@@ -70,6 +70,7 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.DownloadListContextmenuExtender;
 import org.jdownloader.extensions.extraction.gui.config.ExtractionConfigPanel;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.Multi;
@@ -83,6 +84,7 @@ import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
 import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
+import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTablePropertiesContext;
@@ -486,6 +488,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     protected void initExtension() throws StartException {
         /* import old passwordlist */
         boolean oldPWListImported = false;
+        DownloadListContextMenuManager.getInstance().registerExtender(new DownloadListContextmenuExtender(this));
         try {
             if ((oldPWListImported = getSettings().isOldPWListImported()) == false) {
                 SubConfiguration oldConfig = SubConfiguration.getConfig("PASSWORDLIST", true);
@@ -697,7 +700,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     public void onNewFile(Object caller, File[] fileList) {
-        
+
         try {
             logger.info("New File by " + caller);
             if (caller instanceof SingleDownloadController) {
@@ -751,7 +754,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
         if (unspecifiedContext instanceof DownloadTableContext) {
 
-            onExtendPopupMenuDownloadTable((DownloadTableContext) unspecifiedContext);
+            // onExtendPopupMenuDownloadTable((DownloadTableContext) unspecifiedContext);
         } else if (unspecifiedContext instanceof LinkgrabberTableContext) {
             onExtendPopupMenuLinkgrabberTable((LinkgrabberTableContext) unspecifiedContext);
             // p.add(new

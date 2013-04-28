@@ -20,22 +20,13 @@ public class ActionData implements Storable {
     }
 
     private String clazzName;
-    private int    version = -1;
-
-    public int getVersion() {
-        return version;
-    }
-
-    public void setVersion(int version) {
-        this.version = version;
-    }
 
     public ActionData(/* Storable */) {
 
     }
 
-    public ActionData(int versionNumber, Class<?> class1, MenuItemProperty... ps) {
-        version = versionNumber;
+    public ActionData(Class<?> class1, MenuItemProperty... ps) {
+
         this.clazz = class1;
         this.clazzName = class1.getName();
         properties = new HashSet<MenuItemProperty>();

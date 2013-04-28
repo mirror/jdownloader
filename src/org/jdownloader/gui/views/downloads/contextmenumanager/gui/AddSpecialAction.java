@@ -9,36 +9,38 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.downloads.contextmenumanager.AddonSubMenuLink;
-import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
+import org.jdownloader.gui.views.downloads.contextmenumanager.ContextMenuManager;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainer;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuLink;
-import org.jdownloader.gui.views.downloads.contextmenumanager.SeparatorData;
+import org.jdownloader.gui.views.downloads.contextmenumanager.SeperatorData;
 import org.jdownloader.images.NewTheme;
 
 public class AddSpecialAction extends AppAction {
 
-    private DownloadListContextMenuManager manager;
-    private ManagerFrame                   managerFrame;
+    private ContextMenuManager manager;
+    private ManagerFrame       managerFrame;
 
     public AddSpecialAction(ManagerFrame managerFrame) {
         this.manager = managerFrame.getManager();
         this.managerFrame = managerFrame;
         setName(_GUI._.ManagerFrame_layoutPanel_addspecials());
-        setSmallIcon(NewTheme.I().getIcon("add", 20));
+
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
 
-        List<Object> actions = new ArrayList<Object>();
-        actions.add(_GUI._.AddSpecialAction_actionPerformed_seperator());
-        actions.add(new AddonSubMenuLink());
+        List<MenuItemData> actions = new ArrayList<MenuItemData>();
+
+        actions.addAll(manager.listSpecialItems());
 
         ComboBoxDialog d = new ComboBoxDialog(0, _GUI._.AddSpecialAction_actionPerformed_title(), _GUI._.AddSpecialAction_actionPerformed_msg(), actions.toArray(new Object[] {}), 0, null, _GUI._.lit_add(), null, null) {
             protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
@@ -52,7 +54,19 @@ public class AddSpecialAction extends AppAction {
                             JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, _GUI._.AddSubMenuAction_getListCellRendererComponent(((MenuLink) value).getName()), index, isSelected, cellHasFocus);
                             ret.setIcon(NewTheme.I().getIcon(((MenuLink) value).getIconKey(), 22));
                             return ret;
+                        } else if (value instanceof MenuContainer) {
 
+                            JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, _GUI._.AddSubMenuAction_getListCellRendererComponent(((MenuContainer) value).getName()), index, isSelected, cellHasFocus);
+                            if (StringUtils.isNotEmpty(((MenuContainer) value).getIconKey())) {
+                                ret.setIcon(NewTheme.I().getIcon(((MenuContainer) value).getIconKey(), 22));
+                            } else {
+                                ret.setIcon(null);
+                            }
+                            return ret;
+                        } else if (value instanceof SeperatorData) {
+                            JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, _GUI._.AddSpecialAction_actionPerformed_seperator(), index, isSelected, cellHasFocus);
+                            ret.setIcon(null);
+                            return ret;
                         } else {
                             JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                             ret.setIcon(null);
@@ -66,12 +80,9 @@ public class AddSpecialAction extends AppAction {
         //
         try {
             Integer ret = Dialog.getInstance().showDialog(d);
+            if (ret >= 0) {
 
-            if (ret == 0) {
-                managerFrame.addMenuItem(new SeparatorData());
-
-            } else if (ret == 1) {
-                managerFrame.addMenuItem(new AddonSubMenuLink());
+                managerFrame.addMenuItem(actions.get(ret));
 
             }
 
@@ -81,5 +92,4 @@ public class AddSpecialAction extends AppAction {
             e1.printStackTrace();
         }
     }
-
 }

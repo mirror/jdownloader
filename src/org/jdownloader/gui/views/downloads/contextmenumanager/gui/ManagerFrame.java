@@ -21,6 +21,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.downloads.contextmenumanager.ActionData;
+import org.jdownloader.gui.views.downloads.contextmenumanager.ContextMenuManager;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainerRoot;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
@@ -158,7 +159,7 @@ public class ManagerFrame extends BasicGui implements TreeSelectionListener {
         dispose();
     }
 
-    public DownloadListContextMenuManager getManager() {
+    public ContextMenuManager getManager() {
         return manager;
     }
 
@@ -195,11 +196,18 @@ public class ManagerFrame extends BasicGui implements TreeSelectionListener {
 
                     FRAME = new ManagerFrame();
                 }
+                if (!FRAME.getFrame().isVisible()) {
+                    FRAME.setVisible(true);
+                }
 
-                FRAME.getFrame().setVisible(true);
             }
         };
 
+    }
+
+    protected void setVisible(boolean b) {
+        model.set(manager.getMenuData());
+        getFrame().setVisible(b);
     }
 
     @Override

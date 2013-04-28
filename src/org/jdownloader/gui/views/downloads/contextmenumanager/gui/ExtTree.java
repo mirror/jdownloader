@@ -27,6 +27,7 @@ import javax.swing.tree.TreeSelectionModel;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
+import org.jdownloader.gui.views.downloads.contextmenumanager.SeperatorData;
 
 public class ExtTree extends JTree {
     private void expandAll(boolean expand) {
@@ -119,6 +120,7 @@ public class ExtTree extends JTree {
                     popup.add(new AddActionAction(managerFrame));
                     popup.add(new AddSubMenuAction(managerFrame));
                     popup.add(new AddSpecialAction(managerFrame));
+                    popup.add(new AddGenericItem(managerFrame, new SeperatorData()));
                     popup.add(new RemoveAction(managerFrame));
                     popup.show(ExtTree.this, e.getPoint().x, e.getPoint().y);
                 }

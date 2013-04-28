@@ -131,9 +131,22 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
                 return new TreePath(new Object[] { data, menuItemData });
             }
         } finally {
+
             fireTreeStructureChanged(this, new Object[] { data }, null, null);
         }
 
+    }
+
+    protected void fireTreeStructureChanged(Object source, Object[] path, int[] childIndices, Object[] children) {
+        // String before = JSonStorage.toString(data);
+        // make sure that we have valid menu structure
+        data.validate();
+        // String after = JSonStorage.toString(data);
+        // if (!before.equals(after)) {
+        // Dialog.getInstance().showMessageDialog("Menu Structure not allowed!");
+        //
+        // }
+        super.fireTreeStructureChanged(source, path, childIndices, children);
     }
 
     public void fireUpdate() {

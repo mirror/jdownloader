@@ -292,4 +292,7 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Extracting... thus disabled" })
     String extracting();
+
+    @Default(lngs = { "en" }, values = { "Archive(s)" })
+    String linkname();
 }

@@ -2572,4 +2572,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Org. name: %s1" })
     String Renderer_getTreeCellRendererComponent_orgname_(String name);
 
+    @Default(lngs = { "en" }, values = { "Add %s1" })
+    String AddGenericItem_AddGenericItem_(String name);
+
+    @Default(lngs = { "en" }, values = { "Seperator" })
+    String SeperatorData_SeperatorData();
+
+    @Default(lngs = { "en" }, values = { "Always hidden" })
+    String InfoPanel_InfoPanel_hidden();
+
 }

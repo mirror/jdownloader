@@ -4,6 +4,7 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
@@ -18,6 +19,9 @@ import org.appwork.storage.Storable;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
@@ -29,6 +33,18 @@ public class MenuItemData implements Storable {
     private String                    iconKey;
     private String                    className;
     private ActionData                actionData;
+
+    public String _getIdentifier() {
+        if (actionData != null) { return actionData.getClazzName(); }
+        if (getClass() != MenuContainer.class && getClass() != MenuItemData.class) { return getClass().getName(); }
+        if (StringUtils.isNotEmpty(className)) return className;
+        return getIconKey() + ":" + getName();
+
+    }
+
+    public String toString() {
+        return _getIdentifier() + "";
+    }
 
     public ActionData getActionData() {
         return actionData;
@@ -103,62 +119,6 @@ public class MenuItemData implements Storable {
         items.add(child);
     }
 
-    /**
-     * add A path
-     * 
-     * @param path
-     * @throws ClassNotFoundException
-     * @throws IllegalAccessException
-     * @throws InstantiationException
-     */
-    public void add(List<MenuItemData> path) {
-        try {
-            MenuItemData lastNode = createInstance(path.get(path.size() - 1));
-
-            for (int i = path.size() - 2; i >= 0; i--) {
-
-                MenuItemData node = path.get(i);
-
-                MenuItemData ret;
-
-                ret = createInstance(node);
-                if (ret instanceof MenuContainerRoot) break;
-                ret.setItems(new ArrayList<MenuItemData>());
-                ret.add(lastNode);
-                lastNode = ret;
-
-            }
-            MenuItemData addAt = this;
-            addBranch(this, lastNode);
-
-        } catch (Exception e) {
-            throw new WTFException(e);
-        }
-    }
-
-    private void addBranch(MenuItemData menuItemData, MenuItemData lastNode) {
-        boolean added = false;
-        for (MenuItemData mu : menuItemData.getItems()) {
-            if (mu.getActionData() != null) continue;
-            if (StringUtils.equals(mu.getClassName(), lastNode.getClassName())) {
-                // subfolder found
-
-                if (lastNode.getItems() != null && lastNode.getItems().size() > 0) {
-
-                    addBranch(mu, lastNode.getItems().get(0));
-                    added = true;
-                } else {
-                    return;
-                }
-
-            }
-        }
-        if (!added) {
-            menuItemData.getItems().add(lastNode);
-
-        }
-    }
-
     public HashSet<MenuItemProperty> getProperties() {
         return properties;
     }
@@ -194,9 +154,24 @@ public class MenuItemData implements Storable {
         }
     }
 
-    private MenuItemData createInstance(MenuItemData menuItemData) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+    protected MenuItemData createInstance(MenuItemData menuItemData) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         if (menuItemData.getClassName() == null) return menuItemData;
-        MenuItemData ret = (MenuItemData) Class.forName(menuItemData.getClassName()).newInstance();
+
+        MenuItemData ret = null;
+
+        String packageName = AbstractExtension.class.getPackage().getName();
+        if (menuItemData.getClassName().startsWith(packageName)) {
+
+            try {
+                ret = (MenuItemData) ExtensionController.getInstance().loadClass(menuItemData.getClassName()).newInstance();
+            } catch (ExtensionNotLoadedException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            ret = (MenuItemData) Class.forName(menuItemData.getClassName()).newInstance();
+        }
+
         ret.setIconKey(menuItemData.getIconKey());
         ret.setName(menuItemData.getName());
         ret.setItems(menuItemData.getItems());
@@ -254,10 +229,12 @@ public class MenuItemData implements Storable {
 
     }
 
-    protected boolean showItem(MenuItemData inst, SelectionInfo<?, ?> selection) {
+    public boolean showItem(SelectionInfo<?, ?> selection) {
 
-        for (MenuItemProperty p : inst.mergeProperties()) {
+        for (MenuItemProperty p : mergeProperties()) {
             switch (p) {
+            case ALWAYS_HIDDEN:
+                return false;
             case LINK_CONTEXT:
                 if (!selection.isLinkContext()) return false;
                 break;
@@ -298,7 +275,7 @@ public class MenuItemData implements Storable {
 
     public JComponent addTo(JComponent root, SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
-        if (!showItem(this, selection)) return null;
+        if (!showItem(selection)) return null;
 
         JComponent it;
         try {
@@ -335,21 +312,20 @@ public class MenuItemData implements Storable {
 
     public List<List<MenuItemData>> listPathes() {
         List<List<MenuItemData>> set = new ArrayList<List<MenuItemData>>();
+        ArrayList<MenuItemData> newPath = new ArrayList<MenuItemData>();
+        newPath.add(this);
 
+        set.add(newPath);
         if (getItems() != null) {
             for (MenuItemData d : getItems()) {
                 for (List<MenuItemData> p : d.listPathes()) {
-                    ArrayList<MenuItemData> newPath = new ArrayList<MenuItemData>();
+                    newPath = new ArrayList<MenuItemData>();
                     newPath.add(this);
                     newPath.addAll(p);
                     set.add(newPath);
                 }
             }
 
-        } else {
-            ArrayList<MenuItemData> newPath = new ArrayList<MenuItemData>();
-            newPath.add(this);
-            set.add(newPath);
         }
         return set;
     }
@@ -363,5 +339,13 @@ public class MenuItemData implements Storable {
             }
         }
         return null;
+    }
+
+    public Collection<String> _getItemIdentifiers() {
+        HashSet<String> ret = new HashSet<String>();
+        for (MenuItemData mid : getItems()) {
+            ret.add(mid._getIdentifier());
+        }
+        return ret;
     }
 }

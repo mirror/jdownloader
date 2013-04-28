@@ -19,8 +19,9 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.contextmenumanager.ActionClassNotAvailableException;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainer;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemProperty;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuLink;
-import org.jdownloader.gui.views.downloads.contextmenumanager.SeparatorData;
+import org.jdownloader.gui.views.downloads.contextmenumanager.SeperatorData;
 import org.jdownloader.images.NewTheme;
 
 public class Renderer implements TreeCellRenderer {
@@ -49,7 +50,11 @@ public class Renderer implements TreeCellRenderer {
         try {
             MenuItemData mid = ((MenuItemData) value).lazyReal();
             Rectangle bounds = null;
-
+            if (mid.getProperties() != null && mid.getProperties().contains(MenuItemProperty.ALWAYS_HIDDEN)) {
+                renderer.setEnabled(false);
+            } else {
+                renderer.setEnabled(true);
+            }
             // renderer.setPreferredSize(dim);
             // renderer.setSize(new Dimension(Math.max(200, tree.getParent().getWidth()) - bounds.x - 20, 24));
             // tree.revalidate();
@@ -76,7 +81,7 @@ public class Renderer implements TreeCellRenderer {
                 font = bold;
                 // label.setText(_GUI._.InfoPanel_updateInfo_header_actionlabel(, ));
 
-            } else if (mid instanceof SeparatorData) {
+            } else if (mid instanceof SeperatorData) {
 
                 name = _GUI._.Renderer_getTreeCellRendererComponent_seperator();
 

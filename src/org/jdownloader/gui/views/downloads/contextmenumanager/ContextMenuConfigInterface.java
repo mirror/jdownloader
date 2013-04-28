@@ -3,15 +3,16 @@ package org.jdownloader.gui.views.downloads.contextmenumanager;
 import java.util.ArrayList;
 
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.annotations.DisableObjectCache;
 
 public interface ContextMenuConfigInterface extends ConfigInterface {
-
+    @DisableObjectCache
     MenuContainerRoot getMenuStructure();
 
     public void setMenuStructure(MenuContainerRoot root);
 
-    void setUnusedActions(ArrayList<ActionData> list);
+    void setUnusedItems(ArrayList<String> list);
 
-    ArrayList<ActionData> getUnusedActions();
+    ArrayList<String> getUnusedItems();
 
 }

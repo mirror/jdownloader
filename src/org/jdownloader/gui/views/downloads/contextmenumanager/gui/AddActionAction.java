@@ -18,7 +18,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.contextmenumanager.ActionClassNotAvailableException;
 import org.jdownloader.gui.views.downloads.contextmenumanager.ActionData;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
-import org.jdownloader.images.NewTheme;
 
 public class AddActionAction extends AppAction {
 
@@ -26,7 +25,7 @@ public class AddActionAction extends AppAction {
 
     {
         setName(_GUI._.ManagerFrame_layoutPanel_add());
-        setSmallIcon(NewTheme.I().getIcon("add", 20));
+
     }
 
     public AddActionAction(ManagerFrame managerFrame) {

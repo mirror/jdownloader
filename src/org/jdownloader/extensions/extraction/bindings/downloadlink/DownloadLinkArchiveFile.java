@@ -11,7 +11,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
 
-import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionProgress;
 import org.jdownloader.extensions.extraction.translate.T;
@@ -91,7 +90,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     public boolean exists() {
-        Log.L.info("Does file exist: " + getName());
+        // Log.L.info("Does file exist: " + getName());
         for (DownloadLink l : downloadLinks) {
             if (new File(l.getFileOutput()).exists()) return true;
         }

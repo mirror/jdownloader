@@ -199,7 +199,7 @@ public class ExtensionController {
             logger.info(Arrays.toString(addons));
             HashSet<File> dupes = new HashSet<File>();
             HashSet<URL> urlDupes = new HashSet<URL>();
-            
+
             main: for (File jar : addons) {
                 try {
 
@@ -445,6 +445,27 @@ public class ExtensionController {
         if (Application.getResource(TMP_INVALIDEXTENSIONS).exists()) {
             invalidateCache();
         }
+    }
+
+    public Class<?> loadClass(String className) throws ClassNotFoundException, ExtensionNotLoadedException {
+        if (list == null || list.size() == 0) { throw new ExtensionNotLoadedException(); }
+        for (AbstractExtension<?, ?> ae : getEnabledExtensions()) {
+
+            if (className.startsWith(ae.getClass().getPackage().getName())) {
+                try {
+                    return Class.forName(className, true, ae.getClass().getClassLoader());
+                } catch (ClassNotFoundException e) {
+
+                }
+            }
+
+        }
+
+        for (LazyExtension le : getExtensions()) {
+            if (className.startsWith(le.getClass().getPackage().getName())) { throw new ExtensionNotLoadedException(); }
+        }
+        throw new ClassNotFoundException(className);
+
     }
 
 }
