@@ -29,11 +29,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "http://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/track/[a-z0-9\\-_]+" }, flags = { 0 })
 public class BandCampCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String DLLINK    = null;
+    private String userAgent = null;
 
     public BandCampCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,6 +65,12 @@ public class BandCampCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        if (userAgent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            userAgent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", userAgent);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>Sorry, that something isn\\'t here|>start at the beginning</a> and you\\'ll certainly find what)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -71,6 +79,7 @@ public class BandCampCom extends PluginForHost {
         String filename = filenameRegex.getMatch(0);
         final String trackNum = br.getRegex("\"track_num\":(\\d+)").getMatch(0);
         DLLINK = br.getRegex("\"file\":.*?\"(http:.*?)\"").getMatch(0);
+        logger.info("DLLINK = " + DLLINK);
         if (filename == null || artist == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
         if (trackNum != null) {
