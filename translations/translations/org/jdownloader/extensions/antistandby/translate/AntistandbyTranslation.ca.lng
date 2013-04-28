@@ -1,5 +1,5 @@
 gui_config_antistandby_whiledl2=La descàrrega está en procés
 gui_config_antistandby_whilejd2=JDownloader s'està executant
 jd_plugins_optional_antistandby_jdantistandby=JDAntiStandby
-jd_plugins_optional_antistandby_jdantistandby_description=Evita que el teu sistema es suspengui o hiberni per mantenir les descàrregues actives.
+jd_plugins_optional_antistandby_jdantistandby_description=Evita que el teu sistema passi al mode de Pausa en espera o Hivernació per mantenir les descàrregues actives.
 mode=Prevenir els estats en espera/adormir quan
