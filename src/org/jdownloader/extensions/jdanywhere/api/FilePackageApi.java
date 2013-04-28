@@ -9,6 +9,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.extensions.jdanywhere.api.interfaces.IFilePackageApi;
+import org.jdownloader.extensions.jdanywhere.api.storable.FilePackageInfoStorable;
 import org.jdownloader.extensions.jdanywhere.api.storable.FilePackageStorable;
 
 public class FilePackageApi implements IFilePackageApi {
@@ -133,11 +134,12 @@ public class FilePackageApi implements IFilePackageApi {
         return false;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.jdownloader.extensions.jdanywhere.api.IFilePackageApi#getFilePackage(long)
-     */
+    @Override
+    public FilePackageInfoStorable getInformation(long ID) {
+        FilePackage fpkg = Helper.getFilePackageFromID(ID);
+        return new FilePackageInfoStorable(fpkg);
+    }
+
     @Override
     public FilePackageStorable getFilePackage(long ID) {
         FilePackage fpkg = Helper.getFilePackageFromID(ID);

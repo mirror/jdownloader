@@ -5,6 +5,7 @@ import java.util.List;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.annotations.ApiSessionRequired;
+import org.jdownloader.extensions.jdanywhere.api.storable.DownloadLinkInfoStorable;
 import org.jdownloader.extensions.jdanywhere.api.storable.DownloadLinkStorable;
 
 @ApiNamespace("jdanywhere/downloadLink")
@@ -26,5 +27,7 @@ public interface IDownloadLinkApi extends RemoteAPIInterface {
     public abstract boolean setPriority(final List<Long> linkIds, int priority);
 
     public abstract boolean forceDownload(final List<Long> linkIds);
+
+    public abstract DownloadLinkInfoStorable getInformation(long ID);
 
 }

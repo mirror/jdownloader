@@ -9,6 +9,7 @@ import jd.plugins.FilePackage;
 
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.extensions.jdanywhere.api.interfaces.IDownloadLinkApi;
+import org.jdownloader.extensions.jdanywhere.api.storable.DownloadLinkInfoStorable;
 import org.jdownloader.extensions.jdanywhere.api.storable.DownloadLinkStorable;
 
 public class DownloadLinkApi implements IDownloadLinkApi {
@@ -62,6 +63,12 @@ public class DownloadLinkApi implements IDownloadLinkApi {
             }
         }
         return true;
+    }
+
+    @Override
+    public DownloadLinkInfoStorable getInformation(long ID) {
+        DownloadLink link = Helper.getDownloadLinkFromID(ID);
+        return new DownloadLinkInfoStorable(link);
     }
 
     @Override

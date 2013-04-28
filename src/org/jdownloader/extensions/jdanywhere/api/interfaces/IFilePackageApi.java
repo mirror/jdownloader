@@ -5,6 +5,7 @@ import java.util.List;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.annotations.ApiSessionRequired;
+import org.jdownloader.extensions.jdanywhere.api.storable.FilePackageInfoStorable;
 import org.jdownloader.extensions.jdanywhere.api.storable.FilePackageStorable;
 
 @ApiNamespace("jdanywhere/filePackage")
@@ -28,6 +29,8 @@ public interface IFilePackageApi extends RemoteAPIInterface {
     public boolean reset(long ID);
 
     public abstract FilePackageStorable getFilePackage(long ID);
+
+    public abstract FilePackageInfoStorable getInformation(long ID);
 
     public boolean forceDownload(long ID);
 

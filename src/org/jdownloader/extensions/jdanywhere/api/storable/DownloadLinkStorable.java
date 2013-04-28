@@ -8,18 +8,11 @@ import org.appwork.storage.Storable;
 
 public class DownloadLinkStorable implements Storable {
 
-    // mobile
     public long getId() {
         if (link == null) return 0;
         return link.getUniqueID().getID();
     }
 
-    public String getComment() {
-        if (link == null) return null;
-        return link.getComment();
-    }
-
-    // end mobile
     public long getUUID() {
         if (link == null) return 0;
         return link.getUniqueID().getID();
@@ -89,21 +82,6 @@ public class DownloadLinkStorable implements Storable {
     public int getChunks() {
         if (link == null) return 0;
         return link.getChunks();
-    }
-
-    public String getBrowserurl() {
-        if (link == null) return null;
-        return link.getBrowserUrl();
-    }
-
-    public String getPassword() {
-        if (link == null) return null;
-        return link.getDownloadPassword();
-    }
-
-    public String getDirectory() {
-        if (link == null) return null;
-        return link.getFileOutput();
     }
 
     public LinkStatusJobStorable getLinkStatus() {

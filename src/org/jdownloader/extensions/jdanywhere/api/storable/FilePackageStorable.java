@@ -21,11 +21,11 @@ public class FilePackageStorable implements Storable {
         return pkg.getUniqueID().getID();
     }
 
-    public String getComment() {
-        String comment = pkg.getComment();
-        if (comment == null || comment.length() == 0) return "";
-        return comment;
-    }
+    // public String getComment() {
+    // String comment = pkg.getComment();
+    // if (comment == null || comment.length() == 0) return "";
+    // return comment;
+    // }
 
     public long getAdded() {
         return pkg.getCreated();
@@ -44,20 +44,20 @@ public class FilePackageStorable implements Storable {
         return pkg.getView().getSize();
     }
 
-    public String getDirectory() {
-        return pkg.getDownloadDirectory();
-    }
-
-    public String getPassword() {
-        String password = "---";
-        for (DownloadLink link : pkg.getChildren()) {
-            if (password == null || password.length() == 0 || password.equals("---"))
-                password = link.getDownloadPassword();
-            else if (!link.getDownloadPassword().equals(password)) { return ""; }
-        }
-        if (password == null || password.length() == 0 || password.equals("---")) return "";
-        return password;
-    }
+    // public String getDirectory() {
+    // return pkg.getDownloadDirectory();
+    // }
+    //
+    // public String getPassword() {
+    // String password = "---";
+    // for (DownloadLink link : pkg.getChildren()) {
+    // if (password == null || password.length() == 0 || password.equals("---"))
+    // password = link.getDownloadPassword();
+    // else if (!link.getDownloadPassword().equals(password)) { return ""; }
+    // }
+    // if (password == null || password.length() == 0 || password.equals("---")) return "";
+    // return password;
+    // }
 
     public List<String> getHoster() {
         List<String> links = new ArrayList<String>(pkg.size());
