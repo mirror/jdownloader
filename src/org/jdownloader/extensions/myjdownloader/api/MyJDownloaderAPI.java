@@ -107,7 +107,8 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         return logger;
     }
 
-    public boolean validateRID(long rid) {
+    /* TODO: add session support, currently all sessions share the same validateRID */
+    public synchronized boolean validateRID(long rid) {
 
         // lowest RID
         long lowestRid = Long.MIN_VALUE;
