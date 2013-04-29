@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.contextmenumanager;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.views.SelectionInfo;
 
 public class MenuBuilder {
@@ -23,11 +24,12 @@ public class MenuBuilder {
      * @param root
      * @param md
      */
-    protected void createLayer(JComponent root, MenuContainer md) {
+    protected void createLayer(final JComponent root, MenuContainer md) {
         if (root == null) return;
+
         for (MenuItemData i : md.getItems()) {
             try {
-                MenuItemData inst = i.lazyReal();
+                final MenuItemData inst = i.lazyReal();
 
                 // if (inst instanceof ExtensionContextMenuItem) {
                 // inst.addTo(root, selection);
@@ -35,11 +37,14 @@ public class MenuBuilder {
                 // } else {
                 switch (inst.getType()) {
                 case ACTION:
+
                     inst.addTo(root, selection);
+
                     break;
                 case CONTAINER:
+                    final JMenu submenu = (JMenu) inst.addTo(root, selection);
 
-                    createLayer((JMenu) inst.addTo(root, selection), (MenuContainer) inst);
+                    createLayer(submenu, (MenuContainer) inst);
 
                 }
                 // }
@@ -51,7 +56,14 @@ public class MenuBuilder {
     }
 
     public void run() {
-        createLayer(root, menuData);
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                createLayer(root, menuData);
+            }
+        };
+
     }
 
 }

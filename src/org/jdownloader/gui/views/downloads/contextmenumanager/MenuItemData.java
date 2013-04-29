@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
@@ -190,7 +191,7 @@ public class MenuItemData implements Storable {
             throw new WTFException("No ACTION");
         }
         AppAction action = createAction(selection);
-        JMenuItem ret = new JMenuItem(action);
+        JMenuItem ret = action.isToggle() ? new JCheckBoxMenuItem(action) : new JMenuItem(action);
         if (StringUtils.isNotEmpty(name)) {
             ret.setText(name);
         }

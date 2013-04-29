@@ -27,7 +27,7 @@ import org.jdownloader.images.NewTheme;
 public class ValidateArchiveAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
 
     private ExtractionExtension                      extractor;
-    private java.util.List<Archive>                       archives;
+    private java.util.List<Archive>                  archives;
     private SelectionInfo<PackageType, ChildrenType> si;
 
     public ValidateArchiveAction(ExtractionExtension extractionExtension, Archive... as) {
@@ -49,10 +49,9 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
         setName(T._.ValidateArchiveAction_ValidateArchiveAction_object_());
         setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("archive", 18), NewTheme.I().getImage("ok", 11), -1, 0, 6, 8)));
         this.si = si;
-        // 
+        //
         extractor = extractionExtension;
         archives = new ArrayList<Archive>();
-
         nextLink: for (ChildrenType l : si.getChildren()) {
             if (l instanceof CrawledLink) {
                 // if (((CrawledLink) l).getLinkState() != LinkState.OFFLINE) {

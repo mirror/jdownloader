@@ -53,7 +53,7 @@ public abstract class ContextMenuManager {
         long t = System.currentTimeMillis();
         if (menuData != null) return menuData;
 
-        MenuContainerRoot ret = config.getMenuStructure();
+        MenuContainerRoot ret = config.getMenu();
         MenuContainerRoot defaultMenu = setupDefaultStructure();
         if (ret == null) {
             // no customizer ever used
@@ -184,7 +184,7 @@ public abstract class ContextMenuManager {
         }
         if (root == null) {
 
-            config.setMenuStructure(null);
+            config.setMenu(null);
             config.setUnusedItems(null);
             menuData = setupDefaultStructure();
 
@@ -209,7 +209,7 @@ public abstract class ContextMenuManager {
 
             }
 
-            config.setMenuStructure(root);
+            config.setMenu(root);
             config.setUnusedItems(list);
         }
 

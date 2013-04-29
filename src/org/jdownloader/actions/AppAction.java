@@ -22,7 +22,7 @@ public abstract class AppAction extends BasicAction {
 
     public void setIconKey(String iconKey) {
         this.iconKey = iconKey;
-        setIconSizes(20);
+        setIconSizes(18);
     }
 
     public String getIconKey() {

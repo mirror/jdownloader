@@ -7,9 +7,9 @@ import org.appwork.storage.config.annotations.DisableObjectCache;
 
 public interface ContextMenuConfigInterface extends ConfigInterface {
     @DisableObjectCache
-    MenuContainerRoot getMenuStructure();
+    MenuContainerRoot getMenu();
 
-    public void setMenuStructure(MenuContainerRoot root);
+    public void setMenu(MenuContainerRoot root);
 
     void setUnusedItems(ArrayList<String> list);
 

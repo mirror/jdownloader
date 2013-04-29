@@ -55,8 +55,6 @@ public class DownloadListContextMenuManager extends ContextMenuManager {
     private DownloadListContextMenuManager() {
         super();
 
-        init();
-
     }
 
     private static final int VERSION = 0;
@@ -141,43 +139,6 @@ public class DownloadListContextMenuManager extends ContextMenuManager {
         priority.add(new MenuItemData(new ActionData(PriorityHigherAction.class)));
         priority.add(new MenuItemData(new ActionData(PriorityHighestAction.class)));
         return priority;
-    }
-
-    private void init() {
-
-        // add(new ActionData(CheckStatusAction.class));
-        // add(new ActionData(OpenInBrowserAction.class));
-        // add(new ActionData(URLEditorAction.class));
-        // add(new ActionData(PackageNameAction.class, MenuItemProperty.PACKAGE_CONTEXT));
-        // add(new ActionData(SetDownloadFolderInDownloadTableAction.class));
-        // add(new ActionData(SetDownloadPassword.class));
-        // add(new ActionData(SetCommentAction.class));
-        //
-        // // Priority
-        // add(new ActionData(PriorityLowerAction.class));
-        // add(new ActionData(PriorityDefaultAction.class));
-        // add(new ActionData(PriorityHighAction.class));
-        // add(new ActionData(PriorityHigherAction.class));
-        // add(new ActionData(PriorityHighestAction.class));
-        //
-        // add(new ActionData(OpenFileAction.class, MenuItemProperty.LINK_CONTEXT));
-        // add(new ActionData(OpenDirectoryAction.class));
-        //
-        // add(new ActionData(SortAction.class));
-        // add(new ActionData(EnabledAction.class));
-        // add(new ActionData(ForceDownloadAction.class));
-        // add(new ActionData(StopsignAction.class));
-        // add(new ActionData(ResumeAction.class));
-        // add(new ActionData(ResetAction.class));
-        // add(new ActionData(NewPackageAction.class));
-        // add(new ActionData(CreateDLCAction.class));
-        // add(new ActionData(DeleteQuickAction.class));
-        // add(new ActionData(DeleteDisabledSelectedLinks.class));
-        // add(new ActionData(DeleteSelectedAndFailedLinksAction.class));
-        // add(new ActionData(DeleteSelectedFinishedLinksAction.class));
-        // add(new ActionData(DeleteSelectedOfflineLinksAction.class));
-        // add(new ActionData(1, MenuManagerAction.class));
-
     }
 
     public void show() {

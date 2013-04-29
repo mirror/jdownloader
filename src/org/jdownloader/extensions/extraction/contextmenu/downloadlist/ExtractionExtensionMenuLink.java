@@ -14,12 +14,13 @@ public class ExtractionExtensionMenuLink extends AbstractExtensionContextMenuLin
     public ExtractionExtensionMenuLink() {
         setName(org.jdownloader.extensions.extraction.translate.T._.linkname());
         setIconKey("archive");
+
     }
 
     @Override
     protected void link(JComponent root, SelectionInfo<?, ?> selection, ExtractionExtension extension) {
 
-        extension.onExtendPopupMenu(new DownloadTableContext(root, (SelectionInfo<FilePackage, DownloadLink>) selection, selection.getContextColumn()));
+        extension.onExtendPopupMenuDownloadTable(new DownloadTableContext(root, (SelectionInfo<FilePackage, DownloadLink>) selection, selection.getContextColumn()));
     }
 
 }

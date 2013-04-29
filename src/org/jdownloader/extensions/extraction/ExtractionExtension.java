@@ -240,7 +240,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         return controller;
     }
 
-    private boolean isRemoveDownloadLinksAfterExtractEnabled(Archive archive) {
+    public boolean isRemoveDownloadLinksAfterExtractEnabled(Archive archive) {
 
         switch (archive.getSettings().getRemoveDownloadLinksAfterExtraction()) {
         case FALSE:
@@ -839,7 +839,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     }
 
-    protected void onExtendPopupMenuDownloadTable(final DownloadTableContext context) {
+    public void onExtendPopupMenuDownloadTable(final DownloadTableContext context) {
 
         final JMenu menu = new JMenu(_.contextmenu_main()) {
             /**
