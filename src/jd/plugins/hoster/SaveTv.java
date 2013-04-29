@@ -215,10 +215,12 @@ public class SaveTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         boolean useOriginalFilename = getPluginConfig().getBooleanProperty(USEORIGINALFILENAME);
-        if (useOriginalFilename)
-            downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
-        else
-            downloadLink.setFinalFileName(downloadLink.getName());
+        if (downloadLink.getFinalFileName() == null) {
+            if (useOriginalFilename)
+                downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+            else
+                downloadLink.setFinalFileName(downloadLink.getName());
+        }
         dl.startDownload();
     }
 
@@ -242,7 +244,7 @@ public class SaveTv extends PluginForHost {
                 break;
             }
         }
-        if (!br.containsHTML("<frame") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("/STV/M/obj/user/usEdit.cfm") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
