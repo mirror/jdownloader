@@ -36,6 +36,7 @@ file_exists_not=El archivo no existe
 filename=Nombre del Archivo
 files=archivos
 hoster=Servidor
+linkname=Archivo(s)
 local=Estado del Archivo
 menu_tools_extract_files=Extraer Archivos
 name=Extractor de archivos
