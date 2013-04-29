@@ -52,6 +52,8 @@ public class HulkFileCom extends PluginForHost {
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
+    // domain names used within download links.
+    private static final String DOMAINS             = "(hulkfile\\.(com|eu))";
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.1-raz
@@ -289,25 +291,15 @@ public class HulkFileCom extends PluginForHost {
     }
 
     public String getDllink() {
-        logger.severe(br.toString());
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-                if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>Click to Download").getMatch(0);
-                        if (dllink == null) {
-                            String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                            if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                for (String crypted : cryptedScripts) {
-                                    dllink = decodeDownloadLink(crypted);
-                                    if (dllink != null) break;
-                                }
-                            }
-                        }
+                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                    for (String crypted : cryptedScripts) {
+                        dllink = decodeDownloadLink(crypted);
+                        if (dllink != null) break;
                     }
                 }
             }
@@ -464,13 +456,12 @@ public class HulkFileCom extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        String ttt = new Regex(correctedBR, "Wait<br /> <span style=\"[^<>\"]*?\" id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
-        if (ttt != null) {
-            int tt = Integer.parseInt(ttt);
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1000l, downloadLink);
-        }
+        String ttt = new Regex(correctedBR, "<span style=\"font\\-family:tahoma; font\\-size:28pt; vertical\\-align:center; horizontal\\-align:center; text\\-align:center; \" id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+        if (ttt == null) ttt = "30";
+        int tt = Integer.parseInt(ttt);
+        tt -= passedTime;
+        logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
+        if (tt > 0) sleep(tt * 1000l, downloadLink);
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -47,12 +46,16 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thefile.me" }, urls = { "https?://(www\\.)?thefile\\.me/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class TheFileMe extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uncapped-downloads.com" }, urls = { "https?://(www\\.)?uncapped\\-downloads\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class UncappedDownloadsCom extends PluginForHost {
 
     private String               correctedBR                  = "";
+    private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST                  = "http://thefile.me";
+    // primary website url, take note of redirects
+    private static final String  COOKIE_HOST                  = "http://uncapped-downloads.com";
+    // domain names used within download links.
+    private static final String  DOMAINS                      = "(uncapped\\-downloads\\.com)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -60,16 +63,15 @@ public class TheFileMe extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
-    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
+    // fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static Object        LOCK                         = new Object();
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.6.0.8
-    // mods:new filename regex, removed filesize regexes, filesize is never given
+    // XfileSharingProBasic Version 2.6.2.0
+    // mods: Costum filename regex
     // non account: 2 * 1
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
@@ -96,7 +98,7 @@ public class TheFileMe extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public TheFileMe(PluginWrapper wrapper) {
+    public UncappedDownloadsCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -151,7 +153,16 @@ public class TheFileMe extends PluginForHost {
     private String[] scanInfo(final String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "<title>Download ([^<>\"]*?)</title>").getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, "<h4>([^<>\"]*?)</h4>").getMatch(0);
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (fileInfo[1] == null) {
+                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                }
+            }
         }
         if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         return fileInfo;
@@ -166,7 +177,7 @@ public class TheFileMe extends PluginForHost {
     @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
-        String passCode = null;
+        passCode = downloadLink.getStringProperty("pass");
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
@@ -179,11 +190,12 @@ public class TheFileMe extends PluginForHost {
         }
         // Fourth, continue like normal.
         if (dllink == null) {
-            checkErrors(downloadLink, false, passCode);
+            checkErrors(downloadLink, false);
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                // stable is lame, issue finding input data fields correctly.
+                // eg. closes at ' quotation mark - remove when jd2 goes stable!
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -195,7 +207,7 @@ public class TheFileMe extends PluginForHost {
                 }
                 // end of backward compatibility
                 sendForm(download1);
-                checkErrors(downloadLink, false, passCode);
+                checkErrors(downloadLink, false);
                 dllink = getDllink();
             }
         }
@@ -284,19 +296,15 @@ public class TheFileMe extends PluginForHost {
                     dlForm.put("adcopy_response", "manual_challenge");
                 }
                 /* Captcha END */
-
-                if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
-
+                if (password) passCode = handlePassword(dlForm, downloadLink);
                 if (!skipWaittime) waitTime(timeBefore, downloadLink);
-
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
-
+                checkErrors(downloadLink, true);
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
-                    checkErrors(downloadLink, true, passCode);
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    break;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
                     continue;
@@ -305,8 +313,6 @@ public class TheFileMe extends PluginForHost {
                 }
             }
         }
-        checkErrors(downloadLink, true, passCode);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -318,7 +324,6 @@ public class TheFileMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
         fixFilename(downloadLink);
         try {
             // add a download slot
@@ -360,7 +365,8 @@ public class TheFileMe extends PluginForHost {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
-        // remove custom rules first!!! As html can change because of generic cleanup rules.
+        // remove custom rules first!!! As html can change because of generic
+        // cleanup rules.
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
@@ -380,7 +386,7 @@ public class TheFileMe extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + COOKIE_HOST.replaceAll("https?://(www\\.)?", "") + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -474,7 +480,8 @@ public class TheFileMe extends PluginForHost {
         }
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
+    // String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 
@@ -502,34 +509,55 @@ public class TheFileMe extends PluginForHost {
         if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         String newExtension = null;
-        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
-        if (serverFilename.contains(".")) {
-            newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+        // some streaming sites do not provide proper file.extension within
+        // headers (Content-Disposition or the fail over getURL()).
+        if (serverFilename == null) {
+            logger.info("Server filename is null, keeping filename: " + oldName);
         } else {
-            logger.info("HTTP headers don't contain filename.extension information");
+            if (serverFilename.contains(".")) {
+                newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+            } else {
+                logger.info("HTTP headers don't contain filename.extension information");
+            }
         }
         if (newExtension != null && !oldName.endsWith(newExtension)) {
             String oldExtension = null;
             if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
-            if (oldExtension != null && oldExtension.length() <= 5)
+            if (oldExtension != null && oldExtension.length() <= 5) {
                 downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
-            else
+            } else {
                 downloadLink.setFinalFileName(oldName + newExtension);
+            }
         }
     }
 
-    private String handlePassword(String passCode, final Form pwform, final DownloadLink thelink) throws IOException, PluginException {
-        passCode = thelink.getStringProperty("pass", null);
+    private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
         if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
-        pwform.put("password", passCode);
-        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-        return Encoding.urlEncode(passCode);
+        if (passCode == null || passCode.equals("")) {
+            logger.info("User has entered blank password, exiting handlePassword");
+            passCode = null;
+            thelink.setProperty("pass", Property.NULL);
+            return null;
+        }
+        if (pwform == null) {
+            // so we know handlePassword triggered without any form
+            logger.info("Password Form == null");
+        } else {
+            logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+            pwform.put("password", Encoding.urlEncode(passCode));
+        }
+        thelink.setProperty("pass", passCode);
+        return passCode;
     }
 
-    public void checkErrors(final DownloadLink theLink, final boolean checkAll, final String passCode) throws NumberFormatException, PluginException {
+    public void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
-            if (new Regex(correctedBR, PASSWORDTEXT).matches() || correctedBR.contains("Wrong password")) {
+            if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
+                // handle password has failed in the past, additional try
+                // catching / resetting values
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                passCode = null;
+                theLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             if (correctedBR.contains("Wrong captcha")) {

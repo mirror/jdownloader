@@ -40,7 +40,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadlux.com" }, urls = { "http://(www\\.)?uploadlux\\.com/(l|play)\\-[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadlux.com" }, urls = { "https?://(www\\.)?uploadlux\\.com/(l|play)\\-[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadLuxCom extends PluginForHost {
 
     public UploadLuxCom(PluginWrapper wrapper) {
@@ -54,7 +54,7 @@ public class UploadLuxCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("uploadlux.com/play-", "uploadlux.com/l-"));
+        link.setUrlDownload("https://www.uploadlux.com/l-" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     @Override
@@ -63,13 +63,13 @@ public class UploadLuxCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Erreur fichier introuvable")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Erreur fichier introuvable|>Error file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(">Fichier privée\\.<")) {
             link.getLinkStatus().setStatusText("Fichier privée!");
             link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
             return AvailableStatus.TRUE;
         }
-        String filename = br.getRegex("<b>Filename:</b> <b title=\"([^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("<b>File name:</b> <b title=\"([^<>\"]*?)\"").getMatch(0);
         String filesize = br.getRegex("<b>File Size:</b> <b style=\"color:#2BB2E3\">([^<>\"]*?)</b><br").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
@@ -93,6 +93,7 @@ public class UploadLuxCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL().replace("uploadlux.com/l", "uploadlux.com/lf"), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("You have reach the limit of <b>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

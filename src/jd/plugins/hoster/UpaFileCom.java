@@ -64,7 +64,7 @@ public class UpaFileCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
     // mods: removed a filename regex
-    // non account: 20 * 20
+    // non account: 1 * 20
     // free account:
     // premium account:
     // protocol: no https
@@ -179,7 +179,7 @@ public class UpaFileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {

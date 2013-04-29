@@ -35,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -137,6 +138,17 @@ public class SockShareCom extends PluginForHost {
         }
         if (br.containsHTML(SERVERUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", 2 * 60 * 60 * 1000l);
         if (br.containsHTML("(>You have exceeded the daily stream limit for your country|You can wait until tomorrow, or get a)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have exceeded the daily download limit for your country", 4 * 60 * 60 * 1000l);
+        String passCode = downloadLink.getStringProperty("pass");
+        if (br.containsHTML("This file requires a password\\. Please enter it")) {
+            br.setFollowRedirects(true);
+            if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
+            br.postPage(br.getURL(), "file_password=" + Encoding.urlEncode(passCode));
+            if (br.containsHTML(">This password is not correct")) {
+                downloadLink.setProperty("pass", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+            }
+            br.setFollowRedirects(false);
+        }
         final String dllink = getDllink(downloadLink);
         int chunks = 0;
         if (downloadLink.getBooleanProperty(SockShareCom.NOCHUNKS, false)) {
@@ -147,6 +159,7 @@ public class SockShareCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("pass", passCode);
         if (!this.dl.startDownload()) {
             try {
                 if (dl.externalDownloadStop()) return;

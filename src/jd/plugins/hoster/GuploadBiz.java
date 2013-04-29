@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -40,10 +41,12 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gupload.biz" }, urls = { "http://(www\\.)?gupload\\.biz/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoodload.com", "gupload.biz" }, urls = { "http://(www\\.)?(gupload\\.biz|hoodload\\.com)/[a-z0-9]+", "jnbg90p345uzj0ß4trjnhetpohnmDELETE_MErz67tzr5nd" }, flags = { 2, 0 })
 public class GuploadBiz extends PluginForHost {
 
-    private final String MAINPAGE = "http://gupload.biz";
+    private final String        MAINPAGE                 = "http://hoodload.com";
+    private static final String SIMULTANDLSLIMIT         = "?e=You+have+reached+the+maximum+concurrent+downloads";
+    private static final String SIMULTANDLSLIMITUSERTEXT = "Max. simultan downloads limit reached, wait to start more downloads from this host";
 
     // DTemplate Version 0.1-psp
     // mods: added server error errorhandling
@@ -63,12 +66,21 @@ public class GuploadBiz extends PluginForHost {
         return MAINPAGE + "/terms.html";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("gupload.biz/", "hoodload.com/"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/error.html") || br.getURL().contains("/index.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("/error.html") || br.getURL().contains("/index.php") || br.toString().length() < 100) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains(SIMULTANDLSLIMIT)) {
+            link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            link.getLinkStatus().setStatusText(SIMULTANDLSLIMITUSERTEXT);
+            return AvailableStatus.TRUE;
+        }
         final Regex fInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>([^<>\"]*?) \\(([^<>\"]*?)\\)<br/>");
         final String filename = fInfo.getMatch(0);
         final String filesize = fInfo.getMatch(1);
@@ -81,6 +93,7 @@ public class GuploadBiz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.getURL().contains(SIMULTANDLSLIMIT)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
         int wait = 20;
         final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
@@ -180,8 +193,8 @@ public class GuploadBiz extends PluginForHost {
             return ai;
         }
         if (!br.getURL().endsWith("/upgrade.php")) br.getPage(MAINPAGE + "/upgrade.php");
-        final String expire = br.getRegex("Premium Valid Until:[^\\:]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-        if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
+        final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH));
         account.setValid(true);
         ai.setUnlimitedTraffic();
         ai.setStatus("Premium User");

@@ -117,6 +117,7 @@ public class SflnkgNt extends PluginForDecrypt {
         private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         private CryptedLink             cryptedLink    = null;
         private boolean                 HTTPS          = false;
+        private String                  PROTOCOL       = "http://";
 
         public ArrayList<DownloadLink> handleSafelinkingAuto(final CryptedLink param) throws Exception {
             // Prepare browser and correct parameter
@@ -140,8 +141,10 @@ public class SflnkgNt extends PluginForDecrypt {
             br.setFollowRedirects(false);
             if (HTTPS) {
                 this.addedLink = this.addedLink.replaceAll("http://", "https://");
+                PROTOCOL = "https://";
             } else {
                 this.addedLink = this.addedLink.replaceAll("https://", "http://");
+                PROTOCOL = "http://";
             }
         }
 
@@ -204,8 +207,6 @@ public class SflnkgNt extends PluginForDecrypt {
         }
 
         private void handleCaptcha(final String parameter, final CryptedLink param) throws Exception {
-            /* protected links */
-            String protocol = parameter.startsWith("https:") ? "https:" : "http:";
             HashMap<String, String> captchaRegex = new HashMap<String, String>();
             captchaRegex.put("recaptcha", "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)");
             captchaRegex.put("basic", "(https?://" + HOST + "/includes/captcha_factory/securimage/securimage_(show\\.php\\?hash=[a-z0-9]+|register\\.php\\?hash=[^\"]+sid=[a-z0-9]{32}))");
@@ -219,7 +220,7 @@ public class SflnkgNt extends PluginForDecrypt {
             if (protectedForm != null) {
                 boolean password = protectedForm.getRegex("type=\"password\" name=\"link-password\"").matches(); // password?
                 String captcha = br.getRegex("<div id=\"captcha\\-wrapper\">(.*?)</div></div></div>").getMatch(0); // captcha?
-                if (captcha != null) prepareCaptchaAdress(captcha, captchaRegex, protocol);
+                if (captcha != null) prepareCaptchaAdress(captcha, captchaRegex);
 
                 for (int i = 0; i <= 5; i++) {
                     String data = "post-protect=1";
@@ -253,12 +254,12 @@ public class SflnkgNt extends PluginForDecrypt {
                         break;
                     case 5:
                         captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        captchaBr.getPage("https://" + HOST + "/includes/captcha_factory/fancycaptcha.php?hash=" + new Regex(parameter, "/p/(.+)").getMatch(0));
+                        captchaBr.getPage(PROTOCOL + HOST + "/includes/captcha_factory/fancycaptcha.php?hash=" + new Regex(parameter, "/p/(.+)").getMatch(0));
                         data += "&fancy-captcha=" + captchaBr.toString().trim();
                         break;
                     case 6:
                         captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        captchaBr.postPage("https://" + HOST + "/includes/captcha_factory/Qaptcha.jquery.php?hash=" + new Regex(parameter, "/p/(.+)").getMatch(0), "action=qaptcha");
+                        captchaBr.postPage(PROTOCOL + HOST + "/includes/captcha_factory/Qaptcha.jquery.php?hash=" + new Regex(parameter, "/p/(.+)").getMatch(0), "action=qaptcha");
                         if (!captchaBr.containsHTML("\"error\":false")) {
                             logger.warning("Decrypter broken for link: " + parameter + "\n");
                             logger.warning("Qaptcha handling broken");
@@ -289,7 +290,7 @@ public class SflnkgNt extends PluginForDecrypt {
                     }
 
                     if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || password || br.containsHTML("<strong>Prove you are human</strong>")) {
-                        prepareCaptchaAdress(captcha, captchaRegex, protocol);
+                        prepareCaptchaAdress(captcha, captchaRegex);
                         continue;
                     }
                     break;
@@ -299,7 +300,7 @@ public class SflnkgNt extends PluginForDecrypt {
             }
         }
 
-        private void prepareCaptchaAdress(String captcha, HashMap<String, String> captchaRegex, String protocol) {
+        private void prepareCaptchaAdress(String captcha, HashMap<String, String> captchaRegex) {
             br.getRequest().setHtmlCode(captcha);
 
             for (Entry<String, String> next : captchaRegex.entrySet()) {
@@ -326,7 +327,7 @@ public class SflnkgNt extends PluginForDecrypt {
                 /*
                  * creating pseudo functions: document.location.protocol + document.write(value)
                  */
-                engine.eval("var document = { loc : function() { var newObj = new Object(); function protocol() { return \"" + protocol + "\"; } newObj.protocol = protocol(); return newObj; }, write : function(a) { return a; }}");
+                engine.eval("var document = { loc : function() { var newObj = new Object(); function protocol() { return \"" + PROTOCOL + "\"; } newObj.protocol = protocol(); return newObj; }, write : function(a) { return a; }}");
                 engine.eval("document.location = document.loc();");
                 result = engine.eval(javaScript);
             } catch (Throwable e) {
@@ -374,7 +375,7 @@ public class SflnkgNt extends PluginForDecrypt {
             }
         }
 
-        private ArrayList<DownloadLink> decryptMultipleLinks(final String parameter, final CryptedLink param) throws IOException, PluginException {
+        public ArrayList<DownloadLink> decryptMultipleLinks(final String parameter, final CryptedLink param) throws IOException, PluginException {
             ArrayList<String> cryptedLinks = new ArrayList<String>();
             // TODO: Add handling for offline links/containers
 

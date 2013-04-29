@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bayfiles.com" }, urls = { "http://(www\\.)?bayfiles\\.com/file/[A-Z0-9]+/[A-Za-z0-9]+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bayfiles.net", "bayfiles.com" }, urls = { "http://(www\\.)?bayfiles\\.(com|net)/file/[A-Z0-9]+/[A-Za-z0-9]+/.+", "ri9hj59hzjkmv0zkDELETE_MEhgt85hjz09ckmv5ohzj049rghj4" }, flags = { 2, 0 })
 public class BayFilesCom extends PluginForHost {
 
     private static final String CAPTCHAFAILED = "\"Invalid captcha\"";
@@ -74,9 +74,15 @@ public class BayFilesCom extends PluginForHost {
         return true;
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("bayfiles.com/", "bayfiles.net/"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        // Correct previously added links
+        correctDownloadLink(link);
         br.setFollowRedirects(false);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
@@ -121,22 +127,22 @@ public class BayFilesCom extends PluginForHost {
             int wait = 10;
             if (waittime != null) wait = Integer.parseInt(waittime);
             Browser brc = br.cloneBrowser();
-            brc.getPage("http://bayfiles.com/js/bayfiles.js");
-            br.getPage("http://bayfiles.com/ajax_download?_=" + System.currentTimeMillis() + "&action=startTimer&vfid=" + vFid);
+            brc.getPage("http://bayfiles.net/js/bayfiles.js");
+            br.getPage("http://bayfiles.net/ajax_download?_=" + System.currentTimeMillis() + "&action=startTimer&vfid=" + vFid);
             String token = br.getRegex("\"token\":\"(.*?)\"").getMatch(0);
             if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
             String captcha = brc.getRegex("(/\\*[ \t\r\n]*?captcha.create)").getMatch(0);
             if (captcha == null) {
                 /* captchas currently disabled, see bayfiles.js */
-                br.postPage("http://bayfiles.com/ajax_captcha", "action=getCaptcha");
+                br.postPage("http://bayfiles.net/ajax_captcha", "action=getCaptcha");
                 final String reCaptchaID = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
                 if (reCaptchaID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 Form dlForm = new Form();
                 dlForm.setMethod(MethodType.POST);
-                dlForm.setAction("http://bayfiles.com/ajax_captcha");
+                dlForm.setAction("http://bayfiles.net/ajax_captcha");
                 dlForm.put("action", "verifyCaptcha");
                 dlForm.put("token", token);
                 rc.setForm(dlForm);
@@ -166,7 +172,7 @@ public class BayFilesCom extends PluginForHost {
                 sleep(wait * 1001l, downloadLink);
             }
 
-            br.postPage("http://bayfiles.com/ajax_download", "action=getLink&vfid=" + vFid + "&token=" + token);
+            br.postPage("http://bayfiles.net/ajax_download", "action=getLink&vfid=" + vFid + "&token=" + token);
             dllink = br.getRegex("onclick=\"javascript:window\\.location\\.href = \\'(http://.*?)\\'").getMatch(0);
             if (dllink == null) dllink = getExactDllink();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -208,7 +214,7 @@ public class BayFilesCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.getPage("http://api.bayfiles.com/v1/account/login/" + Encoding.urlEncode(account.getUser()) + "/" + Encoding.urlEncode(account.getPass()));
+                br.getPage("http://api.bayfiles.net/v1/account/login/" + Encoding.urlEncode(account.getUser()) + "/" + Encoding.urlEncode(account.getPass()));
                 if (!br.containsHTML("\"error\":\"\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (br.getCookie(MAINPAGE, "SESSID") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
@@ -236,7 +242,7 @@ public class BayFilesCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://api.bayfiles.com/v1/account/info");
+        br.getPage("http://api.bayfiles.net/v1/account/info");
         if (!br.containsHTML("\"premium\":1")) {
             ai.setStatus("Free accounts are not supported!");
             account.setValid(false);
@@ -266,7 +272,7 @@ public class BayFilesCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("\"(http://s\\d+\\.baycdn\\.com/dl/[a-z0-9]+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
+        String dllink = br.getRegex("\"(http://s\\d+\\.baycdn\\.net/dl/[a-z0-9]+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("<a class=\"highlighted\\-btn\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -282,7 +288,7 @@ public class BayFilesCom extends PluginForHost {
     }
 
     private String getExactDllink() {
-        return br.getRegex("(\\'|\")(http://s\\d+\\.baycdn\\.com/dl/[^<>\"]*?)(\\'|\")").getMatch(1);
+        return br.getRegex("(\\'|\")(http://s\\d+\\.baycdn\\.net/dl/[^<>\"]*?)(\\'|\")").getMatch(1);
     }
 
     @Override

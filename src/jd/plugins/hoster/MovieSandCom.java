@@ -52,7 +52,8 @@ public class MovieSandCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().equals("http://www.moviesand.com/404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Currently Watching: ([^<>\"]*?)</div>").getMatch(0);
+        String filename = br.getRegex("<title>MoviesAnd \\- ([^<>\"]*?) \\- Better than YouPorn and RedTube</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("itemprop=\"title\" style=\"color: #46A5F1;\">([^<>\"]*?)</span>").getMatch(0);
         DLLINK = br.getRegex("\"file\", \"(http[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);

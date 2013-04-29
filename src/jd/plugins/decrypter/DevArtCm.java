@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -121,11 +122,10 @@ public class DevArtCm extends PluginForDecrypt {
             ratedContent = true;
         }
         /* download high res version if available */
-        String dllink = br.getRegex("id=\"download\\-button\".*?href=\"(https?://[^\"]+)").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("id=\"gmi\\-ResViewSizer_fullimg\" data\\-gmiclass=\"ResViewSizer_fullimg\".*?src=\"(https?://[^\"]+)").getMatch(0);
+        String dllink = br.getRegex("name=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
 
         if (dllink != null) {
-            final DownloadLink dl = createDownloadlink("DEVART://" + dllink);
+            final DownloadLink dl = createDownloadlink("DEVART://" + Encoding.htmlDecode(dllink));
             dl.setProperty("ratedContent", ratedContent);
             ret.add(dl);
         } else {

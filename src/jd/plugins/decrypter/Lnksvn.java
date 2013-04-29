@@ -40,7 +40,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://(www\\.)?linksave\\.in/(?!news|api|partner|usercp|protect|faq|contact|language)(view.php\\?id=)?(?!dl\\-)[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://(www\\.)?linksave\\.in/(view.php\\?id=)?(?!dl\\-)[\\w]+" }, flags = { 0 })
 public class Lnksvn extends PluginForDecrypt {
 
     private boolean isExternInterfaceActive() {
@@ -53,6 +53,8 @@ public class Lnksvn extends PluginForDecrypt {
     public Lnksvn(final PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String INVALIDLINKS = "http://(www\\.)?linksave\\.in/(news|api|partner|usercp|protect|faq|contact|language).*?";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
@@ -67,8 +69,12 @@ public class Lnksvn extends PluginForDecrypt {
         br.setRequestIntervalLimit("linksave.in", 1000);
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        if (br.containsHTML(">Error 404 \\- Ordner nicht gefunden")) {
+        if (br.containsHTML(">Error 404 \\- Ordner nicht gefunden") || br.containsHTML("<title>404 \\- Not Found</title>")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.getURL().matches(INVALIDLINKS)) {
+            logger.info("Invalid link: " + parameter);
             return decryptedLinks;
         }
         br.setFollowRedirects(false);

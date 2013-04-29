@@ -69,7 +69,7 @@ public class Keep2ShareCc extends PluginForHost {
             filename = br.getRegex(">Downloading file:</span><br>[\t\n\r ]+<span class=\"c2\">.*?alt=\"\" style=\"\">([^<>\"]*?)</span>").getMatch(0);
             filesize = br.getRegex("File size ([^<>\"]*?)</div>").getMatch(0);
         } else {
-            filename = br.getRegex(">File: <span>([^<>\"]*?)</span>").getMatch(0);
+            filename = br.getRegex("File: <span>([^<>\"]*?)</span>").getMatch(0);
             filesize = br.getRegex(">Size: ([^<>\"]*?)</div>").getMatch(0);
         }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

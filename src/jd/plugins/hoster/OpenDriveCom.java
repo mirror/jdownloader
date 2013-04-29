@@ -74,8 +74,8 @@ public class OpenDriveCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML("File is private and cannot be downloaded\">Download</a>")) throw new PluginException(LinkStatus.ERROR_FATAL, "File is private and cannot be downloaded");
-        String dllink = br.getRegex("<a class=\"bottom\\-btn download\" href=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(https?://(www\\.)?opendrive\\.com/files/[A-Za-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("<a class=\"download\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(https?://(www\\.)?([a-z0-9]+\\.)?opendrive\\.com/files/[A-Za-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
