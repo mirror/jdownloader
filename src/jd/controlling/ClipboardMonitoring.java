@@ -76,7 +76,11 @@ public class ClipboardMonitoring {
     private Clipboard                   clipboard           = null;
     private volatile boolean            skipChangeDetection = false;
     private static WindowsClipboardHack clipboardHack       = null;
-    private static boolean              firstRoundDone      = false;
+    private static boolean              firstRoundDone      = true;
+
+    public void setFirstRoundDone(boolean b) {
+        firstRoundDone = b;
+    }
 
     public synchronized void startMonitoring() {
         if (isMonitoring()) return;

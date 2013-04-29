@@ -497,6 +497,9 @@ public class SecondLevelLaunch {
                             ExtensionController.getInstance().init();
                             EXTENSIONS_COMPLETE.setReached();
                             /* init clipboardMonitoring stuff */
+                            if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSkipClipboardMonitorFirstRound()) {
+                                ClipboardMonitoring.getINSTANCE().setFirstRoundDone(false);
+                            }
                             if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
                                 ClipboardMonitoring.getINSTANCE().startMonitoring();
                             }

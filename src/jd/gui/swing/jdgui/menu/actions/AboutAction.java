@@ -38,7 +38,6 @@ public class AboutAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-
         try {
             Dialog.getInstance().showDialog(new AboutDialog());
         } catch (DialogNoAnswerException e1) {

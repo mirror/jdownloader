@@ -103,6 +103,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isClipboardMonitored();
 
     @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isSkipClipboardMonitorFirstRound();
+
+    void setSkipClipboardMonitorFirstRound(boolean b);
+
+    @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("If disabled, The Hostercolumn will show gray disabled icons if the link is disabled")
     boolean isColoredIconsForDisabledHosterColumnEnabled();
