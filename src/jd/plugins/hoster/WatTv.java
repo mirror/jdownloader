@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -55,17 +55,11 @@ public class WatTv extends PluginForHost {
     }
 
     public String getFinalLink() throws Exception {
-        String videoid = br.getRegex("id=\"media\" value=\"(.*?)\"").getMatch(0);
-        if (videoid == null) {
-            videoid = br.getRegex("videoId : \"(.*?)\"").getMatch(0);
-            if (videoid == null) {
-                videoid = br.getRegex("mediaId=(.*?)\\'").getMatch(0);
-                if (videoid == null) {
-                    videoid = br.getRegex("abuse/video/(.*?)'").getMatch(0);
-                }
-            }
-        }
-        if (videoid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        // 8 digit id, located at the end of some fields
+        String videoID = br.getRegex("<meta property=\"og:video(:secure_url)?\" content=\"[^\"]+(\\d{8})\">").getMatch(1);
+        if (videoID == null) videoID = br.getRegex("xtpage = \"[^;]+video\\-(\\d{8})\";").getMatch(0);
+        if (videoID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+
         final Browser br2 = br.cloneBrowser();
         String getVideoLink = null;
         br2.setFollowRedirects(false);
@@ -74,7 +68,7 @@ public class WatTv extends PluginForHost {
             br2.getPage(swfLoaderUrl);
             swfLoaderUrl = br2.getRedirectLocation() == null ? null : br2.getRedirectLocation();
             if (swfLoaderUrl != null) {
-                br2.getPage("http://www.wat.tv/interface/contentv3/" + videoid);
+                br2.getPage("http://www.wat.tv/interface/contentv4/" + videoID);
                 String quality = "/web/", country = "DE";
                 if (br2.containsHTML("\"hasHD\":true")) {
                     quality = "/webhd/";
@@ -82,8 +76,11 @@ public class WatTv extends PluginForHost {
                 if (br2.containsHTML("\"geolock\":true")) {
                     country = "FR";
                 }
-                final String token = computeToken(quality + videoid, new Regex(swfLoaderUrl, "&ts=(.*?)&").getMatch(0));
-                br2.getPage("http://www.wat.tv/get" + quality + videoid + "?token=" + token + "&domain=www.wat.tv&domain2=www.wat.tv&revision=4.1.017&synd=0&helios=1&context=swf2&pub=5&country=" + country + "&sitepage=WAT%2Ftv%2Fkoh-lanta-9&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=WIN%2010,3,183,7");
+                final String token = computeToken(quality + videoID, new Regex(swfLoaderUrl, "&ts=(.*?)&").getMatch(0));
+                // from chrome 20130429,
+                // http://www.wat.tv/get/web/10481575?token=md5sum(32char)/517e4e96&domain=www.wat.tv&refererURL=www.wat.tv&revision=04.00.52&synd=0&helios=1&context=playerWat&pub=1&country=FR&sitepage=WAT%2Ftv%2Ft%2Fcatchup%2Ftf1%2Fnos-chers-voisins-tf1&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=WIN%2011,7,700,179
+                // kept old request string
+                br2.getPage("http://www.wat.tv/get" + quality + videoID + "?token=" + token + "&domain=www.wat.tv&domain2=www.wat.tv&revision=4.1.017&synd=0&helios=1&context=swf2&pub=5&country=" + country + "&sitepage=WAT%2Ftv%2Fkoh-lanta-9&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=WIN%2010,3,183,7");
                 getVideoLink = br2.toString();
             }
         }
@@ -157,6 +154,9 @@ public class WatTv extends PluginForHost {
             filename = br.getRegex("<meta name=\"name\" content=\"(.*?)\"").getMatch(0);
         }
         if (filename == null || filename.equals("")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename.endsWith(" - ")) {
+            filename = filename.replaceFirst(" \\- $", "");
+        }
         downloadLink.setName(filename.trim() + ".flv");
         return AvailableStatus.TRUE;
     }
