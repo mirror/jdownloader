@@ -36,6 +36,7 @@ file_exists_not=Dosya mevcut değil
 filename=Dosya adı
 files=dosya
 hoster=Barındırıcı
+linkname=Arşiv(ler)
 local=Dosya Durumu
 menu_tools_extract_files=Dosyaları Çıkart
 name=Arşiv Çıkartıcısı
