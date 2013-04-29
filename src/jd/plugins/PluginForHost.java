@@ -542,7 +542,10 @@ public abstract class PluginForHost extends Plugin {
     /*
      * Integer.Min_Value will result in no download at all (eg no free supported)
      * 
-     * <=0 will result in unlimited
+     * -1 -> unlimited
+     * 
+     * <-1 || 0 = no download
+     * 
      * 
      * return max possible simultan downloads for given link and account,overwrite this if you want special handling, eg for multihost
      */
@@ -550,23 +553,43 @@ public abstract class PluginForHost extends Plugin {
         int max;
         if (account == null) {
             max = getMaxSimultanFreeDownloadNum();
-            if (max == 0 || max == Integer.MIN_VALUE) {
-                /* no free downloads are possible */
-                return 0;
-            }
-        } else {
-            max = account.getMaxSimultanDownloads();
-            if (max < 0) {
-                return Integer.MAX_VALUE;
-            } else if (max == 0) {
-                max = getMaxSimultanPremiumDownloadNum();
-            } else {
+            if (max >= 0) {
+                /* >=0 = 0 or more downloads */
                 return max;
             }
+            if (max == -1) {
+                /*-1 = unlimited*/
+                return Integer.MAX_VALUE;
+            }
+            /* no downloads */
+            return 0;
+        } else {
+            max = account.getMaxSimultanDownloads();
+            if (max >= 1) {
+                /* 1 or more downloads */
+                return max;
+            }
+            if (max == 0) {
+                /* 0 = use deprecated getMaxSimultanPremiumDownloadNum */
+                max = getMaxSimultanPremiumDownloadNum();
+                if (max >= 0) {
+                    /* >=0 = 0 or more downloads */
+                    return max;
+                }
+                if (max == -1) {
+                    /*-1 = unlimited*/
+                    return Integer.MAX_VALUE;
+                }
+                /* no downloads */
+                return 0;
+            }
+            if (max == -1) {
+                /*-1 = unlimited*/
+                return Integer.MAX_VALUE;
+            }
+            /* no downloads */
+            return 0;
         }
-        if (max == Integer.MIN_VALUE) return 0;
-        if (max <= 0) return Integer.MAX_VALUE;
-        return max;
     }
 
     /*
@@ -870,7 +893,7 @@ public abstract class PluginForHost extends Plugin {
 
                 }
             }
-            
+
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }

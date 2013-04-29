@@ -264,6 +264,11 @@ public class MegaConz extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
+    }
+
+    @Override
     public void reset() {
     }
 
