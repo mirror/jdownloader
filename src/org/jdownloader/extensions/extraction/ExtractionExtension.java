@@ -70,6 +70,7 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.DownloadListContextmenuExtender;
 import org.jdownloader.extensions.extraction.gui.config.ExtractionConfigPanel;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
@@ -488,6 +489,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     protected void initExtension() throws StartException {
         /* import old passwordlist */
         boolean oldPWListImported = false;
+        ArchiveValidator.EXTENSION = this;
         DownloadListContextMenuManager.getInstance().registerExtender(new DownloadListContextmenuExtender(this));
         try {
             if ((oldPWListImported = getSettings().isOldPWListImported()) == false) {
