@@ -10,6 +10,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JTree;
 import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.TreePath;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.renderer.RenderLabel;
@@ -36,6 +37,7 @@ public class Renderer implements TreeCellRenderer {
     public Renderer() {
 
         renderer = new RenderLabel();
+
         dim = new Dimension(500, 24);
         defFont = renderer.getFont();
         bold = defFont.deriveFont(Font.BOLD);
@@ -48,6 +50,8 @@ public class Renderer implements TreeCellRenderer {
 
         MenuItemData mid = ((MenuItemData) value);
         Rectangle bounds = null;
+        TreePath path = tree.getPathForRow(row);
+
         if (mid.getProperties() != null && mid.getProperties().contains(MenuItemProperty.ALWAYS_HIDDEN)) {
             renderer.setEnabled(false);
         } else {
@@ -129,7 +133,7 @@ public class Renderer implements TreeCellRenderer {
             renderer.setText(name);
         }
         renderer.setFont(font);
-        renderer.setIcon(icon);
+
         return renderer;
 
     }

@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.downloads.contextmenumanager.gui;
 
+import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -64,7 +65,7 @@ public class ManagerFrame extends BasicGui implements TreeSelectionListener {
     @Override
     protected void layoutPanel() {
         manager = DownloadListContextMenuManager.getInstance();
-        MigPanel panel = new MigPanel("ins 2,wrap 2", "[grow,fill][300!,fill]", "[grow,fill][]");
+        MigPanel panel = new MigPanel("ins 2,wrap 2", "[grow,fill][]", "[grow,fill][]");
         panel.setOpaque(false);
         LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(panel);
 
@@ -76,7 +77,14 @@ public class ManagerFrame extends BasicGui implements TreeSelectionListener {
 
         // tree.set
         // tree.setShowsRootHandles(false);
-        HeaderScrollPane sp = new HeaderScrollPane(tree);
+        HeaderScrollPane sp = new HeaderScrollPane(tree) {
+
+            @Override
+            public Dimension getPreferredSize() {
+                return tree.getPreferredSize();
+            }
+
+        };
         sp.setColumnHeaderView(new TreeHeader());
         panel.add(sp);
         infoPanel = new InfoPanel(this);
@@ -227,6 +235,12 @@ public class ManagerFrame extends BasicGui implements TreeSelectionListener {
         model.fireUpdate();
         if (sel != null) tree.setSelectionPaths(sel);
         tree.getSelectionModel().addTreeSelectionListener(this);
+    }
+
+    public TreePath getSelectionPath() {
+        TreePath ret = tree.getSelectionPath();
+        if (ret == null) ret = new TreePath(model.getRoot());
+        return ret;
     }
 
 }

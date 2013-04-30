@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.contextmenumanager.gui;
 
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 import javax.swing.tree.DefaultTreeModel;
@@ -9,7 +10,6 @@ import javax.swing.tree.TreePath;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainer;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainerRoot;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData.Type;
@@ -17,6 +17,7 @@ import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData.Type;
 public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
 
     private MenuContainerRoot data;
+    private ExtTree           tree;
 
     public ManagerTreeModel(MenuContainerRoot menuContainerRoot) {
         super(null, false);
@@ -112,7 +113,7 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
     public TreePath addAction(TreePath treePath, MenuItemData menuItemData) {
         try {
             if (treePath != null && treePath.getLastPathComponent() != data) {
-                if (treePath.getLastPathComponent() instanceof MenuContainer) {
+                if (((MenuItemData) treePath.getLastPathComponent()).getType() == Type.CONTAINER) {
 
                     ((MenuItemData) treePath.getLastPathComponent()).getItems().add(menuItemData);
 
@@ -147,11 +148,27 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
         // Dialog.getInstance().showMessageDialog("Menu Structure not allowed!");
         //
         // }
-        super.fireTreeStructureChanged(source, path, childIndices, children);
+        if (tree != null) {
+            TreePath[] paths = tree.getSelectionPaths();
+            Enumeration<TreePath> desc = tree.getExpandedDescendants(new TreePath(data));
+
+            super.fireTreeStructureChanged(source, path, childIndices, children);
+            if (desc != null) {
+                while (desc.hasMoreElements()) {
+                    TreePath p = desc.nextElement();
+                    tree.expandPath(p);
+                }
+            }
+            if (paths != null) tree.setSelectionPaths(paths);
+        }
     }
 
     public void fireUpdate() {
         fireTreeStructureChanged(this, new Object[] { data }, null, null);
+    }
+
+    public void setTree(ExtTree extTree) {
+        this.tree = extTree;
     }
 
 }

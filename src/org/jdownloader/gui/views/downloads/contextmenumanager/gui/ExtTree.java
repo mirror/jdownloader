@@ -16,12 +16,9 @@ import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.TransferHandler;
-import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
-import javax.swing.event.TreeWillExpandListener;
 import javax.swing.plaf.TreeUI;
-import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -30,29 +27,29 @@ import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
 import org.jdownloader.gui.views.downloads.contextmenumanager.SeperatorData;
 
 public class ExtTree extends JTree {
-    private void expandAll(boolean expand) {
-        Object root = getModel().getRoot();
-
-        // Traverse tree from root
-        expandAll(new TreePath(root), expand);
-    }
-
-    private void expandAll(TreePath parent, boolean expand) {
-        // Traverse children
-        MenuItemData node = (MenuItemData) parent.getLastPathComponent();
-        if (node.getItems() != null) {
-            for (MenuItemData mid : node.getItems()) {
-                TreePath path = parent.pathByAddingChild(mid);
-                expandAll(path, expand);
-            }
-        }
-
-        if (expand) {
-            expandPath(parent);
-        } else {
-            collapsePath(parent);
-        }
-    }
+    // private void expandAll(boolean expand) {
+    // Object root = getModel().getRoot();
+    //
+    // // Traverse tree from root
+    // expandAll(new TreePath(root), expand);
+    // }
+    //
+    // private void expandAll(TreePath parent, boolean expand) {
+    // // Traverse children
+    // MenuItemData node = (MenuItemData) parent.getLastPathComponent();
+    // if (node.getItems() != null) {
+    // for (MenuItemData mid : node.getItems()) {
+    // TreePath path = parent.pathByAddingChild(mid);
+    // expandAll(path, expand);
+    // }
+    // }
+    //
+    // if (expand) {
+    // expandPath(parent);
+    // } else {
+    // collapsePath(parent);
+    // }
+    // }
 
     private ManagerTreeModel model;
     private ManagerFrame     managerFrame;
@@ -64,27 +61,29 @@ public class ExtTree extends JTree {
     public ExtTree(ManagerFrame mf) {
         super(mf.getModel());
         this.model = mf.getModel();
+        model.setTree(this);
         this.managerFrame = mf;
         getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+
         setOpaque(true);
-        setExpandsSelectedPaths(true);
-        addTreeWillExpandListener(new TreeWillExpandListener() {
-
-            @Override
-            public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
-            }
-
-            @Override
-            public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
-                throw new ExpandVetoException(event);
-            }
-
-        });
-        expandAll(true);
+        // setExpandsSelectedPaths(true);
+        // addTreeWillExpandListener(new TreeWillExpandListener() {
+        //
+        // @Override
+        // public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
+        // }
+        //
+        // @Override
+        // public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
+        // throw new ExpandVetoException(event);
+        // }
+        //
+        // });
+        // expandAll(true);
 
         setCellRenderer(new Renderer());
         setRootVisible(false);
-        setRowHeight(24);
+        setRowHeight(20);
         addKeyListener(new KeyListener() {
 
             @Override
@@ -102,6 +101,7 @@ public class ExtTree extends JTree {
             public void keyPressed(KeyEvent e) {
             }
         });
+
         addMouseListener(new MouseListener() {
 
             @Override
@@ -110,6 +110,10 @@ public class ExtTree extends JTree {
 
             @Override
             public void mousePressed(MouseEvent e) {
+
+                setSelectionRow(getRowForLocation(e.getX(), e.getY()));
+
+                expandPath(getPathForLocation(e.getX(), e.getY()));
                 if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
 
                     JPopupMenu popup = new JPopupMenu();
@@ -147,8 +151,30 @@ public class ExtTree extends JTree {
                 if (!support.isDataFlavorSupported(MenuItemTransferAble.NODE_FLAVOR) || !support.isDrop()) { return false; }
 
                 JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
+                Transferable transferable = support.getTransferable();
+                try {
+                    TreePath path = dropLocation.getPath();
+                    TreePath data = (TreePath) transferable.getTransferData(MenuItemTransferAble.NODE_FLAVOR);
+                    MenuItemData oldParent = (MenuItemData) data.getParentPath().getLastPathComponent();
+                    MenuItemData item = ((MenuItemData) data.getLastPathComponent());
+                    MenuItemData parent = (MenuItemData) path.getLastPathComponent();
 
-                return dropLocation.getPath() != null;
+                    if (data.isDescendant(path)) return false;
+                    if (parent == item) return false;
+                    int childIndex = dropLocation.getChildIndex();
+                    if (item instanceof SeperatorData) {
+                        if (childIndex == 0) return false;
+                        if (childIndex == parent.getItems().size()) return false;
+                        return true;
+                    }
+                    if (oldParent == parent) return true;
+                    return !parent._getItemIdentifiers().contains(item._getIdentifier());
+
+                } catch (Exception e) {
+
+                }
+
+                return false;
             }
 
             public int getSourceActions(JComponent c) {
@@ -157,7 +183,7 @@ public class ExtTree extends JTree {
 
             protected Transferable createTransferable(JComponent c) {
                 //
-                expandAll(true);
+                // expandAll(true);
                 return new MenuItemTransferAble(getSelectionPath());
 
             }
@@ -185,7 +211,7 @@ public class ExtTree extends JTree {
                     ExtTree.this.model.moveTo(data, (MenuItemData) path.getLastPathComponent(), childIndex);
                     TreePath newPath = path.pathByAddingChild(data.getLastPathComponent());
                     setSelectionPath(newPath);
-                    expandAll(true);
+                    // expandAll(true);
 
                 } catch (Exception e) {
                     Dialog.getInstance().showExceptionDialog("Error", e.getMessage(), e);
@@ -203,7 +229,7 @@ public class ExtTree extends JTree {
             @Override
             public void treeStructureChanged(TreeModelEvent e) {
                 super.treeStructureChanged(e);
-                expandAll(true);
+                // expandAll(true);
                 if (getSelectionCount() <= 0) {
                     setSelectionRow(0);
                 }
@@ -223,9 +249,9 @@ public class ExtTree extends JTree {
         Composite com = ((Graphics2D) g).getComposite();
         try {
             ((Graphics2D) g).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.03f));
-            for (int i = 0; i < getHeight() / 24; i++) {
+            for (int i = 0; i < getHeight() / getRowHeight(); i++) {
                 g.setColor(Color.BLACK);
-                g.fillRect(0, i * 2 * 24, getWidth(), 24);
+                g.fillRect(0, i * 2 * getRowHeight(), getWidth(), getRowHeight());
             }
 
         } finally {

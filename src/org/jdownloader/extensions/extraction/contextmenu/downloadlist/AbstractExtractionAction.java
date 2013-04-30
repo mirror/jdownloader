@@ -33,7 +33,7 @@ public abstract class AbstractExtractionAction extends ExtensionAction<Extractio
 
     public void setEnabled(boolean newValue) {
 
-        if (!false && selection != null) {
+        if (!newValue && selection != null) {
             IOEQ.add(new Runnable() {
 
                 @Override
