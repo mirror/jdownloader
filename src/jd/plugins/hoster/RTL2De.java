@@ -53,8 +53,9 @@ public class RTL2De extends PluginForHost {
             final String url = protocol + "//" + host + ":1935/" + app;
             /* ondemand */
             String playpath = "mp4:" + path;
+            if ("ondemand".equals(app)) app += "?_fcs_vhost=" + host;
             /* vod */
-            if ("vod".equals(app) || (path.startsWith("flv_free/") || path.startsWith("flv_dach/")) && !path.endsWith(".f4v")) playpath = path.substring(0, path.lastIndexOf("."));
+            if ("vod".equals(app) || path.startsWith("flv_free/") && !path.endsWith(".f4v")) playpath = path.substring(0, path.lastIndexOf("."));
 
             DLCONTENT = url + "@" + playpath;
             setupRTMPConnection(dl);
