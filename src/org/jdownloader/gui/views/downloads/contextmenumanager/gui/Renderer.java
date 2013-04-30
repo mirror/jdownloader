@@ -133,7 +133,7 @@ public class Renderer implements TreeCellRenderer {
             renderer.setText(name);
         }
         renderer.setFont(font);
-
+        renderer.setIcon(icon);
         return renderer;
 
     }
