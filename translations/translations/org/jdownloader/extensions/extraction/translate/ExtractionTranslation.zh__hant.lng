@@ -36,6 +36,7 @@ file_exists_not=檔案不存在
 filename=檔名
 files=檔案
 hoster=主機
+linkname=壓縮檔
 local=檔案狀態
 menu_tools_extract_files=解壓縮檔案
 name=壓縮檔解壓縮程式
