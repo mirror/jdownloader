@@ -36,6 +36,7 @@ file_exists_not=Το αρχείο δεν υπάρχει
 filename=Όνομα Αρχείου
 files=αρχεία
 hoster=Πάροχος
+linkname=Συμπιεσμένα αρχεία
 local=Κατάσταση αρχείου
 menu_tools_extract_files=Αποσυμπίεση αρχείων
 name=Αποσυμπίεση αρχείων
