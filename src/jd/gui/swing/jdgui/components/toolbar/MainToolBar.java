@@ -24,6 +24,7 @@ import java.awt.event.MouseEvent;
 import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.Box;
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JRootPane;
 import javax.swing.JSeparator;
@@ -164,8 +165,11 @@ public class MainToolBar extends JToolBar {
                 this.add(new JSeparator(SwingConstants.VERTICAL), "gapleft 10,gapright 10");
             } else if (action.isToggle()) {
                 bt = new JToggleButton(action);
-                bt.setIcon(NewTheme.I().getCheckBoxImage(action.createIconKey(), false, 24));
-                bt.setSelectedIcon(NewTheme.I().getCheckBoxImage(action.createIconKey(), true, 24));
+                ImageIcon icon;
+                bt.setIcon(icon = NewTheme.I().getCheckBoxImage(action.createIconKey(), false, 24));
+                bt.setRolloverIcon(icon);
+                bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.createIconKey(), true, 24));
+                bt.setRolloverSelectedIcon(icon);
                 add(bt, "width 32!");
                 bt.setHideActionText(true);
             } else {
