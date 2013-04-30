@@ -1,5 +1,5 @@
 JDUpdater_start_restart_update_now_=Update & Neustart jetzt durchführen!
-JDUpdater_start_updater_update_msg=Ein Neustart ist nötig um das Update zu beenden.
+JDUpdater_start_updater_update_msg=Um das Update zu beenden ist ein Neustart nötig.
 JDUpdater_start_updater_update_title=Neue Version gefunden!
 dialog_rly_cancel=Update wirklich abbrechen?
 error_service_not_available_right_now=Service momentan nicht erreichbar. Bitte in einer Minute erneut versuchen.
