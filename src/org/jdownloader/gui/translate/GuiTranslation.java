@@ -2581,4 +2581,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Always hidden" })
     String InfoPanel_InfoPanel_hidden();
 
+    @Default(lngs = { "en" }, values = { "export" })
+    String lit_export();
+
+    @Default(lngs = { "en" }, values = { "import" })
+    String lit_import();
+
+    @Default(lngs = { "en" }, values = { "Export the current Menu Structure" })
+    String ManagerFrame_actionPerformed_export_title();
+
+    @Default(lngs = { "en" }, values = { "An Error occured..." })
+    String lit_error_occured();
+
 }

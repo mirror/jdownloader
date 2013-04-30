@@ -3,19 +3,23 @@ package org.jdownloader.gui.views.downloads.contextmenumanager;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class MenuBuilder {
+public class MenuBuilder<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
 
-    private JComponent          root;
-    private SelectionInfo<?, ?> selection;
-    private MenuContainerRoot   menuData;
-    private ContextMenuManager  menuManager;
-    private LogSource           logger;
+    private JComponent                                    root;
+    private SelectionInfo<PackageType, ChildrenType>      selection;
+    private MenuContainerRoot                             menuData;
+    private ContextMenuManager<PackageType, ChildrenType> menuManager;
+    private LogSource                                     logger;
 
-    public MenuBuilder(ContextMenuManager menuManager, JComponent root, SelectionInfo<?, ?> si, MenuContainerRoot md) {
+    public MenuBuilder(ContextMenuManager<PackageType, ChildrenType> menuManager, JComponent root, SelectionInfo<PackageType, ChildrenType> si, MenuContainerRoot md) {
         this.root = root;
         selection = si;
         this.menuManager = menuManager;

@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.extraction.contextmenu.downloadlist;
 
+import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.AutoExtractEnabledToggleAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.CleanupAutoDeleteFilesEnabledToggleAction;
@@ -10,7 +11,6 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.Set
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ValidateArchivesAction;
 import org.jdownloader.gui.views.downloads.contextmenumanager.ActionData;
 import org.jdownloader.gui.views.downloads.contextmenumanager.AddonSubMenuLink;
-import org.jdownloader.gui.views.downloads.contextmenumanager.ContextMenuManager;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainerRoot;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuExtenderHandler;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;

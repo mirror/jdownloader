@@ -3,15 +3,12 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 import java.awt.event.ActionEvent;
 import java.util.List;
 
-import javax.swing.ImageIcon;
-
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.images.NewTheme;
 
 public class AutoExtractEnabledToggleAction extends AbstractExtractionAction {
 
@@ -20,7 +17,7 @@ public class AutoExtractEnabledToggleAction extends AbstractExtractionAction {
     public AutoExtractEnabledToggleAction(final SelectionInfo<?, ?> selection) {
         super(selection);
         setName(_.contextmenu_autoextract());
-        setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("unpack", 18), NewTheme.I().getImage("refresh", 12), 0, 0, 10, 10)));
+        setIconKey(IconKey.ICON_ARCHIVE_REFRESH);
         setSelected(false);
         setEnabled(false);
 
@@ -29,7 +26,7 @@ public class AutoExtractEnabledToggleAction extends AbstractExtractionAction {
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
-        if (archives!=null&&archives.size() > 0) setSelected(_getExtension().isAutoExtractEnabled(archives.get(0)));
+        if (archives != null && archives.size() > 0) setSelected(_getExtension().isAutoExtractEnabled(archives.get(0)));
     }
 
     public void actionPerformed(ActionEvent e) {

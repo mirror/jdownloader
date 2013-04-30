@@ -10,6 +10,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 
@@ -18,7 +19,7 @@ public class SetExtractToAction extends AbstractExtractionAction {
     public SetExtractToAction(final SelectionInfo<?, ?> selection) {
         super(selection);
         setName(_.contextmenu_extract_to());
-        setSmallIcon(merge("folder", "edit"));
+        setIconKey(IconKey.ICON_FOLDER);
 
         setEnabled(false);
 
@@ -27,7 +28,7 @@ public class SetExtractToAction extends AbstractExtractionAction {
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
-        if (archives!=null&&archives.size() > 0) setSelected(_getExtension().isAutoExtractEnabled(archives.get(0)));
+        if (archives != null && archives.size() > 0) setSelected(_getExtension().isAutoExtractEnabled(archives.get(0)));
 
     }
 

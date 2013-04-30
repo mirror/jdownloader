@@ -9,6 +9,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
@@ -17,7 +18,7 @@ public class SetExtractPasswordAction extends AbstractExtractionAction {
     public SetExtractPasswordAction(final SelectionInfo<?, ?> selection) {
         super(selection);
         setName(_.contextmenu_password());
-        setIconKey("password");
+        setIconKey(IconKey.ICON_PASSWORD);
         setEnabled(false);
 
     }
@@ -25,7 +26,7 @@ public class SetExtractPasswordAction extends AbstractExtractionAction {
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
-        if (archives!=null&&archives.size() > 0) setSelected(_getExtension().isAutoExtractEnabled(archives.get(0)));
+        if (archives != null && archives.size() > 0) setSelected(_getExtension().isAutoExtractEnabled(archives.get(0)));
 
     }
 

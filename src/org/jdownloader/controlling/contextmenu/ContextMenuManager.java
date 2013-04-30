@@ -1,22 +1,52 @@
-package org.jdownloader.gui.views.downloads.contextmenumanager;
+package org.jdownloader.controlling.contextmenu;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 
+import javax.swing.JPopupMenu;
+
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.contextmenumanager.ActionData;
+import org.jdownloader.gui.views.downloads.contextmenumanager.ContextMenuConfigInterface;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuBuilder;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainer;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainerRoot;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuExtenderHandler;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuLink;
+import org.jdownloader.gui.views.downloads.contextmenumanager.SeperatorData;
 import org.jdownloader.logging.LogController;
 
-public abstract class ContextMenuManager {
+public abstract class ContextMenuManager<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
     public ContextMenuManager() {
         config = JsonConfig.create(Application.getResource("cfg/menus/" + getClass().getName()), ContextMenuConfigInterface.class);
         logger = LogController.getInstance().getLogger(getClass().getName());
+    }
+
+    public JPopupMenu build(SelectionInfo<PackageType, ChildrenType> si) {
+        long t = System.currentTimeMillis();
+        JPopupMenu root = new JPopupMenu();
+        MenuContainerRoot md = getMenuData();
+        new MenuBuilder<PackageType, ChildrenType>(this, root, si, md).run();
+        // createLayer(root, md);
+
+        return root;
     }
 
     public LogSource getLogger() {
@@ -197,28 +227,41 @@ public abstract class ContextMenuManager {
         } else {
             menuData = root;
 
-            ArrayList<String> list = new ArrayList<String>();
-
-            List<MenuItemData> allItemsInMenu = root.list();
-
-            HashSet<String> actionClassesInMenu = new HashSet<String>();
-
-            for (MenuItemData d : allItemsInMenu) {
-                actionClassesInMenu.add(d._getIdentifier());
-            }
-            // HashSet<String> actionClassesInDefaultMenu = new HashSet<String>();
-            for (MenuItemData e : setupDefaultStructure().list()) {
-
-                if (actionClassesInMenu.add(e._getIdentifier())) {
-                    list.add(e._getIdentifier());
-                }
-
-            }
-
             config.setMenu(root);
-            config.setUnusedItems(list);
+            config.setUnusedItems(getUnused(root));
         }
 
+    }
+
+    private ArrayList<String> getUnused(MenuContainerRoot root) {
+        ArrayList<String> list = new ArrayList<String>();
+
+        List<MenuItemData> allItemsInMenu = root.list();
+
+        HashSet<String> actionClassesInMenu = new HashSet<String>();
+
+        for (MenuItemData d : allItemsInMenu) {
+            actionClassesInMenu.add(d._getIdentifier());
+        }
+        // HashSet<String> actionClassesInDefaultMenu = new HashSet<String>();
+        for (MenuItemData e : setupDefaultStructure().list()) {
+            if (actionClassesInMenu.add(e._getIdentifier())) {
+                list.add(e._getIdentifier());
+            }
+
+        }
+
+        return list;
+    }
+
+    public void saveTo(MenuContainerRoot root, File saveTo) throws UnsupportedEncodingException, IOException {
+
+        IO.secureWrite(saveTo, JSonStorage.toString(new MenuStructure(root, getUnused(root))).getBytes("UTF-8"));
+    }
+
+    public MenuStructure readFrom(File file) throws IOException {
+        return JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<MenuStructure>() {
+        });
     }
 
     public synchronized void registerExtender(MenuExtenderHandler handler) {

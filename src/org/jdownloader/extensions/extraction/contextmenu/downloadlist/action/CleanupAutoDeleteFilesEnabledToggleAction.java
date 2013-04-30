@@ -7,6 +7,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.SelectionInfo;
 
 public class CleanupAutoDeleteFilesEnabledToggleAction extends AbstractExtractionAction {
@@ -16,7 +17,7 @@ public class CleanupAutoDeleteFilesEnabledToggleAction extends AbstractExtractio
     public CleanupAutoDeleteFilesEnabledToggleAction(final SelectionInfo<?, ?> selection) {
         super(selection);
         setName(_.contextmenu_autodeletefiles());
-        setIconKey("file");
+        setIconKey(IconKey.ICON_FILE);
         setSelected(false);
         setEnabled(false);
 
@@ -25,7 +26,7 @@ public class CleanupAutoDeleteFilesEnabledToggleAction extends AbstractExtractio
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
-        if (archives!=null&&archives.size() > 0) setSelected(_getExtension().isRemoveFilesAfterExtractEnabled(archives.get(0)));
+        if (archives != null && archives.size() > 0) setSelected(_getExtension().isRemoveFilesAfterExtractEnabled(archives.get(0)));
     }
 
     public void actionPerformed(ActionEvent e) {

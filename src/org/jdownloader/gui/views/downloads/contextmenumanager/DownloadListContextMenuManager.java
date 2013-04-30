@@ -1,11 +1,9 @@
 package org.jdownloader.gui.views.downloads.contextmenumanager;
 
-import javax.swing.JPopupMenu;
-
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
 import org.jdownloader.gui.views.components.packagetable.context.PriorityDefaultAction;
@@ -34,7 +32,7 @@ import org.jdownloader.gui.views.downloads.context.SetDownloadFolderInDownloadTa
 import org.jdownloader.gui.views.downloads.context.StopsignAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
 
-public class DownloadListContextMenuManager extends ContextMenuManager {
+public class DownloadListContextMenuManager extends ContextMenuManager<FilePackage, DownloadLink> {
 
     private static final DownloadListContextMenuManager INSTANCE = new DownloadListContextMenuManager();
 
@@ -144,16 +142,6 @@ public class DownloadListContextMenuManager extends ContextMenuManager {
     public void show() {
 
         new MenuManagerAction(null).actionPerformed(null);
-    }
-
-    public JPopupMenu build(SelectionInfo<FilePackage, DownloadLink> si) {
-        long t = System.currentTimeMillis();
-        JPopupMenu root = new JPopupMenu();
-        MenuContainerRoot md = getMenuData();
-        new MenuBuilder(this, root, si, md).run();
-        // createLayer(root, md);
-
-        return root;
     }
 
 }
