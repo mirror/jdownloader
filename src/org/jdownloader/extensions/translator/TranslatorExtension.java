@@ -134,14 +134,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             }
         });
         // init extension GUI
-        new EDTHelper<Object>() {
-
-            @Override
-            public Object edtRun() {
-                gui = new TranslatorGui(TranslatorExtension.this);
-                return null;
-            }
-        }.getReturnValue();
 
     }
 
@@ -272,7 +264,16 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      */
     @Override
     public TranslatorGui getGUI() {
-        return gui;
+        if (gui != null) return gui;
+        return new EDTHelper<TranslatorGui>() {
+
+            @Override
+            public TranslatorGui edtRun() {
+                if (gui != null) return gui;
+                gui = new TranslatorGui(TranslatorExtension.this);
+                return gui;
+            }
+        }.getReturnValue();
     }
 
     /**

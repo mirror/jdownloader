@@ -8,12 +8,32 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
 
-    private static final String JD_PLUGINS_DECRYPTER = "jd.plugins.decrypter.";
+    protected static final String JD_PLUGINS_DECRYPTER = "jd.plugins.decrypter.";
 
     public LazyCrawlerPlugin(AbstractCrawlerPlugin ap, Class<PluginForDecrypt> class1, PluginClassLoaderChild classLoader) {
         super(ap.getPattern(), JD_PLUGINS_DECRYPTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion(), class1, classLoader);
         hasConfig = ap.isHasConfig();
         maxConcurrentInstances = ap.getMaxConcurrentInstances();
+        mainClassFilename = ap.getMainClassFilename();
+        mainClassLastModified = ap.getMainClassLastModified();
+        mainClassSHA256 = ap.getMainClassSHA256();
+        interfaceVersion = ap.getInterfaceVersion();
+    }
+
+    protected AbstractCrawlerPlugin getAbstractCrawlerPlugin() {
+        /* we only need the classname and not complete path */
+        String className = getClassname().substring(JD_PLUGINS_DECRYPTER.length());
+        AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(className);
+        ap.setDisplayName(getDisplayName());
+        ap.setPattern(getPattern().pattern());
+        ap.setVersion(getVersion());
+        ap.setHasConfig(isHasConfig());
+        ap.setInterfaceVersion(getInterfaceVersion());
+        ap.setMainClassSHA256(getMainClassSHA256());
+        ap.setMainClassLastModified(getMainClassLastModified());
+        ap.setMainClassFilename(getMainClassFilename());
+        ap.setMaxConcurrentInstances(getMaxConcurrentInstances());
+        return ap;
     }
 
     private long    decrypts               = 0;

@@ -56,8 +56,7 @@ public class Main {
         System.setProperty("java.net.preferIPv4Stack", "true");
         try {
             /*
-             * never cache negative answers,workaround for buggy dns servers that can fail and then the cache would be polluted for cache
-             * timeout
+             * never cache negative answers,workaround for buggy dns servers that can fail and then the cache would be polluted for cache timeout
              */
             java.security.Security.setProperty("networkaddress.cache.negative.ttl", 0 + "");
         } catch (final Throwable e) {
@@ -231,7 +230,7 @@ public class Main {
 
                 }
                 ProcessBuilderFactory.create(CrossSystem.getJavaBinary(), "-jar", jdjar.getName(), "-forceupdate", "guiless", "-exitafterupdate").directory(jdjar.getParentFile()).start();
-                
+
             }
         } catch (Exception e) {
             e.printStackTrace();

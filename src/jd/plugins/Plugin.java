@@ -212,7 +212,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     public boolean hasConfig() {
-        if (config != null && config.getEntries() != null && config.getEntries().size() > 0) return true;
+        if (config != null && config.getEntries() != null && config.getEntries().size() > 0) { return true; }
         return false;
     }
 

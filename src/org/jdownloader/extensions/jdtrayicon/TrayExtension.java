@@ -147,14 +147,14 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
+                LinkCollector.getInstance().getEventsender().addListener(highListener);
+                ShutdownController.getInstance().addShutdownVetoListener(TrayExtension.this);
                 new EDTRunner() {
 
                     @Override
                     protected void runInEDT() {
                         try {
                             if (SwingGui.getInstance() != null) {
-                                LinkCollector.getInstance().getEventsender().addListener(highListener);
-                                ShutdownController.getInstance().addShutdownVetoListener(TrayExtension.this);
                                 initGUI(true);
                                 LogController.CL(TrayExtension.class).info("Systemtray OK");
                             }

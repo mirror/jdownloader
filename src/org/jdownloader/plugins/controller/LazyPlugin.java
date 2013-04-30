@@ -47,20 +47,45 @@ public abstract class LazyPlugin<T extends Plugin> {
     private static final Object[]                             EMPTY                   = new Object[] {};
     private long                                              version;
     private Pattern                                           pattern;
-    private String                                            classname;
+    private String                                            className;
     private String                                            displayName;
     protected WeakReference<Class<T>>                         pluginClass;
+    protected String                                          mainClassFilename       = null;
 
-    protected WeakReference<T>                                prototypeInstance;
+    public String getMainClassFilename() {
+        return mainClassFilename;
+    }
+
+    public String getMainClassSHA256() {
+        return mainClassSHA256;
+    }
+
+    public long getMainClassLastModified() {
+        return mainClassLastModified;
+    }
+
+    protected String mainClassSHA256       = null;
+    protected long   mainClassLastModified = -1;
+    protected int    interfaceVersion      = -1;
+
+    public int getInterfaceVersion() {
+        return interfaceVersion;
+    }
+
+    public void setInterfaceVersion(int interfaceVersion) {
+        this.interfaceVersion = interfaceVersion;
+    }
+
+    protected WeakReference<T>                    prototypeInstance;
     /* PluginClassLoaderChild used to load this Class */
-    private WeakReference<PluginClassLoaderChild>             classLoader;
+    private WeakReference<PluginClassLoaderChild> classLoader;
 
-    public LazyPlugin(String patternString, String classname, String displayName, long version, Class<T> class1, PluginClassLoaderChild classLoader) {
+    public LazyPlugin(String patternString, String className, String displayName, long version, Class<T> class1, PluginClassLoaderChild classLoader) {
         pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
         if (class1 != null) {
             pluginClass = new WeakReference<Class<T>>(class1);
         }
-        this.classname = classname;
+        this.className = className;
         this.displayName = displayName;
         this.version = version;
         if (classLoader != null) {
@@ -77,11 +102,12 @@ public abstract class LazyPlugin<T extends Plugin> {
     }
 
     public String getClassname() {
-        return classname;
+        return className;
     }
 
-    public void setClassname(String classname) {
-        this.classname = classname;
+    protected void setClassname(String classname) {
+        this.mainClassLastModified = -1;
+        this.className = classname;
     }
 
     public synchronized void setPluginClass(Class<T> pluginClass) {
@@ -148,13 +174,13 @@ public abstract class LazyPlugin<T extends Plugin> {
                 }
                 if (currentSharedObjects.size() > 0) {
                     /* this plugin has shared Objects */
-                    SharedPluginObjects savedSharedObjects = sharedPluginObjectsPool.get(classname);
+                    SharedPluginObjects savedSharedObjects = sharedPluginObjectsPool.get(className);
                     if (savedSharedObjects == null) {
                         /* we dont have shared Objects from this plugin in pool yet */
                         savedSharedObjects = new SharedPluginObjects();
                         savedSharedObjects.version = getVersion();
                         savedSharedObjects.sharedObjects = currentSharedObjects;
-                        sharedPluginObjectsPool.put(classname, savedSharedObjects);
+                        sharedPluginObjectsPool.put(className, savedSharedObjects);
                     } else {
                         /* reuse/update objects from pool */
                         Iterator<Entry<String, Object>> it = currentSharedObjects.entrySet().iterator();
@@ -195,10 +221,10 @@ public abstract class LazyPlugin<T extends Plugin> {
                     }
                 } else {
                     /* this plugin no longer has shared Objects, update pool */
-                    SharedPluginObjects savedSharedObjects = sharedPluginObjectsPool.get(classname);
+                    SharedPluginObjects savedSharedObjects = sharedPluginObjectsPool.get(className);
                     if (savedSharedObjects != null && savedSharedObjects.version < this.getVersion()) {
                         /* saved objects are from older plugin version, lets remove it from pool */
-                        sharedPluginObjectsPool.remove(classname);
+                        sharedPluginObjectsPool.remove(className);
                     }
                 }
             }
@@ -251,7 +277,7 @@ public abstract class LazyPlugin<T extends Plugin> {
         if (classLoader != null && classLoader != getClassLoader(false)) {
             /* load class with custom classLoader because it's not default one */
             try {
-                return (Class<T>) classLoader.loadClass(classname);
+                return (Class<T>) classLoader.loadClass(className);
             } catch (Throwable e) {
                 e.printStackTrace();
                 throw new WTFException(e);
@@ -261,7 +287,7 @@ public abstract class LazyPlugin<T extends Plugin> {
         if (pluginClass != null && (ret = pluginClass.get()) != null) return ret;
         pluginClass = null;
         try {
-            ret = (Class<T>) getClassLoader(true).loadClass(classname);
+            ret = (Class<T>) getClassLoader(true).loadClass(className);
         } catch (Throwable e) {
             e.printStackTrace();
             throw new WTFException(e);

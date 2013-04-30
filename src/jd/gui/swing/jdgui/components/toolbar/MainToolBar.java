@@ -134,21 +134,21 @@ public class MainToolBar extends JToolBar {
      */
     public final void updateToolbar() {
         if (!SecondLevelLaunch.GUI_COMPLETE.isReached()) return;
-        synchronized (this) {
-            new EDTRunner() {
 
-                @Override
-                protected void runInEDT() {
-                    setVisible(false);
-                    removeAll();
-                    initToolbar();
-                    updateSpecial();
-                    setVisible(true);
-                    revalidate();
-                }
+        new EDTRunner() {
 
-            };
-        }
+            @Override
+            protected void runInEDT() {
+                setVisible(false);
+                removeAll();
+                initToolbar();
+                updateSpecial();
+                setVisible(true);
+                revalidate();
+            }
+
+        };
+
     }
 
     private void initToolbar() {

@@ -169,6 +169,8 @@ public class PremiumStatus extends JPanel implements MouseListener {
                     domains.add(domainInfo);
                 }
             }
+            /* prefetch outside EDT */
+            domainInfo.getFavIcon();
         }
         domainInfos = null;
         accs = null;

@@ -11,13 +11,13 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
-    private static final String JD_PLUGINS_HOSTER = "jd.plugins.hoster.";
-    private String              premiumUrl;
-    private boolean             hasConfig         = false;
-    private LazyHostPlugin      fallBackPlugin    = null;
+    protected static final String JD_PLUGINS_HOSTER = "jd.plugins.hoster.";
+    private String                premiumUrl;
+    private boolean               hasConfig         = false;
+    private LazyHostPlugin        fallBackPlugin    = null;
 
-    private long                parses            = 0;
-    private long                parsesRuntime     = 0;
+    private long                  parses            = 0;
+    private long                  parsesRuntime     = 0;
 
     public long getAverageParseRuntime() {
         synchronized (this) {
@@ -25,6 +25,21 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
             long ret = parsesRuntime / parses;
             return ret;
         }
+    }
+
+    protected AbstractHostPlugin getAbstractHostPlugin() {
+        /* we only need the classname and not complete path */
+        String className = getClassname().substring(JD_PLUGINS_HOSTER.length());
+        AbstractHostPlugin ap = new AbstractHostPlugin(className);
+        ap.setDisplayName(getDisplayName());
+        ap.setPattern(getPattern().pattern());
+        ap.setVersion(getVersion());
+        ap.setHasConfig(isHasConfig());
+        ap.setInterfaceVersion(getInterfaceVersion());
+        ap.setMainClassSHA256(getMainClassSHA256());
+        ap.setMainClassLastModified(getMainClassLastModified());
+        ap.setMainClassFilename(getMainClassFilename());
+        return ap;
     }
 
     public void updateParseRuntime(long r) {
@@ -71,6 +86,10 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         premiumUrl = ap.getPremiumUrl();
         premium = ap.isPremium();
         hasConfig = ap.isHasConfig();
+        mainClassFilename = ap.getMainClassFilename();
+        mainClassLastModified = ap.getMainClassLastModified();
+        mainClassSHA256 = ap.getMainClassSHA256();
+        interfaceVersion = ap.getInterfaceVersion();
     }
 
     public ImageIcon getIcon() {

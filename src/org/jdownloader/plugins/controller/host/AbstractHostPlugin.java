@@ -9,7 +9,34 @@ public class AbstractHostPlugin implements Storable {
     private boolean premium;
     private boolean hasConfig;
     private long    version;
-    private int     interfaceVersion = 0;
+    private int     interfaceVersion      = 0;
+    private long    mainClassLastModified = -1;
+    private String  mainClassSHA256       = null;
+    private String  mainClassFilename     = null;
+
+    public String getMainClassFilename() {
+        return mainClassFilename;
+    }
+
+    public void setMainClassFilename(String mainClassFilename) {
+        this.mainClassFilename = mainClassFilename;
+    }
+
+    public long getMainClassLastModified() {
+        return mainClassLastModified;
+    }
+
+    public void setMainClassLastModified(long mainClassLastModified) {
+        this.mainClassLastModified = mainClassLastModified;
+    }
+
+    public String getMainClassSHA256() {
+        return mainClassSHA256;
+    }
+
+    public void setMainClassSHA256(String mainClassSHA256) {
+        this.mainClassSHA256 = mainClassSHA256;
+    }
 
     public long getVersion() {
         return version;

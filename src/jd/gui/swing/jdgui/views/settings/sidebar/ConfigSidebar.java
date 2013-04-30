@@ -237,7 +237,7 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
      * Updates the Addon subtree
      */
     public void updateAddons() {
-        treemodel.fill();
+        treemodel.fill(false);
     }
 
     public boolean treeInitiated() {

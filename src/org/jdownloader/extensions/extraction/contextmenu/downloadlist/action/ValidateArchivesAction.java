@@ -27,10 +27,12 @@ public class ValidateArchivesAction extends AbstractExtractionAction {
 
     @Override
     protected void onAsyncInitDone() {
-        if (archives.size() > 1) {
-            setName(T._.ValidateArchiveAction_ValidateArchiveAction_multi());
-        } else {
-            setName(T._.ValidateArchiveAction_ValidateArchiveAction(archives.get(0).getName()));
+        if (archives != null && archives.size() > 0) {
+            if (archives.size() > 1) {
+                setName(T._.ValidateArchiveAction_ValidateArchiveAction_multi());
+            } else {
+                setName(T._.ValidateArchiveAction_ValidateArchiveAction(archives.get(0).getName()));
+            }
         }
         super.onAsyncInitDone();
     }

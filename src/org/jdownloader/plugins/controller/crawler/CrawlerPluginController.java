@@ -18,6 +18,7 @@ import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
@@ -27,7 +28,6 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 public class CrawlerPluginController extends PluginController<PluginForDecrypt> {
 
     private static final Object                                  INTSANCELOCK      = new Object();
-    private static final Object                                  INITLOCK          = new Object();
     private static MinTimeWeakReference<CrawlerPluginController> INSTANCE          = null;
     private static boolean                                       CACHE_INVALIDATED = false;
 
@@ -75,15 +75,14 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {
         list = null;
     }
 
-    public void init(boolean noCache) {
+    public synchronized void init(boolean noCache) {
         List<LazyCrawlerPlugin> plugins = new ArrayList<LazyCrawlerPlugin>();
         final long t = System.currentTimeMillis();
         LogSource logger = LogController.CL(false);
@@ -95,9 +94,34 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             oldClassLoader = Thread.currentThread().getContextClassLoader();
             try {
                 if (noCache) {
+                    /* try to load from cache, to speed up rescan */
+                    HashMap<String, ArrayList<LazyPlugin>> rescanCache = new HashMap<String, ArrayList<LazyPlugin>>();
+                    try {
+                        List<LazyCrawlerPlugin> cachedPlugins = null;
+                        if (this.list != null) {
+                            cachedPlugins = this.list;
+                        } else {
+                            cachedPlugins = loadFromCache();
+                        }
+                        if (cachedPlugins != null) {
+                            for (LazyCrawlerPlugin plugin : cachedPlugins) {
+                                if (plugin.getMainClassFilename() == null) continue;
+                                if (plugin.getMainClassLastModified() <= 0) continue;
+                                if (plugin.getMainClassSHA256() == null) continue;
+                                ArrayList<LazyPlugin> cache = rescanCache.get(plugin.getMainClassFilename());
+                                if (cache == null) {
+                                    cache = new ArrayList<LazyPlugin>();
+                                    rescanCache.put(plugin.getMainClassFilename(), cache);
+                                }
+                                cache.add(plugin);
+                            }
+                        }
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
                     try {
                         /* do a fresh scan */
-                        plugins = update(logger);
+                        plugins = update(logger, rescanCache);
                     } catch (Throwable e) {
                         logger.severe("@CrawlerPluginController: update failed!");
                         logger.log(e);
@@ -113,7 +137,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     if (plugins.size() == 0) {
                         try {
                             /* do a fresh scan */
-                            plugins = update(logger);
+                            plugins = update(logger, null);
                         } catch (Throwable e) {
                             logger.severe("@CrawlerPluginController: update failed!");
                             logger.log(e);
@@ -143,10 +167,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     private List<LazyCrawlerPlugin> loadFromCache() {
         java.util.List<AbstractCrawlerPlugin> l = null;
-        synchronized (INITLOCK) {
-            l = JSonStorage.restoreFrom(Application.getResource(getCache()), false, KEY, new TypeRef<ArrayList<AbstractCrawlerPlugin>>() {
-            }, new ArrayList<AbstractCrawlerPlugin>());
-        }
+        l = JSonStorage.restoreFrom(Application.getResource(getCache()), false, KEY, new TypeRef<ArrayList<AbstractCrawlerPlugin>>() {
+        }, new ArrayList<AbstractCrawlerPlugin>());
         List<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>(l.size());
         /* use this classLoader for all cached plugins to load */
         for (AbstractCrawlerPlugin ap : l) {
@@ -157,10 +179,22 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     static public byte[] KEY = new byte[] { 0x01, 0x03, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
 
-    private List<LazyCrawlerPlugin> update(LogSource logger) throws MalformedURLException {
+    private List<LazyCrawlerPlugin> update(LogSource logger, HashMap<String, ArrayList<LazyPlugin>> pluginCache) throws MalformedURLException {
         HashMap<String, LinkedList<AbstractCrawlerPlugin>> ret = new HashMap<String, LinkedList<AbstractCrawlerPlugin>>();
         HashMap<String, LazyCrawlerPlugin> ret2 = new HashMap<String, LazyCrawlerPlugin>();
-        for (PluginInfo<PluginForDecrypt> c : scan("jd/plugins/decrypter")) {
+        for (PluginInfo<PluginForDecrypt> c : scan("jd/plugins/decrypter", pluginCache)) {
+            if (c.getLazyPlugin() != null) {
+                LazyCrawlerPlugin plugin = (LazyCrawlerPlugin) c.getLazyPlugin();
+                ret2.put(plugin.getDisplayName() + plugin.getPattern(), plugin);
+                LinkedList<AbstractCrawlerPlugin> existingPlugin = ret.get(plugin.getDisplayName());
+                if (existingPlugin == null) {
+                    existingPlugin = new LinkedList<AbstractCrawlerPlugin>();
+                    ret.put(plugin.getDisplayName(), existingPlugin);
+                }
+                existingPlugin.add(plugin.getAbstractCrawlerPlugin());
+                logger.finer("@CrawlerPlugin ok(cached):" + plugin.getClassname() + " " + plugin.getDisplayName() + " " + plugin.getVersion());
+                continue;
+            }
             String simpleName = new String(c.getClazz().getSimpleName());
             DecrypterPlugin a = c.getClazz().getAnnotation(DecrypterPlugin.class);
             if (a != null) {
@@ -199,6 +233,10 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             ap.setPattern(new String(patterns[i]));
                             ap.setVersion(revision);
                             ap.setInterfaceVersion(a.interfaceVersion());
+                            /* information to speed up rescan */
+                            ap.setMainClassSHA256(c.getMainClassSHA256());
+                            ap.setMainClassLastModified(c.getMainClassLastModified());
+                            ap.setMainClassFilename(c.getFile().getName());
                             classLoader = (PluginClassLoaderChild) c.getClazz().getClassLoader();
                             /* during init we dont want dummy libs being created */
                             classLoader.setCreateDummyLibs(false);
@@ -269,9 +307,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     private void save(List<AbstractCrawlerPlugin> save) {
-        synchronized (INITLOCK) {
-            JSonStorage.saveTo(Application.getResource(getCache()), false, KEY, JSonStorage.serializeToJson(save));
-        }
+        JSonStorage.saveTo(Application.getResource(getCache()), false, KEY, JSonStorage.serializeToJson(save));
     }
 
     public List<LazyCrawlerPlugin> list() {
