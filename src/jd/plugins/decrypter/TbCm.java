@@ -535,7 +535,7 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 // **** MP4 *****
-                if (!threeD && (mp4 || best)) {
+                if (mp4 || best) {
                     if (q360p || best) {
                         this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
                     }
@@ -551,7 +551,7 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 // **** WebM *****
-                if (!threeD && (webm || best)) {
+                if (webm || best) {
                     if (q360p || best) {
                         this.put(43, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
                     }
@@ -567,7 +567,7 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 // **** 3D *****/
-                if (threeD || best) {
+                if (threeD) {
                     if (webm || best) {
                         if (q360p || best) {
                             this.put(100, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
@@ -674,52 +674,68 @@ public class TbCm extends PluginForDecrypt {
 
                 /* check for wished formats first */
                 if (best) {
-                    // 1080p
-                    if (LinksFound.get(37) != null) {
-                        String[] temp = LinksFound.get(37);
-                        LinksFound.clear();
-                        LinksFound.put(37, temp);
-                        // 720p
-                    } else if (LinksFound.get(45) != null || LinksFound.get(22) != null) {
-                        String[] temp1 = LinksFound.get(45);
-                        String[] temp2 = LinksFound.get(22);
-
-                        LinksFound.clear();
-
-                        if (temp1 != null) LinksFound.put(45, temp1);
-                        if (temp2 != null) LinksFound.put(22, temp2);
-                        // 480p
-                    } else if (LinksFound.get(35) != null) {
-                        String[] temp = LinksFound.get(35);
-                        LinksFound.clear();
-                        LinksFound.put(35, temp);
-                        // 360p
-                    } else if (LinksFound.get(43) != null || LinksFound.get(18) != null || LinksFound.get(34) != null) {
-                        String[] temp1 = LinksFound.get(43);
-                        String[] temp2 = LinksFound.get(18);
-                        String[] temp3 = LinksFound.get(34);
-
-                        LinksFound.clear();
-
-                        if (temp1 != null) LinksFound.put(43, temp1);
-                        if (temp2 != null) LinksFound.put(18, temp2);
-                        if (temp3 != null) LinksFound.put(34, temp3);
-                        // 240p
-                    } else if (LinksFound.get(13) != null || LinksFound.get(17) != null || LinksFound.get(5) != null) {
-                        String[] temp1 = LinksFound.get(13);
-                        String[] temp2 = LinksFound.get(17);
-                        String[] temp3 = LinksFound.get(5);
-
-                        LinksFound.clear();
-
-                        if (temp1 != null) LinksFound.put(13, temp1);
-                        if (temp2 != null) LinksFound.put(17, temp2);
-                        if (temp3 != null) LinksFound.put(5, temp3);
-                    } else {
-                        // Original
+                    if (LinksFound.get(38) != null) {
+                        // original mp4
                         String[] temp = LinksFound.get(38);
                         LinksFound.clear();
                         LinksFound.put(38, temp);
+                    } else if (LinksFound.get(37) != null || LinksFound.get(46) != null) {
+                        // 1080p mp4
+                        String[] temp1 = LinksFound.get(37);
+                        // 1080p webm
+                        String[] temp2 = LinksFound.get(46);
+                        LinksFound.clear();
+                        if (temp1 != null) LinksFound.put(37, temp1);
+                        if (temp2 != null) LinksFound.put(46, temp2);
+                    } else if (LinksFound.get(45) != null || LinksFound.get(22) != null || LinksFound.get(102) != null || LinksFound.get(84) != null) {
+                        // 720p webm
+                        String[] temp1 = LinksFound.get(45);
+                        // 720p mp4
+                        String[] temp2 = LinksFound.get(22);
+                        // 720p(3d) webm
+                        String[] temp3 = LinksFound.get(102);
+                        // 720p(3d) mp4
+                        String[] temp4 = LinksFound.get(84);
+                        LinksFound.clear();
+                        if (temp1 != null) LinksFound.put(45, temp1);
+                        if (temp2 != null) LinksFound.put(22, temp2);
+                        if (temp3 != null) LinksFound.put(102, temp3);
+                        if (temp4 != null) LinksFound.put(84, temp4);
+                    } else if (LinksFound.get(35) != null || LinksFound.get(44) != null) {
+                        // 480p flv
+                        String[] temp1 = LinksFound.get(35);
+                        // 480p webm
+                        String[] temp2 = LinksFound.get(44);
+                        LinksFound.clear();
+                        if (temp1 != null) LinksFound.put(35, temp1);
+                        if (temp2 != null) LinksFound.put(44, temp2);
+                    } else if (LinksFound.get(43) != null || LinksFound.get(18) != null || LinksFound.get(34) != null || LinksFound.get(100) != null || LinksFound.get(101) != null || LinksFound.get(82) != null) {
+                        // 360p
+                        String[] temp1 = LinksFound.get(43);
+                        String[] temp2 = LinksFound.get(18);
+                        String[] temp3 = LinksFound.get(34);
+                        // 360p(3d) webm
+                        String[] temp4 = LinksFound.get(100);
+                        // 360p(3d) webm
+                        String[] temp5 = LinksFound.get(101);
+                        // 360p(3d) mp4
+                        String[] temp6 = LinksFound.get(82);
+                        LinksFound.clear();
+                        if (temp1 != null) LinksFound.put(43, temp1);
+                        if (temp2 != null) LinksFound.put(18, temp2);
+                        if (temp3 != null) LinksFound.put(34, temp3);
+                        if (temp4 != null) LinksFound.put(100, temp4);
+                        if (temp5 != null) LinksFound.put(101, temp5);
+                        if (temp6 != null) LinksFound.put(82, temp6);
+                    } else if (LinksFound.get(13) != null || LinksFound.get(17) != null || LinksFound.get(5) != null) {
+                        // 240p
+                        String[] temp1 = LinksFound.get(13);
+                        String[] temp2 = LinksFound.get(17);
+                        String[] temp3 = LinksFound.get(5);
+                        LinksFound.clear();
+                        if (temp1 != null) LinksFound.put(13, temp1);
+                        if (temp2 != null) LinksFound.put(17, temp2);
+                        if (temp3 != null) LinksFound.put(5, temp3);
                     }
                 }
 
@@ -801,6 +817,17 @@ public class TbCm extends PluginForDecrypt {
                         String desc = info.desc;
                         if (cfg.getBooleanProperty("FORMATINNAME", true) == false) {
                             desc = "";
+                        }
+                        switch (info.fmt) {
+                        case 82:
+                        case 83:
+                        case 84:
+                        case 85:
+                        case 100:
+                        case 101:
+                        case 102:
+                            desc = "(3D)" + desc;
+                            break;
                         }
                         thislink.setFinalFileName(YT_FILENAME + desc + convertTo.getExtFirst());
                         thislink.setProperty("size", info.size);
