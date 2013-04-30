@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "http://[\\w\\.]*?multishare\\.cz/stahnout/[0-9]+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "https?://[\\w\\.]*?multishare\\.cz/stahnout/[0-9]+/" }, flags = { 2 })
 public class MultiShareCz extends PluginForHost {
 
     public MultiShareCz(PluginWrapper wrapper) {
