@@ -86,6 +86,7 @@ import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.dynamic.Dynamic;
 import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
@@ -590,6 +591,9 @@ public class SecondLevelLaunch {
                             Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
                             // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                         }
+                        // parse Menu Data. This will result in a better direct feeling when using the contextmenu the first time
+                        DownloadListContextMenuManager.getInstance().getMenuData();
+
                     }
 
                 }.start();

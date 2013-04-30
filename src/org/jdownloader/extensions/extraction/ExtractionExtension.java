@@ -43,7 +43,6 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarAction;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -54,7 +53,6 @@ import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -83,14 +81,12 @@ import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.menu.MenuContext;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
-import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTablePropertiesContext;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuFactoryListener {
@@ -109,19 +105,16 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     private ExtractionListenerIcon            statusbarListener = null;
 
-    private AbstractToolbarAction             extractFileAction;
-
     private AppAction                         menuAction;
 
     private ShutdownVetoListener              listener          = null;
 
-    private LogSource                         logger;
+    private boolean                           lazyInitOnStart   = false;
 
     public ExtractionExtension() throws StartException {
         super();
         setTitle(_.name());
         INSTANCE = this;
-        logger = LogController.getInstance().getLogger("ExtractionExtension");
 
     }
 
@@ -252,7 +245,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         return getSettings().isDeleteArchiveDownloadlinksAfterExtraction();
     }
 
-    private boolean isRemoveFilesAfterExtractEnabled(Archive archive) {
+    public boolean isRemoveFilesAfterExtractEnabled(Archive archive) {
 
         switch (archive.getSettings().getRemoveFilesAfterExtraction()) {
         case FALSE:
@@ -403,6 +396,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     @Override
     protected void start() throws StartException {
+        lazyInitOnceOnStart();
+
         LinkCollector.getInstance().setArchiver(this);
         MenuFactoryEventSender.getInstance().addListener(this);
         FileCreationManager.getInstance().getEventSender().addListener(this);
@@ -458,96 +453,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         });
     }
 
-    void fireEvent(ExtractionEvent event) {
-        broadcaster.fireEvent(event);
-    }
-
-    @Override
-    public void handleCommand(String command, String... parameters) {
-
-        if (command.equalsIgnoreCase("add-passwords") || command.equalsIgnoreCase("add-passwords") || command.equalsIgnoreCase("p")) {
-            List<String> lst = getSettings().getPasswordList();
-            ArrayList<String> ret = new ArrayList<String>();
-            if (lst != null) ret.addAll(lst);
-            Collection<String> newPws = Arrays.asList(parameters);
-            ret.removeAll(newPws);
-            ret.addAll(0, newPws);
-            getSettings().setPasswordList(ret);
-            logger.info("Added Passwords: " + newPws + " New List Size: " + ret.size());
-
-        }
-
-    }
-
-    // public void handleStartupParameters(ParameterParser parameters) {
-    // +#
-    // cs=parameters.getCommandSwitch(")
-    //
-    // ;
-    // }
-    @Override
-    protected void initExtension() throws StartException {
-        /* import old passwordlist */
-        boolean oldPWListImported = false;
-        ArchiveValidator.EXTENSION = this;
-        DownloadListContextMenuManager.getInstance().registerExtender(new DownloadListContextmenuExtender(this));
-        try {
-            if ((oldPWListImported = getSettings().isOldPWListImported()) == false) {
-                SubConfiguration oldConfig = SubConfiguration.getConfig("PASSWORDLIST", true);
-                Object oldList = oldConfig.getProperties().get("LIST2");
-                java.util.List<String> currentList = getSettings().getPasswordList();
-                if (currentList == null) currentList = new ArrayList<String>();
-                if (oldList != null && oldList instanceof List) {
-                    for (Object item : (List<?>) oldList) {
-                        if (item != null && item instanceof String) {
-                            String pw = (String) item;
-                            currentList.remove(pw);
-                            currentList.add(pw);
-                        }
-                    }
-                }
-                getSettings().setPasswordList(currentList);
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-        } finally {
-            if (oldPWListImported == false) {
-                getSettings().setOldPWListImported(true);
-            }
-        }
-        extractFileAction = new AbstractToolbarAction() {
-
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 6674118067384677739L;
-
-            public void actionPerformed(ActionEvent e) {
-                menuAction.actionPerformed(e);
-
-            }
-
-            @Override
-            protected void doInit() {
-            }
-
-            @Override
-            protected String createTooltip() {
-                return "Extraction";
-            }
-
-            @Override
-            public String createIconKey() {
-
-                return "unpack";
-            }
-
-            @Override
-            protected String createAccelerator() {
-                return ShortcutController._.getExtractionUnpackFilesAction();
-            }
-        };
-
+    private void lazyInitOnceOnStart() {
+        if (lazyInitOnStart) return;
+        lazyInitOnStart = true;
         initExtractors();
 
         // addListener(new ExtractionListenerFile());
@@ -656,6 +564,66 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             }
         };
         configPanel = new ExtractionConfigPanel(this);
+    }
+
+    void fireEvent(ExtractionEvent event) {
+        broadcaster.fireEvent(event);
+    }
+
+    @Override
+    public void handleCommand(String command, String... parameters) {
+
+        if (command.equalsIgnoreCase("add-passwords") || command.equalsIgnoreCase("add-passwords") || command.equalsIgnoreCase("p")) {
+            List<String> lst = getSettings().getPasswordList();
+            ArrayList<String> ret = new ArrayList<String>();
+            if (lst != null) ret.addAll(lst);
+            Collection<String> newPws = Arrays.asList(parameters);
+            ret.removeAll(newPws);
+            ret.addAll(0, newPws);
+            getSettings().setPasswordList(ret);
+            logger.info("Added Passwords: " + newPws + " New List Size: " + ret.size());
+
+        }
+
+    }
+
+    // public void handleStartupParameters(ParameterParser parameters) {
+    // +#
+    // cs=parameters.getCommandSwitch(")
+    //
+    // ;
+    // }
+    @Override
+    protected void initExtension() throws StartException {
+        /* import old passwordlist */
+        boolean oldPWListImported = false;
+        ArchiveValidator.EXTENSION = this;
+        DownloadListContextMenuManager.getInstance().registerExtender(new DownloadListContextmenuExtender(this));
+        try {
+            if ((oldPWListImported = getSettings().isOldPWListImported()) == false) {
+                SubConfiguration oldConfig = SubConfiguration.getConfig("PASSWORDLIST", true);
+                Object oldList = oldConfig.getProperties().get("LIST2");
+                java.util.List<String> currentList = getSettings().getPasswordList();
+                if (currentList == null) currentList = new ArrayList<String>();
+                if (oldList != null && oldList instanceof List) {
+                    for (Object item : (List<?>) oldList) {
+                        if (item != null && item instanceof String) {
+                            String pw = (String) item;
+                            currentList.remove(pw);
+                            currentList.add(pw);
+                        }
+                    }
+                }
+                getSettings().setPasswordList(currentList);
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+        } finally {
+            if (oldPWListImported == false) {
+                getSettings().setOldPWListImported(true);
+            }
+        }
+
     }
 
     @Override

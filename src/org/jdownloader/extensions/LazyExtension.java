@@ -37,9 +37,12 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     private String                         configInterface;
 
     public static LazyExtension create(String id, Class<AbstractExtension<?, ?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
-        LazyExtension ret = new LazyExtension();
-        AbstractExtension<?, ?> plg = (AbstractExtension<?, ?>) cls.newInstance();
+        System.out.println(id);
 
+        LazyExtension ret = new LazyExtension();
+        long t = System.currentTimeMillis();
+        AbstractExtension<?, ?> plg = (AbstractExtension<?, ?>) cls.newInstance();
+        System.out.println("New Instance: " + (System.currentTimeMillis() - t));
         String path = "tmp/extensioncache/" + id + ".png";
         File iconCache = Application.getResource(path);
         iconCache.getParentFile().mkdirs();
@@ -55,6 +58,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
             } catch (final Throwable e) {
             }
         }
+        System.out.println("Icon Update: " + (System.currentTimeMillis() - t));
         ret.iconPath = path;
         ret.linuxRunnable = plg.isLinuxRunnable();
         ret.macRunnable = plg.isMacRunnable();
@@ -67,7 +71,10 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         ret.extension = plg;
         ret.configInterface = plg.getConfigClass().getName();
         ret.quickToggleEnabled = plg.isQuickToggleEnabled();
+
+        System.out.println("Setup: " + (System.currentTimeMillis() - t));
         plg.init();
+        System.out.println("Init: " + (System.currentTimeMillis() - t));
 
         //
         //

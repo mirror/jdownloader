@@ -1,6 +1,9 @@
 package org.jdownloader.actions;
 
+import javax.swing.ImageIcon;
+
 import org.appwork.swing.action.BasicAction;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.images.NewTheme;
 
 /**
@@ -18,6 +21,10 @@ public abstract class AppAction extends BasicAction {
     public AppAction() {
         super();
 
+    }
+
+    public static ImageIcon merge(String a, String b) {
+        return new ImageIcon(ImageProvider.merge(NewTheme.I().getImage(a, 18), NewTheme.I().getImage(b, 12), 0, 0, 10, 10).getSubimage(0, 0, 18, 18));
     }
 
     public void setIconKey(String iconKey) {

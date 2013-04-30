@@ -14,8 +14,8 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainer;
 
-public class ArchivesCleanupSubMenu extends MenuContainer {
-    public ArchivesCleanupSubMenu() {
+public class CleanupSubMenu extends MenuContainer {
+    public CleanupSubMenu() {
         setName(org.jdownloader.extensions.extraction.translate.T._.context_cleanup());
         setIconKey("clear");
     }

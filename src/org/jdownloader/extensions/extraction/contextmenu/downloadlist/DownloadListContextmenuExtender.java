@@ -1,6 +1,13 @@
 package org.jdownloader.extensions.extraction.contextmenu.downloadlist;
 
 import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.AutoExtractEnabledToggleAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.CleanupAutoDeleteFilesEnabledToggleAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.CleanupAutoDeleteLinksEnabledToggleAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ExtractArchiveNowAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractPasswordAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractToAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ValidateArchivesAction;
 import org.jdownloader.gui.views.downloads.contextmenumanager.ActionData;
 import org.jdownloader.gui.views.downloads.contextmenumanager.AddonSubMenuLink;
 import org.jdownloader.gui.views.downloads.contextmenumanager.ContextMenuManager;
@@ -37,20 +44,18 @@ public class DownloadListContextmenuExtender implements MenuExtenderHandler {
 
         ArchivesSubMenu root;
         mr.getItems().add(addonLinkIndex, root = new ArchivesSubMenu());
-        root.add(new MenuItemData(new ActionData(ExtractNowAction.class)));
+        root.add(new MenuItemData(new ActionData(ExtractArchiveNowAction.class)));
         root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
 
         root.add(new SeperatorData());
-        root.add(new MenuItemData(new ActionData(AutoExtractAction.class)));
+        root.add(new MenuItemData(new ActionData(AutoExtractEnabledToggleAction.class)));
         root.add(new MenuItemData(new ActionData(SetExtractToAction.class)));
         root.add(new MenuItemData(new ActionData(SetExtractPasswordAction.class)));
-        ArchivesCleanupSubMenu cleanup = new ArchivesCleanupSubMenu();
+        CleanupSubMenu cleanup = new CleanupSubMenu();
         root.add(cleanup);
-        cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteFilesAction.class)));
-        cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteLinksAction.class)));
+        cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteFilesEnabledToggleAction.class)));
+        cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteLinksEnabledToggleAction.class)));
 
-        root.add(new SeperatorData());
-        root.add(new ExtractionExtensionMenuLink());
     }
 
 }

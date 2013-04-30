@@ -1,58 +1,31 @@
-package org.jdownloader.extensions.extraction.contextmenu.downloadlist;
+package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 
 import java.awt.event.ActionEvent;
 import java.util.HashSet;
-import java.util.List;
-
-import jd.controlling.IOEQ;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.extensions.ExtensionAction;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.ExtractionConfig;
-import org.jdownloader.extensions.extraction.ExtractionExtension;
-import org.jdownloader.extensions.extraction.translate.ExtractionTranslation;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class SetExtractPasswordAction extends ExtensionAction<ExtractionExtension, ExtractionConfig, ExtractionTranslation> {
-
-    protected List<Archive> archives;
+public class SetExtractPasswordAction extends AbstractExtractionAction {
 
     public SetExtractPasswordAction(final SelectionInfo<?, ?> selection) {
+        super(selection);
         setName(_.contextmenu_password());
         setIconKey("password");
         setEnabled(false);
 
-        //
-        if (selection == null) return;
-        IOEQ.add(new Runnable() {
+    }
 
-            @Override
-            public void run() {
-
-                archives = ArchiveValidator.validate((SelectionInfo<FilePackage, DownloadLink>) selection).getArchives();
-                if (archives != null && archives.size() > 0) {
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            setSelected(_getExtension().isAutoExtractEnabled(archives.get(0)));
-
-                            setEnabled(true);
-                        }
-                    };
-                }
-
-            }
-
-        });
+    @Override
+    protected void onAsyncInitDone() {
+        super.onAsyncInitDone();
+        if (archives!=null&&archives.size() > 0) setSelected(_getExtension().isAutoExtractEnabled(archives.get(0)));
 
     }
 

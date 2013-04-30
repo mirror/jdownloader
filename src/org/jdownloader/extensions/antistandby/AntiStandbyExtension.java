@@ -67,14 +67,20 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
 
     @Override
     protected void start() throws StartException {
-        if (CrossSystem.isWindows()) {
-            asthread = new WindowsAntiStandby(this);
-            asthread.start();
-        } else if (CrossSystem.isMac()) {
-            asthread = new MacAntiStandBy(this);
-            asthread.start();
+        new Thread("AntiStandByLoader") {
+            public void run() {
+                if (CrossSystem.isWindows()) {
 
-        }
+                    asthread = new WindowsAntiStandby(AntiStandbyExtension.this);
+                    asthread.start();
+
+                } else if (CrossSystem.isMac()) {
+                    asthread = new MacAntiStandBy(AntiStandbyExtension.this);
+                    asthread.start();
+
+                }
+            }
+        }.start();
 
     }
 

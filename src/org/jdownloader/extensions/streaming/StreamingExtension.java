@@ -28,7 +28,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
@@ -62,7 +61,6 @@ import org.jdownloader.logging.LogController;
 
 public class StreamingExtension extends AbstractExtension<StreamingConfig, StreamingTranslation> implements MenuFactoryListener {
 
-    private LogSource           logger;
     protected StreamingProvider streamProvider = null;
     static {
         // we need a testcommit 9
@@ -71,8 +69,6 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     }
 
     public StreamingExtension() {
-
-        logger = LogController.getInstance().getLogger("streaming");
 
     }
 

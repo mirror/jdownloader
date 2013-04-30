@@ -9,6 +9,7 @@ import java.util.List;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.views.downloads.contextmenumanager.gui.ClassCurrentlyNotAvailableException;
 
 public class MenuContainerRoot extends MenuContainer implements Storable {
     private int version;
@@ -39,6 +40,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
      * @param container
      */
     private void validate(MenuItemData container) {
+        container._setValidated(true);
         if (container.getItems() != null) {
 
             ArrayList<MenuItemData> itemsToRemove = null;
@@ -47,8 +49,19 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
             MenuItemData last = null;
             for (int i = 0; i < container.getItems().size(); i++) {
                 MenuItemData mid = container.getItems().get(i);
+                MenuItemData lr = null;
                 try {
-                    MenuItemData lr = mid.lazyReal();
+                    try {
+                        lr = mid.createValidatedItem();
+                        if (lr.getActionData() != null) {
+                            lr.createAction(null);
+                        }
+                    } catch (ClassCurrentlyNotAvailableException e) {
+                        // extension not loaded or anything like this.
+                        mid._setValidateException(e);
+                        lr = mid;
+                    }
+
                     if (lr instanceof SeperatorData && (i == 0 || i == container.getItems().size() - 1)) { throw new Exception("Seperator at " + i); }
                     if (lr instanceof SeperatorData && last instanceof SeperatorData) { throw new Exception("Double Seperator"); }
 
@@ -138,7 +151,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
 
                         for (MenuItemData mu : addAt.getItems()) {
                             // if (mu.getActionData() != null) continue;
-                            if (StringUtils.equals(mu.getClassName(), c.getClassName())) {
+                            if (StringUtils.equals(mu._getIdentifier(), c._getIdentifier())) {
                                 // subfolder found
                                 addAt = mu;
                                 continue main;
@@ -199,17 +212,35 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
     private int searchBestPosition(ArrayList<MenuItemData> items, List<MenuItemData> above, List<MenuItemData> below) {
 
         ArrayList<Object> identList = new ArrayList<Object>();
-        ArrayList<Integer> seps = new ArrayList<Integer>();
+
         for (int i = 0; i < items.size(); i++) {
             identList.add(items.get(i)._getIdentifier());
-            if (items.get(i) instanceof SeperatorData) {
-                seps.add(i);
-            }
+
         }
         int bestMatch = Integer.MAX_VALUE;
         int bestIndex = -1;
+
+        if (above.size() == 0 && below.size() == 0) return 0;
+        if (above.size() == 0) {
+            for (int b = 0; b < below.size(); b++) {
+                MenuItemData bN = below.get(b);
+                int bIndex = identList.indexOf(bN._getIdentifier());
+                if (bIndex >= 0) { return bIndex; }
+
+            }
+        } else if (below.size() == 0) {
+            for (int a = above.size() - 1; a >= 0; a--) {
+
+                MenuItemData aN = above.get(a);
+                int aIndex = identList.indexOf(aN._getIdentifier());
+                if (aIndex >= 0) { return aIndex + 1; }
+
+            }
+
+        }
         boolean lastAWasSep = false;
         boolean lastBwasSep = false;
+
         main: for (int a = above.size() - 1; a >= 0; a--) {
 
             MenuItemData aN = above.get(a);
@@ -252,7 +283,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
 
                             if (dist < bestMatch) {
                                 bestMatch = dist;
-                                bestIndex = aIndex + 1;
+                                bestIndex = bIndex;
                             }
                         }
                     } finally {

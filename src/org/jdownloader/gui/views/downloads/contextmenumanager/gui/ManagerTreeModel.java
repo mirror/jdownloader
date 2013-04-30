@@ -12,6 +12,7 @@ import org.appwork.storage.TypeRef;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainer;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainerRoot;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData.Type;
 
 public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
 
@@ -19,16 +20,16 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
 
     public ManagerTreeModel(MenuContainerRoot menuContainerRoot) {
         super(null, false);
-        // create a new copy
 
-        menuContainerRoot = JSonStorage.restoreFromString(JSonStorage.toString(menuContainerRoot), new TypeRef<MenuContainerRoot>() {
-        });
-        data = menuContainerRoot;
+        set(menuContainerRoot);
+
     }
 
     public void set(MenuContainerRoot menuContainerRoot) {
+        // create a copy
         menuContainerRoot = JSonStorage.restoreFromString(JSonStorage.toString(menuContainerRoot), new TypeRef<MenuContainerRoot>() {
         });
+        menuContainerRoot.validate();
         data = menuContainerRoot;
 
         fireTreeStructureChanged(this, new Object[] { data }, null, null);
@@ -52,7 +53,7 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
 
     @Override
     public boolean isLeaf(Object node) {
-        return !(((MenuItemData) node).lazyReal() instanceof MenuContainer);
+        return ((MenuItemData) node).getType() != Type.CONTAINER;
     }
 
     @Override

@@ -39,7 +39,6 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.locale.AWUTranslation;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.sendlogs.LogSenderTranslation;
 import org.appwork.utils.svn.Subversion;
 import org.appwork.utils.swing.EDTHelper;
@@ -59,7 +58,6 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.translator.gui.TranslatorGui;
 import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.translate.JdownloaderTranslation;
 import org.jdownloader.updatev2.UpdaterTranslation;
 import org.tmatesoft.svn.core.SVNDepth;
@@ -94,7 +92,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     private TranslatorExtensionEventSender eventSender;
     private Thread                         timer;
     private String                         fontname;
-    private LogSource                      logger;
 
     public String getFontname() {
         return fontname;
@@ -103,24 +100,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     public TranslatorExtension() {
         // Name. The translation Extension itself does not need translation. All
         // translators should be able to read english
-        logger = LogController.getInstance().getLogger("TranslatorExtension");
+
         setTitle(_.Translator());
         eventSender = new TranslatorExtensionEventSender();
-        // get all LanguageIDs
-        List<String> ids = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
-        // create a list of TLocale instances
-        translations = new ArrayList<TLocale>();
-
-        for (String id : ids) {
-            translations.add(new TLocale(id));
-        }
-        // sort the list.
-        Collections.sort(translations, new Comparator<TLocale>() {
-
-            public int compare(TLocale o1, TLocale o2) {
-                return o1.toString().compareTo(o2.toString());
-            }
-        });
 
         // unload extensions on exit
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
@@ -192,6 +174,23 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      */
     @Override
     protected void start() throws StartException {
+
+        // get all LanguageIDs
+        List<String> ids = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
+        // create a list of TLocale instances
+        translations = new ArrayList<TLocale>();
+
+        for (String id : ids) {
+            translations.add(new TLocale(id));
+        }
+        // sort the list.
+        Collections.sort(translations, new Comparator<TLocale>() {
+
+            public int compare(TLocale o1, TLocale o2) {
+                return o1.toString().compareTo(o2.toString());
+            }
+        });
+
         logger.finer("Started " + getClass().getSimpleName());
         timer = new Thread("TranslatorSyncher") {
             public void run() {
@@ -375,7 +374,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             // mapped to an INterface
 
             this.translationEntries = tmp;
-            // 
+            //
 
         }
         getEventSender().fireEvent(new TranslatorExtensionEvent(this, org.jdownloader.extensions.translator.TranslatorExtensionEvent.Type.LOADED_TRANSLATION));

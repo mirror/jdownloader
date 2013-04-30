@@ -52,7 +52,7 @@ public class MenuItemData implements Storable {
     }
 
     public void setActionData(ActionData actionData) {
-        real = null;
+
         this.actionData = actionData;
     }
 
@@ -63,7 +63,7 @@ public class MenuItemData implements Storable {
     }
 
     public void setClassName(String className) {
-        real = null;
+
         this.className = className;
     }
 
@@ -72,16 +72,18 @@ public class MenuItemData implements Storable {
         CONTAINER;
     }
 
-    private Type         type = Type.ACTION;
+    private Type      type = Type.ACTION;
 
-    private MenuItemData real;
+    private boolean   validated;
+
+    private Exception validateException;
 
     public Type getType() {
         return type;
     }
 
     public void setType(Type type) {
-        real = null;
+
         this.type = type;
     }
 
@@ -90,20 +92,22 @@ public class MenuItemData implements Storable {
     }
 
     public ArrayList<MenuItemData> getItems() {
+
         return items;
     }
 
     public void setItems(ArrayList<MenuItemData> items) {
-        real = null;
+
         this.items = items;
     }
 
     public String getName() {
+
         return name;
     }
 
     public void setName(String name) {
-        real = null;
+
         this.name = name;
     }
 
@@ -112,7 +116,7 @@ public class MenuItemData implements Storable {
     }
 
     public void setIconKey(String iconKey) {
-        real = null;
+
         this.iconKey = iconKey;
     }
 
@@ -125,7 +129,7 @@ public class MenuItemData implements Storable {
     }
 
     public void setProperties(HashSet<MenuItemProperty> properties) {
-        real = null;
+
         this.properties = properties;
     }
 
@@ -141,21 +145,21 @@ public class MenuItemData implements Storable {
         setActionData(actionData);
     }
 
-    public MenuItemData lazyReal() {
-        try {
-            if (real != null) return real;
-            if (className == null || getClass().getName().equals(className)) return this;
+    public MenuItemData createValidatedItem() throws InstantiationException, IllegalAccessException, ClassNotFoundException, ExtensionNotLoadedException {
 
-            MenuItemData ret = createInstance(this);
-
-            real = ret;
-            return ret;
-        } catch (Throwable e) {
-            throw new WTFException(e);
+        if (className == null || getClass().getName().equals(className)) {
+            this._setValidated(true);
+            return this;
         }
+
+        MenuItemData ret = createInstance(this);
+        ret._setValidated(true);
+        return ret;
+
     }
 
-    protected MenuItemData createInstance(MenuItemData menuItemData) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+    protected MenuItemData createInstance(MenuItemData menuItemData) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ExtensionNotLoadedException {
+
         if (menuItemData.getClassName() == null) return menuItemData;
 
         MenuItemData ret = null;
@@ -163,11 +167,7 @@ public class MenuItemData implements Storable {
         String packageName = AbstractExtension.class.getPackage().getName();
         if (menuItemData.getClassName().startsWith(packageName)) {
 
-            try {
-                ret = (MenuItemData) ExtensionController.getInstance().loadClass(menuItemData.getClassName()).newInstance();
-            } catch (ExtensionNotLoadedException e) {
-                e.printStackTrace();
-            }
+            ret = (MenuItemData) ExtensionController.getInstance().loadClass(menuItemData.getClassName()).newInstance();
 
         } else {
             ret = (MenuItemData) Class.forName(menuItemData.getClassName()).newInstance();
@@ -178,13 +178,12 @@ public class MenuItemData implements Storable {
         ret.setItems(menuItemData.getItems());
         ret.setType(menuItemData.getType());
         ret.setProperties(menuItemData.getProperties());
-        // do avoid lazy real loops
-        ret.real = ret;
+
         return ret;
 
     }
 
-    public JComponent createItem(SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ActionClassNotAvailableException {
+    public JComponent createItem(SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
 
         if (actionData == null) {
             //
@@ -202,7 +201,11 @@ public class MenuItemData implements Storable {
 
     }
 
-    public AppAction createAction(SelectionInfo<?, ?> selection) throws ActionClassNotAvailableException {
+    public AppAction createAction(SelectionInfo<?, ?> selection) throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ExtensionNotLoadedException {
+        if (!validated) {
+            //
+            throw new WTFException();
+        }
         if (actionData == null) {
             //
             throw new WTFException("No ACTION");
@@ -220,13 +223,13 @@ public class MenuItemData implements Storable {
             }
 
         }
-        try {
-            Constructor<?> c = clazz.getConstructor(new Class[] { SelectionInfo.class });
-            AppAction action = (AppAction) c.newInstance(new Object[] { selection });
-            return action;
-        } catch (Exception e) {
-            throw new WTFException(e);
-        }
+
+        Constructor<?> c = clazz.getConstructor(new Class[] { SelectionInfo.class });
+        AppAction action = (AppAction) c.newInstance(new Object[] { selection });
+        actionData.setName(action.getName());
+        actionData.setIconKey(action.getIconKey());
+
+        return action;
 
     }
 
@@ -281,7 +284,7 @@ public class MenuItemData implements Storable {
         JComponent it;
         try {
             it = createItem(selection);
-        } catch (ActionClassNotAvailableException e) {
+        } catch (Exception e) {
             return null;
         }
         if (it == null) return null;
@@ -300,6 +303,7 @@ public class MenuItemData implements Storable {
     }
 
     public List<MenuItemData> list() {
+
         List<MenuItemData> set = new ArrayList<MenuItemData>();
         set.add(this);
         if (getItems() != null) {
@@ -312,6 +316,7 @@ public class MenuItemData implements Storable {
     }
 
     public List<List<MenuItemData>> listPathes() {
+
         List<List<MenuItemData>> set = new ArrayList<List<MenuItemData>>();
         ArrayList<MenuItemData> newPath = new ArrayList<MenuItemData>();
         newPath.add(this);
@@ -348,5 +353,21 @@ public class MenuItemData implements Storable {
             ret.add(mid._getIdentifier());
         }
         return ret;
+    }
+
+    public void _setValidated(boolean b) {
+        validated = true;
+    }
+
+    public boolean _isValidated() {
+        return validated;
+    }
+
+    public void _setValidateException(Exception e) {
+        this.validateException = e;
+    }
+
+    public Exception _getValidateException() {
+        return validateException;
     }
 }

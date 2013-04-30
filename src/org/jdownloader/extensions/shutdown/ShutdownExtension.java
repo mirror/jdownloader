@@ -45,7 +45,6 @@ import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTRunner;
@@ -69,8 +68,6 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     private ShutdownConfigPanel   configPanel;
 
-    private LogSource             logger;
-
     public ShutdownConfigPanel getConfigPanel() {
         return configPanel;
     }
@@ -81,7 +78,6 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     public ShutdownExtension() throws StartException {
         setTitle(_.jd_plugins_optional_jdshutdown());
-        logger = LogController.CL(ShutdownExtension.class);
 
     }
 

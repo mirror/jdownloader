@@ -1,5 +1,7 @@
 package org.jdownloader.extensions;
 
-public class ExtensionNotLoadedException extends Exception {
+import org.jdownloader.gui.views.downloads.contextmenumanager.gui.ClassCurrentlyNotAvailableException;
+
+public class ExtensionNotLoadedException extends ClassCurrentlyNotAvailableException {
 
 }

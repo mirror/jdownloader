@@ -21,7 +21,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
@@ -30,7 +29,6 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.downloads.contextmenumanager.ActionClassNotAvailableException;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainer;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemProperty;
@@ -87,12 +85,8 @@ public class InfoPanel extends MigPanel implements ActionListener {
             public void onChanged() {
                 item.setName(name.getText());
 
-                try {
-                    updateHeaderLabel(item.lazyReal());
-                    managerFrame.fireUpdate();
-                } catch (ActionClassNotAvailableException e) {
-                    e.printStackTrace();
-                }
+                updateHeaderLabel(item);
+                managerFrame.fireUpdate();
 
             }
 
@@ -181,42 +175,38 @@ public class InfoPanel extends MigPanel implements ActionListener {
      * @param lastPathComponent
      */
     public void updateInfo(final MenuItemData value) {
-        try {
-            this.item = value;
-            if (value == null) {
 
-                label.setText("");
-                return;
-            }
-            MenuItemData mid = ((MenuItemData) value).lazyReal();
-            Rectangle bounds = null;
-            if (mid.getIconKey() != null) {
+        this.item = value;
+        if (value == null) {
 
-                iconlabel.setIcon(NewTheme.I().getIcon(mid.getIconKey(), 22));
-            } else {
-                iconlabel.setIcon(null);
-            }
-
-            name.setText(mid.getName());
-            link(mid, hideIfDisabled, MenuItemProperty.HIDE_IF_DISABLED);
-            link(mid, hideIfOpenFileIsUnsupported, MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED);
-
-            link(mid, hideIfOutputNotExists, MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING);
-
-            link(mid, linkContext, MenuItemProperty.LINK_CONTEXT);
-
-            link(mid, packageContext, MenuItemProperty.PACKAGE_CONTEXT);
-            link(mid, hidden, MenuItemProperty.ALWAYS_HIDDEN);
-            // renderer.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.RED));
-            updateHeaderLabel(mid);
-
-        } catch (ActionClassNotAvailableException e) {
-            throw new WTFException(e);
+            label.setText("");
+            return;
         }
+        MenuItemData mid = ((MenuItemData) value);
+        Rectangle bounds = null;
+        if (mid.getIconKey() != null) {
+
+            iconlabel.setIcon(NewTheme.I().getIcon(mid.getIconKey(), 22));
+        } else {
+            iconlabel.setIcon(null);
+        }
+
+        name.setText(mid.getName());
+        link(mid, hideIfDisabled, MenuItemProperty.HIDE_IF_DISABLED);
+        link(mid, hideIfOpenFileIsUnsupported, MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED);
+
+        link(mid, hideIfOutputNotExists, MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING);
+
+        link(mid, linkContext, MenuItemProperty.LINK_CONTEXT);
+
+        link(mid, packageContext, MenuItemProperty.PACKAGE_CONTEXT);
+        link(mid, hidden, MenuItemProperty.ALWAYS_HIDDEN);
+        // renderer.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.RED));
+        updateHeaderLabel(mid);
 
     }
 
-    public void updateHeaderLabel(MenuItemData mid) throws ActionClassNotAvailableException {
+    public void updateHeaderLabel(MenuItemData mid) {
 
         String type = null;
         String name = mid.getName();
@@ -240,15 +230,30 @@ public class InfoPanel extends MigPanel implements ActionListener {
                 type = _GUI._.InfoPanel_update_link();
 
             } else {
+                if (mid._isValidated()) {
+                    try {
+                        AppAction action = mid.createAction(null);
 
-                AppAction action = mid.createAction(null);
+                        if (StringUtils.isEmpty(name)) {
+                            name = action.getName();
+                        }
+                        type = _GUI._.InfoPanel_update_action();
+                        if (icon == null) {
+                            icon = action.getSmallIcon();
+                        }
+                    } catch (Exception e) {
+
+                    }
+                }
                 if (StringUtils.isEmpty(name)) {
-                    name = action.getName();
+                    name = mid.getActionData().getName();
                 }
-                type = _GUI._.InfoPanel_update_action();
                 if (icon == null) {
-                    icon = action.getSmallIcon();
+                    if (mid.getActionData().getIconKey() != null) {
+                        icon = NewTheme.I().getIcon(mid.getActionData().getIconKey(), 18);
+                    }
                 }
+                if (StringUtils.isEmpty(name)) name = mid.getActionData().getClazzName();
 
             }
 

@@ -3,23 +3,33 @@ package org.jdownloader.gui.views.downloads.contextmenumanager;
 import java.util.HashSet;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.ExtensionNotLoadedException;
 
 public class ActionData implements Storable {
     private HashSet<MenuItemProperty> properties;
     private Class<?>                  clazz;
 
-    public Class<?> _getClazz() throws ActionClassNotAvailableException {
+    public Class<?> _getClazz() throws ClassNotFoundException, ExtensionNotLoadedException {
         if (clazz == null) {
-            try {
+
+            String packageName = AbstractExtension.class.getPackage().getName();
+            if (getClazzName().startsWith(packageName)) {
+
+                clazz = ExtensionController.getInstance().loadClass(getClazzName());
+
+            } else {
                 clazz = Class.forName(getClazzName());
-            } catch (ClassNotFoundException e) {
-                throw new ActionClassNotAvailableException(getClazzName());
             }
+
         }
         return clazz;
     }
 
     private String clazzName;
+    private String name;
+    private String iconKey;
 
     public ActionData(/* Storable */) {
 
@@ -49,5 +59,21 @@ public class ActionData implements Storable {
 
     public void setProperties(HashSet<MenuItemProperty> properties) {
         this.properties = properties;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getIconKey() {
+        return iconKey;
+    }
+
+    public void setIconKey(String iconKey) {
+        this.iconKey = iconKey;
     }
 }

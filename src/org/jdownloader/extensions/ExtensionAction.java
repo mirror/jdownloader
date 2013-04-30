@@ -1,5 +1,7 @@
 package org.jdownloader.extensions;
 
+import java.lang.reflect.Type;
+
 import jd.plugins.ExtensionConfigInterface;
 
 import org.appwork.exceptions.WTFException;
@@ -14,19 +16,31 @@ public abstract class ExtensionAction<T extends AbstractExtension<ConfigType, Tr
     private T                 extension;
     {
 
-        try {
-            ParameterizedTypeImpl sc = (ParameterizedTypeImpl) getClass().getGenericSuperclass();
-            Class<T> clazz = (Class<T>) sc.getActualTypeArguments()[0];
-            LazyExtension ex = ExtensionController.getInstance().getExtension(clazz);
-            if (ex._isEnabled()) {
-                extension = ((T) ex._getExtension());
+        Class<?> myClass = getClass();
+        while (true) {
+            try {
+                Type supClass = myClass.getGenericSuperclass();
+                if (supClass instanceof ParameterizedTypeImpl) {
+                    ParameterizedTypeImpl sc = ((ParameterizedTypeImpl) supClass);
+                    Class<T> clazz = (Class<T>) sc.getActualTypeArguments()[0];
+                    LazyExtension ex = ExtensionController.getInstance().getExtension(clazz);
 
-                _ = extension.getTranslation();
+                    extension = ((T) ex._getExtension());
+                    if (extension != null) {
+                        _ = extension.getTranslation();
+
+                    }
+                    break;
+                } else if (supClass instanceof Class) {
+                    myClass = (Class<?>) supClass;
+                } else {
+                    break;
+                }
+
+            } catch (Exception e) {
+                throw new WTFException();
+
             }
-
-        } catch (Exception e) {
-            throw new WTFException();
-
         }
         if (extension == null) {
 

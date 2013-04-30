@@ -391,17 +391,21 @@ public class ExtensionController {
     }
 
     private java.util.List<LazyExtension> initModule(Class<AbstractExtension<?, ?>> cls, java.util.List<LazyExtension> list, File jarFile) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
+        long t = System.currentTimeMillis();
         if (list == null) list = new ArrayList<LazyExtension>();
         String id = cls.getName().substring(27);
 
         logger.fine("Load Extension: " + id);
         LazyExtension extension = LazyExtension.create(id, cls);
+
         extension.setJarPath(jarFile.getAbsolutePath());
         extension._setPluginClass(cls);
+
         if (extension._isEnabled()) {
             extension.init();
         }
         list.add(extension);
+        logger.info("Loaded Extension: " + id + " Load Duration:" + (System.currentTimeMillis() - t) + "ms");
         return list;
     }
 
@@ -449,20 +453,25 @@ public class ExtensionController {
 
     public Class<?> loadClass(String className) throws ClassNotFoundException, ExtensionNotLoadedException {
         if (list == null || list.size() == 0) { throw new ExtensionNotLoadedException(); }
+        ClassNotFoundException exc = null;
         for (AbstractExtension<?, ?> ae : getEnabledExtensions()) {
 
             if (className.startsWith(ae.getClass().getPackage().getName())) {
                 try {
                     return Class.forName(className, true, ae.getClass().getClassLoader());
                 } catch (ClassNotFoundException e) {
-
+                    exc = e;
                 }
             }
 
         }
-
+        if (exc != null) throw exc;
         for (LazyExtension le : getExtensions()) {
-            if (className.startsWith(le.getClass().getPackage().getName())) { throw new ExtensionNotLoadedException(); }
+            if (className.startsWith(le.getClass().getPackage().getName())) {
+                //
+
+                throw new ExtensionNotLoadedException();
+            }
         }
         throw new ClassNotFoundException(className);
 

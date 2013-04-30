@@ -19,6 +19,10 @@ public abstract class ContextMenuManager {
         logger = LogController.getInstance().getLogger(getClass().getName());
     }
 
+    public LogSource getLogger() {
+        return logger;
+    }
+
     MenuContainerRoot          menuData;
     ContextMenuConfigInterface config;
     LogSource                  logger;
@@ -149,6 +153,7 @@ public abstract class ContextMenuManager {
             }
 
         }
+        ret.validate();
         System.out.println("Set menu Data");
         menuData = ret;
         System.out.println(System.currentTimeMillis() - t);
@@ -168,6 +173,7 @@ public abstract class ContextMenuManager {
 
     public MenuContainerRoot setupDefaultStructure() {
         MenuContainerRoot ret = createDefaultStructure();
+
         synchronized (extender) {
             for (MenuExtenderHandler exHandler : extender) {
                 exHandler.updateMenuModel(this, ret);

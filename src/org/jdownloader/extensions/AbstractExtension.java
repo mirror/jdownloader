@@ -33,6 +33,7 @@ import org.appwork.txtresource.TranslateInterface;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
@@ -121,7 +122,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /**
-     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid for all extensions
+     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid
+     * for all extensions
      * 
      * @return
      */
@@ -152,6 +154,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
     private volatile Property propertyConfig = null;
 
+    protected LogSource       logger;
+
     public TranslationType getTranslation() {
         return _;
     }
@@ -164,7 +168,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      * 
      * @param translationInterface
      * @param contentType
-     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name as config key.
+     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name
+     *            as config key.
      * @throws
      * @throws StartException
      */
@@ -173,7 +178,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
         version = readVersion(getClass());
         store = buildStore();
         AdvancedConfigManager.getInstance().register(store);
-        LogController.getInstance().getLogger(name);
+        logger = LogController.getInstance().getLogger(name);
         initTranslation();
     }
 
@@ -328,6 +333,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     public void init() throws StartException {
+        long t = System.currentTimeMillis();
         initExtension();
 
         if (store.isFreshInstall()) {
@@ -341,6 +347,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
                 // cannot happen
             }
         }
+
+        logger.info("Init Duration: " + (System.currentTimeMillis() - t));
     }
 
     public boolean isQuickToggleEnabled() {

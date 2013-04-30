@@ -8,14 +8,12 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.downloads.contextmenumanager.ActionClassNotAvailableException;
 import org.jdownloader.gui.views.downloads.contextmenumanager.ActionData;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
 
@@ -53,8 +51,10 @@ public class AddActionAction extends AppAction {
                             ret.setIcon(mi.getSmallIcon());
 
                             return ret;
-                        } catch (ActionClassNotAvailableException e) {
-                            throw new WTFException(e);
+                        } catch (Exception e) {
+                            JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+                            return ret;
                         }
                     }
                 };

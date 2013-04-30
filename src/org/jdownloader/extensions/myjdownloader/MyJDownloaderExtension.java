@@ -8,13 +8,11 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.logging.LogController;
 
 public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtensionConfig, TranslateInterface> {
 
     private MyJDownloaderConfigPanel   configPanel;
     private MyJDownloaderConnectThread thread = null;
-    private LogSource                  logger;
 
     @Override
     protected void stop() throws StopException {
@@ -41,7 +39,7 @@ public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtens
     @Override
     protected void initExtension() throws StartException {
         setTitle("my.jdownloader.org");
-        logger = LogController.getInstance().getLogger(getClass().getName());
+
         configPanel = new MyJDownloaderConfigPanel(this, getSettings());
     }
 
