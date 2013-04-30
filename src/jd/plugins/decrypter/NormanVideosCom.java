@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 18544 $", interfaceVersion = 2, names = { "normanfaitdesvideos.com" }, urls = { "http://(www\\.)?normanfaitdesvideos\\.com/.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 18544 $", interfaceVersion = 2, names = { "normanfaitdesvideos.com" }, urls = { "http://(www\\.)?normanfaitdesvideos\\.com/(?!feed).*" }, flags = { 0 })
 public class NormanVideosCom extends PluginForDecrypt {
 
     public NormanVideosCom(PluginWrapper wrapper) {
@@ -38,8 +38,12 @@ public class NormanVideosCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String strParameter = param.toString();
 
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(strParameter);
+        if (br.containsHTML(">Erreur 404 \\- Introuvable<") || br.containsHTML("HTTP/1\\.0 404 Not Found")) {
+            logger.info("Link offline: " + strParameter);
+            return decryptedLinks;
+        }
 
         String[] links = br.getRegex("http://(www\\.)?youtube.com/embed/(.*?)\\?").getColumn(1);
         if (links == null || links.length == 0) {
@@ -50,7 +54,7 @@ public class NormanVideosCom extends PluginForDecrypt {
         // Added links
         for (String redirectlink : links) {
             redirectlink = "http://www.youtube.com/embed/" + redirectlink;
-            DownloadLink DLLink = createDownloadlink(redirectlink);
+            final DownloadLink DLLink = createDownloadlink(redirectlink);
             // if (strDate != null && strDate != "") DLLink.setFinalFileName(strDate + " " + DLLink.getFinalFileName());
             decryptedLinks.add(DLLink);
         }

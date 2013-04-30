@@ -75,8 +75,7 @@ public class MountFileNet extends PluginForHost {
         for (int i = 1; i <= 5; i++) {
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             final String c = getCaptchaCode(cf, downloadLink);
-            // Waittime can be skipped
-            // if (i == 1) waitTime(timeBefore, downloadLink);
+            if (i == 1) waitTime(timeBefore, downloadLink);
             br.postPage(br.getURL(), "free=Get+download+link&hash=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
             String reconnectWait = br.getRegex("You should wait (\\d+) minutes before downloading next file").getMatch(0);
             if (reconnectWait == null) reconnectWait = br.getRegex("Please wait (\\d+) minutes before downloading next file or").getMatch(0);

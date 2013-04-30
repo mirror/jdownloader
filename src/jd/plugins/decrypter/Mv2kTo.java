@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie2k.to" }, urls = { "http://(www\\.)?movie2k\\.to/(?!movies\\-(all|genre)|tvshows\\-season)(\\d+\\-[^<>\"/]*?|tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+)(\\.html)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie2k.to" }, urls = { "http://(www\\.)?movie2k\\.to/(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+|\\d+\\-[^<>\"/]*?)(\\.html)?" }, flags = { 0 })
 public class Mv2kTo extends PluginForDecrypt {
 
     public Mv2kTo(PluginWrapper wrapper) {

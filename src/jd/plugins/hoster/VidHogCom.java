@@ -51,7 +51,7 @@ public class VidHogCom extends PluginForHost {
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     // domain names used within download links.
-    private static final String DOMAINS             = "(vidhog\\.com)";
+    private static final String DOMAINS             = "((vidhog|vidhogservers)\\.com)";
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.0-raz

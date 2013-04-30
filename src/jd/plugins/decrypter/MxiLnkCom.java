@@ -25,7 +25,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "maxi-link.com" }, urls = { "http://[\\w\\.]*?maxi-link\\.com/[a-z0-9]+/.*?\\.html" }, flags = { 0 })
 public class MxiLnkCom extends PluginForDecrypt {
@@ -40,7 +39,10 @@ public class MxiLnkCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("class=\"size\">0 o</span>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("class=\"size\">0 o</span><br")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (!br.containsHTML(CAPTCHATEXT)) {
             logger.warning("Couldn't find the captchatext, stopping...");
             return null;
