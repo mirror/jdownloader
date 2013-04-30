@@ -8,10 +8,13 @@ import javax.swing.JButton;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
 public class AddOptionsAction extends AppAction {
@@ -29,10 +32,10 @@ public class AddOptionsAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
         JPopupMenu popup = new JPopupMenu();
-        AddLinksAction ala = new AddLinksAction();
+        AddLinksAction ala = new AddLinksAction((SelectionInfo<CrawledPackage, CrawledLink>) null);
         ala.putValue(AbstractAction.NAME, _GUI._.AddOptionsAction_actionPerformed_addlinks());
         popup.add(new JMenuItem(ala));
-        popup.add(new JMenuItem(new AddContainerAction()));
+        popup.add(new JMenuItem(new AddContainerAction((SelectionInfo<CrawledPackage, CrawledLink>) null)));
         int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();

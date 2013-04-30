@@ -16,6 +16,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.utils.Application;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEvent;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
@@ -51,18 +52,26 @@ public class ContextMenuFactory {
 
         SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(context, selection, event, null, table);
         si.setContextColumn(column);
-        // manager.build(selection);
+
+        if (selection == null || selection.size() == 0) {
+            JPopupMenu p = new JPopupMenu();
+            p.add(new AddLinksAction((SelectionInfo<CrawledPackage, CrawledLink>) null));
+            p.add(new AddContainerAction((SelectionInfo<CrawledPackage, CrawledLink>) null));
+            return p;
+        }
+        if (!Application.isJared(getClass())) return manager.build(si);
+
         JPopupMenu p = new JPopupMenu();
         JMenu m;
 
         if (selection != null && selection.size() > 0) {
-            p.add(new ConfirmAction(si.isShiftDown(), si));
+            p.add(new ConfirmAction(si));
             p.add(new JSeparator());
         }
 
         if (selection == null || selection.size() == 0 || JsonConfig.create(LinkgrabberSettings.class).isContextMenuAddLinksActionAlwaysVisible()) {
-            p.add(new AddLinksAction());
-            p.add(new AddContainerAction());
+            p.add(new AddLinksAction((SelectionInfo<CrawledPackage, CrawledLink>) null));
+            p.add(new AddContainerAction((SelectionInfo<CrawledPackage, CrawledLink>) null));
             if (selection == null || selection.size() == 0) { return p; }
             p.add(new JSeparator());
         }

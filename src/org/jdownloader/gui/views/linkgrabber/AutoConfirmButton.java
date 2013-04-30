@@ -188,7 +188,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                                     }
                                 }
 
-                                ConfirmAction ca = new ConfirmAction(autoStart, new SelectionInfo<CrawledPackage, CrawledLink>(list));
+                                ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(list).setShiftDown(autoStart));
                                 ca.setAutostart(autoStart);
                                 ca.actionPerformed(null);
                             }

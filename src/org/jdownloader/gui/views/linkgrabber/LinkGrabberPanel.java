@@ -36,6 +36,7 @@ import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
@@ -150,7 +151,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         autoConfirm = new AutoConfirmButton();
         autoConfirm.setVisible(false);
         setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
-        addLinks = new JButton(new AddLinksAction());
+        addLinks = new JButton(new AddLinksAction((SelectionInfo<CrawledPackage, CrawledLink>) null));
         confirmAll = new ExtButton(new ConfirmAllAction() {
             {
                 org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {

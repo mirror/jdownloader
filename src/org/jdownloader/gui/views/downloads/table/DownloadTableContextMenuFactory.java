@@ -8,6 +8,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -21,9 +23,9 @@ import org.jdownloader.gui.views.components.packagetable.context.PrioritySubMenu
 import org.jdownloader.gui.views.components.packagetable.context.SetCommentAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
-import org.jdownloader.gui.views.downloads.context.OpenInBrowserAction;
-import org.jdownloader.gui.views.downloads.context.PackageNameAction;
-import org.jdownloader.gui.views.downloads.context.SetDownloadFolderInDownloadTableAction;
+import org.jdownloader.gui.views.downloads.action.OpenInBrowserAction;
+import org.jdownloader.gui.views.downloads.action.PackageNameAction;
+import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
@@ -133,8 +135,8 @@ public class DownloadTableContextMenuFactory {
 
     private JPopupMenu emtpy(JPopupMenu p) {
 
-        p.add(new AddLinksAction());
-        p.add(new AddContainerAction());
+        p.add(new AddLinksAction((SelectionInfo<CrawledPackage, CrawledLink>) null));
+        p.add(new AddContainerAction((SelectionInfo<CrawledPackage, CrawledLink>) null));
 
         return p;
     }

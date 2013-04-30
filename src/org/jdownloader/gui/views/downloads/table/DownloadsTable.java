@@ -47,7 +47,7 @@ import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
-import org.jdownloader.gui.views.downloads.context.DeleteSelectionAction;
+import org.jdownloader.gui.views.downloads.action.DeleteSelectionAction;
 import org.jdownloader.images.NewTheme;
 
 public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> {

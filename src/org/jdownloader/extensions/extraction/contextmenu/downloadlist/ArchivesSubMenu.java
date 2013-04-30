@@ -10,9 +10,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainer;
 
 public class ArchivesSubMenu extends MenuContainer {
     public ArchivesSubMenu() {

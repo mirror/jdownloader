@@ -15,11 +15,6 @@ import jd.plugins.FilePackage;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.downloads.context.DeleteDisabledSelectedLinks;
-import org.jdownloader.gui.views.downloads.context.DeleteSelectedAndFailedLinksAction;
-import org.jdownloader.gui.views.downloads.context.DeleteSelectedFinishedLinksAction;
-import org.jdownloader.gui.views.downloads.context.DeleteSelectedLinks;
-import org.jdownloader.gui.views.downloads.context.DeleteSelectedOfflineLinksAction;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.NewTheme;
 

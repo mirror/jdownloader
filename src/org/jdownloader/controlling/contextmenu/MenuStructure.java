@@ -3,7 +3,6 @@ package org.jdownloader.controlling.contextmenu;
 import java.util.ArrayList;
 
 import org.appwork.storage.Storable;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainerRoot;
 
 public class MenuStructure implements Storable {
 

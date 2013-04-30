@@ -12,6 +12,8 @@ import javax.swing.JButton;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -24,6 +26,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
@@ -55,7 +58,7 @@ public class BottomBar extends MigPanel {
 
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
 
-        addLinks = new ExtButton(new AddLinksAction());
+        addLinks = new ExtButton(new AddLinksAction((SelectionInfo<CrawledPackage, CrawledLink>) null));
 
         clearAll = new ExtButton(new ClearDownloadListAction());
         popup = new ExtButton(new AddOptionsAction(addLinks)) {

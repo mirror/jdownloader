@@ -36,6 +36,7 @@ import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
@@ -59,7 +60,7 @@ public class ConfirmAction extends AppAction {
         this.autostart = autostart;
     }
 
-    public ConfirmAction(boolean autostart, SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
+    public ConfirmAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
         if (autostart != org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue()) {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
             Image add = NewTheme.I().getImage("media-playback-start", 20);
@@ -68,7 +69,7 @@ public class ConfirmAction extends AppAction {
             this.autostart = true;
         } else {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add());
-            setSmallIcon(NewTheme.I().getIcon("go-next", 20));
+            setIconKey(IconKey.ICON_GO_NEXT);
             this.autostart = false;
         }
         this.si = selectionInfo;

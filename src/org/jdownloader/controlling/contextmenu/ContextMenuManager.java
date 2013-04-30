@@ -21,16 +21,8 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.downloads.contextmenumanager.ActionData;
-import org.jdownloader.gui.views.downloads.contextmenumanager.ContextMenuConfigInterface;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuBuilder;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainer;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainerRoot;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuExtenderHandler;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuLink;
-import org.jdownloader.gui.views.downloads.contextmenumanager.SeperatorData;
 import org.jdownloader.logging.LogController;
 
 public abstract class ContextMenuManager<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {

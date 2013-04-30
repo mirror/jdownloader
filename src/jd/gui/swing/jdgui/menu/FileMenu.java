@@ -6,12 +6,15 @@ import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 
 import jd.SecondLevelLaunch;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
 
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 
@@ -29,10 +32,10 @@ public class FileMenu extends JMenu {
 
                     @Override
                     protected void runInEDT() {
-                        AddLinksAction ala = new AddLinksAction();
+                        AddLinksAction ala = new AddLinksAction((SelectionInfo<CrawledPackage, CrawledLink>) null);
                         ala.putValue(AbstractAction.NAME, _GUI._.AddOptionsAction_actionPerformed_addlinks());
                         add(new JMenuItem(ala));
-                        add(new JMenuItem(new AddContainerAction()));
+                        add(new JMenuItem(new AddContainerAction((SelectionInfo<CrawledPackage, CrawledLink>) null)));
                         add(new JSeparator());
                         add(new RestartAction());
 

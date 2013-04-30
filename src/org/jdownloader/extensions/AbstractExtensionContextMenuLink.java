@@ -4,9 +4,9 @@ import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JComponent;
 
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuLink;
 
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 

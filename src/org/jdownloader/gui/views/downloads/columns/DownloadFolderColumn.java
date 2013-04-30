@@ -17,7 +17,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
-import org.jdownloader.gui.views.downloads.context.SetDownloadFolderInDownloadTableAction;
+import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     /**

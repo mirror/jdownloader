@@ -39,6 +39,12 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
     private PackageControllerTable<PackageType, ChildrenType> table;
     private ExtColumn<AbstractNode>                           contextColumn;
+    private boolean                                           shiftDown = false;
+
+    public SelectionInfo<PackageType, ChildrenType> setShiftDown(boolean shiftDown) {
+        this.shiftDown = shiftDown;
+        return this;
+    }
 
     public PackageControllerTable<PackageType, ChildrenType> getTable() {
         return table;
@@ -81,6 +87,11 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         this.table = table;
         // System.out.println(isShiftDown());
         agregate();
+
+        if (keyEvent != null && BinaryLogic.containsSome(keyEvent.getModifiers(), ActionEvent.SHIFT_MASK)) {
+            shiftDown = true;
+        }
+        if (mouseEvent != null && mouseEvent.isShiftDown()) shiftDown = true;
     }
 
     public SelectionInfo(List<? extends AbstractNode> selection) {
@@ -347,11 +358,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
      * @return
      */
     public boolean isShiftDown() {
-        // System.out.println(keyEvent.getModifiers());
-        // System.out.println(keyEvent.isShiftDown());
-        if (keyEvent != null && BinaryLogic.containsSome(keyEvent.getModifiers(), ActionEvent.SHIFT_MASK)) { return true; }
-        if (mouseEvent != null && mouseEvent.isShiftDown()) return true;
-        return false;
+
+        return shiftDown;
     }
 
     /**

@@ -58,7 +58,7 @@ public class ConfirmAllAction extends AppAction {
 
                 java.util.List<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
 
-                ConfirmAction ca = new ConfirmAction(autostart, new SelectionInfo<CrawledPackage, CrawledLink>(packages));
+                ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(packages).setShiftDown(autostart));
                 ca.setAutostart(autostart);
                 ca.actionPerformed(null);
             }

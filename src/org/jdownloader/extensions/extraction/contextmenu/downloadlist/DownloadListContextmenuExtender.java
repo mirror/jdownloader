@@ -1,6 +1,11 @@
 package org.jdownloader.extensions.extraction.contextmenu.downloadlist;
 
+import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
+import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.AutoExtractEnabledToggleAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.CleanupAutoDeleteFilesEnabledToggleAction;
@@ -9,12 +14,7 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.Ext
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractPasswordAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractToAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ValidateArchivesAction;
-import org.jdownloader.gui.views.downloads.contextmenumanager.ActionData;
-import org.jdownloader.gui.views.downloads.contextmenumanager.AddonSubMenuLink;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuContainerRoot;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuExtenderHandler;
-import org.jdownloader.gui.views.downloads.contextmenumanager.MenuItemData;
-import org.jdownloader.gui.views.downloads.contextmenumanager.SeperatorData;
+import org.jdownloader.gui.views.downloads.context.submenu.AddonSubMenuLink;
 
 public class DownloadListContextmenuExtender implements MenuExtenderHandler {
 

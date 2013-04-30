@@ -49,20 +49,20 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     /**
      * 
      */
-    private static final long   serialVersionUID = -5917220196056769905L;
+    private static final long        serialVersionUID = -5917220196056769905L;
     protected java.util.List<Filter> filters          = new ArrayList<Filter>();
-    protected volatile boolean  enabled          = false;
-    private HeaderInterface     header;
-    private LinkGrabberTable    linkgrabberTable;
-    private DelayedRunnable     delayedRefresh;
+    protected volatile boolean       enabled          = false;
+    private HeaderInterface          header;
+    private LinkGrabberTable         linkgrabberTable;
+    private DelayedRunnable          delayedRefresh;
 
-    private TableModelListener  listener;
-    private BooleanKeyHandler   visibleKeyHandler;
-    private Filter              filterException;
+    private TableModelListener       listener;
+    private BooleanKeyHandler        visibleKeyHandler;
+    private Filter                   filterException;
 
-    protected static final long REFRESH_MIN      = 200l;
-    protected static final long REFRESH_MAX      = 2000l;
-    private static final Object LOCK             = new Object();
+    protected static final long      REFRESH_MIN      = 200l;
+    protected static final long      REFRESH_MAX      = 2000l;
+    private static final Object      LOCK             = new Object();
 
     public FilterTable(HeaderInterface hosterFilter, LinkGrabberTable table, BooleanKeyHandler visible) {
         super(new FilterTableModel());
@@ -208,7 +208,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         // (org.jdownloader.settings.statics.LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue())
         // {
         SelectionInfo<CrawledPackage, CrawledLink> matches = new SelectionInfo<CrawledPackage, CrawledLink>(getMatches(getSelectedFilters()));
-        popup.add(new ConfirmAction(false, matches));
+        popup.add(new ConfirmAction(matches));
         popup.add(new MergeToPackageAction(matches));
         popup.add(new CreateDLCAction(matches));
         popup.add(new RemoveNonSelectedAction(matches));
