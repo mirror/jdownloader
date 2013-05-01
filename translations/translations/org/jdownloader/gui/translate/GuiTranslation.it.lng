@@ -7,6 +7,7 @@ AbstractCaptchaDialog_createPopup_skip_and_disable_package=Ignora tutti i captch
 AbstractCaptchaDialog_createPopup_skip_and_hide_all_captchas_download=Ignora tutti i captcha
 AbstractCaptchaDialog_createPopup_skip_and_stop_all_downloads=Ferma tutti i download
 AbstractConfigPanel_addPair_enabled=Abilita/Disabilita questa opzione
+AccountManagerSettings_AccountManagerSettings_disable_global=Usa l'account per scaricare
 AddAccountDialog_actionPerformed_outdated=Il plugin %s1 è obsoleto. Esegui un aggiornamento!
 AddAccountDialog_layoutDialogContent_choosehoster_=1. Scegli un hoster
 AddAccountDialog_layoutDialogContent_enterlogininfo=2. Inserisci le informazioni di accesso
