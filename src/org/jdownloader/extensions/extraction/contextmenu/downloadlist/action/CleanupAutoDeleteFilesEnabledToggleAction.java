@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 
 import java.awt.event.ActionEvent;
-import java.util.List;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
@@ -11,8 +10,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.SelectionInfo;
 
 public class CleanupAutoDeleteFilesEnabledToggleAction extends AbstractExtractionAction {
-
-    protected List<Archive> archives;
 
     public CleanupAutoDeleteFilesEnabledToggleAction(final SelectionInfo<?, ?> selection) {
         super(selection);
