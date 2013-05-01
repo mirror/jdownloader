@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -69,6 +70,14 @@ public class Share4WebCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(SECURITYCAPTCHA)) {
+            final Form captchaForm = br.getForm(0);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String code = getCaptchaCode("http://www." + this.getHost() + "/captcha/?rnd=", downloadLink);
+            captchaForm.put("captcha", code);
+            br.submitForm(captchaForm);
+            if (br.containsHTML(SECURITYCAPTCHA)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         br.setFollowRedirects(false);
         br.postPage(downloadLink.getDownloadURL() + "/timer", "step=timer&referer=&reg=select&ad=");
         if (br.containsHTML("(>Somebody else is already downloading using your IP-address|Try to download file later)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
