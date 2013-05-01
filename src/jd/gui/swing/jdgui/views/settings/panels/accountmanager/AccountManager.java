@@ -19,6 +19,14 @@ public class AccountManager extends JPanel implements SettingsComponent {
     private MigPanel            tb;
     private PremiumAccountTable table;
 
+    private ExtButton           newButton;
+
+    private ExtButton           removeButton;
+
+    private ExtButton           buyButton;
+
+    private ExtButton           refreshButton;
+
     /**
      * Create a new instance of AccountManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}
      * .
@@ -34,18 +42,26 @@ public class AccountManager extends JPanel implements SettingsComponent {
         table = new PremiumAccountTable(accountManagerSettings);
 
         NewAction na;
-        tb.add(new ExtButton(na = new NewAction()), "sg 1,height 26!");
+        tb.add(newButton = new ExtButton(na = new NewAction()), "sg 1,height 26!");
         na.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
         RemoveAction ra;
-        tb.add(new ExtButton(ra = new RemoveAction(table)), "sg 1,height 26!");
+        tb.add(removeButton = new ExtButton(ra = new RemoveAction(table)), "sg 1,height 26!");
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
 
-        tb.add(new ExtButton(new BuyAction(table)), "sg 2,height 26!");
-        tb.add(new ExtButton(new RefreshAction()), "sg 2,height 26!");
+        tb.add(buyButton = new ExtButton(new BuyAction(table)), "sg 2,height 26!");
+        tb.add(refreshButton = new ExtButton(new RefreshAction()), "sg 2,height 26!");
 
         add(new JScrollPane(table));
         add(tb, "");
 
+    }
+
+    public void setEnabled(boolean enabled) {
+        refreshButton.setEnabled(enabled);
+        buyButton.setEnabled(enabled);
+        removeButton.setEnabled(enabled);
+        newButton.setEnabled(enabled);
+        table.setEnabled(enabled);
     }
 
     /**

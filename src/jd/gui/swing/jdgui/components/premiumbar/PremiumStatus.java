@@ -74,7 +74,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
         }
 
         this.setOpaque(false);
-        updateGUI(org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getDefaultValue());
+        updateGUI(org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getValue());
         org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
@@ -130,6 +130,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
     }
 
     private void updateGUI(final boolean enabled) {
+
         new EDTRunner() {
 
             @Override

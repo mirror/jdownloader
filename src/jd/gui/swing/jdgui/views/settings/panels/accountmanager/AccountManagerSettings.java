@@ -19,9 +19,15 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 import javax.swing.ImageIcon;
 
 import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
 public class AccountManagerSettings extends AbstractConfigPanel {
@@ -38,7 +44,21 @@ public class AccountManagerSettings extends AbstractConfigPanel {
 
         this.addHeader(getTitle(), NewTheme.I().getIcon("premium", 32));
         this.addDescriptionPlain(_JDT._.gui_settings_premium_description());
+
+        addPair(_GUI._.AccountManagerSettings_AccountManagerSettings_disable_global(), null, new Checkbox(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS));
         add(acm = new AccountManager(this));
+        acm.setEnabled(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
+        CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                acm.setEnabled(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        }, false);
     }
 
     @Override

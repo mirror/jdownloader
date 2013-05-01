@@ -2593,4 +2593,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "An Error occured..." })
     String lit_error_occured();
 
+    @Default(lngs = { "en" }, values = { "Use Account(s) to download" })
+    String AccountManagerSettings_AccountManagerSettings_disable_global();
+
 }
