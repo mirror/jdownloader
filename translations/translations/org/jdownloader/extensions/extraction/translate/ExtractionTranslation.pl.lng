@@ -36,6 +36,7 @@ file_exists_not=Plik nie istnieje
 filename=Nazwa pliku
 files=pliki
 hoster=Serwis
+linkname=Archiwów(-a)
 local=Status pliku
 menu_tools_extract_files=Wypakuj Pliki
 name=Wypakowywanie Archiwów
