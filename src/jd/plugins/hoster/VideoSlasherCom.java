@@ -52,7 +52,7 @@ public class VideoSlasherCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         // Invalid link
-        if (br.getURL().equals("http://www.videoslasher.com/404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.videoslasher.com/404") || br.getURL().equals("http://www.videoslasher.com/login")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Link offline
         if (br.containsHTML(">This material has been removed due to infringement")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(MAINTENANCE)) {

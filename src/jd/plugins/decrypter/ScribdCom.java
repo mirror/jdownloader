@@ -44,15 +44,23 @@ public class ScribdCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://www.scribd.com/profiles/collections/get_collection_documents?page=1&id=" + new Regex(parameter, "/collections/(\\d+)/").getMatch(0));
-        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-        final String[] links = br.getRegex("data\\-object_id=\"(\\d+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        boolean continueDecrypt = true;
+        int page = 1;
+        while (continueDecrypt) {
+            br.getPage("http://www.scribd.com/profiles/collections/get_collection_documents?page=" + page + "&id=" + new Regex(parameter, "/collections/(\\d+)/").getMatch(0));
+            br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+            final String[] links = br.getRegex("data\\-object_id=\"(\\d+)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            if (links.length == 36)
+                page += 1;
+            else
+                continueDecrypt = false;
+            for (final String singleLink : links)
+                decryptedLinks.add(createDownloadlink("http://www.scribd.com/doc/" + singleLink));
         }
-        for (final String singleLink : links)
-            decryptedLinks.add(createDownloadlink("http://www.scribd.com/doc/" + singleLink));
         final FilePackage fp = FilePackage.getInstance();
         fp.setName("scribd.com collection - " + new Regex(parameter, "scribd\\.com/collections/\\d+/([A-Za-z0-9\\-_]+)").getMatch(0));
         fp.addLinks(decryptedLinks);

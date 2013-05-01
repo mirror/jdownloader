@@ -208,7 +208,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             if (qhq) selectedQualities.add("hqURL");
             if (q720) selectedQualities.add("hd720URL");
             if (q1080) selectedQualities.add("hd1080URL");
-            for (final String selectedQualityValue : qualities) {
+            for (final String selectedQualityValue : selectedQualities) {
                 final DownloadLink dl = getVideoDownloadlink(selectedQualityValue);
                 if (dl != null) {
                     fp.add(dl);

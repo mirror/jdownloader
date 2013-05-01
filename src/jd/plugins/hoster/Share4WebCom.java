@@ -42,6 +42,8 @@ public class Share4WebCom extends PluginForHost {
         return "http://www.share4web.com/page/terms";
     }
 
+    private static final String SECURITYCAPTCHA = "text from the image and click \"Continue\" to access the website";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -49,6 +51,10 @@ public class Share4WebCom extends PluginForHost {
         br.setCookie("http://www.share4web.com/", "lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">File not found or removed|Page Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(SECURITYCAPTCHA)) {
+            link.getLinkStatus().setStatusText("Can't check status, security captcha...");
+            return AvailableStatus.UNCHECKABLE;
+        }
         final Regex fileInfo = br.getRegex("<span id=\"fileName\" style=\"font\\-weight: normal;\">([^<>\"\\']+)</span>[\t\n\r ]+\\(([^<>\"\\']+)\\)[\t\n\r ]+<script>");
         String filename = fileInfo.getMatch(0);
         String filesize = fileInfo.getMatch(1);

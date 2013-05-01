@@ -38,7 +38,7 @@ public class LiveMixTapesCom extends PluginForHost {
 
     private static final String CAPTCHATEXT            = "/captcha/captcha\\.gif\\?";
     private static final String MAINPAGE               = "http://www.livemixtapes.com/";
-    private static final String MUSTBELOGGEDIN         = ">You must be logged in to access this page";
+    private static final String MUSTBELOGGEDIN         = ">You must be logged in to access this page|by Tweeting this mixtape or sharing it on Facebook";
     private static final String ONLYREGISTEREDUSERTEXT = "Download is only available for registered users";
 
     public LiveMixTapesCom(PluginWrapper wrapper) {

@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -46,6 +47,7 @@ public class UniBytesCom extends PluginForHost {
     private static final String MAINPAGE         = "http://www.unibytes.com/";
     private static String       agent            = null;
     private static final String freeDlLink       = "(https?://st\\d+\\.unibytes\\.com/fdload/file[^\"]+)";
+    private static final String SECURITYCAPTCHA  = "text from the image and click \"Continue\" to access the website";
 
     public UniBytesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,13 +68,17 @@ public class UniBytesCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepBrowser();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<p>File not found or removed</p>|>\\s+Page Not Found\\s+<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML(SECURITYCAPTCHA)) {
+            link.getLinkStatus().setStatusText("Can't check status, security captcha...");
+            return AvailableStatus.UNCHECKABLE;
+        }
         String filename = br.getRegex("id=\"fileName\" style=\"[^\"\\']+\">(.*?)</span>").getMatch(0);
         String filesize = br.getRegex("\\((\\d+\\.\\d+ [A-Za-z]+)\\)</h3><script>").getMatch(0);
         if (filesize == null) {
@@ -126,8 +132,16 @@ public class UniBytesCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        String uid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-zA-Z0-9\\-\\.\\_]+)").getMatch(0);
         requestFileInformation(downloadLink);
+        if (br.containsHTML(SECURITYCAPTCHA)) {
+            final Form captchaForm = br.getForm(0);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String code = getCaptchaCode("http://www." + this.getHost() + "/captcha/?rnd=", downloadLink);
+            captchaForm.put("captcha", code);
+            br.submitForm(captchaForm);
+            if (br.containsHTML(SECURITYCAPTCHA)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        String uid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-zA-Z0-9\\-\\.\\_]+)").getMatch(0);
         if (br.containsHTML(FATALSERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
         String dllink = br.getRedirectLocation();
         if (dllink == null || !dllink.contains("fdload/")) {

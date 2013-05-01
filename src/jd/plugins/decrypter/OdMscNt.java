@@ -26,7 +26,6 @@ import jd.gui.UserIO;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -85,7 +84,7 @@ public class OdMscNt extends PluginForDecrypt {
 
     }
 
-    private boolean getUserLogin(String url) throws IOException, DecrypterException {
+    private boolean getUserLogin(String url) throws IOException {
         String ltmp = null;
         String ptmp = null;
         if (url.contains("engine/go.php?")) url = "http://odimusic.net/download/index.php";
@@ -115,7 +114,7 @@ public class OdMscNt extends PluginForDecrypt {
 
             }
         }
-        throw new DecrypterException("Login or/and password wrong");
+        return false;
     }
 
     /* NO OVERRIDE!! */

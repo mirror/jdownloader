@@ -31,7 +31,7 @@ import jd.utils.JDHexUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-z0-9]+/[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://(www\\.)?((wtrns\\.fr|we\\.tl)/[\\w\\-]+|wetransfer\\.com/downloads/[a-z0-9]+/[a-z0-9]+(/[a-z0-9]+)?)" }, flags = { 0 })
 public class WeTransferCom extends PluginForHost {
 
     private String HASH   = null;
@@ -88,7 +88,7 @@ public class WeTransferCom extends PluginForHost {
         CODE = new Regex(dlink, "wetransfer\\.com/downloads/([a-z0-9]+)/").getMatch(0);
         if (HASH == null || CODE == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        br.getPage("https://www.wetransfer.com/api/v1/transfers/" + CODE + "/download?recipient_id=&security_hash=" + HASH + "&password=&ie=false");
+        br.getPage("https://www.wetransfer.com/api/v1/transfers/" + CODE + "/download?recipient_id=" + new Regex(dlink, "wetransfer\\.com/downloads/[a-z0-9]+/([a-z0-9]+)").getMatch(0) + "&security_hash=" + HASH + "&password=&ie=false");
         DLLINK = br.getRegex("\"direct_link\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (DLLINK != null) {
             String filename = new Regex(Encoding.htmlDecode(DLLINK), "filename=\"([^<>\"]*?)\"").getMatch(0);

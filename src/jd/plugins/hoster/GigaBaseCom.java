@@ -39,7 +39,8 @@ public class GigaBaseCom extends PluginForHost {
         super(wrapper);
     }
 
-    private static String AGENT = RandomUserAgent.generate();
+    private static String       AGENT           = RandomUserAgent.generate();
+    private static final String SECURITYCAPTCHA = "text from the image and click \"Continue\" to access the website";
 
     @Override
     public String getAGBLink() {
@@ -52,8 +53,41 @@ public class GigaBaseCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", AGENT);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>File not found or removed<|<title>Gigabase\\.com</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(SECURITYCAPTCHA)) {
+            link.getLinkStatus().setStatusText("Can't check status, security captcha...");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        Regex fileInfo = br.getRegex("<div id=\"fileName\" style=\"[^<>\"]+\">(.*?)</div>[\t\n\r ]+\\(([^<>\"\\']+)\\)[\t\n\r ]+<a href=\"");
+        String filename = fileInfo.getMatch(0);
+        String filesize = fileInfo.getMatch(1);
+        if (filename == null || filesize == null) {
+            fileInfo = br.getRegex("<span title=\"(.*?)\" id=\"fileName\" style=\"[^<>\"]+\">.*?</span>[ \t\r\n]+\\(([^<>\"\\']+)\\)</h3>");
+            filename = fileInfo.getMatch(0);
+            filesize = fileInfo.getMatch(1);
+        }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(SECURITYCAPTCHA)) {
+            final Form captchaForm = br.getForm(0);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String code = getCaptchaCode("http://www." + this.getHost() + "/captcha/?rnd=", downloadLink);
+            captchaForm.put("captcha", code);
+            br.submitForm(captchaForm);
+            if (br.containsHTML(SECURITYCAPTCHA)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         String dllink = br.getRegex(">Download types</span><br/><span class=\"c3\"><a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^\"<>]+)").getMatch(0);
         if (dllink == null) {
@@ -97,27 +131,6 @@ public class GigaBaseCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", AGENT);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>File not found or removed<|<title>Gigabase\\.com</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fileInfo = br.getRegex("<div id=\"fileName\" style=\"[^<>\"]+\">(.*?)</div>[\t\n\r ]+\\(([^<>\"\\']+)\\)[\t\n\r ]+<a href=\"");
-        String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) {
-            fileInfo = br.getRegex("<span title=\"(.*?)\" id=\"fileName\" style=\"[^<>\"]+\">.*?</span>[ \t\r\n]+\\(([^<>\"\\']+)\\)</h3>");
-            filename = fileInfo.getMatch(0);
-            filesize = fileInfo.getMatch(1);
-        }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

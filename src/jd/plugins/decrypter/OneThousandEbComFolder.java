@@ -30,20 +30,26 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://(?!static)([\\w\\-\\.]+)?(1000eb\\.com/(?!upload|bulletin_detail_\\d+|chance|copyrights|agreements|faq|contactus|aboutus|joinus|reportbadinformation|login)[\\w\\-]+\\.htm(\\?p=\\d+)?|[\\w\\-\\.]+1000eb\\.com/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://(?!static|upload)([\\w\\-\\.]+)?(1000eb\\.com/[\\w\\-]+\\.htm(\\?p=\\d+)?|[\\w\\-\\.]+1000eb\\.com/)" }, flags = { 0 })
 public class OneThousandEbComFolder extends PluginForDecrypt {
 
     public OneThousandEbComFolder(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String INVALIDLINKS = "http://([\\w\\-\\.]+)?1000eb\\.com/(upload|bulletin_detail_\\d+|chance|copyrights|agreements|faq|contactus|aboutus|joinus|reportbadinformation|login|search).*?\\.htm";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
         br.setFollowRedirects(true);
         br.getPage(parameter);
 
-        if (br.containsHTML("class=\"noBodyBox\">主人尚未上传文件到当前文件夹 </div>")) {
+        if (br.containsHTML("class=\"noBodyBox\">主人尚未上传文件到当前文件夹 </div>") || br.containsHTML("<b>下载链接不合法</b>")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
