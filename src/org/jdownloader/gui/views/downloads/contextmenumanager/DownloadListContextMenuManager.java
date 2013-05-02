@@ -149,9 +149,9 @@ public class DownloadListContextMenuManager extends ContextMenuManager<FilePacka
         return priority;
     }
 
-    public void show() {
-
-        new MenuManagerAction(null).actionPerformed(null);
+    @Override
+    public String getFileExtension() {
+        return ".jdDLMenu";
     }
 
 }

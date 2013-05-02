@@ -1,23 +1,34 @@
 package org.jdownloader.controlling.contextmenu;
 
-import javax.swing.Action;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
-import javax.swing.JMenuItem;
 
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.gui.ExtMenuImpl;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
 public class MenuContainer extends MenuItemData {
     public MenuContainer() {
         super();
-        setType(Type.CONTAINER);
+        setType(null);
 
+    }
+
+    public void add(Class<? extends AppAction> class1, MenuItemProperty... ps) {
+        add(new ActionData(class1, ps));
+    }
+
+    public void add(ActionData actionData) {
+        add(new MenuItemData(actionData));
+    }
+
+    public Type getType() {
+        return Type.CONTAINER;
     }
 
     public MenuContainer(String name, String iconKey) {
         super();
+        setType(null);
         setName(name);
         setIconKey(iconKey);
     }
@@ -25,17 +36,8 @@ public class MenuContainer extends MenuItemData {
     @Override
     public JMenu createItem(SelectionInfo<?, ?> selection) {
 
-        JMenu subMenu = new JMenu(getName()) {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1L;
+        JMenu subMenu = new ExtMenuImpl(getName());
 
-            protected JMenuItem createActionComponent(Action a) {
-                if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
-                return super.createActionComponent(a);
-            }
-        };
         if (getIconKey() != null) {
             subMenu.setIcon(NewTheme.I().getIcon(getIconKey(), 18));
         }

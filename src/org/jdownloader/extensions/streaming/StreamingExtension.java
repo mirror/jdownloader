@@ -9,57 +9,43 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.prefs.Preferences;
 
-import javax.swing.Action;
 import javax.swing.ImageIcon;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
 
 import jd.SecondLevelLaunch;
 import jd.nutils.Executer;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
-import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.actions.AppAction;
 import org.jdownloader.api.HttpServer;
+import org.jdownloader.controlling.contextmenu.ContextMenuManager;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
+import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.ArchiveItem;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
-import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
 import org.jdownloader.extensions.streaming.gui.VLCGui;
-import org.jdownloader.extensions.streaming.gui.actions.AddToLibraryAction;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveController;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
 import org.jdownloader.extensions.streaming.upnp.MediaServer;
 import org.jdownloader.extensions.streaming.upnp.PlayToDevice;
 import org.jdownloader.extensions.streaming.upnp.PlayToUpnpRendererDevice;
-import org.jdownloader.gui.menu.MenuContext;
-import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
-import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
-import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext;
+import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
-public class StreamingExtension extends AbstractExtension<StreamingConfig, StreamingTranslation> implements MenuFactoryListener {
+public class StreamingExtension extends AbstractExtension<StreamingConfig, StreamingTranslation> implements MenuExtenderHandler {
 
     protected StreamingProvider streamProvider = null;
     static {
@@ -93,7 +79,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
             streamProvider = null;
 
             if (mediaServer != null) mediaServer.shutdown();
-            MenuFactoryEventSender.getInstance().removeListener(this);
+
             if (streamServerHandler != null) {
 
                 HttpServer.getInstance().unregisterRequestHandler(streamServerHandler);
@@ -121,7 +107,6 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
         vlcstreamingAPI = new HttpApiImpl(this, this.mediaServer);
 
-        MenuFactoryEventSender.getInstance().addListener(this, true);
         try {
             streamServerHandler = HttpServer.getInstance().registerRequestHandler(getSettings().getStreamServerPort(), false, vlcstreamingAPI);
         } catch (IOException e) {
@@ -193,6 +178,9 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
     @Override
     protected void initExtension() throws StartException {
+
+        DownloadListContextMenuManager.getInstance().registerExtender(this);
+        LinkgrabberContextMenuManager.getInstance().registerExtender(this);
     }
 
     @Override
@@ -229,41 +217,43 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         return vlcBinary;
     }
 
-    @Override
-    public void onExtendPopupMenu(final MenuContext<?> context) {
-        if (context instanceof DownloadTableContext) {
+    //
+    // @Override
+    // public void onExtendPopupMenu(final MenuContext<?> context) {
+    // if (context instanceof DownloadTableContext) {
+    //
+    // final JMenu menu = new JMenu(T._.popup_streaming()) {
+    // /**
+    // *
+    // */
+    // private static final long serialVersionUID = -5156294142768994122L;
+    //
+    // protected JMenuItem createActionComponent(Action a) {
+    // if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
+    // return super.createActionComponent(a);
+    // }
+    // };
+    //
+    // // menu.setEnabled(false);
+    // ((DownloadTableContext) context).getMenu().add(menu);
+    // menu.setIcon(getIcon(18));
+    // menu.setEnabled(((DownloadTableContext) context).getSelectionInfo().isLinkContext());
+    // if (((DownloadTableContext) context).getSelectionInfo().isLinkContext()) {
+    // onExtendDownloadTableLinkContext(context, menu);
+    //
+    // } else {
+    // onExtendDownloadTablePackageContext(context, menu);
+    // }
+    //
+    // } else if (context instanceof LinkgrabberTableContext) {
+    // ((LinkgrabberTableContext) context).getMenu().add(new JMenuItem(new AddToLibraryAction(this, ((LinkgrabberTableContext)
+    // context).getSelectionInfo())), null, 1);
+    //
+    // }
+    // }
 
-            final JMenu menu = new JMenu(T._.popup_streaming()) {
-                /**
-                 * 
-                 */
-                private static final long serialVersionUID = -5156294142768994122L;
-
-                protected JMenuItem createActionComponent(Action a) {
-                    if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
-                    return super.createActionComponent(a);
-                }
-            };
-
-            // menu.setEnabled(false);
-            ((DownloadTableContext) context).getMenu().add(menu);
-            menu.setIcon(getIcon(18));
-            menu.setEnabled(((DownloadTableContext) context).getSelectionInfo().isLinkContext());
-            if (((DownloadTableContext) context).getSelectionInfo().isLinkContext()) {
-                onExtendDownloadTableLinkContext(context, menu);
-
-            } else {
-                onExtendDownloadTablePackageContext(context, menu);
-            }
-
-        } else if (context instanceof LinkgrabberTableContext) {
-            ((LinkgrabberTableContext) context).getMenu().add(new JMenuItem(new AddToLibraryAction(this, ((LinkgrabberTableContext) context).getSelectionInfo())), null, 1);
-
-        }
-    }
-
-    private void onExtendDownloadTablePackageContext(MenuContext<?> context, JMenu menu) {
-    }
+    // private void onExtendDownloadTablePackageContext(MenuContext<?> context, JMenu menu) {
+    // }
 
     private static final HashSet<String> SUPPORTED_DIRECT_PLAY_FORMATS = new HashSet<String>();
     static {
@@ -278,79 +268,80 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         SUPPORTED_DIRECT_PLAY_FORMATS.add("wav");
     }
 
-    private void onExtendDownloadTableLinkContext(final MenuContext<?> context, final JMenu menu) {
-        DownloadLink link = ((DownloadTableContext) context).getSelectionInfo().getContextLink();
-        String filename = link.getName().toLowerCase(Locale.ENGLISH);
-
-        final List<PlayToDevice> renderer = getPlayToRenderer();
-
-        if (SUPPORTED_DIRECT_PLAY_FORMATS.contains(Files.getExtension(filename))) {
-
-            for (PlayToDevice d : renderer) {
-                menu.add(new DirectPlayToAction(this, d, link));
-
-            }
-        } else {
-
-            // Rar
-            new Thread("MenuCreator") {
-                public void run() {
-                    try {
-                        LazyExtension plg = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
-                        if (plg._isEnabled()) {
-                            final ExtractionExtension extractor = (ExtractionExtension) plg._getExtension();
-
-                            final ValidateArchiveAction<FilePackage, DownloadLink> validation = new ValidateArchiveAction<FilePackage, DownloadLink>(extractor, ((DownloadTableContext) context).getSelectionInfo());
-                            final Archive archive = validation.getArchives().get(0);
-                            java.util.List<ArchiveItem> ais = archive.getSettings().getArchiveItems();
-
-                            if (ais != null && ais.size() > 0) {
-
-                                for (final ArchiveItem ai : ais) {
-                                    if (SUPPORTED_DIRECT_PLAY_FORMATS.contains(Files.getExtension(ai.getPath()))) {
-                                        new EDTRunner() {
-
-                                            @Override
-                                            protected void runInEDT() {
-
-                                                for (PlayToDevice d : renderer) {
-
-                                                    menu.add(new RarPlayToAction(StreamingExtension.this, d, archive, extractor, ai));
-
-                                                }
-
-                                            }
-                                        };
-                                    }
-
-                                }
-                            } else {
-                                new EDTRunner() {
-
-                                    @Override
-                                    protected void runInEDT() {
-
-                                        for (PlayToDevice d : renderer) {
-
-                                            menu.add(new RarPlayToAction(StreamingExtension.this, d, archive, extractor, null));
-
-                                        }
-
-                                    }
-                                };
-
-                            }
-                        }
-                    } catch (Throwable e) {
-                        logger.log(e);
-                    }
-
-                }
-            }.start();
-
-        }
-
-    }
+    // private void onExtendDownloadTableLinkContext(final MenuContext<?> context, final JMenu menu) {
+    // DownloadLink link = ((DownloadTableContext) context).getSelectionInfo().getContextLink();
+    // String filename = link.getName().toLowerCase(Locale.ENGLISH);
+    //
+    // final List<PlayToDevice> renderer = getPlayToRenderer();
+    //
+    // if (SUPPORTED_DIRECT_PLAY_FORMATS.contains(Files.getExtension(filename))) {
+    //
+    // for (PlayToDevice d : renderer) {
+    // menu.add(new DirectPlayToAction(this, d, link));
+    //
+    // }
+    // } else {
+    //
+    // // Rar
+    // new Thread("MenuCreator") {
+    // public void run() {
+    // try {
+    // LazyExtension plg = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
+    // if (plg._isEnabled()) {
+    // final ExtractionExtension extractor = (ExtractionExtension) plg._getExtension();
+    //
+    // final ValidateArchiveAction<FilePackage, DownloadLink> validation = new ValidateArchiveAction<FilePackage, DownloadLink>(extractor,
+    // ((DownloadTableContext) context).getSelectionInfo());
+    // final Archive archive = validation.getArchives().get(0);
+    // java.util.List<ArchiveItem> ais = archive.getSettings().getArchiveItems();
+    //
+    // if (ais != null && ais.size() > 0) {
+    //
+    // for (final ArchiveItem ai : ais) {
+    // if (SUPPORTED_DIRECT_PLAY_FORMATS.contains(Files.getExtension(ai.getPath()))) {
+    // new EDTRunner() {
+    //
+    // @Override
+    // protected void runInEDT() {
+    //
+    // for (PlayToDevice d : renderer) {
+    //
+    // menu.add(new RarPlayToAction(StreamingExtension.this, d, archive, extractor, ai));
+    //
+    // }
+    //
+    // }
+    // };
+    // }
+    //
+    // }
+    // } else {
+    // new EDTRunner() {
+    //
+    // @Override
+    // protected void runInEDT() {
+    //
+    // for (PlayToDevice d : renderer) {
+    //
+    // menu.add(new RarPlayToAction(StreamingExtension.this, d, archive, extractor, null));
+    //
+    // }
+    //
+    // }
+    // };
+    //
+    // }
+    // }
+    // } catch (Throwable e) {
+    // logger.log(e);
+    // }
+    //
+    // }
+    // }.start();
+    //
+    // }
+    //
+    // }
 
     private List<PlayToDevice> getPlayToRenderer() {
         java.util.List<PlayToDevice> ret = new ArrayList<PlayToDevice>();
@@ -493,6 +484,10 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
         }
         return null;
+    }
+
+    @Override
+    public void updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
     }
 
 }

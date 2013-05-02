@@ -7,12 +7,14 @@ import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 
 public class RemoveOfflineAction extends AppAction {
 
@@ -21,7 +23,7 @@ public class RemoveOfflineAction extends AppAction {
      */
     private static final long serialVersionUID = -6341297356888158708L;
 
-    public RemoveOfflineAction() {
+    public RemoveOfflineAction(SelectionInfo<CrawledPackage, CrawledLink> selection) {
         setName(_GUI._.RemoveOfflineAction_RemoveOfflineAction_object_());
         setIconKey("remove_offline");
     }

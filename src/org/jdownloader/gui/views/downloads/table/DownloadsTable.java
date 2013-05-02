@@ -2,9 +2,7 @@ package org.jdownloader.gui.views.downloads.table;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Image;
 import java.awt.LayoutManager;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -12,13 +10,9 @@ import java.awt.event.MouseEvent;
 import java.util.EventObject;
 
 import javax.swing.DropMode;
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
-import javax.swing.JSeparator;
 import javax.swing.JTable;
-import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
@@ -28,7 +22,6 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
@@ -38,10 +31,8 @@ import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtColumn;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -156,7 +147,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     }
 
     protected boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
-        showPropertiesMenu(e.getPoint(), obj);
+        // showPropertiesMenu(e.getPoint(), obj);
 
         return false;
     }
@@ -169,37 +160,41 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     protected boolean onSingleClick(MouseEvent e, final AbstractNode obj) {
 
-        if (e.isAltDown() || e.isAltGraphDown()) {
-            showPropertiesMenu(e.getPoint(), obj);
-            return true;
-        }
+        // if (e.isAltDown() || e.isAltGraphDown()) {
+        // showPropertiesMenu(e.getPoint(), obj);
+        // return true;
+        // }
         return super.onSingleClick(e, obj);
     }
 
-    private void showPropertiesMenu(Point point, AbstractNode obj) {
-        JPopupMenu m = new JPopupMenu();
-
-        if (obj instanceof AbstractPackageNode) {
-
-            Image back = (((AbstractPackageNode<?, ?>) obj).isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
-
-            m.add(SwingUtils.toBold(new JLabel(_GUI._.ContextMenuFactory_createPopup_properties(obj.getName()), new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)), SwingConstants.LEFT)));
-            m.add(new JSeparator());
-        } else if (obj instanceof DownloadLink) {
-
-            Image back = (((DownloadLink) obj).getIcon().getImage());
-
-            m.add(SwingUtils.toBold(new JLabel(_GUI._.ContextMenuFactory_createPopup_properties(obj.getName()), new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)), SwingConstants.LEFT)));
-            m.add(new JSeparator());
-        }
-
-        final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(point);
-
-        for (Component mm : DownloadTableContextMenuFactory.fillPropertiesMenu(new SelectionInfo<FilePackage, DownloadLink>(obj, getExtTableModel().getSelectedObjects()), col)) {
-            m.add(mm);
-        }
-        m.show(this, point.x, point.y);
-    }
+    // private void showPropertiesMenu(Point point, AbstractNode obj) {
+    // JPopupMenu m = new JPopupMenu();
+    //
+    // if (obj instanceof AbstractPackageNode) {
+    //
+    // Image back = (((AbstractPackageNode<?, ?>) obj).isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) :
+    // NewTheme.I().getImage("tree_package_closed", 32));
+    //
+    // m.add(SwingUtils.toBold(new JLabel(_GUI._.ContextMenuFactory_createPopup_properties(obj.getName()), new
+    // ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)), SwingConstants.LEFT)));
+    // m.add(new JSeparator());
+    // } else if (obj instanceof DownloadLink) {
+    //
+    // Image back = (((DownloadLink) obj).getIcon().getImage());
+    //
+    // m.add(SwingUtils.toBold(new JLabel(_GUI._.ContextMenuFactory_createPopup_properties(obj.getName()), new
+    // ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)), SwingConstants.LEFT)));
+    // m.add(new JSeparator());
+    // }
+    //
+    // final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(point);
+    //
+    // for (Component mm : DownloadTableContextMenuFactory.fillPropertiesMenu(new SelectionInfo<FilePackage, DownloadLink>(obj,
+    // getExtTableModel().getSelectedObjects()), col)) {
+    // m.add(mm);
+    // }
+    // m.show(this, point.x, point.y);
+    // }
 
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {

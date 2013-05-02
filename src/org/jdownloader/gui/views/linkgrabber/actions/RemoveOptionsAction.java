@@ -52,17 +52,17 @@ public class RemoveOptionsAction extends AbstractAction {
         java.util.List<AbstractNode> selection = table.getExtTableModel().getSelectedObjects();
 
         SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(null, selection, null, null, table);
-        popup.add(new RemoveAllLinkgrabberAction());
+        popup.add(new RemoveAllLinkgrabberAction(null));
         popup.add(new RemoveSelectionLinkgrabberAction(si) {
             {
                 setName(_GUI._.RemoveOptionsAction_actionPerformed_selection_());
             }
         });
         popup.add(new RemoveNonSelectedAction(si));
-        popup.add(new RemoveOfflineAction());
+        popup.add(new RemoveOfflineAction(null));
         popup.add(new RemoveIncompleteArchives(new SelectionInfo<CrawledPackage, CrawledLink>(new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes()))));
         popup.add(new JSeparator());
-        popup.add(new ResetPopupAction(panel));
+        popup.add(new ResetPopupAction(null));
         int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();

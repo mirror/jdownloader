@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.extraction.contextmenu.downloadlist;
+package org.jdownloader.extensions.extraction.contextmenu.linkgrabber;
 
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
@@ -8,16 +8,16 @@ import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.contextmenu.ArchivesSubMenu;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.CleanupSubMenu;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.AutoExtractEnabledToggleAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.CleanupAutoDeleteFilesEnabledToggleAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.CleanupAutoDeleteLinksEnabledToggleAction;
-import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ExtractArchiveNowAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractPasswordAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractToAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ValidateArchivesAction;
-import org.jdownloader.gui.views.downloads.context.submenu.AddonSubMenuLink;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.AddonLGSubMenuLink;
 
-public class DownloadListContextmenuExtender implements MenuExtenderHandler {
+public class LinkgrabberContextmenuExtender implements MenuExtenderHandler {
 
     private ExtractionExtension extension;
 
@@ -29,7 +29,7 @@ public class DownloadListContextmenuExtender implements MenuExtenderHandler {
         this.extension = extension;
     }
 
-    public DownloadListContextmenuExtender(ExtractionExtension extractionExtension) {
+    public LinkgrabberContextmenuExtender(ExtractionExtension extractionExtension) {
         this.extension = extractionExtension;
     }
 
@@ -37,7 +37,7 @@ public class DownloadListContextmenuExtender implements MenuExtenderHandler {
     public void updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
         int addonLinkIndex = 0;
         for (int i = 0; i < mr.getItems().size(); i++) {
-            if (mr.getItems().get(i) instanceof AddonSubMenuLink) {
+            if (mr.getItems().get(i) instanceof AddonLGSubMenuLink) {
                 addonLinkIndex = i;
                 break;
             }
@@ -45,9 +45,7 @@ public class DownloadListContextmenuExtender implements MenuExtenderHandler {
 
         ArchivesSubMenu root;
         mr.getItems().add(addonLinkIndex, root = new ArchivesSubMenu());
-        root.add(new MenuItemData(new ActionData(ExtractArchiveNowAction.class)));
         root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
-
         root.add(new SeperatorData());
         root.add(new MenuItemData(new ActionData(AutoExtractEnabledToggleAction.class)));
         root.add(new MenuItemData(new ActionData(SetExtractToAction.class)));
@@ -58,5 +56,4 @@ public class DownloadListContextmenuExtender implements MenuExtenderHandler {
         cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteLinksEnabledToggleAction.class)));
 
     }
-
 }

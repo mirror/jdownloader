@@ -5,11 +5,10 @@ import java.awt.event.ActionEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.controlling.contextmenu.gui.ManagerFrame;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 
 public class MenuManagerAction extends AppAction {
 
@@ -24,13 +23,7 @@ public class MenuManagerAction extends AppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                ManagerFrame.show();
-            }
-        };
+        DownloadListContextMenuManager.getInstance().openGui();
 
     }
 

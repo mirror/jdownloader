@@ -1,15 +1,13 @@
 package org.jdownloader.controlling.contextmenu.gui;
 
 import java.awt.Dimension;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.swing.Box;
+import javax.swing.JComponent;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileFilter;
@@ -17,17 +15,18 @@ import javax.swing.tree.TreePath;
 
 import jd.gui.swing.laf.LookAndFeelController;
 
-import org.appwork.app.gui.BasicGui;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.Application;
-import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
+import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
+import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
@@ -37,76 +36,27 @@ import org.jdownloader.controlling.contextmenu.MenuStructure;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
-import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.images.NewTheme;
 
-public class ManagerFrame extends BasicGui implements TreeSelectionListener {
-    private static ManagerFrame FRAME;
+public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectionListener {
 
-    public static void main(String[] args) {
-        new EDTRunner() {
+    private InfoPanel                infoPanel;
+    private ContextMenuManager<?, ?> manager;
+    private ManagerTreeModel         model;
+    private ExtTree                  tree;
 
-            @Override
-            protected void runInEDT() {
-                Application.setApplication(".jd_home");
-                LookAndFeelController.getInstance().init();
+    public ManagerFrame(ContextMenuManager<?, ?> manager) {
+        super(Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK, _GUI._.ManagerFrame_ManagerFrame_(), null, null, null);
 
-                new ManagerFrame();
-            }
-        };
-
-    }
-
-    private InfoPanel                      infoPanel;
-    private DownloadListContextMenuManager manager;
-    private ManagerTreeModel               model;
-    private ExtTree                        tree;
-
-    private ManagerFrame() {
-        super(_GUI._.ManagerFrame_ManagerFrame_());
+        this.manager = manager;
+        ext = manager.getFileExtension();
+        setLocator(new RememberAbsoluteDialogLocator("dialogframe-" + manager.getClass().getName()));
+        setDimensor(new RememberLastDialogDimension("dialogframe-" + manager.getClass().getName()));
 
     }
 
-    protected List<? extends Image> getAppIconList() {
-        final java.util.List<Image> list = new ArrayList<Image>();
-        list.add(NewTheme.I().getImage("menu", 16));
-        list.add(NewTheme.I().getImage("menu", 32));
-        return list;
-    }
-
-    private String ext = ".jdDlMenu";
-
-    @Override
-    protected void layoutPanel() {
-        manager = DownloadListContextMenuManager.getInstance();
-        MigPanel panel = new MigPanel("ins 2,wrap 2", "[grow,fill][]", "[grow,fill][]");
-        panel.setOpaque(false);
-        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(panel);
-
-        model = new ManagerTreeModel(manager.getMenuData());
-        tree = new ExtTree(this);
-
-        tree.getSelectionModel().addTreeSelectionListener(this);
-        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(tree);
-
-        // tree.set
-        // tree.setShowsRootHandles(false);
-        HeaderScrollPane sp = new HeaderScrollPane(tree) {
-
-            @Override
-            public Dimension getPreferredSize() {
-                return tree.getPreferredSize();
-            }
-
-        };
-        sp.setColumnHeaderView(new TreeHeader());
-        panel.add(sp);
-        infoPanel = new InfoPanel(this);
-        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(infoPanel);
-        sp = new HeaderScrollPane(infoPanel);
-        sp.setColumnHeaderView(new OptionsPaneHeader());
-        panel.add(sp);
-        MigPanel bottom = new MigPanel("ins 0", "[][][][][][][][grow,fill][][]", "[]");
+    protected DefaultButtonPanel getDefaultButtonPanel() {
+        DefaultButtonPanel bottom = new DefaultButtonPanel("ins 0", "[][][][][][][][grow,fill][][]", "[]");
         ExtButton save = new ExtButton(new AppAction() {
             {
                 setName(_GUI._.lit_save());
@@ -118,6 +68,8 @@ public class ManagerFrame extends BasicGui implements TreeSelectionListener {
                 MenuContainerRoot data = (MenuContainerRoot) model.getRoot();
 
                 manager.setMenuData(data);
+                setReturnmask(true);
+
                 dispose();
             }
 
@@ -249,6 +201,8 @@ public class ManagerFrame extends BasicGui implements TreeSelectionListener {
             @Override
             public void actionPerformed(ActionEvent e) {
 
+                setReturnmask(false);
+
                 dispose();
             }
 
@@ -266,20 +220,65 @@ public class ManagerFrame extends BasicGui implements TreeSelectionListener {
         bottom.add(save, "tag ok,height 24!");
         bottom.add(cancel, "tag cancel,height 24!");
         bottom.setOpaque(false);
-        panel.add(bottom, "spanx");
+        return bottom;
+
+    }
+
+    // protected List<? extends Image> getAppIconList() {
+    // final java.util.List<Image> list = new ArrayList<Image>();
+    // list.add(NewTheme.I().getImage("menu", 16));
+    // list.add(NewTheme.I().getImage("menu", 32));
+    // return list;
+    // }
+
+    private String ext = ".jdDlMenu";
+
+    @Override
+    protected boolean isResizable() {
+        return true;
+    }
+
+    // @Override
+    @Override
+    public JComponent layoutDialogContent() {
+        MigPanel panel = new MigPanel("ins 2,wrap 2", "[grow,fill][]", "[grow,fill][]");
+        panel.setOpaque(false);
+
+        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor((JComponent) getDialog().getContentPane());
+        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(panel);
+
+        model = new ManagerTreeModel(manager.getMenuData());
+        tree = new ExtTree(this);
+
+        tree.getSelectionModel().addTreeSelectionListener(this);
+        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(tree);
+
+        // tree.set
+        // tree.setShowsRootHandles(false);
+        HeaderScrollPane sp = new HeaderScrollPane(tree) {
+
+            @Override
+            public Dimension getPreferredSize() {
+                return tree.getPreferredSize();
+            }
+
+        };
+        sp.setColumnHeaderView(new TreeHeader());
+        panel.add(sp);
+        infoPanel = new InfoPanel(this);
+        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(infoPanel);
+        sp = new HeaderScrollPane(infoPanel);
+        sp.setColumnHeaderView(new OptionsPaneHeader());
+        panel.add(sp);
 
         LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(sp);
-        getFrame().setContentPane(panel);
+
         if (tree.getRowCount() > 0) tree.setSelectionRow(0);
+        return panel;
     }
 
     public ManagerTreeModel getModel() {
         return model;
-    }
-
-    @Override
-    protected void requestExit() {
-        dispose();
     }
 
     public ContextMenuManager getManager() {
@@ -310,27 +309,9 @@ public class ManagerFrame extends BasicGui implements TreeSelectionListener {
         }
     }
 
-    public static void show() {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                if (FRAME == null) {
-
-                    FRAME = new ManagerFrame();
-                }
-                if (!FRAME.getFrame().isVisible()) {
-                    FRAME.setVisible(true);
-                }
-
-            }
-        };
-
-    }
-
-    protected void setVisible(boolean b) {
+    public void setVisible(boolean b) {
         model.set(manager.getMenuData());
-        getFrame().setVisible(b);
+        super.setVisible(b);
     }
 
     @Override
@@ -356,6 +337,11 @@ public class ManagerFrame extends BasicGui implements TreeSelectionListener {
         TreePath ret = tree.getSelectionPath();
         if (ret == null) ret = new TreePath(model.getRoot());
         return ret;
+    }
+
+    @Override
+    protected Object createReturnValue() {
+        return null;
     }
 
 }

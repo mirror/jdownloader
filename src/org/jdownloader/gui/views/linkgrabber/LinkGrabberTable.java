@@ -12,7 +12,6 @@ import java.util.EventObject;
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
-import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
 import javax.swing.JSeparator;
@@ -241,9 +240,10 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
         final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(e.getPoint());
 
-        for (JMenuItem mm : ContextMenuFactory.fillPropertiesMenu(new SelectionInfo<CrawledPackage, CrawledLink>(obj, getExtTableModel().getSelectedObjects()), col)) {
-            m.add(mm);
-        }
+        // for (JMenuItem mm : ContextMenuFactory.fillPropertiesMenu(new SelectionInfo<CrawledPackage, CrawledLink>(obj,
+        // getExtTableModel().getSelectedObjects()), col)) {
+        // m.add(mm);
+        // }
         m.show(this, e.getPoint().x, e.getPoint().y);
         return false;
     }

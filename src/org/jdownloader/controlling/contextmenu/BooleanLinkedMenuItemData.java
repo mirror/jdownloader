@@ -6,6 +6,7 @@ import javax.swing.JComponent;
 
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.views.SelectionInfo;
 
 public class BooleanLinkedMenuItemData extends MenuItemData {
@@ -20,7 +21,7 @@ public class BooleanLinkedMenuItemData extends MenuItemData {
     }
 
     @Override
-    public JComponent addTo(JComponent root, SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    public JComponent addTo(JComponent root, SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
         if (keyhandler.isEnabled() == value) { return super.addTo(root, selection); }
         return null;
     }

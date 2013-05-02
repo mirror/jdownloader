@@ -21,6 +21,12 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
+import org.jdownloader.controlling.contextmenu.gui.ManagerFrame;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.logging.LogController;
@@ -33,12 +39,32 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
     public JPopupMenu build(SelectionInfo<PackageType, ChildrenType> si) {
         long t = System.currentTimeMillis();
-        JPopupMenu root = new JPopupMenu();
+        ExtPopupMenu root = new ExtPopupMenu();
         MenuContainerRoot md = getMenuData();
         new MenuBuilder<PackageType, ChildrenType>(this, root, si, md).run();
         // createLayer(root, md);
 
         return root;
+    }
+
+    protected ManagerFrame guiFrame;
+
+    public void openGui() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                try {
+                    Dialog.getInstance().showDialog(new ManagerFrame(ContextMenuManager.this));
+                } catch (DialogClosedException e) {
+                    e.printStackTrace();
+                } catch (DialogCanceledException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        };
+
     }
 
     public LogSource getLogger() {
@@ -80,6 +106,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         if (menuData != null) return menuData;
 
         MenuContainerRoot ret = config.getMenu();
+
         MenuContainerRoot defaultMenu = setupDefaultStructure();
         if (ret == null) {
             // no customizer ever used
@@ -179,6 +206,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         System.out.println("Set menu Data");
         menuData = ret;
         System.out.println(System.currentTimeMillis() - t);
+
         return ret;
     }
 
@@ -292,5 +320,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         ret.add(0, new SeperatorData());
         return ret;
     }
+
+    public abstract String getFileExtension();
 
 }

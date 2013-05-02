@@ -50,6 +50,7 @@ import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate.JdownloaderTranslation;
 import org.jdownloader.translate._JDT;
@@ -63,6 +64,7 @@ public class GUISettings extends AbstractConfigPanel {
     private Thread            languageScanner;
     private SettingsButton    resetDialogs;
     private SettingsButton    contextMenuManagerDownloadList;
+    private SettingsButton    contextMenuManagerLinkgrabber;
 
     public String getTitle() {
         return _JDT._.gui_settings__gui_title();
@@ -137,7 +139,28 @@ public class GUISettings extends AbstractConfigPanel {
                     protected void runInEDT() {
                         JDGui.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
 
-                        DownloadListContextMenuManager.getInstance().show();
+                        DownloadListContextMenuManager.getInstance().openGui();
+                    }
+                };
+
+            }
+        });
+
+        contextMenuManagerLinkgrabber = new SettingsButton(new AppAction() {
+            {
+                setName(_GUI._.lit_open());
+
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
+
+                        LinkgrabberContextMenuManager.getInstance().openGui();
                     }
                 };
 
@@ -152,11 +175,11 @@ public class GUISettings extends AbstractConfigPanel {
         this.addPair(_GUI._.gui_config_barrierfree_captchasize(), null, captchaSize);
         this.addPair(_GUI._.gui_config_language(), null, lng);
         this.addPair(_GUI._.gui_config_dialogs(), null, resetDialogs);
-        this.addHeader(_GUI._.gui_config_menumanager(), NewTheme.I().getIcon("menu", 32));
+        this.addHeader(_GUI._.gui_config_menumanager_downloadlist(), NewTheme.I().getIcon("menu", 32));
 
         this.addDescription(_GUI._.gui_config_menumanager_desc());
-        this.addPair(_GUI._.gui_config_menumanager(), null, contextMenuManagerDownloadList);
-
+        this.addPair(_GUI._.gui_config_menumanager_downloadlist(), null, contextMenuManagerDownloadList);
+        this.addPair(_GUI._.gui_config_menumanager_linkgrabber(), null, contextMenuManagerLinkgrabber);
     }
 
     @Override

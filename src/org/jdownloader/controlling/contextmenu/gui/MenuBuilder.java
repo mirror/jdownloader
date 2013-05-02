@@ -12,6 +12,7 @@ import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.views.SelectionInfo;
 
 public class MenuBuilder<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
@@ -42,10 +43,8 @@ public class MenuBuilder<PackageType extends AbstractPackageNode<ChildrenType, P
             try {
                 final MenuItemData inst = i;
                 if (inst._getValidateException() != null) continue;
-                // if (inst instanceof ExtensionContextMenuItem) {
-                // inst.addTo(root, selection);
-                // menuManager.extend(root, (ExtensionContextMenuItem<?>) inst, selection, menuData);
-                // } else {
+                if (root.getComponentCount() == 0 && inst instanceof SeperatorData) continue;
+
                 switch (inst.getType()) {
                 case ACTION:
 
@@ -58,12 +57,19 @@ public class MenuBuilder<PackageType extends AbstractPackageNode<ChildrenType, P
                     createLayer(submenu, (MenuContainer) inst);
 
                 }
-                // }
+                ;
+
             } catch (Throwable e) {
+                logger.warning("Could Not Build MenuItem: " + i);
                 logger.log(e);
             }
 
         }
+        ;
+        if (root instanceof ExtMenuInterface) {
+            ((ExtMenuInterface) root).cleanup();
+        }
+
     }
 
     public void run() {

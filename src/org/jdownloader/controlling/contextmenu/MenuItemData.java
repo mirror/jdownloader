@@ -72,11 +72,13 @@ public class MenuItemData implements Storable {
         CONTAINER;
     }
 
-    private Type      type = Type.ACTION;
+    private Type              type = Type.ACTION;
 
-    private boolean   validated;
+    private boolean           validated;
 
-    private Exception validateException;
+    private Exception         validateException;
+
+    private MenuContainerRoot root;
 
     public Type getType() {
         return type;
@@ -277,16 +279,14 @@ public class MenuItemData implements Storable {
         return true;
     }
 
-    public JComponent addTo(JComponent root, SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    public JComponent addTo(JComponent root, SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
 
         if (!showItem(selection)) return null;
 
         JComponent it;
-        try {
-            it = createItem(selection);
-        } catch (Exception e) {
-            return null;
-        }
+
+        it = createItem(selection);
+
         if (it == null) return null;
         if (!it.isEnabled() && mergeProperties().contains(MenuItemProperty.HIDE_IF_DISABLED)) return null;
 
@@ -369,5 +369,13 @@ public class MenuItemData implements Storable {
 
     public Exception _getValidateException() {
         return validateException;
+    }
+
+    public MenuContainerRoot _getRoot() {
+        return root;
+    }
+
+    public void _setRoot(MenuContainerRoot root) {
+        this.root = root;
     }
 }

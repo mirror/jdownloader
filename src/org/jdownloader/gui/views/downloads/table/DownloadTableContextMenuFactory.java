@@ -1,12 +1,8 @@
 package org.jdownloader.gui.views.downloads.table;
 
-import java.awt.Component;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 
-import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
-import javax.swing.JSeparator;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -15,17 +11,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.ExtColumn;
-import org.jdownloader.gui.menu.eventsender.MenuFactoryEvent;
-import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
-import org.jdownloader.gui.views.components.packagetable.context.PrioritySubMenu;
-import org.jdownloader.gui.views.components.packagetable.context.SetCommentAction;
-import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
-import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
-import org.jdownloader.gui.views.downloads.action.OpenInBrowserAction;
-import org.jdownloader.gui.views.downloads.action.PackageNameAction;
-import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
@@ -141,31 +127,33 @@ public class DownloadTableContextMenuFactory {
         return p;
     }
 
-    public static java.util.List<Component> fillPropertiesMenu(SelectionInfo<FilePackage, DownloadLink> si, ExtColumn<AbstractNode> column) {
-
-        java.util.List<Component> ret = new ArrayList<Component>();
-
-        ret.add(new JMenuItem(new CheckStatusAction<FilePackage, DownloadLink>(si)));
-
-        OpenInBrowserAction openInBrowserAction = new OpenInBrowserAction(si);
-        if (openInBrowserAction.isEnabled()) {
-            ret.add(new JMenuItem(openInBrowserAction));
-        }
-
-        ret.add(new JMenuItem(new URLEditorAction<FilePackage, DownloadLink>(si)));
-
-        ret.add(new JSeparator());
-
-        if (si.isPackageContext()) {
-            ret.add(new JMenuItem(new PackageNameAction(si)));
-        }
-
-        ret.add(new JMenuItem(new SetDownloadFolderInDownloadTableAction(si)));
-        ret.add(new JMenuItem(new SetDownloadPassword<FilePackage, DownloadLink>(si)));
-        ret.add(new JMenuItem(new SetCommentAction<FilePackage, DownloadLink>(si)));
-
-        ret.add(new PrioritySubMenu<FilePackage, DownloadLink>(si));
-        MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTablePropertiesContext(ret, si, column)));
-        return ret;
-    }
+    // public static java.util.List<Component> fillPropertiesMenu(SelectionInfo<FilePackage, DownloadLink> si, ExtColumn<AbstractNode>
+    // column) {
+    //
+    // java.util.List<Component> ret = new ArrayList<Component>();
+    //
+    // ret.add(new JMenuItem(new CheckStatusAction<FilePackage, DownloadLink>(si)));
+    //
+    // OpenInBrowserAction openInBrowserAction = new OpenInBrowserAction(si);
+    // if (openInBrowserAction.isEnabled()) {
+    // ret.add(new JMenuItem(openInBrowserAction));
+    // }
+    //
+    // ret.add(new JMenuItem(new URLEditorAction<FilePackage, DownloadLink>(si)));
+    //
+    // ret.add(new JSeparator());
+    //
+    // if (si.isPackageContext()) {
+    // ret.add(new JMenuItem(new PackageNameAction(si)));
+    // }
+    //
+    // ret.add(new JMenuItem(new SetDownloadFolderInDownloadTableAction(si)));
+    // ret.add(new JMenuItem(new SetDownloadPassword<FilePackage, DownloadLink>(si)));
+    // ret.add(new JMenuItem(new SetCommentAction<FilePackage, DownloadLink>(si)));
+    //
+    // ret.add(new PrioritySubMenu<FilePackage, DownloadLink>(si));
+    // MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new
+    // DownloadTablePropertiesContext(ret, si, column)));
+    // return ret;
+    // }
 }

@@ -16,16 +16,13 @@
  */
 package org.jdownloader.extensions.neembuu;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.logging.Level;
 
 import javax.swing.ImageIcon;
-import javax.swing.JMenuItem;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -40,15 +37,10 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.neembuu.gui.NeembuuGui;
 import org.jdownloader.extensions.neembuu.translate.NeembuuTranslation;
 import org.jdownloader.extensions.neembuu.translate._NT;
-import org.jdownloader.gui.menu.MenuContext;
-import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
-import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
-import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
-public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTranslation> implements MenuFactoryListener {
+public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTranslation> {
 
     private NeembuuGui                                   tab;
     private int                                          number_of_retries          = 0;                                               // 0=not
@@ -227,7 +219,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
                 it.remove();
             }
         }
-        MenuFactoryEventSender.getInstance().removeListener(this);
+
         tab = null;
         LogController.CL().finer("Stopped " + getClass().getSimpleName());
     }
@@ -247,7 +239,6 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
             }
         }.waitForEDT();
 
-        MenuFactoryEventSender.getInstance().addListener(this, true);
     }
 
     /**
@@ -305,34 +296,24 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
         return tab;
     }
 
-    @Override
-    public void onExtendPopupMenu(MenuContext<?> context) {
-
-        if (context instanceof LinkgrabberTableContext) {
-            onExtendLinkgrabberTablePopupMenu((LinkgrabberTableContext) context);
-        } else if (context instanceof DownloadTableContext) {
-
-            onExtendDownloadTablePopupMenu((DownloadTableContext) context);
-
-        }
-    }
-
-    private void onExtendLinkgrabberTablePopupMenu(LinkgrabberTableContext context) {
-        context.getMenu().add(new WatchAsYouDownloadLinkgrabberAction(context.getSelectionInfo().isShiftDown(), context.getSelectionInfo().getChildren()));
-    }
-
-    private void onExtendDownloadTablePopupMenu(DownloadTableContext context) {
-        if (context.getSelectionInfo().isPackageContext()) {
-            final HashSet<FilePackage> fps = new HashSet<FilePackage>();
-            if (!context.getSelectionInfo().isEmpty()) {
-                for (final FilePackage node : context.getSelectionInfo().getAllPackages()) {
-
-                    if ((Boolean) ((FilePackage) node).getProperty(WATCH_AS_YOU_DOWNLOAD_KEY, false) == true) fps.add((FilePackage) node);
-
-                }
-            }
-            if (fps.size() > 0) context.getMenu().add(new JMenuItem(new WatchAsYouDownloadAction(new ArrayList<FilePackage>(fps))));
-        }
-
-    }
+    //
+    // private void onExtendLinkgrabberTablePopupMenu(LinkgrabberTableContext context) {
+    // // context.getMenu().add(new WatchAsYouDownloadLinkgrabberAction(context.getSelectionInfo().isShiftDown(),
+    // // context.getSelectionInfo().getChildren()));
+    // }
+    //
+    // private void onExtendDownloadTablePopupMenu(DownloadTableContext context) {
+    // if (context.getSelectionInfo().isPackageContext()) {
+    // final HashSet<FilePackage> fps = new HashSet<FilePackage>();
+    // if (!context.getSelectionInfo().isEmpty()) {
+    // for (final FilePackage node : context.getSelectionInfo().getAllPackages()) {
+    //
+    // if ((Boolean) ((FilePackage) node).getProperty(WATCH_AS_YOU_DOWNLOAD_KEY, false) == true) fps.add((FilePackage) node);
+    //
+    // }
+    // }
+    // if (fps.size() > 0) context.getMenu().add(new JMenuItem(new WatchAsYouDownloadAction(new ArrayList<FilePackage>(fps))));
+    // }
+    //
+    // }
 }

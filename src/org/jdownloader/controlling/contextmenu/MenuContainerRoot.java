@@ -9,7 +9,6 @@ import java.util.List;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.actions.AppAction;
 
 public class MenuContainerRoot extends MenuContainer implements Storable {
     private int version;
@@ -39,64 +38,89 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
      * 
      * @param container
      */
-    private void validate(MenuItemData container) {
+    private boolean validate(MenuItemData container) {
         container._setValidated(true);
-        if (container.getItems() != null) {
+        boolean ret = true;
+        container._setRoot(_getRoot());
+        main: while (true) {
+            if (container.getItems() != null) {
 
-            ArrayList<MenuItemData> itemsToRemove = null;
-            HashMap<MenuItemData, MenuItemData> replaceMap = new HashMap<MenuItemData, MenuItemData>();
-            HashSet<Object> set = new HashSet<Object>();
-            MenuItemData last = null;
-            for (int i = 0; i < container.getItems().size(); i++) {
-                MenuItemData mid = container.getItems().get(i);
-                MenuItemData lr = null;
-                try {
+                HashMap<MenuItemData, MenuItemData> replaceMap = new HashMap<MenuItemData, MenuItemData>();
+                HashSet<Object> set = new HashSet<Object>();
+                MenuItemData last = null;
+                for (int i = 0; i < container.getItems().size(); i++) {
+                    MenuItemData mid = container.getItems().get(i);
+                    MenuItemData lr = null;
                     try {
-                        lr = mid.createValidatedItem();
-                        if (lr.getActionData() != null) {
-                            lr.createAction(null);
+                        try {
+                            lr = mid.createValidatedItem();
+                            if (lr.getActionData() != null) {
+                                lr.createAction(null);
+                            }
+                        } catch (ClassCurrentlyNotAvailableException e) {
+                            // extension not loaded or anything like this.
+                            mid._setValidateException(e);
+                            lr = mid;
                         }
-                    } catch (ClassCurrentlyNotAvailableException e) {
-                        // extension not loaded or anything like this.
-                        mid._setValidateException(e);
-                        lr = mid;
+                        lr._setRoot(_getRoot());
+                        if (lr instanceof SeperatorData && (i == 0 || i == container.getItems().size() - 1)) {
+
+                            container.getItems().remove(i);
+                            ret = false;
+                            continue main;
+                        }
+                        if (lr instanceof SeperatorData && last instanceof SeperatorData) {
+
+                            container.getItems().remove(i);
+                            ret = false;
+                            continue main;
+                        }
+
+                        if (!set.add(lr._getIdentifier()) && !(lr instanceof SeperatorData) && lr.getType() == Type.ACTION) {
+
+                            container.getItems().remove(i);
+                            ret = false;
+                            continue main;
+
+                        }
+                        if (lr != mid) {
+                            // let's replace
+                            replaceMap.put(mid, lr);
+
+                        }
+                        last = lr;
+
+                    } catch (Exception e) {
+
+                        container.getItems().remove(i);
+                        ret = false;
+                        continue main;
+                        // if (itemsToRemove == null) itemsToRemove = new ArrayList<MenuItemData>();
+                        // itemsToRemove.add(mid);
+                        // e.printStackTrace();
+
                     }
-
-                    if (lr instanceof SeperatorData && (i == 0 || i == container.getItems().size() - 1)) { throw new Exception("Seperator at " + i); }
-                    if (lr instanceof SeperatorData && last instanceof SeperatorData) { throw new Exception("Double Seperator"); }
-
-                    if (!set.add(lr._getIdentifier()) && !(lr instanceof SeperatorData) && lr.getType() == Type.ACTION) { throw new Exception("Action Dupe"); }
-                    if (lr != mid) {
-                        // let's replace
-                        replaceMap.put(mid, lr);
-
-                    }
-                    last = lr;
-
-                } catch (Exception e) {
-                    if (itemsToRemove == null) itemsToRemove = new ArrayList<MenuItemData>();
-                    itemsToRemove.add(mid);
-                    e.printStackTrace();
 
                 }
 
-            }
-            if (itemsToRemove != null) {
-                container.getItems().removeAll(itemsToRemove);
-            }
+                for (int i = 0; i < container.getItems().size(); i++) {
+                    MenuItemData mid = container.getItems().get(i);
+                    MenuItemData rep = replaceMap.remove(mid);
+                    if (rep != null) {
+                        container.getItems().set(i, rep);
+                        mid = rep;
+                    }
+                    ret &= validate(mid);
 
-            for (int i = 0; i < container.getItems().size(); i++) {
-                MenuItemData mid = container.getItems().get(i);
-                MenuItemData rep = replaceMap.remove(mid);
-                if (rep != null) {
-                    container.getItems().set(i, rep);
-                    mid = rep;
                 }
-                validate(mid);
-
             }
+            return ret;
         }
 
+    }
+
+    public MenuContainerRoot _getRoot() {
+        return this;
     }
 
     private void addBranch(MenuItemData menuItemData, MenuItemData lastNode) {
@@ -302,25 +326,4 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
         return bestIndex;
     }
 
-    // private Object _getContextIdentifier(ArrayList<MenuItemData> items, int i) {
-    // MenuItemData ret = items.get(i);
-    // if (ret instanceof SeperatorData) {
-    // Object before = i > 0 ? items.get(i - 1)._getIdentifier() : null;
-    // Object after = i < items.size() - 1 ? items.get(i + 1)._getIdentifier() : null;
-    // return before + "|Seperator|" + after;
-    // }
-    // return ret._getIdentifier();
-    // }
-    //
-    // private Object _getContextIdentifier(MenuItemData mid, ArrayList<MenuItemData> items) {
-    // return null;
-    // }
-
-    public void add(Class<? extends AppAction> class1, MenuItemProperty... ps) {
-        add(new ActionData(class1, ps));
-    }
-
-    private void add(ActionData actionData) {
-        add(new MenuItemData(actionData));
-    }
 }

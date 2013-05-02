@@ -47,6 +47,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.RemoveOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ResetAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
@@ -81,6 +82,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
+        LinkgrabberContextMenuManager.getInstance().setPanel(this);
         tableModel = LinkGrabberTableModel.getInstance();
         table = new LinkGrabberTable(this, tableModel);
         tableScrollPane = new JScrollPane(table);
@@ -172,7 +174,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         switch (CFG_GUI.CFG.getLinkgrabberDefaultClearAction()) {
 
         case RESET_PANEL:
-            resetButton = new JButton(new ResetAction(this));
+            resetButton = new JButton(new ResetAction(null));
             break;
         default:
             resetButton = new JButton(new ClearLinkgrabberAction());

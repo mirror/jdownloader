@@ -16,47 +16,32 @@
 
 package org.jdownloader.extensions.extraction;
 
-import java.awt.Cursor;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.swing.Action;
-import javax.swing.ImageIcon;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import javax.swing.JSeparator;
 import javax.swing.filechooser.FileFilter;
 
 import jd.SecondLevelLaunch;
 import jd.config.SubConfiguration;
-import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.UserIO;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.FileCreationListener;
@@ -65,11 +50,11 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.DownloadListContextmenuExtender;
+import org.jdownloader.extensions.extraction.contextmenu.linkgrabber.LinkgrabberContextmenuExtender;
 import org.jdownloader.extensions.extraction.gui.config.ExtractionConfigPanel;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.Multi;
@@ -77,19 +62,13 @@ import org.jdownloader.extensions.extraction.split.HJSplit;
 import org.jdownloader.extensions.extraction.split.Unix;
 import org.jdownloader.extensions.extraction.split.XtreamSplit;
 import org.jdownloader.extensions.extraction.translate.ExtractionTranslation;
-import org.jdownloader.extensions.extraction.translate.T;
-import org.jdownloader.gui.menu.MenuContext;
-import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
-import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
-import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTablePropertiesContext;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
-public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuFactoryListener {
+public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener {
 
     private ExtractionQueue                   extractionQueue   = new ExtractionQueue();
 
@@ -373,7 +352,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     protected void stop() throws StopException {
         LinkCollector.getInstance().setArchiver(null);
         ShutdownController.getInstance().removeShutdownVetoListener(listener);
-        MenuFactoryEventSender.getInstance().removeListener(this);
+
         FileCreationManager.getInstance().getEventSender().removeListener(this);
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
@@ -399,7 +378,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         lazyInitOnceOnStart();
 
         LinkCollector.getInstance().setArchiver(this);
-        MenuFactoryEventSender.getInstance().addListener(this);
+
         FileCreationManager.getInstance().getEventSender().addListener(this);
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
             public void run() {
@@ -599,6 +578,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         boolean oldPWListImported = false;
         ArchiveValidator.EXTENSION = this;
         DownloadListContextMenuManager.getInstance().registerExtender(new DownloadListContextmenuExtender(this));
+        LinkgrabberContextMenuManager.getInstance().registerExtender(new LinkgrabberContextmenuExtender(this));
         try {
             if ((oldPWListImported = getSettings().isOldPWListImported()) == false) {
                 SubConfiguration oldConfig = SubConfiguration.getConfig("PASSWORDLIST", true);
@@ -718,370 +698,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         } catch (Exception e) {
             logger.log(e);
         }
-    }
-
-    public void onExtendPopupMenu(MenuContext<?> unspecifiedContext) {
-
-        if (unspecifiedContext instanceof DownloadTableContext) {
-
-            // onExtendPopupMenuDownloadTable((DownloadTableContext) unspecifiedContext);
-        } else if (unspecifiedContext instanceof LinkgrabberTableContext) {
-            onExtendPopupMenuLinkgrabberTable((LinkgrabberTableContext) unspecifiedContext);
-            // p.add(new
-            // ValidateArchiveAction(selection));
-        } else if (unspecifiedContext instanceof LinkgrabberTablePropertiesContext) {
-            onExtendPropertiesMenuLinkgrabberTable((LinkgrabberTablePropertiesContext) unspecifiedContext);
-        }
-    }
-
-    private void onExtendPropertiesMenuLinkgrabberTable(final LinkgrabberTablePropertiesContext context) {
-
-        // JMenu menu = new JMenu(_.contextmenu_main()) {
-        // protected JMenuItem createActionComponent(Action a) {
-        // if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
-        // return super.createActionComponent(a);
-        // }
-        // };
-        // menu.setIcon(getIcon(18));
-        // context.getMenu().add(menu);
-
-    }
-
-    private void onExtendPopupMenuLinkgrabberTable(final LinkgrabberTableContext context) {
-
-        final JMenu menu = new JMenu(_.contextmenu_main()) {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = -5156294142768994122L;
-
-            protected JMenuItem createActionComponent(Action a) {
-                if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
-                return super.createActionComponent(a);
-            }
-        };
-
-        // menu.setEnabled(false);
-        context.getMenu().add(menu);
-
-        menu.setIcon(getIcon(18));
-        menu.setEnabled(false);
-        IOEQ.add(new Runnable() {
-
-            public void run() {
-
-                final String org = menu.getText();
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        menu.setText(_.contextmenu_loading(org));
-                        menu.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-                    }
-
-                };
-                final ValidateArchiveAction<CrawledPackage, CrawledLink> validation = new ValidateArchiveAction<CrawledPackage, CrawledLink>(ExtractionExtension.this, context.getSelectionInfo());
-
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-
-                        if (validation.getArchives().size() > 0) {
-                            createMenu(menu, false, validation.getArchives().toArray(new Archive[] {}));
-                            menu.setEnabled(true);
-                        }
-                    }
-                };
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        menu.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                        menu.setText(org);
-                    }
-                };
-
-            }
-        });
-
-    }
-
-    public void onExtendPopupMenuDownloadTable(final DownloadTableContext context) {
-
-        final JMenu menu = new JMenu(_.contextmenu_main()) {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = -5156294142768994122L;
-
-            protected JMenuItem createActionComponent(Action a) {
-                if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
-                return super.createActionComponent(a);
-            }
-        };
-
-        // menu.setEnabled(false);
-        context.getMenu().add(menu);
-
-        menu.setIcon(getIcon(18));
-        menu.setEnabled(false);
-        IOEQ.add(new Runnable() {
-
-            @Override
-            public void run() {
-                final String org = menu.getText();
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        menu.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-                        menu.setText(_.contextmenu_loading(org));
-                    }
-
-                };
-                final ValidateArchiveAction<FilePackage, DownloadLink> validation = new ValidateArchiveAction<FilePackage, DownloadLink>(ExtractionExtension.this, context.getSelectionInfo());
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-
-                        if (validation.getArchives().size() > 0) {
-                            createMenu(menu, true, validation.getArchives().toArray(new Archive[] {}));
-                            menu.setEnabled(true);
-                        }
-                    }
-                };
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        menu.setText(org);
-                        menu.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                    }
-                };
-            }
-
-        });
-
-    }
-
-    private void createMenu(JMenu menu, boolean startExtract, final Archive... archives) {
-
-        // final boolean fileExists = new File(link.getFileOutput()).exists();
-        // final boolean isLinkSupported = isLinkSupported(dlAF);
-        if (startExtract) {
-
-            menu.add(new AppAction() {
-                /**
-             * 
-             */
-                private static final long serialVersionUID = 1375146705091555054L;
-
-                {
-                    setName(_.contextmenu_extract());
-                    Image front = NewTheme.I().getImage("media-playback-start", 20, true);
-                    setSmallIcon(new ImageIcon(ImageProvider.merge(getIcon(20).getImage(), front, 0, 0, 5, 5)));
-                    setEnabled(true);
-                }
-
-                public void actionPerformed(ActionEvent e) {
-                    Thread thread = new Thread() {
-                        @Override
-                        public void run() {
-                            for (Archive archive : archives) {
-                                if (archive.isComplete()) {
-                                    addToQueue(archive);
-                                } else {
-                                    Dialog.getInstance().showMessageDialog(_.cannot_extract_incopmplete(archive.getName()));
-                                }
-                            }
-
-                        }
-                    };
-                    thread.setName("Extract Context: extract");
-                    thread.setDaemon(true);
-                    thread.start();
-                }
-            });
-        }
-        menu.add(new ValidateArchiveAction(this, archives));
-        menu.add(new JSeparator());
-
-        menu.add(new AppAction() {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 2539573738898436840L;
-
-            {
-                setName(_.contextmenu_autoextract());
-                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("unpack", 20), NewTheme.I().getImage("refresh", 12), 0, 0, 10, 10)));
-                setSelected(isAutoExtractEnabled(archives[0]));
-            }
-
-            public void actionPerformed(ActionEvent e) {
-                for (Archive archive : archives) {
-                    archive.getSettings().setAutoExtract(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
-                }
-                Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? _.set_autoextract_true() : _.set_autoextract_false());
-            }
-
-        });
-
-        menu.add(new AppAction() {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 3224128311203557582L;
-
-            {
-                setName(_.contextmenu_extract_to());
-                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("folder", 20), NewTheme.I().getImage("edit", 12), 0, 0, 10, 10)));
-
-            }
-
-            public void actionPerformed(ActionEvent e) {
-
-                FileFilter ff = new FileFilter() {
-                    @Override
-                    public boolean accept(File pathname) {
-                        if (pathname.isDirectory()) return true;
-                        return false;
-                    }
-
-                    @Override
-                    public String getDescription() {
-                        return _.plugins_optional_extraction_filefilter_extractto();
-                    }
-                };
-                ArchiveFactory dlAF = archives[0].getFactory();
-                File extractto = getFinalExtractToFolder(archives[0]);
-
-                while (extractto != null && !extractto.isDirectory()) {
-                    extractto = extractto.getParentFile();
-                }
-                try {
-                    File path = DownloadFolderChooserDialog.open(extractto, false, T._.extract_to2());
-
-                    if (path == null) return;
-                    for (Archive archive : archives) {
-                        archive.getSettings().setExtractPath(path.getAbsolutePath());
-                    }
-                } catch (DialogClosedException e1) {
-                    e1.printStackTrace();
-                } catch (DialogCanceledException e1) {
-                    e1.printStackTrace();
-                }
-
-            }
-        });
-
-        menu.add(new AppAction() {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 3224128311203557582L;
-
-            {
-                setName(_.contextmenu_password());
-                setSmallIcon(NewTheme.I().getIcon("password", 20));
-
-            }
-
-            public void actionPerformed(ActionEvent e) {
-
-                try {
-                    StringBuilder sb = new StringBuilder();
-                    HashSet<String> list = new HashSet<String>();
-
-                    for (Archive archive : archives) {
-                        HashSet<String> pws = archive.getSettings().getPasswords();
-                        if (pws != null) list.addAll(pws);
-                    }
-
-                    if (list != null && list.size() > 0) {
-                        for (String s : list) {
-                            if (sb.length() > 0) sb.append("\r\n");
-                            sb.append(s);
-                        }
-                    }
-                    String pw = null;
-
-                    if (archives.length > 1) {
-                        pw = Dialog.getInstance().showInputDialog(0, _.context_password(), (list == null || list.size() == 0) ? _.context_password_msg_multi() : _.context_password_msg2_multi(sb.toString()), null, NewTheme.getInstance().getIcon("password", 32), null, null);
-
-                    } else {
-                        pw = Dialog.getInstance().showInputDialog(0, _.context_password(), (list == null || list.size() == 0) ? _.context_password_msg(archives[0].getName()) : _.context_password_msg2(archives[0].getName(), sb.toString()), null, NewTheme.getInstance().getIcon("password", 32), null, null);
-
-                    }
-                    if (!StringUtils.isEmpty(pw)) {
-
-                        list.add(pw);
-                        for (Archive archive : archives) {
-                            archive.getSettings().setPasswords(list);
-                        }
-                    }
-
-                } catch (DialogClosedException e1) {
-                    e1.printStackTrace();
-                } catch (DialogCanceledException e1) {
-                    e1.printStackTrace();
-                }
-
-            }
-        });
-        JMenu cleanup;
-        menu.add(cleanup = new JMenu(_.context_cleanup()) {
-
-            protected JMenuItem createActionComponent(Action a) {
-                if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
-                return super.createActionComponent(a);
-            }
-        });
-        cleanup.setIcon(NewTheme.I().getIcon("clear", 20));
-        cleanup.add(new AppAction() {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 2539573738898436840L;
-
-            {
-                setName(_.contextmenu_autodeletefiles());
-                setSmallIcon(NewTheme.I().getIcon("file", 20));
-                setSelected(isRemoveFilesAfterExtractEnabled(archives[0]));
-            }
-
-            public void actionPerformed(ActionEvent e) {
-                for (Archive archive : archives) {
-                    archive.getSettings().setRemoveFilesAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
-                }
-                Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? _.set_autoremovefiles_true() : _.set_autoremovefiles_false());
-            }
-
-        });
-
-        cleanup.add(new AppAction() {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 2539573738898436840L;
-
-            {
-                setName(_.contextmenu_autodeletelinks());
-                setSmallIcon(NewTheme.I().getIcon("link", 20));
-                setSelected(isRemoveDownloadLinksAfterExtractEnabled(archives[0]));
-            }
-
-            public void actionPerformed(ActionEvent e) {
-                for (Archive archive : archives) {
-                    archive.getSettings().setRemoveDownloadLinksAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
-                }
-                Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? _.set_autoremovelinks_true() : _.set_autoremovelinks_false());
-            }
-
-        });
-
     }
 
     public boolean isAutoExtractEnabled(Archive archive) {
