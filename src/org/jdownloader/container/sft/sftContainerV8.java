@@ -86,21 +86,21 @@ public class sftContainerV8 extends sftContainer {
                 if (node != null) {
                     byte[] bValue = base64.decodeBuffer(node.getValue());
                     rc.encode(bValue);
-                    this.strDescription = new String(bValue);
+                    this.strDescription = new String(bValue, "ISO-8859-1");
                 }
 
                 node = sft_root.find(NODE_UPLOADER);
                 if (node != null) {
                     byte[] bValue = base64.decodeBuffer(node.getValue());
                     rc.encode(bValue);
-                    this.strUploader = new String(bValue);
+                    this.strUploader = new String(bValue, "ISO-8859-1");
                 }
 
                 node = sft_root.find(NODE_COMMENT);
                 if (node != null) {
                     byte[] bValue = base64.decodeBuffer(node.getValue());
                     rc.encode(bValue);
-                    this.strComment = new String(bValue);
+                    this.strComment = new String(bValue, "ISO-8859-1");
                 }
 
                 byte[] magicStringCopy = null;

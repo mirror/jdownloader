@@ -58,19 +58,20 @@ public class FileInfoDialog extends AbstractDialog<String> implements ActionList
             if (Comment == null) Comment = na;
 
             StringBuilder info_builder = new StringBuilder();
-            info_builder.append("<span style=\"white-space:pre\">\r\n<strong>");
+            info_builder.append("<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td width=\"1%\"><strong>");
             info_builder.append("Beschreibung:");
-            info_builder.append("</strong>&#9;");
+            info_builder.append("  </strong></td><td>");
             info_builder.append(Description);
-            info_builder.append("<br>\r\n<strong>");
+            info_builder.append("</tr><tr><td><strong>");
             info_builder.append("Upper:");
-            info_builder.append("</strong>&#9;&#9;");
+            info_builder.append("  </strong></td><td>");
             info_builder.append(Uploader);
-            info_builder.append("<br>\r\n<strong>");
+            info_builder.append("</td></tr><tr><td><strong>");
             info_builder.append("Kommentar:");
-            info_builder.append("</strong>&#9;&#9;");
+            info_builder.append("  </strong></td><td>");
             info_builder.append(Comment);
-            info_builder.append("<br>\r\n</span>");
+            info_builder.append("</td></tr></table>");
+
             textPane.setText(info_builder.toString());
             lastCryptState = container.isDecrypted();
         }
@@ -186,7 +187,7 @@ public class FileInfoDialog extends AbstractDialog<String> implements ActionList
             }
         });
 
-        centerPanel.setLayout(new MigLayout("", "[300px:n]", Layout));
+        centerPanel.setLayout(new MigLayout("", "[320px:n]", Layout));
         centerPanel.add(separator, "cell 0 2,grow");
         centerPanel.add(labelPassword, "flowx,cell 0 1,alignx left,aligny center");
         centerPanel.add(this.textPane, "cell 0 0,growx,aligny top");

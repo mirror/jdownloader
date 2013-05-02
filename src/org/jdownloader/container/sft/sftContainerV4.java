@@ -44,21 +44,21 @@ public class sftContainerV4 extends sftContainer {
 
             byte[] eValue = base64.decodeBuffer(node.getValue());
             rc4.encode(eValue);
-            this.strDescription = new String(eValue);
+            this.strDescription = new String(eValue, "ISO-8859-1");
         }
 
         node = sft_root.find(NODE_UPLOADER);
         if (node != null) {
             byte[] eValue = base64.decodeBuffer(node.getValue());
             rc4.encode(eValue);
-            this.strUploader = new String(eValue);
+            this.strUploader = new String(eValue, "ISO-8859-1");
         }
 
         node = sft_root.find(NODE_COMMENT);
         if (node != null) {
             byte[] eValue = base64.decodeBuffer(node.getValue());
             rc4.encode(eValue);
-            this.strComment = new String(eValue);
+            this.strComment = new String(eValue, "ISO-8859-1");
         }
 
         // check if file is valid and check if password needed
