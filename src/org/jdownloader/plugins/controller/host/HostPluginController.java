@@ -151,6 +151,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         LazyHostPlugin fallBackPlugin = null;
         /* use this classLoader for all cached plugins to load */
         for (AbstractHostPlugin ap : l) {
+            if (ap.getCacheVersion() != AbstractHostPlugin.CACHEVERSION) throw new WTFException("Invalid CacheVersion found");
             LazyHostPlugin lhp;
             lhp = new LazyHostPlugin(ap, null, null);
             if ("UpdateRequired".equalsIgnoreCase(ap.getDisplayName())) {
@@ -228,6 +229,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             }
                             /* we use new String() here to dereference the Annotation and it's loaded class */
                             AbstractHostPlugin ap = new AbstractHostPlugin(new String(c.getClazz().getSimpleName()));
+                            ap.setCacheVersion(AbstractHostPlugin.CACHEVERSION);
                             ap.setDisplayName(displayName);
                             ap.setPattern(new String(patterns[i]));
                             ap.setVersion(revision);

@@ -6,15 +6,25 @@ public class AbstractCrawlerPlugin implements Storable {
     public AbstractCrawlerPlugin(/* STorable */) {
     }
 
-    private String  classname;
-    private String  displayName;
-    private long    version;
-    private boolean hasConfig;
-    private int     interfaceVersion       = 0;
-    private int     maxConcurrentInstances = Integer.MAX_VALUE;
-    private long    mainClassLastModified  = -1;
-    private String  mainClassSHA256        = null;
-    private String  mainClassFilename      = null;
+    public static final int CACHEVERSION           = 2;
+    private String          classname;
+    private String          displayName;
+    private long            version;
+    private boolean         hasConfig;
+    private int             interfaceVersion       = 0;
+    private int             maxConcurrentInstances = Integer.MAX_VALUE;
+    private long            mainClassLastModified  = -1;
+    private String          mainClassSHA256        = null;
+    private String          mainClassFilename      = null;
+    private int             cacheVersion           = -1;
+
+    public int getCacheVersion() {
+        return cacheVersion;
+    }
+
+    public void setCacheVersion(int cacheVersion) {
+        this.cacheVersion = cacheVersion;
+    }
 
     public long getMainClassLastModified() {
         return mainClassLastModified;

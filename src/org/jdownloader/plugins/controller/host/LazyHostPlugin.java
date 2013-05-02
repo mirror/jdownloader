@@ -32,13 +32,20 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         String className = getClassname().substring(JD_PLUGINS_HOSTER.length());
         AbstractHostPlugin ap = new AbstractHostPlugin(className);
         ap.setDisplayName(getDisplayName());
+        if (isPremium()) {
+            ap.setPremium(isPremium());
+            ap.setPremiumUrl(getPremiumUrl());
+        }
         ap.setPattern(getPattern().pattern());
         ap.setVersion(getVersion());
         ap.setHasConfig(isHasConfig());
         ap.setInterfaceVersion(getInterfaceVersion());
+
         ap.setMainClassSHA256(getMainClassSHA256());
         ap.setMainClassLastModified(getMainClassLastModified());
         ap.setMainClassFilename(getMainClassFilename());
+
+        ap.setCacheVersion(AbstractHostPlugin.CACHEVERSION);
         return ap;
     }
 

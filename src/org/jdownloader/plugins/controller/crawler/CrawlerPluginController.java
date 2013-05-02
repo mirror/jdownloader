@@ -172,6 +172,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         List<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>(l.size());
         /* use this classLoader for all cached plugins to load */
         for (AbstractCrawlerPlugin ap : l) {
+            if (ap.getCacheVersion() != AbstractCrawlerPlugin.CACHEVERSION) throw new WTFException("Invalid CacheVersion found");
             ret.add(new LazyCrawlerPlugin(ap, null, null));
         }
         return ret;
@@ -229,6 +230,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             LinkedList<AbstractCrawlerPlugin> existingPlugin = ret.get(displayName);
                             /* we use new String() here to dereference the Annotation and it's loaded class */
                             AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(new String(c.getClazz().getSimpleName()));
+                            ap.setCacheVersion(AbstractCrawlerPlugin.CACHEVERSION);
                             ap.setDisplayName(displayName);
                             ap.setPattern(new String(patterns[i]));
                             ap.setVersion(revision);

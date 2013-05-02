@@ -33,6 +33,7 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
         ap.setMainClassLastModified(getMainClassLastModified());
         ap.setMainClassFilename(getMainClassFilename());
         ap.setMaxConcurrentInstances(getMaxConcurrentInstances());
+        ap.setCacheVersion(AbstractCrawlerPlugin.CACHEVERSION);
         return ap;
     }
 
