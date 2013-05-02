@@ -36,6 +36,7 @@ file_exists_not=Datoteka ne postoji
 filename=Naziv datoteke
 files=datoteke
 hoster=Servis
+linkname=Arhiva(e)
 local=Status datoteke
 menu_tools_extract_files=Raspakiraj datoteke
 name=Upravljanje arhivama

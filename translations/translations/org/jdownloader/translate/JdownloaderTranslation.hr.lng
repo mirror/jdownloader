@@ -1,5 +1,6 @@
 AddContainerAction_delete_container_msg=Želite li obrisati %s1 nakon dodavanja linka(ova) u JDownloader?
 AddContainerAction_delete_container_title=Brisanje kontejner datoteka?
+DownloadLink_setSkipped_statusmessage=Preskočeno
 DownloadWatchDog_onShutdownRequest_=Preuzimanja su u tijeku!
 DownloadWatchDog_onShutdownRequest_msg=Želite li zaustaviti preuzimanja koja su u tijeku za izlaz iz JDownloader-a?
 DownloadWatchDog_onShutdownRequest_nonresumable=U tijeku su preuzimanja koja se ne mogu nastaviti!
