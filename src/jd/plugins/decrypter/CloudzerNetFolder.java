@@ -39,10 +39,16 @@ public class CloudzerNetFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("clz.to/", "cloudzer.net/");
+        // Prefer english language
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getURL().equals("http://cloudzer.net/404") || br.containsHTML("> us in case of a technical failure")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(">doesn\\'t contain files<")) {
+            logger.info("Link offline (folder empty): " + parameter);
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);

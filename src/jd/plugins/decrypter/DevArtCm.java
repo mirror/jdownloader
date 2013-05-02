@@ -117,12 +117,15 @@ public class DevArtCm extends PluginForDecrypt {
             if (!login()) { return; }
             br.getPage(artPageURL);
         }
+        String dllink = null;
         // define page as mature content
         if (br.containsHTML(">Mature Content</span>") && !br.containsHTML(">Mature Content Filter<")) {
             ratedContent = true;
+            dllink = br.getRegex("class=\"thumb ismature\" href=\"" + br.getURL() + "\" title=\"[^<>\"/]+\" data\\-super\\-img=\"(http://[^<>\"]*?)\"").getMatch(0);
+        } else {
+
+            dllink = br.getRegex("name=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
         }
-        /* download high res version if available */
-        String dllink = br.getRegex("name=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
 
         if (dllink != null) {
             final DownloadLink dl = createDownloadlink("DEVART://" + Encoding.htmlDecode(dllink));

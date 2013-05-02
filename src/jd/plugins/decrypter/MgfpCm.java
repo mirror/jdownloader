@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -53,7 +54,12 @@ public class MgfpCm extends PluginForDecrypt {
                  */
                 br.getPage("http://www.imagefap.com/gallery.php?view=2");
             } else if (!parameter.contains("view=2")) parameter += "?view=2";
-            br.getPage(parameter);
+            try {
+                br.getPage(parameter);
+            } catch (final BrowserException e) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             if (br.getRedirectLocation() != null) {
                 if (br.getRedirectLocation().contains("/pictures/")) {
                     parameter = br.getRedirectLocation();

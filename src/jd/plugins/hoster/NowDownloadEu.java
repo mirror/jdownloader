@@ -70,30 +70,28 @@ public class NowDownloadEu extends PluginForHost {
         return MAINPAGE + "/terms.php";
     }
 
-    private String              MAINPAGE           = "http://www.nowdownload.eu";
-    private String              DOMAIN             = "eu";
-    private Boolean             AVAILABLE_PRECHECK = true;
-    private static final String ua                 = RandomUserAgent.generate();
-    private static Object       LOCK               = new Object();
+    private String              MAINPAGE                = "http://www.nowdownload.eu";
+    private String              DOMAIN                  = "eu";
+    private Boolean             AVAILABLE_PRECHECK      = true;
+    private static final String ua                      = RandomUserAgent.generate();
+    private static Object       LOCK                    = new Object();
+    private static final String TEMPUNAVAILABLE         = ">The file is being transfered\\. Please wait";
+    private static final String TEMPUNAVAILABLEUSERTEXT = "Host says: 'The file is being transfered. Please wait!'";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("http://www.nowdownload." + DOMAIN + "/dl/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!AVAILABLE_PRECHECK) {
             DOMAIN = validateHost();
-
             if (DOMAIN == null) {
                 link.getLinkStatus().setStatusText("All servers seems to be offline...");
                 return AvailableStatus.FALSE;
             }
-
             AVAILABLE_PRECHECK = true;
-
             MAINPAGE = "http://www.nowdownload." + DOMAIN;
-
             this.enablePremium(MAINPAGE + "/premium.php");
         }
         this.setBrowserExclusive();
@@ -102,6 +100,12 @@ public class NowDownloadEu extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">This file does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(TEMPUNAVAILABLE)) {
+            link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            link.getLinkStatus().setStatusText(TEMPUNAVAILABLEUSERTEXT);
+            return AvailableStatus.TRUE;
+        }
+
         final Regex fileInfo = br.getRegex(">Downloading</span> <br> (.*?) ([\\d+\\.]+ (B|KB|MB|GB|TB))");
         String filename = fileInfo.getMatch(0).replace("<br>", "");
         String filesize = fileInfo.getMatch(1);
@@ -114,6 +118,7 @@ public class NowDownloadEu extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(TEMPUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, TEMPUNAVAILABLEUSERTEXT, 60 * 60 * 1000l);
         String dllink = (checkDirectLink(downloadLink, "directlink"));
         if (dllink == null) dllink = getDllink();
         // This handling maybe isn't needed anymore

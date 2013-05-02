@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -49,10 +50,17 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String DOMAIN         = "http://vk.com";
     private static Object       LOCK           = new Object();
     private String              FINALLINK      = null;
-    private final String        USECOOKIELOGIN = "USECOOKIELOGIN";
     private static final String AUDIOLINK      = "http://vkontaktedecrypted\\.ru/audiolink/\\d+";
     private static final String VIDEOLINK      = "http://vkontaktedecrypted\\.ru/videolink/\\d+";
     private int                 MAXCHUNKS      = 1;
+    /** Settings stuff */
+    private final String        USECOOKIELOGIN = "USECOOKIELOGIN";
+    private final String        FASTLINKCHECK  = "FASTLINKCHECK";
+    private static final String ALLOW_BEST     = "ALLOW_BEST";
+    private static final String ALLOW_240P     = "ALLOW_240P";
+    private static final String ALLOW_360P     = "ALLOW_360P";
+    private static final String ALLOW_480P     = "ALLOW_480P";
+    private static final String ALLOW_720P     = "ALLOW_720P";
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
@@ -91,42 +99,24 @@ public class VKontakteRuHoster extends PluginForHost {
                 FINALLINK = br.getRegex("\\'" + audioID + "\\',\\'(http://cs\\d+\\.[a-z0-9]+\\.[a-z]{2,4}/u\\d+/audios?/[a-z0-9]+\\.mp3)\\'").getMatch(0);
                 if (FINALLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (!linkOk(link, finalFilename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                link.setProperty("directlink", FINALLINK);
             }
         } else if (link.getDownloadURL().matches(VIDEOLINK)) {
             MAXCHUNKS = 0;
             br.setFollowRedirects(true);
-
-            br.getPage("http://vk.com/video_ext.php?oid=" + link.getStringProperty("userid", null) + "&id=" + link.getStringProperty("videoid", null) + "&hash=" + link.getStringProperty("embedhash", null));
-            // final String brReplaced = br.toString().replace("\\", "");
-            final String server = br.getRegex("var video_host = \\'(http://)?([^<>\"]*?)(/)?\\'").getMatch(1);
-            final String uid = br.getRegex("var video_uid = \\'(\\d+)\\'").getMatch(0);
-            final String vtag = br.getRegex("var video_vtag = \\'([a-z0-9\\-]+)\\'").getMatch(0);
-            final String vkid = br.getRegex("\"vkid\":(\\d+)").getMatch(0);
-            String filename = br.getRegex("var video_title = \\'([^<>\"]*?)\\';").getMatch(0);
-            if (filename == null || server == null || uid == null || vtag == null || vkid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String quality = null;
-            String inbetween = "u" + uid + "/videos/" + vtag;
-            if (br.containsHTML("\"hd\":3")) {
-                /** http://vk.com/video_ext.php?oid=220692&id=158972513&hash=73774f79545aa0be */
-                quality = ".720.mp4";
-            } else if (br.containsHTML("\"hd\":2")) {
-                /** http://vk.com/video_ext.php?oid=220692&id=159139817&hash=77f796b5a24ff1ef */
-                quality = ".480.mp4";
-            } else if (br.containsHTML("\"hd\":1")) {
-                quality = ".360.mp4";
-            } else if (br.containsHTML("\"hd\":0,\"no_flv\":1")) {
-                quality = ".240.mp4";
-            } else if (br.containsHTML("\"no_flv\":0") && vtag.contains("-")) {
-                /** http://vk.com/video_ext.php?oid=220692&id=126736025&hash=a3d2fb0c6daffa31 */
-                quality = ".vk.flv";
-                inbetween = "assets/video/" + vtag + vkid;
-            } else if (br.containsHTML("\"no_flv\":0")) {
-                /** http://vk.com/video_ext.php?oid=220692&id=137826312&hash=25c45b09a2660b33 */
-                quality = ".flv";
+            FINALLINK = link.getStringProperty("directlink", null);
+            // Check if directlink is expired
+            if (!linkOk(link, link.getFinalFileName())) {
+                br.getPage("http://vk.com/video_ext.php?oid=" + link.getStringProperty("userid", null) + "&id=" + link.getStringProperty("videoid", null) + "&hash=" + link.getStringProperty("embedhash", null));
+                final LinkedHashMap<String, String> availableQualities = findAvailableVideoQualities();
+                if (availableQualities == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                FINALLINK = availableQualities.get(link.getStringProperty("selectedquality", null));
+                if (FINALLINK == null) {
+                    logger.warning("Could not find new link for selected quality...");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            filename = Encoding.htmlDecode(filename) + quality;
-            FINALLINK = "http://" + server + "/" + inbetween + quality;
-            if (!linkOk(link, filename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (!linkOk(link, link.getFinalFileName())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             String albumID = link.getStringProperty("albumid");
             String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
@@ -307,8 +297,42 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
+    /** Same function in hoster and decrypterplugin, sync it!! */
+    private LinkedHashMap<String, String> findAvailableVideoQualities() {
+        /** Find needed information */
+        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+        final String[][] qualities = { { "url720", "720p" }, { "url480", "480p" }, { "url360", "360p" }, { "url240", "240p" } };
+        final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
+        for (final String[] qualityInfo : qualities) {
+            final String finallink = getJson(qualityInfo[0]);
+            if (finallink != null) {
+                foundQualities.put(qualityInfo[1], finallink);
+            }
+        }
+        return foundQualities;
+    }
+
+    private String getJson(final String key) {
+        return br.getRegex("\"" + key + "\":\"(http:[^<>\"]*?)\"").getMatch(0);
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's Vk Plugin helps downloading Videoclips from vk.com. Vk provides different video formats and qualities.";
+    }
+
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USECOOKIELOGIN, JDL.L("plugins.hoster.vkontakteruhoster.alwaysUseCookiesForLogin", "Always use cookies for login (this can cause out of date errors)")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastLinkcheck", "Fast LinkCheck for video links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.youtube.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
+        getConfig().addEntry(hq);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240P, JDL.L("plugins.hoster.vkcom.checkSD", "Grab 240p MP4/FLV?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, JDL.L("plugins.hoster.vkcom.checkHQ", "Grab 360p MP4?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480P, JDL.L("plugins.hoster.vkcom.check720", "Grab 480p MP4?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720P, JDL.L("plugins.hoster.vkcom.check1080", "Grab 720p MP4?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
     }
 
     @Override

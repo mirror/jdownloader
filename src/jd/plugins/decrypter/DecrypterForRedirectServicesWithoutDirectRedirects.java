@@ -273,6 +273,10 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 if (finallink != null) finallink = finallink.replace("\\", "");
             }
         } else if (parameter.contains("accuratefiles.com/")) {
+            if (br.containsHTML(">File was removed from filehosting")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String fileID = br.getRegex("\"/go/(\\d+)\"").getMatch(0);
             if (fileID == null) {
                 fileID = br.getRegex("name=\"file_id\" value=\"(\\d+)\"").getMatch(0);

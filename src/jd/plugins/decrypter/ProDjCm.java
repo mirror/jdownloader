@@ -48,6 +48,11 @@ public class ProDjCm extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* NOTE: no override to keep compatible to old stable */
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();

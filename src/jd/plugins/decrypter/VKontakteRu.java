@@ -19,9 +19,11 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
@@ -420,6 +422,7 @@ public class VKontakteRu extends PluginForDecrypt {
         /**
          * We couldn't find any external videos so it must be on their servers -> send it to the hosterplugin
          */
+        final FilePackage fp = FilePackage.getInstance();
         final String embedHash = br.getRegex("\\\\\"hash2\\\\\":\\\\\"([a-z0-9]+)\\\\\"").getMatch(0);
         if (embedHash == null) {
             if (!br.containsHTML("VideoPlayer4_0\\.swf\\?")) {
@@ -430,113 +433,87 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        String videoName = new Regex(correctedBR, "\"md_title\":\"(.*?)\"").getMatch(0);
-        if (videoName == null) {
-            videoName = new Regex(correctedBR, "\\{\"title\\\\\":\"(.*?)\"").getMatch(0);
-        }
+
+        /** Find needed information */
         final String userid = new Regex(parameter, "((\\-)?\\d+)_\\d+$").getMatch(0);
+        br.getPage("http://vk.com/video_ext.php?oid=" + userid + "&id=" + vidID + "&hash=" + embedHash);
 
-        /** Unfinished code */
-        // /** Find needed information */
-        // br.getPage("http://vk.com/video_ext.php?oid=" + userid + "&id=" + vidID + "&hash=" + embedHash);
-        // final String server = br.getRegex("var video_host = \\'(http://)?([^<>\"]*?)(/)?\\'").getMatch(1);
-        // final String uid = br.getRegex("var video_uid = \\'(\\d+)\\'").getMatch(0);
-        // final String vtag = br.getRegex("var video_vtag = \\'([a-z0-9\\-]+)\\'").getMatch(0);
-        // final String vkid = br.getRegex("\"vkid\":(\\d+)").getMatch(0);
-        // String filename = br.getRegex("var video_title = \\'([^<>\"]*?)\\';").getMatch(0);
-        // if (filename == null || server == null || uid == null || vtag == null || vkid == null) return null;
-        // filename = Encoding.htmlDecode(filename.trim());
-        // final FilePackage fp = FilePackage.getInstance();
-        // fp.setName(filename);
-        // String quality = null;
-        // String inbetween = "u" + uid + "/videos/" + vtag;
-        // /** Find available qualities */
-        // LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
-        // if (br.containsHTML("\"hd\":3")) {
-        // /** http://vk.com/video_ext.php?oid=220692&id=158972513&hash=73774f79545aa0be */
-        // quality = ".720.mp4";
-        // foundQualities.put("720p", "http://" + server + "/" + inbetween + quality);
-        // }
-        // if (br.containsHTML("\"hd\":2")) {
-        // /** http://vk.com/video_ext.php?oid=220692&id=159139817&hash=77f796b5a24ff1ef */
-        // quality = ".480.mp4";
-        // foundQualities.put("480p", "http://" + server + "/" + inbetween + quality);
-        // }
-        // if (br.containsHTML("\"hd\":1")) {
-        // quality = ".360.mp4";
-        // foundQualities.put("360p", "http://" + server + "/" + inbetween + quality);
-        // }
-        // if (br.containsHTML("\"hd\":0,\"no_flv\":1")) {
-        // quality = ".240.mp4";
-        // foundQualities.put("240p", "http://" + server + "/" + inbetween + quality);
-        // }
-        // if (br.containsHTML("\"no_flv\":0") && vtag.contains("-")) {
-        // /** http://vk.com/video_ext.php?oid=220692&id=126736025&hash=a3d2fb0c6daffa31 */
-        // quality = ".vk.flv";
-        // inbetween = "assets/video/" + vtag + vkid;
-        // foundQualities.put("flv", "http://" + server + "/" + inbetween + quality);
-        // } else if (br.containsHTML("\"no_flv\":0")) {
-        // /** http://vk.com/video_ext.php?oid=220692&id=137826312&hash=25c45b09a2660b33 */
-        // quality = ".flv";
-        // foundQualities.put("flv", "http://" + server + "/" + inbetween + quality);
-        // }
-        // /** Make a list of the user selection */
-        // final SubConfiguration cfg = SubConfiguration.getConfig("vkontakte.ru");
-        // if (cfg.getBooleanProperty("ALLOW_BEST", false)) {
-        // ArrayList<String> list = new ArrayList<String>(foundQualities.keySet());
-        // final String highestAvailableQualityValue = list.get(0);
-        // final DownloadLink dl = getVideoDownloadlink(highestAvailableQualityValue);
-        // fp.add(dl);
-        // foundVideolinks.add(dl);
-        // } else {
-        // /** User selected nothing -> Decrypt everything */
-        // boolean qflv = cfg.getBooleanProperty("ALLOW_FLV", false);
-        // boolean q240p = cfg.getBooleanProperty("ALLOW_240P", false);
-        // boolean q360p = cfg.getBooleanProperty("ALLOW_360P", false);
-        // boolean q480p = cfg.getBooleanProperty("ALLOW_480P", false);
-        // boolean q720p = cfg.getBooleanProperty("ALLOW_720P", false);
-        // if (qflv == false && q240p == false && q360p == false && q480p == false && q720p == false) {
-        // qflv = true;
-        // q240p = true;
-        // q360p = true;
-        // q480p = true;
-        // q720p = true;
-        // }
-        // /** Decrypt qualities, selected by the user */
-        // final ArrayList<String> selectedQualities = new ArrayList<String>();
-        // if (qflv) selectedQualities.add("flv");
-        // if (q240p) selectedQualities.add("240p");
-        // if (q360p) selectedQualities.add("360p");
-        // if (q480p) selectedQualities.add("480p");
-        // if (q720p) selectedQualities.add("720p");
-        // for (final String selectedQualityValue : selectedQualities) {
-        // final String finallink = foundQualities.get(selectedQualityValue);
-        // if (finallink != null) {
-        // final DownloadLink dl = createDownloadlink(finallink);
-        // dl.setFinalFileName(filename + "_" + selectedQualityValue + ".mp4");
-        // fp.add(dl);
-        // foundVideolinks.add(dl);
-        // }
-        // }
-        // if (foundVideolinks.size() == 0) {
-        // logger.info("None of the selected qualities were found, decrypting done...");
-        // return foundVideolinks;
-        // }
-        // }
-
-        final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-        // Set filename so we have nice filenames here ;)
-        if (videoName != null) {
-            if (videoName.length() > 100) {
-                videoName = videoName.substring(0, 100);
-            }
-            dl.setName(Encoding.htmlDecode(videoName).replaceAll("(»|\")", "").trim() + ".mp4");
+        String filename = br.getRegex("var video_title = \\'([^<>\"]*?)\\';").getMatch(0);
+        if (filename == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
-        dl.setProperty("userid", userid);
-        dl.setProperty("videoid", vidID);
-        dl.setProperty("embedhash", embedHash);
-        foundVideolinks.add(dl);
+        final LinkedHashMap<String, String> foundQualities = findAvailableVideoQualities();
+        if (foundQualities == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        filename = Encoding.htmlDecode(filename.trim());
+        fp.setName(filename);
+        /** Decrypt qualities, selected by the user */
+        final ArrayList<String> selectedQualities = new ArrayList<String>();
+        final SubConfiguration cfg = SubConfiguration.getConfig("vkontakte.ru");
+        boolean fastLinkcheck = cfg.getBooleanProperty("FASTLINKCHECK", false);
+        if (cfg.getBooleanProperty("ALLOW_BEST", false)) {
+            ArrayList<String> list = new ArrayList<String>(foundQualities.keySet());
+            final String highestAvailableQualityValue = list.get(0);
+            selectedQualities.add(highestAvailableQualityValue);
+        } else {
+            /** User selected nothing -> Decrypt everything */
+            boolean q240p = cfg.getBooleanProperty("ALLOW_240P", false);
+            boolean q360p = cfg.getBooleanProperty("ALLOW_360P", false);
+            boolean q480p = cfg.getBooleanProperty("ALLOW_480P", false);
+            boolean q720p = cfg.getBooleanProperty("ALLOW_720P", false);
+            if (q240p == false && q360p == false && q480p == false && q720p == false) {
+                q240p = true;
+                q360p = true;
+                q480p = true;
+                q720p = true;
+            }
+            if (q240p) selectedQualities.add("240p");
+            if (q360p) selectedQualities.add("360p");
+            if (q480p) selectedQualities.add("480p");
+            if (q720p) selectedQualities.add("720p");
+        }
+        for (final String selectedQualityValue : selectedQualities) {
+            final String finallink = foundQualities.get(selectedQualityValue);
+            if (finallink != null) {
+                final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+                dl.setFinalFileName(filename + "_" + selectedQualityValue + finallink.substring(finallink.lastIndexOf(".")));
+                dl.setProperty("directlink", finallink);
+                dl.setProperty("userid", userid);
+                dl.setProperty("videoid", vidID);
+                dl.setProperty("embedhash", embedHash);
+                dl.setProperty("selectedquality", selectedQualityValue);
+                if (fastLinkcheck) dl.setAvailable(true);
+                fp.add(dl);
+                foundVideolinks.add(dl);
+            }
+        }
+        if (foundVideolinks.size() == 0) {
+            logger.info("None of the selected qualities were found, decrypting done...");
+            return foundVideolinks;
+        }
         return foundVideolinks;
+    }
+
+    /** Same function in hoster and decrypterplugin, sync it!! */
+    private LinkedHashMap<String, String> findAvailableVideoQualities() {
+        /** Find needed information */
+        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+        final String[][] qualities = { { "url720", "720p" }, { "url480", "480p" }, { "url360", "360p" }, { "url240", "240p" } };
+        final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
+        for (final String[] qualityInfo : qualities) {
+            final String finallink = getJson(qualityInfo[0]);
+            if (finallink != null) {
+                foundQualities.put(qualityInfo[1], finallink);
+            }
+        }
+        return foundQualities;
+    }
+
+    private String getJson(final String key) {
+        return br.getRegex("\"" + key + "\":\"(http:[^<>\"]*?)\"").getMatch(0);
     }
 
     private ArrayList<DownloadLink> decryptCommunityVideoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
@@ -612,7 +589,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName("vk.com wall - " + new Regex(parameter, "(\\d+)$").getMatch(0));
+        fp.setName(userID);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

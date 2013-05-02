@@ -180,13 +180,13 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             logger.warning("Found no quality for link: " + PARAMETER);
             return null;
         }
+        /** Decrypt qualities, selected by the user */
+        final ArrayList<String> selectedQualities = new ArrayList<String>();
         final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
         if (cfg.getBooleanProperty("ALLOW_BEST", false)) {
             ArrayList<String> list = new ArrayList<String>(FOUNDQUALITIES.keySet());
             final String highestAvailableQualityValue = list.get(0);
-            final DownloadLink dl = getVideoDownloadlink(highestAvailableQualityValue);
-            fp.add(dl);
-            decryptedLinks.add(dl);
+            selectedQualities.add(highestAvailableQualityValue);
         } else {
             /** User selected nothing -> Decrypt everything */
             boolean qld = cfg.getBooleanProperty("ALLOW_LQ", false);
@@ -201,24 +201,22 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 q720 = true;
                 q1080 = true;
             }
-            /** Decrypt qualities, selected by the user */
-            final ArrayList<String> selectedQualities = new ArrayList<String>();
             if (qld) selectedQualities.add("ldURL");
             if (qsd) selectedQualities.add("sdURL");
             if (qhq) selectedQualities.add("hqURL");
             if (q720) selectedQualities.add("hd720URL");
             if (q1080) selectedQualities.add("hd1080URL");
-            for (final String selectedQualityValue : selectedQualities) {
-                final DownloadLink dl = getVideoDownloadlink(selectedQualityValue);
-                if (dl != null) {
-                    fp.add(dl);
-                    decryptedLinks.add(dl);
-                }
+        }
+        for (final String selectedQualityValue : selectedQualities) {
+            final DownloadLink dl = getVideoDownloadlink(selectedQualityValue);
+            if (dl != null) {
+                fp.add(dl);
+                decryptedLinks.add(dl);
             }
-            if (decryptedLinks.size() == 0) {
-                logger.info("None of the selected qualities were found, decrypting done...");
-                return decryptedLinks;
-            }
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.info("None of the selected qualities were found, decrypting done...");
+            return decryptedLinks;
         }
         return decryptedLinks;
     }

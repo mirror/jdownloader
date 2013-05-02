@@ -53,6 +53,8 @@ public class ExtaBitCom extends PluginForHost {
     public ExtaBitCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://extabit.com/premium.jsp");
+        // Too many downloads in a short time = 503 errors for premiumusers
+        this.setStartIntervall(5 * 1000l);
     }
 
     public void correctDownloadLink(DownloadLink link) {
