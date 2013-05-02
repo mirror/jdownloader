@@ -479,7 +479,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public String getFinalFileName() {
         if (finalFileName != null) {
             /* convert existing finalFileName into Property System */
-            this.setFinalFileName(finalFileName);
+            String lfinalFileName = finalFileName;
+            finalFileName = null;
+            this.setFinalFileName(lfinalFileName);
         }
         return this.getStringProperty(PROPERTY_FINALFILENAME, null);
     }
@@ -609,7 +611,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (finalfile && new File(this.getFileOutput()).exists()) {
             File f = new File(this.getFileOutput());
             if (!internalDeleteFile(deleteTo, f)) {
-                
+
                 LogController.CL().severe("Could not delete file " + this.getFileOutput());
             }
         }
@@ -636,7 +638,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             try {
                 JDFileUtils.moveToTrash(f);
             } catch (IOException e) {
-                
+
                 LogController.CL().log(e);
                 return false;
             }
@@ -842,6 +844,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setFinalFileName(String newfinalFileName) {
         String oldName = null;
+        finalFileName = null;
         if (!StringUtils.isEmpty(newfinalFileName)) {
             if (new Regex(newfinalFileName, Pattern.compile("r..\\.htm.?$", Pattern.CASE_INSENSITIVE)).matches()) {
                 System.out.println("Use Workaround for stupid >>rar.html<< uploaders!");
@@ -854,7 +857,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             this.setProperty(PROPERTY_FINALFILENAME, Property.NULL);
             oldName = getName();
         }
-        finalFileName = null;
         setIcon(null);
         if (!oldName.equals(getName())) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, getName()));
     }
