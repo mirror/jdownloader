@@ -49,7 +49,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(www\\.)?uptobox\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class UpToBoxCom extends PluginForHost {
@@ -533,22 +532,31 @@ public class UpToBoxCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         } else {
-            String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
-            } else {
-                expire = expire.replaceAll("(<b>|</b>)", "");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+            // alternative xfileshare expire time, usually shown on 'extend premium account' page
+            getPage("/?op=payments");
+            String expire = new Regex(correctedBR, "Premium(\\-| )Account expires?:([^\n\r]+)</center>").getMatch(1);
+            if (expire != null) {
+                String tmpdays = new Regex(expire, "(\\d+)\\s+days?").getMatch(0);
+                String tmphrs = new Regex(expire, "(\\d+)\\s+hours?").getMatch(0);
+                String tmpmin = new Regex(expire, "(\\d+)\\s+minutes?").getMatch(0);
+                String tmpsec = new Regex(expire, "(\\d+)\\s+seconds?").getMatch(0);
+                long waittime = 0;
+                if (tmpdays != null) waittime = waittime + (Integer.parseInt(tmpdays) * 86400000);
+                if (tmphrs != null) waittime = waittime + (Integer.parseInt(tmphrs) * 3600000);
+                if (tmpmin != null) waittime = waittime + (Integer.parseInt(tmpmin) * 60000);
+                if (tmpsec != null) waittime = waittime + (Integer.parseInt(tmpsec) * 1000);
+                ai.setValidUntil(System.currentTimeMillis() + waittime);
                 try {
                     maxPrem.set(-1);
                     account.setMaxSimultanDownloads(-1);
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
                 }
+                ai.setStatus("Premium User");
+            } else {
+                ai.setExpired(true);
+                account.setValid(false);
             }
-            ai.setStatus("Premium User");
         }
         return ai;
     }
