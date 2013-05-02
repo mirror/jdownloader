@@ -21,7 +21,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -41,24 +40,12 @@ public class DatabaseConnector {
 
     private String                  configpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
 
-    private static boolean          dbshutdown    = false;
-
-    /**
-     * return if Database is still open
-     * 
-     * @return
-     */
-    public static boolean isDatabaseShutdown() {
-        return dbshutdown;
-    }
-
-    public static void main(String[] args) throws SQLException {
-        new DatabaseConnector();
-    }
-
     public DatabaseConnector() throws SQLException {
-        LogController.CL().finer("Loading database");
-        if (!new File(configpath + "database.script").exists()) throw new SQLException("Database does not exist!");
+        if (!new File(configpath + "database.script").exists()) {
+            LogController.CL().finer("Found no old database to import!");
+            return;
+        }
+        LogController.CL().finer("Import old database");
         CountingInputStream fis = null;
         String[] searchForEntries = new String[] { "INSERT INTO CONFIG VALUES('", "INSERT INTO LINKS VALUES('" };
         String[] searchForEntriesType = new String[] { "config_", "links_" };
@@ -66,7 +53,7 @@ public class DatabaseConnector {
         for (int searchForEntriesIndex = 0; searchForEntriesIndex < searchForEntries.length; searchForEntriesIndex++) {
             String searchForEntry = searchForEntries[searchForEntriesIndex];
             try {
-                fis = new CountingInputStream(new BufferedInputStream(new FileInputStream(configpath + "database.script"), 8192));
+                fis = new CountingInputStream(new BufferedInputStream(new FileInputStream(configpath + "database.script"), 32767));
                 int read = -1;
                 int entryIndex = 0;
                 insertLoop: while ((read = fis.read()) != -1) {
@@ -106,8 +93,8 @@ public class DatabaseConnector {
                         }
                     }
                 }
-            } catch (IOException e) {
-                throw new SQLException(e);
+            } catch (Throwable e) {
+                LogController.CL().log(e);
             } finally {
                 try {
                     fis.close();
@@ -157,13 +144,6 @@ public class DatabaseConnector {
             } catch (final Throwable e) {
             }
         }
-    }
-
-    /**
-     * Shutdowns the database
-     */
-    public void shutdownDatabase() {
-        dbshutdown = true;
     }
 
     /**

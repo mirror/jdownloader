@@ -96,18 +96,6 @@ public class SubConfiguration extends Property implements Serializable {
         return name;
     }
 
-    public synchronized static boolean hasConfig(final String name) {
-        if (SUB_CONFIGS.containsKey(name)) {
-            return true;
-        } else {
-            try {
-                return JDUtilities.getDatabaseConnector().hasData(name);
-            } catch (final NoOldJDDataBaseFoundException e) {
-                return false;
-            }
-        }
-    }
-
     public synchronized static SubConfiguration getConfig(final String name, boolean ImportOnly) {
         if (SUB_CONFIGS.containsKey(name)) {
             return SUB_CONFIGS.get(name);
@@ -131,15 +119,4 @@ public class SubConfiguration extends Property implements Serializable {
         return getConfig(name, false);
     }
 
-    public synchronized static void removeConfig(final String name) {
-        try {
-            try {
-                JDUtilities.getDatabaseConnector().removeData(name);
-            } catch (final NoOldJDDataBaseFoundException e) {
-            }
-        } finally {
-            SUB_CONFIGS.remove(name);
-        }
-
-    }
 }
