@@ -17,55 +17,31 @@
 package jd.config;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.io.ObjectInputStream;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.HashMap;
 
-import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.utils.IO;
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.LimitedInputStream;
 import org.jdownloader.logging.LogController;
+import org.seamless.util.io.IO;
+import org.tmatesoft.svn.core.internal.util.CountingInputStream;
 
-public class DatabaseConnector implements Serializable {
+public class DatabaseConnector {
 
-    private static final long             serialVersionUID = 8074213660382482620L;
+    private HashMap<String, Long[]> objectIndices = new HashMap<String, Long[]>();
 
-    private String                        configpath       = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
+    private String                  configpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
 
-    private final HashMap<String, Object> dbdata           = new HashMap<String, Object>();
-
-    public static final Object            LOCK             = new Object();
-
-    private static boolean                dbshutdown       = false;
-
-    private static Connection             con              = null;
-
-    static {
-
-        try {
-            Class.forName("org.hsqldb.jdbcDriver").newInstance();
-        } catch (final IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (final InstantiationException e) {
-            e.printStackTrace();
-        } catch (final ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
-    }
+    private static boolean          dbshutdown    = false;
 
     /**
      * return if Database is still open
@@ -76,355 +52,137 @@ public class DatabaseConnector implements Serializable {
         return dbshutdown;
     }
 
-    public DatabaseConnector(String config) throws SQLException {
-        if (config != null) this.configpath = config;
-        if (con != null) return;
+    public static void main(String[] args) throws SQLException {
+        new DatabaseConnector();
+    }
+
+    public DatabaseConnector() throws SQLException {
         LogController.CL().finer("Loading database");
-        if (new File(configpath + "database.script").exists()) {
-            if (!checkDatabaseHeader()) { throw new SQLException("Database broken!");
-
-            }
-        }
-
-        con = DriverManager.getConnection("jdbc:hsqldb:file:" + configpath + "database;shutdown=true", "sa", "");
-
-        con.setAutoCommit(true);
-        con.createStatement().executeUpdate("SET LOGSIZE 1");
-
-        if (!new File(configpath + "database.script").exists()) {
-            LogController.CL().finer("No CONFIGURATION database found. Creating new one.");
-
-            con.createStatement().executeUpdate("CREATE TABLE config (name VARCHAR(256), obj OTHER)");
-            con.createStatement().executeUpdate("CREATE TABLE links (name VARCHAR(256), obj OTHER)");
-
-            final PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
-            LogController.CL().finer("Starting database wrapper");
-            // cfg file conversion
-            for (final String tmppath : new File(configpath).list()) {
-                try {
-                    if (tmppath.endsWith(".cfg")) {
-                        LogController.CL().finest("Wrapping " + tmppath);
-
-                        final Object props = JDIO.loadObject(JDUtilities.getResourceFile("config/" + tmppath), false);
-
-                        if (props != null) {
-                            pst.setString(1, tmppath.split(".cfg")[0]);
-                            pst.setObject(2, props);
-                            pst.execute();
+        configpath = "/home/daniel/.jd_home/config/";
+        if (!new File(configpath + "database.script").exists()) throw new SQLException("Database does not exist!");
+        CountingInputStream fis = null;
+        String[] searchForEntries = new String[] { "INSERT INTO CONFIG VALUES('", "INSERT INTO LINKS VALUES('" };
+        String[] searchForEntriesType = new String[] { "config_", "links_" };
+        String searchForObject = ",'aced";
+        for (int searchForEntriesIndex = 0; searchForEntriesIndex < searchForEntries.length; searchForEntriesIndex++) {
+            String searchForEntry = searchForEntries[searchForEntriesIndex];
+            try {
+                fis = new CountingInputStream(new BufferedInputStream(new FileInputStream(configpath + "database.script"), 8192));
+                int read = -1;
+                int entryIndex = 0;
+                insertLoop: while ((read = fis.read()) != -1) {
+                    if (searchForEntry.charAt(entryIndex) == read) {
+                        entryIndex++;
+                    } else {
+                        entryIndex = 0;
+                        continue insertLoop;
+                    }
+                    if (entryIndex == searchForEntry.length() - 1) {
+                        entryIndex = 0;
+                        int objectIndex = 0;
+                        long objectStartIndex = 0;
+                        long objectStopIndex = -1;
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        nameLoop: while ((read = fis.read()) != -1) {
+                            bos.write(read);
+                            if (searchForObject.charAt(objectIndex) == read) {
+                                objectIndex++;
+                            } else {
+                                objectIndex = 0;
+                                continue nameLoop;
+                            }
+                            if (objectIndex == searchForObject.length() - 1) {
+                                String name = new String(bos.toByteArray(), 1, bos.size() - (searchForObject.length() + 1));
+                                objectStartIndex = fis.getBytesRead() - 3;
+                                while ((read = fis.read()) != -1) {
+                                    if (read == '\'') {
+                                        objectStopIndex = fis.getBytesRead() - 1;
+                                        break;
+                                    }
+                                }
+                                if (objectStopIndex == -1) { throw new WTFException(); }
+                                objectIndices.put(searchForEntriesType[searchForEntriesIndex] + name, new Long[] { objectStartIndex, objectStopIndex });
+                                continue insertLoop;
+                            }
                         }
                     }
-                } catch (final Exception e) {
-                    LogController.CL().log(e);
+                }
+            } catch (IOException e) {
+                throw new SQLException(e);
+            } finally {
+                try {
+                    fis.close();
+                } catch (final Throwable e) {
                 }
             }
         }
-        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
-            @Override
-            public void run() {
-                shutdownDatabase();
-            }
-
-            @Override
-            public int getHookPriority() {
-                return 0;
-            }
-
-            @Override
-            public String toString() {
-                return "save database...";
-            }
-        });
-    }
-
-    /**
-     * Constructor
-     * 
-     * @throws Exception
-     */
-    public DatabaseConnector() throws SQLException {
-        this(null);
-    }
-
-    /**
-     * Checks the database of inconsistency
-     * 
-     * @throws IOException
-     */
-    private boolean checkDatabaseHeader() {
-        LogController.CL().finer("Checking database");
-        final File f = new File(configpath + "database.script");
-        if (!f.exists()) return true;
-        boolean databaseok = true;
-
-        BufferedInputStream in = null;
-        FileInputStream fis = null;
-        try {
-            fis = new FileInputStream(f);
-            in = new BufferedInputStream(fis);
-            String line = "";
-            int counter = 0;
-            byte[] buffer = new byte[100];
-            main: while (counter < 7) {
-                line = IO.readLine(in, buffer);
-                if (line == null) {
-                    databaseok = false;
-                    break main;
-                }
-                switch (counter) {
-                case 0:
-                    if (!line.equals("CREATE SCHEMA PUBLIC AUTHORIZATION DBA")) {
-                        databaseok = false;
-                    }
-                    break;
-                case 1:
-                    if (!line.equals("CREATE MEMORY TABLE CONFIG(NAME VARCHAR(256),OBJ OBJECT)")) {
-                        databaseok = false;
-                    }
-                    break;
-                case 2:
-                    if (!line.equals("CREATE MEMORY TABLE LINKS(NAME VARCHAR(256),OBJ OBJECT)")) {
-                        databaseok = false;
-                    }
-                    break;
-                case 3:
-                    if (!line.equals("CREATE USER SA PASSWORD \"\"")) {
-                        databaseok = false;
-                    }
-                    break;
-                case 4:
-                    if (!line.equals("GRANT DBA TO SA")) {
-                        databaseok = false;
-                    }
-                    break;
-                case 5:
-                    if (!line.equals("SET WRITE_DELAY 10")) {
-                        databaseok = false;
-                    }
-                    break;
-                case 6:
-                    if (!line.equals("SET SCHEMA PUBLIC")) {
-                        databaseok = false;
-                    }
-                    break;
-                }
-                counter++;
-            }
-
-            while (((line = IO.readLine(in, buffer)) != null)) {
-                if (!line.startsWith("INSERT INTO")) {
-                    databaseok = false;
-                    break;
-                }
-            }
-
-        } catch (final FileNotFoundException e) {
-            databaseok = false;
-        } catch (final IOException e) {
-            databaseok = false;
-        } finally {
-            try {
-                in.close();
-            } catch (final Throwable e1) {
-            }
-            try {
-                fis.close();
-            } catch (final Throwable e1) {
-            }
-        }
-        return databaseok;
     }
 
     public synchronized boolean hasData(final String name) {
-        synchronized (LOCK) {
-            if (!isDatabaseShutdown()) {
-                Statement statement = null;
-                ResultSet rs = null;
-                try {
-                    // try to init the table
-                    statement = con.createStatement();
-                    rs = statement.executeQuery("SELECT * FROM config WHERE name = '" + name + "'");
-                    if (rs.next()) { return true; }
-                } catch (final Exception e) {
-                } finally {
-                    try {
-                        rs.close();
-                    } catch (final Throwable e) {
-                    }
-                    try {
-                        statement.close();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-            return false;
-        }
+        return objectIndices.containsKey("config_" + name);
     }
 
     public synchronized void removeData(final String name) {
-        synchronized (LOCK) {
-            if (!isDatabaseShutdown()) {
-                dbdata.remove(name);
-                Statement statement = null;
-                ResultSet rs = null;
-                try {
-                    statement = con.createStatement();
-                    rs = statement.executeQuery("DELETE FROM config WHERE name = '" + name + "'");
-                } catch (final Exception e) {
-                } finally {
-                    if (rs != null) {
-                        try {
-                            rs.close();
-                        } catch (final Throwable e) {
-                        }
-                    }
-                    if (statement != null) {
-                        try {
-                            statement.close();
-                        } catch (final Throwable e) {
-                        }
-                    }
-                }
-            }
-        }
+        objectIndices.remove("config_" + name);
     }
 
     /**
      * Returns a CONFIGURATION
      */
-    public synchronized Object getData(final String name) {
-        synchronized (LOCK) {
-            Object ret = null;
-            if (!isDatabaseShutdown()) {
-                ret = dbdata.get(name);
-                Statement statement = null;
-                ResultSet rs = null;
-                try {
-                    if (ret == null) {
-                        // try to init the table
-                        statement = con.createStatement();
-                        rs = statement.executeQuery("SELECT * FROM config WHERE name = '" + name + "'");
-                        if (rs.next()) {
-                            ret = rs.getObject(2);
-                            dbdata.put(rs.getString(1), ret);
-                        }
-                    }
-                } catch (final Exception e) {
-                    LogController.CL().warning("Database not available. " + name);
-                } finally {
-                    try {
-                        rs.close();
-                    } catch (final Throwable e) {
-                    }
-                    try {
-                        statement.close();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-            return ret;
+    public Object getData(final String name) {
+        Long[] indices = null;
+        synchronized (this) {
+            indices = objectIndices.get("config_" + name);
         }
+        Object ret = null;
+        if (indices != null) {
+            ret = readObject(indices[0], indices[1]);
+        }
+        return ret;
     }
 
-    /**
-     * Returns all Subconfigurations
-     * 
-     * @return
-     */
-    public java.util.List<SubConfiguration> getSubConfigurationKeys() {
-        synchronized (LOCK) {
-            if (isDatabaseShutdown()) return null;
-            final java.util.List<SubConfiguration> ret = new ArrayList<SubConfiguration>();
-            Statement statement = null;
-            ResultSet rs = null;
-
+    private Object readObject(long startIndex, long stopIndex) {
+        FileInputStream fis = null;
+        try {
+            fis = new FileInputStream(configpath + "database.script");
+            fis.skip(startIndex);
+            LimitedInputStream is = new LimitedInputStream(fis, stopIndex - startIndex);
+            byte[] hex = IO.readBytes(is);
+            return new ObjectInputStream(new ByteArrayInputStream(HexFormatter.hexToByteArray(new String(hex, "ASCII")))).readObject();
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return null;
+        } finally {
             try {
-                statement = con.createStatement();
-                rs = statement.executeQuery("SELECT * FROM config");
-                while (rs.next()) {
-                    final SubConfiguration conf = SubConfiguration.getConfig(rs.getString(1));
-                    HashMap<String, Object> props = conf.getProperties();
-                    if (props != null && props.size() > 0) {
-                        ret.add(conf);
-                    }
-                }
+                fis.close();
             } catch (final Throwable e) {
-                LogController.CL().log(e);
-            } finally {
-                try {
-                    rs.close();
-                } catch (final Throwable e) {
-                }
-                try {
-                    statement.close();
-                } catch (final Throwable e) {
-                }
             }
-            return ret;
         }
-    }
-
-    /**
-     * Saves a CONFIGURATION into the database
-     */
-    public void saveConfiguration(final String name, final Object data) {
     }
 
     /**
      * Shutdowns the database
      */
     public void shutdownDatabase() {
-        synchronized (LOCK) {
-            if (!isDatabaseShutdown()) {
-                try {
-                    dbshutdown = true;
-                    con.close();
-                } catch (final Throwable e) {
-                }
-            }
-        }
+        dbshutdown = true;
     }
 
     /**
      * Returns the saved linklist
      */
     public Object getLinks() {
-        synchronized (LOCK) {
-            if (!isDatabaseShutdown()) {
-
-                Statement statement = null;
-                ResultSet rs = null;
-
-                try {
-                    statement = con.createStatement();
-                    rs = statement.executeQuery("SELECT * FROM links");
-                    rs.next();
-                    return rs.getObject(2);
-                } catch (final Throwable e) {
-                    LogController.CL().warning("Database not available.");
-                } finally {
-                    try {
-                        rs.close();
-                    } catch (final Throwable e) {
-                    }
-                    try {
-                        statement.close();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-            return null;
+        Long[] indices = null;
+        synchronized (this) {
+            indices = objectIndices.get("links_links");
         }
+        Object ret = null;
+        if (indices != null) {
+            ret = readObject(indices[0], indices[1]);
+        }
+        return ret;
     }
 
     public void save() {
-    }
-
-    /**
-     * Returns the connection to the database
-     */
-    public Connection getDatabaseConnection() {
-        return con;
     }
 
 }

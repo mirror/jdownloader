@@ -53,25 +53,25 @@ import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
 public class Main {
 
-    private static int              BOTHRESIZE  = GridBagConstraints.BOTH;
-    private static Insets           INSETS      = new Insets(5, 5, 5, 5);
-    private static int              NORESIZE    = GridBagConstraints.NONE;
-    private static int              NORTHWEST   = GridBagConstraints.NORTHWEST;
-    private static int              REL         = GridBagConstraints.RELATIVE;
-    private static int              REM         = GridBagConstraints.REMAINDER;
-    private static JSonWrapper      guiConfig;
-    private static StringBuilder    log;
-    private static JFrame           frame;
-    private static JTextArea        logWindow;
+    private static int                   BOTHRESIZE  = GridBagConstraints.BOTH;
+    private static Insets                INSETS      = new Insets(5, 5, 5, 5);
+    private static int                   NORESIZE    = GridBagConstraints.NONE;
+    private static int                   NORTHWEST   = GridBagConstraints.NORTHWEST;
+    private static int                   REL         = GridBagConstraints.RELATIVE;
+    private static int                   REM         = GridBagConstraints.REMAINDER;
+    private static JSonWrapper           guiConfig;
+    private static StringBuilder         log;
+    private static JFrame                frame;
+    private static JTextArea             logWindow;
     public static java.util.List<Server> clonePrefix = new ArrayList<Server>();
-    public static boolean           clone       = false;
-    public static boolean           GUILESS     = false;
-    public static boolean           NORESTART   = false;
-    private static JProgressBar     progressload;
-    private static JTextPane        warnings;
-    private static int              TICKET_TIME = -1;
-    private static Logger           logger;
-    private static boolean          RESTORE     = false;
+    public static boolean                clone       = false;
+    public static boolean                GUILESS     = false;
+    public static boolean                NORESTART   = false;
+    private static JProgressBar          progressload;
+    private static JTextPane             warnings;
+    private static int                   TICKET_TIME = -1;
+    private static Logger                logger;
+    private static boolean               RESTORE     = false;
 
     private static void log(StringBuilder log, String string) {
         if (log != null) log.append(string);
@@ -218,7 +218,6 @@ public class Main {
 
                 updater.filterAvailableUpdates(files);
 
-                JDUpdateUtils.backupDataBase();
                 updater.updateFiles(files);
             }
 

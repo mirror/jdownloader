@@ -9,7 +9,6 @@
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="jd/ressourcen/libs/dbus"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="ressourcen/libs/hsqldb.jar" sourcepath="ressourcen/code-ressourcen/hsqsql_src.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/irclib.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/js.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/savemytube.jar"/>
