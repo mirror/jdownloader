@@ -58,7 +58,6 @@ public class DatabaseConnector {
 
     public DatabaseConnector() throws SQLException {
         LogController.CL().finer("Loading database");
-        configpath = "/home/daniel/.jd_home/config/";
         if (!new File(configpath + "database.script").exists()) throw new SQLException("Database does not exist!");
         CountingInputStream fis = null;
         String[] searchForEntries = new String[] { "INSERT INTO CONFIG VALUES('", "INSERT INTO LINKS VALUES('" };
