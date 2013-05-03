@@ -47,7 +47,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -413,7 +412,17 @@ public class FujiFileMe extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/[a-z0-9]+)(\"|\\')").getMatch(1);
+            // "http://nl2c.fujifile.me:86/p/3/b9tp8f5dnecm2h/CTO394.mp4.part08.rar"
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi|p|f|[a-z]{1})/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            if (dllink == null) {
+                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                    for (String crypted : cryptedScripts) {
+                        dllink = decodeDownloadLink(crypted);
+                        if (dllink != null) break;
+                    }
+                }
+            }
         }
         return dllink;
     }
@@ -651,7 +660,7 @@ public class FujiFileMe extends PluginForHost {
             ai.setUsedSpace(space[0][0] + "Mb");
         }
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        final String availabletraffic = new Regex(correctedBR, "align=right>Today Available Download Quota:</TD><TD><b><a href=\"http://(www\\.)?fujifile\\.me/D_day\\.php\">([^<>\"]*?)</a>").getMatch(1);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             // need to set 0 traffic left, as getSize returns positive result,
