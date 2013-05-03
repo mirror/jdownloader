@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.extensions.ExtensionNotLoadedException;
 
 public class MenuContainerRoot extends MenuContainer implements Storable {
     private int version;
@@ -150,87 +150,84 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
      * add A path
      * 
      * @param path
+     * @throws ExtensionNotLoadedException
      * @throws ClassNotFoundException
      * @throws IllegalAccessException
      * @throws InstantiationException
      */
-    public void add(List<MenuItemData> path) {
-        try {
+    public void add(List<MenuItemData> path) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ExtensionNotLoadedException {
 
-            MenuItemData addAt = this;
-            MenuItemData c;
-            MenuItemData parent = null;
-            main: for (int i = 0; i < path.size(); i++) {
-                c = path.get(i);
-                try {
-                    if (c instanceof MenuContainerRoot) {
+        MenuItemData addAt = this;
+        MenuItemData c;
+        MenuItemData parent = null;
+        main: for (int i = 0; i < path.size(); i++) {
+            c = path.get(i);
+            try {
+                if (c instanceof MenuContainerRoot) {
 
-                        continue;
-                    }
-                    Collection<String> ids = addAt._getItemIdentifiers();
-
-                    System.out.println(parent);
-
-                    if (c.getType() == Type.CONTAINER) {
-
-                        for (MenuItemData mu : addAt.getItems()) {
-                            // if (mu.getActionData() != null) continue;
-                            if (StringUtils.equals(mu._getIdentifier(), c._getIdentifier())) {
-                                // subfolder found
-                                addAt = mu;
-                                continue main;
-
-                            }
-                        }
-
-                    } else {
-                        if (ids.contains(c._getIdentifier())) {
-                            break;
-                        }
-                    }
-                    int index = parent.getItems().indexOf(c);
-                    MenuItemData newItem = createInstance(c);
-                    if (i < path.size() - 1) {
-                        // only of the last component is not a container
-                        newItem.setItems(new ArrayList<MenuItemData>());
-                    }
-
-                    List<MenuItemData> above = parent.getItems().subList(0, index);
-                    List<MenuItemData> below = parent.getItems().subList(index + 1, parent.getItems().size());
-                    index = searchBestPosition(addAt.getItems(), above, below);
-
-                    addAt.getItems().add(index, newItem);
-
-                    if (newItem.getType() == Type.CONTAINER) {
-                        addAt = newItem;
-                    }
-                } finally {
-                    parent = c;
+                    continue;
                 }
-            }
-            // MenuItemData parent=null;
-            // for (int i = path.size() - 2; i >= 0; i--) {
-            //
-            // MenuItemData node = path.get(i);
-            //
-            // MenuItemData ret;
-            //
-            // ret = createInstance(node);
-            // if (ret instanceof MenuContainerRoot){
-            // parent=ret;
-            // break;
-            // }
-            // ret.setItems(new ArrayList<MenuItemData>());
-            // ret.add(lastNode);
-            // lastNode = ret;
-            //
-            // }
-            // MenuItemData addAt = this;
-            // addBranch(this, lastNode);
+                Collection<String> ids = addAt._getItemIdentifiers();
 
-        } catch (Exception e) {
-            throw new WTFException(e);
+                System.out.println(parent);
+
+                if (c.getType() == Type.CONTAINER) {
+
+                    for (MenuItemData mu : addAt.getItems()) {
+                        // if (mu.getActionData() != null) continue;
+                        if (StringUtils.equals(mu._getIdentifier(), c._getIdentifier())) {
+                            // subfolder found
+                            addAt = mu;
+                            continue main;
+
+                        }
+                    }
+
+                } else {
+                    if (ids.contains(c._getIdentifier())) {
+                        break;
+                    }
+                }
+                int index = parent.getItems().indexOf(c);
+                MenuItemData newItem = createInstance(c);
+                if (i < path.size() - 1) {
+                    // only of the last component is not a container
+                    newItem.setItems(new ArrayList<MenuItemData>());
+                }
+
+                List<MenuItemData> above = parent.getItems().subList(0, index);
+                List<MenuItemData> below = parent.getItems().subList(index + 1, parent.getItems().size());
+                index = searchBestPosition(addAt.getItems(), above, below);
+
+                addAt.getItems().add(index, newItem);
+
+                if (newItem.getType() == Type.CONTAINER) {
+                    addAt = newItem;
+                }
+            } finally {
+                parent = c;
+            }
         }
+        // MenuItemData parent=null;
+        // for (int i = path.size() - 2; i >= 0; i--) {
+        //
+        // MenuItemData node = path.get(i);
+        //
+        // MenuItemData ret;
+        //
+        // ret = createInstance(node);
+        // if (ret instanceof MenuContainerRoot){
+        // parent=ret;
+        // break;
+        // }
+        // ret.setItems(new ArrayList<MenuItemData>());
+        // ret.add(lastNode);
+        // lastNode = ret;
+        //
+        // }
+        // MenuItemData addAt = this;
+        // addBranch(this, lastNode);
+
     }
 
     private int searchBestPosition(ArrayList<MenuItemData> items, List<MenuItemData> above, List<MenuItemData> below) {

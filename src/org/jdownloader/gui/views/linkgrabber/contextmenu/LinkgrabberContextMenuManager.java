@@ -79,9 +79,6 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
         mr.add(new ActionData(OpenUrlAction.class, MenuItemProperty.LINK_CONTEXT));
         mr.add(new SeperatorData());
 
-        // addons
-        mr.add(new AddonLGSubMenuLink());
-
         mr.add(createOthersMenu());
         // others
 

@@ -90,6 +90,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     private boolean                           lazyInitOnStart   = false;
 
+    private DownloadListContextmenuExtender   dlListContextMenuExtender;
+
+    private LinkgrabberContextmenuExtender    lgContextMenuExtender;
+
     public ExtractionExtension() throws StartException {
         super();
         setTitle(_.name());
@@ -351,6 +355,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     @Override
     protected void stop() throws StopException {
         LinkCollector.getInstance().setArchiver(null);
+        DownloadListContextMenuManager.getInstance().unregisterExtender(dlListContextMenuExtender);
+        LinkgrabberContextMenuManager.getInstance().unregisterExtender(lgContextMenuExtender);
         ShutdownController.getInstance().removeShutdownVetoListener(listener);
 
         FileCreationManager.getInstance().getEventSender().removeListener(this);
@@ -376,6 +382,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     @Override
     protected void start() throws StartException {
         lazyInitOnceOnStart();
+        DownloadListContextMenuManager.getInstance().registerExtender(dlListContextMenuExtender);
+        LinkgrabberContextMenuManager.getInstance().registerExtender(lgContextMenuExtender);
 
         LinkCollector.getInstance().setArchiver(this);
 
@@ -542,7 +550,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 }
             }
         };
-        configPanel = new ExtractionConfigPanel(this);
+
     }
 
     void fireEvent(ExtractionEvent event) {
@@ -577,8 +585,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         /* import old passwordlist */
         boolean oldPWListImported = false;
         ArchiveValidator.EXTENSION = this;
-        DownloadListContextMenuManager.getInstance().registerExtender(new DownloadListContextmenuExtender(this));
-        LinkgrabberContextMenuManager.getInstance().registerExtender(new LinkgrabberContextmenuExtender(this));
+        dlListContextMenuExtender = new DownloadListContextmenuExtender(this);
+        lgContextMenuExtender = new LinkgrabberContextmenuExtender(this);
+
         try {
             if ((oldPWListImported = getSettings().isOldPWListImported()) == false) {
                 SubConfiguration oldConfig = SubConfiguration.getConfig("PASSWORDLIST", true);
@@ -631,7 +640,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     @Override
     public ExtensionConfigPanel<ExtractionExtension> getConfigPanel() {
-        return configPanel;
+        synchronized (this) {
+            if (configPanel == null) {
+                configPanel = new ExtractionConfigPanel(this);
+            }
+            return configPanel;
+        }
+
     }
 
     public ExtractionQueue getJobQueue() {

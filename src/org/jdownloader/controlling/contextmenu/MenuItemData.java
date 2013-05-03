@@ -288,6 +288,7 @@ public class MenuItemData implements Storable {
         it = createItem(selection);
 
         if (it == null) return null;
+
         if (!it.isEnabled() && mergeProperties().contains(MenuItemProperty.HIDE_IF_DISABLED)) return null;
 
         root.add(it);

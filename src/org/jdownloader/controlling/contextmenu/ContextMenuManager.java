@@ -104,110 +104,128 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     public synchronized MenuContainerRoot getMenuData() {
         long t = System.currentTimeMillis();
         if (menuData != null) return menuData;
+        try {
+            MenuContainerRoot ret = config.getMenu();
 
-        MenuContainerRoot ret = config.getMenu();
+            MenuContainerRoot defaultMenu = setupDefaultStructure();
+            if (ret == null) {
+                // no customizer ever used
+                ret = defaultMenu;
 
-        MenuContainerRoot defaultMenu = setupDefaultStructure();
-        if (ret == null) {
-            // no customizer ever used
-            ret = defaultMenu;
+            } else {
+                System.out.println(JSonStorage.toString(ret));
+                ret.validate();
 
-        } else {
-            System.out.println(JSonStorage.toString(ret));
+                List<MenuItemData> allItemsInMenu = ret.list();
+                List<MenuItemData> allItemsInDefaultMenu = defaultMenu.list();
+                HashMap<String, MenuItemData> itemsIdsInMenu = new HashMap<String, MenuItemData>();
+                HashMap<String, MenuItemData> itemsInDefaultMenu = new HashMap<String, MenuItemData>();
+
+                for (MenuItemData d : allItemsInMenu) {
+
+                    itemsIdsInMenu.put(d._getIdentifier(), d);
+
+                }
+                for (MenuItemData d : allItemsInDefaultMenu) {
+
+                    itemsInDefaultMenu.put(d._getIdentifier(), d);
+
+                }
+                ArrayList<String> unused = config.getUnusedItems();
+                if (unused == null) {
+                    unused = new ArrayList<String>();
+                }
+
+                ArrayList<MenuItemData> newActions = new ArrayList<MenuItemData>();
+                HashSet<String> idsInUnusedList = new HashSet<String>(unused);
+
+                // find new or updated actions
+
+                for (Entry<String, MenuItemData> e : itemsInDefaultMenu.entrySet()) {
+
+                    if (!idsInUnusedList.contains(e.getKey())) {
+                        // not in unused list
+                        if (!itemsIdsInMenu.containsKey(e.getKey())) {
+                            // not in menu itself
+                            // this is a new action
+                            newActions.add(e.getValue());
+                        }
+
+                    }
+                }
+
+                if (newActions.size() > 0) {
+
+                    List<List<MenuItemData>> pathes = defaultMenu.listPathes();
+                    // HashSet<Class<?>> actionClassesInDefaultTree = new HashSet<Class<?>>();
+                    // // HashMap<MenuItemData,> actionClassesInDefaultTree = new HashSet<Class<?>>();
+                    //
+                    // System.out.println(pathes);
+                    // for (List<MenuItemData> path : pathes) {
+                    //
+                    // MenuItemData d = path.get(path.size() - 1);
+                    // if (d.getActionData() != null) {
+                    // if (d.getActionData().getClazzName() != null) {
+                    // try {
+                    // actionClassesInDefaultTree.add(d.getActionData()._getClazz());
+                    // } catch (Exception e1) {
+                    // logger.log(e1);
+                    // }
+                    // }
+                    // }
+                    // }
+                    HashSet<String> itemsInSubmenuItems = new HashSet<String>();
+
+                    for (MenuItemData ad : newActions) {
+                        if (ad.getItems() != null) {
+                            for (MenuItemData mid : ad.list()) {
+                                if (mid == ad) continue;
+                                // newActions.remove(mid);
+                                itemsInSubmenuItems.add(mid._getIdentifier());
+                            }
+                        }
+
+                    }
+                    for (MenuItemData ad : newActions) {
+                        if (itemsInSubmenuItems.contains(ad._getIdentifier())) continue;
+                        for (List<MenuItemData> path : pathes) {
+                            if (StringUtils.equals(path.get(path.size() - 1)._getIdentifier(), ad._getIdentifier())) {
+                                try {
+                                    ret.add(path);
+                                } catch (Throwable e) {
+                                    logger.log(e);
+
+                                }
+                            }
+
+                        }
+
+                    }
+                    // neworUpdate.add(new SeparatorData());
+                    // neworUpdate.add(new MenuItemData(new ActionData(0,MenuManagerAction.class)));
+
+                }
+
+            }
             ret.validate();
-
-            List<MenuItemData> allItemsInMenu = ret.list();
-            List<MenuItemData> allItemsInDefaultMenu = defaultMenu.list();
-            HashMap<String, MenuItemData> itemsIdsInMenu = new HashMap<String, MenuItemData>();
-            HashMap<String, MenuItemData> itemsInDefaultMenu = new HashMap<String, MenuItemData>();
-
-            for (MenuItemData d : allItemsInMenu) {
-
-                itemsIdsInMenu.put(d._getIdentifier(), d);
-
+            System.out.println("Set menu Data");
+            menuData = ret;
+            System.out.println(System.currentTimeMillis() - t);
+            return ret;
+        } catch (Exception e) {
+            logger.log(e);
+            try {
+                menuData = setupDefaultStructure();
+                menuData.validate();
+                return menuData;
+            } catch (Exception e1) {
+                logger.log(e1);
+                menuData = new MenuContainerRoot();
+                menuData.validate();
+                return menuData;
             }
-            for (MenuItemData d : allItemsInDefaultMenu) {
-
-                itemsInDefaultMenu.put(d._getIdentifier(), d);
-
-            }
-            ArrayList<String> unused = config.getUnusedItems();
-            if (unused == null) {
-                unused = new ArrayList<String>();
-            }
-
-            ArrayList<MenuItemData> newActions = new ArrayList<MenuItemData>();
-            HashSet<String> idsInUnusedList = new HashSet<String>(unused);
-
-            // find new or updated actions
-
-            for (Entry<String, MenuItemData> e : itemsInDefaultMenu.entrySet()) {
-
-                if (!idsInUnusedList.contains(e.getKey())) {
-                    // not in unused list
-                    if (!itemsIdsInMenu.containsKey(e.getKey())) {
-                        // not in menu itself
-                        // this is a new action
-                        newActions.add(e.getValue());
-                    }
-
-                }
-            }
-
-            if (newActions.size() > 0) {
-
-                List<List<MenuItemData>> pathes = defaultMenu.listPathes();
-                // HashSet<Class<?>> actionClassesInDefaultTree = new HashSet<Class<?>>();
-                // // HashMap<MenuItemData,> actionClassesInDefaultTree = new HashSet<Class<?>>();
-                //
-                // System.out.println(pathes);
-                // for (List<MenuItemData> path : pathes) {
-                //
-                // MenuItemData d = path.get(path.size() - 1);
-                // if (d.getActionData() != null) {
-                // if (d.getActionData().getClazzName() != null) {
-                // try {
-                // actionClassesInDefaultTree.add(d.getActionData()._getClazz());
-                // } catch (Exception e1) {
-                // logger.log(e1);
-                // }
-                // }
-                // }
-                // }
-                HashSet<String> itemsInSubmenuItems = new HashSet<String>();
-
-                for (MenuItemData ad : newActions) {
-                    if (ad.getItems() != null) {
-                        for (MenuItemData mid : ad.list()) {
-                            if (mid == ad) continue;
-                            // newActions.remove(mid);
-                            itemsInSubmenuItems.add(mid._getIdentifier());
-                        }
-                    }
-
-                }
-                for (MenuItemData ad : newActions) {
-                    if (itemsInSubmenuItems.contains(ad._getIdentifier())) continue;
-                    for (List<MenuItemData> path : pathes) {
-                        if (StringUtils.equals(path.get(path.size() - 1)._getIdentifier(), ad._getIdentifier())) {
-                            ret.add(path);
-                        }
-
-                    }
-
-                }
-                // neworUpdate.add(new SeparatorData());
-                // neworUpdate.add(new MenuItemData(new ActionData(0,MenuManagerAction.class)));
-
-            }
-
         }
-        ret.validate();
-        System.out.println("Set menu Data");
-        menuData = ret;
-        System.out.println(System.currentTimeMillis() - t);
 
-        return ret;
     }
 
     abstract public MenuContainerRoot createDefaultStructure();
@@ -293,6 +311,15 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
         }
 
+    }
+
+    public void unregisterExtender(MenuExtenderHandler handler) {
+        synchronized (extender) {
+            extender.remove(handler);
+
+            menuData = null;
+
+        }
     }
 
     public ArrayList<MenuExtenderHandler> listExtender() {

@@ -35,7 +35,6 @@ import org.jdownloader.gui.views.downloads.action.ResetAction;
 import org.jdownloader.gui.views.downloads.action.ResumeAction;
 import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
 import org.jdownloader.gui.views.downloads.action.StopsignAction;
-import org.jdownloader.gui.views.downloads.context.submenu.AddonSubMenuLink;
 import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.MoreMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.PriorityMenuContainer;
@@ -83,10 +82,6 @@ public class DownloadListContextMenuManager extends ContextMenuManager<FilePacka
         mr.add(new MenuItemData(new ActionData(ForceDownloadAction.class)));
         mr.add(new MenuItemData(new ActionData(StopsignAction.class)));
         mr.add(new SeperatorData());
-
-        mr.add(new AddonSubMenuLink());
-
-        // /* addons */
 
         mr.add(createMoreMenu());
 

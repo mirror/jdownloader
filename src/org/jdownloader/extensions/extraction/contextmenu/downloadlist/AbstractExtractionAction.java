@@ -54,6 +54,7 @@ public abstract class AbstractExtractionAction extends ExtensionAction<Extractio
 
             });
         }
+        super.setEnabled(newValue);
     }
 
     protected void asynchInit() {

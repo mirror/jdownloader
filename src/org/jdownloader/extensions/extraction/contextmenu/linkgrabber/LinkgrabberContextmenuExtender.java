@@ -15,7 +15,7 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.Cle
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractPasswordAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractToAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ValidateArchivesAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.AddonLGSubMenuLink;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkGrabberMoreSubMenu;
 
 public class LinkgrabberContextmenuExtender implements MenuExtenderHandler {
 
@@ -37,7 +37,7 @@ public class LinkgrabberContextmenuExtender implements MenuExtenderHandler {
     public void updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
         int addonLinkIndex = 0;
         for (int i = 0; i < mr.getItems().size(); i++) {
-            if (mr.getItems().get(i) instanceof AddonLGSubMenuLink) {
+            if (mr.getItems().get(i) instanceof LinkGrabberMoreSubMenu) {
                 addonLinkIndex = i;
                 break;
             }
