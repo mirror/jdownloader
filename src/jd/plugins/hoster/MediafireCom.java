@@ -48,8 +48,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.LnkCrptWs;
-import jd.plugins.decrypter.MdfrFldr;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -297,6 +295,9 @@ public class MediafireCom extends PluginForHost {
     private static final String                              PRIVATEFOLDERUSERTEXT = "This is a private folder. Re-Add this link while your account is active to make it work!";
     private String                                           SESSIONTOKEN          = null;
     private String                                           errorCode             = null;
+    /* keep updated with decrypter */
+    private final String                                     APPLICATIONID         = "27112";
+    private final String                                     APIKEY                = "czQ1cDd5NWE3OTl2ZGNsZmpkd3Q1eXZhNHcxdzE4c2Zlbmt2djdudw==";
     /**
      * Map to cache the configuration keys
      */
@@ -525,7 +526,7 @@ public class MediafireCom extends PluginForHost {
                     } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
                         final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                        final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+                        final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
                         final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         String code = getCaptchaCode(cf, downloadLink);
                         String chid = sm.getChallenge(code);
@@ -843,7 +844,7 @@ public class MediafireCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
-        
+
         downloadLink.setProperty("type", Property.NULL);
         if (downloadLink.getBooleanProperty("offline")) return AvailableStatus.FALSE;
         final String fid = getFID(downloadLink);
@@ -901,7 +902,7 @@ public class MediafireCom extends PluginForHost {
             SESSIONTOKEN = this.getPluginConfig().getStringProperty("sessiontoken");
         } else {
             // Get token for user account
-            apiRequest(apiBR, "https://www.mediafire.com/api/user/get_session_token.php", "?email=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()) + "&application_id=" + MdfrFldr.APPLICATIONID + "&signature=" + JDHash.getSHA1(aa.getUser() + aa.getPass() + MdfrFldr.APPLICATIONID + Encoding.Base64Decode(MdfrFldr.APIKEY)) + "&version=1");
+            apiRequest(apiBR, "https://www.mediafire.com/api/user/get_session_token.php", "?email=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()) + "&application_id=" + APPLICATIONID + "&signature=" + JDHash.getSHA1(aa.getUser() + aa.getPass() + APPLICATIONID + Encoding.Base64Decode(APIKEY)) + "&version=1");
             SESSIONTOKEN = getXML("session_token", apiBR.toString());
             this.getPluginConfig().setProperty("username", aa.getUser());
             this.getPluginConfig().setProperty("password", aa.getPass());

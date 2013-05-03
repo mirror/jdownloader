@@ -47,7 +47,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.LnkCrptWs;
+
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -291,7 +291,7 @@ public class ProjectFreeUploadCom extends PluginForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
                     PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+                    jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
                     File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     String code = getCaptchaCode(cf, downloadLink);
                     String chid = sm.getChallenge(code);

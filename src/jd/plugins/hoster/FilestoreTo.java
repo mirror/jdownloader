@@ -27,9 +27,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDHexUtils;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -175,7 +176,8 @@ public class FilestoreTo extends PluginForHost {
 
     private String zStatistic(String s) {
         s = Encoding.Base64Decode(s);
-        return JDHexUtils.toString(LnkCrptWs.IMAGEREGEX(s));
+        final PluginForDecrypt adsplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+        return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s));
     }
 
 }

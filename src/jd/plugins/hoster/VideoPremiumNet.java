@@ -42,7 +42,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.LnkCrptWs;
+
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -469,7 +469,7 @@ public class VideoPremiumNet extends PluginForHost {
                 // Handle stupid login captcha
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", "shutterstock.com", "http://shutterstock.com", true);
                 final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+                final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
                 final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                 final String code = getCaptchaCode(cf, dummyLink);
                 loginform.remove("redirect");

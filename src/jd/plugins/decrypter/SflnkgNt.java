@@ -98,8 +98,7 @@ public class SflnkgNt extends PluginForDecrypt {
 
     public class GeneralSafelinkingHandling {
         /**
-         * A class to handle sites similar to safelinking.net ->Google "Secure your links with a captcha, a password and much more" to find
-         * such sites
+         * A class to handle sites similar to safelinking.net ->Google "Secure your links with a captcha, a password and much more" to find such sites
          */
 
         public GeneralSafelinkingHandling(final Browser br, final CryptedLink param, final String host) {
@@ -232,7 +231,7 @@ public class SflnkgNt extends PluginForDecrypt {
                     switch (getCaptchaTypeNumber()) {
                     case 1:
                         PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                        jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+                        jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
                         File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         String code = getCaptchaCode(cf, param);
                         String chid = sm.getChallenge(code);

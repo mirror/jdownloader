@@ -28,8 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.TbCm;
-import jd.plugins.decrypter.TbCm.DestinationFormat;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)|http://www.spiegel.de/img/.+?(\\.\\w+)" }, flags = { 0 })
 public class SpiegelDe extends PluginForHost {
@@ -59,16 +58,17 @@ public class SpiegelDe extends PluginForHost {
         } else if (new Regex(downloadLink.getDownloadURL(), PATTERN_SUPPORTED_VIDEO).matches()) {
             if (this.dl.startDownload()) {
                 if (downloadLink.getProperty("convertto") != null) {
-                    final DestinationFormat convertTo = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
-                    DestinationFormat inType;
-                    if (convertTo == DestinationFormat.VIDEOIPHONE || convertTo == DestinationFormat.VIDEOMP4 || convertTo == DestinationFormat.VIDEO3GP) {
+                    JDUtilities.getPluginForDecrypt("youtube.com");
+                    final jd.plugins.decrypter.TbCm.DestinationFormat convertTo = jd.plugins.decrypter.TbCm.DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
+                    jd.plugins.decrypter.TbCm.DestinationFormat inType;
+                    if (convertTo == jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOIPHONE || convertTo == jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOMP4 || convertTo == jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO3GP) {
                         inType = convertTo;
                     } else {
-                        inType = DestinationFormat.VIDEOFLV;
+                        inType = jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOFLV;
                     }
                     /* to load the TbCm plugin */
                     // JDUtilities.getPluginForDecrypt("youtube.com");
-                    if (!TbCm.ConvertFile(downloadLink, inType, convertTo)) {
+                    if (!jd.plugins.decrypter.TbCm.ConvertFile(downloadLink, inType, convertTo)) {
                         logger.severe("Video-Convert failed!");
                     }
 

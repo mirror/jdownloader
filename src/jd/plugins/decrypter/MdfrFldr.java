@@ -46,8 +46,9 @@ public class MdfrFldr extends PluginForDecrypt {
     }
 
     private String              SESSIONTOKEN  = null;
-    public static final String  APIKEY        = "czQ1cDd5NWE3OTl2ZGNsZmpkd3Q1eXZhNHcxdzE4c2Zlbmt2djdudw==";
-    public static final String  APPLICATIONID = "27112";
+    /* keep updated with hoster */
+    private final String        APIKEY        = "czQ1cDd5NWE3OTl2ZGNsZmpkd3Q1eXZhNHcxdzE4c2Zlbmt2djdudw==";
+    private final String        APPLICATIONID = "27112";
     private String              ERRORCODE     = null;
     private static final String OFFLINE       = ">Unknown or invalid FolderKey<";
 
@@ -203,7 +204,7 @@ public class MdfrFldr extends PluginForDecrypt {
                 SESSIONTOKEN = this.getPluginConfig().getStringProperty("sessiontoken");
             } else {
                 // Get token for user account
-                apiRequest(br, "https://www.mediafire.com/api/user/get_session_token.php", "?email=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()) + "&application_id=" + MdfrFldr.APPLICATIONID + "&signature=" + JDHash.getSHA1(aa.getUser() + aa.getPass() + MdfrFldr.APPLICATIONID + Encoding.Base64Decode(MdfrFldr.APIKEY)) + "&version=1");
+                apiRequest(br, "https://www.mediafire.com/api/user/get_session_token.php", "?email=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()) + "&application_id=" + APPLICATIONID + "&signature=" + JDHash.getSHA1(aa.getUser() + aa.getPass() + APPLICATIONID + Encoding.Base64Decode(APIKEY)) + "&version=1");
                 SESSIONTOKEN = getXML("session_token", br.toString());
                 this.getPluginConfig().setProperty("username", aa.getUser());
                 this.getPluginConfig().setProperty("password", aa.getPass());

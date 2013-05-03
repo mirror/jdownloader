@@ -31,7 +31,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -124,7 +123,7 @@ public class GigaSizeCom extends PluginForHost {
         Form captchaForm = br.getFormbyProperty("id", "downloadForm");
         if (br.containsHTML("//api\\.adscaptcha\\.com/")) {
             final PluginForDecrypt adsplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-            final jd.plugins.decrypter.LnkCrptWs.AdsCaptcha ac = ((LnkCrptWs) adsplug).getAdsCaptcha(br);
+            final jd.plugins.decrypter.LnkCrptWs.AdsCaptcha ac = ((jd.plugins.decrypter.LnkCrptWs) adsplug).getAdsCaptcha(br);
             captchaForm = ac.getResult();
             if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_FATAL, "User abort ...");
         }

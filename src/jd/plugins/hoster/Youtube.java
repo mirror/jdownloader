@@ -39,8 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.TbCm;
-import jd.plugins.decrypter.TbCm.DestinationFormat;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -355,18 +353,19 @@ public class Youtube extends PluginForHost {
 
     private void postprocess(final DownloadLink downloadLink) {
         if (downloadLink.getProperty("convertto") != null) {
-            final DestinationFormat convertto = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
-            DestinationFormat InType = DestinationFormat.VIDEOFLV;
-            if (convertto.equals(DestinationFormat.VIDEOWEBM) || convertto.equals(DestinationFormat.VIDEOMP4) || convertto.equals(DestinationFormat.VIDEO3GP)) {
+            JDUtilities.getPluginForDecrypt("youtube.com");
+            final jd.plugins.decrypter.TbCm.DestinationFormat convertto = jd.plugins.decrypter.TbCm.DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
+            jd.plugins.decrypter.TbCm.DestinationFormat InType = jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOFLV;
+            if (convertto.equals(jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOWEBM) || convertto.equals(jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOMP4) || convertto.equals(jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO3GP)) {
                 InType = convertto;
             }
-            if (!TbCm.ConvertFile(downloadLink, InType, convertto)) {
+            if (!jd.plugins.decrypter.TbCm.ConvertFile(downloadLink, InType, convertto)) {
                 logger.severe("Video-Convert failed!");
             }
         }
 
         if (downloadLink.getBooleanProperty("subtitle", false)) {
-            if (!TbCm.convertSubtitle(downloadLink)) {
+            if (!jd.plugins.decrypter.TbCm.convertSubtitle(downloadLink)) {
                 logger.severe("Subtitle conversion failed!");
             }
         }
@@ -402,7 +401,7 @@ public class Youtube extends PluginForHost {
                 if (downloadLink.getStringProperty("fmtNew", null) == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again"); }
                 if (downloadLink.getStringProperty("videolink", null) == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again"); }
 
-                final HashMap<Integer, String[]> LinksFound = ((TbCm) plugin).getLinks(downloadLink.getStringProperty("videolink", null), this.prem, this.br, 0);
+                final HashMap<Integer, String[]> LinksFound = ((jd.plugins.decrypter.TbCm) plugin).getLinks(downloadLink.getStringProperty("videolink", null), this.prem, this.br, 0);
 
                 if (LinksFound == null || LinksFound.isEmpty()) {
                     if (this.br.containsHTML("<div\\s+id=\"verify-age-actions\">")) { throw new PluginException(LinkStatus.ERROR_FATAL, "The entered account couldn't pass the age verification!"); }

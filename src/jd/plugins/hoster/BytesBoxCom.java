@@ -39,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.LnkCrptWs;
+
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -106,7 +106,7 @@ public class BytesBoxCom extends PluginForHost {
         ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         for (int i = 0; i <= 3; i++) {
             final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-            jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+            jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
             final String code = getCaptchaCode(cf, downloadLink);
             ajaxBR.postPage("/ajax.solvcaptcha.php", "downsess=" + downsess + "&adcopy_challenge=" + sm.getChallenge(code) + "&adcopy_response=" + Encoding.urlEncode(code));

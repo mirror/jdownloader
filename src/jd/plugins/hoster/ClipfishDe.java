@@ -24,9 +24,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.TbCm;
-import jd.plugins.decrypter.TbCm.DestinationFormat;
 import jd.plugins.download.DownloadInterface;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "clipfish://.+" }, flags = { 0 })
 public class ClipfishDe extends PluginForHost {
@@ -65,11 +64,12 @@ public class ClipfishDe extends PluginForHost {
 
             if (dl.startDownload()) {
                 if (downloadLink.getProperty("convertto") != null) {
-                    final DestinationFormat convertTo = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
-                    final DestinationFormat inType = DestinationFormat.VIDEOFLV;
+                    JDUtilities.getPluginForDecrypt("youtube.com");
+                    final jd.plugins.decrypter.TbCm.DestinationFormat convertTo = jd.plugins.decrypter.TbCm.DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
+                    final jd.plugins.decrypter.TbCm.DestinationFormat inType = jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOFLV;
                     /* to load the TbCm plugin */
 
-                    if (!TbCm.ConvertFile(downloadLink, inType, convertTo)) {
+                    if (!jd.plugins.decrypter.TbCm.ConvertFile(downloadLink, inType, convertTo)) {
                         logger.severe("Video-Convert failed!");
                     }
                 }

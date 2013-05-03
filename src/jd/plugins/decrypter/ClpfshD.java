@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.decrypter.TbCm.DestinationFormat;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "http://(www\\.)?clipfish\\.de/(.*?channel/\\d+/video/\\d+|video/\\d+(/.+)?|special/.*?/video/\\d+|musikvideos/video/\\d+(/.+)?)" }, flags = { 0 })
 public class ClpfshD extends PluginForDecrypt {
@@ -47,7 +47,7 @@ public class ClpfshD extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private void addLink(final CryptedLink cryptedLink, final ArrayList<DownloadLink> decryptedLinks, final String name, final DownloadLink downloadLink, final DestinationFormat convertTo) {
+    private void addLink(final CryptedLink cryptedLink, final ArrayList<DownloadLink> decryptedLinks, final String name, final DownloadLink downloadLink, final jd.plugins.decrypter.TbCm.DestinationFormat convertTo) {
         final FilePackage filePackage = FilePackage.getInstance();
         filePackage.setName("ClipFish " + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");
         filePackage.add(downloadLink);
@@ -103,8 +103,9 @@ public class ClpfshD extends PluginForDecrypt {
          * scheinbar gibt es auf clipfish keine flv Audiodateien mehr.
          */
         if (cType.equals("audio")) {
-            addLink(cryptedLink, decryptedLinks, name, downloadLink, DestinationFormat.VIDEOFLV);
-            addLink(cryptedLink, decryptedLinks, name, downloadLink, DestinationFormat.AUDIOMP3);
+            JDUtilities.getPluginForDecrypt("youtube.com");
+            addLink(cryptedLink, decryptedLinks, name, downloadLink, jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOFLV);
+            addLink(cryptedLink, decryptedLinks, name, downloadLink, jd.plugins.decrypter.TbCm.DestinationFormat.AUDIOMP3);
         } else {
             String ext = pathToflv.substring(pathToflv.lastIndexOf(".") + 1, pathToflv.length());
             if (pathToflv.startsWith("rtmp")) {

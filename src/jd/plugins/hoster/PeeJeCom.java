@@ -32,7 +32,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -115,7 +114,7 @@ public class PeeJeCom extends PluginForHost {
         if (br.containsHTML("solvemedia\\.com/papi/")) {
             logger.info("Detected captcha method \"solvemedia\" for this host");
             final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-            jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+            jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
             int repeat = 5;
             // solve media validates captchas response. Incorrect captchas will result in error message within sm.smBr or chid = null.
             for (int i = 0; i <= repeat; i++) {
@@ -124,7 +123,7 @@ public class PeeJeCom extends PluginForHost {
                 String code = getCaptchaCode(cf, downloadLink);
                 String chid = sm.getChallenge(code);
                 if (sm.smBr.containsHTML("error-msg\">Try again")) {
-                    sm = ((LnkCrptWs) solveplug).getSolveMedia(sm.smBr);
+                    sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(sm.smBr);
                     continue;
                 } else if (chid != null) {
                     dlForm.put("adcopy_challenge", chid);
