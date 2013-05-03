@@ -28,8 +28,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgjug.com", "instagram.com", "pic4free.org", "cocoimage.com", "imagetwist.com", "postimage.org", "imgur.com", "imgchili.com", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com", "9gag.com" }, urls = { "http://(www\\.)?imgjug\\.com/(i/[A-Za-z0-9]+|\\?v=[A-Za-z0-9]+\\.jpg)", "http://(www\\.)?(instagram\\.com|instagr\\.am)/p/[A-Za-z0-9]+", "http://(www\\.)?pic4free\\.org/\\?v=[^<>\"/]+", "http://(www\\.)?img\\d+\\.cocoimage\\.com/img\\.php\\?id=\\d+", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?postimage\\.org/image/[a-z0-9]+", "http://((www|i)\\.)?imgur\\.com(/gallery|/a|/download)?/(?!register|contact|removalrequest|stats|https)[A-Za-z0-9]{5,}",
@@ -173,6 +171,11 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             finallink = br.getRegex("ref=\"nofollow\" target=\"_blank\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("imgur.com/a/")) {
             br.getPage(parameter.replace("/all$", ""));
+            if (br.containsHTML("<h1>File not found!</h1>|")) {
+                logger.info("Link offline OR no longer exists: " + parameter);
+                return decryptedLinks;
+            }
+
             String fpName = br.getRegex("<title>(.*?) \\- Imgur").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("data-title=\"([^\"]+)").getMatch(0);
@@ -180,26 +183,17 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                     fpName = new Regex(parameter, "/a/([A-Za-z0-9]{5,})").getMatch(0);
                 }
             }
-            String[] links = br.getRegex("title=\"[^\"]+\" alt=\"[^\"]+\" data\\-src=\"(https?://[^\"]+)\" data-index=\"\\d+").getColumn(0);
-            if (links == null || links.length == 0) {
-                links = br.getRegex("class=\"unloaded\".*?data\\-src=\"(https?://[^\"]+)\" alt=\"[^\"]*\"").getColumn(0);
-            }
-            if (links == null || links.length == 0) {
+            // using links (i.imgur.com/imgUID(s)?.extension) seems to be problematic, it can contain 's' (imgUID + s +
+            // .extension), but not always! imgUid.endswith("s") is also a valid uid, so you can't strip them!
+            String[] imgUIDs = br.getRegex("id=\"thumb\\-([a-zA-Z0-9]{5,})\"").getColumn(0);
+            if (imgUIDs == null || imgUIDs.length == 0) {
                 logger.warning("Possible Error, please make sure link is valid within browser.");
                 logger.warning("If plugin is out of date please report issue to JDownloader Developement : " + parameter);
+                return decryptedLinks;
             }
-            String imgUID = null;
-            if (links != null && links.length != 0) {
-                for (String link : links) {
-                    imgUID = new Regex(link, "https?://[^/]+/([a-zA-Z0-9]{5,})").getMatch(0);
-                    if (imgUID == null) {
-                        logger.warning("Can't find imgUID");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    // we do not want _ANY_ imgUID ending with 's'(small/thumbnail image),
-                    if (imgUID.endsWith("s")) {
-                        imgUID = new Regex(imgUID, "(.+)s$").getMatch(0);
-                    }
+
+            if (imgUIDs != null && imgUIDs.length != 0) {
+                for (String imgUID : imgUIDs) {
                     DownloadLink dl = createDownloadlink("http://imgurdecrypted/download/" + imgUID);
                     dl.setProperty("imgUID", imgUID);
                     decryptedLinks.add(dl);
@@ -213,10 +207,6 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         } else if (parameter.matches("http://(((www|i)\\.)?imgur\\.com/[A-Za-z0-9]{5,}|(www\\.)?imgur\\.com/(download|gallery)/[A-Za-z0-9]{5,})")) {
             String imgUID = new Regex(parameter, "([A-Za-z0-9]{5,})$").getMatch(0);
-            // we do not want _ANY_ imgUID ending with 's'(small/thumbnail image),
-            if (imgUID.endsWith("s")) {
-                imgUID = new Regex(imgUID, "(.+)s$").getMatch(0);
-            }
             final DownloadLink dl = createDownloadlink("http://imgurdecrypted/download/" + imgUID);
             dl.setProperty("imgUID", imgUID);
             decryptedLinks.add(dl);
