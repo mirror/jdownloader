@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -88,7 +89,7 @@ public class LuckyShareNet extends PluginForHost {
             // without account
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa != null) {
-                login(aa, false);
+                login(aa, false, null);
                 try {
                     con = br.openGetConnection(link.getDownloadURL());
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
@@ -228,7 +229,7 @@ public class LuckyShareNet extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private HashMap<String, String> login(final Account account, final boolean force) throws Exception {
+    private HashMap<String, String> login(final Account account, final boolean force, AtomicBoolean fresh) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -245,6 +246,7 @@ public class LuckyShareNet extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(MAINPAGE, key, value);
                         }
+                        if (fresh != null) fresh.set(false);
                         return cookies;
                     }
                 }
@@ -264,6 +266,7 @@ public class LuckyShareNet extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                if (fresh != null) fresh.set(true);
                 return cookies;
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
@@ -276,7 +279,7 @@ public class LuckyShareNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            login(account, true, null);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -303,7 +306,8 @@ public class LuckyShareNet extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         if (oldStyle() && FAILED409) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR); }
-        HashMap<String, String> cookies = login(account, false);
+        AtomicBoolean fresh = new AtomicBoolean(false);
+        HashMap<String, String> cookies = login(account, false, fresh);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();
@@ -311,6 +315,10 @@ public class LuckyShareNet extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             synchronized (LOCK) {
                 final Object ret = account.getProperty("cookies", null);
+                if (fresh.get()) {
+                    account.setProperty("cookies", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 if (cookies == ret || ret == null) {
                     account.setProperty("cookies", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
