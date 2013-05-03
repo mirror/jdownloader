@@ -191,10 +191,14 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             String imgUID = null;
             if (links != null && links.length != 0) {
                 for (String link : links) {
-                    imgUID = new Regex(link, "https?://[^/]+/([a-zA-Z0-9]+)").getMatch(0);
+                    imgUID = new Regex(link, "https?://[^/]+/([a-zA-Z0-9]{5,})").getMatch(0);
                     if (imgUID == null) {
                         logger.warning("Can't find imgUID");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    // we do not want _ANY_ imgUID ending with 's'(small/thumbnail image),
+                    if (imgUID.endsWith("s")) {
+                        imgUID = new Regex(imgUID, "(.+)s$").getMatch(0);
                     }
                     DownloadLink dl = createDownloadlink("http://imgurdecrypted/download/" + imgUID);
                     dl.setProperty("imgUID", imgUID);
@@ -209,6 +213,10 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         } else if (parameter.matches("http://(((www|i)\\.)?imgur\\.com/[A-Za-z0-9]{5,}|(www\\.)?imgur\\.com/(download|gallery)/[A-Za-z0-9]{5,})")) {
             String imgUID = new Regex(parameter, "([A-Za-z0-9]{5,})$").getMatch(0);
+            // we do not want _ANY_ imgUID ending with 's'(small/thumbnail image),
+            if (imgUID.endsWith("s")) {
+                imgUID = new Regex(imgUID, "(.+)s$").getMatch(0);
+            }
             final DownloadLink dl = createDownloadlink("http://imgurdecrypted/download/" + imgUID);
             dl.setProperty("imgUID", imgUID);
             decryptedLinks.add(dl);
