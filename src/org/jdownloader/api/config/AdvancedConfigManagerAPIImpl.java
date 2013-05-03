@@ -1,51 +1,61 @@
 package org.jdownloader.api.config;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.regex.Pattern;
 
-import org.appwork.remoteapi.APIQuery;
-import org.appwork.remoteapi.QueryResponseMap;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.settings.advanced.AdvancedConfigAPIEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
-import org.jdownloader.settings.advanced.AdvancedConfigInterfaceEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
 
-    public ArrayList<AdvancedConfigAPIEntry> list() {
+    public ArrayList<AdvancedConfigAPIEntry> list(String pattern, boolean returnDescription, boolean returnValues, boolean returnDefaultValues) {
         ArrayList<AdvancedConfigAPIEntry> ret = new ArrayList<AdvancedConfigAPIEntry>();
         java.util.List<AdvancedConfigEntry> entries = AdvancedConfigManager.getInstance().list();
+        Pattern cPat = StringUtils.isEmpty(pattern) ? null : Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         for (AdvancedConfigEntry entry : entries) {
-            ret.add(new AdvancedConfigAPIEntry(entry));
+            String key = entry.getKeyHandler().getStorageHandler().getConfigInterface().getName() + "." + entry.getKeyHandler().getKey();
+            if (cPat == null || cPat.matcher(key).matches()) {
+                ret.add(new AdvancedConfigAPIEntry(entry, returnDescription, returnValues, returnDefaultValues));
+            }
         }
         return ret;
     }
 
-    public Object get(int storageID, String key) {
-        KeyHandler<Object> kh = getKeyHandler(storageID, key);
+    public Object get(String interfaceName, String storage, String key) {
+        KeyHandler<Object> kh = getKeyHandler(interfaceName, storage, key);
         return kh.getValue();
     }
 
-    public boolean set(int storageID, String key, String value) {
-        KeyHandler<Object> kh = getKeyHandler(storageID, key);
-        Class<Object> rc = kh.getRawClass();
-        Object v = JSonStorage.restoreFromString(value, new TypeRef<Object>(rc) {
-        }, null);
+    public void set(String interfaceName, String storage, String key, Object value) throws InvalidValueException {
+        KeyHandler<Object> kh = getKeyHandler(interfaceName, storage, key);
+        Type rc = kh.getRawType();
+        String json = JSonStorage.toString(value);
+        TypeRef<Object> type = new TypeRef<Object>(rc) {
+        };
+
         try {
+            Object v;
+            synchronized (JSonStorage.LOCK) {
+                v = JSonStorage.getMapper().stringToObject(json, type);
+            }
+
             kh.setValue(v);
-        } catch (ValidationException e) {
-            return false;
+        } catch (Exception e) {
+            throw new InvalidValueException(e);
         }
-        return true;
+
     }
 
-    public boolean reset(int storageID, String key) {
-        KeyHandler<Object> kh = getKeyHandler(storageID, key);
+    public boolean reset(String interfaceName, String storage, String key) {
+        KeyHandler<Object> kh = getKeyHandler(interfaceName, storage, key);
         try {
             kh.setValue(kh.getDefaultValue());
         } catch (ValidationException e) {
@@ -54,80 +64,87 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
         return true;
     }
 
-    public Object getDefault(int storageID, String key) {
-        KeyHandler<Object> kh = getKeyHandler(storageID, key);
+    public Object getDefault(String interfaceName, String storage, String key) {
+        KeyHandler<Object> kh = getKeyHandler(interfaceName, storage, key);
         return kh.getDefaultValue();
     }
 
-    private KeyHandler<Object> getKeyHandler(int storageID, String key) {
-        StorageHandler<?> storageHandler = StorageHandler.getStorageHandler(storageID);
+    private KeyHandler<Object> getKeyHandler(String interfaceName, String storage, String key) {
+        StorageHandler<?> storageHandler = StorageHandler.getStorageHandler(interfaceName, storage);
         if (storageHandler == null) return null;
         KeyHandler<Object> kh = storageHandler.getKeyHandler(key);
         return kh;
     }
 
-    @Override
-    public List<ConfigInterfaceAPIStorable> queryConfigInterfaces(APIQuery query) {
-        AdvancedConfigManager acm = AdvancedConfigManager.getInstance();
-        List<ConfigInterfaceAPIStorable> result = new ArrayList<ConfigInterfaceAPIStorable>();
+    // @Override
+    // public List<ConfigInterfaceAPIStorable> queryConfigInterfaces(APIQuery query) {
+    // AdvancedConfigManager acm = AdvancedConfigManager.getInstance();
+    // List<ConfigInterfaceAPIStorable> result = new ArrayList<ConfigInterfaceAPIStorable>();
+    //
+    // for (AdvancedConfigEntry ace : acm.list()) {
+    // if (!result.contains(new ConfigInterfaceAPIStorable(ace))) {
+    // result.add(new ConfigInterfaceAPIStorable(ace));
+    // } else {
+    // ConfigInterfaceAPIStorable cis = result.get(result.indexOf(new ConfigInterfaceAPIStorable(ace)));
+    // cis.getInfoMap().put("settingsCount", (Integer) cis.getInfoMap().get("settingsCount") + 1);
+    // }
+    // }
+    // return result;
+    // }
+    //
+    // @SuppressWarnings("rawtypes")
+    // @Override
+    // public List<ConfigEntryAPIStorable> queryConfigSettings(APIQuery query) {
+    // AdvancedConfigManager acm = AdvancedConfigManager.getInstance();
+    // List<ConfigEntryAPIStorable> result = new ArrayList<ConfigEntryAPIStorable>();
+    //
+    // // retrieve packageUUIDs from queryParams
+    // List<String> interfaceKeys = new ArrayList<String>();
+    // if (!query._getQueryParam("interfaceKeys", List.class, new ArrayList()).isEmpty()) {
+    // List uuidsFromQuery = query._getQueryParam("interfaceKeys", List.class, new ArrayList());
+    // for (Object o : uuidsFromQuery) {
+    // try {
+    // interfaceKeys.add((String) o);
+    // } catch (ClassCastException e) {
+    // continue;
+    // }
+    // }
+    // }
+    //
+    // for (AdvancedConfigEntry ace : acm.list()) {
+    // ConfigEntryAPIStorable ces = new ConfigEntryAPIStorable(ace);
+    // // if only certain interfaces selected, skip if interface not included
+    // if (!interfaceKeys.isEmpty()) {
+    // if (!interfaceKeys.contains(ces.getInterfaceKey().substring(ces.getInterfaceKey().lastIndexOf(".") + 1,
+    // ces.getInterfaceKey().length()))) {
+    // continue;
+    // }
+    // }
+    // KeyHandler<?> kh = ((AdvancedConfigInterfaceEntry) ace).getKeyHandler();
+    //
+    // QueryResponseMap infoMap = new QueryResponseMap();
+    // if (query.fieldRequested("value")) {
+    // infoMap.put("value", kh.getValue());
+    // }
+    // if (query.fieldRequested("defaultValue")) {
+    // infoMap.put("defaultValue", kh.getDefaultValue());
+    // }
+    // if (query.fieldRequested("dataType")) {
+    // infoMap.put("dataType", kh.getRawClass().getName());
+    // }
+    // if (query.fieldRequested("description")) {
+    // infoMap.put("description", ace.getDescription());
+    // }
+    //
+    // ces.setInfoMap(infoMap);
+    // result.add(ces);
+    // }
+    // return result;
+    // }
 
-        for (AdvancedConfigEntry ace : acm.list()) {
-            if (!result.contains(new ConfigInterfaceAPIStorable(ace))) {
-                result.add(new ConfigInterfaceAPIStorable(ace));
-            } else {
-                ConfigInterfaceAPIStorable cis = result.get(result.indexOf(new ConfigInterfaceAPIStorable(ace)));
-                cis.getInfoMap().put("settingsCount", (Integer) cis.getInfoMap().get("settingsCount") + 1);
-            }
-        }
-        return result;
+    @Override
+    public ArrayList<AdvancedConfigAPIEntry> list() {
+        return list(null, false, false, false);
     }
 
-    @SuppressWarnings("rawtypes")
-    @Override
-    public List<ConfigEntryAPIStorable> queryConfigSettings(APIQuery query) {
-        AdvancedConfigManager acm = AdvancedConfigManager.getInstance();
-        List<ConfigEntryAPIStorable> result = new ArrayList<ConfigEntryAPIStorable>();
-
-        // retrieve packageUUIDs from queryParams
-        List<String> interfaceKeys = new ArrayList<String>();
-        if (!query._getQueryParam("interfaceKeys", List.class, new ArrayList()).isEmpty()) {
-            List uuidsFromQuery = query._getQueryParam("interfaceKeys", List.class, new ArrayList());
-            for (Object o : uuidsFromQuery) {
-                try {
-                    interfaceKeys.add((String) o);
-                } catch (ClassCastException e) {
-                    continue;
-                }
-            }
-        }
-
-        for (AdvancedConfigEntry ace : acm.list()) {
-            ConfigEntryAPIStorable ces = new ConfigEntryAPIStorable(ace);
-            // if only certain interfaces selected, skip if interface not included
-            if (!interfaceKeys.isEmpty()) {
-                if (!interfaceKeys.contains(ces.getInterfaceKey().substring(ces.getInterfaceKey().lastIndexOf(".") + 1, ces.getInterfaceKey().length()))) {
-                    continue;
-                }
-            }
-            KeyHandler<?> kh = ((AdvancedConfigInterfaceEntry) ace).getKeyHandler();
-
-            QueryResponseMap infoMap = new QueryResponseMap();
-            if (query.fieldRequested("value")) {
-                infoMap.put("value", kh.getValue());
-            }
-            if (query.fieldRequested("defaultValue")) {
-                infoMap.put("defaultValue", kh.getDefaultValue());
-            }
-            if (query.fieldRequested("dataType")) {
-                infoMap.put("dataType", kh.getRawClass().getName());
-            }
-            if (query.fieldRequested("description")) {
-                infoMap.put("description", ace.getDescription());
-            }
-
-            ces.setInfoMap(infoMap);
-            result.add(ces);
-        }
-        return result;
-    }
 }

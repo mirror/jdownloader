@@ -85,7 +85,7 @@ public class AdvancedConfigManager {
                     throw new RuntimeException("Getter for " + m.getSetter().getMethod() + " missing");
                 } else {
                     synchronized (configInterfaces) {
-                        configInterfaces.add(new AdvancedConfigInterfaceEntry(cf, m));
+                        configInterfaces.add(new AdvancedConfigEntry(cf, m));
                     }
                     map.put(m, true);
                 }
