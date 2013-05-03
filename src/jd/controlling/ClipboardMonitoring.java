@@ -439,7 +439,7 @@ public class ClipboardMonitoring {
                     if (!path.matches("^/.+")) continue;
                 }
                 if (sb.length() > 0) sb.append("\r\n");
-                sb.append("file://" + f.getPath());
+                sb.append("file://" + path);
             }
             if (sb.length() == 0) return null;
             return sb.toString();

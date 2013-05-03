@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -40,63 +41,81 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "nowdownload.co", "nowdownload.ch" }, urls = { "http://(www\\.)?nowdownload\\.eu/dl(\\d+)?/[a-z0-9]+", "http://(www\\.)?nowdownload\\.co/dl(\\d+)?/[a-z0-9]+", "http://(www\\.)?nowdownload\\.ch/dl(\\d+)?/[a-z0-9]+" }, flags = { 2, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch)/dl(\\d+)?/[a-z0-9]+" }, flags = { 2 })
 public class NowDownloadEu extends PluginForHost {
 
     public NowDownloadEu(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium(MAINPAGE.string + "/premium.php");
+    }
 
-        /*
-         * == Fix original link ==
-         * 
-         * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before proceed, to
-         * select one available.
-         */
-
-        DOMAIN = validateHost();
-
-        if (DOMAIN == null) {
-            AVAILABLE_PRECHECK = false;
-            DOMAIN = "eu";
+    public boolean rewriteHost(DownloadLink link) {
+        if ("nowdownload.co".equals(link.getHost()) || "nowdownload.ch".equals(link.getHost())) {
+            link.setHost("nowdownload.eu");
+            return true;
         }
-
-        MAINPAGE = "http://www.nowdownload." + DOMAIN;
-
-        this.enablePremium(MAINPAGE + "/premium.php");
+        return false;
     }
 
     @Override
     public String getAGBLink() {
-        return MAINPAGE + "/terms.php";
+        return MAINPAGE.string + "/terms.php";
     }
 
-    private String              MAINPAGE                = "http://www.nowdownload.eu";
-    private String              DOMAIN                  = "eu";
-    private Boolean             AVAILABLE_PRECHECK      = true;
-    private static final String ua                      = RandomUserAgent.generate();
-    private static Object       LOCK                    = new Object();
-    private static final String TEMPUNAVAILABLE         = ">The file is being transfered\\. Please wait";
-    private static final String TEMPUNAVAILABLEUSERTEXT = "Host says: 'The file is being transfered. Please wait!'";
+    public static class StringContainer {
+        public String string = null;
+
+        public StringContainer(String string) {
+            this.string = string;
+        }
+
+        @Override
+        public String toString() {
+            return string;
+        }
+    }
+
+    private StringContainer        MAINPAGE                = new StringContainer("http://www.nowdownload.eu");
+    private StringContainer        DOMAIN                  = new StringContainer("eu");
+    private AtomicBoolean          AVAILABLE_PRECHECK      = new AtomicBoolean(false);
+    private static StringContainer ua                      = new StringContainer(RandomUserAgent.generate());
+    private static Object          LOCK                    = new Object();
+    private static final String    TEMPUNAVAILABLE         = ">The file is being transfered\\. Please wait";
+    private static final String    TEMPUNAVAILABLEUSERTEXT = "Host says: 'The file is being transfered. Please wait!'";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("http://www.nowdownload." + DOMAIN + "/dl/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
+    private void correctCurrentDomain() {
+        if (AVAILABLE_PRECHECK.get() == false) {
+            synchronized (LOCK) {
+                if (AVAILABLE_PRECHECK.get() == false) {
+                    /*
+                     * == Fix original link ==
+                     * 
+                     * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before proceed, to select
+                     * one available.
+                     */
+
+                    String newDomain = validateHost();
+                    if (newDomain != null) {
+                        DOMAIN.string = newDomain;
+                    }
+                    MAINPAGE.string = "http://www.nowdownload." + newDomain;
+                    this.enablePremium(MAINPAGE.toString() + "/premium.php");
+                    AVAILABLE_PRECHECK.set(true);
+                }
+            }
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (!AVAILABLE_PRECHECK) {
-            DOMAIN = validateHost();
-            if (DOMAIN == null) {
-                link.getLinkStatus().setStatusText("All servers seems to be offline...");
-                return AvailableStatus.FALSE;
-            }
-            AVAILABLE_PRECHECK = true;
-            MAINPAGE = "http://www.nowdownload." + DOMAIN;
-            this.enablePremium(MAINPAGE + "/premium.php");
-        }
+        correctCurrentDomain();
         this.setBrowserExclusive();
         correctDownloadLink(link);
-        br.getHeaders().put("User-Agent", ua);
+        br.getHeaders().put("User-Agent", ua.string);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">This file does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -131,9 +150,9 @@ public class NowDownloadEu extends PluginForHost {
             if (waittime != null) wait = Integer.parseInt(waittime);
             Browser br2 = br.cloneBrowser();
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br2.getPage(MAINPAGE + tokenPage);
+            br2.getPage(MAINPAGE.string + tokenPage);
             sleep(wait * 1001l, downloadLink);
-            br.getPage(MAINPAGE + continuePage);
+            br.getPage(MAINPAGE.string + continuePage);
             dllink = getDllink();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String filename = new Regex(dllink, ".+/[^_]+_(.+)").getMatch(0);
@@ -159,7 +178,7 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     private String validateHost() {
-        final String[] domains = { "co", "ch", "eu" };
+        final String[] domains = { "eu", "co", "ch", };
 
         for (int i = 0; i < domains.length; i++) {
             String domain = domains[i];
@@ -209,13 +228,14 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     /**
-     * Dev note: Never buy premium from them, as freeuser you have no limits, as premium neither and you can't even download the original
-     * videos as premiumuser->Senseless!!
+     * Dev note: Never buy premium from them, as freeuser you have no limits, as premium neither and you can't even download the original videos as
+     * premiumuser->Senseless!!
      */
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
+                correctCurrentDomain();
                 // Load cookies
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
@@ -227,17 +247,17 @@ public class NowDownloadEu extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
+                            this.br.setCookie(MAINPAGE.string, key, value);
                         }
                         return;
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage(MAINPAGE + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                br.postPage(MAINPAGE.string + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (br.getURL().contains("login.php?e=1") || !br.getURL().contains("panel.php?logged=1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
+                final Cookies add = this.br.getCookies(MAINPAGE.string);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }

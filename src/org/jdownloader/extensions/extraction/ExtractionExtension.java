@@ -40,6 +40,7 @@ import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -640,13 +641,15 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     @Override
     public ExtensionConfigPanel<ExtractionExtension> getConfigPanel() {
-        synchronized (this) {
-            if (configPanel == null) {
-                configPanel = new ExtractionConfigPanel(this);
+        if (configPanel != null) return configPanel;
+        return new EDTHelper<ExtractionConfigPanel>() {
+            @Override
+            public ExtractionConfigPanel edtRun() {
+                if (configPanel != null) return configPanel;
+                configPanel = new ExtractionConfigPanel(ExtractionExtension.this);
+                return configPanel;
             }
-            return configPanel;
-        }
-
+        }.getReturnValue();
     }
 
     public ExtractionQueue getJobQueue() {
