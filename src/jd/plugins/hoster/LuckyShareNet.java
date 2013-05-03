@@ -228,7 +228,7 @@ public class LuckyShareNet extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private HashMap<String, String> login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -245,7 +245,7 @@ public class LuckyShareNet extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(MAINPAGE, key, value);
                         }
-                        return;
+                        return cookies;
                     }
                 }
                 br.setFollowRedirects(false);
@@ -264,6 +264,7 @@ public class LuckyShareNet extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                return cookies;
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -302,12 +303,19 @@ public class LuckyShareNet extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         if (oldStyle() && FAILED409) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR); }
-        login(account, false);
+        HashMap<String, String> cookies = login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            synchronized (LOCK) {
+                final Object ret = account.getProperty("cookies", null);
+                if (cookies == ret || ret == null) {
+                    account.setProperty("cookies", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
