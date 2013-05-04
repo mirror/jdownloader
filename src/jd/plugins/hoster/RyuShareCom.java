@@ -187,6 +187,7 @@ public class RyuShareCom extends PluginForHost {
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            boolean skipCaptcha = true;
             for (int i = 0; i <= 3; i++) {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
@@ -259,14 +260,14 @@ public class RyuShareCom extends PluginForHost {
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
-                    logger.info("Detected captcha method \"keycaptca\"");
-                    PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
-                    final String result = kc.showDialog(downloadLink.getDownloadURL());
-                    if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
-                    dlForm.put("capcode", result);
-                    /** wait time is often skippable for reCaptcha handling */
-                    skipWaittime = false;
+                    if (!skipCaptcha) {
+                        logger.info("Detected captcha method \"keycaptca\"");
+                        PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                        jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
+                        final String result = kc.showDialog(downloadLink.getDownloadURL());
+                        if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
+                        dlForm.put("capcode", result);
+                    }
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
@@ -277,6 +278,7 @@ public class RyuShareCom extends PluginForHost {
                 dllink = getDllink();
                 if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
+                    skipCaptcha = false;
                     continue;
                 } else if (dllink == null && !br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
