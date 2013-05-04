@@ -1,5 +1,7 @@
 RestartController_confirmToExit_=Wirklich beenden?
 RestartController_confirmToExit_msg=Möchtest du wirklich JDownloader beenden?
+TranslationProxyDialogAuthRequired=JDownloader kann keine Verbindung mit %s1 herstellen! Dein Proxy Server erfordert eine Authentifikation.\nBitte überprüfe deine Anmeldedaten...
+TranslationProxyDialogNoConnection=JDownloader kann keine Verbindung mit %s1 herstellen! Bitte überprüfe deine Verbindungseinstellungen...
 close_jd=Fehlende Rechte um %s1 zu schreiben.\nVersuche alle momentan laufende JDownloader & Java-Prozesse zu beenden und versuche es anschließend erneut!\nBitte kontaktiere unseren Support, falls dieses Problem nach einen Neustart weiterhin besteht.
 confirmdialog_new_update_available_answer_later=Später
 confirmdialog_new_update_available_answer_later_install=Später

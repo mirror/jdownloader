@@ -36,6 +36,7 @@ file_exists_not=Datei fehlt
 filename=Dateiname
 files=Dateien
 hoster=Hoster
+linkname=Archiv(e)
 local=Dateistatus
 menu_tools_extract_files=Dateien entpacken
 name=Archiv Entpacker
