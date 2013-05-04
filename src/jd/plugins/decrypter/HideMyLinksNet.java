@@ -27,8 +27,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hidemylinks.net" }, urls = { "https?://(www\\.)?hidemylinks\\.net/(p|d)/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deleteme" }, urls = { "REGEXNOTUSEDHASHDASHDASHDHAahahahahdahsdyayah" }, flags = { 0 })
 public class HideMyLinksNet extends PluginForDecrypt {
+
+    // TODO: DELETE WHEN JD2 goes stable.
 
     public HideMyLinksNet(PluginWrapper wrapper) {
         super(wrapper);

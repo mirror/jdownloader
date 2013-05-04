@@ -98,7 +98,8 @@ public class SflnkgNt extends PluginForDecrypt {
 
     public class GeneralSafelinkingHandling {
         /**
-         * A class to handle sites similar to safelinking.net ->Google "Secure your links with a captcha, a password and much more" to find such sites
+         * A class to handle sites similar to safelinking.net ->Google "Secure your links with a captcha, a password and much more" to find
+         * such sites
          */
 
         public GeneralSafelinkingHandling(final Browser br, final CryptedLink param, final String host) {
@@ -127,7 +128,7 @@ public class SflnkgNt extends PluginForDecrypt {
 
         public void startUp() {
             try {
-                /* not available in old stable */
+                /* not available in old versions (before jd2) */
                 br.setAllowedResponseCodes(new int[] { 500 });
             } catch (Throwable e) {
             }

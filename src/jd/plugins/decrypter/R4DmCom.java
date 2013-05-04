@@ -27,8 +27,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "r4dm.com" }, urls = { "https?://(www\\.)?r4dm\\.com/(p|d)/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deleteme" }, urls = { "REGEXNOTUSED2314jsdfjaSFASDFAUSDFASNF" }, flags = { 0 })
 public class R4DmCom extends PluginForDecrypt {
+
+    // TODO: DELETE WHEN JD2 goes stable.
 
     public R4DmCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +56,7 @@ public class R4DmCom extends PluginForDecrypt {
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+        return true;
     }
 
 }

@@ -27,8 +27,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xsharez.com" }, urls = { "https?://(www\\.)?xsharez\\.com/(p|d)/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deleteme" }, urls = { "REGEXNOTUSED-ASDFJASnafhaysdfabFASDFYADSFnasdfhasdfyash" }, flags = { 0 })
 public class XSharezCom extends PluginForDecrypt {
+
+    // TODO: DELETE WHEN JD2 goes stable.
 
     public XSharezCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +56,7 @@ public class XSharezCom extends PluginForDecrypt {
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+        return true;
     }
 
 }

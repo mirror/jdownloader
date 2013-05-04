@@ -570,7 +570,6 @@ public class FileSegaCom extends PluginForHost {
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
                 if (!new Regex(correctedBR, ">Account: <font color=\"#ffffff\"><b>(Gratuito|Premium)</b>|>Scadenza Premium:<").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                // not all accounts expire or have displayed expire time
                 if (!br.containsHTML("(>Scadenza Premium:<|>Account: <font color=\"#ffffff\"><b>Premium</b>)")) {
                     account.setProperty("nopremium", true);
                 } else {

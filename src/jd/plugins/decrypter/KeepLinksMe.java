@@ -83,7 +83,7 @@ public class KeepLinksMe extends PluginForDecrypt {
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+        return true;
     }
 
     private void handleCaptcha(final String parameter, final CryptedLink param) throws Exception {
