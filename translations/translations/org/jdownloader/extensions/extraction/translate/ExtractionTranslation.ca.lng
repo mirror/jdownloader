@@ -1,6 +1,6 @@
 ValidateArchiveAction_ValidateArchiveAction=Validació %s1
-ValidateArchiveAction_ValidateArchiveAction_multi=Validar arxius
-ValidateArchiveAction_ValidateArchiveAction_object_=Validar arxiu(s)
+ValidateArchiveAction_ValidateArchiveAction_multi=Valida els fitxers
+ValidateArchiveAction_ValidateArchiveAction_object_=Valida fitxer(s)
 ValidateArchiveAction_actionPerformed_=L'arxiu conté %s1 part(s) i està complet
 ValidateArchiveAction_actionPerformed_bad=L'arxiu conté %s1 part(s) i´está incomplet
 archivename=Nom de l'arxiu
@@ -75,7 +75,7 @@ settings_extract_to_archive_folder=Extreu a la carpeta següent
 settings_extract_to_path=Extreu a
 settings_extractto=Carpeta d'extracció
 settings_multi=Conifguracions especials (Només per rar,7z and zip. No per arxius partits)
-settings_multi_use_original_file_date=Utilitzar la data de l'arxiu original si és possible
+settings_multi_use_original_file_date=Utilitza la data del fitxer original si és possible
 settings_overwrite=Voleu sobrescriure els fitxers existents?
 settings_passwordlist=Fitxer de Contrassenyes (una per línia)
 settings_passwords=Llista de contrasenyes

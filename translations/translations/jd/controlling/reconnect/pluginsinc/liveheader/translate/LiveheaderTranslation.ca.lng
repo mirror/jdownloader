@@ -1,6 +1,6 @@
 AutoDetectAction_run_failed=JDownloader ha pogut trobar un script de reconnexió LiveHeader funcional. Si us plau, assegureu-vos d'haver ingressat les dades correctament i de tenir una connexió amb IP dinàmica.
 DataCompareDialog_DataCompareDialog_=Compara la informació del router
-DataCompareDialog_layoutDialogContent__desc=Si us plau, comprova la informació següent i intenta omplir els camps buits tan acuradament com sigui possible.
+DataCompareDialog_layoutDialogContent__desc=Si us plau, comproveu la informació següent i intenteu omplir els camps buits tan acuradament com sigui possible.
 DataCompareDialog_layoutDialogContent_firmware=Firmware/Versió
 DataCompareDialog_layoutDialogContent_firmware_help=Entra la versió del Firmware del teu router... deixa-ho en blanc si la desconeixes
 DataCompareDialog_layoutDialogContent_ip=IP o nom de l'allotjament
