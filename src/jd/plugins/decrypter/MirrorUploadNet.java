@@ -43,6 +43,11 @@ public class MirrorUploadNet extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
 
+        if (br.containsHTML("</span>This file has been deleted by its owner or by our team\\.</div>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+
         String fpName = br.getRegex("<title>MirrorUpload\\.net \\- Download \\- ([^<>\"]*?)</title>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<b>File : </b>([^<>\"]*?)<br />").getMatch(0);
         br.getPage("http://www.mirrorupload.net/status.html?uid=" + new Regex(parameter, "file/([A-Z0-9]{8})").getMatch(0));

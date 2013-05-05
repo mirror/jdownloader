@@ -129,7 +129,7 @@ public class FileSwapCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex("Storage Used:.+>([\\d\\.]+ (KB|MB|GB|TB))").getMatch(0);
+        String space = br.getRegex("Storage Used:.+([\\d\\.]+ (KB|MB|GB|TB))").getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " GiB");
         account.setValid(true);
         ai.setUnlimitedTraffic();
@@ -181,7 +181,7 @@ public class FileSwapCom extends PluginForHost {
                     br.postPage(HOST.replace("http://", "https://") + "/account/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=&rememberme=1");
                 }
                 if (!br.getRegex("(Invalid username/password)").matches() && !br.getURL().matches(".+fileswap\\.com/index\\.php")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!br.getRegex("Account Type:.+<span>(Premium)</span>").matches()) {
+                if (!br.getRegex("<span>Account Type:</span>.+>Premium</a>").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);
@@ -223,6 +223,7 @@ public class FileSwapCom extends PluginForHost {
                     }
                 }
             }
+            dllink = dllink.replace("&amp;", "&");
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
             if (dl.getConnection().getContentType().contains("html")) {
