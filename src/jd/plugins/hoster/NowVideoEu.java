@@ -90,7 +90,7 @@ public class NowVideoEu extends PluginForHost {
                     if (CCtld != null) {
                         ccTLD.string = CCtld;
                     }
-                    MAINPAGE.string = "nowdownload." + ccTLD;
+                    MAINPAGE.string = "nowdownload." + CCtld;
                     this.enablePremium("http://www." + MAINPAGE.toString() + "/premium.php");
                     AVAILABLE_PRECHECK.set(true);
                 }
@@ -102,16 +102,16 @@ public class NowVideoEu extends PluginForHost {
         final String[] ccTLDs = { "eu", "co", "ch" };
 
         for (int i = 0; i < ccTLDs.length; i++) {
-            String ccTLD = ccTLDs[i];
+            String CCtld = ccTLDs[i];
             try {
                 Browser br = new Browser();
                 workAroundTimeOut(br);
                 br.setCookiesExclusive(true);
-                br.getPage("http://www.nowvideo." + ccTLD);
+                br.getPage("http://www.nowvideo." + CCtld);
                 br = null;
-                return ccTLD;
+                return CCtld;
             } catch (Exception e) {
-                logger.warning("nowvideo." + ccTLD + " seems to be offline...");
+                logger.warning("nowvideo." + CCtld + " seems to be offline...");
             }
         }
         return null;
