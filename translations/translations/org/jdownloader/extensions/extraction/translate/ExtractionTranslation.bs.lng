@@ -36,6 +36,7 @@ file_exists_not=Dokument ne postoji
 filename=Ime dokumenta
 files=dokumenti
 hoster=Domaćin
+linkname=Arhiva(e)
 local=Status Dokumenta
 menu_tools_extract_files=Ekstraktuj Dokumente
 name=Ekstraktor Arhive
