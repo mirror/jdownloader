@@ -59,6 +59,7 @@ public class TurtleShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("Logged download usage expires after 3 hours")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 3 * 60 * 60 * 1001l); }
         if (br.containsHTML("<div class=\"download_btn\\-wrap\"><a href=\"/user/register/\" class=\"download_button slow\"")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
