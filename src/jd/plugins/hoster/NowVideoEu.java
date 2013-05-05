@@ -63,14 +63,6 @@ public class NowVideoEu extends PluginForHost {
         }
     }
 
-    public boolean rewriteHost(DownloadLink link) {
-        if ("nowvideo.ch".equals(link.getHost())) {
-            link.setHost("nowvideo.co");
-            return true;
-        }
-        return false;
-    }
-
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("http://www." + MAINPAGE.string + "/player.php?v=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
@@ -90,18 +82,16 @@ public class NowVideoEu extends PluginForHost {
             synchronized (LOCK) {
                 if (AVAILABLE_PRECHECK.get() == false) {
                     /*
-                     * == Fix original link ==
-                     * 
-                     * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before proceed, to select
-                     * one available.
+                     * For example .eu domain are blocked from some Italian ISP, and .co from others, so need to test all domains before
+                     * proceeding.
                      */
 
-                    String newDomain = validateHost();
-                    if (newDomain != null) {
-                        DOMAIN.string = newDomain;
+                    String CCtld = validateHost();
+                    if (CCtld != null) {
+                        ccTLD.string = CCtld;
                     }
-                    MAINPAGE.string = "http://www.nowdownload." + newDomain;
-                    this.enablePremium(MAINPAGE.toString() + "/premium.php");
+                    MAINPAGE.string = "nowdownload." + ccTLD;
+                    this.enablePremium("http://www." + MAINPAGE.toString() + "/premium.php");
                     AVAILABLE_PRECHECK.set(true);
                 }
             }
@@ -109,19 +99,19 @@ public class NowVideoEu extends PluginForHost {
     }
 
     private String validateHost() {
-        final String[] domains = { "eu", "co", "ch" };
+        final String[] ccTLDs = { "eu", "co", "ch" };
 
-        for (int i = 0; i < domains.length; i++) {
-            String domain = domains[i];
+        for (int i = 0; i < ccTLDs.length; i++) {
+            String ccTLD = ccTLDs[i];
             try {
                 Browser br = new Browser();
                 workAroundTimeOut(br);
                 br.setCookiesExclusive(true);
-                br.getPage("http://nowvideo." + domain);
+                br.getPage("http://www.nowvideo." + ccTLD);
                 br = null;
-                return domain;
+                return ccTLD;
             } catch (Exception e) {
-                logger.warning("NowVideo." + domain + " seems to be offline...");
+                logger.warning("nowvideo." + ccTLD + " seems to be offline...");
             }
         }
         return null;
@@ -129,7 +119,7 @@ public class NowVideoEu extends PluginForHost {
 
     private static Object       LOCK               = new Object();
     private StringContainer     MAINPAGE           = new StringContainer("nowvideo.eu");
-    private StringContainer     DOMAIN             = new StringContainer("eu");
+    private StringContainer     ccTLD              = new StringContainer("eu");
     private static final String ISBEINGCONVERTED   = ">The file is being converted.";
     private AtomicBoolean       AVAILABLE_PRECHECK = new AtomicBoolean(false);
 
@@ -179,8 +169,8 @@ public class NowVideoEu extends PluginForHost {
     }
 
     /**
-     * Dev note: Never buy premium from them, as freeuser you have no limits, as premium neither and you can't even download the original videos as
-     * premiumuser->Senseless!!
+     * Dev note: Never buy premium from them, as freeuser you have no limits, as premium neither and you can't even download the original
+     * videos as premiumuser->Senseless!!
      */
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
