@@ -567,8 +567,18 @@ public class LetitBitNet extends PluginForHost {
         HashMap<String, String> ret = new HashMap<String, String>();
         String key = null;
         for (final InputField ipf : encForm.getInputFields()) {
-            key = ipf.get("id");
-            if (key == null) key = ipf.get("ID");
+            try {
+                key = ipf.get("id");
+            } catch (Throwable e) {
+                key = ipf.getProperty("id", null) != null ? ipf.getProperty("id", null).toString() : null;
+            }
+            if (key == null) {
+                try {
+                    key = ipf.get("ID");
+                } catch (Throwable e) {
+                    key = ipf.getProperty("ID", null) != null ? ipf.getProperty("ID", null).toString() : null;
+                }
+            }
             if (key == null) continue;
             ret.put(key, ipf.getValue());
         }
@@ -871,4 +881,5 @@ public class LetitBitNet extends PluginForHost {
         }
         return false;
     }
+
 }
