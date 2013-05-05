@@ -1,7 +1,7 @@
 action_tooltip=Herunterfahren des Systems aktivieren, wenn alle Downloads fertig sind
 addons_jdshutdown_statusmessage_disabled=Das System wird nach dem Download NICHT heruntergefahren.
 addons_jdshutdown_statusmessage_enabled=Das System wird nach dem Download heruntergefahren.
-config_active_by_default=Lass Herunterfahren an
+config_active_by_default=Herunterfahren aktiviert lassen
 config_toolbarbutton=Toolbar Schaltfläche sichtbar
 gui_config_jdshutdown_close=JD schließen
 gui_config_jdshutdown_forceshutdown=Herunterfahren erzwingen (Nur einige OS)
