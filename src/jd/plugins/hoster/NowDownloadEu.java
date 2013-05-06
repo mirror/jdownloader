@@ -75,9 +75,9 @@ public class NowDownloadEu extends PluginForHost {
         }
     }
 
-    private StringContainer        MAINPAGE                = new StringContainer("http://www.nowdownload.eu");
-    private StringContainer        DOMAIN                  = new StringContainer("eu");
-    private AtomicBoolean          AVAILABLE_PRECHECK      = new AtomicBoolean(false);
+    private static StringContainer MAINPAGE                = new StringContainer("http://www.nowdownload.eu");
+    private static StringContainer DOMAIN                  = new StringContainer("eu");
+    private static AtomicBoolean   AVAILABLE_PRECHECK      = new AtomicBoolean(false);
     private static StringContainer ua                      = new StringContainer(RandomUserAgent.generate());
     private static Object          LOCK                    = new Object();
     private static final String    TEMPUNAVAILABLE         = ">The file is being transfered\\. Please wait";
