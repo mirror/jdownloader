@@ -206,7 +206,7 @@ public class Keep2ShareCc extends PluginForHost {
                     postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(code);
                 }
                 br.postPage("http://keep2share.cc/login.html", postData);
-                if (!br.containsHTML("class=\"premium\">Premium:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!br.containsHTML("a href=\"/premium.html\" class=\"premium\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -233,7 +233,8 @@ public class Keep2ShareCc extends PluginForHost {
             return ai;
         }
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("class=\"premium\">Premium:[\t\n\r ]+(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
+        String expire = br.getRegex("class=\"premium\">Premium:[\t\n\r ]+(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
+        if (expire == null) expire = br.getRegex("Premium expires:\\s*?<b>(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
         if (expire == null) {
             if (br.containsHTML(">Premium:[\t\n\r ]+LifeTime")) {
                 ai.setStatus("Premium Lifetime User");
