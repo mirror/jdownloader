@@ -42,12 +42,12 @@ public class NowVideoEu extends PluginForHost {
 
     public NowVideoEu(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www." + MAINPAGE.string + "/premium.php");
+        this.enablePremium(MAINPAGE.string + "/premium.php");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www." + MAINPAGE.string + "/terms.php";
+        return MAINPAGE.string + "/terms.php";
     }
 
     public static class StringContainer {
@@ -72,7 +72,7 @@ public class NowVideoEu extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www." + MAINPAGE.string + "/player.php?v=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        link.setUrlDownload(MAINPAGE.string + "/player.php?v=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
     private static void workAroundTimeOut(final Browser br) {
@@ -97,8 +97,8 @@ public class NowVideoEu extends PluginForHost {
                     if (CCtld != null) {
                         ccTLD.string = CCtld;
                     }
-                    MAINPAGE.string = "nowdownload." + CCtld;
-                    this.enablePremium("http://www." + MAINPAGE.toString() + "/premium.php");
+                    MAINPAGE.string = "http://www.nowvideo." + CCtld;
+                    this.enablePremium(MAINPAGE.toString() + "/premium.php");
                     AVAILABLE_PRECHECK.set(true);
                 }
             }
@@ -125,7 +125,7 @@ public class NowVideoEu extends PluginForHost {
     }
 
     private static Object          LOCK               = new Object();
-    private static StringContainer MAINPAGE           = new StringContainer("nowvideo.eu");
+    private static StringContainer MAINPAGE           = new StringContainer("http://www.nowvideo.eu");
     private static StringContainer ccTLD              = new StringContainer("eu");
     private static final String    ISBEINGCONVERTED   = ">The file is being converted.";
     private static AtomicBoolean   AVAILABLE_PRECHECK = new AtomicBoolean(false);
@@ -155,7 +155,7 @@ public class NowVideoEu extends PluginForHost {
         if (br.containsHTML(ISBEINGCONVERTED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is being converted!", 2 * 60 * 60 * 1000l);
         final String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*?)\"").getMatch(0);
         if (fKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://www." + MAINPAGE.string + "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey));
+        br.getPage(MAINPAGE.string + "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey));
         String dllink = br.getRegex("url=(http://[^<>\"]*?\\.flv)\\&title").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
@@ -195,17 +195,17 @@ public class NowVideoEu extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie("http://" + MAINPAGE.string, key, value);
+                            this.br.setCookie(MAINPAGE.string, key, value);
                         }
                         return;
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://www." + MAINPAGE.string + "/login.php?return=", "register=Login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                br.postPage(MAINPAGE.string + "/login.php?return=", "register=Login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (br.getURL().contains("login.php?e=1") || !br.getURL().contains("panel.php?login=1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies("http://" + MAINPAGE.string);
+                final Cookies add = this.br.getCookies(MAINPAGE.string);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
