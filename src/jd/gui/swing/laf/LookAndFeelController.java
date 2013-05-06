@@ -68,10 +68,12 @@ public class LookAndFeelController implements LAFManagerInterface {
         // set WM Class explicitly
         try {
             // patch by Vampire
+            Toolkit toolkit = Toolkit.getDefaultToolkit();
             final Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
             awtAppClassName.setAccessible(true);
-            awtAppClassName.set(null, "JDownloader");
+            awtAppClassName.set(toolkit, "JDownloader");
         } catch (final Exception e) {
+            e.printStackTrace();
             // it seems we are not in X, nothing to do for now
         }
     }

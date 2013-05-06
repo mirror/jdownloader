@@ -688,7 +688,14 @@ public class JDGui extends SwingGui {
         new EDTHelper<Object>() {
             @Override
             public Object edtRun() {
-                mainFrame.setIconImage(NewTheme.I().getImage("logo/jd_logo_64_64", -1));
+                Image image = NewTheme.I().getImage("logo/jd_logo_64_64", -1);
+                if (Application.getJavaVersion() >= 16000000) {
+                    final java.util.List<Image> list = new ArrayList<Image>();
+                    list.add(image);
+                    mainFrame.setIconImages(list);
+                } else {
+                    mainFrame.setIconImage(image);
+                }
                 return null;
             }
         }.start();
