@@ -61,9 +61,7 @@ public class DhSt extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("<form style=\"margin\\-top: \\-27px; margin\\-bottom: \\-2px;\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.d\\-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+\\?key=\\d+)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(http://[a-z0-9]+\\.d\\-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]/[^<>\"/])\\'").getMatch(0);
+        String dllink = getDllink();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -71,6 +69,13 @@ public class DhSt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getDllink() {
+        String dllink = br.getRegex("<form style=\"margin\\-top: \\-27px; margin\\-bottom: \\-2px;\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.d\\-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+\\?key=\\d+)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("(\"|')(http://[a-z0-9]+\\.d\\-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+/[^<>\"/]+)(\"|')").getMatch(1);
+        return dllink;
     }
 
     @Override
