@@ -124,11 +124,11 @@ public class NowVideoEu extends PluginForHost {
         return null;
     }
 
-    private static Object       LOCK               = new Object();
-    private StringContainer     MAINPAGE           = new StringContainer("nowvideo.eu");
-    private StringContainer     ccTLD              = new StringContainer("eu");
-    private static final String ISBEINGCONVERTED   = ">The file is being converted.";
-    private AtomicBoolean       AVAILABLE_PRECHECK = new AtomicBoolean(false);
+    private static Object        LOCK               = new Object();
+    private StringContainer      MAINPAGE           = new StringContainer("nowvideo.eu");
+    private StringContainer      ccTLD              = new StringContainer("eu");
+    private static final String  ISBEINGCONVERTED   = ">The file is being converted.";
+    private static AtomicBoolean AVAILABLE_PRECHECK = new AtomicBoolean(false);
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
