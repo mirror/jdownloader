@@ -131,7 +131,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         FAILED
     }
 
-    private final LinkedList<SingleDownloadController>                      downloadControllers    = new LinkedList<SingleDownloadController>();
+    private final ArrayList<SingleDownloadController>                       downloadControllers    = new ArrayList<SingleDownloadController>();
     private final LinkedHashSet<DownloadLink>                               forcedLinks            = new LinkedHashSet<DownloadLink>();
 
     private final HashMap<String, java.util.List<SingleDownloadController>> activeDownloadsbyHost  = new HashMap<String, java.util.List<SingleDownloadController>>();
@@ -1150,7 +1150,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     synchronized (DownloadWatchDog.this.downloadControllers) {
                         if (DownloadWatchDog.this.downloadControllers.size() > 0) {
                             /* use first running download */
-                            entry = DownloadWatchDog.this.downloadControllers.getFirst().getDownloadLink();
+                            entry = DownloadWatchDog.this.downloadControllers.get(0).getDownloadLink();
                         } else {
                             /*
                              * no running download available, set stopmark to none
@@ -1286,7 +1286,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                             synchronized (fp) {
                                                 for (DownloadLink fpLink : fp.getChildren()) {
                                                     if (fpLink.isSkipped()) skippedLinksCounterTmp++;
-                                                    if (fpLink.getDefaultPlugin() == null || !fpLink.isEnabled() || fpLink.isSkipped() || (fpLink.getAvailableStatus() == AvailableStatus.FALSE) || fpLink.getLinkStatus().isFinished() || fpLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE)) continue;
+                                                    if (fpLink.getDefaultPlugin() == null) continue;
+                                                    if (!fpLink.isEnabled()) continue;
+                                                    if (fpLink.isSkipped()) continue;
+                                                    if (fpLink.getAvailableStatus() == AvailableStatus.FALSE) continue;
+                                                    if (fpLink.getLinkStatus().isPluginActive() == false) {
+                                                        if (fpLink.getLinkStatus().isFinished()) continue;
+                                                        if (fpLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE)) continue;
+                                                    }
                                                     long prio = fpLink.getPriority();
                                                     java.util.List<DownloadLink> list = optimizedList.get(prio);
                                                     if (list == null) {
@@ -1426,7 +1433,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     int round = 0;
                                     long currentWatchDogLoop = WATCHDOGWAITLOOP.get();
                                     while (DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
-                                        if (++round == 5 || links.size() == 0 || currentWatchDogLoop != WATCHDOGWAITLOOP.get()) break;
+                                        if (++round == 5 || (links.size() == 0 && DownloadWatchDog.this.getActiveDownloads() == 0) || currentWatchDogLoop != WATCHDOGWAITLOOP.get()) break;
                                         synchronized (WATCHDOGWAITLOOP) {
                                             WATCHDOGWAITLOOP.wait(1000);
                                         }
