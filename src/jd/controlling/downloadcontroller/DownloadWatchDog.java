@@ -1433,9 +1433,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     int round = 0;
                                     long currentWatchDogLoop = WATCHDOGWAITLOOP.get();
                                     while (DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
-                                        if (++round == 5 || (links.size() == 0 && DownloadWatchDog.this.getActiveDownloads() == 0) || currentWatchDogLoop != WATCHDOGWAITLOOP.get()) break;
+                                        if (++round == 4 || (links.size() == 0 && DownloadWatchDog.this.getActiveDownloads() == 0) || currentWatchDogLoop != WATCHDOGWAITLOOP.get()) break;
                                         synchronized (WATCHDOGWAITLOOP) {
-                                            WATCHDOGWAITLOOP.wait(1000);
+                                            WATCHDOGWAITLOOP.wait(1250);
                                         }
                                     }
                                 } catch (final InterruptedException e) {
