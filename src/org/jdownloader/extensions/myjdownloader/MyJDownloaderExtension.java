@@ -22,7 +22,9 @@ public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtens
         MyJDownloaderConnectThread lThread = thread;
         thread = null;
 
-        if (lThread != null && lThread.isAlive()) lThread.interruptConnectThread();
+        if (lThread != null && lThread.isAlive()) {
+            lThread.disconnect();
+        }
     }
 
     public synchronized void setEnabled(boolean enabled) throws StartException, StopException {
@@ -73,8 +75,6 @@ public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtens
     @Override
     public void onShutdown(boolean silent) {
         try {
-            MyJDownloaderConnectThread lThread = thread;
-            if (lThread != null) lThread.disconnect();
             stop();
         } catch (final Throwable e) {
         }
