@@ -124,10 +124,12 @@ public class MyJDownloaderConnectThread extends Thread {
                     } else {
                         logger.info("Something else!?!?! WTF!" + validToken);
                         connectError++;
+                        Thread.sleep(1000);
                     }
                 } catch (ConnectException e) {
                     logger.info("Could not connect! Server down?");
                     connectError++;
+                    Thread.sleep(1000);
                 } catch (SocketTimeoutException e) {
                     logger.info("ReadTimeout!");
                 } finally {
@@ -139,7 +141,16 @@ public class MyJDownloaderConnectThread extends Thread {
 
             } catch (final Throwable e) {
                 logger.log(e);
+            } finally {
+                disconnect();
             }
+        }
+    }
+
+    public void disconnect() {
+        try {
+            api.disconnect();
+        } catch (final Throwable e) {
         }
     }
 
@@ -168,7 +179,7 @@ public class MyJDownloaderConnectThread extends Thread {
                 }
             }
         }
-        // 
+        //
         sessionValid = true;
     }
 

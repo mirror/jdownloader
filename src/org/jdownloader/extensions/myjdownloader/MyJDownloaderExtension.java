@@ -2,6 +2,9 @@ package org.jdownloader.extensions.myjdownloader;
 
 import jd.plugins.AddonPanel;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.extensions.AbstractExtension;
@@ -9,7 +12,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtensionConfig, TranslateInterface> {
+public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtensionConfig, TranslateInterface> implements ShutdownVetoListener {
 
     private MyJDownloaderConfigPanel   configPanel;
     private MyJDownloaderConnectThread thread = null;
@@ -39,8 +42,8 @@ public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtens
     @Override
     protected void initExtension() throws StartException {
         setTitle("my.jdownloader.org");
-
         configPanel = new MyJDownloaderConfigPanel(this, getSettings());
+        ShutdownController.getInstance().addShutdownVetoListener(this);
     }
 
     public LogSource getLogger() {
@@ -65,6 +68,33 @@ public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtens
     @Override
     public AddonPanel<? extends AbstractExtension<MyDownloaderExtensionConfig, TranslateInterface>> getGUI() {
         return null;
+    }
+
+    @Override
+    public void onShutdown(boolean silent) {
+        try {
+            MyJDownloaderConnectThread lThread = thread;
+            if (lThread != null) lThread.disconnect();
+            stop();
+        } catch (final Throwable e) {
+        }
+    }
+
+    @Override
+    public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
+    }
+
+    @Override
+    public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+    }
+
+    @Override
+    public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+    }
+
+    @Override
+    public long getShutdownVetoPriority() {
+        return 0;
     }
 
 }
