@@ -318,7 +318,7 @@ public class RyuShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     /** Remove HTML code which could break the plugin */
@@ -753,4 +753,5 @@ public class RyuShareCom extends PluginForHost {
         }
         return false;
     }
+
 }
