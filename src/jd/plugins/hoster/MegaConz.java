@@ -1,5 +1,6 @@
 package jd.plugins.hoster;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -217,20 +218,20 @@ public class MegaConz extends PluginForHost {
         File dec = new File(link.getFileOutput() + ".decrypted");
         File org = new File(link.getFileOutput());
         if (dec.exists() && dec.delete() == false) throw new IOException("Could not delete " + dec);
-        FileInputStream fis = null;
+        BufferedInputStream fis = null;
         BufferedOutputStream fos = null;
         boolean deleteOutput = true;
         int bufferSize = 1024 * 1024;
         try {
             link.getLinkStatus().setStatusText("Decrypting");
-            fis = new FileInputStream(link.getFileOutput());
+            fis = new BufferedInputStream(new FileInputStream(link.getFileOutput()), bufferSize);
             fos = new BufferedOutputStream(new FileOutputStream(dec), 2 * bufferSize);
 
             Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
             cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
             final CipherOutputStream cos = new CipherOutputStream(fos, cipher);
             int read = 0;
-            final byte[] buffer = new byte[bufferSize];
+            final byte[] buffer = new byte[32767];
             while ((read = fis.read(buffer)) != -1) {
                 if (read > 0) {
                     cos.write(buffer, 0, read);
