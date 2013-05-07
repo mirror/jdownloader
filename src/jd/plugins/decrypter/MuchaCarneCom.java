@@ -111,7 +111,7 @@ public class MuchaCarneCom extends PluginForDecrypt {
         externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
         if (externID != null) {
             br.getPage(externID);
-            if (br.containsHTML("<link_url>N/A</link_url>") || br.containsHTML("No htmlCode read")) {
+            if (br.containsHTML("<link_url>N/A</link_url>") || br.containsHTML("No htmlCode read") || br.containsHTML(">404 Not Found<")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }

@@ -85,6 +85,13 @@ public class FourSexFourCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        // youporn.com handling 1
+        externID = br.getRegex("youporn\\.com/embed/(\\d+)").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("http://www.youporn.com/watch/" + externID + "/" + System.currentTimeMillis());
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         // Filename needed for all sites below
         String filename = br.getRegex("<title>(.*?) \\- 4sex4\\.com</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
@@ -111,6 +118,7 @@ public class FourSexFourCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        // youporn.com handling 2
         externID = br.getRegex("flashvars=\"file=(http%3A%2F%2Fdownload\\.youporn\\.com[^<>\"]*?)\\&").getMatch(0);
         if (externID != null) {
             br.setCookie("http://youporn.com/", "age_verified", "1");

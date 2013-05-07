@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoweed.com" }, urls = { "http://((www\\.)?videoweed\\.(com|es)/file/|embed\\.videoweed\\.(com|es)/embed\\.php\\?.*?v=)[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoweed.com" }, urls = { "http://(www\\.)?videoweed\\.(com|es)/(file/|embed\\.php\\?.*?v=)[a-z0-9]+" }, flags = { 0 })
 public class VideoWeedCom extends PluginForHost {
 
     private String dllink = null;
@@ -40,10 +40,8 @@ public class VideoWeedCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        // Make normal links out of embedded links
-        String fileID = new Regex(link.getDownloadURL(), "v=([a-z0-9]+)").getMatch(0);
-        if (fileID != null) link.setUrlDownload("http://www.videoweed.es/file/" + fileID);
-        link.setUrlDownload(link.getDownloadURL().replace("videoweed.com/", "videoweed.es/"));
+        final String fileID = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        link.setUrlDownload("http://www.videoweed.es/file/" + fileID);
     }
 
     @Override

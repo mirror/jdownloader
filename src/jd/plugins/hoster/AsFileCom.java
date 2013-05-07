@@ -64,7 +64,7 @@ public class AsFileCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-EN");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<title>ASfile\\.com</title>|>Page not found<|Delete Reason:|No htmlCode read)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>ASfile\\.com</title>|>Page not found<|Delete Reason:|No htmlCode read)") || br.getURL().contains("/file_is_unavailable/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename;
         if (br.getURL().contains("/password/")) {
             filename = br.getRegex("This file ([^<>\"]*?) is password protected.").getMatch(0);
