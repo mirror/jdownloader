@@ -3,6 +3,7 @@ package org.jdownloader.extensions.myjdownloader.api;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -80,14 +81,14 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         }
     }
 
-    protected AtomicLong                        TIMESTAMP      = new AtomicLong(System.currentTimeMillis());
-    protected volatile String                   connectToken   = null;
+    protected AtomicLong                         TIMESTAMP      = new AtomicLong(System.currentTimeMillis());
+    protected volatile String                    connectToken   = null;
 
-    protected final MyDownloaderExtensionConfig config;
+    protected final MyDownloaderExtensionConfig  config;
 
-    private MyJDownloaderExtension              extension;
-    private ArrayList<RIDEntry>                 rids;
-    private long                                minAcceptedRID = Long.MIN_VALUE;
+    private MyJDownloaderExtension               extension;
+    private HashMap<String, ArrayList<RIDEntry>> rids;
+    private long                                 minAcceptedRID = Long.MIN_VALUE;
 
     public MyJDownloaderAPI(MyJDownloaderExtension myJDownloaderExtension) {
         super("JD");
@@ -99,7 +100,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         br = new BasicHTTP();
         br.setAllowedResponseCodes(200, 503, 401, 407, 403, 500, 429);
         br.putRequestHeader("Content-Type", "application/json; charset=utf-8");
-        rids = new ArrayList<RIDEntry>();
+        rids = new HashMap<String, ArrayList<RIDEntry>>();
 
     }
 
@@ -108,12 +109,19 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
     }
 
     /* TODO: add session support, currently all sessions share the same validateRID */
-    public synchronized boolean validateRID(long rid) {
+    public synchronized boolean validateRID(long rid, String sessionToken) {
+
+        // TODO CLeanup
+        ArrayList<RIDEntry> ridList = rids.get(sessionToken);
+        if (ridList == null) {
+            ridList = new ArrayList<RIDEntry>();
+            rids.put(sessionToken, ridList);
+        }
 
         // lowest RID
         long lowestRid = Long.MIN_VALUE;
         RIDEntry next;
-        for (Iterator<RIDEntry> it = rids.iterator(); it.hasNext();) {
+        for (Iterator<RIDEntry> it = ridList.iterator(); it.hasNext();) {
             next = it.next();
             if (next.getRid() == rid) {
                 // dupe rid is always bad
@@ -137,7 +145,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
             return false;
         }
         RIDEntry ride = new RIDEntry(rid);
-        rids.add(ride);
+        ridList.add(ride);
 
         return true;
     }

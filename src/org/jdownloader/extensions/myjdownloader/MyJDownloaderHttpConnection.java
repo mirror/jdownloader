@@ -59,10 +59,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
 
     private OutputStream os                     = null;
     private byte[]       payloadEncryptionToken = null;
-    /**
-     * @deprecated is used for eventsys
-     * @return
-     */
+
     private String       requestConnectToken;
 
     @Override
@@ -101,11 +98,6 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         return payloadEncryptionToken;
     }
 
-    @Deprecated
-    /**
-     * @deprecated is used for eventsys
-     * @return
-     */
     public String getRequestConnectToken() {
         return requestConnectToken;
     }
@@ -145,7 +137,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         if (aesJsonRequest == null) return false;
         if (StringUtils.isEmpty(aesJsonRequest.getUrl())) return false;
         if (!StringUtils.equals(getRequest().getRequestedURL(), aesJsonRequest.getUrl())) { return false; }
-        if (!api.validateRID(aesJsonRequest.getRid())) { return false; }
+        if (!api.validateRID(aesJsonRequest.getRid(), getRequestConnectToken())) { return false; }
 
         logger.info("Go Request " + JSonStorage.toString(aesJsonRequest));
         return true;
