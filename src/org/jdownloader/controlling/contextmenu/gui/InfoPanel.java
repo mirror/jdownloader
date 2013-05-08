@@ -153,18 +153,30 @@ public class InfoPanel extends MigPanel implements ActionListener {
         add(name, "newline,spanx");
         add(iconlabel = label(_GUI._.InfoPanel_InfoPanel_icon()), "height 22!");
         add(iconChange, "newline,spanx");
-        add(label(_GUI._.InfoPanel_InfoPanel_hideIfDisabled()));
-        add(hideIfDisabled, "spanx");
-        add(label(_GUI._.InfoPanel_InfoPanel_hideIfOpenFileIsUnsupported()));
-        add(hideIfOpenFileIsUnsupported, "spanx");
-        add(label(_GUI._.InfoPanel_InfoPanel_hideIfFileNotExists()));
-        add(hideIfOutputNotExists, "spanx");
-        add(label(_GUI._.InfoPanel_InfoPanel_linkContext2()));
-        add(linkContext, "spanx");
-        add(label(_GUI._.InfoPanel_InfoPanel_packageContext2()));
-        add(packageContext, "spanx");
-        add(label(_GUI._.InfoPanel_InfoPanel_hidden()));
-        add(hidden, "spanx");
+        if (managerFrame.getManager().supportsProperty(MenuItemProperty.HIDE_IF_DISABLED)) {
+            add(label(_GUI._.InfoPanel_InfoPanel_hideIfDisabled()));
+            add(hideIfDisabled, "spanx");
+        }
+        if (managerFrame.getManager().supportsProperty(MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED)) {
+            add(label(_GUI._.InfoPanel_InfoPanel_hideIfOpenFileIsUnsupported()));
+            add(hideIfOpenFileIsUnsupported, "spanx");
+        }
+        if (managerFrame.getManager().supportsProperty(MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING)) {
+            add(label(_GUI._.InfoPanel_InfoPanel_hideIfFileNotExists()));
+            add(hideIfOutputNotExists, "spanx");
+        }
+        if (managerFrame.getManager().supportsProperty(MenuItemProperty.LINK_CONTEXT)) {
+            add(label(_GUI._.InfoPanel_InfoPanel_linkContext2()));
+            add(linkContext, "spanx");
+        }
+        if (managerFrame.getManager().supportsProperty(MenuItemProperty.PACKAGE_CONTEXT)) {
+            add(label(_GUI._.InfoPanel_InfoPanel_packageContext2()));
+            add(packageContext, "spanx");
+        }
+        if (managerFrame.getManager().supportsProperty(MenuItemProperty.ALWAYS_HIDDEN)) {
+            add(label(_GUI._.InfoPanel_InfoPanel_hidden()));
+            add(hidden, "spanx");
+        }
     }
 
     private JLabel label(String infoPanel_InfoPanel_hideIfDisabled) {
@@ -175,7 +187,9 @@ public class InfoPanel extends MigPanel implements ActionListener {
      * @param lastPathComponent
      */
     public void updateInfo(final MenuItemData value) {
-
+        // getParent().revalidate();
+        getParent().getParent().getParent().revalidate();
+        // managerFrame.getDialog().getContentPane().revalidate();
         this.item = value;
         if (value == null) {
 
@@ -191,7 +205,9 @@ public class InfoPanel extends MigPanel implements ActionListener {
             iconlabel.setIcon(null);
         }
 
-        name.setText(mid.getName());
+        String n = mid.getName();
+
+        name.setText(n);
         link(mid, hideIfDisabled, MenuItemProperty.HIDE_IF_DISABLED);
         link(mid, hideIfOpenFileIsUnsupported, MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED);
 
@@ -253,7 +269,12 @@ public class InfoPanel extends MigPanel implements ActionListener {
                         icon = NewTheme.I().getIcon(mid.getActionData().getIconKey(), 18);
                     }
                 }
-                if (StringUtils.isEmpty(name)) name = mid.getActionData().getClazzName();
+                if (StringUtils.isEmpty(name)) {
+
+                    name = mid.getActionData().getClazzName();
+                    name = name.substring(name.lastIndexOf(".") + 1);
+
+                }
 
             }
 

@@ -7,7 +7,6 @@ import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface ShutdownConfig extends ExtensionConfigInterface {
     @DefaultBooleanValue(false)
@@ -35,14 +34,6 @@ public interface ShutdownConfig extends ExtensionConfigInterface {
     Mode getShutdownMode();
 
     void setShutdownMode(Mode mode);
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    @RequiresRestart
-    @DescriptionForConfigEntry("If enabled, The Main Toolbar will contain a button to quickly enable or disable Shutdown")
-    boolean isToolbarButtonEnabled();
-
-    void setToolbarButtonEnabled(boolean b);
 
     @DefaultIntValue(60)
     @AboutConfig

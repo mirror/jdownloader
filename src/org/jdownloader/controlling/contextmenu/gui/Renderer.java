@@ -110,6 +110,7 @@ public class Renderer implements TreeCellRenderer {
 
                     }
                 }
+
                 if (StringUtils.isEmpty(name)) {
                     name = mid.getActionData().getName();
                 }
@@ -118,7 +119,12 @@ public class Renderer implements TreeCellRenderer {
                         icon = NewTheme.I().getIcon(mid.getActionData().getIconKey(), 18);
                     }
                 }
-                if (StringUtils.isEmpty(name)) name = mid.getActionData().getClazzName();
+
+                if (StringUtils.isEmpty(name)) {
+
+                    name = mid.getActionData().getClazzName();
+                    name = name.substring(name.lastIndexOf(".") + 1);
+                }
 
             }
 

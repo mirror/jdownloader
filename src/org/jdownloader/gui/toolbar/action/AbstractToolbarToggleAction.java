@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.components.toolbar.actions;
+package org.jdownloader.gui.toolbar.action;
 
 import java.awt.event.ActionEvent;
 
@@ -7,19 +7,15 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 
-public abstract class AbstractToolbarToggleAction extends AbstractToolbarAction implements GenericConfigEventListener<Boolean> {
+public abstract class AbstractToolbarToggleAction extends ToolBarAction implements GenericConfigEventListener<Boolean> {
 
     private BooleanKeyHandler keyHandler;
 
     public AbstractToolbarToggleAction(BooleanKeyHandler keyHandler) {
         this.keyHandler = keyHandler;
-    }
 
-    @Override
-    final protected void doInit() {
         setSelected(keyHandler.getValue());
         keyHandler.getEventSender().addListener(this, true);
-
     }
 
     public void actionPerformed(ActionEvent e) {

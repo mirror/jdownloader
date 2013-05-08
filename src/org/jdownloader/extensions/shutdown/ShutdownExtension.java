@@ -16,7 +16,6 @@
 
 package org.jdownloader.extensions.shutdown;
 
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -28,9 +27,6 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.swing.jdgui.components.toolbar.ToolbarManager;
-import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarToggleAction;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
@@ -40,15 +36,15 @@ import org.appwork.controlling.StateEventListener;
 import org.appwork.controlling.StateMachine;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
-import org.appwork.uio.MessageDialogImpl;
-import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
-import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.contextmenu.ContextMenuManager;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
+import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.StartException;
@@ -56,17 +52,18 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
 import org.jdownloader.extensions.shutdown.translate.T;
-import org.jdownloader.gui.shortcuts.ShortcutController;
+import org.jdownloader.gui.toolbar.MainToolbarManager;
+import org.jdownloader.gui.toolbar.action.AbstractToolbarToggleAction;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.RestartController;
 
-public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener {
+public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener, MenuExtenderHandler {
 
-    private Thread                shutdown   = null;
+    private Thread                      shutdown   = null;
 
-    private AbstractToolbarAction menuAction = null;
+    private AbstractToolbarToggleAction menuAction = null;
 
-    private ShutdownConfigPanel   configPanel;
+    private ShutdownConfigPanel         configPanel;
 
     public ShutdownConfigPanel getConfigPanel() {
         return configPanel;
@@ -445,71 +442,20 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     @Override
     protected void stop() throws StopException {
         DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                if (menuAction != null) {
-
-                    ToolbarManager.getInstance().remove(menuAction);
-                }
-            }
-        };
+        MainToolbarManager.getInstance().unregisterExtender(this);
 
     }
 
     @Override
     protected void start() throws StartException {
-
+        MainToolbarManager.getInstance().registerExtender(this);
         if (!getSettings().isShutdownActiveByDefaultEnabled()) {
             CFG_SHUTDOWN.SHUTDOWN_ACTIVE.setValue(false);
         }
         if (menuAction == null) {
-            menuAction = new AbstractToolbarToggleAction(CFG_SHUTDOWN.SHUTDOWN_ACTIVE) {
-
-                {
-                    setName(_.lit_shutdownn());
-
-                    this.setEnabled(true);
-                    setSelected(false);
-
-                }
-
-                public void actionPerformed(ActionEvent e) {
-                    super.actionPerformed(e);
-
-                    if (isSelected()) {
-
-                        UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _.addons_jdshutdown_statusmessage_enabled()));
-
-                    } else {
-                        UIOManager.I().show(MessageDialogInterface.class, new MessageDialogImpl(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _.addons_jdshutdown_statusmessage_disabled()));
-
-                    }
-
-                }
-
-                @Override
-                public String createIconKey() {
-                    return "logout";
-                }
-
-                @Override
-                protected String createAccelerator() {
-                    return ShortcutController._.getShutdownExtensionToggleShutdownAction();
-                }
-
-                @Override
-                protected String createTooltip() {
-                    return _.action_tooltip();
-                }
-
-            };
+            menuAction = new ShutdownEnableToggle(null);
         }
 
-        if (getSettings().isToolbarButtonEnabled()) {
-            ToolbarManager.getInstance().add(menuAction);
-        }
         DownloadWatchDog.getInstance().getStateMachine().addListener(this);
         LogController.CL().info("Shutdown OK");
     }
@@ -646,5 +592,10 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         }
 
         return true;
+    }
+
+    @Override
+    public void updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
+        mr.add(ShutdownEnableToggle.class);
     }
 }

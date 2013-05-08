@@ -50,6 +50,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                 MenuItemData last = null;
                 for (int i = 0; i < container.getItems().size(); i++) {
                     MenuItemData mid = container.getItems().get(i);
+                    mid._setValidateException(null);
                     MenuItemData lr = null;
                     try {
                         try {

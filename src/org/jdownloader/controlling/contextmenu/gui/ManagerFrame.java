@@ -46,7 +46,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
     private ExtTree                  tree;
 
     public ManagerFrame(ContextMenuManager<?, ?> manager) {
-        super(Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK, _GUI._.ManagerFrame_ManagerFrame_(), null, null, null);
+        super(Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK, _GUI._.ManagerFrame_ManagerFrame_title(manager.getName()), null, null, null);
 
         this.manager = manager;
         ext = manager.getFileExtension();

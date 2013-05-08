@@ -5,26 +5,15 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.shortcuts.ShortcutController;
+import org.jdownloader.gui.toolbar.action.AbstractToolbarToggleAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 
 public class AutoReconnectToggleAction extends AbstractToolbarToggleAction {
-    private static final AutoReconnectToggleAction INSTANCE = new AutoReconnectToggleAction();
 
-    /**
-     * get the only existing instance of AutoReconnectToggleAction. This is a singleton
-     * 
-     * @return
-     */
-    public static AutoReconnectToggleAction getInstance() {
-        return AutoReconnectToggleAction.INSTANCE;
-    }
-
-    /**
-     * Create a new instance of AutoReconnectToggleAction. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
-     */
-    private AutoReconnectToggleAction() {
+    public AutoReconnectToggleAction(SelectionInfo<?, ?> selection) {
         super(org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED);
+        setIconKey("auto-reconnect");
         org.jdownloader.settings.staticreferences.CFG_RECONNECT.ACTIVE_PLUGIN_ID.getEventSender().addListener(new GenericConfigEventListener<String>() {
 
             @Override
@@ -52,18 +41,13 @@ public class AutoReconnectToggleAction extends AbstractToolbarToggleAction {
             @Override
             public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
             }
-        });
+        }, true);
         if ("DummyRouterPlugin".equalsIgnoreCase(org.jdownloader.settings.staticreferences.CFG_RECONNECT.ACTIVE_PLUGIN_ID.getValue())) {
             AutoReconnectToggleAction.this.setEnabled(false);
             AutoReconnectToggleAction.this.setSelected(false);
         } else {
             AutoReconnectToggleAction.this.setEnabled(true);
         }
-    }
-
-    @Override
-    public String createIconKey() {
-        return "auto-reconnect";
     }
 
     @Override

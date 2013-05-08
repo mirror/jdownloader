@@ -4,9 +4,9 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
-import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarToggleAction;
 
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.toolbar.action.AbstractToolbarToggleAction;
 
 public class TrayAction extends AppAction {
 

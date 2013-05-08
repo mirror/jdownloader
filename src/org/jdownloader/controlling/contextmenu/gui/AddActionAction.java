@@ -74,11 +74,18 @@ public class AddActionAction extends AppAction {
 
                     @Override
                     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                        if (value == null) return (JLabel) orgRenderer.getListCellRendererComponent(list, _GUI._.AddActionAction_getListCellRendererComponent_no_action_(), index, isSelected, cellHasFocus);
                         AppAction mi;
                         try {
                             mi = new MenuItemData(((ActionData) value)).createValidatedItem().createAction(null);
 
-                            JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, mi.getName(), index, isSelected, cellHasFocus);
+                            String name = mi.getName();
+
+                            if (StringUtils.isEmpty(name)) {
+                                name = mi.getClass().getSimpleName() + "(" + mi.getTooltipText() + ")";
+                            }
+
+                            JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, name, index, isSelected, cellHasFocus);
                             ret.setIcon(mi.getSmallIcon());
 
                             return ret;
@@ -95,10 +102,11 @@ public class AddActionAction extends AppAction {
 
         try {
             Integer ret = Dialog.getInstance().showDialog(d);
-            ActionData action = actions.get(ret);
-            // new MenuItemData(action)
-            managerFrame.addAction(action);
-
+            if (ret >= 0) {
+                ActionData action = actions.get(ret);
+                // new MenuItemData(action)
+                managerFrame.addAction(action);
+            }
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {

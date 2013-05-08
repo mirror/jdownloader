@@ -9,6 +9,7 @@ import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
 import org.jdownloader.gui.views.components.packagetable.context.PriorityDefaultAction;
@@ -147,6 +148,11 @@ public class DownloadListContextMenuManager extends ContextMenuManager<FilePacka
     @Override
     public String getFileExtension() {
         return ".jdDLMenu";
+    }
+
+    @Override
+    public String getName() {
+        return _GUI._.DownloadListContextMenuManager_getName();
     }
 
 }

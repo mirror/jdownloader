@@ -25,7 +25,7 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.toolbar.actions.ShowSettingsAction;
+import jd.gui.swing.jdgui.menu.actions.SettingsAction;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -105,7 +105,8 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
     }
 
     public void handlePreferences(PreferencesEvent e) {
-        ShowSettingsAction.getInstance().actionPerformed(null);
+        new SettingsAction().actionPerformed(null);
+
         appReOpened(null);
     }
 

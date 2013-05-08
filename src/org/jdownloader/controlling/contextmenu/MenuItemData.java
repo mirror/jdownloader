@@ -147,6 +147,10 @@ public class MenuItemData implements Storable {
         setActionData(actionData);
     }
 
+    public MenuItemData(Class<? extends AppAction> class1, MenuItemProperty... itemProperties) {
+        this(new ActionData(class1), itemProperties);
+    }
+
     public MenuItemData createValidatedItem() throws InstantiationException, IllegalAccessException, ClassNotFoundException, ExtensionNotLoadedException {
 
         if (className == null || getClass().getName().equals(className)) {

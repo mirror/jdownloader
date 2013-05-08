@@ -20,6 +20,8 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.List;
 
 import javax.swing.AbstractButton;
 import javax.swing.Action;
@@ -37,7 +39,6 @@ import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarAction;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.controlling.StateEvent;
@@ -47,10 +48,14 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.images.NewTheme;
 
-public class MainToolBar extends JToolBar {
+public class MainToolBar extends JToolBar implements MouseListener {
 
     private static final long  serialVersionUID = 922971719957349497L;
 
@@ -66,7 +71,11 @@ public class MainToolBar extends JToolBar {
 
     private MainToolBar() {
         super();
+
+        putClientProperty("Synthetica.toolBar.buttons.paintBorder", Boolean.TRUE);
+        putClientProperty("Synthetica.toolBar.button.pressed.paintBorder", Boolean.TRUE);
         this.setRollover(true);
+        this.addMouseListener(this);
         this.setFloatable(false);
         setPreferredSize(new Dimension(-1, 38));
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -112,15 +121,6 @@ public class MainToolBar extends JToolBar {
 
     }
 
-    protected String getColConstraints(int size) {
-        final StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < size; ++i) {
-            sb.append("[]2");
-        }
-        sb.append("[grow,fill][]");
-        return sb.toString();
-    }
-
     /**
      * USed to register the shortcuts to the rootpane during init
      * 
@@ -152,52 +152,71 @@ public class MainToolBar extends JToolBar {
 
     }
 
+    protected void addImpl(Component comp, Object constraints, int index) {
+        super.addImpl(comp, constraints, index);
+        comp.removeMouseListener(this);
+        comp.addMouseListener(this);
+
+    }
+
     private void initToolbar() {
 
-        AbstractToolbarAction[] list = ToolbarManager.getInstance().getList();
-        this.setLayout(new MigLayout("ins 0 3 0 0", this.getColConstraints(list.length), "[grow,fill,32!]"));
+        List<MenuItemData> list = MainToolbarManager.getInstance().getMenuData().getItems();
+        this.setLayout(new MigLayout("ins 0 3 0 0", "[]", "[grow,fill,32!]"));
         AbstractButton ab;
         // System.out.println(this.getColConstraints(list.length));
-        for (final AbstractToolbarAction action : list) {
-            action.init();
+        for (final MenuItemData menudata : list) {
+
             AbstractButton bt = null;
-            if (action == Seperator.getInstance()) {
-                this.add(new JSeparator(SwingConstants.VERTICAL), "gapleft 10,gapright 10");
-            } else if (action.isToggle()) {
-                bt = new JToggleButton(action);
-                ImageIcon icon;
-                bt.setIcon(icon = NewTheme.I().getCheckBoxImage(action.createIconKey(), false, 24));
-                bt.setRolloverIcon(icon);
-                bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.createIconKey(), true, 24));
-                bt.setRolloverSelectedIcon(icon);
-                add(bt, "width 32!");
-                bt.setHideActionText(true);
-            } else {
-                bt = new ExtButton(action);
-                add(bt, "width 32!");
-                bt.setHideActionText(true);
-            }
+            AppAction action;
+            try {
+                if (!menudata.showItem(null)) continue;
+                if (menudata instanceof SeperatorData) {
+                    this.add(new JSeparator(SwingConstants.VERTICAL), "gapleft 10,gapright 10,width 2!");
+                    continue;
+                }
+                if (menudata._getValidateException() != null) continue;
+                if (menudata.getActionData() == null) continue;
 
-            final Object value = action.getValue(Action.ACCELERATOR_KEY);
-            if (value == null) {
-                continue;
-            }
-            final KeyStroke ks = (KeyStroke) value;
-            this.rootpane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, action);
-            this.rootpane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
-            this.rootpane.getActionMap().put(action, action);
-
-            final String shortCut = action.getShortCutString();
-            if (bt != null) {
-                if (StringUtils.isEmpty(action.getTooltipText())) {
-                    bt.setToolTipText(shortCut != null ? " [" + shortCut + "]" : null);
+                action = menudata.createAction(null);
+                if (action.isToggle()) {
+                    bt = new JToggleButton(action);
+                    ImageIcon icon;
+                    bt.setIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), false, 24));
+                    bt.setRolloverIcon(icon);
+                    bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, 24));
+                    bt.setRolloverSelectedIcon(icon);
+                    add(bt, "width 32!");
+                    bt.setHideActionText(true);
                 } else {
-                    bt.setToolTipText(action.getTooltipText() + (shortCut != null ? " [" + shortCut + "]" : ""));
+                    bt = new ExtButton(action);
+                    add(bt, "width 32!");
+                    bt.setHideActionText(true);
                 }
 
+                final Object value = action.getValue(Action.ACCELERATOR_KEY);
+                if (value == null) {
+                    continue;
+                }
+                final KeyStroke ks = (KeyStroke) value;
+                this.rootpane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, action);
+                this.rootpane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
+                this.rootpane.getActionMap().put(action, action);
+
+                final String shortCut = action.getShortCutString();
+                if (bt != null) {
+                    if (StringUtils.isEmpty(action.getTooltipText())) {
+                        bt.setToolTipText(shortCut != null ? " [" + shortCut + "]" : null);
+                    } else {
+                        bt.setToolTipText(action.getTooltipText() + (shortCut != null ? " [" + shortCut + "]" : ""));
+                    }
+
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
-        add(Box.createHorizontalGlue());
+        add(Box.createHorizontalGlue(), "pushx,growx");
 
     }
 
@@ -208,6 +227,30 @@ public class MainToolBar extends JToolBar {
     // made speedMeter Instance public. Used in remote API
     public SpeedMeterPanel getSpeedMeter() {
         return speedmeter;
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        if (e.isPopupTrigger() || e.getButton() == 3) {
+
+            MainToolbarManager.getInstance().openGui();
+        }
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
     }
 
 }

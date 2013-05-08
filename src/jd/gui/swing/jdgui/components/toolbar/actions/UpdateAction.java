@@ -3,30 +3,22 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 import java.awt.event.ActionEvent;
 
 import org.jdownloader.gui.shortcuts.ShortcutController;
+import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.updatev2.UpdateController;
 
-public class UpdateAction extends AbstractToolbarAction {
-    private static final UpdateAction INSTANCE = new UpdateAction();
+public class UpdateAction extends ToolBarAction {
 
     /**
-     * get the only existing instance of UpdateAction. This is a singleton
      * 
-     * @return
      */
-    public static UpdateAction getInstance() {
-        return UpdateAction.INSTANCE;
-    }
+    private static final long serialVersionUID = 1L;
 
-    /**
-     * Create a new instance of UpdateAction. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
-     */
-    private UpdateAction() {
-        setEnabled(false);
-    }
+    public UpdateAction(SelectionInfo<?, ?> selection) {
 
-    public boolean isDefaultVisible() {
-        return true;
+        setIconKey("update");
+        setEnabled(true);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -42,11 +34,6 @@ public class UpdateAction extends AbstractToolbarAction {
     }
 
     @Override
-    public String createIconKey() {
-        return "update";
-    }
-
-    @Override
     protected String createAccelerator() {
         return ShortcutController._.getDoUpdateCheckAction();
     }
@@ -54,10 +41,6 @@ public class UpdateAction extends AbstractToolbarAction {
     @Override
     protected String createTooltip() {
         return _GUI._.action_start_update_tooltip();
-    }
-
-    @Override
-    protected void doInit() {
     }
 
 }

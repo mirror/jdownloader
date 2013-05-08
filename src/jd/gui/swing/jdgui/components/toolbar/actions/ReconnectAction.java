@@ -7,26 +7,16 @@ import jd.controlling.reconnect.Reconnecter;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.shortcuts.ShortcutController;
+import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class ReconnectAction extends AbstractToolbarAction {
-    private static final ReconnectAction INSTANCE = new ReconnectAction();
+public class ReconnectAction extends ToolBarAction {
 
-    /**
-     * get the only existing instance of ReconnectAction. This is a singleton
-     * 
-     * @return
-     */
-    public static ReconnectAction getInstance() {
-        return ReconnectAction.INSTANCE;
-    }
+    public ReconnectAction(SelectionInfo<?, ?> selection) {
 
-    /**
-     * Create a new instance of ReconnectAction. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
-     */
-    private ReconnectAction() {
+        setIconKey("reconnect");
 
     }
 
@@ -43,11 +33,6 @@ public class ReconnectAction extends AbstractToolbarAction {
     }
 
     @Override
-    public String createIconKey() {
-        return "reconnect";
-    }
-
-    @Override
     protected String createAccelerator() {
         return ShortcutController._.getDoReconnectAction();
     }
@@ -55,10 +40,6 @@ public class ReconnectAction extends AbstractToolbarAction {
     @Override
     protected String createTooltip() {
         return _GUI._.action_reconnect_invoke_tooltip();
-    }
-
-    @Override
-    protected void doInit() {
     }
 
 }

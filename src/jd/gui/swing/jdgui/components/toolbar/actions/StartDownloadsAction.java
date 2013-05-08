@@ -5,38 +5,30 @@ import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.UserIF.Panels;
 import jd.gui.swing.jdgui.JDGui;
 
-import org.appwork.controlling.StateEvent;
-import org.appwork.controlling.StateEventListener;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.shortcuts.ShortcutController;
+import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
 import org.jdownloader.translate._JDT;
 
-public class StartDownloadsAction extends AbstractToolbarAction {
-    private static final StartDownloadsAction INSTANCE = new StartDownloadsAction();
-
-    /**
-     * get the only existing instance of StartDownloadsAction. This is a singleton
-     * 
-     * @return
-     */
-    public static StartDownloadsAction getInstance() {
-        return StartDownloadsAction.INSTANCE;
-    }
+public class StartDownloadsAction extends ToolBarAction implements DownloadWatchdogListener {
 
     /**
      * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
      */
-    private StartDownloadsAction() {
-
+    public StartDownloadsAction(SelectionInfo<?, ?> selection) {
+        setIconKey("media-playback-start");
+        DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -65,26 +57,49 @@ public class StartDownloadsAction extends AbstractToolbarAction {
     }
 
     @Override
-    public String createIconKey() {
-        return "media-playback-start";
+    public void onDownloadWatchdogDataUpdate() {
     }
 
     @Override
-    protected void doInit() {
-        DownloadWatchDog.getInstance().getStateMachine().addListener(new StateEventListener() {
+    public void onDownloadWatchdogStateIsIdle() {
+        new EDTRunner() {
 
-            public void onStateUpdate(StateEvent event) {
+            @Override
+            protected void runInEDT() {
+                setEnabled(true);
             }
+        };
 
-            public void onStateChange(StateEvent event) {
+    }
 
-                if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
-                    setEnabled(true);
-                } else if (DownloadWatchDog.RUNNING_STATE == event.getNewState()) {
-                    setEnabled(false);
-                }
+    @Override
+    public void onDownloadWatchdogStateIsPause() {
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsRunning() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                setEnabled(false);
             }
-        });
+        };
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsStopped() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                setEnabled(true);
+            }
+        };
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsStopping() {
     }
 
 }

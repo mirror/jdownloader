@@ -1,32 +1,54 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
-import jd.gui.swing.jdgui.components.toolbar.AbstractToolbarAdapterAction;
-import jd.gui.swing.jdgui.menu.actions.SettingsAction;
+import java.awt.event.ActionEvent;
 
-public class ShowSettingsAction extends AbstractToolbarAdapterAction {
-    private static final ShowSettingsAction INSTANCE = new ShowSettingsAction();
+import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.shortcuts.ShortcutController;
+import org.jdownloader.gui.toolbar.action.ToolBarAction;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+public class ShowSettingsAction extends ToolBarAction {
 
     /**
-     * get the only existing instance of ShowSettingsAction. This is a singleton
      * 
-     * @return
      */
-    public static ShowSettingsAction getInstance() {
-        return ShowSettingsAction.INSTANCE;
+    private static final long serialVersionUID = 1L;
+
+    public ShowSettingsAction(SelectionInfo<?, ?> selection) {
+
+        setIconKey("settings");
+
     }
 
     @Override
-    public boolean isDefaultVisible() {
-        return false;
+    public void actionPerformed(ActionEvent e) {
+
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+
+                JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+                SwingGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+            }
+        };
     }
 
-    /**
-     * Create a new instance of ShowSettingsAction. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
-     */
-    private ShowSettingsAction() {
-        super(new SettingsAction());
+    @Override
+    public String createAccelerator() {
 
+        return ShortcutController._.getOpenSettingsAction();
+    }
+
+    @Override
+    public String createTooltip() {
+        return _GUI._.action_settings_menu_tooltip();
     }
 
 }

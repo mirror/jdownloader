@@ -1,31 +1,35 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
-import jd.gui.swing.jdgui.components.toolbar.AbstractToolbarAdapterAction;
-import jd.gui.swing.jdgui.menu.actions.ExitAction;
+import java.awt.event.ActionEvent;
 
-public class ExitToolbarAction extends AbstractToolbarAdapterAction {
+import org.jdownloader.gui.shortcuts.ShortcutController;
+import org.jdownloader.gui.toolbar.action.ToolBarAction;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.updatev2.RestartController;
 
-    private static final ExitToolbarAction INSTANCE = new ExitToolbarAction();
+public class ExitToolbarAction extends ToolBarAction {
 
-    /**
-     * get the only existing instance of ExitToolbarAction. This is a singleton
-     * 
-     * @return
-     */
-    public static ExitToolbarAction getInstance() {
-        return ExitToolbarAction.INSTANCE;
+    public ExitToolbarAction(SelectionInfo<?, ?> selection) {
+
+        setIconKey("exit");
+        setName(_GUI._.action_exit());
+
     }
 
-    public boolean isDefaultVisible() {
-        return false;
+    @Override
+    public String createAccelerator() {
+        return ShortcutController._.getExitJDownloaderAction();
     }
 
-    /**
-     * Create a new instance of ExitToolbarAction. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
-     */
-    private ExitToolbarAction() {
-        super(new ExitAction());
+    @Override
+    public String createTooltip() {
+        return _GUI._.action_exit_tooltip();
     }
 
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        RestartController.getInstance().exitAsynch();
+
+    }
 }

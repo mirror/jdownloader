@@ -2446,8 +2446,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add new Links to download..." })
     String AddLinksAction_AddLinksAction_tt();
 
-    @Default(lngs = { "en" }, values = { "Downloadlist ContextMenu Manager" })
-    String ManagerFrame_ManagerFrame_();
+    @Default(lngs = { "en" }, values = { "Menu Customizer: %s1" })
+    String ManagerFrame_ManagerFrame_title(String name);
 
     @Default(lngs = { "en" }, values = { "Sort package by Column" })
     String SortAction_SortAction_object_empty();
@@ -2598,5 +2598,20 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Use Account(s) to download" })
     String AccountManagerSettings_AccountManagerSettings_disable_global();
+
+    @Default(lngs = { "en" }, values = { "Main Toolbar: " })
+    String gui_config_menumanager_toolbar();
+
+    @Default(lngs = { "en" }, values = { "All Actions are already on use in the selected submenu" })
+    String AddActionAction_getListCellRendererComponent_no_action_();
+
+    @Default(lngs = { "en" }, values = { "Downloads list - Rightclick menu" })
+    String DownloadListContextMenuManager_getName();
+
+    @Default(lngs = { "en" }, values = { "LinkGrabber list - Rightclick menu" })
+    String LinkgrabberContextMenuManager_getName();
+
+    @Default(lngs = { "en" }, values = { "Main Toolbar" })
+    String MainToolbarManager_getName();
 
 }

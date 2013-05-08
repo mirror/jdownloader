@@ -16,7 +16,6 @@ import javax.swing.JFrame;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.IconedProcessIndicator;
-import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.ConfigInterface;
@@ -90,7 +89,7 @@ public class UpdateController implements UpdateCallbackInterface {
         handler.startIntervalChecker();
         this.appid = appid;
         this.updaterid = updaterid;
-        UpdateAction.getInstance().setEnabled(true);
+        // UpdateAction.getInstance().setEnabled(true);
 
     }
 

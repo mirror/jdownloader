@@ -121,14 +121,14 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                 HashMap<String, MenuItemData> itemsIdsInMenu = new HashMap<String, MenuItemData>();
                 HashMap<String, MenuItemData> itemsInDefaultMenu = new HashMap<String, MenuItemData>();
 
-                for (MenuItemData d : allItemsInMenu) {
-
-                    itemsIdsInMenu.put(d._getIdentifier(), d);
-
-                }
                 for (MenuItemData d : allItemsInDefaultMenu) {
 
                     itemsInDefaultMenu.put(d._getIdentifier(), d);
+
+                }
+                for (MenuItemData d : allItemsInMenu) {
+
+                    itemsIdsInMenu.put(d._getIdentifier(), d);
 
                 }
                 ArrayList<String> unused = config.getUnusedItems();
@@ -349,5 +349,11 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     public abstract String getFileExtension();
+
+    public abstract String getName();
+
+    public boolean supportsProperty(MenuItemProperty property) {
+        return true;
+    }
 
 }

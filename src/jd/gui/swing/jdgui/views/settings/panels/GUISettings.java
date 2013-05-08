@@ -47,6 +47,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.JDRestartController;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
+import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
@@ -65,6 +66,7 @@ public class GUISettings extends AbstractConfigPanel {
     private SettingsButton    resetDialogs;
     private SettingsButton    contextMenuManagerDownloadList;
     private SettingsButton    contextMenuManagerLinkgrabber;
+    private SettingsButton    toolbarManager;
 
     public String getTitle() {
         return _JDT._.gui_settings__gui_title();
@@ -166,7 +168,25 @@ public class GUISettings extends AbstractConfigPanel {
 
             }
         });
+        toolbarManager = new SettingsButton(new AppAction() {
+            {
+                setName(_GUI._.lit_open());
 
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+
+                        MainToolbarManager.getInstance().openGui();
+                    }
+                };
+
+            }
+        });
         this.addHeader(getTitle(), NewTheme.I().getIcon("gui", 32));
 
         // this.addHeader(getTitle(),
@@ -180,6 +200,7 @@ public class GUISettings extends AbstractConfigPanel {
         this.addDescription(_GUI._.gui_config_menumanager_desc());
         this.addPair(_GUI._.gui_config_menumanager_downloadlist(), null, contextMenuManagerDownloadList);
         this.addPair(_GUI._.gui_config_menumanager_linkgrabber(), null, contextMenuManagerLinkgrabber);
+        this.addPair(_GUI._.gui_config_menumanager_toolbar(), null, toolbarManager);
     }
 
     @Override

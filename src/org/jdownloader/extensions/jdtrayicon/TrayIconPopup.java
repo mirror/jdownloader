@@ -176,30 +176,30 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
     private void initEntryPanel() {
         entryPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]"));
         if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
-            addMenuEntry(entryPanel, new TrayAction(StopDownloadsAction.getInstance().init()));
-            addMenuEntry(entryPanel, new TrayAction(PauseDownloadsAction.getInstance().init(), T._.popup_pause()));
+            addMenuEntry(entryPanel, new TrayAction(new StopDownloadsAction(null)));
+            addMenuEntry(entryPanel, new TrayAction(new PauseDownloadsAction(null), T._.popup_pause()));
         } else if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
-            addMenuEntry(entryPanel, new TrayAction(StartDownloadsAction.getInstance().init()));
+            addMenuEntry(entryPanel, new TrayAction(new StartDownloadsAction(null)));
 
         }
         // addMenuEntry(entryPanel, new TrayAction(PauseDownloadsAction.getInstance().init(), T._.popup_pause()));
         // addMenuEntry(entryPanel, "action.addurl");
         // addMenuEntry(entryPanel, "action.load");
-        addMenuEntry(entryPanel, new TrayAction(UpdateAction.getInstance().init(), T._.popup_update()));
-        addMenuEntry(entryPanel, new TrayAction(ReconnectAction.getInstance().init(), T._.popup_reconnect()));
-        addMenuEntry(entryPanel, new TrayAction(OpenDefaultDownloadFolderAction.getInstance().init(), T._.popup_downloadfolder()));
+        addMenuEntry(entryPanel, new TrayAction(new UpdateAction(null), T._.popup_update()));
+        addMenuEntry(entryPanel, new TrayAction(new ReconnectAction(null), T._.popup_reconnect()));
+        addMenuEntry(entryPanel, new TrayAction(new OpenDefaultDownloadFolderAction(null), T._.popup_downloadfolder()));
     }
 
     private void initQuickConfigPanel() {
         quickConfigPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]"));
-        addMenuEntry(quickConfigPanel, new TrayAction(GlobalPremiumSwitchToggleAction.getInstance().init(), T._.popup_premiumtoggle()));
-        addMenuEntry(quickConfigPanel, new TrayAction(ClipBoardToggleAction.getInstance().init(), T._.popup_clipboardtoggle()));
-        addMenuEntry(quickConfigPanel, new TrayAction(AutoReconnectToggleAction.getInstance().init(), T._.popup_reconnecttoggle()));
+        addMenuEntry(quickConfigPanel, new TrayAction(new GlobalPremiumSwitchToggleAction(null), T._.popup_premiumtoggle()));
+        addMenuEntry(quickConfigPanel, new TrayAction(new ClipBoardToggleAction(null), T._.popup_clipboardtoggle()));
+        addMenuEntry(quickConfigPanel, new TrayAction(new AutoReconnectToggleAction(null), T._.popup_reconnecttoggle()));
     }
 
     private void initExitPanel() {
         exitPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]"));
-        addMenuEntry(exitPanel, new TrayAction(ExitToolbarAction.getInstance().init(), T._.popup_exit()));
+        addMenuEntry(exitPanel, new TrayAction(new ExitToolbarAction(null), T._.popup_exit()));
     }
 
     private void initBottomPanel() {
@@ -221,7 +221,7 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
     private AbstractButton getMenuEntry(AppAction action) {
 
         AbstractButton b = createButton(action);
-        if (action == ExitToolbarAction.getInstance()) {
+        if (action instanceof ExitToolbarAction) {
             b.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     hideThreadrunning = false;

@@ -10,12 +10,13 @@ import org.jdownloader.extensions.ExtensionNotLoadedException;
 public class ActionData implements Storable {
     private HashSet<MenuItemProperty> properties;
     private Class<?>                  clazz;
+    private static final String       PACKAGE_NAME = AbstractExtension.class.getPackage().getName();
 
     public Class<?> _getClazz() throws ClassNotFoundException, ExtensionNotLoadedException {
+
         if (clazz == null) {
 
-            String packageName = AbstractExtension.class.getPackage().getName();
-            if (getClazzName().startsWith(packageName)) {
+            if (getClazzName().startsWith(PACKAGE_NAME)) {
 
                 clazz = ExtensionController.getInstance().loadClass(getClazzName());
 
@@ -23,6 +24,8 @@ public class ActionData implements Storable {
                 clazz = Class.forName(getClazzName());
             }
 
+        } else if (getClazzName().startsWith(PACKAGE_NAME)) {
+            clazz = ExtensionController.getInstance().loadClass(getClazzName());
         }
         return clazz;
     }

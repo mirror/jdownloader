@@ -31,7 +31,7 @@ public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension>
 
         addPair(T._.gui_config_jdshutdown_mode(), null, new ComboBox<Mode>(keyHandler2, new Mode[] { Mode.SHUTDOWN, Mode.STANDBY, Mode.HIBERNATE, Mode.CLOSE }, new String[] { Mode.SHUTDOWN.getTranslation(), Mode.STANDBY.getTranslation(), Mode.HIBERNATE.getTranslation(), Mode.CLOSE.getTranslation() }));
         addPair(T._.gui_config_jdshutdown_forceshutdown(), null, new Checkbox(CFG_SHUTDOWN.FORCE_SHUTDOWN_ENABLED));
-        addPair(T._.config_toolbarbutton(), null, new Checkbox(CFG_SHUTDOWN.TOOLBAR_BUTTON_ENABLED));
+
         addPair(T._.config_active_by_default(), null, new Checkbox(CFG_SHUTDOWN.SHUTDOWN_ACTIVE_BY_DEFAULT_ENABLED));
         if (CrossSystem.isWindows()) {
 
