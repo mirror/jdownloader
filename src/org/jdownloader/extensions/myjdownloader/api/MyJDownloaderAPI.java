@@ -91,7 +91,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
     private long                                 minAcceptedRID = Long.MIN_VALUE;
 
     public MyJDownloaderAPI(MyJDownloaderExtension myJDownloaderExtension) {
-        super("JD");
+        super("JD_V1");
         extension = myJDownloaderExtension;
 
         this.config = extension.getSettings();

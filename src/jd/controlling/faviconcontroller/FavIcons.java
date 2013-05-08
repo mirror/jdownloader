@@ -45,6 +45,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class FavIcons {
 
@@ -124,10 +126,14 @@ public class FavIcons {
             /* check if we already have a favicon? */
             if (NewTheme.I().hasIcon("fav/" + host)) {
                 image = NewTheme.I().getIcon("fav/" + host, -1);
-            } else if (NewTheme.I().hasIcon("fav/big." + host)) {
+            }
+            if (image == null && NewTheme.I().hasIcon("fav/big." + host)) {
                 image = NewTheme.I().getIcon("fav/big." + host, -1);
             }
-
+            if (image != null) {
+                /* load favIcon from disk */
+                return image;
+            }
         }
         if (image == null) {
             /* add to queue list */
@@ -155,6 +161,14 @@ public class FavIcons {
                 THREAD_POOL.execute(new Runnable() {
 
                     public void run() {
+                        LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
+                        if (existingHostPlugin != null && "jd.plugins.hoster.Offline".equals(existingHostPlugin.getClassname())) {
+                            synchronized (LOCK) {
+                                QUEUE.remove(host);
+                                if (!FAILED_LIST.contains(host)) FAILED_LIST.add(host);
+                            }
+                            return;
+                        }
                         BufferedImage favicon = downloadFavIcon(host);
                         synchronized (LOCK) {
                             java.util.List<FavIconRequestor> requestors = QUEUE.remove(host);
