@@ -36,6 +36,7 @@ file_exists_not=Filen existerar inte
 filename=Filnamn
 files=filer
 hoster=Värd
+linkname=Arkiv
 local=Filstatus
 menu_tools_extract_files=Extrahera filer
 name=Arkiv extrator

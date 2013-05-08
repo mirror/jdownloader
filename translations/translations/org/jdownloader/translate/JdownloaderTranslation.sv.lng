@@ -1,5 +1,6 @@
 AddContainerAction_delete_container_msg=Vil du ta bort %s1 efter att länkarna har lagts till i JDownloader?
 AddContainerAction_delete_container_title=Radera filer?
+DownloadLink_setSkipped_statusmessage=Överhoppad
 DownloadWatchDog_onShutdownRequest_=Nerladdningar pågår!
 DownloadWatchDog_onShutdownRequest_msg=Vill du avsluta pågeående nerladdingar och stänga JDownloader?
 DownloadWatchDog_onShutdownRequest_nonresumable=Icke återuppdagbara nerladdningar pågår!
@@ -25,8 +26,6 @@ SetDownloadFolderAction_msg=Byt nerladdningskatalog för hela paketet %s1, eller
 SetDownloadFolderAction_no=Urval
 SetDownloadFolderAction_yes=Paket
 StartDownloadsAction_createTooltip_=Starta nerladdningar
-TranslationProxyDialogAuthRequired=JDownloader kan inte koppla upp mot %s1! Din proxy server kräver autentisering.\nKontrollera din behörighet...
-TranslationProxyDialogNoConnection=JDownloader kan inte koppla upp mot %s1! Kontrollera dina upkopplingsinställningar...
 basics_browser_folder=Välj
 basics_no=Nej
 basics_yes=Ja
