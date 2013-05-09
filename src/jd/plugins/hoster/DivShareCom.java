@@ -52,10 +52,11 @@ public class DivShareCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<title>DivShare \\- Password-Protected File</title>")) {
             Form pw = br.getForm(0);
@@ -88,8 +89,9 @@ public class DivShareCom extends PluginForHost {
         }
         // handling für die links, die "direct" beinhalten (diese starten
         // sofort)
-        if (downloadLink.getDownloadURL().contains("direct")) {
+        if (br.getURL().contains("direct")) {
             String redirect = br.getRegex("If it doesn\\'t\\, <a href=\"(.*?)\">click here<").getMatch(0);
+            if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
@@ -99,6 +101,7 @@ public class DivShareCom extends PluginForHost {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                     return AvailableStatus.TRUE;
                 }
+                br.followConnection();
                 if (br.containsHTML("This file is unavailable until")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 if (br.containsHTML("Sorry, we couldn't find this file.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 if (br.containsHTML("This file is secured by Divshare.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -118,9 +121,11 @@ public class DivShareCom extends PluginForHost {
             // alte Methode um an den filename der Downloadseite zu kommen
             // br.getRegex("<title>(.*?) - DivShare</title>").getMatch(0);
             String filename0 = downloadLink.getDownloadURL().replaceAll("divshare.com/(download|image)", "divshare.com/sharing");
-            Browser br2 = br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             br2.getPage(filename0);
-            String filename = br2.getRegex("no-repeat left center;\">(.*?)</span>").getMatch(0);
+            String filename = br2.getRegex("no\\-repeat left center;\">(.*?)</span>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<div class=\"fileNameHeader\">([^<>\"]*?)</div>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- DivShare</title>").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(filename.replaceAll("(\\)|\\()", "").replace("_", "."));
             String id = br2.getRegex("divshare.com/download/([0-9a-f\\-]+)").getMatch(0);

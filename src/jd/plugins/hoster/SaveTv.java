@@ -25,6 +25,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -238,6 +239,7 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        prepBrowser(br);
         br.setFollowRedirects(true);
 
         final Account aa = AccountController.getInstance().getValidAccount(this);
@@ -292,6 +294,11 @@ public class SaveTv extends PluginForHost {
         link.setAvailable(true);
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(".", "")));
         return AvailableStatus.TRUE;
+    }
+
+    public void prepBrowser(final Browser br) {
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
     }
 
     private String getTelecastId(final DownloadLink link) {

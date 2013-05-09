@@ -88,10 +88,13 @@ public class WeTransferCom extends PluginForHost {
         CODE = new Regex(dlink, "wetransfer\\.com/downloads/([a-z0-9]+)/").getMatch(0);
         if (HASH == null || CODE == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
+        // https://www.wetransfer.com/api/v1/transfers/1a6a4d0a11578e1b4310620b51d15b7020130506085913/download?recipient_id=d9914e774e65816dbc6dfdddbd4494eb20130506085913&security_hash=6e5aae&password=&ie=false
         br.getPage("https://www.wetransfer.com/api/v1/transfers/" + CODE + "/download?recipient_id=" + new Regex(dlink, "wetransfer\\.com/downloads/[a-z0-9]+/([a-z0-9]+)").getMatch(0) + "&security_hash=" + HASH + "&password=&ie=false");
         DLLINK = br.getRegex("\"direct_link\":\"(http[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("\"action\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (DLLINK != null) {
             String filename = new Regex(Encoding.htmlDecode(DLLINK), "filename=\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) filename = br.getRegex("\"filename\":\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         } else {

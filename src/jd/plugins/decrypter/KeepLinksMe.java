@@ -63,7 +63,8 @@ public class KeepLinksMe extends PluginForDecrypt {
                 decryptedLinks = gsh.getDecryptedLinks();
             } else {
                 handleCaptcha(parameter, param);
-                final String[] links = br.getRegex("class=\"selecttext live\">(http[^<>\"]*?)</a>").getColumn(0);
+                String[] links = br.getRegex("class=\"selecttext live\">(http[^<>\"]*?)</a>").getColumn(0);
+                if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)?keeplinks\\.me/d/[a-z0-9]+)\" id=\"direct\\d+\"").getColumn(0);
                 if (links == null || links.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return decryptedLinks;
@@ -103,7 +104,7 @@ public class KeepLinksMe extends PluginForDecrypt {
         if (id == null) return;
 
         /* search for protected form */
-        Form protectedForm = br.getFormbyProperty("id", "frmprotect");
+        final Form protectedForm = br.getFormbyProperty("id", "frmprotect");
         if (protectedForm != null) {
             boolean password = protectedForm.getRegex("type=\"password\" name=\"link-password\"").matches(); // password?
             String captcha = br.getRegex("<form name=\"frmprotect\" id=\"frmprotect\"(.*?)</form>").getMatch(0); // captcha?
@@ -126,12 +127,15 @@ public class KeepLinksMe extends PluginForDecrypt {
                     data += "&solvemedia_response=" + code.replace(" ", "+") + "&adcopy_challenge=" + chid + "&adcopy_response=" + code.replace(" ", "+");
                     break;
                 case 2:
-                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
-                    rc.parse();
+                    final String rcID = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    if (id == null) return;
+                    rc.setId(rcID);
+                    rc.load();
                     rc.load();
                     File cfRe = rc.downloadCaptcha(getLocalCaptchaFile());
-                    data += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_challenge_field=" + getCaptchaCode(cfRe, param);
+                    data += "&captchatype=Re&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + getCaptchaCode(cfRe, param);
                     break;
                 case 3:
                     data += "&securimage_response_field=" + getCaptchaCode(br.getRegex(captchaRegex.get("basic")).getMatch(0), param);
@@ -180,7 +184,7 @@ public class KeepLinksMe extends PluginForDecrypt {
                                                                                                   // correct?
                 }
 
-                if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || !br.containsHTML("class=\"co_form_title\">Live Link") || password || br.containsHTML("<strong>Prove you are human</strong>")) {
+                if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || (!br.containsHTML("class=\"co_form_title\">Live Link") && !br.containsHTML("class=\"co_form_title\">Direct Link")) || password || br.containsHTML("<strong>Prove you are human</strong>")) {
                     br.getPage(parameter);
                     prepareCaptchaAdress(captcha, captchaRegex, protocol);
                     continue;
@@ -226,6 +230,7 @@ public class KeepLinksMe extends PluginForDecrypt {
         for (Entry<String, String> next : captchaRegex.entrySet()) {
             if (br.containsHTML(next.getValue())) {
                 cType = next.getKey();
+                break;
             }
         }
 

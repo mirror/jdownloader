@@ -66,13 +66,13 @@ public class SimplyDebridCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         return 10;
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ac = new AccountInfo();
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         String user = Encoding.urlEncode(account.getUser());
@@ -91,7 +91,7 @@ public class SimplyDebridCom extends PluginForHost {
         String[] accInfo = page.split(";");
         if (!accInfo[0].equalsIgnoreCase("1")) {
             // account is not a premium account
-            ac.setStatus("account is not a premium account.");
+            ac.setStatus("Account is not a premium account.");
             account.setValid(false);
             return ac;
         }

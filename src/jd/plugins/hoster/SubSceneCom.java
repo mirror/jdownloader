@@ -46,8 +46,9 @@ public class SubSceneCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>An error occurred while processing your request|>Server Error)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if ((br.containsHTML("<li class=\"deleted\">")) && (!br.containsHTML("mac"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<strong>Release info:[\t\n\r ]+</strong>([^<>\"]*?)</li>").getMatch(0);
+        String filename = br.getRegex("<strong>Release info:[\t\n\r ]+</strong>([^\"]*?)</li>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = filename.replace("<div>", "").replace("</div>", "");
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".zip");
         return AvailableStatus.TRUE;
     }

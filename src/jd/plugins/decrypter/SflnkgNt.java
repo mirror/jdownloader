@@ -244,7 +244,7 @@ public class SflnkgNt extends PluginForDecrypt {
                         rc.parse();
                         rc.load();
                         File cfRe = rc.downloadCaptcha(getLocalCaptchaFile());
-                        data += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_challenge_field=" + getCaptchaCode(cfRe, param);
+                        data += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + getCaptchaCode(cfRe, param);
                         break;
                     case 3:
                         data += "&securimage_response_field=" + getCaptchaCode(br.getRegex(captchaRegex.get("basic")).getMatch(0), param);
