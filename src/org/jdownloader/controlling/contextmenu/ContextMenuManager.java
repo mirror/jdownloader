@@ -41,7 +41,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         long t = System.currentTimeMillis();
         ExtPopupMenu root = new ExtPopupMenu();
         MenuContainerRoot md = getMenuData();
-        new MenuBuilder<PackageType, ChildrenType>(this, root, si, md).run();
+        new MenuBuilder(this, root, si, md).run();
         // createLayer(root, md);
 
         return root;

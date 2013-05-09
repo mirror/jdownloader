@@ -12,6 +12,7 @@ import java.util.HashSet;
 
 import javax.swing.Icon;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPopupMenu;
@@ -188,8 +189,11 @@ public class InfoPanel extends MigPanel implements ActionListener {
      */
     public void updateInfo(final MenuItemData value) {
         // getParent().revalidate();
-        getParent().getParent().getParent().revalidate();
-        // managerFrame.getDialog().getContentPane().revalidate();
+        // Component.revalidate is 1.7 only - that's why we have to cast
+        JComponent p = (JComponent) getParent().getParent().getParent();
+
+        p.revalidate();
+
         this.item = value;
         if (value == null) {
 

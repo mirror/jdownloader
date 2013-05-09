@@ -18,11 +18,14 @@ package jd.gui.swing.jdgui.components.toolbar;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Image;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.List;
 
+import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.Box;
@@ -37,25 +40,29 @@ import javax.swing.SwingConstants;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.controlling.StateEvent;
-import org.appwork.controlling.StateEventListener;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
+import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.images.NewTheme;
 
-public class MainToolBar extends JToolBar implements MouseListener {
+public class MainToolBar extends JToolBar implements MouseListener, DownloadWatchdogListener {
 
     private static final long  serialVersionUID = 922971719957349497L;
 
@@ -72,8 +79,6 @@ public class MainToolBar extends JToolBar implements MouseListener {
     private MainToolBar() {
         super();
 
-        putClientProperty("Synthetica.toolBar.buttons.paintBorder", Boolean.TRUE);
-        putClientProperty("Synthetica.toolBar.button.pressed.paintBorder", Boolean.TRUE);
         this.setRollover(true);
         this.addMouseListener(this);
         this.setFloatable(false);
@@ -102,19 +107,8 @@ public class MainToolBar extends JToolBar implements MouseListener {
                         updateToolbar();
                     }
                 };
-                DownloadWatchDog.getInstance().getStateMachine().addListener(new StateEventListener() {
+                DownloadWatchDog.getInstance().getEventSender().addListener(MainToolBar.this);
 
-                    public void onStateUpdate(StateEvent event) {
-                    }
-
-                    public void onStateChange(StateEvent event) {
-                        if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
-                            if (speedmeter != null) speedmeter.stop();
-                        } else if (DownloadWatchDog.RUNNING_STATE == event.getNewState()) {
-                            if (speedmeter != null) speedmeter.start();
-                        }
-                    }
-                });
             }
 
         });
@@ -176,47 +170,85 @@ public class MainToolBar extends JToolBar implements MouseListener {
                     continue;
                 }
                 if (menudata._getValidateException() != null) continue;
-                if (menudata.getActionData() == null) continue;
 
-                action = menudata.createAction(null);
-                if (action.isToggle()) {
-                    bt = new JToggleButton(action);
-                    ImageIcon icon;
-                    bt.setIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), false, 24));
-                    bt.setRolloverIcon(icon);
-                    bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, 24));
-                    bt.setRolloverSelectedIcon(icon);
+                if (menudata.getType() == org.jdownloader.controlling.contextmenu.MenuItemData.Type.CONTAINER) {
+                    bt = new ExtButton(new AppAction() {
+                        {
+                            setTooltipText(menudata.getName());
+                            setName(menudata.getName());
+                            putValue(AbstractAction.LARGE_ICON_KEY, createDropdownImage(menudata.getIconKey()));
+                        }
+
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            ExtPopupMenu root = new ExtPopupMenu();
+                            new MenuBuilder(MainToolbarManager.getInstance(), root, null, (MenuContainer) menudata).run();
+                            Object src = e.getSource();
+                            if (e.getSource() instanceof Component) {
+                                Component button = (Component) e.getSource();
+                                Dimension prefSize = root.getPreferredSize();
+                                int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                                root.show(button, -insets[1], button.getHeight() - insets[0]);
+
+                            }
+                        }
+
+                    });
                     add(bt, "width 32!");
                     bt.setHideActionText(true);
-                } else {
-                    bt = new ExtButton(action);
-                    add(bt, "width 32!");
-                    bt.setHideActionText(true);
-                }
-
-                final Object value = action.getValue(Action.ACCELERATOR_KEY);
-                if (value == null) {
                     continue;
-                }
-                final KeyStroke ks = (KeyStroke) value;
-                this.rootpane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, action);
-                this.rootpane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
-                this.rootpane.getActionMap().put(action, action);
+                } else if (menudata.getActionData() != null) {
 
-                final String shortCut = action.getShortCutString();
-                if (bt != null) {
-                    if (StringUtils.isEmpty(action.getTooltipText())) {
-                        bt.setToolTipText(shortCut != null ? " [" + shortCut + "]" : null);
+                    action = menudata.createAction(null);
+                    if (action.isToggle()) {
+                        bt = new JToggleButton(action);
+                        ImageIcon icon;
+                        bt.setIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), false, 24));
+                        bt.setRolloverIcon(icon);
+                        bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, 24));
+                        bt.setRolloverSelectedIcon(icon);
+                        add(bt, "width 32!");
+                        bt.setHideActionText(true);
                     } else {
-                        bt.setToolTipText(action.getTooltipText() + (shortCut != null ? " [" + shortCut + "]" : ""));
+                        bt = new ExtButton(action);
+                        add(bt, "width 32!");
+                        bt.setHideActionText(true);
                     }
 
+                    final Object value = action.getValue(Action.ACCELERATOR_KEY);
+                    if (value == null) {
+                        continue;
+                    }
+                    final KeyStroke ks = (KeyStroke) value;
+                    this.rootpane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, action);
+                    this.rootpane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
+                    this.rootpane.getActionMap().put(action, action);
+
+                    final String shortCut = action.getShortCutString();
+                    if (bt != null) {
+                        if (StringUtils.isEmpty(action.getTooltipText())) {
+                            bt.setToolTipText(shortCut != null ? " [" + shortCut + "]" : null);
+                        } else {
+                            bt.setToolTipText(action.getTooltipText() + (shortCut != null ? " [" + shortCut + "]" : ""));
+                        }
+
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         add(Box.createHorizontalGlue(), "pushx,growx");
+
+    }
+
+    protected ImageIcon createDropdownImage(String iconKey) {
+
+        Image back = NewTheme.I().getImage(iconKey, 20, false);
+        Image checkBox = NewTheme.I().getImage("popdownButton", -1, false);
+        back = ImageProvider.merge(back, checkBox, 0, 0, 24 - checkBox.getWidth(null), 24 - checkBox.getHeight(null));
+
+        return new ImageIcon(back);
 
     }
 
@@ -251,6 +283,51 @@ public class MainToolBar extends JToolBar implements MouseListener {
 
     @Override
     public void mouseExited(MouseEvent e) {
+    }
+
+    @Override
+    public void onDownloadWatchdogDataUpdate() {
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsIdle() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (speedmeter != null) speedmeter.stop();
+            }
+        };
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsPause() {
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsRunning() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (speedmeter != null) speedmeter.start();
+            }
+        };
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsStopped() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (speedmeter != null) speedmeter.stop();
+            }
+        };
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsStopping() {
     }
 
 }

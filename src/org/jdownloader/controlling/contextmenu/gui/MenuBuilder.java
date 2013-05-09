@@ -3,27 +3,23 @@ package org.jdownloader.controlling.contextmenu.gui;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
-import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class MenuBuilder<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
+public class MenuBuilder {
 
-    private JComponent                                    root;
-    private SelectionInfo<PackageType, ChildrenType>      selection;
-    private MenuContainerRoot                             menuData;
-    private ContextMenuManager<PackageType, ChildrenType> menuManager;
-    private LogSource                                     logger;
+    private JComponent               root;
+    private SelectionInfo<?, ?>      selection;
+    private MenuContainer            menuData;
+    private ContextMenuManager<?, ?> menuManager;
+    private LogSource                logger;
 
-    public MenuBuilder(ContextMenuManager<PackageType, ChildrenType> menuManager, JComponent root, SelectionInfo<PackageType, ChildrenType> si, MenuContainerRoot md) {
+    public MenuBuilder(ContextMenuManager<?, ?> menuManager, JComponent root, SelectionInfo<?, ?> si, MenuContainer md) {
         this.root = root;
         selection = si;
         this.menuManager = menuManager;

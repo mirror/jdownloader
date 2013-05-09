@@ -1,6 +1,7 @@
 package org.jdownloader.controlling.contextmenu.gui;
 
 import java.awt.Component;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -67,7 +68,12 @@ public class NewSubMenuDialog extends AbstractDialog<Object> {
                     String[] names = imagesDir.list(new FilenameFilter() {
 
                         public boolean accept(File dir, String name) {
-                            return name.endsWith(".png");
+                            if (name.endsWith(".png")) {
+
+                                Image image = NewTheme.I().getImage(name.substring(0, name.length() - 4), -1, false);
+                                if (Math.max(image.getWidth(null), image.getHeight(null)) >= 32) { return true; }
+                            }
+                            return false;
                         }
                     });
 
