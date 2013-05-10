@@ -189,7 +189,7 @@ public class FileniumCom extends PluginForHost {
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
-        String expire = br.getRegex("(?i)<expiration\\-txt>([^<]+)").getMatch(0);
+        final String expire = br.getRegex("(?i)<expiration\\-txt>([^<]+)").getMatch(0);
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
         }
@@ -199,7 +199,19 @@ public class FileniumCom extends PluginForHost {
         }
         String hostsSup = br.cloneBrowser().getPage("http://filenium.com/jddomains");
         String[] hosts = new Regex(hostsSup, "\"([^\"]+)\",").getColumn(0);
-        ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        supportedHosts.remove("vk.com");
+        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
+            if (!supportedHosts.contains("uploaded.net")) {
+                supportedHosts.add("uploaded.net");
+            }
+            if (!supportedHosts.contains("ul.to")) {
+                supportedHosts.add("ul.to");
+            }
+            if (!supportedHosts.contains("uploaded.to")) {
+                supportedHosts.add("uploaded.to");
+            }
+        }
         ai.setProperty("multiHostSupport", supportedHosts);
         return ai;
     }

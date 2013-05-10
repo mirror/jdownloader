@@ -578,7 +578,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             final String[] photoLinks = br.getRegex("onclick=\"return showPhoto\\(\\'((\\-)?\\d+_\\d+)\\'").getColumn(0);
             if (photoLinks == null || photoLinks.length == 0) {
-                logger.info("Skipping current offset...");
+                logger.info("Current offset has no downloadable links, continuing...");
                 continue;
             }
             for (final String photoLink : photoLinks) {
@@ -589,7 +589,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(userID);
+        fp.setName("-" + userID);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
