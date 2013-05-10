@@ -23,6 +23,7 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -43,31 +44,44 @@ public class ImgSrcRu extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String        PASSWORD = null;
-    private static String agent    = null;
-    private static Object LOCK     = new Object();
+    private String  PASSWORD = null;
+    private String  agent    = null;
+    private boolean loaded   = false;
+
+    private Browser prepBrowser(Browser prepBr, Boolean neu) {
+        if (prepBr == null) prepBr = this.br.cloneBrowser();
+        if (neu) {
+            String refer = prepBr.getHeaders().get("Referer");
+            prepBr = new Browser();
+            prepBr.getHeaders().put("Referer", refer);
+        }
+        prepBr.setFollowRedirects(true);
+        prepBr.setReadTimeout(180000);
+        prepBr.setConnectTimeout(180000);
+        if (agent == null || neu) {
+            /* we first have to load the plugin, before we can reference it */
+            if (!loaded) {
+                JDUtilities.getPluginForHost("mediafire.com");
+                loaded = true;
+            }
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        prepBr.getHeaders().put("User-Agent", agent);
+        // br.setCookie(MAINPAGE + "/", "lang", "en");
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        prepBr.setCookie(MAINPAGE + "/", "iamlegal", "yeah");
+        prepBr.setCookie(MAINPAGE + "/", "per_page", "48");
+        return prepBr;
+    }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        // only allow one instance to run at any point in time. Will help with
-        // users that mass decrypt.
-        synchronized (LOCK) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            ArrayList<String> allPages = new ArrayList<String>();
-            String parameter = param.toString().replaceAll("https?://(www\\.)?imgsrc\\.(ru|ro|su)/", "http://imgsrc.ru/");
-            br.setFollowRedirects(true);
-            br.setReadTimeout(180000);
-            br.setConnectTimeout(180000);
-            if (agent == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
-            }
-            br.getHeaders().put("User-Agent", agent);
-            // br.setCookie(MAINPAGE + "/", "lang", "en");
-            br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-            br.setCookie(MAINPAGE + "/", "iamlegal", "yeah");
-            br.setCookie(MAINPAGE + "/", "per_page", "48");
+        long startTime = System.currentTimeMillis();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> allPages = new ArrayList<String>();
+        String parameter = param.toString().replaceAll("https?://(www\\.)?imgsrc\\.(ru|ro|su)/", "http://imgsrc.ru/");
 
+        try {
+            prepBrowser(br, false);
             boolean passwordprotected = false;
             if (parameter.matches("http://(www\\.)?imgsrc\\.ru/main/passchk\\.php\\?ad=\\d+")) {
                 getPage(parameter);
@@ -135,9 +149,9 @@ public class ImgSrcRu extends PluginForDecrypt {
             for (final String page : allPages) {
                 final String currentPage = MAINPAGE + page;
                 logger.info("Decrypting page " + pageCounter + " of " + allPages.size() + " and working on line: " + currentPage);
+                prepBrowser(br, true);
                 getPage(page);
-                // Check password again, because they don't set any cookies for
-                // correctly entered passwords we have to enter them again for
+                // Check password again, because they don't set any cookies for correctly entered passwords we have to enter them again for
                 // each page
                 if (isPasswordProtected()) handlePassword(parameter, param);
                 // Get the picture we're currently viewing
@@ -162,6 +176,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
+                    prepBrowser(br, true);
                     getPage(pic);
                     final DownloadLink dlink = getDownloadLink();
                     if (dlink != null) {
@@ -176,7 +191,6 @@ public class ImgSrcRu extends PluginForDecrypt {
                 }
                 counter++;
                 pageCounter++;
-                Thread.sleep(10000);
             }
 
             if (decryptedLinks.size() == 0) {
@@ -184,6 +198,10 @@ public class ImgSrcRu extends PluginForDecrypt {
                 return null;
             }
             return decryptedLinks;
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            logger.info("Time to decrypt : " + parameter + " = " + (((System.currentTimeMillis() - startTime) / 1000) / 60) + " minutes.");
         }
     }
 
@@ -227,17 +245,17 @@ public class ImgSrcRu extends PluginForDecrypt {
         boolean failed = false;
         int repeat = 3;
         for (int i = 0; i <= repeat; i++) {
-            failed = false;
             long meep = new Random().nextInt(4) * 1000;
-            Thread.sleep(meep);
+            if (failed) Thread.sleep(meep);
             try {
                 br.getPage(url);
+                if (br.getURL().contains(url)) {
+                    failed = false;
+                    break;
+                }
             } catch (Exception e) {
                 failed = true;
                 continue;
-            }
-            if (!failed && br.getURL().contains(url)) {
-                break;
             }
         }
         if (failed) {
@@ -253,6 +271,12 @@ public class ImgSrcRu extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    /* NOTE: no override to keep compatible to old stable */
+    public int getMaxConcurrentProcessingInstances() {
+        // I've used unlimited and had issues.
+        return 5;
     }
 
 }
