@@ -45,6 +45,10 @@ public class ThreeDlTv extends PluginForDecrypt {
         br.getPage(parameter);
         final String currentdomain = new Regex(parameter, "(http://(www\\.)?[a-z]+\\.3dl\\.tv)").getMatch(0);
         if (parameter.matches(".*?\\.3dl\\.tv/download/\\d+/[^<>\"/]+/detail\\.html")) {
+            if (br.containsHTML(">Dieser Eintrag existiert nicht mehr")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             final String password = br.getRegex("<th>Passwort:</th><td colspan=\"3\"><input type=\"text\" value=\"([^<>\"]*?)\"").getMatch(0);
             final String fpName = br.getRegex("<table cellpadding=\"0\" cellspacing=\"0\"><tr><td><div>([^<>\"]*?)</div></td><td").getMatch(0);
             final String[] folders = br.getRegex("\"(/folder/[a-z0-9]+)\"").getColumn(0);

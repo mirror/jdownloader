@@ -87,7 +87,7 @@ public class PornHubCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         // Convert embed links to normal links
         if (downloadLink.getDownloadURL().matches("http://(www\\.)?pornhub\\.com/embed_player\\.php\\?id=\\d+")) {
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("No htmlCode read") || br.containsHTML("flash/novideo\\.flv")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             final String newLink = br.getRegex("<link_url>(http://(www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=\\d+)</link_url>").getMatch(0);
             if (newLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setUrlDownload(newLink);

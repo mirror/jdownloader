@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -57,7 +59,14 @@ public class DivShareCom extends PluginForHost {
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Cannot connect to the rep database because:")) {
+            downloadLink.getLinkStatus().setStatusText("Divshare database connection error");
+            return AvailableStatus.UNCHECKABLE;
+        }
         if (br.containsHTML("<title>DivShare \\- Password-Protected File</title>")) {
             Form pw = br.getForm(0);
             String password = null;
@@ -133,16 +142,17 @@ public class DivShareCom extends PluginForHost {
             String size = br2.getRegex("File Size:.*?>.*?([0-9\\.]+)").getMatch(0);
             String sizef = br2.getRegex("tiny.*?>([KGTBM]+)").getMatch(0);
             if (sizef != null) size = size + " " + sizef;
-            downloadLink.setDownloadSize(SizeFormatter.getSize(size.replaceAll(",", "\\.")));
+            if (size != null) downloadLink.setDownloadSize(SizeFormatter.getSize(size.replaceAll(",", "\\.")));
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        if (br.containsHTML("Cannot connect to the rep database because:")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot connect to the rep database because:", 10 * 60 * 1000l);
         br.setFollowRedirects(true);
-        if (link.getDownloadURL().contains("direct")) {
+        if (br.getURL().contains("direct")) {
             String dllink;
             dllink = br.getURL();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -176,13 +186,11 @@ public class DivShareCom extends PluginForHost {
                     link.setProperty("pass", passCode);
                 }
             }
-            String infolink2 = infolink.replaceAll("divshare\\.com/(download|image)", "divshare.com/download/launch");
-            br.getPage(infolink2);
+            final String infolink2 = infolink.replaceAll("divshare\\.com/(download|image)", "divshare.com/download/launch");
+            getPage(infolink2);
             String dllink = br.getRegex("\"(http://[a-z0-9]+\\.divshare\\.com/launch[^<>\"]*?)\"").getMatch(0);
             if (dllink == null && br.containsHTML("application/mp3")) {
-                String id = br.getRegex("divshare.com/download/([0-9a-f]+)").getMatch(0);
-                String id2 = br.getRegex("divshare.com/download/.*?-([0-9a-f]+)").getMatch(0);
-                dllink = "http://storagestart2.divshare.com/launch.php?f=" + id + "&s=" + id2;
+                dllink = br.getRegex("var ch1  = escape\\(\\'(http://[^<>\"]*?)\\'\\);").getMatch(0);
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
@@ -194,6 +202,11 @@ public class DivShareCom extends PluginForHost {
 
         }
 
+    }
+
+    private void getPage(final String url) throws IOException, PluginException {
+        br.getPage(url);
+        if (br.containsHTML("Cannot connect to the rep database because:")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot connect to the rep database because:", 10 * 60 * 1000l);
     }
 
     @Override

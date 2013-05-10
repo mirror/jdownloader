@@ -71,6 +71,10 @@ public class SpglD extends PluginForDecrypt {
         if (new Regex(cryptedLink.getCryptedUrl(), SpglD.PATTERN_SUPPORTED_VIDEO).matches()) {
             final String id = new Regex(cryptedLink.getCryptedUrl(), SpglD.PATTERN_SUPPORTED_VIDEO).getMatch(0);
             this.br.getPage("http://video.spiegel.de/flash/" + id + ".xml");
+            if (br.containsHTML("File not found\\.")) {
+                logger.info("Link offline: " + cryptedLink.getCryptedUrl());
+                return decryptedLinks;
+            }
             final String[] types = br.getRegex("(<type\\d+>.*?type\\d+>)").getColumn(0);
             final String xmlInfos = this.br.getPage("http://www1.spiegel.de/active/playlist/fcgi/playlist.fcgi/asset=flashvideo/mode=id/id=" + id);
             final String name = new Regex(xmlInfos, SpglD.PATTERN_THEMA).getMatch(0) + "-" + new Regex(xmlInfos, SpglD.PATTERN_HEADLINE).getMatch(0);

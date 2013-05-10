@@ -40,6 +40,7 @@ public class VoaYeursCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String filename = br.getRegex("<title>Porno XXX \\- ([^<>\"]*?)</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         String externID = br.getRedirectLocation();
         if (externID != null && externID.length() < 40) {
             logger.info("Link offline: " + parameter);
@@ -194,7 +195,7 @@ public class VoaYeursCom extends PluginForDecrypt {
         }
         externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
         if (externID != null) {
-            DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
+            final DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
             dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             decryptedLinks.add(dl);
             return decryptedLinks;

@@ -66,7 +66,25 @@ public class WeTransferCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         // More chunks are possible for some links but not for all
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -2);
+        String fields = br.getRegex("\"fields\":\\{(\".*?\"\\]\\}\\}\")\\}\\}").getMatch(0);
+        if (fields != null) {
+            fields = fields.replace("\\\"", "JDTEMPREPLACEJD");
+            final String[][] postData = new Regex(fields, "\"(.*?)\":\"(.*?)\"").getMatches();
+            String postString = "";
+            int counter = 0;
+            for (String[] field : postData) {
+                field[1] = field[1].replace("JDTEMPREPLACEJD", "\"");
+                if (counter == 0) {
+                    postString += field[0] + "=" + field[1];
+                } else {
+                    postString += "&" + field[0] + "=" + field[1];
+                }
+                counter++;
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, postString, true, -2);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -2);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

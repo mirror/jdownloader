@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,63 +29,50 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidivodo.com" }, urls = { "http://(www\\.)?(en\\.)?vidivodo\\.com/video/[a-z0-9\\-]+/\\d+" }, flags = { 0 })
-public class VidiVodoCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "toukoucity.to" }, urls = { "http://(www\\.)?toukoucity\\.to/video/[A-Za-z0-9]+" }, flags = { 0 })
+public class ToukouCityTo extends PluginForHost {
 
-    private String dllink = null;
-
-    public VidiVodoCom(final PluginWrapper wrapper) {
+    public ToukouCityTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://en.vidivodo.com/pages.php?mypage_id=6";
-    }
+    private String DLLINK = null;
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public String getAGBLink() {
+        return "http://toukoucity.to/contact/";
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        setBrowserExclusive();
+        this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("http://vidivodo.com/", "useradult", "1");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>404\\. That\\'s an error\\.<|The video you have requested is not available<)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("property=\"og:title\" content=\"(.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("target=\"_blank\" title=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-            }
-        }
-        String encryptID = br.getRegex("encrypt_id:\"([^<>\"]*?)\"").getMatch(0);
-        if (encryptID == null) encryptID = br.getRegex("vid:\\'([^<>\"]*?)\\'").getMatch(0);
-        if (encryptID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        br.getPage("http://en.vidivodo.com/player/getxml?mediaid=" + encryptID);
-        dllink = br.getRegex("<url><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></url>").getMatch(0);
-        if (filename == null || dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (br.getURL().equals("http://toukoucity.to/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("class=\"titles\">([^<>\"]*?)</h2>").getMatch(0);
+        DLLINK = br.getRegex("\\(\\'file\\',\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("").getMatch(0);
+        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".flv");
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null || ext.length() > 5) ext = ".mp4";
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
+            con = br2.openGetConnection(DLLINK);
+            if (!con.getContentType().contains("html"))
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
+            else
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
             return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
-            } catch (final Throwable e1) {
+            } catch (Throwable e) {
             }
         }
     }
@@ -92,7 +80,7 @@ public class VidiVodoCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -101,14 +89,19 @@ public class VidiVodoCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
-    public void resetDownloadlink(final DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 }

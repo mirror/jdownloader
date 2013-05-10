@@ -213,6 +213,7 @@ public class Rlnks extends PluginForDecrypt {
                 br.submitForm(ALLFORM);
                 if (br.getURL().contains("error.php")) {
                     br.getPage(partLink);
+                    continue;
                 }
                 ALLFORM = br.getFormbyProperty("name", "form");
                 ALLFORM = ALLFORM == null && b ? br.getForm(0) : ALLFORM;
