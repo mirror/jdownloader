@@ -39,6 +39,7 @@ public class OneChannelCh extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("1channel.li/", "1channel.ch/");
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("\\(TV Show\\) \\-  on 1Channel \\| LetMeWatchThis</title>")) {
             final String[] episodes = br.getRegex("class=\"tv_episode_item\"> <a href=\"(/tv[^<>\"]*?)\"").getColumn(0);
@@ -49,6 +50,10 @@ public class OneChannelCh extends PluginForDecrypt {
             for (String singleLink : episodes)
                 decryptedLinks.add(createDownloadlink("http://www.1channel.ch" + singleLink));
         } else {
+            if (br.getURL().equals("http://www.1channel.ch/")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online \\-  on 1Channel \\| [^<>\"]*?</title>").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
             if (parameter.contains("season-") && fpName != null) {

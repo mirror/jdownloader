@@ -33,14 +33,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net", "chili-warez.net" }, urls = { "http://(www\\.)?mov\\-world\\.net/(?!news/)(\\?id=\\d+|.*?/.*?\\d+\\.html)", "http://(www\\.)?xxx\\-4\\-free\\.net/.*?/.*?\\.html", "http://(www\\.)?chili\\-warez\\.net/[^<>\"]+\\d+\\.html" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net", "chili-warez.net" }, urls = { "http://(www\\.)?mov\\-world\\.net/(\\?id=\\d+|.*?/.*?\\d+\\.html)", "http://(www\\.)?xxx\\-4\\-free\\.net/.*?/.*?\\.html", "http://(www\\.)?chili\\-warez\\.net/[^<>\"]+\\d+\\.html" }, flags = { 0, 0, 0 })
 public class MvWrldNt extends PluginForDecrypt {
 
     public MvWrldNt(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String UNSUPPORTEDLINKS = "http://(www\\.)?xxx\\-4\\-free\\.net//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|streams/index|stories/index|partner/anmelden|kontakt).*?\\.html";
+    private static final String UNSUPPORTEDLINKS = "http://(www\\.)?(xxx\\-4\\-free\\.net|mov\\-world\\.net)//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|streams/index|stories/index|partner/anmelden|kontakt).*?\\.html";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {

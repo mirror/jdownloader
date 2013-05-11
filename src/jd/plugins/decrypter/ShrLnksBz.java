@@ -155,6 +155,7 @@ public class ShrLnksBz extends PluginForDecrypt {
             // Captcha Recognition broken - auto = false
             boolean auto = false;
             final int max = 5;
+            boolean failed = true;
             for (int i = 0; i <= max; i++) {
                 String Captchamap = br.getRegex("\"(/captcha\\.gif\\?d=\\d+.*?PHPSESSID=.*?)\"").getMatch(0);
                 if (Captchamap == null) {
@@ -192,9 +193,10 @@ public class ShrLnksBz extends PluginForDecrypt {
                     }
                     continue;
                 }
+                failed = false;
                 break;
             }
-            if (br.containsHTML("> Your choice was wrong\\.<")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            if (failed) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         }
         /* use cnl2 button if available */
         if (br.containsHTML("/cnl2/")) {

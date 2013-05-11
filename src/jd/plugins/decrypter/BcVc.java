@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 18160 $", interfaceVersion = 2, names = { "bc.vc" }, urls = { "http://(www\\.)?bc\\.vc/([A-Za-z0-9\\-]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 18160 $", interfaceVersion = 2, names = { "bc.vc" }, urls = { "http://(www\\.)?bc\\.vc/(?!advertising)([A-Za-z0-9\\-]+)?" }, flags = { 0 })
 public class BcVc extends PluginForDecrypt {
 
     public BcVc(PluginWrapper wrapper) {
@@ -44,8 +44,12 @@ public class BcVc extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.getURL().equals("http://bc.vc/") || br.containsHTML("top\\.location\\.href = \"http://bc\\.vc/\"")) {
+        if (br.getURL().equals("http://bc.vc/") || br.containsHTML("top\\.location\\.href = \"http://bc\\.vc/\"") || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("Unable to connect to database")) {
+            logger.info("Link can't be decrypted because of server problems: " + parameter);
             return decryptedLinks;
         }
         final String[] matches = br.getRegex("aid\\:(.*?)\\,lid\\:(.*?)\\,oid\\:(.*?)\\,ref\\: ?\\'(.*?)\\'\\}").getRow(0);

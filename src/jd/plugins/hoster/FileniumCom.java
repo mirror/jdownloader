@@ -23,6 +23,8 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -39,6 +41,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -53,12 +56,18 @@ public class FileniumCom extends PluginForHost {
     public FileniumCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://filenium.com/checkuserjd");
+        setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
         return "http://filenium.com/legal";
     }
+
+    /** The list of server values displayed to the user */
+    private final String[] domainsList    = new String[] { "filenium.com", "ams.filenium.com", "lon.filenium.com" };
+    private final String   domains        = "domains";
+    private String         SELECTEDDOMAIN = domainsList[0];
 
     public Browser newBrowser() {
         br = new Browser();
@@ -175,7 +184,7 @@ public class FileniumCom extends PluginForHost {
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
         login(acc, false);
         showMessage(link, "Task 1: Generating Link");
-        String dllink = br.getPage("http://filenium.com/?filenium&filez=" + Encoding.urlEncode(link.getDownloadURL()));
+        String dllink = br.getPage("http://" + SELECTEDDOMAIN + "/?filenium&filez=" + Encoding.urlEncode(link.getDownloadURL()));
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replaceAll("\\\\/", "/");
         showMessage(link, "Task 2: Download begins!");
@@ -197,7 +206,7 @@ public class FileniumCom extends PluginForHost {
         if (acctype != null) {
             ai.setStatus(acctype + " User");
         }
-        String hostsSup = br.cloneBrowser().getPage("http://filenium.com/jddomains");
+        String hostsSup = br.cloneBrowser().getPage("http://" + SELECTEDDOMAIN + "/jddomains");
         String[] hosts = new Regex(hostsSup, "\"([^\"]+)\",").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         supportedHosts.remove("vk.com");
@@ -219,6 +228,7 @@ public class FileniumCom extends PluginForHost {
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
+                SELECTEDDOMAIN = getConfiguredDomain();
                 /** Load cookies */
                 br = newBrowser();
                 final Object ret = account.getProperty("cookies", null);
@@ -235,7 +245,7 @@ public class FileniumCom extends PluginForHost {
                         return;
                     }
                 }
-                br.getPage("http://filenium.com/checkuserjd?user=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()));
+                br.getPage("http://" + SELECTEDDOMAIN + "/checkuserjd?user=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie("http://filenium.com", "secureid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (!br.containsHTML("type>premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
@@ -254,8 +264,23 @@ public class FileniumCom extends PluginForHost {
         }
     }
 
+    private String getConfiguredDomain() {
+        switch (getPluginConfig().getIntegerProperty(this.domains, -1)) {
+        case 0:
+            return domainsList[0];
+        case 1:
+            return domainsList[1];
+        default:
+            return domainsList[2];
+        }
+    }
+
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), domains, domainsList, JDL.L("plugins.host.FileniumCom.domains", "Use this domain:")).setDefaultValue(0));
     }
 
     @Override
