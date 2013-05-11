@@ -21,5 +21,5 @@ interaction_shutdown_dialog_title_shutdown=Apagar?
 interaction_shutdown_dialog_title_standby=Espera?
 jd_plugins_optional_jdshutdown=JDShutdown
 jd_plugins_optional_jdshutdown_description=Configureu si voleu tancar, hivernar o posar en mode pausa en espera l'ordinador, o bé tancar el JDownloader, de manera automàtica en finalitzar les descàrregues.
-lit_shutdownn=Desconnectar
+lit_shutdownn=Desconnecta
 show_admin=Es necesiten permisos d'administrador per configurar el JDownloader per la Hivernació o la Pausa en espera
