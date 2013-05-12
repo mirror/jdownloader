@@ -46,28 +46,7 @@ public class FickPornoNet extends PluginForDecrypt {
             return null;
         }
         filename = filename.trim();
-        String externID = br.getRegex("value=\"options=(http://.*?)\"").getMatch(0);
-        if (externID != null) {
-            br.getPage(externID);
-            if (br.containsHTML("No htmlCode read")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            String finallink = br.getRegex("<flv_url>(http://.*?)</flv_url>").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("<video_url>(<\\!\\[CDATA\\[)?(.*?)(\\]\\])?></video_url>").getMatch(1);
-                if (finallink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-            }
-
-            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
-            dl.setFinalFileName(filename + ".flv");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        externID = br.getRegex("flashvars=\"file=(http.*?)http://static\\.youporn\\.com/r/").getMatch(0);
+        String externID = br.getRegex("flashvars=\"file=(http.*?)http://static\\.youporn\\.com/r/").getMatch(0);
         if (externID != null) {
             br.getPage(Encoding.htmlDecode(externID));
             if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
@@ -90,7 +69,30 @@ public class FickPornoNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML("(holyxxx\\.com/|name=\"movie\" value=\"http://(www\\.)?pornotube\\.com/player/)")) {
+        externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
+        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        // pornhub handling number 2
+        externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            if (br.containsHTML("<link_url>N/A</link_url>") || br.containsHTML("No htmlCode read") || br.containsHTML(">404 Not Found<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            externID = br.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        if (br.containsHTML("(holyxxx\\.com/|name=\"movie\" value=\"http://(www\\.)?pornotube\\.com/player/)") || br.containsHTML("NA</table></div></div><br>")) {
             logger.info("This link is probably broken: " + parameter);
             return decryptedLinks;
         }

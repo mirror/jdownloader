@@ -184,12 +184,7 @@ public class SockShareCom extends PluginForHost {
         try {
             login(account, true);
         } catch (PluginException e) {
-            if (br.containsHTML("Pro  ?Status</?[^>]+>[\r\n\t ]+<[^>]+>Free Account")) {
-                logger.warning("Free Accounts are not currently supported");
-                ai.setStatus("Free Accounts are not currently supported");
-            }
-            account.setValid(false);
-            return ai;
+            throw e;
         }
         br.getPage("http://www.sockshare.com/profile.php?pro");
         ai.setUnlimitedTraffic();
@@ -254,13 +249,14 @@ public class SockShareCom extends PluginForHost {
                 login.put("remember", "1");
                 br.submitForm(login);
                 // no auth = not logged / invalid account.
-                if (br.getCookie(MAINPAGE, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha wrong!\r\nUngültiger Benutzername oder ungültiges Passwort oder ungültiges login Captcha!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // finish off more code here
                 br.getPage("http://www.sockshare.com/profile.php?pro");
                 proActive = br.getRegex("Pro  ?Status</?[^>]+>[\r\n\t ]+<[^>]+>(Active)").getMatch(0);
+                if (br.containsHTML("<td>Free Account \\- <strong><a href=\"/gopro\\.php\\?upgrade\"")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported for this host!\r\nFree Accounts werden für diesen Hoster nicht unterstützt!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 if (proActive == null) {
                     logger.severe(br.toString());
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnknown accounttype!\r\nUnbekannter Accounttyp!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();

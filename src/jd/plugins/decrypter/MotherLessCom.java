@@ -60,8 +60,10 @@ public class MotherLessCom extends PluginForDecrypt {
         // alters 'domain/(g/name/)uid' by removing all but uid
         String parameter = param.toString().replaceAll("motherless\\.com/g/[\\w\\-]+/", "motherless.com/");
         br.getPage(parameter);
-        if (br.containsHTML("Not Available") || br.containsHTML("not found") || br.containsHTML("You will be redirected to") || br.containsHTML(">The page you\\'re looking for cannot be found")) {
-            logger.info("Link offline: " + parameter);
+        if (br.containsHTML("Not Available") || br.containsHTML("not found") || br.containsHTML("You will be redirected to") || br.containsHTML("The page you\\'re looking for cannot be found")) {
+            final DownloadLink dl = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
+            dl.setProperty("dltype", "offline");
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (br.containsHTML("class=\"red\\-pill\\-button rounded\\-corners\\-r5\">Reply</a>")) {
@@ -71,13 +73,13 @@ public class MotherLessCom extends PluginForDecrypt {
         // Common bug: It can happen that the texts that we use to differ between the kinds of links change so the decrypter breaks down,
         // always check that first!
         if (br.containsHTML("The member uploaded this image for subscribers only")) {
-            DownloadLink dl = createDownloadlink(parameter.replace("motherless", "premiummotherlesspictures"));
+            final DownloadLink dl = createDownloadlink(parameter.replace("motherless", "premiummotherlesspictures"));
             dl.setProperty("dltype", "image");
             dl.setProperty("onlyregistered", "true");
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (br.containsHTML("The member uploaded this video for subscribers only")) {
-            DownloadLink dl = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
+            final DownloadLink dl = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
             dl.setProperty("dltype", "video");
             dl.setProperty("onlyregistered", "true");
             decryptedLinks.add(dl);

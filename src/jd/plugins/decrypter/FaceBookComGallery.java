@@ -56,6 +56,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
             if (parameter.matches(FBSHORTLINK)) {
                 br.getPage(parameter);
                 final String finallink = br.getRedirectLocation();
+                if (br.containsHTML(">Something\\'s wrong here")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
                 if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;

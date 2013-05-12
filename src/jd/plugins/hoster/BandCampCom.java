@@ -72,6 +72,25 @@ public class BandCampCom extends PluginForHost {
         }
         br.getHeaders().put("User-Agent", userAgent);
         br.setFollowRedirects(true);
+        final Browser br2 = br.cloneBrowser();
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (!con.getContentType().contains("html")) {
+                DLLINK = downloadLink.getDownloadURL();
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                return AvailableStatus.TRUE;
+            } else {
+                br.followConnection();
+            }
+
+        } catch (final Exception e) {
+        }
+        try {
+            con.disconnect();
+        } catch (Throwable e) {
+        }
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>Sorry, that something isn\\'t here|>start at the beginning</a> and you\\'ll certainly find what)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex filenameRegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
@@ -87,10 +106,8 @@ public class BandCampCom extends PluginForHost {
         } else {
             downloadLink.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(filename.trim()) + ".mp3");
         }
-        Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
             if (!con.getContentType().contains("html"))

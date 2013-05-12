@@ -124,7 +124,10 @@ public class IfolderRu extends PluginForHost {
             }
             captchaForm.put("ints_session", ints_session);
             captchaForm.setAction(br.getURL());
-            if (!captchaurl.startsWith("http://")) captchaurl = "http://ints.rusfolder.com" + captchaurl;
+            if (!captchaurl.startsWith("http://")) {
+            	String host = new Regex(br.getURL(), "(https?://.*?)/").getMatch(0);
+            	captchaurl = host + captchaurl;
+            }
             /* Captcha */
             String captchaCode = getCaptchaCode("ifolder.ru", captchaurl, downloadLink);
             captchaForm.put("confirmed_number", captchaCode);
@@ -135,6 +138,13 @@ public class IfolderRu extends PluginForHost {
                 captchaForm.put(specialStuff.getMatch(0), specialStuff.getMatch(1));
             } else {
                 logger.info("Specialstuff is null, this could cause trouble...");
+            }
+            /* hidden code */
+            Regex hiddenCode = br.getRegex("var c = \\[\\'(.*?)\\'\\, \\'hh([a-z0-9]+?)\\'\\];");
+            if (hiddenCode.getMatch(0) != null && hiddenCode.getMatch(1) != null) {
+            	captchaForm.put(hiddenCode.getMatch(0), hiddenCode.getMatch(1));
+            } else {
+            	logger.info("hidden_code is null, this could cause trouble...");
             }
             try {
                 br.submitForm(captchaForm);

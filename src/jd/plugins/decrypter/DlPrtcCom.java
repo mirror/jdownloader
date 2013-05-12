@@ -30,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl-protect.com" }, urls = { "http://(www\\.)?dl\\-protect\\.com/(en/)?[A-Z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl-protect.com" }, urls = { "http://(www\\.)?dl\\-protect\\.com/(?!fr)(en/)?[A-Z0-9]+" }, flags = { 0 })
 public class DlPrtcCom extends PluginForDecrypt {
 
     public DlPrtcCom(PluginWrapper wrapper) {
@@ -48,6 +48,10 @@ public class DlPrtcCom extends PluginForDecrypt {
         String parameter = param.toString().replaceAll("dl\\-protect\\.com/(en|fr)/", "dl-protect.com/").replace("dl-protect.com/", "dl-protect.com/en/");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
+        if (br.containsHTML(">Unfortunately, the link you are looking for is not found")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML(PASSWORDTEXT) || br.containsHTML(CAPTCHATEXT)) {
             for (int i = 0; i <= 5; i++) {
                 Form importantForm = getForm();
@@ -97,7 +101,7 @@ public class DlPrtcCom extends PluginForDecrypt {
     }
 
     private String getCaptchaLink() {
-        final String captchaLink = br.getRegex("\"(/captcha\\.php\\?uid=[a-z0-9]+)\"").getMatch(0);
+        final String captchaLink = br.getRegex("<img id=\"captcha_\" src=\"(/captcha\\.php\\?uid=[a-z0-9]+)\"").getMatch(0);
         return captchaLink;
     }
 

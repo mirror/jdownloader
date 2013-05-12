@@ -124,6 +124,8 @@ public class MotherLessCom extends PluginForHost {
                 }
             }
         }
+        // No link there but link to the full picture -> Offline
+        if (DLLINK == null && br.containsHTML("<div id=\"media\\-media\">[\t\n\r ]+<div>[\t\n\r ]+<a href=\"/[A-Z0-9]+\\?full\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
@@ -131,7 +133,7 @@ public class MotherLessCom extends PluginForHost {
         br.getPage(parameter.getDownloadURL());
         DLLINK = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?\\.flv)\\'\\)").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
+            DLLINK = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9]+/[^<>\"]*?\\.flv)\"").getMatch(0);
         }
         if (DLLINK != null && !DLLINK.contains("?start=0")) DLLINK += "?start=0";
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -182,7 +184,9 @@ public class MotherLessCom extends PluginForHost {
         br.getHeaders().put("User-Agent", ua);
         br.setFollowRedirects(true);
         String betterName = null;
-        if ("video".equals(parameter.getStringProperty("dltype"))) {
+        if ("offline".equals(parameter.getStringProperty("dltype"))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if ("video".equals(parameter.getStringProperty("dltype"))) {
             getVideoLink(parameter);
             betterName = new Regex(parameter.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
             if (betterName != null) betterName += ".flv";

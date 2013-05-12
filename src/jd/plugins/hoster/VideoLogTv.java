@@ -45,11 +45,13 @@ public class VideoLogTv extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().equals("http://videolog.tv/index.php") || br.containsHTML("<title>Videolog \\| A maior comunidade de produtores de vídeo do Brasil</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Removed because of copyright stuff
+        if (br.containsHTML(">Este v\\&iacute;deo foi bloqueado por desrespeitar o acordo de utiliza\\&ccedil;\\&atilde;o,")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<input type=\\'hidden\\' id=\"prop3\" value=\"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1 class=\"titulo\\-video\">(.*?) <g:plusone>").getMatch(0);
@@ -60,17 +62,22 @@ public class VideoLogTv extends PluginForHost {
                 }
             }
         }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
+        if (br.containsHTML(">V\\&iacute;deo para maiores de 18 anos")) {
+            downloadLink.getLinkStatus().setStatusText("18+ video: Only available for registered users");
+            downloadLink.setName(filename + ".mp4");
+            return AvailableStatus.TRUE;
+        }
         br.getPage("http://embed-video.videolog.tv/api/player/video.php?format=xml&id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-        System.out.println(br.toString() + "\n");
         /** Prefer HD quality */
         DLLINK = br.getRegex("<hd_720><\\!\\[CDATA\\[(http://.*?)\\]\\]></hd_720>").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("<standard><\\!\\[CDATA\\[(http://.*?)\\]\\]></standard>").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".mp4";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        downloadLink.setFinalFileName(filename + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -93,6 +100,14 @@ public class VideoLogTv extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(">V\\&iacute;deo para maiores de 18 anos")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "18+ video: Only available for registered users");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

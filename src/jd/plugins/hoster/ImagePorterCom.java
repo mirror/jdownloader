@@ -43,23 +43,25 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imageporter.com" }, urls = { "http://(www\\.)?imageporter\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imageporter.com" }, urls = { "http://(www\\.)?(imageporter\\.com/[a-z0-9]{12}|img\\d+\\.imageporter\\.com/i/\\d+/[a-z0-9]{12})" }, flags = { 0 })
 public class ImagePorterCom extends PluginForHost {
 
     private String              BRBEFORE            = "";
 
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-
     private static final String COOKIE_HOST         = "http://imageporter.com";
-
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
-
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static Object       LOCK                = new Object();
 
     public ImagePorterCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload("http://www.imageporter.com/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {

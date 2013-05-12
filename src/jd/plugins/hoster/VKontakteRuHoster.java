@@ -44,7 +44,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?|audiolink/\\d+|videolink/\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(vkontaktedecrypted\\.ru/(picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?|audiolink/\\d+|videolink/\\d+)|vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+)" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN         = "http://vk.com";
@@ -52,6 +52,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private String              FINALLINK      = null;
     private static final String AUDIOLINK      = "http://vkontaktedecrypted\\.ru/audiolink/\\d+";
     private static final String VIDEOLINK      = "http://vkontaktedecrypted\\.ru/videolink/\\d+";
+    private static final String DOCLINK        = "http://vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+";
     private int                 MAXCHUNKS      = 1;
     /** Settings stuff */
     private final String        USECOOKIELOGIN = "USECOOKIELOGIN";
@@ -117,6 +118,20 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
             }
             if (!linkOk(link, link.getFinalFileName())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (link.getDownloadURL().matches(DOCLINK)) {
+            MAXCHUNKS = 0;
+            getPageSafe(link.getDownloadURL(), aa);
+            if (br.containsHTML("File deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("This document is available only to its owner\\.")) {
+                link.getLinkStatus().setStatusText("This document is available only to its owner");
+                link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+                return AvailableStatus.TRUE;
+            }
+            String filename = br.getRegex("title>([^<>\"]*?)</title>").getMatch(0);
+            FINALLINK = br.getRegex("var src = \\'(http://[^<>\"]*?)\\';").getMatch(0);
+            if (filename == null || FINALLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filename = Encoding.htmlDecode(filename.trim());
+            if (!linkOk(link, filename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             String albumID = link.getStringProperty("albumid");
             String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
@@ -158,6 +173,17 @@ public class VKontakteRuHoster extends PluginForHost {
 
     }
 
+    // If an account security check appears, it will also be handled
+    private void getPageSafe(final String page, final Account acc) throws Exception {
+        br.getPage(page);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
+            logger.info("Avoiding 'https://login.vk.com/?role=fast&_origin=' security check by re-logging in...");
+            // Force login
+            login(br, acc, true);
+            br.getPage(page);
+        }
+    }
+
     private boolean linkOk(final DownloadLink downloadLink, final String finalfilename) throws IOException {
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -194,9 +220,9 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        /**
-         * Chunks disabled because (till now) this plugin only exists to download pictures
-         */
+        if (downloadLink.getDownloadURL().matches(DOCLINK)) {
+            if (br.containsHTML("This document is available only to its owner\\.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This document is available only to its owner"); }
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, FINALLINK, true, MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -42,7 +43,12 @@ public class FakkuNet extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         if (new Regex(parameter, "http://(www\\.)?fakku\\.net/viewmanga\\.php\\?id=\\d+").matches()) {
-            br.getPage(parameter + "&mode=download");
+            try {
+                br.getPage(parameter + "&mode=download");
+            } catch (final BrowserException e) {
+                logger.info("Cannot decrypt link because of server or connection problems: " + parameter);
+                return decryptedLinks;
+            }
             if (br.getRedirectLocation() != null) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;

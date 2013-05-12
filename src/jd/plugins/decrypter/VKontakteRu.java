@@ -41,7 +41,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?vk\\.com/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=\\d+\\&id=\\d+|video\\?gid=\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|id\\d+(\\?z=albums\\d+)?|wall\\-\\d+|[A-Za-z0-9\\-_]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?vk\\.com/(?!doc\\d+)(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=\\d+\\&id=\\d+|video\\?gid=\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|id\\d+(\\?z=albums\\d+)?|wall\\-\\d+|[A-Za-z0-9\\-_]+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -55,7 +55,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String FILEOFFLINE                   = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
     private static final String DOMAIN                        = "http://vk.com";
     private static final String PATTERN_AUDIO_GENERAL         = ".*?vk\\.com/audio.*?";
-    private static final String PATTERN_AUDIO_ALBUM           = "http://(www\\.)?vk\\.com/(audio(\\.php)?\\?id=(\\-)?\\d+|audios\\d+)";
+    private static final String PATTERN_AUDIO_ALBUM           = ".*?vk\\.com/(audio(\\.php)?\\?id=(\\-)?\\d+|audios(\\-)?\\d+)";
     private static final String PATTERN_VIDEO_SINGLE          = ".*?vk\\.com/(video(\\-)?\\d+_\\d+|video_ext\\.php\\?oid=\\d+\\&id=\\d+)";
     private static final String PATTERN_VIDEO_ALBUM           = ".*?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos\\d+)";
     private static final String PATTERN_VIDEO_COMMUNITY_ALBUM = ".*?vk\\.com/video\\?gid=\\d+";
@@ -159,23 +159,42 @@ public class VKontakteRu extends PluginForDecrypt {
         if (new Regex(parameter, "vk\\.com/audio\\?id=\\-\\d+").matches()) {
             postData = "act=load_audios_silent&al=1&edit=0&id=0&gid=" + new Regex(parameter, "(\\d+)$").getMatch(0);
         } else {
-            postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + new Regex(parameter, "(\\d+)$").getMatch(0);
+            postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + new Regex(parameter, "((\\-)?\\d+)$").getMatch(0);
         }
         br.postPage("http://vk.com/audio", postData);
-        final String[][] audioLinks = br.getRegex("\\'(\\d+)\\',\\'(http://cs\\d+\\.[a-z0-9]+\\.[a-z]{2,4}/u\\d+/audios?/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
-        if (audioLinks == null || audioLinks.length == 0) return null;
-        for (String audioInfo[] : audioLinks) {
-            final String finallink = "http://vkontaktedecrypted.ru/audiolink/" + audioInfo[0];
+        final String completeData = br.getRegex("\\{\"all\":\\[(\\[.*?\\])\\]\\}").getMatch(0);
+        if (completeData == null) return null;
+        final String[] audioData = completeData.split(",\\[");
+        if (audioData == null || audioData.length == 0) return null;
+        for (final String singleAudioData : audioData) {
+            final String[] singleAudioDataAsArray = new Regex(singleAudioData, "\\'(.*?)\\'").getColumn(0);
+            final String finallink = "http://vkontaktedecrypted.ru/audiolink/" + singleAudioDataAsArray[1];
             final DownloadLink dl = createDownloadlink(finallink);
             dl.setProperty("postdata", postData);
-            dl.setProperty("directlink", Encoding.htmlDecode(audioInfo[1]));
+            dl.setProperty("directlink", Encoding.htmlDecode(singleAudioDataAsArray[2]));
             // Set filename so we have nice filenames here ;)
-            dl.setFinalFileName(Encoding.htmlDecode(audioInfo[2].trim()) + " - " + Encoding.htmlDecode(audioInfo[3].trim()) + ".mp3");
+            dl.setFinalFileName(Encoding.htmlDecode(singleAudioDataAsArray[5].trim()) + " - " + Encoding.htmlDecode(singleAudioDataAsArray[6].trim()) + ".mp3");
             dl.setAvailable(true);
             decryptedLinks.add(dl);
             logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
             overallCounter++;
         }
+
+        // final String[][] audioLinks =
+        // br.getRegex("\\'(\\d+)\\',\\'(http://cs\\d+\\.[a-z0-9]+\\.[a-z]{2,4}/u\\d+/audios?/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
+        // if (audioLinks == null || audioLinks.length == 0) return null;
+        // for (String audioInfo[] : audioLinks) {
+        // final String finallink = "http://vkontaktedecrypted.ru/audiolink/" + audioInfo[0];
+        // final DownloadLink dl = createDownloadlink(finallink);
+        // dl.setProperty("postdata", postData);
+        // dl.setProperty("directlink", Encoding.htmlDecode(audioInfo[1]));
+        // // Set filename so we have nice filenames here ;)
+        // dl.setFinalFileName(Encoding.htmlDecode(audioInfo[2].trim()) + " - " + Encoding.htmlDecode(audioInfo[3].trim()) + ".mp3");
+        // dl.setAvailable(true);
+        // decryptedLinks.add(dl);
+        // logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
+        // overallCounter++;
+        // }
         return decryptedLinks;
     }
 

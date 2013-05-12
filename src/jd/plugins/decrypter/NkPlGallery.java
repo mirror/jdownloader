@@ -89,7 +89,8 @@ public class NkPlGallery extends PluginForDecrypt {
                     return null;
                 }
                 final String profileNumber = new Regex(parameter, "nk.pl/#profile/(\\d+)").getMatch(0);
-                final String profilName = br.getRegex("<h3><a href=\"/profile/" + profileNumber + "\">(.*?)</a></h3>").getMatch(0);
+                String profilName = br.getRegex("<h3><a href=\"/profile/" + profileNumber + "\">(.*?)</a></h3>").getMatch(0);
+                profilName = Encoding.htmlDecode(profilName.trim());
                 String galleryName = br.getRegex("album_name\" title=\"(.*?)\"").getMatch(0);
                 galleryName = galleryName == null ? "Album" : galleryName;
                 if (profilName == null) {
@@ -148,8 +149,15 @@ public class NkPlGallery extends PluginForDecrypt {
         String password = null;
         br.getPage(MAINPAGE);
         synchronized (LOCK) {
-            username = getPluginConfig().getStringProperty("user", null);
-            password = getPluginConfig().getStringProperty("pass", null);
+            final PluginForHost vkPlugin = JDUtilities.getPluginForHost("nk.pl");
+            final Account aa = AccountController.getInstance().getValidAccount(vkPlugin);
+            if (aa != null) {
+                username = aa.getUser();
+                password = aa.getPass();
+            } else {
+                username = getPluginConfig().getStringProperty("user", null);
+                password = getPluginConfig().getStringProperty("pass", null);
+            }
             if (username != null && password != null) {
                 br.postPage(POSTPAGE, "login=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password) + "&remember=1&form_name=login_form&target=&manual=1");
             }
