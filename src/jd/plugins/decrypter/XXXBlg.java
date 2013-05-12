@@ -79,18 +79,24 @@ public class XXXBlg extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            String[] links = new Regex(pagepiece, "\"http://xxx\\-blog\\.to/download/\\?(http[^<>\"]*?)\"").getColumn(0);
-            if (links == null || links.length == 0) links = new Regex(pagepiece, "<a href=\"(http[^<>\"]*?)\" target=\"_blank\"").getColumn(0);
-            if (links == null || links.length == 0) {
+            final String[] regexes = { "\"http://xxx\\-blog\\.to/download/\\?(http[^<>\"]*?)\"", "<a href=\"(http[^<>\"]*?)\" target=\"_blank\"" };
+            for (final String currentRegex : regexes) {
+                final String[] links = new Regex(pagepiece, currentRegex).getColumn(0);
+                if (links == null || links.length == 0) {
+                    continue;
+                }
+                for (String link : links) {
+                    if (link.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)")) continue;
+                    final DownloadLink dlink = createDownloadlink(link);
+                    dlink.setSourcePluginPasswordList(pwList);
+                    decryptedLinks.add(dlink);
+                }
+            }
+            if (decryptedLinks.size() == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (String link : links) {
-                if (link.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)")) continue;
-                final DownloadLink dlink = createDownloadlink(link);
-                dlink.setSourcePluginPasswordList(pwList);
-                decryptedLinks.add(dlink);
-            }
+
             if (fpname != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpname.trim());
