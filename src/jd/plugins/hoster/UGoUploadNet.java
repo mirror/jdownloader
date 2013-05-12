@@ -34,6 +34,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
@@ -53,7 +54,7 @@ public class UGoUploadNet extends PluginForHost {
         return "http://www.ugoupload.net/terms.html";
     }
 
-    // Captcha type: reCaptcha
+    // Captcha type: solvemedia
     private static Object       LOCK                     = new Object();
     private final String        MAINPAGE                 = "http://ugoupload.net";
     private final boolean       RESUME                   = false;
@@ -108,23 +109,40 @@ public class UGoUploadNet extends PluginForHost {
             br.followConnection();
             final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
             final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-            if (rcID == null || captchaAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setId(rcID);
-            rc.load();
-            for (int i = 0; i <= 5; i++) {
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, RESUME, MAXCHUNKS);
-                if (!dl.getConnection().isContentDisposition()) {
-                    br.followConnection();
-                    rc.reload();
-                    continue;
+            if (captchaAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (rcID != null) {
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.setId(rcID);
+                rc.load();
+                for (int i = 0; i <= 5; i++) {
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, downloadLink);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, RESUME, MAXCHUNKS);
+                    if (!dl.getConnection().isContentDisposition()) {
+                        br.followConnection();
+                        rc.reload();
+                        continue;
+                    }
+                    break;
                 }
-                break;
+                captcha = true;
+            } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                captcha = true;
+                for (int i = 0; i <= 5; i++) {
+                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                    final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    final String code = getCaptchaCode(cf, downloadLink);
+                    final String chid = sm.getChallenge(code);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, "submit=continue&submitted=1&d=1&adcopy_challenge=" + chid + "&adcopy_response=manual_challenge", RESUME, MAXCHUNKS);
+                    if (!dl.getConnection().isContentDisposition()) {
+                        br.followConnection();
+                        continue;
+                    }
+                    break;
+                }
             }
-            captcha = true;
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();

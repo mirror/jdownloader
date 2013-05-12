@@ -82,45 +82,9 @@ public class VKontakteRuHoster extends PluginForHost {
 
         br.setFollowRedirects(false);
         // Login required to check/download
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        // This shouldn't happen
-        if (aa == null) {
-            link.getLinkStatus().setStatusText("Only downlodable via account!");
-            return AvailableStatus.UNCHECKABLE;
-        }
-        login(br, aa, false);
-        if (link.getDownloadURL().matches(AUDIOLINK)) {
-            String finalFilename = link.getFinalFileName();
-            if (finalFilename == null) finalFilename = link.getName();
-            final String audioID = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-            FINALLINK = link.getStringProperty("directlink", null);
-            if (!linkOk(link, finalFilename)) {
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("http://vk.com/audio", link.getStringProperty("postdata", null));
-                FINALLINK = br.getRegex("\\'" + audioID + "\\',\\'(http://cs\\d+\\.[a-z0-9]+\\.[a-z]{2,4}/u\\d+/audios?/[a-z0-9]+\\.mp3)\\'").getMatch(0);
-                if (FINALLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (!linkOk(link, finalFilename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                link.setProperty("directlink", FINALLINK);
-            }
-        } else if (link.getDownloadURL().matches(VIDEOLINK)) {
+        if (link.getDownloadURL().matches(DOCLINK)) {
             MAXCHUNKS = 0;
-            br.setFollowRedirects(true);
-            FINALLINK = link.getStringProperty("directlink", null);
-            // Check if directlink is expired
-            if (!linkOk(link, link.getFinalFileName())) {
-                br.getPage("http://vk.com/video_ext.php?oid=" + link.getStringProperty("userid", null) + "&id=" + link.getStringProperty("videoid", null) + "&hash=" + link.getStringProperty("embedhash", null));
-                final LinkedHashMap<String, String> availableQualities = findAvailableVideoQualities();
-                if (availableQualities == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                FINALLINK = availableQualities.get(link.getStringProperty("selectedquality", null));
-                if (FINALLINK == null) {
-                    logger.warning("Could not find new link for selected quality...");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            if (!linkOk(link, link.getFinalFileName())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (link.getDownloadURL().matches(DOCLINK)) {
-            MAXCHUNKS = 0;
-            getPageSafe(link.getDownloadURL(), aa);
+            br.getPage(link.getDownloadURL());
             if (br.containsHTML("File deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("This document is available only to its owner\\.")) {
                 link.getLinkStatus().setStatusText("This document is available only to its owner");
@@ -133,40 +97,93 @@ public class VKontakteRuHoster extends PluginForHost {
             filename = Encoding.htmlDecode(filename.trim());
             if (!linkOk(link, filename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            String albumID = link.getStringProperty("albumid");
-            String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
-            if (albumID == null || photoID == null) {
-                // This should never happen
-                logger.warning("A property couldn't be found!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /** Login needed to download */
+            final Account aa = AccountController.getInstance().getValidAccount(this);
+            // This shouldn't happen
+            if (aa == null) {
+                link.getLinkStatus().setStatusText("Only downlodable via account!");
+                return AvailableStatus.UNCHECKABLE;
             }
-            br.getPage("http://vk.com/photo" + photoID);
-            /* seems we have to refesh the login process */
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-            br.postPage("http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
-            final String correctedBR = br.toString().replace("\\", "");
-            /**
-             * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but
-             * others are online
-             */
-            final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
-            for (String q : qs) {
-                /* large image */
-                if (FINALLINK == null || (FINALLINK != null && !linkOk(link, null))) {
-                    String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
-                    if (base == null) base = "";
-                    String section = new Regex(correctedBR, "(\\{\"id\":\"" + photoID + "\",\"base\":\"" + base + ".*?)((,\\{)|$)").getMatch(0);
-                    if (base != null) FINALLINK = new Regex(section, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"" + q + "src\":\"(" + base + ".*?)\"").getMatch(0);
-                } else {
-                    break;
+            login(br, aa, false);
+            if (link.getDownloadURL().matches(AUDIOLINK)) {
+                String finalFilename = link.getFinalFileName();
+                if (finalFilename == null) finalFilename = link.getName();
+                final String audioID = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+                FINALLINK = link.getStringProperty("directlink", null);
+                if (!linkOk(link, finalFilename)) {
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.postPage("http://vk.com/audio", link.getStringProperty("postdata", null));
+                    FINALLINK = br.getRegex("\\'" + audioID + "\\',\\'(http://cs\\d+\\.[a-z0-9]+\\.[a-z]{2,4}/u\\d+/audios?/[a-z0-9]+\\.mp3)\\'").getMatch(0);
+                    if (FINALLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (!linkOk(link, finalFilename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    link.setProperty("directlink", FINALLINK);
                 }
-            }
-            if (FINALLINK == null) {
-                logger.warning("Finallink is null!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (link.getDownloadURL().matches(VIDEOLINK)) {
+                MAXCHUNKS = 0;
+                br.setFollowRedirects(true);
+                FINALLINK = link.getStringProperty("directlink", null);
+                // Check if directlink is expired
+                if (!linkOk(link, link.getFinalFileName())) {
+                    br.getPage("http://vk.com/video_ext.php?oid=" + link.getStringProperty("userid", null) + "&id=" + link.getStringProperty("videoid", null) + "&hash=" + link.getStringProperty("embedhash", null));
+                    final LinkedHashMap<String, String> availableQualities = findAvailableVideoQualities();
+                    if (availableQualities == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    FINALLINK = availableQualities.get(link.getStringProperty("selectedquality", null));
+                    if (FINALLINK == null) {
+                        logger.warning("Could not find new link for selected quality...");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                if (!linkOk(link, link.getFinalFileName())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (link.getDownloadURL().matches(DOCLINK)) {
+                MAXCHUNKS = 0;
+                getPageSafe(link.getDownloadURL(), aa);
+                if (br.containsHTML("File deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (br.containsHTML("This document is available only to its owner\\.")) {
+                    link.getLinkStatus().setStatusText("This document is available only to its owner");
+                    link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+                    return AvailableStatus.TRUE;
+                }
+                String filename = br.getRegex("title>([^<>\"]*?)</title>").getMatch(0);
+                FINALLINK = br.getRegex("var src = \\'(http://[^<>\"]*?)\\';").getMatch(0);
+                if (filename == null || FINALLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                filename = Encoding.htmlDecode(filename.trim());
+                if (!linkOk(link, filename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                String albumID = link.getStringProperty("albumid");
+                String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
+                if (albumID == null || photoID == null) {
+                    // This should never happen
+                    logger.warning("A property couldn't be found!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage("http://vk.com/photo" + photoID);
+                /* seems we have to refesh the login process */
+                if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+                if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                br.postPage("http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
+                final String correctedBR = br.toString().replace("\\", "");
+                /**
+                 * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but
+                 * others are online
+                 */
+                final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
+                for (String q : qs) {
+                    /* large image */
+                    if (FINALLINK == null || (FINALLINK != null && !linkOk(link, null))) {
+                        String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
+                        if (base == null) base = "";
+                        String section = new Regex(correctedBR, "(\\{\"id\":\"" + photoID + "\",\"base\":\"" + base + ".*?)((,\\{)|$)").getMatch(0);
+                        if (base != null) FINALLINK = new Regex(section, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"" + q + "src\":\"(" + base + ".*?)\"").getMatch(0);
+                    } else {
+                        break;
+                    }
+                }
+                if (FINALLINK == null) {
+                    logger.warning("Finallink is null!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -216,7 +233,12 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible with account!");
+        if (downloadLink.getDownloadURL().matches(DOCLINK)) {
+            requestFileInformation(downloadLink);
+            doFree(downloadLink);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible with account!");
+        }
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
