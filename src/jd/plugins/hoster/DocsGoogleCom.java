@@ -70,9 +70,9 @@ public class DocsGoogleCom extends PluginForHost {
         return id;
     }
 
-    public static String agent = null;
+    public String agent = null;
 
-    public static Browser prepBrowser(Browser pbr) {
+    public Browser prepBrowser(Browser pbr) {
         // used within the decrypter also, leave public
         // language determined by the accept-language
         // user-agent required to use new ones otherwise blocks with javascript notice.

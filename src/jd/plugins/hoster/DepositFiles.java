@@ -74,7 +74,7 @@ public class DepositFiles extends PluginForHost {
     private static final String   UA                       = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17";
     private static final String   FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
     private static final String   PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
-    public static StringContainer MAINPAGE                 = null;
+    public static StringContainer MAINPAGE                 = new StringContainer();
     public static final String    DOMAINS                  = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
 
     public String                 DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
@@ -87,8 +87,13 @@ public class DepositFiles extends PluginForHost {
     private static AtomicInteger  simultanpremium          = new AtomicInteger(1);
     private static AtomicBoolean  useWebLogin              = new AtomicBoolean(false);
 
-    static {
-        if (MAINPAGE == null) {
+    public DepositFiles(final PluginWrapper wrapper) {
+        super(wrapper);
+        this.enablePremium("http://depositfiles.com/signup.php?ref=down1");
+    }
+
+    private void setMainpage() {
+        if (MAINPAGE == null || MAINPAGE.string == null) {
             try {
                 Browser testBr = new Browser();
                 testBr.setFollowRedirects(true);
@@ -113,13 +118,9 @@ public class DepositFiles extends PluginForHost {
         }
     }
 
-    public DepositFiles(final PluginWrapper wrapper) {
-        super(wrapper);
-        this.enablePremium("http://depositfiles.com/signup.php?ref=down1");
-    }
-
     @Override
     public void correctDownloadLink(final DownloadLink link) {
+        setMainpage();
         if (!link.getDownloadURL().contains(MAINPAGE.string.replaceAll("https?://(www\\.)?", ""))) {
             // currently respects users protocol choice on link import
             link.setUrlDownload(link.getDownloadURL().replaceAll(DOMAINS + "(/.*?)?/files", MAINPAGE.string.replaceAll("https?://(www\\.)?", "") + "/de/files"));
@@ -235,6 +236,7 @@ public class DepositFiles extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
+        setMainpage();
         synchronized (LOCK) {
             try {
                 login(account, true);
@@ -285,6 +287,7 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public String getAGBLink() {
+        setMainpage();
         return MAINPAGE.string + "/en/agreem.html";
     }
 
@@ -332,6 +335,7 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        setMainpage();
         String finallink = checkDirectLink(downloadLink);
         checkShowFreeDialog();
         setBrowserExclusive();
@@ -719,6 +723,7 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        setMainpage();
         if (!new Regex(downloadLink.getDownloadURL(), MAINPAGE.string.replaceAll("https?://(www\\.)?", "")).matches()) {
             correctDownloadLink(downloadLink);
         }

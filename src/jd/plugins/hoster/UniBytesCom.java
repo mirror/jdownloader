@@ -42,12 +42,12 @@ public class UniBytesCom extends PluginForHost {
     // DEV NOTES
     // other: they blocked our default User Agent.
 
-    private static final String CAPTCHATEXT      = "captcha\\.jpg";
-    private static final String FATALSERVERERROR = "<u>The requested resource \\(\\) is not available\\.</u>";
-    private static final String MAINPAGE         = "http://www.unibytes.com/";
-    private static String       agent            = null;
-    private static final String freeDlLink       = "(https?://st\\d+\\.unibytes\\.com/fdload/file[^\"]+)";
-    private static final String SECURITYCAPTCHA  = "text from the image and click \"Continue\" to access the website";
+    private final String CAPTCHATEXT      = "captcha\\.jpg";
+    private final String FATALSERVERERROR = "<u>The requested resource \\(\\) is not available\\.</u>";
+    private final String MAINPAGE         = "http://www.unibytes.com/";
+    private String       agent            = null;
+    private final String freeDlLink       = "(https?://st\\d+\\.unibytes\\.com/fdload/file[^\"]+)";
+    private final String SECURITYCAPTCHA  = "text from the image and click \"Continue\" to access the website";
 
     public UniBytesCom(PluginWrapper wrapper) {
         super(wrapper);

@@ -45,21 +45,21 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "https?://(www\\.)?(save\\.tv|free\\.save\\.tv)/STV/M/obj/user/usShowVideoArchiveDetail\\.cfm\\?TelecastID=\\d+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
 
-    private static final String PREMIUMPOSTPAGE         = "https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM";
+    private final String        PREMIUMPOSTPAGE         = "https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM";
     private static final String NORANDOMNUMBERS         = "NORANDOMNUMBERS";
     private static final String USEORIGINALFILENAME     = "USEORIGINALFILENAME";
     private static final String PREFERADSFREE           = "PREFERADSFREE";
-    private static final String ADSFREEAVAILABLE        = "for=\"archive-layer-adfree\">Schnittliste vor dem Download / Streaming anwenden<";
-    private static final String ADSFREEAVAILABLETEXT    = "Video ist ohne Werbung verfügbar";
-    private static final String ADSFREEANOTVAILABLETEXT = "Videos ohne Werbung werden bevorzugt, dieses ist aber nur mit Werbung verfügbar";
+    private final String        ADSFREEAVAILABLE        = "for=\"archive-layer-adfree\">Schnittliste vor dem Download / Streaming anwenden<";
+    private final String        ADSFREEAVAILABLETEXT    = "Video ist ohne Werbung verfügbar";
+    private final String        ADSFREEANOTVAILABLETEXT = "Videos ohne Werbung werden bevorzugt, dieses ist aber nur mit Werbung verfügbar";
     private static final String PREFERH264MOBILE        = "PREFERH264MOBILE";
-    private static final String PREFERH264MOBILETEXT    = "H.264 Mobile Videos bevorzugen (diese sind kleiner)";
+    private final String        PREFERH264MOBILETEXT    = "H.264 Mobile Videos bevorzugen (diese sind kleiner)";
     private static final String USEAPI                  = "USEAPI";
-    private static String       SESSIONID               = null;
-    private static final String APIKEY                  = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
-    private static final String APIPAGE                 = "http://api.save.tv/v2/Api.svc?wsdl";
+    private String              SESSIONID               = null;
+    private final String        APIKEY                  = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
+    private final String        APIPAGE                 = "http://api.save.tv/v2/Api.svc?wsdl";
     private static Object       LOCK                    = new Object();
-    private static final String COOKIE_HOST             = "http://save.tv";
+    private final String        COOKIE_HOST             = "http://save.tv";
 
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -129,12 +129,12 @@ public class SaveTv extends PluginForHost {
         String downloadWithoutAds = "false";
         if (preferAdsFree) downloadWithoutAds = "true";
         String preferMobileVideos = null;
-        if (SaveTv.SESSIONID != null) {
+        if (SESSIONID != null) {
             preferMobileVideos = "5";
             if (preferMobileVids) preferMobileVideos = "4";
             br.getHeaders().put("SOAPAction", "http://tempuri.org/IDownload/GetStreamingUrl");
             br.getHeaders().put("Content-Type", "text/xml");
-            br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SaveTv.SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + telecastID + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds
+            br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + telecastID + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds
                     + "</adFreeSpecified></GetStreamingUrl></v:Body></v:Envelope>");
             // Example request: http://jdownloader.net:8081/pastebin/110483
             dllink = br.getRegex("<a:DownloadUrl>(http://[^<>\"]*?)</a").getMatch(0);
@@ -171,15 +171,15 @@ public class SaveTv extends PluginForHost {
         br.setFollowRedirects(true);
         final boolean useAPI = getPluginConfig().getBooleanProperty(USEAPI);
         if (useAPI) {
-            SaveTv.SESSIONID = account.getStringProperty("sessionid", null);
+            SESSIONID = account.getStringProperty("sessionid", null);
             final long lastUse = account.getLongProperty("lastuse", -1);
             // Only generate new sessionID if we have none or it's older than 6 hours
-            if (SaveTv.SESSIONID == null || (System.currentTimeMillis() - lastUse) > 360000) {
+            if (SESSIONID == null || (System.currentTimeMillis() - lastUse) > 360000) {
                 br.getHeaders().put("User-Agent", "kSOAP/2.0");
                 br.getHeaders().put("Content-Type", "text/xml");
                 br.getHeaders().put("SOAPAction", "http://tempuri.org/ISession/CreateSession");
-                br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><CreateSession xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><apiKey i:type=\"d:string\">" + Encoding.Base64Decode(SaveTv.APIKEY) + "</apiKey></CreateSession></v:Body></v:Envelope>");
-                SaveTv.SESSIONID = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
+                br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><CreateSession xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><apiKey i:type=\"d:string\">" + Encoding.Base64Decode(APIKEY) + "</apiKey></CreateSession></v:Body></v:Envelope>");
+                SESSIONID = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
                 if (SESSIONID == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** TODO: Save and use session expiry date */
                 // // Get expiry date
@@ -191,7 +191,7 @@ public class SaveTv extends PluginForHost {
                 // // Example: 2013-05-07T21:39:21.07275Z
                 // final String sessionExpiry = br.getRegex("<GetSessionExpiryResult>([^<>\"]*?)</GetSessionExpiryResult>").getMatch(0);
                 account.setProperty("lastuse", System.currentTimeMillis());
-                account.setProperty("sessionid", SaveTv.SESSIONID);
+                account.setProperty("sessionid", SESSIONID);
             }
             br.getHeaders().put("SOAPAction", "http://tempuri.org/IUser/Login");
             br.getHeaders().put("Content-Type", "text/xml");
@@ -255,13 +255,13 @@ public class SaveTv extends PluginForHost {
         boolean preferMobileVids = getPluginConfig().getBooleanProperty(PREFERH264MOBILE);
         String filename = null;
         String filesize = null;
-        if (SaveTv.SESSIONID != null) {
+        if (SESSIONID != null) {
             // Check adFree state: http://jdownloader.net:8081/pastebin/110484
             String preferMobileVideos = "5";
             if (preferMobileVids) preferMobileVideos = "4";
             br.getHeaders().put("SOAPAction", "http://tempuri.org/IDownload/GetStreamingUrl");
             br.getHeaders().put("Content-Type", "text/xml");
-            br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SaveTv.SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">false</adFreeSpecified></GetStreamingUrl></v:Body></v:Envelope>");
+            br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">false</adFreeSpecified></GetStreamingUrl></v:Body></v:Envelope>");
             filename = br.getRegex("<a:Filename>([^<>\"]*?)</a").getMatch(0);
             filesize = br.getRegex("<a:SizeMB>(\\d+)</a:SizeMB>").getMatch(0);
             if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -27,6 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision: 20105 $", interfaceVersion = 2, names = { "docs.google.com" }, urls = { "https?://(www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+" }, flags = { 0 })
@@ -53,8 +54,8 @@ public class DocsGoogleCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        JDUtilities.getPluginForDecrypt("docs.google.com");
-        jd.plugins.hoster.DocsGoogleCom.prepBrowser(br);
+        PluginForHost plugin = JDUtilities.getPluginForHost("docs.google.com");
+        ((jd.plugins.hoster.DocsGoogleCom) plugin).prepBrowser(br);
 
         br.getPage(parameter + "/edit?pli=1");
         // Browser br2 = br.cloneBrowser();

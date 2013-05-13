@@ -37,7 +37,7 @@ public class FileUploadDotnet extends PluginForHost {
     private final Pattern PAT_Download = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html", Pattern.CASE_INSENSITIVE);
     private final Pattern PAT_VIEW     = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html)", Pattern.CASE_INSENSITIVE);
     private final Pattern PAT_Member   = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)", Pattern.CASE_INSENSITIVE);
-    private static String UA           = RandomUserAgent.generate();
+    private String        UA           = RandomUserAgent.generate();
 
     public FileUploadDotnet(PluginWrapper wrapper) {
         super(wrapper);

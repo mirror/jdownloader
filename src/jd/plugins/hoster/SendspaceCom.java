@@ -53,13 +53,13 @@ public class SendspaceCom extends PluginForHost {
         setStartIntervall(5000l);
     }
 
-    private static final String JDOWNLOADERAPIKEY = "T1U5ODVNT1FDTQ==";
+    private final String  JDOWNLOADERAPIKEY = "T1U5ODVNT1FDTQ==";
     // private static final String JDUSERNAME = "cHNwem9ja2Vyc2NlbmVqZA==";
-    private String              CURRENTERRORCODE;
-    private static String       SESSIONTOKEN;
-    private static String       SESSIONKEY;
-    private static Object       LOCK              = new Object();
-    private static final String COOKIE_HOST       = "http://sendspace.com";
+    private String        CURRENTERRORCODE;
+    private String        SESSIONTOKEN;
+    private String        SESSIONKEY;
+    private static Object LOCK              = new Object();
+    private String        COOKIE_HOST       = "http://sendspace.com";
 
     // TODO: Add handling for password protected files for handle premium,
     // actually it only works for handle free
@@ -161,7 +161,7 @@ public class SendspaceCom extends PluginForHost {
                     Thread.sleep(90000);
                     return requestFileInformation(downloadLink);
                 }
-                // 
+                //
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -385,8 +385,8 @@ public class SendspaceCom extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(COOKIE_HOST, key, value);
                         }
-                        SendspaceCom.SESSIONTOKEN = account.getStringProperty("sessiontoken", null);
-                        SendspaceCom.SESSIONKEY = account.getStringProperty("sessionkey", null);
+                        SESSIONTOKEN = account.getStringProperty("sessiontoken", null);
+                        SESSIONKEY = account.getStringProperty("sessionkey", null);
                         return;
                     }
                 }
@@ -405,8 +405,8 @@ public class SendspaceCom extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
-                account.setProperty("sessiontoken", SendspaceCom.SESSIONTOKEN);
-                account.setProperty("sessionkey", SendspaceCom.SESSIONKEY);
+                account.setProperty("sessiontoken", SESSIONTOKEN);
+                account.setProperty("sessionkey", SESSIONKEY);
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 account.setProperty("sessiontoken", Property.NULL);
@@ -470,8 +470,8 @@ public class SendspaceCom extends PluginForHost {
 
     private void createSessToken() throws IOException, PluginException {
         apiRequest("http://api.sendspace.com/rest/", "?method=auth.createtoken&api_key=" + Encoding.Base64Decode(JDOWNLOADERAPIKEY) + "&api_version=1.0&response_format=xml&app_version=0.1");
-        SendspaceCom.SESSIONTOKEN = get("token");
-        if (SendspaceCom.SESSIONTOKEN == null) {
+        SESSIONTOKEN = get("token");
+        if (SESSIONTOKEN == null) {
             logger.warning("sessiontoken could not be found!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -480,7 +480,7 @@ public class SendspaceCom extends PluginForHost {
     private boolean sessionOk() {
         boolean failed = false;
         try {
-            apiRequest("http://api.sendspace.com/rest/", "?method=auth.checksession&session_key=" + SendspaceCom.SESSIONKEY);
+            apiRequest("http://api.sendspace.com/rest/", "?method=auth.checksession&session_key=" + SESSIONKEY);
         } catch (final Exception e) {
             failed = true;
         }

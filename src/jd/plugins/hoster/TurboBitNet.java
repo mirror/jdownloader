@@ -61,12 +61,29 @@ import org.appwork.utils.os.CrossSystem;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(www\\.)?(maxisoc\\.ru|turo\\-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|sharephile\\.com|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|speed-file\\.ru|sharezoid\\.com|turbobit\\.pl|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|file\\.krut-warez\\.ru|filebit\\.org|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|letitshare\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbo-bit\\.ru|turbobit\\.net|upload\\.mskvn\\.by|vipbit\\.ru|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.dwmedia\\.ru|upload\\.uz|xrfiles\\.ru|unextfiles\\.com|e-flash\\.com\\.ua|turbobax\\.net|zharabit\\.net|download\\.uzhgorod\\.name|trium-club\\.ru|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|turbobit\\.name|files\\.uz\\-translations\\.uz|turboblt\\.ru|fo\\.letitbook\\.ru|freefo\\.ru|bayrakweb\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
 
-    private static String       UA            = RandomUserAgent.generate();
-    private static final String RECAPTCHATEXT = "api\\.recaptcha\\.net";
-    private static final String CAPTCHAREGEX  = "\"(http://turbobit\\.net/captcha/.*?)\"";
-    private static final String MAINPAGE      = "http://turbobit.net";
-    private static Object       LOCK          = new Object();
-    private static final String BLOCKED       = "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!";
+    private static StringContainer UA            = new StringContainer(RandomUserAgent.generate());
+    private static final String    RECAPTCHATEXT = "api\\.recaptcha\\.net";
+    private static final String    CAPTCHAREGEX  = "\"(http://turbobit\\.net/captcha/.*?)\"";
+    private static final String    MAINPAGE      = "http://turbobit.net";
+    private static Object          LOCK          = new Object();
+    private static final String    BLOCKED       = "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!";
+
+    public static class StringContainer {
+        public String string = null;
+
+        public StringContainer(String string) {
+            this.string = string;
+        }
+
+        public void set(String string) {
+            this.string = string;
+        }
+
+        @Override
+        public String toString() {
+            return string;
+        }
+    }
 
     public TurboBitNet(final PluginWrapper wrapper) {
         super(wrapper);
@@ -290,7 +307,7 @@ public class TurboBitNet extends PluginForHost {
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
         checkShowFreeDialog();
-        prepareBrowser(UA);
+        prepareBrowser(UA.toString());
         br.setCookie(MAINPAGE, "JD", "1");
         String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
@@ -647,7 +664,7 @@ public class TurboBitNet extends PluginForHost {
                     ua = account.getStringProperty("UA", null);
                 }
                 if (ua == null) {
-                    ua = UA;
+                    ua = UA.toString();
                 }
                 br.getHeaders().put("User-Agent", ua);
                 br.setCookie(MAINPAGE, "set_user_lang_change", "en");

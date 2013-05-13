@@ -41,11 +41,24 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jumbofiles.com" }, urls = { "http://(www\\.)?jumbofiles\\.com/[0-9a-z]{12}" }, flags = { 2 })
 public class JumboFilesCom extends PluginForHost {
 
-    private String              BRBEFORE    = "";
-    private static final String COOKIE_HOST = "http://jumbofiles.com";
-    private static final String NOCHUNKS    = "NOCHUNKS";
-    private static final String NORESUME    = "NORESUME";
-    private static String       UA          = RandomUserAgent.generate();
+    private String                 BRBEFORE    = "";
+    private static final String    COOKIE_HOST = "http://jumbofiles.com";
+    private static final String    NOCHUNKS    = "NOCHUNKS";
+    private static final String    NORESUME    = "NORESUME";
+    private static StringContainer UA          = new StringContainer(RandomUserAgent.generate());
+
+    public static class StringContainer {
+        public String string = null;
+
+        public StringContainer(String string) {
+            this.string = string;
+        }
+
+        @Override
+        public String toString() {
+            return string;
+        }
+    }
 
     public JumboFilesCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -287,7 +300,7 @@ public class JumboFilesCom extends PluginForHost {
     private void login(final Account account) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", UA);
+        br.getHeaders().put("User-Agent", UA.toString());
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(COOKIE_HOST + "/login.html");
         Form loginform = br.getForm(0);

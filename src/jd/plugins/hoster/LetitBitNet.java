@@ -65,16 +65,16 @@ import org.appwork.utils.os.CrossSystem;
 public class LetitBitNet extends PluginForHost {
 
     private static Object        LOCK                              = new Object();
-    private static final String  COOKIE_HOST                       = "http://letitbit.net/";
+    private final String         COOKIE_HOST                       = "http://letitbit.net/";
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
     /*
      * For linkcheck and premium download we're using their API: http://api.letitbit.net/reg/static/api.pdf
      */
-    public static final String   APIKEY                            = "VjR1U3JGUkNx";
-    public static final String   APIPAGE                           = "http://api.letitbit.net/";
-    private static final String  TEMPDISABLED                      = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static String        agent                             = null;
+    public final String          APIKEY                            = "VjR1U3JGUkNx";
+    public final String          APIPAGE                           = "http://api.letitbit.net/";
+    private final String         TEMPDISABLED                      = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private String               agent                             = null;
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -151,8 +151,7 @@ public class LetitBitNet extends PluginForHost {
     }
 
     /**
-     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per
-     * minute
+     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per minute
      * */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {

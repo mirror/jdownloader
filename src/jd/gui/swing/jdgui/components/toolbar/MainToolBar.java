@@ -268,7 +268,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     @Override
     public void mousePressed(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == 3) {
-
             MainToolbarManager.getInstance().openGui();
         }
     }

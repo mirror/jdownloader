@@ -59,11 +59,28 @@ public class ShareOnlineBiz extends PluginForHost {
     private long                                             server               = -1;
     private long                                             waitNoFreeSlot       = 10 * 60 * 1000l;
     private long                                             waitOverloadedServer = 5 * 60 * 1000l;
-    private static String                                    UA                   = RandomUserAgent.generate();
+    private static StringContainer                           UA                   = new StringContainer(RandomUserAgent.generate());
     private boolean                                          hideID               = true;
     private static AtomicInteger                             maxChunksnew         = new AtomicInteger(-2);
     private char[]                                           FILENAMEREPLACES     = new char[] { '_', '&', 'ü' };
     private final String                                     SHARED_IP_WORKAROUND = "SHARED_IP_WORKAROUND";
+
+    public static class StringContainer {
+        public String string = null;
+
+        public StringContainer(String string) {
+            this.string = string;
+        }
+
+        public void set(String string) {
+            this.string = string;
+        }
+
+        @Override
+        public String toString() {
+            return string;
+        }
+    }
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -433,7 +450,7 @@ public class ShareOnlineBiz extends PluginForHost {
             }
         }
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", UA);
+        br.getHeaders().put("User-Agent", UA.toString());
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
         br.getHeaders().put("Pragma", null);

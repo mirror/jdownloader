@@ -50,10 +50,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "catshare.net" }, urls = { "http://(www\\.)?catshare\\.net/[A-Za-z0-9]{16}" }, flags = { 2 })
 public class CatShareNet extends PluginForHost {
 
-    private String        BRBEFORE      = "";
-    private String        HOSTER        = "http://catshare.net";
-    private static Object LOCK          = new Object();
-    private static long   DAILYLIMITMAX = SizeFormatter.getSize("20 GB");
+    private String        BRBEFORE = "";
+    private String        HOSTER   = "http://catshare.net";
+    private static Object LOCK     = new Object();
 
     // DEV NOTES
     // captchatype: recaptcha
@@ -257,7 +256,7 @@ public class CatShareNet extends PluginForHost {
 
         final String dailyLimitLeft = br.getRegex("<li><a href=\"/premium\">([^<>\"\\']+)</a></li>").getMatch(0);
         if (dailyLimitLeft != null) {
-            ai.setTrafficMax(DAILYLIMITMAX);
+            ai.setTrafficMax(SizeFormatter.getSize("20 GB"));
             ai.setTrafficLeft(SizeFormatter.getSize(dailyLimitLeft));
         } else
             ai.setUnlimitedTraffic();

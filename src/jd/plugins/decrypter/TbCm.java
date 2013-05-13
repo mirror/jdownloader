@@ -60,21 +60,25 @@ import de.savemytube.flv.FLV;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?(.*?list=[a-z\\-_A-Z0-9]+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
+    private static AtomicBoolean PLUGIN_CHECKED  = new AtomicBoolean(false);
     private static AtomicBoolean PLUGIN_DISABLED = new AtomicBoolean(false);
 
-    static {
+    public TbCm(PluginWrapper wrapper) {
+        super(wrapper);
+    };
+
+    private void canHandle() {
+        if (PLUGIN_CHECKED.get()) return;
         String installerSource = null;
         try {
             installerSource = JDIO.readFileToString(JDUtilities.getResourceFile("src.dat"));
             PLUGIN_DISABLED.set(installerSource.contains("\"PS\""));
         } catch (Throwable e) {
             e.printStackTrace();
+        } finally {
+            PLUGIN_CHECKED.set(true);
         }
     }
-
-    public TbCm(PluginWrapper wrapper) {
-        super(wrapper);
-    };
 
     public static enum DestinationFormat {
         AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }),
@@ -323,11 +327,13 @@ public class TbCm extends PluginForDecrypt {
     }
 
     public boolean canHandle(final String data) {
+        canHandle();
         if (PLUGIN_DISABLED.get() == true) return false;
         return super.canHandle(data);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        canHandle();
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (PLUGIN_DISABLED.get() == true) return decryptedLinks;

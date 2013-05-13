@@ -56,11 +56,28 @@ public class LuckyShareNet extends PluginForHost {
         return "http://luckyshare.net/termsofservice";
     }
 
-    private static final String MAINPAGE      = "http://luckyshare.net/";
-    private static Object       LOCK          = new Object();
-    private static String       AGENT         = null;
-    private static boolean      FAILED409     = false;
-    private static final String ONLYBETAERROR = "Downloading from luckyshare.net is only possible with the JDownloader 2 BETA";
+    private final String           MAINPAGE      = "http://luckyshare.net/";
+    private static Object          LOCK          = new Object();
+    private static StringContainer AGENT         = new StringContainer(null);
+    private static AtomicBoolean   FAILED409     = new AtomicBoolean(false);
+    private final String           ONLYBETAERROR = "Downloading from luckyshare.net is only possible with the JDownloader 2 BETA";
+
+    public static class StringContainer {
+        public String string = null;
+
+        public StringContainer(String string) {
+            this.string = string;
+        }
+
+        public void set(String string) {
+            this.string = string;
+        }
+
+        @Override
+        public String toString() {
+            return string;
+        }
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -73,7 +90,7 @@ public class LuckyShareNet extends PluginForHost {
             if (con.getResponseCode() == 409 && oldStyle()) {
                 // Hier krachts
                 link.getLinkStatus().setStatusText(ONLYBETAERROR);
-                FAILED409 = true;
+                FAILED409.set(true);
                 return AvailableStatus.UNCHECKABLE;
             }
             br.followConnection();
@@ -120,7 +137,7 @@ public class LuckyShareNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (oldStyle() && FAILED409) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR); }
+        if (oldStyle() && FAILED409.get()) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR); }
         String dllink = downloadLink.getDownloadURL();
         final String filesizelimit = br.getRegex(">Files with filesize over ([^<>\"\\'/]+) are available only for Premium Users").getMatch(0);
         if (filesizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
@@ -191,12 +208,14 @@ public class LuckyShareNet extends PluginForHost {
     }
 
     private void prepBrowser(final Browser b) {
-        if (AGENT == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            AGENT = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        if (AGENT.string == null) {
+            synchronized (AGENT) {
+                /* we first have to load the plugin, before we can reference it */
+                JDUtilities.getPluginForHost("mediafire.com");
+                AGENT.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            }
         }
-        b.getHeaders().put("User-Agent", AGENT);
+        b.getHeaders().put("User-Agent", AGENT.toString());
         b.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         b.setReadTimeout(3 * 60 * 1000);
         b.setConnectTimeout(3 * 60 * 1000);
@@ -305,7 +324,7 @@ public class LuckyShareNet extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        if (oldStyle() && FAILED409) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR); }
+        if (oldStyle() && FAILED409.get()) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR); }
         AtomicBoolean fresh = new AtomicBoolean(false);
         HashMap<String, String> cookies = login(account, false, fresh);
         br.setFollowRedirects(false);

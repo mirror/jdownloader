@@ -59,22 +59,22 @@ public class RapidStoneCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private static final String        COOKIE_HOST                  = "http://rapidstone.com";
+    private final String         COOKIE_HOST                  = "http://rapidstone.com";
     // domain names used within download links.
-    private static final String        DOMAINS                      = "(rapidstone\\.com)";
-    private static final String        PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private static final String        MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final boolean       videoHoster                  = false;
-    private static final boolean       supportsHTTPS                = false;
-    private static final boolean       useRUA                       = false;
+    private final String         DOMAINS                      = "(rapidstone\\.com)";
+    private final String         PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private final String         MAINTENANCE                  = ">This server is in maintenance mode";
+    private final boolean        videoHoster                  = false;
+    private final boolean        supportsHTTPS                = false;
+    private final boolean        useRUA                       = false;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
     // fail. .:. use [1-20]
-    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // set true if the hoster allows every 'account type' (non account|free
     // account|paid account) allow own connection threshold.
-    private static final boolean       allowConcurrent              = true;
+    private final boolean        allowConcurrent              = true;
 
     // DEV NOTES
     // XfileShare Version 3.0.2.0
