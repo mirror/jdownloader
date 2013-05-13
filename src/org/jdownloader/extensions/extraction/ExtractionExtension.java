@@ -317,7 +317,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     public IExtraction getExtractorByFactory(ArchiveFactory factory) {
         for (IExtraction extractor : extractors) {
             try {
-                if (extractor.isArchivSupported(factory)) { return extractor.getClass().newInstance(); }
+                if (extractor.isArchivSupported(factory)) {
+                    IExtraction ret = extractor.getClass().newInstance();
+                    ret.setLogger(extractor.logger);
+                    return ret;
+                }
             } catch (InstantiationException e) {
                 e.printStackTrace();
             } catch (IllegalAccessException e) {

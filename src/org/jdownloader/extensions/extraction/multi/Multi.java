@@ -434,6 +434,8 @@ public class Multi extends IExtraction {
             }
             if (format == null) throw new CheckException("Cannot check Archive " + archive.getName());
 
+            boolean ZEROZEROZEROMissing = false;
+            int missing = 0;
             for (int i = start; i <= last; i++) {
 
                 ArchiveFile af = erg.get(i);
@@ -442,13 +444,20 @@ public class Multi extends IExtraction {
                     // available file
                     ret.add(new DummyArchiveFile(af));
                 } else {
+                    if (i == 0) {
+                        ZEROZEROZEROMissing = true;
+                        continue;
+                    }
+                    missing++;
                     // missing file
                     String part = String.format(format, StringFormatter.fillString(i + "", "0", "", length));
                     ret.add(new DummyArchiveFile(part, archive.getFolder()));
                 }
 
             }
-
+            if (archive.getType() == ArchiveType.MULTI && missing == 0 && ZEROZEROZEROMissing) {
+                logger.info("Workaround(may be wrong) for non existing .000");
+            }
             return ret;
         } catch (Throwable e) {
             logger.log(e);
