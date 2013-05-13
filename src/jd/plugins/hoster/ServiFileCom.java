@@ -57,7 +57,7 @@ public class ServiFileCom extends PluginForHost {
     private static final String GETLINKREGEX  = "disabled=\"disabled\" onclick=\"document\\.location=\\'(.*?)\\';\"";
     private static final String GETLINKREGEX2 = "\\'(" + "http://(www\\.)" + MAINPAGE.replaceAll("(http://|www\\.)", "") + "/get/[A-Za-z0-9]+/\\d+/.*?)\\'";
     private static final String PREMIUMLIMIT  = "out of 200\\.00 GB</td>";
-    private static final String PREMIUMTEXT   = "Account type:</td>[\n ]+<td><b>Premium</b>";
+    private static final String PREMIUMTEXT   = ">Account type:</td>[\t\n\r ]+<td><b>Premium</b>";
     private static Object       LOCK          = new Object();
 
     // Using FreakshareScript 1.2

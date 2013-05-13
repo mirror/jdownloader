@@ -72,7 +72,7 @@ public class FickPornoNet extends PluginForDecrypt {
         externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
         if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
         if (externID != null) {
-            DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
+            final DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
