@@ -1,0 +1,9 @@
+close=Bezár
+date=Dátum
+exists=Kapcsolat Állapota
+filename=Fájl Neve
+files=fájlok
+name=Kicsomagoló
+plugins_optional_extraction_filefilter_extractto=Kicsomagolási Célmappa
+plugins_optional_extraction_status_notenoughspace=Nincs elég hely a kicsomagoláshoz
+properties=Alkönyvtár Beállítás

@@ -1,4 +1,5 @@
-gui_config_antistandby_mode=Mód:
-gui_config_antistandby_whiledl=Alvó állapot tiltása letöltés közben
-gui_config_antistandby_whilejd=Alvó állapot tiltása a JDownloader működése közben
+gui_config_antistandby_whiledl2=Letöltés folyamatban
+gui_config_antistandby_whilejd2=A JDownloader fut
 jd_plugins_optional_antistandby_jdantistandby=JD Antikészenlét
+jd_plugins_optional_antistandby_jdantistandby_description=Megakadályozza, hogy a számítógép aktív letöltés alatt készenléti, vagy alvó üzemmódba kapcsoljon.
+mode=Meggátolja a készenléti / alvó állapotot, ha

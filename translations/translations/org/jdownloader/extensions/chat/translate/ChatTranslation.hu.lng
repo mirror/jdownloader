@@ -1,5 +1,2 @@
-sys_warning_loguploadfailed=Logfájl feltöltése sikertelen!
-jd_plugins_optional_jdchat_newmessage=Új üzenetet küldött %s1:<hr> %s2
-plugins_optional_jdchat_enternick=Mi a beceneved?
 jd_plugins_optional_jdchat_jdchat=JDChat
-plugin_optional_jdchat_getlog=%s1 számára szükséges a log a probléma megoldásához, elküldi neki?
+plugins_optional_jdchat_enternick=Mi a beceneved?

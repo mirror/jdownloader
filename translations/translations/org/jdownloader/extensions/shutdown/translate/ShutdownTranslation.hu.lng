@@ -1,19 +1,26 @@
-gui_config_jdshutdown_shutdown=Leállítás
+action_tooltip=Engedélyezi a rendszer leállítását következő letöltés befejezésekor
+addons_jdshutdown_statusmessage_disabled=A JDownloader NEM kapcsolja ki a számítógépet
+addons_jdshutdown_statusmessage_enabled=A JDownloader a letöltések befejezése után kikapcsolja a számítógépet!
+config_active_by_default=A kikapcsolás engedélyezésének fenntartása
+config_toolbarbutton=Eszköztár gomb látható
+gui_config_jdshutdown_close=Jdownloader bezárása
 gui_config_jdshutdown_forceshutdown=Kényszerített kikapcsolás (nem minden operációs rendszer támogatja)
-interaction_shutdown_dialog_title_standby=Alvó állapot?
+gui_config_jdshutdown_hibernate=Hibernálás  (nem minden operációs rendszer támogatja)
+gui_config_jdshutdown_mode=Mód:
+gui_config_jdshutdown_shutdown=Leállítás
+gui_config_jdshutdown_standby=Készenlét  (nem minden operációs rendszer támogatja)
+install_force=A kényszerített leállítás engedélyezése
+install_msg=Azt szeretné, hogy a program kényszerítse a rendszert a leállításra?
+install_title=Engedélyezheti a programnak, hogy  leállíthatsa a számítógépet
+interaction_shutdown_dialog_msg_closejd=<h2><font color="red">A JDownloader bezárásra kerül!</font></h2>
+interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">A rendszer hibernál!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">A rendszer leáll!</font></h2>
-gui_config_jdshutdown_osx_force_long=Kényszerített leállítás telepítése (csak MacOSX)
+interaction_shutdown_dialog_msg_standby=<h2><font color="red">A rendszer alvó állapotba kerül!</font></h2>
+interaction_shutdown_dialog_title_closejd=JDownloader bezárása?
 interaction_shutdown_dialog_title_hibernate=Hibernálás?
 interaction_shutdown_dialog_title_shutdown=Kikapcsolás?
-interaction_shutdown_dialog_msg_closejd=<h2><font color="red">A JDownloader bezárásra kerül!</font></h2>
-addons_jdshutdown_statusmessage_disabled=A JDownloader NEM kapcsolja ki a számítógépet
-gui_config_jdshutdown_hibernate=Hibernálás  (nem minden operációs rendszer támogatja)
-gui_config_jdshutdown_close=Jdownloader bezárása
-gui_config_jdshutdown_standby=Készenlét  (nem minden operációs rendszer támogatja)
-gui_config_jdshutdown_osx_force_short=Telepítés
+interaction_shutdown_dialog_title_standby=Alvó állapot?
 jd_plugins_optional_jdshutdown=JD Leállító
-interaction_shutdown_dialog_title_closejd=JDownloader bezárása?
-gui_config_jdshutdown_mode=Mód:
-addons_jdshutdown_statusmessage_enabled=A JDownloader a letöltések befejezése után kikapcsolja a számítógépet!
-interaction_shutdown_dialog_msg_standby=<h2><font color="red">A rendszer alvó állapotba kerül!</font></h2>
-interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">A rendszer hibernál!</font></h2>
+jd_plugins_optional_jdshutdown_description=Automatikusan lekapcsolhatja, felfüggesztheti, hibernálhatja a számítógépet, vagy bezárhatja  a JDownloadert, ha a letöltések elkészültek.
+lit_shutdownn=Leállítás
+show_admin=Adminisztrátor jogosultság szükséges ahhoz, hogy a JDownloader a hibernált vagy készenléti üzemmódba tudja kapcsolni a számítógépet.
