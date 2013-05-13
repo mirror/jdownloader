@@ -719,6 +719,12 @@ public class DirectHTTP extends PluginForHost {
             // br.getPage("http://www.fileplanet.com/");
             br.getHeaders().put("Referer", "http://fileplanet.com/");
         }
+        if (downloadLink.getDownloadURL().contains("sites.google.com")) {
+            /*
+             * it seems google checks referer and ip must have called the page lately
+             */
+            br.getHeaders().put("Referer", "https://sites.google.com");
+        }
     }
 
     public void setDownloadLink(final DownloadLink link) {
