@@ -8,3 +8,4 @@ PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD=Nové heslo:
 PASSWORDDIALOG_PASSWORDCHANGE_OLDPASSWORD=Staré heslo:
 ProxyDialog_password=Heslo
 extpasswordeditorcolumn_tooltip=Vaše heslo
+proxy_none=Priame
