@@ -1,2 +1,6 @@
 Translator=Traductor
+TranslatorExtensionGuiToggleAction_deselected=Abrir Traductor
+TranslatorExtensionGuiToggleAction_deselected_tt=Abrir la pestaña del Traductor
+TranslatorExtensionGuiToggleAction_selected=Cerrar Traductor
+TranslatorExtensionGuiToggleAction_selected_tt=Cerrar la pestaña del Traductor
 description=Editor de traducciones de JDownloader. Requiere una cuenta de desarrollador.
