@@ -151,8 +151,10 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     protected void addImpl(Component comp, Object constraints, int index) {
         super.addImpl(comp, constraints, index);
-        comp.removeMouseListener(this);
-        comp.addMouseListener(this);
+        if (comp != speedmeter) {
+            comp.removeMouseListener(this);
+            comp.addMouseListener(this);
+        }
 
     }
 
@@ -327,7 +329,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     }
 
     protected void updateSpecial() {
-        if (speedmeter != null) add(speedmeter, "hidemode 3, width 32:300:300");
+        if (speedmeter != null) add(speedmeter, "hidemode 3, width 32:300:300,pushy,growy");
     }
 
     // made speedMeter Instance public. Used in remote API
