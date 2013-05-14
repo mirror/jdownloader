@@ -23,12 +23,12 @@ import org.jdownloader.translate._JDT;
 public class StartDownloadsAction extends ToolBarAction implements DownloadWatchdogListener {
 
     /**
-     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     public StartDownloadsAction(SelectionInfo<?, ?> selection) {
         setIconKey("media-playback-start");
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
+        DownloadWatchDog.getInstance().notifyCurrentState(this);
     }
 
     public void actionPerformed(ActionEvent e) {

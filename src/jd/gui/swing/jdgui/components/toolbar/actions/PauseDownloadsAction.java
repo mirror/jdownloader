@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 
-import org.appwork.controlling.State;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -21,8 +20,6 @@ public class PauseDownloadsAction extends ToolBarAction implements DownloadWatch
 
     public PauseDownloadsAction(SelectionInfo<?, ?> selection) {
         setIconKey("media-playback-pause");
-
-        this.setEnabled(false);
 
         setTooltipText(_GUI._.gui_menu_action_break2_desc(JsonConfig.create(GeneralSettings.class).getPauseSpeed()));
 
@@ -46,14 +43,7 @@ public class PauseDownloadsAction extends ToolBarAction implements DownloadWatch
             }
 
         }, true);
-        State newState = DownloadWatchDog.getInstance().getStateMachine().getState();
-        if (DownloadWatchDog.IDLE_STATE == newState || DownloadWatchDog.STOPPED_STATE == newState) {
-            onDownloadWatchdogStateIsIdle();
-        } else if (DownloadWatchDog.RUNNING_STATE == newState) {
-            onDownloadWatchdogStateIsRunning();
-        } else if (DownloadWatchDog.PAUSE_STATE == newState) {
-            onDownloadWatchdogStateIsPause();
-        }
+        DownloadWatchDog.getInstance().notifyCurrentState(this);
 
     }
 

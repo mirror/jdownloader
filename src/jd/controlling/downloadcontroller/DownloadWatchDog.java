@@ -33,6 +33,7 @@ import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogEventSender;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.proxy.ProxyController;
@@ -934,6 +935,25 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (ls.hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE)) {
             ls.reset();
         }
+    }
+
+    public void notifyCurrentState(final DownloadWatchdogListener listener) {
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+                if (DownloadWatchDog.this.stateMachine.isState(RUNNING_STATE)) {
+                    listener.onDownloadWatchdogStateIsRunning();
+                } else if (DownloadWatchDog.this.stateMachine.isState(STOPPED_STATE)) {
+                    listener.onDownloadWatchdogStateIsStopped();
+                } else if (DownloadWatchDog.this.stateMachine.isState(IDLE_STATE)) {
+                    listener.onDownloadWatchdogStateIsIdle();
+                } else if (DownloadWatchDog.this.stateMachine.isState(PAUSE_STATE)) {
+                    listener.onDownloadWatchdogStateIsPause();
+                } else if (DownloadWatchDog.this.stateMachine.isState(STOPPING_STATE)) {
+                    listener.onDownloadWatchdogStateIsStopping();
+                }
+            }
+        }, true);
     }
 
     public long getDownloadSpeedbyFilePackage(FilePackage pkg) {

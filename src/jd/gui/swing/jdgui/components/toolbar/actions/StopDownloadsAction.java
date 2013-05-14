@@ -20,8 +20,8 @@ public class StopDownloadsAction extends ToolBarAction implements DownloadWatchd
 
     public StopDownloadsAction(SelectionInfo<?, ?> selection) {
         setIconKey("media-playback-stop");
-        this.setEnabled(false);
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
+        DownloadWatchDog.getInstance().notifyCurrentState(this);
     }
 
     public void actionPerformed(ActionEvent e) {
