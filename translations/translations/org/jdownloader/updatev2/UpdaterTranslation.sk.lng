@@ -1,1 +1,9 @@
+confirmdialog_new_update_available_answer_later=Neskôr
+confirmdialog_new_update_available_answer_later_install=Neskôr
+confirmdialog_new_update_available_answer_now_install=Inštalovať teraz
+confirmdialog_new_update_available_frametitle=K dispozícii je nová aktualizácia
+confirmdialog_new_update_available_message_sized=A new Update is available. Do you want to download it now?\r\nUpdate size: %s1
+installframe_statusmsg_complete=Inštalácia dokončená...
+installframe_statusmsg_interrupted=Aktualizácia bola prerušená
 update_dialog_cancel=Zrušiť
+update_dialog_title_updates_available=Aktualizácia(e) k dispozícii
