@@ -1,3 +1,7 @@
+ChatExtensionGuiToggleAction_deselected=Abrir Chat
+ChatExtensionGuiToggleAction_deselected_tt=Abrir a Aba Chat
+ChatExtensionGuiToggleAction_selected=Fechar Chat
+ChatExtensionGuiToggleAction_selected_tt=Fechar a Aba Chat
 description=Entre em contato com os Desenvolvedores e o Suporte do JDownloader
 gui_tab_title=Canal %s1
 jd_plugins_optional_jdchat_JDChatView_title=Chat de Suporte do JD
