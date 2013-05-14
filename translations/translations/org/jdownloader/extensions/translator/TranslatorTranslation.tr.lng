@@ -1,2 +1,6 @@
-Translator=Çevirici
+Translator=Çevirmen
+TranslatorExtensionGuiToggleAction_deselected=Çevirmeni Aç
+TranslatorExtensionGuiToggleAction_deselected_tt=Çevirmen Sekmesini Aç
+TranslatorExtensionGuiToggleAction_selected=Çevirmeni Kapat
+TranslatorExtensionGuiToggleAction_selected_tt=Çevirmen Sekmesini Kapat
 description=Bu Uzantı JDownloader çevirilerini düzenlemek için kullanılabilir. Bu uzantıyı kullanmak için bir geliştirici hesabına ihtiyacınız var

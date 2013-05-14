@@ -19,6 +19,7 @@ LinkgrabberFilterRule_duplicate=%s1 (kopya)
 Main_run_autostart_=İndirmeler başlatılıyor
 Main_run_autostart_msg=İndirmeler birkaç saniyeye kadar başlayacak...
 Mainstart_now=HEMEN başlat!
+OptionalContainer_OptionalContainer=Daha Fazla Eylem...
 PackagizerSettings_folderbypackage_rule_name=Paket Adına göre Alt Klasör oluştur
 RemoveAction_actionPerformed_rly_msg=Tüm seçilen kuralları silmek istiyor musunuz?
 SetDownloadFolderAction_actionPerformed_=Bölünmüş Paket %s1
