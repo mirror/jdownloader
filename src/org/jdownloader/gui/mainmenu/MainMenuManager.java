@@ -198,7 +198,7 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
 
     @Override
     public String getName() {
-        return _GUI._.MainToolbarManager_getName();
+        return _GUI._.MainMenuManager_getName();
     }
 
 }

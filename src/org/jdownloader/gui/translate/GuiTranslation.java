@@ -2599,7 +2599,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Use Account(s) to download" })
     String AccountManagerSettings_AccountManagerSettings_disable_global();
 
-    @Default(lngs = { "en" }, values = { "Main Toolbar: " })
+    @Default(lngs = { "en" }, values = { "Main Toolbar" })
     String gui_config_menumanager_toolbar();
 
     @Default(lngs = { "en" }, values = { "All Actions are already on use in the selected submenu" })
@@ -2637,5 +2637,11 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Move down" })
     String MoveDownAction_MoveDownAction();
+
+    @Default(lngs = { "en" }, values = { "Main Menu" })
+    String gui_config_menumanager_mainmenu();
+
+    @Default(lngs = { "en" }, values = { "Main Menu" })
+    String MainMenuManager_getName();
 
 }
