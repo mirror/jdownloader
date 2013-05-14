@@ -26,6 +26,7 @@ SpeedMeterPanel_createTooltipText_=Rýchlostný limit: %s1/s
 SpeedlimitEditor_SpeedlimitEditor_=Rýchlostný limit
 action_aboutaction=O programe JDownloader
 action_aboutaction_tooltip=O programe JDownloader
+action_exit=Koniec
 action_help=Pomocník
 action_settings_menu=Nastavenia
 added_date_column_title=Pridané dňa
