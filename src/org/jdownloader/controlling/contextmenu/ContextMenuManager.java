@@ -244,7 +244,8 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
         synchronized (extender) {
             for (MenuExtenderHandler exHandler : extender) {
-                exHandler.updateMenuModel(this, ret);
+                MenuItemData r = exHandler.updateMenuModel(this, ret);
+                if (r != null) ret.addBranch(ret, r);
             }
 
         }

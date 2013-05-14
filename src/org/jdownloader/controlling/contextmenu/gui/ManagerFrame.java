@@ -241,7 +241,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
     // @Override
     @Override
     public JComponent layoutDialogContent() {
-        MigPanel panel = new MigPanel("ins 2,wrap 2", "[grow,fill][]", "[grow,fill][]");
+        final MigPanel panel = new MigPanel("ins 2,wrap 2", "[grow,fill][]", "[grow,fill][]");
         panel.setOpaque(false);
 
         LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor((JComponent) getDialog().getContentPane());
@@ -267,7 +267,13 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
         panel.add(sp);
         infoPanel = new InfoPanel(this);
         LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(infoPanel);
-        sp = new HeaderScrollPane(infoPanel);
+        sp = new HeaderScrollPane(infoPanel) {
+            public Dimension getPreferredSize() {
+                Dimension ret = super.getPreferredSize();
+                ret.width = Math.max(ret.width, 300);
+                return ret;
+            }
+        };
         sp.setColumnHeaderView(new OptionsPaneHeader());
         panel.add(sp);
 

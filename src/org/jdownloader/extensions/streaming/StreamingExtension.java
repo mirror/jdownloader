@@ -27,6 +27,7 @@ import org.jdownloader.api.HttpServer;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.ExtensionController;
@@ -201,11 +202,6 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     @Override
     public String getDescription() {
         return "Audio & Video Streaming";
-    }
-
-    @Override
-    public ImageIcon getIcon(int size) {
-        return NewTheme.I().getIcon("video", size);
     }
 
     @Override
@@ -487,7 +483,17 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     }
 
     @Override
-    public void updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
+    public String getIconKey() {
+        return "video";
+    }
+
+    @Override
+    public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
+        return null;
+    }
+
+    public ImageIcon getIcon(int i) {
+        return NewTheme.I().getIcon(getIconKey(), i);
     }
 
 }

@@ -469,4 +469,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Skipped" })
     String DownloadLink_setSkipped_statusmessage();
 
+    @Default(lngs = { "en" }, values = { "More Actions..." })
+    String OptionalContainer_OptionalContainer();
+
 }

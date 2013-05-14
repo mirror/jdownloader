@@ -13,7 +13,7 @@ public class AutoExtractEnabledToggleAction extends AbstractExtractionAction {
 
     public AutoExtractEnabledToggleAction(final SelectionInfo<?, ?> selection) {
         super(selection);
-        setName(_.contextmenu_autoextract());
+        setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autoextract());
         setIconKey(IconKey.ICON_ARCHIVE_REFRESH);
         setSelected(false);
         setEnabled(false);
@@ -30,7 +30,7 @@ public class AutoExtractEnabledToggleAction extends AbstractExtractionAction {
         for (Archive archive : archives) {
             archive.getSettings().setAutoExtract(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
         }
-        Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? _.set_autoextract_true() : _.set_autoextract_false());
+        Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T._.set_autoextract_true() : org.jdownloader.extensions.extraction.translate.T._.set_autoextract_false());
     }
 
 }

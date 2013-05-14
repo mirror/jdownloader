@@ -33,7 +33,6 @@ import java.awt.event.WindowStateListener;
 import java.awt.image.BufferedImage;
 
 import javax.swing.JFrame;
-import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
@@ -134,6 +133,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     @Override
+    public String getIconKey() {
+        return "settings";
+    }
+
+    @Override
     protected void start() throws StartException {
         if (Application.getJavaVersion() < Application.JAVA16) {
             LogController.CL(TrayExtension.class).severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + Application.getJavaVersion());
@@ -169,11 +173,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     @Override
-    public boolean isQuickToggleEnabled() {
-        return false;
-    }
-
-    @Override
     public String getDescription() {
         return T._.jd_plugins_optional_jdtrayicon_jdlighttray_description();
     }
@@ -186,11 +185,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     @Override
     public boolean isDefaultEnabled() {
         return true;
-    }
-
-    @Override
-    public java.util.ArrayList<JMenuItem> getMenuAction() {
-        return null;
     }
 
     private TrayIconPopup                       trayIconPopup;

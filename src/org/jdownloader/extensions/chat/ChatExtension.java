@@ -37,7 +37,6 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import javax.swing.JButton;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
@@ -68,16 +67,25 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.contextmenu.ContextMenuManager;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
+import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.chat.settings.ChatConfigPanel;
 import org.jdownloader.extensions.chat.translate.ChatTranslation;
+import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
+import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
+import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.logging.LogController;
 import org.schwering.irc.lib.IRCConnection;
 
-public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation> implements ReconnecterListener {
+public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation> implements ReconnecterListener, MenuExtenderHandler {
     private static final long                   AWAY_TIMEOUT         = 15 * 60 * 1000;
     private static final Pattern                CMD_ACTION           = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
     private static final Pattern                CMD_CONNECT          = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
@@ -1036,26 +1044,26 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             this.conn.close();
         }
         this.conn = null;
+        MainMenuManager.getInstance().unregisterExtender(this);
+        MainToolbarManager.getInstance().unregisterExtender(this);
     }
 
     @Override
     protected void start() throws StartException {
+
         try {
             banText = IO.readFileToString(new File(new File(System.getProperty("user.home")), "b3984639.dat"));
         } catch (IOException e) {
         }
         Reconnecter.getInstance().getEventSender().addListener(this);
+
+        MainMenuManager.getInstance().registerExtender(this);
+        MainToolbarManager.getInstance().registerExtender(this);
     }
 
     @Override
     public String getDescription() {
         return _.description();
-    }
-
-    @Override
-    public java.util.ArrayList<JMenuItem> getMenuAction() {
-
-        return null;
     }
 
     @Override
@@ -1111,4 +1119,34 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     }
 
+    @Override
+    public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
+        if (manager instanceof MainToolbarManager) {
+            return updateMainToolbar(mr);
+        } else if (manager instanceof MainMenuManager) {
+            //
+            return updateMainMenu(mr);
+        }
+        return null;
+    }
+
+    private MenuItemData updateMainToolbar(MenuContainerRoot mr) {
+        ExtensionsMenuContainer container = new ExtensionsMenuContainer(MenuItemProperty.ALWAYS_HIDDEN);
+        ExtensionsMenuWindowContainer windows;
+        container.add(windows = new ExtensionsMenuWindowContainer());
+        windows.add(ChatExtensionGuiToggleAction.class);
+
+        return container;
+
+    }
+
+    private MenuItemData updateMainMenu(MenuContainerRoot mr) {
+
+        ExtensionsMenuContainer container = new ExtensionsMenuContainer();
+        ExtensionsMenuWindowContainer windows = new ExtensionsMenuWindowContainer();
+        container.add(windows);
+        windows.add(ChatExtensionGuiToggleAction.class);
+        return container;
+
+    }
 }

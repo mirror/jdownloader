@@ -51,4 +51,16 @@ public interface ChatTranslation extends TranslateInterface {
 
     @Default(lngs = { "en", "de" }, values = { "%s1 Channel", "%s1 Kanal" })
     String gui_tab_title(String currentChannel);
+
+    @Default(lngs = { "en", "de" }, values = { "Close Chat", "Chat schließen" })
+    String ChatExtensionGuiToggleAction_selected();
+
+    @Default(lngs = { "en", "de" }, values = { "Close the Chat Tab", "Den Chat Reiter schließen" })
+    String ChatExtensionGuiToggleAction_selected_tt();
+
+    @Default(lngs = { "en", "de" }, values = { "Open Chat", "Chat öffnen" })
+    String ChatExtensionGuiToggleAction_deselected();
+
+    @Default(lngs = { "en", "de" }, values = { "Open the Chat Tab", "Den Chat Reiter öffnen" })
+    String ChatExtensionGuiToggleAction_deselected_tt();
 }

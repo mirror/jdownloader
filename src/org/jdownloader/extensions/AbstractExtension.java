@@ -18,8 +18,7 @@ package org.jdownloader.extensions;
 
 import java.lang.reflect.Type;
 
-import javax.swing.ImageIcon;
-import javax.swing.JMenuItem;
+import javax.swing.Icon;
 
 import jd.config.ConfigContainer;
 import jd.config.Property;
@@ -59,6 +58,10 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      */
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public Icon getIcon(int i) {
+        return NewTheme.I().getIcon(getIconKey(), i);
     }
 
     /**
@@ -132,12 +135,17 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /**
-     * use {@link #setProxyRotationEnabled(false)} to stop the extension.
+     * use {@link #setEnabled(false)} to stop the extension. avoid to call this method directly
      * 
      * @throws StopException
      */
     protected abstract void stop() throws StopException;
 
+    /**
+     * use {@link #setEnabled(true)} to start the extension. avoid to call this method directly
+     * 
+     * @throws StartException
+     */
     protected abstract void start() throws StartException;
 
     private String            name;
@@ -155,6 +163,10 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     private volatile Property propertyConfig = null;
 
     protected LogSource       logger;
+
+    public LogSource getLogger() {
+        return logger;
+    }
 
     public TranslationType getTranslation() {
         return _;
@@ -296,14 +308,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
         return true;
     }
 
-    @Deprecated
-    public String getIconKey() {
-        return "settings";
-    }
-
-    public ImageIcon getIcon(int size) {
-        return NewTheme.I().getIcon(getIconKey(), size);
-    }
+    public abstract String getIconKey();
 
     public boolean isWindowsRunnable() {
         return true;
@@ -323,13 +328,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
         return version;
     }
 
-    public java.util.List<JMenuItem> getMenuAction() {
-        return null;
-    }
-
-    public ExtensionGuiEnableAction getShowGuiAction() {
-        return getGUI() != null ? getGUI().getEnabledAction() : null;
-
+    public boolean isQuickToggleEnabled() {
+        return false;
     }
 
     public void init() throws StartException {
@@ -349,10 +349,6 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
         }
 
         logger.info("Init Duration: " + (System.currentTimeMillis() - t));
-    }
-
-    public boolean isQuickToggleEnabled() {
-        return false;
     }
 
     public void handleCommand(String command, String... parameters) {

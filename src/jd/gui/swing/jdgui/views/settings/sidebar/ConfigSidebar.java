@@ -35,9 +35,7 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.menu.AddonsMenu;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.ExtensionManager;
 import jd.gui.swing.laf.LookAndFeelController;
@@ -51,9 +49,8 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
+import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.LazyExtension;
-import org.jdownloader.extensions.StartException;
-import org.jdownloader.extensions.StopException;
 import org.jdownloader.translate._JDT;
 
 public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseListener, ConfigEventListener {
@@ -273,42 +270,12 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
                     CheckBoxedEntry object = ((CheckBoxedEntry) list.getModel().getElementAt(index));
                     boolean value = !((CheckBoxedEntry) list.getModel().getElementAt(index))._isEnabled();
                     if (value == object._isEnabled()) return;
-                    if (value) {
-                        try {
-                            object._setEnabled(true);
-                            if (object instanceof LazyExtension) {
-                                if (((LazyExtension) object)._getExtension().getGUI() != null) {
-                                    int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName()));
-
-                                    if (UserIO.isOK(ret)) {
-                                        // activate panel
-                                        ((LazyExtension) object)._getExtension().getGUI().setActive(true);
-                                        // bring panel to front
-                                        ((LazyExtension) object)._getExtension().getGUI().toFront();
-
-                                    }
-                                }
-                            }
-                        } catch (StartException e1) {
-                            Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e1.getMessage(), e1);
-                        } catch (StopException e1) {
-                            e1.printStackTrace();
-                        }
-                    } else {
-                        try {
-
-                            object._setEnabled(false);
-                        } catch (StartException e1) {
-                            e1.printStackTrace();
-                        } catch (StopException e1) {
-                            Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e1.getMessage(), e1);
-                        }
-                    }
+                    ExtensionController.getInstance().setEnabled((LazyExtension) object, value);
                     /*
                      * we save enabled/disabled status here, plugin must be running when enabled
                      */
 
-                    AddonsMenu.getInstance().onUpdated();
+                    // AddonsMenu.getInstance().onUpdated();
 
                     // ConfigSidebar.getInstance(null).updateAddons();
                     // addons.updateShowcase();

@@ -1,5 +1,7 @@
 package org.jdownloader.controlling.contextmenu.gui;
 
+import java.lang.reflect.InvocationTargetException;
+
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 
@@ -9,12 +11,13 @@ import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.views.SelectionInfo;
 
 public class MenuBuilder {
 
     private JComponent               root;
-    private SelectionInfo<?, ?>      selection;
+    protected SelectionInfo<?, ?>    selection;
     private MenuContainer            menuData;
     private ContextMenuManager<?, ?> menuManager;
     private LogSource                logger;
@@ -44,13 +47,11 @@ public class MenuBuilder {
                 switch (inst.getType()) {
                 case ACTION:
 
-                    inst.addTo(root, selection);
+                    addAction(root, inst);
 
                     break;
                 case CONTAINER:
-                    final JMenu submenu = (JMenu) inst.addTo(root, selection);
-
-                    createLayer(submenu, (MenuContainer) inst);
+                    addContainer(root, inst);
 
                 }
                 ;
@@ -66,6 +67,16 @@ public class MenuBuilder {
             ((ExtMenuInterface) root).cleanup();
         }
 
+    }
+
+    protected void addContainer(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+        final JMenu submenu = (JMenu) inst.addTo(root, selection);
+
+        createLayer(submenu, (MenuContainer) inst);
+    }
+
+    protected void addAction(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+        inst.addTo(root, selection);
     }
 
     public void run() {

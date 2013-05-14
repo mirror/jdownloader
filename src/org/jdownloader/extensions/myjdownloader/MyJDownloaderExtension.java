@@ -32,6 +32,11 @@ public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtens
     }
 
     @Override
+    public String getIconKey() {
+        return "logo/jd_logo_54_54";
+    }
+
+    @Override
     protected void start() throws StartException {
         thread = new MyJDownloaderConnectThread(this);
         thread.start();

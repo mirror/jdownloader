@@ -19,12 +19,8 @@ package org.jdownloader.extensions.shutdown;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JMenuItem;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.AddonPanel;
@@ -45,6 +41,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.StartException;
@@ -53,17 +50,14 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
 import org.jdownloader.extensions.shutdown.translate.T;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
-import org.jdownloader.gui.toolbar.action.AbstractToolbarToggleAction;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.RestartController;
 
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener, MenuExtenderHandler {
 
-    private Thread                      shutdown   = null;
+    private Thread              shutdown = null;
 
-    private AbstractToolbarToggleAction menuAction = null;
-
-    private ShutdownConfigPanel         configPanel;
+    private ShutdownConfigPanel configPanel;
 
     public ShutdownConfigPanel getConfigPanel() {
         return configPanel;
@@ -215,8 +209,8 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         checkStandbyHibernateSettings(getSettings().getShutdownMode());
         LogController.CL().info("Stop all running downloads");
         DownloadWatchDog.getInstance().stopDownloads();
-        /* reset enabled flag */
-        menuAction.setSelected(false);
+        // /* reset enabled flag */
+        // menuAction.setSelected(false);
     }
 
     private void hibernate() {
@@ -452,9 +446,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         if (!getSettings().isShutdownActiveByDefaultEnabled()) {
             CFG_SHUTDOWN.SHUTDOWN_ACTIVE.setValue(false);
         }
-        if (menuAction == null) {
-            menuAction = new ShutdownEnableToggle(null);
-        }
+        // if (menuAction == null) {
+        // menuAction = new ShutdownEnableToggle(null);
+        // }
 
         DownloadWatchDog.getInstance().getStateMachine().addListener(this);
         LogController.CL().info("Shutdown OK");
@@ -470,12 +464,12 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         return null;
     }
 
-    @Override
-    public List<JMenuItem> getMenuAction() {
-        java.util.List<JMenuItem> menu = new ArrayList<JMenuItem>();
-        menu.add(new JCheckBoxMenuItem(menuAction));
-        return menu;
-    }
+    // @Override
+    // public List<JMenuItem> getMenuAction() {
+    // java.util.List<JMenuItem> menu = new ArrayList<JMenuItem>();
+    // menu.add(new JCheckBoxMenuItem(menuAction));
+    // return menu;
+    // }
 
     @Override
     protected void initExtension() throws StartException {
@@ -581,6 +575,11 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         }
     }
 
+    @Override
+    public boolean isQuickToggleEnabled() {
+        return true;
+    }
+
     private static boolean isHibernateActivated() throws UnsupportedEncodingException, IOException, InterruptedException {
         Response status = ShutdownExtension.execute(new String[] { "powercfg", "-a" });
         LogController.CL().info(status.toString());
@@ -595,7 +594,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     @Override
-    public void updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
-        mr.add(ShutdownEnableToggle.class);
+    public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
+        return null;
     }
 }

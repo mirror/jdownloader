@@ -92,6 +92,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
             }
 
         };
+
         iconChange = new ExtButton(new AppAction() {
             {
                 setName(_GUI._.InfoPanel_changeicon());

@@ -9,14 +9,25 @@ import org.jdownloader.extensions.ExtensionNotLoadedException;
 
 public class ActionData implements Storable {
     private HashSet<MenuItemProperty> properties;
+    private String                    jsonData;
+
     private Class<?>                  clazz;
-    private static final String       PACKAGE_NAME = AbstractExtension.class.getPackage().getName();
+    private static final String       PACKAGE_NAME = AbstractExtension.class.getPackage().getName() + ".";
+    private String                    data;
+
+    public void setData(String data) {
+        this.data = data;
+    }
+
+    public String getData() {
+        return data;
+    }
 
     public Class<?> _getClazz() throws ClassNotFoundException, ExtensionNotLoadedException {
 
         if (clazz == null) {
 
-            if (getClazzName().startsWith(PACKAGE_NAME)) {
+            if (_isExtensionAction()) {
 
                 clazz = ExtensionController.getInstance().loadClass(getClazzName());
 
@@ -24,10 +35,19 @@ public class ActionData implements Storable {
                 clazz = Class.forName(getClazzName());
             }
 
-        } else if (getClazzName().startsWith(PACKAGE_NAME)) {
+        } else if (_isExtensionAction()) {
             clazz = ExtensionController.getInstance().loadClass(getClazzName());
         }
         return clazz;
+    }
+
+    private boolean _isExtensionAction() {
+
+        String cn = getClazzName();
+        int i = cn.lastIndexOf(".");
+        String pkg = i >= 0 ? cn.substring(0, i) : "";
+        boolean ret = pkg.startsWith(PACKAGE_NAME);
+        return ret;
     }
 
     private String clazzName;
@@ -39,7 +59,11 @@ public class ActionData implements Storable {
     }
 
     public ActionData(Class<?> class1, MenuItemProperty... ps) {
+        this(class1, null, ps);
+    }
 
+    public ActionData(Class<?> class1, String data, MenuItemProperty... ps) {
+        this.data = data;
         this.clazz = class1;
         this.clazzName = class1.getName();
         properties = new HashSet<MenuItemProperty>();

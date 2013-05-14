@@ -29,8 +29,10 @@ import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.Box;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
+import javax.swing.JMenu;
 import javax.swing.JRootPane;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
@@ -55,6 +57,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
@@ -156,9 +159,10 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     private void initToolbar() {
 
         List<MenuItemData> list = MainToolbarManager.getInstance().getMenuData().getItems();
-        this.setLayout(new MigLayout("ins 0 3 0 0", "[]", "[grow,fill,32!]"));
+        this.setLayout(new MigLayout("ins 0 3 0 0", "[]", "[grow,32!]"));
         AbstractButton ab;
         // System.out.println(this.getColConstraints(list.length));
+        MenuItemData last = null;
         for (final MenuItemData menudata : list) {
 
             AbstractButton bt = null;
@@ -166,7 +170,12 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
             try {
                 if (!menudata.showItem(null)) continue;
                 if (menudata instanceof SeperatorData) {
-                    this.add(new JSeparator(SwingConstants.VERTICAL), "gapleft 10,gapright 10,width 2!");
+                    if (last != null && last instanceof SeperatorData) {
+                        // no seperator dupes
+                        continue;
+                    }
+                    this.add(new JSeparator(SwingConstants.VERTICAL), "gapleft 10,gapright 10,width 2!,pushy,growy");
+                    last = menudata;
                     continue;
                 }
                 if (menudata._getValidateException() != null) continue;
@@ -194,7 +203,8 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         }
 
                     });
-                    add(bt, "width 32!");
+                    last = menudata;
+                    add(bt, "width 32!,height 32!");
                     bt.setHideActionText(true);
                     continue;
                 } else if (menudata.getActionData() != null) {
@@ -203,18 +213,20 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                     if (action.isToggle()) {
                         bt = new JToggleButton(action);
                         ImageIcon icon;
+
                         bt.setIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), false, 24));
                         bt.setRolloverIcon(icon);
                         bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, 24));
                         bt.setRolloverSelectedIcon(icon);
-                        add(bt, "width 32!");
+                        add(bt, "width 32!,height 32!");
                         bt.setHideActionText(true);
                     } else {
                         bt = new ExtButton(action);
-                        add(bt, "width 32!");
+                        bt.setIcon(NewTheme.I().getIcon(action.getIconKey(), 24));
+                        add(bt, "width 32!,height 32!");
                         bt.setHideActionText(true);
                     }
-
+                    last = menudata;
                     final Object value = action.getValue(Action.ACCELERATOR_KEY);
                     if (value == null) {
                         continue;
@@ -233,7 +245,65 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         }
 
                     }
+                } else if (menudata instanceof MenuLink) {
+                    final JComponent item = menudata.createItem(null);
+                    if (StringUtils.isNotEmpty(menudata.getIconKey())) {
+                        if (item instanceof AbstractButton) {
+                            ((AbstractButton) item).setIcon(NewTheme.I().getIcon(menudata.getIconKey(), 24));
+                        }
+                    }
+
+                    if (item instanceof JMenu) {
+
+                        bt = new ExtButton(new AppAction() {
+                            {
+                                setName(((JMenu) item).getText());
+                                Icon ico = ((JMenu) item).getIcon();
+
+                                if (ico == null || Math.max(ico.getIconHeight(), ico.getIconWidth()) < 24) {
+                                    ico = createDropdownImage("menu");
+                                    putValue(AbstractAction.LARGE_ICON_KEY, ico);
+                                    setSmallIcon(ico);
+                                } else if (ico instanceof ImageIcon) {
+                                    if (Math.max(ico.getIconHeight(), ico.getIconWidth()) != 24) {
+                                        ico = ImageProvider.scaleImageIcon((ImageIcon) ico, 24, 24);
+                                    }
+                                    ico = createDropdownImage(((ImageIcon) ico).getImage());
+                                    putValue(AbstractAction.LARGE_ICON_KEY, ico);
+                                    setSmallIcon(ico);
+                                } else {
+
+                                    putValue(AbstractAction.LARGE_ICON_KEY, ico);
+                                    setSmallIcon(ico);
+                                }
+                            }
+
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                ExtPopupMenu root = new ExtPopupMenu();
+                                for (Component c : ((JMenu) item).getMenuComponents()) {
+                                    root.add(c);
+                                }
+
+                                Object src = e.getSource();
+                                if (e.getSource() instanceof Component) {
+                                    Component button = (Component) e.getSource();
+                                    Dimension prefSize = root.getPreferredSize();
+                                    int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                                    root.show(button, -insets[1], button.getHeight() - insets[0]);
+
+                                }
+                            }
+
+                        });
+
+                        add(bt, "width 32!,height 32!");
+                        bt.setHideActionText(true);
+                    } else {
+                        add(item, "aligny center");
+                    }
                 }
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -245,11 +315,15 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     protected ImageIcon createDropdownImage(String iconKey) {
 
         Image back = NewTheme.I().getImage(iconKey, 20, false);
+        return createDropdownImage(back);
+
+    }
+
+    protected ImageIcon createDropdownImage(Image back) {
         Image checkBox = NewTheme.I().getImage("popdownButton", -1, false);
         back = ImageProvider.merge(back, checkBox, 0, 0, 24 - checkBox.getWidth(null), 24 - checkBox.getHeight(null));
 
         return new ImageIcon(back);
-
     }
 
     protected void updateSpecial() {

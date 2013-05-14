@@ -22,8 +22,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.logging.Level;
 
-import javax.swing.ImageIcon;
-
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -37,7 +35,6 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.neembuu.gui.NeembuuGui;
 import org.jdownloader.extensions.neembuu.translate.NeembuuTranslation;
 import org.jdownloader.extensions.neembuu.translate._NT;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
 public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTranslation> {
@@ -201,6 +198,11 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
         return downloadSessions;
     }
 
+    @Override
+    public String getIconKey() {
+        return "ok";
+    }
+
     /**
      * Action "onStop". Is called each time the user disables the extension
      */
@@ -241,23 +243,10 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
 
     }
 
-    /**
-     * Has to return the Extension MAIN Icon. This icon will be used,for example, in the settings pane
-     */
-    @Override
-    public ImageIcon getIcon(int size) {
-        return NewTheme.I().getIcon("ok", size);
-    }
-
     @Override
     public boolean isDefaultEnabled() {
         /* only default enabled if java >= 1.7 installed */
         return Application.getJavaVersion() >= Application.JAVA17;
-    }
-
-    @Override
-    public boolean isQuickToggleEnabled() {
-        return false;
     }
 
     /**

@@ -61,6 +61,11 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
         }
     }
 
+    @Override
+    public String getIconKey() {
+        return "settings";
+    }
+
     public boolean isQuickToggleEnabled() {
         return true;
     }

@@ -33,6 +33,9 @@ import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
 import jd.gui.swing.jdgui.views.ClosableView;
 
+import org.jdownloader.gui.event.GUIEvent;
+import org.jdownloader.gui.event.GUIEventSender;
+
 public class MainTabbedPane extends JTabbedPane {
 
     private static final long     serialVersionUID = -1531827591735215594L;
@@ -104,9 +107,11 @@ public class MainTabbedPane extends JTabbedPane {
                     if (latestSelection != null) {
                         latestSelection.setHidden();
                     }
+                    GUIEventSender.getInstance().fireEvent(new GUIEvent(MainTabbedPane.this, GUIEvent.Type.TAB_SWITCH, latestSelection, comp));
                     latestSelection = comp;
                     comp.setShown();
                     revalidate();
+
                 } catch (Exception e2) {
                     e2.printStackTrace();
                 }

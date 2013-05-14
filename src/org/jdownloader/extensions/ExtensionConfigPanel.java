@@ -12,6 +12,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
+import org.jdownloader.images.NewTheme;
 
 public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends AbstractConfigPanel implements ConfigEventListener {
 
@@ -31,7 +32,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
         plg.getSettings().getStorageHandler().getEventSender().addListener(this);
         if (!clean) {
-            final Header header = new Header(plg.getName(), plg.getIcon(32), keyHandlerEnabled, extension.getVersion());
+            final Header header = new Header(plg.getName(), NewTheme.I().getIcon(extension.getIconKey(), 32), keyHandlerEnabled, extension.getVersion());
 
             add(header, "spanx,growx,pushx");
 
@@ -83,7 +84,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
     @Override
     public ImageIcon getIcon() {
-        return extension.getIcon(32);
+        return NewTheme.I().getIcon(extension.getIconKey(), 32);
     }
 
     @Override

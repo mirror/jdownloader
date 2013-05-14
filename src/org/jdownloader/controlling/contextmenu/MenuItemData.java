@@ -36,7 +36,13 @@ public class MenuItemData implements Storable {
     private ActionData                actionData;
 
     public String _getIdentifier() {
-        if (actionData != null) { return actionData.getClazzName(); }
+        if (actionData != null) {
+
+            if (actionData.getData() != null) return actionData.getClazzName() + ":" + actionData.getData();
+
+            return actionData.getClazzName();
+
+        }
         if (getClass() != MenuContainer.class && getClass() != MenuItemData.class) { return getClass().getName(); }
         if (StringUtils.isNotEmpty(className)) return className;
         return getIconKey() + ":" + getName();
@@ -44,6 +50,7 @@ public class MenuItemData implements Storable {
     }
 
     public String toString() {
+
         return _getIdentifier() + "";
     }
 
@@ -178,7 +185,7 @@ public class MenuItemData implements Storable {
         } else {
             ret = (MenuItemData) Class.forName(menuItemData.getClassName()).newInstance();
         }
-
+        ret.setActionData(getActionData());
         ret.setIconKey(menuItemData.getIconKey());
         ret.setName(menuItemData.getName());
         ret.setItems(menuItemData.getItems());
@@ -221,28 +228,62 @@ public class MenuItemData implements Storable {
         if (selection == null) {
 
             try {
-                Constructor<?> c = clazz.getConstructor(new Class[] {});
-                AppAction action = (AppAction) c.newInstance(new Object[] {});
-                return action;
-            } catch (Exception e) {
+                if (StringUtils.isNotEmpty(actionData.getData())) {
+                    Constructor<?> c = clazz.getConstructor(new Class[] { String.class });
+                    AppAction action = (AppAction) c.newInstance(new Object[] { actionData.getData() });
 
+                    return customize(action);
+
+                } else {
+                    Constructor<?> c = clazz.getConstructor(new Class[] {});
+                    AppAction action = (AppAction) c.newInstance(new Object[] {});
+                    return customize(action);
+                }
+
+            } catch (Exception e) {
+                // e.printStackTrace();
             }
 
         }
+        AppAction action = null;
+        if (StringUtils.isNotEmpty(actionData.getData())) {
+            Constructor<?> c = clazz.getConstructor(new Class[] { SelectionInfo.class, String.class });
+            action = (AppAction) c.newInstance(new Object[] { selection, actionData.getData() });
 
-        Constructor<?> c = clazz.getConstructor(new Class[] { SelectionInfo.class });
-        AppAction action = (AppAction) c.newInstance(new Object[] { selection });
+        } else {
+            Constructor<?> c = clazz.getConstructor(new Class[] { SelectionInfo.class });
+            action = (AppAction) c.newInstance(new Object[] { selection });
+        }
+
+        return customize(action);
+
+    }
+
+    private AppAction customize(AppAction action) {
+
+        if (StringUtils.isNotEmpty(getIconKey())) {
+            action.setIconKey(getIconKey());
+        }
+        if (StringUtils.isNotEmpty(getName())) {
+            action.setName(getName());
+        }
+
         actionData.setName(action.getName());
         actionData.setIconKey(action.getIconKey());
 
         return action;
-
     }
 
     public boolean showItem(SelectionInfo<?, ?> selection) {
 
         for (MenuItemProperty p : mergeProperties()) {
             switch (p) {
+            case HIDE_ON_LINUX:
+                return !CrossSystem.isLinux();
+            case HIDE_ON_MAC:
+                return !CrossSystem.isMac();
+            case HIDE_ON_WINDOWS:
+                return !CrossSystem.isWindows();
             case ALWAYS_HIDDEN:
                 return false;
             case LINK_CONTEXT:
@@ -383,4 +424,5 @@ public class MenuItemData implements Storable {
     public void _setRoot(MenuContainerRoot root) {
         this.root = root;
     }
+
 }

@@ -13,7 +13,7 @@ public class CleanupAutoDeleteLinksEnabledToggleAction extends AbstractExtractio
 
     public CleanupAutoDeleteLinksEnabledToggleAction(final SelectionInfo<?, ?> selection) {
         super(selection);
-        setName(_.contextmenu_autodeletelinks());
+        setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autodeletelinks());
         setIconKey(IconKey.ICON_LINK);
         setSelected(false);
         setEnabled(false);
@@ -31,7 +31,7 @@ public class CleanupAutoDeleteLinksEnabledToggleAction extends AbstractExtractio
         for (Archive archive : archives) {
             archive.getSettings().setRemoveDownloadLinksAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
         }
-        Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? _.set_autoremovelinks_true() : _.set_autoremovelinks_false());
+        Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T._.set_autoremovelinks_true() : org.jdownloader.extensions.extraction.translate.T._.set_autoremovelinks_false());
 
     }
 }

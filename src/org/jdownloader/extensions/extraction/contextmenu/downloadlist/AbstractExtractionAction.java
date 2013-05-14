@@ -7,14 +7,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.extensions.ExtensionAction;
+import org.jdownloader.extensions.AbstractExtensionAction;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
-import org.jdownloader.extensions.extraction.translate.ExtractionTranslation;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public abstract class AbstractExtractionAction extends ExtensionAction<ExtractionExtension, ExtractionConfig, ExtractionTranslation> {
+public abstract class AbstractExtractionAction extends AbstractExtensionAction<ExtractionExtension> {
 
     private SelectionInfo<?, ?> selection;
     protected List<Archive>     archives;

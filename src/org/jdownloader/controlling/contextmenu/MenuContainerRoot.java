@@ -92,7 +92,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                         last = lr;
 
                     } catch (Exception e) {
-
+                        e.printStackTrace();
                         container.getItems().remove(i);
                         ret = false;
                         continue main;
@@ -124,26 +124,36 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
         return this;
     }
 
-    private void addBranch(MenuItemData menuItemData, MenuItemData lastNode) {
-        boolean added = false;
-        for (MenuItemData mu : menuItemData.getItems()) {
-            if (mu.getActionData() != null) continue;
-            if (StringUtils.equals(mu.getClassName(), lastNode.getClassName())) {
-                // subfolder found
+    public void addBranch(MenuItemData parent, MenuItemData nodeToAdd) {
+        if (nodeToAdd instanceof MenuContainerRoot) {
+            for (MenuItemData mu : nodeToAdd.getItems()) {
+                addBranch(parent, mu);
+            }
 
-                if (lastNode.getItems() != null && lastNode.getItems().size() > 0) {
+        } else {
+            boolean added = false;
+            if (parent == null) parent = this;
+            for (MenuItemData mu : parent.getItems()) {
+                if (mu.getActionData() != null) continue;
+                if (StringUtils.equals(mu.getClassName(), nodeToAdd.getClassName())) {
+                    // subfolder found
 
-                    addBranch(mu, lastNode.getItems().get(0));
-                    added = true;
-                } else {
-                    return;
+                    if (nodeToAdd.getItems() != null && nodeToAdd.getItems().size() > 0) {
+                        for (MenuItemData item : nodeToAdd.getItems()) {
+
+                            addBranch(mu, item);
+                        }
+                        added = true;
+                    } else {
+                        return;
+                    }
+
                 }
+            }
+            if (!added) {
+                parent.getItems().add(nodeToAdd);
 
             }
-        }
-        if (!added) {
-            menuItemData.getItems().add(lastNode);
-
         }
     }
 

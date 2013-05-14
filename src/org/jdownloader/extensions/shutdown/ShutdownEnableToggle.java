@@ -6,16 +6,18 @@ import org.appwork.uio.MessageDialogImpl;
 import org.appwork.uio.MessageDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.extensions.AbstractExtensionQuickToggleAction;
 import org.jdownloader.gui.shortcuts.ShortcutController;
-import org.jdownloader.gui.toolbar.action.AbstractToolbarToggleAction;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class ShutdownEnableToggle extends AbstractToolbarToggleAction {
+public class ShutdownEnableToggle extends AbstractExtensionQuickToggleAction<ShutdownExtension> {
 
     public ShutdownEnableToggle(SelectionInfo<?, ?> selection) {
         super(CFG_SHUTDOWN.SHUTDOWN_ACTIVE);
         setName(org.jdownloader.extensions.shutdown.translate.T._.lit_shutdownn());
         setIconKey("logout");
+        setAccelerator(ShortcutController._.getShutdownExtensionToggleShutdownAction());
+        setTooltipText(org.jdownloader.extensions.shutdown.translate.T._.action_tooltip());
         this.setEnabled(true);
         setSelected(false);
 
@@ -33,16 +35,6 @@ public class ShutdownEnableToggle extends AbstractToolbarToggleAction {
 
         }
 
-    }
-
-    @Override
-    protected String createAccelerator() {
-        return ShortcutController._.getShutdownExtensionToggleShutdownAction();
-    }
-
-    @Override
-    protected String createTooltip() {
-        return org.jdownloader.extensions.shutdown.translate.T._.action_tooltip();
     }
 
 };

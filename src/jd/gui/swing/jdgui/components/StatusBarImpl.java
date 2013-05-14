@@ -101,6 +101,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());
         reconnectIndicator.setIndeterminate(false);
         reconnectIndicator.setEnabled(false);
+
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
@@ -337,7 +338,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                             public boolean accept(DownloadLink link) {
                                 return true;
                             }
-                        });                        
+                        });
                     }
 
                     public void mousePressed(MouseEvent e) {

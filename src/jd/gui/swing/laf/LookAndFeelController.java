@@ -28,6 +28,7 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.synthetica.SyntheticaHelper;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.LAFManagerInterface;
 import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
 import org.jdownloader.images.NewTheme;
@@ -53,7 +54,8 @@ public class LookAndFeelController implements LAFManagerInterface {
     private LogSource                      logger;
 
     /**
-     * Create a new instance of LookAndFeelController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of LookAndFeelController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private LookAndFeelController() {
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
@@ -87,7 +89,7 @@ public class LookAndFeelController implements LAFManagerInterface {
     public synchronized void setUIManager() {
         if (uiInitated) return;
         uiInitated = true;
-        initLinux();
+        if (CrossSystem.isLinux()) initLinux();
         long t = System.currentTimeMillis();
         try {
             // de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setLookAndFeel("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel");

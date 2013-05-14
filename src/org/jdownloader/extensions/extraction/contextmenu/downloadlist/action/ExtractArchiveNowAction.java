@@ -16,7 +16,7 @@ public class ExtractArchiveNowAction extends AbstractExtractionAction {
 
     public ExtractArchiveNowAction(final SelectionInfo<?, ?> selection) {
         super(selection);
-        setName(_.contextmenu_extract());
+        setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_extract());
         setIconKey(IconKey.ICON_ARCHIVE_RUN);
         setEnabled(false);
 
@@ -30,7 +30,7 @@ public class ExtractArchiveNowAction extends AbstractExtractionAction {
                     if (archive.isComplete()) {
                         _getExtension().addToQueue(archive);
                     } else {
-                        Dialog.getInstance().showMessageDialog(_.cannot_extract_incopmplete(archive.getName()));
+                        Dialog.getInstance().showMessageDialog(org.jdownloader.extensions.extraction.translate.T._.cannot_extract_incopmplete(archive.getName()));
                     }
                 }
 

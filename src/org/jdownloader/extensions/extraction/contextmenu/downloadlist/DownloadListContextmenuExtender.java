@@ -34,7 +34,7 @@ public class DownloadListContextmenuExtender implements MenuExtenderHandler {
     }
 
     @Override
-    public void updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
+    public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
         int addonLinkIndex = 0;
         for (int i = 0; i < mr.getItems().size(); i++) {
             if (mr.getItems().get(i) instanceof MoreMenuContainer) {
@@ -56,7 +56,7 @@ public class DownloadListContextmenuExtender implements MenuExtenderHandler {
         root.add(cleanup);
         cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteFilesEnabledToggleAction.class)));
         cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteLinksEnabledToggleAction.class)));
-
+        return null;
     }
 
 }

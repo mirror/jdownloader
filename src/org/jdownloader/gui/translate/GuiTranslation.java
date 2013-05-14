@@ -213,7 +213,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "New Package Name" })
     String gui_linklist_editpackagename_message();
 
-    @Default(lngs = { "en" }, values = { "About" })
+    @Default(lngs = { "en" }, values = { "Help" })
     String gui_menu_about();
 
     @Default(lngs = { "en" }, values = { "Pause downloads. Limits global speed to %s1 KiB/s" })
@@ -2613,5 +2613,29 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Main Toolbar" })
     String MainToolbarManager_getName();
+
+    @Default(lngs = { "en" }, values = { "Disable %s1" })
+    String ExtensionQuickToggleAction_name_selected(String name);
+
+    @Default(lngs = { "en" }, values = { "Enable %s1" })
+    String ExtensionQuickToggleAction_name_deselected(String name);
+
+    @Default(lngs = { "en" }, values = { "Disable  the '%s1' Extension" })
+    String ExtensionQuickToggleAction_name_selected_tt(String name);
+
+    @Default(lngs = { "en" }, values = { "Enable the '%s1' Extension" })
+    String ExtensionQuickToggleAction_name_deselected_tt(String name);
+
+    @Default(lngs = { "en" }, values = { "Move to Top" })
+    String MoveToTopAction_MoveToTopAction();
+
+    @Default(lngs = { "en" }, values = { "Move up" })
+    String MoveUpAction_MoveUpAction();
+
+    @Default(lngs = { "en" }, values = { "Move to Bottom" })
+    String MoveToBottomAction_MoveToBottomAction();
+
+    @Default(lngs = { "en" }, values = { "Move down" })
+    String MoveDownAction_MoveDownAction();
 
 }

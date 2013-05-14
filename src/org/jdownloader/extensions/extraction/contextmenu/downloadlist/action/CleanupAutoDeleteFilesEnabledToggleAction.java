@@ -13,7 +13,7 @@ public class CleanupAutoDeleteFilesEnabledToggleAction extends AbstractExtractio
 
     public CleanupAutoDeleteFilesEnabledToggleAction(final SelectionInfo<?, ?> selection) {
         super(selection);
-        setName(_.contextmenu_autodeletefiles());
+        setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autodeletefiles());
         setIconKey(IconKey.ICON_FILE);
         setSelected(false);
         setEnabled(false);
@@ -31,7 +31,7 @@ public class CleanupAutoDeleteFilesEnabledToggleAction extends AbstractExtractio
         for (Archive archive : archives) {
             archive.getSettings().setRemoveFilesAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
         }
-        Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? _.set_autoremovefiles_true() : _.set_autoremovefiles_false());
+        Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T._.set_autoremovefiles_true() : org.jdownloader.extensions.extraction.translate.T._.set_autoremovefiles_false());
 
     }
 }

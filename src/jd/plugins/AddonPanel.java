@@ -8,7 +8,6 @@ import jd.gui.swing.jdgui.views.ClosableView;
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionGuiTabToggleAction;
 
 /**
  * Abstract Superclass which should be used for all Extension Gui Panels
@@ -21,10 +20,9 @@ public abstract class AddonPanel<T extends AbstractExtension<? extends Extension
     /**
      * 
      */
-    private static final long           serialVersionUID = 1L;
-    private boolean                     active           = false;
-    private T                           extension;
-    private ExtensionGuiTabToggleAction action;
+    private static final long serialVersionUID = 1L;
+    private boolean           active           = false;
+    private T                 extension;
 
     public AddonPanel(T plg) {
         extension = plg;
@@ -62,8 +60,8 @@ public abstract class AddonPanel<T extends AbstractExtension<? extends Extension
      * @param b
      */
     public void setActive(final boolean b) {
+        if (active == b) return;
         active = b;
-        getEnabledAction().setSelected(b);
 
         if (b) {
 
@@ -99,18 +97,6 @@ public abstract class AddonPanel<T extends AbstractExtension<? extends Extension
      * is called as soon as the gui gets activated and visible in the main tabbed pane
      */
     abstract protected void onActivated();
-
-    /**
-     * returns the action which can be used as toggleaction to show/hide the gui
-     * 
-     * @return
-     */
-    public synchronized ExtensionGuiTabToggleAction getEnabledAction() {
-        if (action == null) {
-            action = new ExtensionGuiTabToggleAction(extension);
-        }
-        return action;
-    }
 
     /**
      * if this returns true, the guis visibility is stored across sessions. This means that the pannel will be reactivated after JDownloader

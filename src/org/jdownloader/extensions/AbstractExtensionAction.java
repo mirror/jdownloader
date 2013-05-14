@@ -2,18 +2,14 @@ package org.jdownloader.extensions;
 
 import java.lang.reflect.Type;
 
-import jd.plugins.ExtensionConfigInterface;
-
 import org.appwork.exceptions.WTFException;
-import org.appwork.txtresource.TranslateInterface;
 import org.jdownloader.actions.AppAction;
 
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
-public abstract class ExtensionAction<T extends AbstractExtension<ConfigType, TranslationType>, ConfigType extends ExtensionConfigInterface, TranslationType extends TranslateInterface> extends AppAction {
+public abstract class AbstractExtensionAction<T extends AbstractExtension<?, ?>> extends AppAction {
 
-    protected TranslationType _;
-    private T                 extension;
+    private T extension;
     {
 
         Class<?> myClass = getClass();
@@ -26,10 +22,7 @@ public abstract class ExtensionAction<T extends AbstractExtension<ConfigType, Tr
                     LazyExtension ex = ExtensionController.getInstance().getExtension(clazz);
 
                     extension = ((T) ex._getExtension());
-                    if (extension != null) {
-                        _ = extension.getTranslation();
 
-                    }
                     break;
                 } else if (supClass instanceof Class) {
                     myClass = (Class<?>) supClass;

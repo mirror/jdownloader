@@ -4,7 +4,6 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.jdownloader.controlling.contextmenu.ActionData;
-import org.jdownloader.controlling.contextmenu.BooleanLinkedMenuItemData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
@@ -28,7 +27,6 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
-import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
 public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPackage, CrawledLink> {
 
@@ -68,8 +66,9 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
         mr.setSource(VERSION);
         mr.add(new MenuItemData(new ActionData(ConfirmAction.class), MenuItemProperty.HIDE_IF_DISABLED));
         mr.add(new SeperatorData());
-        mr.add(new BooleanLinkedMenuItemData(CFG_LINKGRABBER.CONTEXT_MENU_ADD_LINKS_ACTION_ALWAYS_VISIBLE, true, AddLinksAction.class));
-        mr.add(new BooleanLinkedMenuItemData(CFG_LINKGRABBER.CONTEXT_MENU_ADD_LINKS_ACTION_ALWAYS_VISIBLE, true, AddContainerAction.class));
+        mr.add(new MenuItemData(new ActionData(AddLinksAction.class), MenuItemProperty.ALWAYS_HIDDEN));
+        mr.add(new MenuItemData(new ActionData(AddContainerAction.class), MenuItemProperty.ALWAYS_HIDDEN));
+
         mr.add(new SeperatorData());
         mr.add(createSettingsSubmenu());
 

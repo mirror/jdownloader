@@ -1,9 +1,5 @@
 package org.jdownloader.extensions.infobar;
 
-import java.awt.event.ActionEvent;
-
-import javax.swing.JMenuItem;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -11,16 +7,25 @@ import jd.plugins.AddonPanel;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTHelper;
+import org.jdownloader.controlling.contextmenu.ContextMenuManager;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
+import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.ExtensionGuiEnableAction;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.infobar.translate.InfobarTranslation;
 import org.jdownloader.extensions.infobar.translate.T;
+import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
+import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
+import org.jdownloader.gui.mainmenu.container.OptionalContainer;
+import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.logging.LogController;
 
-public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTranslation> {
+public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTranslation> implements MenuExtenderHandler {
 
     @Override
     public boolean isDefaultEnabled() {
@@ -37,8 +42,6 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     private ExtensionConfigPanel<InfoBarExtension> configPanel;
 
-    private ExtensionGuiEnableAction               guiAction;
-
     public ExtensionConfigPanel<InfoBarExtension> getConfigPanel() {
         return configPanel;
     }
@@ -50,18 +53,11 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     public InfoBarExtension() throws StartException {
 
         setTitle(T._.jd_plugins_optional_infobar_jdinfobar());
-        guiAction = new ExtensionGuiEnableAction(this) {
-            public void actionPerformed(ActionEvent e) {
-                super.actionPerformed(e);
-                setGuiEnable(isSelected());
-            }
-
-        };
 
     }
 
-    public ExtensionGuiEnableAction getShowGuiAction() {
-        return guiAction;
+    public Class<EnableInfoBarGuiAction> getShowGuiAction() {
+        return EnableInfoBarGuiAction.class;
 
     }
 
@@ -91,7 +87,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     public void setGuiEnable(boolean b) {
         if (b) {
             if (infoDialog == null) {
-                infoDialog = InfoDialog.getInstance(getShowGuiAction());
+                infoDialog = new InfoDialog(this);
                 infoDialog.setEnableDropLocation(getPropertyConfig().getBooleanProperty(PROPERTY_DROPLOCATION, true));
                 infoDialog.setEnableDocking(getPropertyConfig().getBooleanProperty(PROPERTY_DOCKING, true));
                 if (Application.getJavaVersion() >= 16000000) updateOpacity(null);
@@ -100,7 +96,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
         } else {
             if (infoDialog != null) infoDialog.hideDialog();
         }
-        if (getShowGuiAction() != null && getShowGuiAction().isSelected() != b) getShowGuiAction().setSelected(b);
+        getSettings().setGuiEnabled(b);
     }
 
     @Override
@@ -111,11 +107,43 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     @Override
     protected void stop() throws StopException {
         if (infoDialog != null) infoDialog.hideDialog();
+        MainMenuManager.getInstance().unregisterExtender(this);
+        MainToolbarManager.getInstance().unregisterExtender(this);
     }
 
     @Override
     protected void start() throws StartException {
         LogController.CL().info("InfoBar: OK");
+        MainMenuManager.getInstance().registerExtender(this);
+        MainToolbarManager.getInstance().registerExtender(this);
+    }
+
+    @Override
+    public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
+
+        if (manager instanceof MainToolbarManager) {
+            return updateMainToolbar(mr);
+        } else if (manager instanceof MainMenuManager) {
+            //
+            return updateMainMenu(mr);
+        }
+        return null;
+    }
+
+    private MenuItemData updateMainMenu(MenuContainerRoot mr) {
+        ExtensionsMenuContainer container = new ExtensionsMenuContainer();
+        ExtensionsMenuWindowContainer windows = new ExtensionsMenuWindowContainer();
+        windows.add(EnableInfoBarGuiAction.class);
+        container.add(windows);
+        return container;
+
+    }
+
+    private MenuItemData updateMainToolbar(MenuContainerRoot mr) {
+        OptionalContainer opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN);
+        opt.add(EnableInfoBarGuiAction.class);
+        return opt;
+
     }
 
     protected void initSettings(ConfigContainer config) {
@@ -163,11 +191,6 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     @Override
     public AddonPanel<InfoBarExtension> getGUI() {
-        return null;
-    }
-
-    @Override
-    public java.util.ArrayList<JMenuItem> getMenuAction() {
         return null;
     }
 

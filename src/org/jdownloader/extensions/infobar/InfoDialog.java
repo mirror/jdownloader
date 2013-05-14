@@ -26,26 +26,18 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTHelper;
-import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.infobar.translate.T;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class InfoDialog extends JWindow implements ActionListener, MouseListener, MouseMotionListener {
 
-    private static InfoDialog INSTANCE = null;
-
-    public static InfoDialog getInstance(AppAction action) {
-        if (INSTANCE == null) INSTANCE = new InfoDialog(action);
-        return INSTANCE;
-    }
-
     private static final long          serialVersionUID = 4715904261105562064L;
 
     private static final int           DOCKING_DISTANCE = 25;
 
     private final DownloadInformations ds;
-    private final AppAction            action;
+
     private final DragDropHandler      ddh;
     private boolean                    enableDocking;
 
@@ -59,11 +51,13 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     private SpeedMeterPanel            speedmeter;
 
-    private InfoDialog(AppAction action) {
-        super();
+    private InfoBarExtension           extension;
 
+    public InfoDialog(InfoBarExtension infoBarExtension) {
+        super();
+        extension = infoBarExtension;
         this.ds = DownloadInformations.getInstance();
-        this.action = action;
+
         this.ddh = new DragDropHandler();
 
         this.setName("INFODIALOG");
@@ -272,8 +266,8 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     }
 
     public void actionPerformed(ActionEvent e) {
-        action.setSelected(false);
-        action.actionPerformed(new ActionEvent(action, e.getID(), e.getActionCommand()));
+        extension.setGuiEnable(false);
+
     }
 
 }

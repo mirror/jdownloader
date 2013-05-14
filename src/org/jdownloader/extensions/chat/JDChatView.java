@@ -20,6 +20,7 @@ import javax.swing.Icon;
 
 import jd.plugins.AddonPanel;
 
+import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.images.NewTheme;
 
@@ -67,8 +68,11 @@ public class JDChatView extends AddonPanel<ChatExtension> {
     protected void onDeactivated() {
 
         try {
-            getExtension().stop();
+            getExtension().setEnabled(false);
+
         } catch (StopException e) {
+            e.printStackTrace();
+        } catch (StartException e) {
             e.printStackTrace();
         }
 

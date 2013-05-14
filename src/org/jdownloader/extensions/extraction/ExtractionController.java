@@ -317,7 +317,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      * 
      * @return The thrown exception.
      */
-    Exception getException() {
+    public Exception getException() {
         return exception;
     }
 

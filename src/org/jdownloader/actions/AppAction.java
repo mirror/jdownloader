@@ -1,6 +1,11 @@
 package org.jdownloader.actions;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
 import org.appwork.swing.action.BasicAction;
+import org.jdownloader.actions.event.AppActionEvent;
+import org.jdownloader.actions.event.AppActionEventSender;
 import org.jdownloader.images.NewTheme;
 
 /**
@@ -11,13 +16,29 @@ import org.jdownloader.images.NewTheme;
  */
 public abstract class AppAction extends BasicAction {
 
-    private String iconKey;
+    private String               iconKey;
 
-    private int    size;
+    private int                  size;
+
+    private AppActionEventSender eventSender;
 
     public AppAction() {
         super();
 
+    }
+
+    public synchronized AppActionEventSender getEventSender() {
+        if (eventSender == null) {
+            eventSender = new AppActionEventSender();
+            addPropertyChangeListener(new PropertyChangeListener() {
+
+                @Override
+                public void propertyChange(PropertyChangeEvent evt) {
+                    eventSender.fireEvent(new AppActionEvent(AppAction.this, AppActionEvent.Type.PROPERTY_CHANGE, evt));
+                }
+            });
+        }
+        return eventSender;
     }
 
     public void setIconKey(String iconKey) {

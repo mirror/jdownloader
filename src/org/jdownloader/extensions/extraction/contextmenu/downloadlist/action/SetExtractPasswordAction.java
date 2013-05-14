@@ -17,7 +17,7 @@ public class SetExtractPasswordAction extends AbstractExtractionAction {
 
     public SetExtractPasswordAction(final SelectionInfo<?, ?> selection) {
         super(selection);
-        setName(_.contextmenu_password());
+        setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_password());
         setIconKey(IconKey.ICON_PASSWORD);
         setEnabled(false);
 
@@ -50,10 +50,10 @@ public class SetExtractPasswordAction extends AbstractExtractionAction {
             String pw = null;
 
             if (archives.size() > 1) {
-                pw = Dialog.getInstance().showInputDialog(0, _.context_password(), (list == null || list.size() == 0) ? _.context_password_msg_multi() : _.context_password_msg2_multi(sb.toString()), null, NewTheme.getInstance().getIcon("password", 32), null, null);
+                pw = Dialog.getInstance().showInputDialog(0, org.jdownloader.extensions.extraction.translate.T._.context_password(), (list == null || list.size() == 0) ? org.jdownloader.extensions.extraction.translate.T._.context_password_msg_multi() : org.jdownloader.extensions.extraction.translate.T._.context_password_msg2_multi(sb.toString()), null, NewTheme.getInstance().getIcon("password", 32), null, null);
 
             } else {
-                pw = Dialog.getInstance().showInputDialog(0, _.context_password(), (list == null || list.size() == 0) ? _.context_password_msg(archives.get(0).getName()) : _.context_password_msg2(archives.get(0).getName(), sb.toString()), null, NewTheme.getInstance().getIcon("password", 32), null, null);
+                pw = Dialog.getInstance().showInputDialog(0, org.jdownloader.extensions.extraction.translate.T._.context_password(), (list == null || list.size() == 0) ? org.jdownloader.extensions.extraction.translate.T._.context_password_msg(archives.get(0).getName()) : org.jdownloader.extensions.extraction.translate.T._.context_password_msg2(archives.get(0).getName(), sb.toString()), null, NewTheme.getInstance().getIcon("password", 32), null, null);
 
             }
             if (!StringUtils.isEmpty(pw)) {

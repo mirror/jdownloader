@@ -497,6 +497,7 @@ public class SecondLevelLaunch {
                                 ExtensionController.getInstance().invalidateCache();
                             }
                             ExtensionController.getInstance().init();
+
                             EXTENSIONS_COMPLETE.setReached();
                             /* init clipboardMonitoring stuff */
                             if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSkipClipboardMonitorFirstRound()) {

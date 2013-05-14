@@ -152,7 +152,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
             {
                 // setName(_GUI._.BottomBar_BottomBar_totop());
-                setToolTipText(_GUI._.BottomBar_BottomBar_totop_tooltip());
+                this.setTooltipText(_GUI._.BottomBar_BottomBar_totop_tooltip());
                 setSmallIcon(NewTheme.I().getIcon("go-top", 20));
             }
 
@@ -187,7 +187,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
             {
                 // setName(_GUI._.BottomBar_BottomBar_moveup());
-                setToolTipText(_GUI._.BottomBar_BottomBar_moveup_tooltip());
+                this.setTooltipText(_GUI._.BottomBar_BottomBar_moveup_tooltip());
                 setSmallIcon(NewTheme.I().getIcon("go-up", 20));
             }
 
@@ -248,7 +248,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
             {
                 // setName(_GUI._.BottomBar_BottomBar_movedown());
-                setToolTipText(_GUI._.BottomBar_BottomBar_movedown_tooltip());
+                this.setTooltipText(_GUI._.BottomBar_BottomBar_movedown_tooltip());
                 setSmallIcon(NewTheme.I().getIcon("go-down", 20));
             }
 
@@ -304,7 +304,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
             {
                 // setName(_GUI._.BottomBar_BottomBar_tobottom());
-                setToolTipText(_GUI._.BottomBar_BottomBar_tobottom_tooltip());
+                this.setTooltipText(_GUI._.BottomBar_BottomBar_tobottom_tooltip());
                 setSmallIcon(NewTheme.I().getIcon("go-bottom", 20));
             }
 

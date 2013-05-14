@@ -16,8 +16,6 @@
 
 package org.jdownloader.extensions.improveddock;
 
-import javax.swing.JMenuItem;
-
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.AddonPanel;
 
@@ -87,11 +85,6 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOS
     }
 
     @Override
-    public java.util.ArrayList<JMenuItem> getMenuAction() {
-        return null;
-    }
-
-    @Override
     protected void initExtension() throws StartException {
     }
 
@@ -107,6 +100,11 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOS
                 updateThread.start();
             }
         }
+    }
+
+    @Override
+    public String getIconKey() {
+        return "settings";
     }
 
     public void onStateUpdate(StateEvent event) {

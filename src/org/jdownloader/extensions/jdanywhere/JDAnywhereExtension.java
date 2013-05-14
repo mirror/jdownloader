@@ -43,6 +43,11 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
     }
 
     @Override
+    public String getIconKey() {
+        return "settings";
+    }
+
+    @Override
     protected void stop() throws StopException {
         try {
             RemoteAPIController.getInstance().unregister(cma);

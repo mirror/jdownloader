@@ -8,7 +8,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
-import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
@@ -17,7 +16,6 @@ import jd.plugins.ExtensionConfigInterface;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
 import org.appwork.utils.Application;
-import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
@@ -36,6 +34,8 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
     private String                         configInterface;
 
+    private boolean                        quickToggle;
+
     public static LazyExtension create(String id, Class<AbstractExtension<?, ?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
         System.out.println(id);
 
@@ -43,23 +43,12 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         long t = System.currentTimeMillis();
         AbstractExtension<?, ?> plg = (AbstractExtension<?, ?>) cls.newInstance();
         System.out.println("New Instance: " + (System.currentTimeMillis() - t));
-        String path = "tmp/extensioncache/" + id + ".png";
-        File iconCache = Application.getResource(path);
-        iconCache.getParentFile().mkdirs();
-        iconCache.delete();
+
         ret.description = plg.getDescription();
         FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(iconCache);
-            ImageIO.write(IconIO.toBufferedImage(plg.getIcon(32).getImage()), "png", fos);
-        } finally {
-            try {
-                fos.close();
-            } catch (final Throwable e) {
-            }
-        }
+
         System.out.println("Icon Update: " + (System.currentTimeMillis() - t));
-        ret.iconPath = path;
+        ret.iconPath = plg.getIconKey();
         ret.linuxRunnable = plg.isLinuxRunnable();
         ret.macRunnable = plg.isMacRunnable();
         ret.settings = plg.hasConfigPanel();
@@ -70,7 +59,8 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         ret.classname = cls.getName();
         ret.extension = plg;
         ret.configInterface = plg.getConfigClass().getName();
-        ret.quickToggleEnabled = plg.isQuickToggleEnabled();
+
+        ret.quickToggle = plg.isQuickToggleEnabled();
 
         System.out.println("Setup: " + (System.currentTimeMillis() - t));
         plg.init();
@@ -88,6 +78,14 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         // IllegalArgumentException("Module is not for linux");
 
         return ret;
+    }
+
+    public boolean isQuickToggle() {
+        return quickToggle;
+    }
+
+    public void setQuickToggle(boolean quickToggle) {
+        this.quickToggle = quickToggle;
     }
 
     public String getConfigInterface() {
@@ -130,13 +128,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
     private boolean     windowsRunnable;
 
-    private boolean     quickToggleEnabled;
-
     private ClassLoader classLoader;
-
-    public void setQuickToggleEnabled(boolean quickToggleEnabled) {
-        this.quickToggleEnabled = quickToggleEnabled;
-    }
 
     public LazyExtension() {
         // required for Storable
@@ -163,10 +155,10 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     public ImageIcon _getIcon(int size) {
         if (extension == null) {
 
-            return NewTheme.I().getScaledInstance(NewTheme.I().getIcon(Application.getRessourceURL(iconPath)), size);
+            return NewTheme.I().getIcon(iconPath, size);
 
         } else {
-            return extension.getIcon(size);
+            return NewTheme.I().getIcon(extension.getIconKey(), size);
         }
     }
 
@@ -321,10 +313,6 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         return classLoader;
     }
 
-    public boolean isQuickToggleEnabled() {
-        return extension == null ? quickToggleEnabled : extension.isQuickToggleEnabled();
-    }
-
     private String                                    classname;
 
     protected volatile Class<AbstractExtension<?, ?>> pluginClass;
@@ -336,6 +324,8 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     private volatile Constructor<AbstractExtension<?, ?>> constructor;
 
     private String                                        jarPath;
+
+    private String                                        className;
 
     public String getClassname() {
         return classname;

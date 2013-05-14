@@ -22,8 +22,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import javax.swing.JMenuItem;
-
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.nutils.Executer;
@@ -93,17 +91,17 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
         return null;
     }
 
-    @Override
-    public java.util.ArrayList<JMenuItem> getMenuAction() {
-        return null;
-    }
-
     public ExtensionConfigPanel<GrowlExtension> getConfigPanel() {
         return null;
     }
 
     public boolean hasConfigPanel() {
         return false;
+    }
+
+    @Override
+    public String getIconKey() {
+        return "settings";
     }
 
     public GrowlExtension() throws StartException {

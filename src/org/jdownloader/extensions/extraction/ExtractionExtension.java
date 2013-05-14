@@ -16,7 +16,6 @@
 
 package org.jdownloader.extensions.extraction;
 
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,14 +23,10 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.swing.JMenuItem;
-import javax.swing.filechooser.FileFilter;
-
 import jd.SecondLevelLaunch;
 import jd.config.SubConfiguration;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.gui.UserIO;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 
@@ -43,14 +38,18 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.contextmenu.ContextMenuManager;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
+import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.extraction.actions.ExtractAction;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
@@ -63,17 +62,24 @@ import org.jdownloader.extensions.extraction.split.HJSplit;
 import org.jdownloader.extensions.extraction.split.Unix;
 import org.jdownloader.extensions.extraction.split.XtreamSplit;
 import org.jdownloader.extensions.extraction.translate.ExtractionTranslation;
-import org.jdownloader.gui.views.DownloadFolderChooserDialog;
+import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
+import org.jdownloader.gui.mainmenu.container.OptionalContainer;
+import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
-public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener {
+public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuExtenderHandler {
 
-    private ExtractionQueue                   extractionQueue   = new ExtractionQueue();
+    private ExtractionQueue       extractionQueue = new ExtractionQueue();
 
-    private ExtractionEventSender             broadcaster       = new ExtractionEventSender();
+    private ExtractionEventSender eventSender     = new ExtractionEventSender();
+
+    public ExtractionEventSender getEventSender() {
+        return eventSender;
+    }
 
     private final java.util.List<IExtraction> extractors        = new ArrayList<IExtraction>();
 
@@ -84,8 +90,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     private static ExtractionExtension        INSTANCE;
 
     private ExtractionListenerIcon            statusbarListener = null;
-
-    private AppAction                         menuAction;
 
     private ShutdownVetoListener              listener          = null;
 
@@ -253,7 +257,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * @return
      * @throws ArchiveException
      */
-    private synchronized Archive buildArchive(ArchiveFactory link) throws ArchiveException {
+    public synchronized Archive buildArchive(ArchiveFactory link) throws ArchiveException {
         IExtraction extrctor = getExtractorByFactory(link);
         if (extrctor == null) {
             //
@@ -375,7 +379,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
                         if (statusbarListener != null) {
                             statusbarListener.cleanup();
-                            broadcaster.removeListener(statusbarListener);
+                            eventSender.removeListener(statusbarListener);
                         }
                     }
                 };
@@ -389,7 +393,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         lazyInitOnceOnStart();
         DownloadListContextMenuManager.getInstance().registerExtender(dlListContextMenuExtender);
         LinkgrabberContextMenuManager.getInstance().registerExtender(lgContextMenuExtender);
-
+        MainMenuManager.getInstance().registerExtender(this);
+        MainToolbarManager.getInstance().registerExtender(this);
         LinkCollector.getInstance().setArchiver(this);
 
         FileCreationManager.getInstance().getEventSender().addListener(this);
@@ -400,7 +405,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     @Override
                     protected void runInEDT() {
                         if (statusbarListener != null) statusbarListener.cleanup();
-                        broadcaster.addListener(statusbarListener = new ExtractionListenerIcon(ExtractionExtension.this));
+                        eventSender.addListener(statusbarListener = new ExtractionListenerIcon(ExtractionExtension.this));
                     }
                 };
             }
@@ -451,7 +456,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         initExtractors();
 
         // addListener(new ExtractionListenerFile());
-        broadcaster.addListener(new ExtractionListenerList());
+        eventSender.addListener(new ExtractionListenerList());
 
         Iterator<IExtraction> it = extractors.iterator();
         while (it.hasNext()) {
@@ -462,104 +467,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             }
         }
 
-        if (menuAction == null) menuAction = new AppAction() {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1612595219577059496L;
-
-            {
-                setName(_.menu_tools_extract_files());
-                setIconKey(ExtractionExtension.this.getIconKey());
-                this.setEnabled(true);
-            }
-
-            public void actionPerformed(ActionEvent e) {
-                FileFilter ff = new FileFilter() {
-                    @Override
-                    public boolean accept(File pathname) {
-                        if (pathname.isDirectory()) return true;
-
-                        for (IExtraction extractor : extractors) {
-                            if (extractor.isArchivSupported(new FileArchiveFactory(pathname))) { return true; }
-                        }
-
-                        return false;
-                    }
-
-                    @Override
-                    public String getDescription() {
-                        return _.plugins_optional_extraction_filefilter();
-                    }
-                };
-
-                File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, UserIO.FILES_ONLY, ff, true, null, null);
-                if (files == null) return;
-
-                for (final File archiveStartFile : files) {
-
-                    try {
-                        final Archive archive = buildArchive(new FileArchiveFactory(archiveStartFile));
-                        if (getSettings().isCustomExtractionPathEnabled()) {
-
-                            File path = DownloadFolderChooserDialog.open(new File(getSettings().getCustomExtractionPath()), false, "Extract To");
-                            archive.getSettings().setExtractPath(path.getAbsolutePath());
-                        } else {
-                            File path = DownloadFolderChooserDialog.open(archiveStartFile.getParentFile(), false, "Extract To");
-                            archive.getSettings().setExtractPath(path.getAbsolutePath());
-                        }
-
-                        new Thread() {
-                            @Override
-                            public void run() {
-
-                                if (archive.isComplete()) {
-                                    final ExtractionController controller = addToQueue(archive);
-                                    if (controller != null) {
-                                        final ExtractionListener listener = new ExtractionListener() {
-
-                                            @Override
-                                            public void onExtractionEvent(ExtractionEvent event) {
-                                                if (event.getCaller() == controller) {
-                                                    switch (event.getType()) {
-                                                    case CLEANUP:
-                                                        broadcaster.removeListener(this);
-                                                        break;
-                                                    case EXTRACTION_FAILED:
-                                                    case EXTRACTION_FAILED_CRC:
-
-                                                        if (controller.getException() != null) {
-                                                            Dialog.getInstance().showExceptionDialog(_.extraction_failed(archiveStartFile.getName()), controller.getException().getLocalizedMessage(), controller.getException());
-                                                        } else {
-                                                            Dialog.getInstance().showErrorDialog(_.extraction_failed(archiveStartFile.getName()));
-                                                        }
-                                                        break;
-                                                    }
-
-                                                }
-                                            }
-
-                                        };
-                                        broadcaster.addListener(listener);
-                                    }
-                                } else {
-
-                                    new ValidateArchiveAction(ExtractionExtension.this, archive).actionPerformed(null);
-                                }
-                            }
-                        }.start();
-                    } catch (ArchiveException e1) {
-                        logger.log(e1);
-                    } catch (DialogNoAnswerException e1) {
-                    }
-                }
-            }
-        };
-
     }
 
     void fireEvent(ExtractionEvent event) {
-        broadcaster.fireEvent(event);
+        eventSender.fireEvent(event);
     }
 
     @Override
@@ -633,14 +544,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     @Override
     public AddonPanel<ExtractionExtension> getGUI() {
         return null;
-    }
-
-    @Override
-    public List<JMenuItem> getMenuAction() {
-        java.util.List<JMenuItem> ret = new java.util.ArrayList<JMenuItem>();
-        ret.add(new JMenuItem(menuAction));
-
-        return ret;
     }
 
     @Override
@@ -793,6 +696,32 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             }
         }
         return ret;
+    }
+
+    public java.util.List<IExtraction> getExtractors() {
+        return extractors;
+    }
+
+    @Override
+    public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
+
+        if (manager instanceof MainToolbarManager) {
+            return updateMainToolbar(mr);
+        } else if (manager instanceof MainMenuManager) { return updateMainMenu(mr); }
+        return null;
+    }
+
+    private MenuItemData updateMainMenu(MenuContainerRoot mr) {
+        ExtensionsMenuContainer container = new ExtensionsMenuContainer();
+        container.add(ExtractAction.class);
+        return container;
+
+    }
+
+    private MenuItemData updateMainToolbar(MenuContainerRoot mr) {
+        OptionalContainer opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN);
+        opt.add(ExtractAction.class);
+        return opt;
     }
 
 }

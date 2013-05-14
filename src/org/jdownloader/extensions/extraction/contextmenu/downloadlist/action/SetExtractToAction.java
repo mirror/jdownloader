@@ -18,7 +18,7 @@ public class SetExtractToAction extends AbstractExtractionAction {
 
     public SetExtractToAction(final SelectionInfo<?, ?> selection) {
         super(selection);
-        setName(_.contextmenu_extract_to());
+        setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_extract_to());
         setIconKey(IconKey.ICON_FOLDER);
 
         setEnabled(false);
@@ -43,7 +43,7 @@ public class SetExtractToAction extends AbstractExtractionAction {
 
             @Override
             public String getDescription() {
-                return _.plugins_optional_extraction_filefilter_extractto();
+                return org.jdownloader.extensions.extraction.translate.T._.plugins_optional_extraction_filefilter_extractto();
             }
         };
         ArchiveFactory dlAF = archives.get(0).getFactory();
@@ -53,7 +53,7 @@ public class SetExtractToAction extends AbstractExtractionAction {
             extractto = extractto.getParentFile();
         }
         try {
-            File path = DownloadFolderChooserDialog.open(extractto, false, _.extract_to2());
+            File path = DownloadFolderChooserDialog.open(extractto, false, org.jdownloader.extensions.extraction.translate.T._.extract_to2());
 
             if (path == null) return;
             for (Archive archive : archives) {

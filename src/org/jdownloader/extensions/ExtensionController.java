@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.SecondLevelLaunch;
+import jd.gui.UserIO;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -31,9 +32,20 @@ import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.contextmenu.ActionData;
+import org.jdownloader.controlling.contextmenu.ContextMenuManager;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
+import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.MenuItemProperty;
+import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
+import org.jdownloader.gui.mainmenu.container.OptionalContainer;
+import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.translate._JDT;
 
-public class ExtensionController {
+public class ExtensionController implements MenuExtenderHandler {
     private static final String              TMP_INVALIDEXTENSIONS = "tmp/invalidextensions";
 
     private static final ExtensionController INSTANCE              = new ExtensionController();
@@ -54,7 +66,8 @@ public class ExtensionController {
     private LogSource                      logger;
 
     /**
-     * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private ExtensionController() {
         eventSender = new ExtensionControllerEventSender();
@@ -133,6 +146,8 @@ public class ExtensionController {
             } catch (final Throwable e) {
                 Log.exception(e);
             }
+            MainMenuManager.getInstance().registerExtender(this);
+            MainToolbarManager.getInstance().registerExtender(this);
             list = Collections.unmodifiableList(ret);
             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
@@ -459,7 +474,12 @@ public class ExtensionController {
     }
 
     public Class<?> loadClass(String className) throws ClassNotFoundException, ExtensionNotLoadedException {
-        if (list == null || list.size() == 0) { throw new ExtensionNotLoadedException(); }
+        if (list == null || list.size() == 0) {
+
+            //
+            throw new ExtensionNotLoadedException();
+
+        }
         ClassNotFoundException exc = null;
         for (AbstractExtension<?, ?> ae : getEnabledExtensions()) {
 
@@ -482,6 +502,106 @@ public class ExtensionController {
         }
         throw new ClassNotFoundException(className);
 
+    }
+
+    @Override
+    public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
+        java.util.List<LazyExtension> pluginsOptional = new ArrayList<LazyExtension>(getExtensions());
+        Collections.sort(pluginsOptional, new Comparator<LazyExtension>() {
+
+            public int compare(LazyExtension o1, LazyExtension o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+        if (manager instanceof MainToolbarManager) {
+            return updateMainToolbar(pluginsOptional, mr);
+        } else if (manager instanceof MainMenuManager) { return updateMainMenu(pluginsOptional, mr); }
+        return null;
+    }
+
+    private MenuItemData updateMainMenu(List<LazyExtension> pluginsOptional, MenuContainerRoot mr) {
+
+        MenuContainerRoot root = new MenuContainerRoot();
+        ExtensionsMenuContainer container = new ExtensionsMenuContainer();
+
+        OptionalContainer opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN);
+        root.add(container);
+        root.add(opt);
+        // AddonsMenuWindowContainer windows = new AddonsMenuWindowContainer();
+        // container.add(windows);
+        for (final LazyExtension wrapper : pluginsOptional) {
+            try {
+
+                if (wrapper.isQuickToggle()) {
+                    MenuItemData m = new MenuItemData(new ActionData(ExtensionQuickToggleAction.class, wrapper.getClassname()));
+
+                    container.add(m);
+                } else {
+                    MenuItemData m = new MenuItemData(new ActionData(ExtensionQuickToggleAction.class, wrapper.getClassname()));
+
+                    opt.add(m);
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+        }
+        return root;
+
+    }
+
+    private MenuItemData updateMainToolbar(List<LazyExtension> pluginsOptional, MenuContainerRoot mr) {
+
+        // AddonsMenuWindowContainer windows = new AddonsMenuWindowContainer();
+        // container.add(windows);
+        OptionalContainer opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN);
+        ExtensionsMenuContainer container = new ExtensionsMenuContainer();
+        opt.add(container);
+        for (final LazyExtension wrapper : pluginsOptional) {
+            try {
+
+                MenuItemData m = new MenuItemData(new ActionData(ExtensionQuickToggleAction.class, wrapper.getClassname()));
+                container.add(m);
+
+            } catch (Exception e) {
+                logger.log(e);
+            }
+        }
+        return opt;
+    }
+
+    public void setEnabled(LazyExtension object, boolean value) {
+
+        if (value) {
+            try {
+                object._setEnabled(true);
+                if (object instanceof LazyExtension) {
+                    if (((LazyExtension) object)._getExtension().getGUI() != null) {
+                        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName()));
+
+                        if (UserIO.isOK(ret)) {
+                            // activate panel
+                            ((LazyExtension) object)._getExtension().getGUI().setActive(true);
+                            // bring panel to front
+                            ((LazyExtension) object)._getExtension().getGUI().toFront();
+
+                        }
+                    }
+                }
+            } catch (StartException e1) {
+                Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e1.getMessage(), e1);
+            } catch (StopException e1) {
+                e1.printStackTrace();
+            }
+        } else {
+            try {
+
+                object._setEnabled(false);
+            } catch (StartException e1) {
+                e1.printStackTrace();
+            } catch (StopException e1) {
+                Dialog.getInstance().showExceptionDialog(_JDT._.dialog_title_exception(), e1.getMessage(), e1);
+            }
+        }
     }
 
 }

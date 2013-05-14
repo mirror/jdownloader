@@ -373,7 +373,7 @@ public class JDGui extends SwingGui {
     }
 
     private void initComponents() {
-        this.menuBar = new JDMenuBar();
+        this.menuBar = JDMenuBar.getInstance();
         this.statusBar = new StatusBarImpl();
         this.waitingPane = new JPanel();
         this.waitingPane.setOpaque(false);

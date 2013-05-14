@@ -12,8 +12,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import javax.swing.ImageIcon;
-
 import jd.captcha.translate.CaptchaTranslation;
 import jd.controlling.reconnect.pluginsinc.batch.translate.BatchTranslation;
 import jd.controlling.reconnect.pluginsinc.extern.translate.ExternTranslation;
@@ -49,13 +47,24 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialog.LoginData;
 import org.jdownloader.api.cnl2.translate.ExternInterfaceTranslation;
+import org.jdownloader.controlling.contextmenu.ContextMenuManager;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
+import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.translator.gui.GuiToggleAction;
 import org.jdownloader.extensions.translator.gui.TranslatorGui;
+import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
+import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
+import org.jdownloader.gui.mainmenu.container.OptionalContainer;
+import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate.JdownloaderTranslation;
@@ -72,7 +81,7 @@ import org.tmatesoft.svn.core.wc.SVNRevision;
  * @author thomas
  * 
  */
-public class TranslatorExtension extends AbstractExtension<TranslatorConfig, TranslatorTranslation> {
+public class TranslatorExtension extends AbstractExtension<TranslatorConfig, TranslatorTranslation> implements MenuExtenderHandler {
     /**
      * Extension GUI
      */
@@ -142,18 +151,13 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     /**
-     * Has to return the Extension MAIN Icon. This icon will be used,for example, in the settings pane
-     */
-    @Override
-    public ImageIcon getIcon(int size) {
-        return NewTheme.I().getIcon("language", size);
-    }
-
-    /**
      * Action "onStop". Is called each time the user disables the extension
      */
     @Override
     protected void stop() throws StopException {
+
+        MainMenuManager.getInstance().unregisterExtender(this);
+        MainToolbarManager.getInstance().unregisterExtender(this);
         logger.finer("Stopped " + getClass().getSimpleName());
         if (timer != null) {
             timer.interrupt();
@@ -167,6 +171,8 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     @Override
     protected void start() throws StartException {
 
+        MainMenuManager.getInstance().registerExtender(this);
+        MainToolbarManager.getInstance().registerExtender(this);
         // get all LanguageIDs
         List<String> ids = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
         // create a list of TLocale instances
@@ -207,6 +213,34 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             }
         };
         timer.start();
+    }
+
+    @Override
+    public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
+        if (manager instanceof MainToolbarManager) {
+            return updateMainToolbar(mr);
+        } else if (manager instanceof MainMenuManager) {
+            //
+            return updateMainMenu(mr);
+        }
+        return null;
+    }
+
+    private MenuItemData updateMainToolbar(MenuContainerRoot mr) {
+        OptionalContainer opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN);
+        opt.add(GuiToggleAction.class);
+        return opt;
+
+    }
+
+    private MenuItemData updateMainMenu(MenuContainerRoot mr) {
+
+        ExtensionsMenuContainer container = new ExtensionsMenuContainer();
+        ExtensionsMenuWindowContainer windows = new ExtensionsMenuWindowContainer();
+        container.add(windows);
+        windows.add(GuiToggleAction.class);
+        return container;
+
     }
 
     protected void refresh() throws InterruptedException {
@@ -491,6 +525,11 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
         return false;
 
+    }
+
+    @Override
+    public String getIconKey() {
+        return "language";
     }
 
     public TLocale getTLocaleByID(String lastLoaded) {

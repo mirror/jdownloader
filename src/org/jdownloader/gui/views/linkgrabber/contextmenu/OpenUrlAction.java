@@ -20,10 +20,12 @@ public class OpenUrlAction extends AppAction {
     private CrawledLink       link;
 
     public OpenUrlAction(SelectionInfo<CrawledPackage, CrawledLink> link) {
+
         setName(_GUI._.OpenUrlAction_OpenUrlAction_());
         setIconKey("browse");
-
-        this.link = link.getContextLink();
+        if (link != null) {
+            this.link = link.getContextLink();
+        }
     }
 
     public void actionPerformed(ActionEvent e) {

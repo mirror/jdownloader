@@ -1,5 +1,7 @@
 package org.jdownloader.gui.toolbar;
 
+import java.util.HashSet;
+
 import javax.swing.JPopupMenu;
 
 import jd.controlling.IOEQ;
@@ -15,20 +17,37 @@ import jd.gui.swing.jdgui.components.toolbar.actions.ShowSettingsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StartDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
+import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
+import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
+import jd.gui.swing.jdgui.menu.actions.RestartAction;
+import jd.gui.swing.jdgui.menu.actions.SettingsAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
+import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.gui.mainmenu.ChunksEditorLink;
+import org.jdownloader.gui.mainmenu.ParalellDownloadsEditorLink;
+import org.jdownloader.gui.mainmenu.ParallelDownloadsPerHostEditorLink;
+import org.jdownloader.gui.mainmenu.SpeedlimitEditorLink;
+import org.jdownloader.gui.mainmenu.action.AddLinksMenuAction;
+import org.jdownloader.gui.mainmenu.action.LogSendAction;
+import org.jdownloader.gui.mainmenu.container.OptionalContainer;
+import org.jdownloader.gui.toolbar.action.MoveDownAction;
+import org.jdownloader.gui.toolbar.action.MoveToBottomAction;
+import org.jdownloader.gui.toolbar.action.MoveToTopAction;
+import org.jdownloader.gui.toolbar.action.MoveUpAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
+import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 
 public class MainToolbarManager extends ContextMenuManager<FilePackage, DownloadLink> {
 
@@ -48,8 +67,8 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
     @Override
     public void setMenuData(MenuContainerRoot root) {
         super.setMenuData(root);
-
-        updateDelayer.resetAndStart();
+        // no delayer here.
+        MainToolBar.getInstance().updateToolbar();
     }
 
     @Override
@@ -103,6 +122,12 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         mr.add(PauseDownloadsAction.class);
         mr.add(StopDownloadsAction.class);
 
+        mr.add(new SeperatorData());
+        mr.add(new MenuItemData(new ActionData(MoveToTopAction.class), MenuItemProperty.ALWAYS_HIDDEN));
+        mr.add(new MenuItemData(new ActionData(MoveUpAction.class), MenuItemProperty.ALWAYS_HIDDEN));
+        mr.add(new MenuItemData(new ActionData(MoveDownAction.class), MenuItemProperty.ALWAYS_HIDDEN));
+        mr.add(new MenuItemData(new ActionData(MoveToBottomAction.class), MenuItemProperty.ALWAYS_HIDDEN));
+        mr.add(new SeperatorData());
         mr.add(ClipBoardToggleAction.class);
         mr.add(AutoReconnectToggleAction.class);
         mr.add(GlobalPremiumSwitchToggleAction.class);
@@ -110,11 +135,37 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
 
         mr.add(ReconnectAction.class);
         mr.add(UpdateAction.class);
-        mr.add(new MenuItemData(OpenDefaultDownloadFolderAction.class, MenuItemProperty.ALWAYS_HIDDEN));
 
-        mr.add(new MenuItemData(ShowSettingsAction.class, MenuItemProperty.ALWAYS_HIDDEN));
-        mr.add(new MenuItemData(ExitToolbarAction.class, MenuItemProperty.ALWAYS_HIDDEN));
+        OptionalContainer opt;
+        mr.add(opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN));
+        opt.add(new MenuItemData(OpenDefaultDownloadFolderAction.class));
+        opt.add(new MenuItemData(ShowSettingsAction.class));
+        opt.add(new MenuItemData(ExitToolbarAction.class));
+        opt.add(AddLinksMenuAction.class);
+        opt.add(AddContainerAction.class);
+        opt.add(RestartAction.class);
+
+        opt.add(SettingsAction.class);
+
+        opt.add(new ChunksEditorLink());
+
+        opt.add(new ParalellDownloadsEditorLink());
+        opt.add(new ParallelDownloadsPerHostEditorLink());
+        //
+        opt.add(new SpeedlimitEditorLink());
+        opt.add(LatestChangesAction.class);
+        opt.add(KnowledgeAction.class);
+        opt.add(LogSendAction.class);
+
         return mr;
+    }
+
+    protected void setHidden(MenuItemData ret) {
+        HashSet<MenuItemProperty> props = ret.getProperties();
+        if (props == null) {
+            ret.setProperties(props = new HashSet<MenuItemProperty>());
+        }
+
     }
 
     public void show() {
