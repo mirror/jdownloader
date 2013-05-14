@@ -1,2 +1,6 @@
 Translator=Traduttore
+TranslatorExtensionGuiToggleAction_deselected=Apri Translator
+TranslatorExtensionGuiToggleAction_deselected_tt=Apre la scheda Translator
+TranslatorExtensionGuiToggleAction_selected=Chiudi Translator
+TranslatorExtensionGuiToggleAction_selected_tt=Chiude la scheda Translator
 description=Questa estensione può essere usata per modificare le traduzioni di JDownloader.\r E' necessario avere un account sviluppatore per usare questa estensione
