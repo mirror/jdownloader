@@ -38,6 +38,10 @@ public class NicoVideoJpPlaylist extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML(">This My List is set as private")) {
+            logger.info("Private playlist, cannot decrypt: " + parameter);
+            return decryptedLinks;
+        }
         final String fpName = br.getRegex("MylistGroup\\.preloadSingle\\(\\d+, \\{.*?name: \"([^<>\"]*?)\"").getMatch(0);
         final String[] videoids = br.getRegex("\"video_id\":\"(sm\\d+)\"").getColumn(0);
         if (videoids == null || videoids.length == 0) {

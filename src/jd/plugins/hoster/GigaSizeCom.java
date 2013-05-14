@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -54,11 +55,21 @@ public class GigaSizeCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.getHeaders().put("User-Agent", agent);
         br.getPage("http://www.gigasize.com");
-        br.getPage(downloadLink.getDownloadURL());
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (con.getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("limit-download-free")) { return AvailableStatus.UNCHECKABLE; }
         if (br.containsHTML("<h2 class=\"error\">Download error</h2>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 

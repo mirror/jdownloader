@@ -54,7 +54,7 @@ public class NmeStashInfo extends PluginForDecrypt {
         br.setFollowRedirects(false);
         synchronized (LOCK) {
             if (!getUserLogin()) {
-                logger.info("No login/password entered!");
+                logger.info("No/Wrong login/password entered!");
                 return decryptedLinks;
             }
             br.getHeaders().put("Referer", MAINPAGE);
@@ -104,7 +104,7 @@ public class NmeStashInfo extends PluginForDecrypt {
 
             }
         }
-        throw new DecrypterException("Login or/and password wrong");
+        return false;
     }
 
     /* NO OVERRIDE!! */

@@ -22,11 +22,9 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -42,7 +40,10 @@ public class FShareVnFolder extends PluginForDecrypt {
         String parameter = param.toString().replace("mega.1280.com", "fshare.vn");
         boolean failed = false;
         br.getPage(parameter);
-        if (!br.containsHTML("filename")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (!br.containsHTML("filename")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String[] linkinformation = br.getRegex("(=\"http://(www\\.)?fshare\\.vn/file/[A-Z0-9]+/\"[^>]+><span class=\"filename\">[^<]+</span></a><br[^>]+>[\n\t\r ]+<span class=\"filesize\">[\\d\\.]+[^<]+</span>)").getColumn(0);
         if (linkinformation == null || linkinformation.length == 0) {
             failed = true;

@@ -72,7 +72,7 @@ public class LinkSnappyCom extends PluginForHost {
         ac.setProperty("multiHostSupport", Property.NULL);
 
         login(account, true);
-        br.getPage("http://www.linksnappy.com/members/index.php?act=index");
+        getPageSecure("http://www.linksnappy.com/members/index.php?act=index");
         if (br.getCookie("http://www.linksnappy.com/", "lseSavePass") == null) {
             ac.setStatus("Account is invalid. Wrong password?");
             account.setValid(false);
@@ -88,7 +88,7 @@ public class LinkSnappyCom extends PluginForHost {
         ac.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd MMMM yyyy", Locale.ENGLISH));
 
         // now it's time to get all supported hosts
-        br.getPage("http://www.linksnappy.com/index.php?act=download");
+        getPageSecure("http://www.linksnappy.com/index.php?act=download");
         hosts = br.getRegex("images/filehosts/small/([a-z0-9\\-\\.]+)\\.png\\) left no\\-repeat;\">OK</li>").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         if (hosts != null) {
@@ -119,23 +119,33 @@ public class LinkSnappyCom extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
-        getPageSecure("http://gen.linksnappy.com/genAPI.php?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&genLinks=%7B%22link%22+%3A+%22" + Encoding.urlEncode(link.getDownloadURL()) + "%22%2C+%22type%22+%3A+%22%22%2C+%22linkpass%22+%3A+%22%22%2C+%22fmt%22+%3A+%2235%22%2C+%22ytcountry%22+%3A+%22usa%22%7D&_=" + System.currentTimeMillis());
-        String dllink = br.getRegex("\"generated\":\"(http:[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = dllink.replace("\\", "");
 
         // all ok, start downloading...
         br.setFollowRedirects(true);
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        } catch (final SocketTimeoutException e) {
-            final boolean timeoutedBefore = link.getBooleanProperty("sockettimeout");
-            if (timeoutedBefore) {
-                link.setProperty("sockettimeout", false);
-                throw e;
+        for (int i = 1; i <= 10; i++) {
+            getPageSecure("http://gen.linksnappy.com/genAPI.php?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&genLinks=%7B%22link%22+%3A+%22" + Encoding.urlEncode(link.getDownloadURL()) + "%22%2C+%22type%22+%3A+%22%22%2C+%22linkpass%22+%3A+%22%22%2C+%22fmt%22+%3A+%2235%22%2C+%22ytcountry%22+%3A+%22usa%22%7D&_=" + System.currentTimeMillis());
+            String dllink = br.getRegex("\"generated\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = dllink.replace("\\", "");
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            } catch (final SocketTimeoutException e) {
+                final boolean timeoutedBefore = link.getBooleanProperty("sockettimeout");
+                if (timeoutedBefore) {
+                    link.setProperty("sockettimeout", false);
+                    throw e;
+                }
+                link.setProperty("sockettimeout", true);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            link.setProperty("sockettimeout", true);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (dl.getConnection().getResponseCode() == 503) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Throwable e) {
+                }
+                logger.info("Try " + i + ": Got 503 error for link: " + dllink);
+                continue;
+            }
         }
         if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 1000l);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -146,17 +156,49 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     private void getPageSecure(final String page) throws IOException, PluginException {
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(page);
-            if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 1000l);
-            br.followConnection();
-        } finally {
+        boolean failed = true;
+        for (int i = 1; i <= 10; i++) {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br.openGetConnection(page);
+                if (con.getResponseCode() == 503) {
+                    logger.info("Try " + i + ": Got 503 error for link: " + page);
+                    continue;
+                }
+                br.followConnection();
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
+            failed = false;
+            break;
         }
+        if (failed) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 1000l);
+    }
+
+    private void postPageSecure(final String page, final String postData) throws IOException, PluginException {
+        boolean failed = true;
+        for (int i = 1; i <= 10; i++) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openPostConnection(page, postData);
+                if (con.getResponseCode() == 503) {
+                    logger.info("Try " + i + ": Got 503 error for link: " + page);
+                    continue;
+                }
+                br.followConnection();
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+            failed = false;
+            break;
+        }
+        if (failed) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 1000l);
     }
 
     @Override
@@ -183,7 +225,7 @@ public class LinkSnappyCom extends PluginForHost {
                     return;
                 }
             }
-            br.postPage("http://www.linksnappy.com/members/index.php?act=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
+            postPageSecure("http://www.linksnappy.com/members/index.php?act=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
 
             /** Save cookies */
             final HashMap<String, String> cookies = new HashMap<String, String>();

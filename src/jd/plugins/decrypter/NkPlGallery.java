@@ -66,7 +66,10 @@ public class NkPlGallery extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setCookiesExclusive(true);
         synchronized (LOCK) {
-            if (!getUserLogin()) { return null; }
+            if (!getUserLogin()) {
+                logger.info("Invalid or no username/password entered, cannot decrypt without account, stopping...");
+                return decryptedLinks;
+            }
             // Access the page
             br.getPage(correctCryptedLink(parameter));
             final String basicAuth = br.getCookie("nk.pl", "basic_auth");
@@ -192,7 +195,7 @@ public class NkPlGallery extends PluginForDecrypt {
                 }
             }
         }
-        throw new DecrypterException("Login or/and password for \"Nasza Klasa\" is wrong!");
+        return false;
     }
 
     /* NO OVERRIDE!! */

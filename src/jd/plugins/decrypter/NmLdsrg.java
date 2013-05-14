@@ -93,6 +93,8 @@ public class NmLdsrg extends PluginForDecrypt {
                     br.postPage("http://127.0.0.1:9666/flash/addcrypted2", cnl2post);
                     if (br.containsHTML("success")) {
                         logger.info("CNL2 = works!");
+                        // Add this to prevent out of date errors because links are added via CNL, decryptedLinks list will be empty!
+                        decryptedLinks.add(createDownloadlink("http://dummylink.de/dg5649hz09tjkhomdfrlmgoelrhmk"));
                         continue;
                     }
                     if (br.containsHTML("^failed")) {
