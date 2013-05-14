@@ -147,7 +147,7 @@ public class LinkSnappyCom extends PluginForHost {
                 continue;
             }
         }
-        if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 1000l);
+        if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 10 * 60 * 1000l);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -175,7 +175,7 @@ public class LinkSnappyCom extends PluginForHost {
             failed = false;
             break;
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 1000l);
+        if (failed) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 10 * 60 * 1000l);
     }
 
     private void postPageSecure(final String page, final String postData) throws IOException, PluginException {
@@ -198,7 +198,7 @@ public class LinkSnappyCom extends PluginForHost {
             failed = false;
             break;
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 1000l);
+        if (failed) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 10 * 60 * 1000l);
     }
 
     @Override
