@@ -1,3 +1,7 @@
+ChatExtensionGuiToggleAction_deselected=Άνοιγμα Συζήτησης
+ChatExtensionGuiToggleAction_deselected_tt=Άνοιγμα Καρτέλας Συζήτησης
+ChatExtensionGuiToggleAction_selected=Κλείσιμο Συζήτησης
+ChatExtensionGuiToggleAction_selected_tt=Κλείσιμο Καρτέλας Συζήτησης
 description=Επικοινωνία με την Ομάδα Ανάπτυξης και Υποστήριξης του JDownloader
 gui_tab_title=Κανάλι %s1
 jd_plugins_optional_jdchat_JDChatView_title=JD Συζήτηση Υποστήριξης

@@ -1,2 +1,6 @@
 Translator=Μεταφραστής
+TranslatorExtensionGuiToggleAction_deselected=Άνοιγμα Μετάφρασης
+TranslatorExtensionGuiToggleAction_deselected_tt=Άνοιγμα Καρτέλας Μετάφρασης
+TranslatorExtensionGuiToggleAction_selected=Κλείσιμο Μετάφρασης
+TranslatorExtensionGuiToggleAction_selected_tt=Κλείσιμο Καρτέλας Μετάφρασης
 description=Αυτή η Επέκταση μπορεί να χρησιμοποιηθεί για την επεξεργασία της μετάφρασης του JDownloader. Απαιτείται ένας λογαριασμός Developer για τη χρήση του.
