@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 
@@ -83,6 +84,7 @@ public abstract class PluginsC {
     protected byte[]                 k;
 
     private int                      status                  = STATUS_NOTEXTRACTED;
+    protected boolean                askFileDeletion         = false;
 
     public abstract ContainerStatus callDecryption(File file);
 
@@ -138,6 +140,10 @@ public abstract class PluginsC {
         return cls == null ? new ArrayList<CrawledLink>() : cls;
     }
 
+    protected boolean askFileDeletion() {
+        return askFileDeletion;
+    }
+
     public synchronized void initContainer(String filename, final byte[] bs) throws IOException {
         File file = new File(filename);
         if (filename == null || !file.exists() || !file.isFile()) return;
@@ -147,7 +153,9 @@ public abstract class PluginsC {
             if (bs != null) k = bs;
             try {
                 callDecryption(file);
-                if (cls.size() > 0) {
+                if (askFileDeletion() == false && LinkCrawler.insideDecrypterPlugin()) {
+                    file.delete();
+                } else if (cls.size() > 0 && askFileDeletion()) {
                     switch (JsonConfig.create(GeneralSettings.class).getDeleteContainerFilesAfterAddingThemAction()) {
                     case ASK_FOR_DELETE:
 
@@ -192,6 +200,10 @@ public abstract class PluginsC {
             String file = new Regex(source.getURL(), "file://(.+)").getMatch(0);
             file = Encoding.urlDecode(file, false);
             if (file != null && new File(file).exists()) {
+                CrawledLink origin = source.getSourceLink();
+                if (LinkCrawler.insideDecrypterPlugin() == false && origin != null && new Regex(origin.getURL(), "file://(.+)").matches()) {
+                    askFileDeletion = true;
+                }
                 initContainer(file, null);
                 retLinks = getContainedDownloadlinks();
             } else {

@@ -29,9 +29,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Vector;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
@@ -41,6 +40,7 @@ import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginsC;
 
+import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.logging.LogController;
 
 public class C extends PluginsC {
@@ -140,14 +140,21 @@ public class C extends PluginsC {
             if (dlc != null) {
                 lc = new File(lc.getAbsolutePath().substring(0, lc.getAbsolutePath().length() - 3) + "dlc");
                 JDIO.writeLocalFile(lc, dlc);
-                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + lc.getAbsolutePath()));
-                cs.setStatus(ContainerStatus.STATUS_FINISHED);
 
+                LinkCrawler lcr = new LinkCrawler();
+                lcr.setFilter(LinkFilterController.getInstance());
+                lcr.crawl("file://" + lc.getAbsolutePath());
+                lcr.waitForCrawling();
+                cls = new ArrayList<CrawledLink>();
+                cls.addAll(lcr.getCrawledLinks());
+                if (cls.size() > 0) {
+                    cs.setStatus(ContainerStatus.STATUS_FINISHED);
+                } else {
+                    cs.setStatus(ContainerStatus.STATUS_FAILED);
+                }
                 return cs;
-
             }
         } catch (MalformedURLException e) {
-
         }
 
         cs.setStatus(ContainerStatus.STATUS_FAILED);
@@ -170,16 +177,6 @@ public class C extends PluginsC {
     // @Override
     public ArrayList<CrawledLink> getContainedDownloadlinks() {
         return new ArrayList<CrawledLink>();
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jd.plugins.PluginForContainer#getContainedDownloadlinks(java.lang.String)
-     */
-    // @Override
-    public void initContainer(final String filename) {
-        callDecryption(new File(filename));
     }
 
 }

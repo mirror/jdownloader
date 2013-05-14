@@ -156,13 +156,9 @@ public class TbCm extends PluginForDecrypt {
                 new FLV(downloadlink.getFileOutput(), true, true);
 
                 // FLV löschen
-                if (!new File(downloadlink.getFileOutput()).delete()) {
-                    new File(downloadlink.getFileOutput()).deleteOnExit();
-                }
+                new File(downloadlink.getFileOutput()).delete();
                 // AVI löschen
-                if (!new File(downloadlink.getFileOutput().replaceAll(TbCm.TEMP_EXT, ".avi")).delete()) {
-                    new File(downloadlink.getFileOutput().replaceAll(TbCm.TEMP_EXT, ".avi")).deleteOnExit();
-                }
+                new File(downloadlink.getFileOutput().replaceAll(TbCm.TEMP_EXT, ".avi")).delete();
 
                 return true;
             default:

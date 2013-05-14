@@ -270,7 +270,7 @@ public class LinkCrawler {
         }
     }
 
-    private boolean insideDecrypterPlugin() {
+    public static boolean insideDecrypterPlugin() {
         if (Thread.currentThread() instanceof LinkCrawlerThread && ((LinkCrawlerThread) Thread.currentThread()).isLinkCrawlerThreadUsedbyDecrypter()) {
             return true;
         } else {
@@ -286,12 +286,11 @@ public class LinkCrawler {
         synchronized (this) {
             if (crawler.decrementAndGet() == 0) {
                 /* this LinkCrawler instance stopped, notify static counter */
-                synchronized (CRAWLER) {
-                    CRAWLER.decrementAndGet();
-                }
-                synchronized (crawler) {
-                    crawler.notifyAll();
-                }
+
+                CRAWLER.decrementAndGet();
+
+                this.notifyAll();
+
                 /*
                  * all tasks are done , we can now cleanup our duplicateFinder
                  */
@@ -329,9 +328,7 @@ public class LinkCrawler {
             if (crawler.get() == 0) {
                 started = true;
                 /* this LinkCrawler instance started, notify static counter */
-                synchronized (CRAWLER) {
-                    CRAWLER.incrementAndGet();
-                }
+                CRAWLER.incrementAndGet();
             }
             crawler.incrementAndGet();
         }

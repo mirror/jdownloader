@@ -207,7 +207,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             if (dlcContent == null) throw new IllegalArgumentException("no DLC Content available");
             String dlc = dlcContent.trim().replace(" ", "+");
             File tmp = JDUtilities.getResourceFile("tmp/jd_" + System.currentTimeMillis() + ".dlc", true);
-            tmp.deleteOnExit();
             IO.writeToFile(tmp, dlc.getBytes("UTF-8"));
             String url = "file://" + tmp.getAbsolutePath();
             clickAndLoad2Add(url, request);

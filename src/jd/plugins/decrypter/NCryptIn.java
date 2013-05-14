@@ -299,11 +299,9 @@ public class NCryptIn extends PluginForDecrypt {
                 con.disconnect();
             } catch (final Throwable e) {
             }
+            if (file.exists()) file.delete();
         }
-
-        if (file != null && file.exists() && file.length() > 100) {
-            if (decryptedLinks.size() > 0) { return decryptedLinks; }
-        }
+        if (decryptedLinks.size() > 0) { return decryptedLinks; }
         return null;
     }
 

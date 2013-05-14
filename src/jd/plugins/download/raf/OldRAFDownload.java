@@ -861,7 +861,6 @@ public class OldRAFDownload extends DownloadInterface {
                     if (DISKSPACECHECK.FAILED.equals(freeSpace)) throw new Throwable("not enough diskspace free to copy part to complete file");
                     IO.copyFile(part, outputCompleteFile);
                     renameOkay = true;
-                    part.deleteOnExit();
                     part.delete();
                 } catch (Throwable e) {
                     LogSource.exception(logger, e);
