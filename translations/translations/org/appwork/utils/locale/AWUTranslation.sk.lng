@@ -1,5 +1,7 @@
 ABSTRACTDIALOG_BUTTON_OK=Ok
 AccountNew_layoutDialogContent_password=Heslo
+DIALOG_FILECHOOSER_helpButtonText=Pomocník
+DIALOG_FILECHOOSER_listViewButtonAccessibleName=Zoznam
 DIALOG_FILECHOOSER_newFolderErrorSeparator=:
 PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD=Nové heslo:
 PASSWORDDIALOG_PASSWORDCHANGE_OLDPASSWORD=Staré heslo:
