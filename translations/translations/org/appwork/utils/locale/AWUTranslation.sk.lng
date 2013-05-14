@@ -1,5 +1,6 @@
 ABSTRACTDIALOG_BUTTON_OK=Ok
 AccountNew_layoutDialogContent_password=Heslo
+AppWorkUtils_Graph_getSpeedString=Aktuálna: %s1/s
 DIALOG_FILECHOOSER_helpButtonText=Pomocník
 DIALOG_FILECHOOSER_listViewButtonAccessibleName=Zoznam
 DIALOG_FILECHOOSER_newFolderErrorSeparator=:
