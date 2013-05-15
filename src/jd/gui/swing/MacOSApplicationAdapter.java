@@ -101,6 +101,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         new Thread("DockUpdater") {
             public void run() {
                 while (true) {
+                    final AggregatedNumbers aggn = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks()));
                     new EDTRunner() {
 
                         @Override
@@ -171,7 +172,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                                 }
                             });
                             m.setMaximum(100);
-                            AggregatedNumbers aggn = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks()));
+
                             int percent = 0;
                             if (aggn.getTotalBytes() > 0) {
                                 percent = (int) ((aggn.getLoadedBytes() * 100) / aggn.getTotalBytes());
@@ -193,7 +194,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                     };
 
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(5000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
