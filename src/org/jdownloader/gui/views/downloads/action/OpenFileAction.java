@@ -12,7 +12,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.images.NewTheme;
 
 public class OpenFileAction extends AppAction {
 
@@ -21,19 +20,19 @@ public class OpenFileAction extends AppAction {
     private File              file;
 
     public OpenFileAction(final SelectionInfo<FilePackage, DownloadLink> si) {
-        this.file = si == null ? null : new File(si.getContextLink().getFileOutput());
 
         ImageIcon img;
         if (si != null) {
             if (si.isLinkContext()) {
-                img = (si.getLink().getIcon());
+                this.file = si == null ? null : new File(si.getContextLink().getFileOutput());
+
             } else {
-                img = (si.getFirstPackage().isExpanded() ? NewTheme.I().getIcon("tree_package_open", 32) : NewTheme.I().getIcon("tree_package_closed", 32));
+                this.file = si == null ? null : new File(si.getContextPackage().getDownloadDirectory());
+
             }
-            this.setSmallIcon(img);
-        } else {
-            this.setSmallIcon(NewTheme.I().getIcon("file", 20));
+
         }
+        setIconKey("file");
         setName(_GUI._.gui_table_contextmenu_openfile());
 
     }

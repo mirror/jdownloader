@@ -149,6 +149,11 @@ public class DownloadInformations {
         return etanum;
     }
 
+    /**
+     * Format 0.0-100.0
+     * 
+     * @return
+     */
     public double getPercent() {
         return Math.round((getCurrentDownloadSize() * 10000.0) / getTotalDownloadSize()) / 100.0;
     }

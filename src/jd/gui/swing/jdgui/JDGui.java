@@ -189,6 +189,7 @@ public class JDGui extends SwingGui {
                 Dialog.getInstance().setParentOwner(getMainFrame());
             }
         });
+
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
 
             public boolean postProcessKeyEvent(final KeyEvent e) {

@@ -397,7 +397,7 @@
 		<buildAddon package="infobar" include="infobar" />
 
 		<buildAddon package="JDShutdown" include="shutdown" />
-		<buildAddon package="improveddock" include="improveddock" />
+
 
 		<buildAddon package="JDTray" include="jdtrayicon" />
 		<buildAddon package="MyJDownloader" include="myjdownloader" />

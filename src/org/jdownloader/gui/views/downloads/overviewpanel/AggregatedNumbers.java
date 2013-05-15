@@ -87,6 +87,18 @@ public class AggregatedNumbers {
 
     }
 
+    public long getTotalBytes() {
+        return totalBytes;
+    }
+
+    public long getDownloadSpeed() {
+        return downloadSpeed;
+    }
+
+    public long getEta() {
+        return eta;
+    }
+
     public long getLoadedBytes() {
         return loadedBytes;
     }
