@@ -160,6 +160,9 @@ public class VidToMe extends PluginForHost {
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        if (link.getStringProperty("OrginalFileName", null) == null) {
+            link.setProperty("OrginalFileName", Encoding.htmlDecode(fileInfo[0].trim()));
+        }
         link.setFinalFileName(Encoding.htmlDecode(fileInfo[0].trim()));
         if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         return AvailableStatus.TRUE;
@@ -169,12 +172,10 @@ public class VidToMe extends PluginForHost {
         // standard traits from base page
         fileInfo[0] = new Regex(correctedBR, "<h2 class=\"video\\-page\\-head\">([^<>\"]*?)</h2>").getMatch(0);
         if (fileInfo[0] == null) fileInfo[0] = new Regex(correctedBR, "name=\"fname\" value=\"([^<>\"]*?)\"").getMatch(0);
-        // String fileExtension = new Regex(correctedBR,
-        // "<META NAME=\"description\" CONTENT=\"[^>\"]+ ([^\"]+)\">").getMatch(0);
+        // String fileExtension = new Regex(correctedBR, "<META NAME=\"description\" CONTENT=\"[^>\"]+ ([^\"]+)\">").getMatch(0);
         // if (fileExtension == null) fileExtension = new Regex(correctedBR,
         // "<META NAME=\"keywords\"\\s+CONTENT=\"[^>\"]+ ([^\"]+)\">").getMatch(0);
-        // after uploading original files are no longer stored/kept, effectively
-        // they re-encode into formats they want for their flash
+        // after uploading original files are no longer stored/kept, effectively they re-encode into formats they want for their flash
         // player! All videos that i've seen have been changed into mp4 format,
         String fileExtension = "mp4";
         if (!fileInfo[0].endsWith(".mp4") && (fileExtension != null && fileInfo[0] != null)) fileInfo[0] = fileInfo[0].trim() + "." + fileExtension.trim();
@@ -203,7 +204,7 @@ public class VidToMe extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, Account account) throws Exception, PluginException {
         passCode = downloadLink.getStringProperty("pass");
         // Check for streaming links on the first page
-        dllink = getDllink(downloadLink);
+        getDllink(downloadLink);
         // Third, do they provide video hosting?
         if (dllink == null && videoHoster) {
             final Browser brv = br.cloneBrowser();
@@ -223,7 +224,7 @@ public class VidToMe extends PluginForHost {
                 waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 checkErrors(downloadLink, false);
-                dllink = getDllink(downloadLink);
+                getDllink(downloadLink);
             }
         }
         if (dllink == null) {
@@ -317,7 +318,7 @@ public class VidToMe extends PluginForHost {
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
-                dllink = getDllink(downloadLink);
+                getDllink(downloadLink);
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -330,8 +331,7 @@ public class VidToMe extends PluginForHost {
                 }
             }
         }
-        // Process usedHost within hostMap. We do it here so that we can probe
-        // if slots are already used before openDownload.
+        // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
         controlHost(account, downloadLink, true);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
@@ -393,7 +393,7 @@ public class VidToMe extends PluginForHost {
         }
     }
 
-    private String getDllink(final DownloadLink dl) {
+    private void getDllink(final DownloadLink dl) {
         dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
@@ -407,14 +407,12 @@ public class VidToMe extends PluginForHost {
                 }
             }
         }
-        return dllink;
     }
 
     private void checkErrors(DownloadLink theLink, boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
-                // handle password has failed in the past, additional try
-                // catching / resetting values
+                // handle password has failed in the past, additional try catching / resetting values
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
@@ -429,9 +427,9 @@ public class VidToMe extends PluginForHost {
         // monitor this
         if (new Regex(correctedBR, "(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)").matches()) {
             /*
-             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was recorded from x time
-             * (hours|days) which can trigger false positive below wait handling. As its only indication of what's previous happen as in past tense not a wait
-             * time going forward...
+             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
+             * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
+             * previous happen as in past tense not a wait time going forward...
              */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
         }
@@ -511,11 +509,10 @@ public class VidToMe extends PluginForHost {
     }
 
     private String getConfiguredQualityDownloadlink(final DownloadLink dl, final String source) {
-        String dllink = null;
         switch (getPluginConfig().getIntegerProperty(quality, -1)) {
         case 0:
             logger.fine("Quality 720p is configured");
-            dllink = get720p(dl, source);
+            get720p(dl, source);
             if (dllink == null) {
                 get360p(dl, source);
                 if (dllink == null) {
@@ -525,7 +522,7 @@ public class VidToMe extends PluginForHost {
             break;
         case 1:
             logger.fine("Quality 360p is configured");
-            dllink = get360p(dl, source);
+            get360p(dl, source);
             if (dllink == null) {
                 get720p(dl, source);
                 if (dllink == null) {
@@ -535,7 +532,7 @@ public class VidToMe extends PluginForHost {
             break;
         case 2:
             logger.fine("Quality 240p is configured");
-            dllink = get240p(dl, source);
+            get240p(dl, source);
             if (dllink == null) {
                 get360p(dl, source);
                 if (dllink == null) {
@@ -545,7 +542,7 @@ public class VidToMe extends PluginForHost {
             break;
         default:
             logger.fine("No quality is configured, returning default quality (720p)");
-            dllink = get720p(dl, source);
+            get720p(dl, source);
             if (dllink == null) {
                 get360p(dl, source);
                 if (dllink == null) {
@@ -557,23 +554,23 @@ public class VidToMe extends PluginForHost {
         return dllink;
     }
 
-    private String get720p(final DownloadLink dl, final String source) {
-        addQualityToFilename(dl, "720p");
-        return new Regex(source, "label:\"720p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
+    private void get720p(final DownloadLink dl, final String source) {
+        dllink = new Regex(source, "label:\"720p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink != null) addQualityToFilename(dl, "720p");
     }
 
-    private String get360p(final DownloadLink dl, final String source) {
-        addQualityToFilename(dl, "360p");
-        return new Regex(source, "label:\"360p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
+    private void get360p(final DownloadLink dl, final String source) {
+        dllink = new Regex(source, "label:\"360p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink != null) addQualityToFilename(dl, "360p");
     }
 
-    private String get240p(final DownloadLink dl, final String source) {
-        addQualityToFilename(dl, "240p");
-        return new Regex(source, "label:\"240p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
+    private void get240p(final DownloadLink dl, final String source) {
+        dllink = new Regex(source, "label:\"240p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink != null) addQualityToFilename(dl, "240p");
     }
 
     private void addQualityToFilename(final DownloadLink dl, final String quality) {
-        final String currentFilename = dl.getFinalFileName();
+        final String currentFilename = dl.getStringProperty("OrginalFileName", null);
         String ext = null;
         if (currentFilename.contains(".")) ext = currentFilename.substring(currentFilename.lastIndexOf("."));
         if (ext != null)
@@ -717,7 +714,7 @@ public class VidToMe extends PluginForHost {
             dllink = checkDirectLink(downloadLink);
             if (dllink == null) {
                 getPage(downloadLink.getDownloadURL());
-                dllink = getDllink(downloadLink);
+                getDllink(downloadLink);
                 if (dllink == null) {
                     checkErrors(downloadLink, true);
                     Form dlform = br.getFormbyProperty("name", "F1");
@@ -726,7 +723,7 @@ public class VidToMe extends PluginForHost {
                     if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     sendForm(dlform);
                     checkErrors(downloadLink, true);
-                    dllink = getDllink(downloadLink);
+                    getDllink(downloadLink);
                 }
             }
             if (dllink == null) {
@@ -920,14 +917,14 @@ public class VidToMe extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
-     * singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
-     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
-     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
-     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
-     * begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -945,8 +942,8 @@ public class VidToMe extends PluginForHost {
     }
 
     /**
-     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going forward. Thus prevents
-     * new downloads starting when not possible and is self aware and requires no coder interaction.
+     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
+     * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
      * 
      * @param account
      * 
@@ -980,9 +977,9 @@ public class VidToMe extends PluginForHost {
     }
 
     /**
-     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x connections to ip/host
-     * server. Currently JD allows a global connection controller and doesn't allow for handling of different hosts/IP setup. This will help with those
-     * situations by allowing more connection when possible.
+     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
+     * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
+     * hosts/IP setup. This will help with those situations by allowing more connection when possible.
      * 
      * @param Account
      *            Account that's been used, can be null
@@ -1045,9 +1042,9 @@ public class VidToMe extends PluginForHost {
             // && max(Free|Prem)SimDlHost!
 
             /*
-             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads finishes. This is
-             * best practice otherwise you have to use some crude system of waits, but you have no control over to reset the count. Highly dependent on how fast
-             * or slow the users connections is.
+             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads
+             * finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control over to reset
+             * the count. Highly dependent on how fast or slow the users connections is.
              */
             if (isHashedHashedKey(account, usedHost)) {
                 Integer usedSlots = getHashedHashedValue(account);
@@ -1200,8 +1197,8 @@ public class VidToMe extends PluginForHost {
     }
 
     /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re: InputField
-     * parse(final String data). Affects revision 19688 and earlier!
+     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
+     * InputField parse(final String data). Affects revision 19688 and earlier!
      * 
      * TODO: remove after JD2 goes stable!
      * 
