@@ -36,6 +36,7 @@ file_exists_not=L'arxiu no existeix
 filename=Nom del fitxer
 files=fitxers
 hoster=Allotjament
+linkname=Arxiu(s)
 local=Estat de l'arxiu
 menu_tools_extract_files=Extreu els fitxers
 name=Extractor de fitxers

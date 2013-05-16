@@ -1,0 +1,4 @@
+LogModel_getStringValue_between_=Entre %s1 i %s2
+LogTable_onContextMenu_disable_=Elimina la selecció
+LogTable_onContextMenu_enable_=Seleccióna
+SendLogDialog_SendLogDialog_title_=Enviar registre d'incidències

@@ -1,2 +1,6 @@
 Translator=Traductor
+TranslatorExtensionGuiToggleAction_deselected=Obrir traductor
+TranslatorExtensionGuiToggleAction_deselected_tt=Obrir la pestanya de tracucció
+TranslatorExtensionGuiToggleAction_selected=Tancar traductor
+TranslatorExtensionGuiToggleAction_selected_tt=Tancar la pestanya de tracucció
 description=Aquesta extensió serveix per editar les traduccions del JDownloader. Cal un compte de desenvolupador per utilitzar-la
