@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.api;
+package org.jdownloader.api;
 
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.annotations.ApiNamespace;

@@ -17,7 +17,6 @@ import org.jdownloader.api.jd.JDAPIImpl;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
 import org.jdownloader.api.polling.PollingAPIImpl;
 import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
-import org.jdownloader.extensions.api.ExtensionsAPIImpl;
 
 public class RemoteAPIController {
 

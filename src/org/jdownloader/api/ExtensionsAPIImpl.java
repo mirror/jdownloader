@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.api;
+package org.jdownloader.api;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.logging.Log;
