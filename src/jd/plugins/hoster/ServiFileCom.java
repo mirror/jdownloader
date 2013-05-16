@@ -178,8 +178,8 @@ public class ServiFileCom extends PluginForHost {
         final String space = br.getRegex("<td>Spaced Used:</td>[\t\n\r ]+<td>(.*?) " + PREMIUMLIMIT).getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim());
         final String expire = br.getRegex(">Premium end date:</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
-        if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd-MM-yyyy", Locale.ENGLISH));
         account.setValid(true);
+        if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd-MM-yyyy", Locale.ENGLISH));
         ai.setUnlimitedTraffic();
         ai.setStatus("Premium User");
         return ai;
