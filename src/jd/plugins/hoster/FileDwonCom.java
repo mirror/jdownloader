@@ -44,12 +44,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedwon.com" }, urls = { "https?://(www\\.)?filedwon\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedwon.net", "filedwon.com" }, urls = { "https?://(www\\.)?filedwon\\.(com|net)/[a-z0-9]{12}", "https?://(www\\.)?filedwon\\.com/[a-z0-9]{12}" }, flags = { 0, 0 })
 public class FileDwonCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://filedwon.com";
+    private final String         COOKIE_HOST                  = "http://filedwon.net";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -69,8 +69,11 @@ public class FileDwonCom extends PluginForHost {
     // other: no redirects
 
     @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    public void correctDownloadLink(final DownloadLink link) {
+        // output the hostmask as we wish based on COOKIE_HOST url!
+        String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
+        String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
+        link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
     }
 
     @Override

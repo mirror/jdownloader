@@ -63,7 +63,7 @@ public class RapidStoneCom extends PluginForHost {
     // domain names used within download links.
     private final String         DOMAINS                      = "(rapidstone\\.com)";
     private final String         PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         MAINTENANCE                  = ">This server is in maintenance mode";
+    private final String         MAINTENANCE                  = ">This server is in maintenance mode|>We are moving to a new datacenter";
     private final boolean        videoHoster                  = false;
     private final boolean        supportsHTTPS                = false;
     private final boolean        useRUA                       = false;
@@ -446,9 +446,9 @@ public class RapidStoneCom extends PluginForHost {
         // monitor this
         if (new Regex(correctedBR, "(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)").matches()) {
             /*
-             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was recorded from x time
-             * (hours|days) which can trigger false positive below wait handling. As its only indication of what's previous happen as in past tense not a wait
-             * time going forward...
+             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
+             * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
+             * previous happen as in past tense not a wait time going forward...
              */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
         }
@@ -495,7 +495,7 @@ public class RapidStoneCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
         }
-        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, MAINTENANCE).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
 
     private void checkServerErrors() throws NumberFormatException, PluginException {
@@ -874,14 +874,14 @@ public class RapidStoneCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
-     * singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
-     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
-     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
-     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
-     * begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -899,8 +899,8 @@ public class RapidStoneCom extends PluginForHost {
     }
 
     /**
-     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going forward. Thus prevents
-     * new downloads starting when not possible and is self aware and requires no coder interaction.
+     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
+     * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
      * 
      * @param account
      * 
@@ -933,9 +933,9 @@ public class RapidStoneCom extends PluginForHost {
     }
 
     /**
-     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x connections to ip/host
-     * server. Currently JD allows a global connection controller and doesn't allow for handling of different hosts/IP setup. This will help with those
-     * situations by allowing more connection when possible.
+     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
+     * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
+     * hosts/IP setup. This will help with those situations by allowing more connection when possible.
      * 
      * @param Account
      *            Account that's been used, can be null
@@ -998,9 +998,9 @@ public class RapidStoneCom extends PluginForHost {
             // && max(Free|Prem)SimDlHost!
 
             /*
-             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads finishes. This is
-             * best practice otherwise you have to use some crude system of waits, but you have no control over to reset the count. Highly dependent on how fast
-             * or slow the users connections is.
+             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads
+             * finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control over to reset
+             * the count. Highly dependent on how fast or slow the users connections is.
              */
             if (isHashedHashedKey(account, usedHost)) {
                 Integer usedSlots = getHashedHashedValue(account);
@@ -1153,8 +1153,8 @@ public class RapidStoneCom extends PluginForHost {
     }
 
     /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re: InputField
-     * parse(final String data). Affects revision 19688 and earlier!
+     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
+     * InputField parse(final String data). Affects revision 19688 and earlier!
      * 
      * TODO: remove after JD2 goes stable!
      * 
