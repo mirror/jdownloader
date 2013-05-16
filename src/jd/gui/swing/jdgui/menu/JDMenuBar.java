@@ -5,6 +5,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.lang.reflect.InvocationTargetException;
 
+import javax.swing.AbstractButton;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -76,7 +77,13 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
             @Override
             protected void addContainer(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
                 final JMenu submenu = (JMenu) inst.addTo(root, selection);
+
+                // final Field f = KeyEvent.class.getField("VK_" + Character.toUpperCase(mnemonic));
+                // final int m = (Integer) f.get(null);
+                // putValue(AbstractAction.MNEMONIC_KEY, m);
+                // putValue(AbstractAction.DISPLAYED_MNEMONIC_INDEX_KEY, getName().indexOf(m));
                 if (submenu != null) {
+                    applyMnemonic(root, submenu);
                     if (root == JDMenuBar.this) submenu.setIcon(null);
                     createLayer(submenu, (MenuContainer) inst);
                 }
@@ -84,7 +91,10 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
             @Override
             protected void addAction(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                inst.addTo(root, selection);
+                JComponent comp = inst.addTo(root, selection);
+                if (comp instanceof AbstractButton) {
+                    applyMnemonic(root, (AbstractButton) comp);
+                }
             }
 
         }.run();

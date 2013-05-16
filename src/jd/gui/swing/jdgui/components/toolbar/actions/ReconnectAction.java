@@ -6,7 +6,6 @@ import jd.controlling.reconnect.Reconnecter;
 
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -30,11 +29,6 @@ public class ReconnectAction extends ToolBarAction {
             }).start();
         }
 
-    }
-
-    @Override
-    protected String createAccelerator() {
-        return ShortcutController._.getDoReconnectAction();
     }
 
     @Override

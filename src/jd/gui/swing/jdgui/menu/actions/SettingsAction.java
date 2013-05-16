@@ -22,37 +22,25 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.gui.shortcuts.ShortcutController;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class SettingsAction extends ActionAdapter {
+public class SettingsAction extends AppAction {
 
     private static final long serialVersionUID = 2547991585530678706L;
 
     public SettingsAction() {
-        super(_GUI._.action_settings_menu(), "action.settings", "settings");
+        setIconKey("settings");
+        setTooltipText(_GUI._.action_settings_menu_tooltip());
+        setName(_GUI._.action_settings_menu());
+
     }
 
     @Override
-    public void onAction(ActionEvent e) {
+    public void actionPerformed(ActionEvent e) {
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         SwingGui.getInstance().setContent(ConfigurationView.getInstance(), true);
-    }
-
-    @Override
-    public void initDefaults() {
-    }
-
-    @Override
-    public String createAccelerator() {
-
-        return ShortcutController._.getOpenSettingsAction();
-    }
-
-    @Override
-    public String createTooltip() {
-        return _GUI._.action_settings_menu_tooltip();
     }
 
 }

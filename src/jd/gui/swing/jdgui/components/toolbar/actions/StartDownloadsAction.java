@@ -13,7 +13,6 @@ import jd.gui.UserIF.Panels;
 import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
@@ -23,10 +22,12 @@ import org.jdownloader.translate._JDT;
 public class StartDownloadsAction extends ToolBarAction implements DownloadWatchdogListener {
 
     /**
-     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     public StartDownloadsAction(SelectionInfo<?, ?> selection) {
         setIconKey("media-playback-start");
+        setName(_JDT._.StartDownloadsAction_createTooltip_());
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
     }
@@ -49,11 +50,6 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
     @Override
     public String createTooltip() {
         return _JDT._.StartDownloadsAction_createTooltip_();
-    }
-
-    @Override
-    protected String createAccelerator() {
-        return ShortcutController._.getStartDownloadsAction();
     }
 
     @Override

@@ -4,7 +4,6 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.images.NewTheme;
 
 public abstract class ToolBarAction extends AppAction {
-    abstract protected String createAccelerator();
 
     protected String createMnemonic() {
         return "-";
@@ -14,13 +13,7 @@ public abstract class ToolBarAction extends AppAction {
 
         if (LARGE_ICON_KEY == (key)) { return NewTheme.I().getIcon(getIconKey(), 24); }
         if (SMALL_ICON == (key)) { return NewTheme.I().getIcon(getIconKey(), 18); }
-        if (ACCELERATOR_KEY == key) {
-            Object ret = super.getValue(key);
-            if (ret == null) {
-                setAccelerator(createAccelerator());
-            }
-            return super.getValue(key);
-        }
+
         if (MNEMONIC_KEY == key || DISPLAYED_MNEMONIC_INDEX_KEY == key) {
             Object ret = super.getValue(key);
             if (ret == null) {

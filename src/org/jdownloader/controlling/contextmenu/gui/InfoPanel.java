@@ -4,6 +4,8 @@ import java.awt.Component;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.net.URISyntaxException;
@@ -11,12 +13,14 @@ import java.net.URL;
 import java.util.HashSet;
 
 import javax.swing.Icon;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
+import javax.swing.KeyStroke;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
@@ -25,6 +29,7 @@ import javax.swing.event.ListSelectionListener;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.KeyUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -55,6 +60,10 @@ public class InfoPanel extends MigPanel implements ActionListener {
     private ManagerFrame managerFrame;
 
     private JCheckBox    hidden;
+
+    private ExtTextField shortcut;
+
+    protected KeyStroke  currentShortcut;
 
     public InfoPanel(ManagerFrame m) {
         super("ins 5,wrap 2", "[grow,fill][]", "[22!][]");
@@ -155,6 +164,49 @@ public class InfoPanel extends MigPanel implements ActionListener {
         add(name, "newline,spanx");
         add(iconlabel = label(_GUI._.InfoPanel_InfoPanel_icon()), "height 22!");
         add(iconChange, "newline,spanx");
+        shortcut = new ExtTextField();
+        shortcut.setEditable(false);
+        shortcut.addKeyListener(new KeyListener() {
+
+            @Override
+            public void keyTyped(KeyEvent e) {
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent event) {
+                String msg1 = KeyUtils.getShortcutString(event, true);
+                currentShortcut = KeyStroke.getKeyStroke(event.getKeyCode(), event.getModifiers());
+                shortcut.setText(msg1);
+                save();
+            }
+
+        });
+        if (managerFrame.getManager().isAcceleratorsEnabled()) {
+            add(label(_GUI._.InfoPanel_InfoPanel_shortcuts()));
+            add(shortcut, "newline");
+            add(new JButton(new AppAction() {
+                {
+                    setIconKey("reset");
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            currentShortcut = null;
+                            shortcut.setText("");
+                        }
+                    };
+                }
+
+            }), "width 22!,height 22!");
+        }
         if (managerFrame.getManager().supportsProperty(MenuItemProperty.HIDE_IF_DISABLED)) {
             add(label(_GUI._.InfoPanel_InfoPanel_hideIfDisabled()));
             add(hideIfDisabled, "spanx");
@@ -200,6 +252,18 @@ public class InfoPanel extends MigPanel implements ActionListener {
 
             label.setText("");
             return;
+        }
+
+        if (StringUtils.isNotEmpty(value.getShortcut())) {
+            currentShortcut = KeyStroke.getKeyStroke(value.getShortcut());
+            if (currentShortcut != null) {
+                shortcut.setText(KeyUtils.getShortcutString(currentShortcut, true));
+            } else {
+                shortcut.setText("");
+            }
+        } else {
+            currentShortcut = null;
+            shortcut.setText("");
         }
         MenuItemData mid = ((MenuItemData) value);
         Rectangle bounds = null;
@@ -317,6 +381,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
                 if (packageContext.isSelected()) newProperties.add(MenuItemProperty.PACKAGE_CONTEXT);
                 if (hidden.isSelected()) newProperties.add(MenuItemProperty.ALWAYS_HIDDEN);
                 item.setProperties(newProperties);
+                item.setShortcut(currentShortcut == null ? null : currentShortcut.toString());
             }
         }.waitForEDT();
 

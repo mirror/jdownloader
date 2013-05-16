@@ -19,34 +19,25 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.shortcuts.ShortcutController;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class KnowledgeAction extends ActionAdapter {
+public class KnowledgeAction extends AppAction {
 
     private static final long serialVersionUID = 2227665710503234763L;
 
     public KnowledgeAction() {
-        super(_GUI._.action_help(), "action.help", "help");
+
+        setIconKey("help");
+        setName(_GUI._.action_help());
+        setTooltipText(_GUI._.action_help_tooltip());
+
     }
 
     @Override
-    public void onAction(ActionEvent e) {
+    public void actionPerformed(ActionEvent e) {
         CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/index");
-    }
 
-    @Override
-    public void initDefaults() {
-    }
-
-    @Override
-    public String createAccelerator() {
-        return ShortcutController._.getOpenKnowledgebaseAction();
-    }
-
-    @Override
-    public String createTooltip() {
-        return _GUI._.action_help_tooltip();
     }
 
 }

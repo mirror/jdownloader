@@ -19,34 +19,22 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.shortcuts.ShortcutController;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class LatestChangesAction extends ActionAdapter {
+public class LatestChangesAction extends AppAction {
 
     private static final long serialVersionUID = 2705114922279833817L;
 
     public LatestChangesAction() {
-        super(_GUI._.action_changelog(), "action.changes", "help");
+        setTooltipText(_GUI._.action_changelog_tooltip());
+        setIconKey("help");
+        setName(_GUI._.action_changelog());
     }
 
     @Override
-    public void onAction(ActionEvent e) {
+    public void actionPerformed(ActionEvent e) {
         CrossSystem.openURLOrShowMessage("http://jdownloader.org/changes/index");
-    }
-
-    @Override
-    public void initDefaults() {
-    }
-
-    @Override
-    public String createAccelerator() {
-        return ShortcutController._.getOpenLatestChangesAction();
-    }
-
-    @Override
-    public String createTooltip() {
-        return _GUI._.action_changelog_tooltip();
     }
 
 }

@@ -357,4 +357,8 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         return true;
     }
 
+    public boolean isAcceleratorsEnabled() {
+        return false;
+    }
+
 }

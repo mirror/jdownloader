@@ -408,4 +408,15 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setShowDeleteLinksDialogOption(DeleteLinksDialogOption option);
 
+    public static enum MacDockProgressDisplay {
+        TOTAL_PROGRESS,
+        NOTHING;
+    }
+
+    @DefaultEnumValue("TOTAL_PROGRESS")
+    @AboutConfig
+    MacDockProgressDisplay getMacDockProgressDisplay();
+
+    void setMacDockProgressDisplay(MacDockProgressDisplay value);
+
 }

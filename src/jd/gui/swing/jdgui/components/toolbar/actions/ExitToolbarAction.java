@@ -2,7 +2,6 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.event.ActionEvent;
 
-import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -15,11 +14,6 @@ public class ExitToolbarAction extends ToolBarAction {
         setIconKey("exit");
         setName(_GUI._.action_exit());
 
-    }
-
-    @Override
-    public String createAccelerator() {
-        return ShortcutController._.getExitJDownloaderAction();
     }
 
     @Override

@@ -8,6 +8,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 @Defaults(lngs = { "en" })
 public interface GuiTranslation extends TranslateInterface {
+
     @Default(lngs = { "en" }, values = { "About JDownloader" })
     String action_aboutaction();
 
@@ -2643,5 +2644,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Main Menu" })
     String MainMenuManager_getName();
+
+    @Default(lngs = { "en" }, values = { "Shortcut" })
+    String InfoPanel_InfoPanel_shortcuts();
 
 }

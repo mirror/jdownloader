@@ -18,61 +18,26 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import org.jdownloader.gui.shortcuts.ShortcutController;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class RestartAction extends ActionAdapter {
+public class RestartAction extends AppAction {
 
     private static final long serialVersionUID = 1333126351380171619L;
 
     public RestartAction() {
-        super(_GUI._.action_restart(), "action.restart", "restart");
+        setTooltipText(_GUI._.action_restart_tooltip());
+        setName(_GUI._.action_restart());
+        setIconKey("restart");
     }
 
     @Override
-    public void onAction(ActionEvent e) {
-        // ShutdownController.getInstance().hasShutdownEvent(SilentUpdaterEvent)
-        // if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0,
-        // _GUI._.sys_ask_rlyrestart()), UserIO.RETURN_OK,
-        // UserIO.RETURN_DONT_SHOW_AGAIN)) {
-        //
-        // if (JDUpdater.getInstance().hasWaitingUpdates()) {
-        // UpdateFoundDialog dialog = new UpdateFoundDialog(null, new Runnable()
-        // {
-        //
-        // public void run() {
-        // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(true);
-        // }
-        //
-        // }, JDUpdater.getInstance());
-        // try {
-        // Dialog.getInstance().showDialog(dialog);
-        // return;
-        // } catch (DialogNoAnswerException e1) {
-        //
-        // }
-        // }
+    public void actionPerformed(ActionEvent e) {
         new Thread("Restarter") {
             public void run() {
                 org.jdownloader.controlling.JDRestartController.getInstance().directRestart();
             }
         }.start();
-
-        // }
-    }
-
-    @Override
-    public void initDefaults() {
-    }
-
-    @Override
-    public String createAccelerator() {
-        return ShortcutController._.getRestartJDownloaderAction();
-    }
-
-    @Override
-    public String createTooltip() {
-        return _GUI._.action_restart_tooltip();
     }
 
 }

@@ -2,7 +2,6 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.event.ActionEvent;
 
-import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -31,11 +30,6 @@ public class UpdateAction extends ToolBarAction {
             }
         }.start();
 
-    }
-
-    @Override
-    protected String createAccelerator() {
-        return ShortcutController._.getDoUpdateCheckAction();
     }
 
     @Override

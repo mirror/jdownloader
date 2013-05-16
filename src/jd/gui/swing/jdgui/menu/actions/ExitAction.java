@@ -18,37 +18,24 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import org.jdownloader.gui.shortcuts.ShortcutController;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.RestartController;
 
-public class ExitAction extends ActionAdapter {
+public class ExitAction extends AppAction {
 
     private static final long serialVersionUID = -1428029294638573437L;
 
     public ExitAction() {
-        super(_GUI._.action_exit(), "action.exit", "exit");
+
+        setIconKey("exit");
+        setName(_GUI._.action_exit());
+        setTooltipText(_GUI._.action_exit_tooltip());
     }
 
     @Override
-    public void onAction(ActionEvent e) {
-
+    public void actionPerformed(ActionEvent e) {
         RestartController.getInstance().exitAsynch();
-
-    }
-
-    @Override
-    public void initDefaults() {
-    }
-
-    @Override
-    public String createAccelerator() {
-        return ShortcutController._.getExitJDownloaderAction();
-    }
-
-    @Override
-    public String createTooltip() {
-        return _GUI._.action_exit_tooltip();
     }
 
 }

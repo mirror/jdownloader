@@ -62,7 +62,6 @@ import org.jdownloader.extensions.translator.TranslatorExtensionEvent;
 import org.jdownloader.extensions.translator.TranslatorExtensionListener;
 import org.jdownloader.extensions.translator.gui.actions.NewTranslationAction;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
-import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.tmatesoft.svn.core.SVNException;
@@ -307,7 +306,6 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         menuPanel.add(save = new ExtButton(new AppAction() {
             {
                 setName("2. Save locally");
-                setAccelerator(ShortcutController._.getTranslatorExtensionSaveLocally());
             }
 
             @Override
@@ -367,7 +365,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         menuPanel.add(upload = new ExtButton(new AppAction() {
             {
                 setName("3. Upload Changes");
-                setAccelerator(ShortcutController._.getTranslatorExtensionUpload());
+
             }
 
             @Override

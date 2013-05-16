@@ -111,6 +111,10 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
 
     }
 
+    public boolean isAcceleratorsEnabled() {
+        return true;
+    }
+
     private static final int VERSION = 0;
 
     public MenuContainerRoot createDefaultStructure() {

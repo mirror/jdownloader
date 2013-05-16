@@ -1,6 +1,5 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
-import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.toolbar.action.AbstractToolbarToggleAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -10,12 +9,6 @@ public class ClipBoardToggleAction extends AbstractToolbarToggleAction {
     public ClipBoardToggleAction(SelectionInfo<?, ?> selection) {
         super(org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED);
         setIconKey("clipboard");
-    }
-
-    @Override
-    protected String createAccelerator() {
-        return ShortcutController._.getToolbarClipboardToggle();
-
     }
 
     @Override

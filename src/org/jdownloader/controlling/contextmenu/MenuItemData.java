@@ -11,6 +11,7 @@ import java.util.List;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
+import javax.swing.KeyStroke;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -86,6 +87,14 @@ public class MenuItemData implements Storable {
     private Exception         validateException;
 
     private MenuContainerRoot root;
+
+    private String            mnemonic;
+
+    private String            shortcut;
+
+    public void setMnemonic(String mnemonic) {
+        this.mnemonic = mnemonic;
+    }
 
     public Type getType() {
         return type;
@@ -203,6 +212,9 @@ public class MenuItemData implements Storable {
             throw new WTFException("No ACTION");
         }
         AppAction action = createAction(selection);
+        if (StringUtils.isNotEmpty(getShortcut())) {
+            action.setAccelerator(KeyStroke.getKeyStroke(getShortcut()));
+        }
         JMenuItem ret = action.isToggle() ? new JCheckBoxMenuItem(action) : new JMenuItem(action);
         if (StringUtils.isNotEmpty(name)) {
             ret.setText(name);
@@ -393,6 +405,10 @@ public class MenuItemData implements Storable {
         return null;
     }
 
+    public String getMnemonic() {
+        return mnemonic;
+    }
+
     public Collection<String> _getItemIdentifiers() {
         HashSet<String> ret = new HashSet<String>();
         for (MenuItemData mid : getItems()) {
@@ -423,6 +439,26 @@ public class MenuItemData implements Storable {
 
     public void _setRoot(MenuContainerRoot root) {
         this.root = root;
+    }
+
+    public String getShortcut() {
+        return shortcut;
+    }
+
+    public void setShortcut(String shortcut) {
+        this.shortcut = shortcut;
+    }
+
+    public String _getShortcut() {
+        if (StringUtils.isNotEmpty(shortcut)) { return shortcut; }
+        if (getActionData() != null) {
+            try {
+                return createAction(null).getShortCutString();
+            } catch (Exception e) {
+
+            }
+        }
+        return null;
     }
 
 }

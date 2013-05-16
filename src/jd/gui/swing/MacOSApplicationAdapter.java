@@ -16,42 +16,32 @@
 
 package jd.gui.swing;
 
-import java.awt.AlphaComposite;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.RenderingHints;
-import java.awt.Shape;
-import java.awt.geom.Area;
-import java.awt.geom.Ellipse2D;
 import java.io.File;
 
 import javax.swing.JFrame;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.menu.actions.SettingsAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.swing.components.circlebar.CircledProgressBar;
-import org.appwork.swing.components.circlebar.IconPainter;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.overviewpanel.AggregatedNumbers;
+import org.jdownloader.icon.IconBadgePainter;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.RestartController;
 
 import com.apple.eawt.AboutHandler;
@@ -100,103 +90,45 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
         new Thread("DockUpdater") {
             public void run() {
+                boolean isDefault = true;
                 while (true) {
-                    final AggregatedNumbers aggn = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks()));
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-
-                            // com.apple.eawt.Application.getApplication().setDockIconBadge(DownloadInformations.getInstance().getPercent()
-                            // + "%");
-                            CircledProgressBar m = new CircledProgressBar();
-
-                            m.setValueClipPainter(new IconPainter() {
-
-                                public void paint(final CircledProgressBar bar, final Graphics2D g2, final Shape shape, final int diameter, final double progress) {
-                                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                                    ((Graphics2D) g2).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
-                                    final Area a = new Area(shape);
-
-                                    g2.draw(a);
-                                    g2.setColor(Color.GREEN);
-                                    a.intersect(new Area(new Ellipse2D.Float(0, 0, diameter, diameter)));
-
-                                    g2.fill(a);
-
-                                    g2.setClip(null);
-
-                                    // g2.draw(shape);
-                                    g2.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.CAP_ROUND));
-                                    g2.setColor(Color.GRAY);
-                                    g2.draw(a);
-
-                                }
-
-                                private Dimension dimension;
-                                {
-                                    dimension = new Dimension(75, 75);
-                                }
-
-                                @Override
-                                public Dimension getPreferredSize() {
-                                    return dimension;
-                                }
-                            });
-
-                            m.setNonvalueClipPainter(new IconPainter() {
-
-                                public void paint(final CircledProgressBar bar, final Graphics2D g2, final Shape shape, final int diameter, final double progress) {
-                                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                                    ((Graphics2D) g2).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
-                                    final Area a = new Area(shape);
-
-                                    g2.setColor(Color.WHITE);
-                                    a.intersect(new Area(new Ellipse2D.Float(0, 0, diameter, diameter)));
-
-                                    g2.fill(a);
-                                    g2.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.CAP_ROUND));
-                                    g2.setColor(Color.GRAY);
-                                    g2.draw(a);
-
-                                }
-
-                                private Dimension dimension;
-                                {
-                                    dimension = new Dimension(75, 75);
-                                }
-
-                                @Override
-                                public Dimension getPreferredSize() {
-                                    return dimension;
-                                }
-                            });
-                            m.setMaximum(100);
-
-                            int percent = 0;
-                            if (aggn.getTotalBytes() > 0) {
-                                percent = (int) ((aggn.getLoadedBytes() * 100) / aggn.getTotalBytes());
+                    if (DownloadWatchDog.getInstance().isRunning()) {
+                        switch (JsonConfig.create(GraphicalUserInterfaceSettings.class).getMacDockProgressDisplay()) {
+                        case NOTHING:
+                            if (!isDefault) {
+                                com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", 128));
+                                isDefault = true;
                             }
-                            m.setValue(percent);
-                            // System.out.println(m.getValue());
-                            m.setSize(75, 75);
-                            Image img = NewTheme.I().getImage("logo/jd_logo_128_128", 128);
-                            Graphics g = img.getGraphics();
-                            g.translate(128 - m.getWidth(), 128 - m.getHeight());
-                            ((Graphics2D) g).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
-                            m.paint(g);
-                            // g.fillRect(0, 0, 40, 40);
-                            g.dispose();
-                            com.apple.eawt.Application.getApplication().setDockIconImage(img);
-                            // JDGui.getInstance().getMainFrame().setIconImage(img);
+                            break;
+                        case TOTAL_PROGRESS:
+                            isDefault = false;
+                            final AggregatedNumbers aggn = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks()));
+                            new EDTRunner() {
+
+                                @Override
+                                protected void runInEDT() {
+                                    int percent = 0;
+                                    if (aggn.getTotalBytes() > 0) {
+                                        percent = (int) ((aggn.getLoadedBytes() * 100) / aggn.getTotalBytes());
+                                    }
+                                    ;
+                                    com.apple.eawt.Application.getApplication().setDockIconImage(new IconBadgePainter(NewTheme.I().getImage("logo/jd_logo_128_128", 128)).getImage(percent, percent + ""));
+                                    // JDGui.getInstance().getMainFrame().setIconImage(img);
+                                }
+
+                            };
                         }
 
-                    };
-
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        if (!isDefault) {
+                            com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", 128));
+                            isDefault = true;
+                        }
                     }
                 }
             }
@@ -229,7 +161,6 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
     }
 
     public void handlePreferences(PreferencesEvent e) {
-        new SettingsAction().actionPerformed(null);
 
         appReOpened(null);
     }

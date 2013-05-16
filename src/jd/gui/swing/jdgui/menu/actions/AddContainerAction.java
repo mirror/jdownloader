@@ -24,20 +24,22 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.gui.UserIO;
 import jd.nutils.io.JDFileFilter;
 
-import org.jdownloader.gui.shortcuts.ShortcutController;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
-public class AddContainerAction extends ActionAdapter {
+public class AddContainerAction extends AppAction {
 
     private static final long serialVersionUID = 4713690050852393405L;
 
     public AddContainerAction() {
-        super(_GUI._.action_addcontainer(), "action.load", "load");
+        setName(_GUI._.action_addcontainer());
+        setTooltipText(_GUI._.action_addcontainer_tooltip());
+        setIconKey("load");
     }
 
     @Override
-    public void onAction(ActionEvent e) {
+    public void actionPerformed(ActionEvent e) {
         File[] ret = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", _GUI._.gui_filechooser_loaddlc(), UserIO.FILES_ONLY, new JDFileFilter(null, ContainerPluginController.getInstance().getContainerExtensions(null), true), true);
         if (ret == null) return;
         StringBuilder sb = new StringBuilder();
@@ -47,20 +49,6 @@ public class AddContainerAction extends ActionAdapter {
             sb.append(r.getAbsolutePath());
         }
         LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
-    }
-
-    @Override
-    public void initDefaults() {
-    }
-
-    @Override
-    public String createAccelerator() {
-        return ShortcutController._.getAddContainerAction();
-    }
-
-    @Override
-    public String createTooltip() {
-        return _GUI._.action_addcontainer_tooltip();
     }
 
 }

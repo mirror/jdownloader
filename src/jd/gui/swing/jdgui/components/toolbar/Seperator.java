@@ -2,6 +2,8 @@ package jd.gui.swing.jdgui.components.toolbar;
 
 import java.awt.event.ActionEvent;
 
+import javax.swing.KeyStroke;
+
 import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarAction;
 
 public class Seperator extends AbstractToolbarAction {
@@ -36,7 +38,7 @@ public class Seperator extends AbstractToolbarAction {
     }
 
     @Override
-    protected String createAccelerator() {
+    protected KeyStroke createAccelerator() {
         return null;
     }
 

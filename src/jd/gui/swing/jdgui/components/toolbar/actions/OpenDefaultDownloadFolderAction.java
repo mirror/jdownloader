@@ -5,7 +5,6 @@ import java.io.File;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -26,11 +25,6 @@ public class OpenDefaultDownloadFolderAction extends ToolBarAction {
     @Override
     public boolean isEnabled() {
         return CrossSystem.isOpenFileSupported();
-    }
-
-    @Override
-    protected String createAccelerator() {
-        return ShortcutController._.getOpenDefaultDownloadFolderAction();
     }
 
     @Override

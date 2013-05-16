@@ -1,7 +1,10 @@
 package org.jdownloader.controlling.contextmenu.gui;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.HashSet;
 
+import javax.swing.AbstractButton;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 
@@ -16,11 +19,12 @@ import org.jdownloader.gui.views.SelectionInfo;
 
 public class MenuBuilder {
 
-    private JComponent               root;
-    protected SelectionInfo<?, ?>    selection;
-    private MenuContainer            menuData;
-    private ContextMenuManager<?, ?> menuManager;
-    private LogSource                logger;
+    private JComponent                            root;
+    protected SelectionInfo<?, ?>                 selection;
+    private MenuContainer                         menuData;
+    private ContextMenuManager<?, ?>              menuManager;
+    private LogSource                             logger;
+    private HashMap<JComponent, HashSet<Integer>> mnemonics;
 
     public MenuBuilder(ContextMenuManager<?, ?> menuManager, JComponent root, SelectionInfo<?, ?> si, MenuContainer md) {
         this.root = root;
@@ -28,7 +32,41 @@ public class MenuBuilder {
         this.menuManager = menuManager;
         menuData = md;
         logger = menuManager.getLogger();
+        mnemonics = new HashMap<JComponent, HashSet<Integer>>();
 
+    }
+
+    protected void registerMnemonic(JComponent root, int mnem) {
+        HashSet<Integer> set = mnemonics.get(root);
+        if (set == null) {
+            mnemonics.put(root, set = new HashSet<Integer>());
+        }
+        set.add(mnem);
+    }
+
+    public void applyMnemonic(JComponent root, final AbstractButton submenu) {
+        int mnem = submenu.getMnemonic();
+        if (mnem == 0) {
+            if (submenu.getText() != null) {
+                for (int i = 0; i < submenu.getText().length(); i++) {
+
+                    mnem = org.appwork.swing.action.BasicAction.charToMnemonic(submenu.getText().charAt(i));
+                    if (!isMnemonicUsed(root, mnem)) {
+                        submenu.setMnemonic(mnem);
+                        break;
+                    }
+                }
+
+            }
+        }
+
+        registerMnemonic(root, mnem);
+    }
+
+    protected boolean isMnemonicUsed(JComponent root, int mnem) {
+        HashSet<Integer> set = mnemonics.get(root);
+        if (set == null) { return false; }
+        return set.contains(mnem);
     }
 
     /**

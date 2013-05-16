@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
+import javax.swing.KeyStroke;
+
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.images.NewTheme;
 
@@ -40,7 +42,7 @@ public abstract class AbstractToolbarAction extends AppAction {
 
     abstract protected void doInit();
 
-    abstract protected String createAccelerator();
+    abstract protected KeyStroke createAccelerator();
 
     public Object getValue(String key) {
 

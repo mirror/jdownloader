@@ -193,6 +193,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         @Override
                         public void actionPerformed(ActionEvent e) {
                             ExtPopupMenu root = new ExtPopupMenu();
+
                             new MenuBuilder(MainToolbarManager.getInstance(), root, null, (MenuContainer) menudata).run();
                             Object src = e.getSource();
                             if (e.getSource() instanceof Component) {
@@ -205,6 +206,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         }
 
                     });
+
                     last = menudata;
                     add(bt, "width 32!,height 32!");
                     bt.setHideActionText(true);
@@ -212,6 +214,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                 } else if (menudata.getActionData() != null) {
 
                     action = menudata.createAction(null);
+                    if (StringUtils.isNotEmpty(menudata._getShortcut())) {
+                        action.setAccelerator(KeyStroke.getKeyStroke(menudata._getShortcut()));
+                    }
                     if (action.isToggle()) {
                         bt = new JToggleButton(action);
                         ImageIcon icon;
@@ -224,6 +229,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         bt.setHideActionText(true);
                     } else {
                         bt = new ExtButton(action);
+
                         bt.setIcon(NewTheme.I().getIcon(action.getIconKey(), 24));
                         add(bt, "width 32!,height 32!");
                         bt.setHideActionText(true);
@@ -234,6 +240,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         continue;
                     }
                     final KeyStroke ks = (KeyStroke) value;
+
                     this.rootpane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, action);
                     this.rootpane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
                     this.rootpane.getActionMap().put(action, action);

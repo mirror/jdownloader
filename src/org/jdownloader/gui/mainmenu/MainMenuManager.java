@@ -196,6 +196,10 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
 
     }
 
+    public boolean isAcceleratorsEnabled() {
+        return true;
+    }
+
     @Override
     public String getName() {
         return _GUI._.MainMenuManager_getName();

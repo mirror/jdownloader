@@ -7,7 +7,6 @@ import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -38,12 +37,6 @@ public class ShowSettingsAction extends ToolBarAction {
                 SwingGui.getInstance().setContent(ConfigurationView.getInstance(), true);
             }
         };
-    }
-
-    @Override
-    public String createAccelerator() {
-
-        return ShortcutController._.getOpenSettingsAction();
     }
 
     @Override
