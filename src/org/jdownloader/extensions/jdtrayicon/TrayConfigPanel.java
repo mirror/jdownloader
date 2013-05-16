@@ -23,6 +23,7 @@ public class TrayConfigPanel extends ExtensionConfigPanel<TrayExtension> {
         addPair(T._.plugins_optional_JDLightTray_startMinimized(), null, new Checkbox(CFG_TRAY_CONFIG.START_MINIMIZED_ENABLED));
         addPair(T._.plugins_optional_JDLightTray_singleClick(), null, new Checkbox(CFG_TRAY_CONFIG.TOOGLE_WINDOW_STATUS_WITH_SINGLE_CLICK_ENABLED));
         addPair(T._.plugins_optional_JDLightTray_tooltip(), null, new Checkbox(CFG_TRAY_CONFIG.TOOL_TIP_ENABLED));
+        addPair(T._.plugins_optional_JDLightTray_hideifframevisible(), null, new Checkbox(CFG_TRAY_CONFIG.TRAY_ONLY_VISIBLE_IF_WINDOW_IS_HIDDEN_ENABLED));
         addPair(T._.plugins_optional_JDLightTray_linkgrabberresults(), null, new ComboBox<LinkgrabberResultsOption>(CFG_TRAY_CONFIG.SH.getKeyHandler("ShowLinkgrabbingResultsOption", KeyHandler.class), LinkgrabberResultsOption.values(), new String[] { T._.plugins_optional_JDLightTray_minimized(), T._.plugins_optional_JDLightTray_always(), T._.plugins_optional_JDLightTray_never() }));
         addPair(T._.plugins_optional_JDLightTray_passwordRequired(), CFG_GUI.PASSWORD_PROTECTION_ENABLED, new PasswordInput(CFG_GUI.PASSWORD));
 

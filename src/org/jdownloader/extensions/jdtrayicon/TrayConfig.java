@@ -55,4 +55,10 @@ public interface TrayConfig extends ExtensionConfigInterface {
     public boolean isGnomeTrayIconTransparentEnabled();
 
     public void setGnomeTrayIconTransparentEnabled(boolean b);
+
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    public boolean isTrayOnlyVisibleIfWindowIsHiddenEnabled();
+
+    public void setTrayOnlyVisibleIfWindowIsHiddenEnabled(boolean b);
 }

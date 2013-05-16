@@ -25,6 +25,8 @@ import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -232,80 +234,135 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     private void initGUI(final boolean startup) {
-        try {
-            SystemTray systemTray = SystemTray.getSystemTray();
-            BufferedImage img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_64_64", -1), (int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight());
-
-            if (getSettings().isGreyIconEnabled()) {
-                img = ImageProvider.convertToGrayScale(img);
-            }
-
-            // workaround for gnome 3 transparency bug
-            if (getSettings().isGnomeTrayIconTransparentEnabled() && CrossSystem.isLinux() && new DesktopSupportLinux().isGnomeDesktop()) {
-                java.awt.Robot robo = new java.awt.Robot();
-                Color tmp, newColor;
-                int cr, cb, cg;
-                float alpha;
-                for (int y = 0; y < img.getHeight(); y++) {
-                    newColor = robo.getPixelColor(1, y);
-                    for (int x = 0; x < img.getWidth(); x++) {
-                        tmp = new Color(img.getRGB(x, y));
-                        alpha = ((img.getRGB(x, y) >> 24) & 0xFF) / 255F;
-                        cr = (int) (alpha * tmp.getRed() + (1 - alpha) * newColor.getRed());
-                        cg = (int) (alpha * tmp.getGreen() + (1 - alpha) * newColor.getGreen());
-                        cb = (int) (alpha * tmp.getBlue() + (1 - alpha) * newColor.getBlue());
-                        tmp = new Color(cr, cg, cb);
-                        img.setRGB(x, y, tmp.getRGB());
-                    }
-                }
-            }
-
-            /*
-             * trayicon message must be set, else windows cannot handle icon right (eg autohide feature)
-             */
-            trayIcon = new TrayIcon(img, "JDownloader");
-            trayIcon.setImageAutoSize(true);
-            trayIcon.addActionListener(this);
-            ma = new TrayMouseAdapter(this, trayIcon);
-            trayIcon.addMouseListener(ma);
-            trayIcon.addMouseMotionListener(ma);
-            trayIconTooltip = new TrayIconTooltip();
-            systemTray.add(trayIcon);
-        } catch (Throwable e) {
-            /*
-             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here http://www.webupd8.org/2011/04/how-to-re-enable
-             * -notification-area.html
-             * 
-             * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
-             * 
-             * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
-             * 
-             * TODO: maybe add dialog to inform user
-             */
-            LogController.CL().log(e);
-            try {
-                setEnabled(false);
-            } catch (final Throwable e1) {
-            }
-            return;
-        }
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
+
                 new EDTRunner() {
 
                     @Override
                     protected void runInEDT() {
-                        LogController.CL(TrayExtension.class).info("JDLightTrayIcon Init complete");
-                        guiFrame = JDGui.getInstance().getMainFrame();
-                        if (guiFrame != null) {
+                        try {
+                            removeTrayIcon();
+                            SystemTray systemTray = SystemTray.getSystemTray();
+                            BufferedImage img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_64_64", -1), (int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight());
 
-                            JDGui.getInstance().setClosingHandler(TrayExtension.this);
-                            guiFrame.removeWindowStateListener(TrayExtension.this);
-                            guiFrame.addWindowStateListener(TrayExtension.this);
-                            if (startup && getSettings().isStartMinimizedEnabled()) {
-                                miniIt(true);
+                            if (getSettings().isGreyIconEnabled()) {
+                                img = ImageProvider.convertToGrayScale(img);
                             }
+
+                            // workaround for gnome 3 transparency bug
+                            if (getSettings().isGnomeTrayIconTransparentEnabled() && CrossSystem.isLinux() && new DesktopSupportLinux().isGnomeDesktop()) {
+                                java.awt.Robot robo = new java.awt.Robot();
+                                Color tmp, newColor;
+                                int cr, cb, cg;
+                                float alpha;
+                                for (int y = 0; y < img.getHeight(); y++) {
+                                    newColor = robo.getPixelColor(1, y);
+                                    for (int x = 0; x < img.getWidth(); x++) {
+                                        tmp = new Color(img.getRGB(x, y));
+                                        alpha = ((img.getRGB(x, y) >> 24) & 0xFF) / 255F;
+                                        cr = (int) (alpha * tmp.getRed() + (1 - alpha) * newColor.getRed());
+                                        cg = (int) (alpha * tmp.getGreen() + (1 - alpha) * newColor.getGreen());
+                                        cb = (int) (alpha * tmp.getBlue() + (1 - alpha) * newColor.getBlue());
+                                        tmp = new Color(cr, cg, cb);
+                                        img.setRGB(x, y, tmp.getRGB());
+                                    }
+                                }
+                            }
+
+                            /*
+                             * trayicon message must be set, else windows cannot handle icon right (eg autohide feature)
+                             */
+                            trayIcon = new TrayIcon(img, "JDownloader");
+                            trayIcon.setImageAutoSize(true);
+                            trayIcon.addActionListener(TrayExtension.this);
+                            ma = new TrayMouseAdapter(TrayExtension.this, trayIcon);
+                            trayIcon.addMouseListener(ma);
+                            trayIcon.addMouseMotionListener(ma);
+                            trayIconTooltip = new TrayIconTooltip();
+                            LogController.CL(TrayExtension.class).info("JDLightTrayIcon Init complete");
+                            if (guiFrame == null) {
+                                guiFrame = JDGui.getInstance().getMainFrame();
+
+                                if (guiFrame != null) {
+
+                                    JDGui.getInstance().setClosingHandler(TrayExtension.this);
+                                    guiFrame.addComponentListener(new ComponentListener() {
+
+                                        @Override
+                                        public void componentShown(ComponentEvent e) {
+
+                                            if (getSettings().isTrayOnlyVisibleIfWindowIsHiddenEnabled()) {
+                                                new EDTRunner() {
+
+                                                    @Override
+                                                    protected void runInEDT() {
+                                                        removeTrayIcon();
+                                                        // initGUI(false);
+                                                    }
+                                                };
+
+                                            }
+                                        }
+
+                                        @Override
+                                        public void componentResized(ComponentEvent e) {
+
+                                        }
+
+                                        @Override
+                                        public void componentMoved(ComponentEvent e) {
+
+                                        }
+
+                                        @Override
+                                        public void componentHidden(ComponentEvent e) {
+                                            if (getSettings().isTrayOnlyVisibleIfWindowIsHiddenEnabled()) {
+                                                new EDTRunner() {
+
+                                                    @Override
+                                                    protected void runInEDT() {
+
+                                                        removeTrayIcon();
+                                                        initGUI(false);
+
+                                                    }
+                                                };
+
+                                            }
+                                        }
+                                    });
+                                    guiFrame.removeWindowStateListener(TrayExtension.this);
+                                    guiFrame.addWindowStateListener(TrayExtension.this);
+                                    if (startup && getSettings().isStartMinimizedEnabled()) {
+                                        miniIt(true);
+                                    }
+
+                                }
+                            }
+                            if (!getSettings().isTrayOnlyVisibleIfWindowIsHiddenEnabled() || !guiFrame.isVisible()) {
+
+                                systemTray.add(trayIcon);
+                            }
+
+                        } catch (Throwable e) {
+                            /*
+                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
+                             * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
+                             * 
+                             * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
+                             * 
+                             * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
+                             * 
+                             * TODO: maybe add dialog to inform user
+                             */
+                            LogController.CL().log(e);
+                            try {
+                                setEnabled(false);
+                            } catch (final Throwable e1) {
+                            }
+                            return;
                         }
                     }
                 };
@@ -477,7 +534,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                             }
                                         }
                                         if (reInitTrayIcon) {
-                                            removeTrayIcon();
+
                                             initGUI(false);
                                             try {
                                                 if (SystemTray.getSystemTray().getTrayIcons().length > 0) {

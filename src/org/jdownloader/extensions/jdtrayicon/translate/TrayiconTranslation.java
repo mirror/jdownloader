@@ -121,4 +121,7 @@ public interface TrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Minimize to Taskbar" })
     String JDGui_windowClosing_try_answer_totaskbar();
 
+    @Default(lngs = { "en" }, values = { "Hide Tray if Window is visible" })
+    String plugins_optional_JDLightTray_hideifframevisible();
+
 }
