@@ -392,4 +392,36 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     public ExtColumn<AbstractNode> getContextColumn() {
         return contextColumn;
     }
+
+    public boolean isCtrlDown() {
+
+        if (keyEvent != null && keyEvent.isControlDown()) { return true; }
+        if (mouseEvent != null && mouseEvent.isControlDown()) { return true; }
+        ;
+        return false;
+    }
+
+    public boolean isMetaDown() {
+
+        if (keyEvent != null && keyEvent.isMetaDown()) { return true; }
+        if (mouseEvent != null && mouseEvent.isMetaDown()) { return true; }
+        ;
+        return false;
+    }
+
+    public boolean isAltGraphDown() {
+
+        if (keyEvent != null && keyEvent.isAltGraphDown()) { return true; }
+        if (mouseEvent != null && mouseEvent.isAltGraphDown()) { return true; }
+        ;
+        return false;
+    }
+
+    public boolean isAltDown() {
+
+        if (keyEvent != null && keyEvent.isAltDown()) { return true; }
+        if (mouseEvent != null && mouseEvent.isAltDown()) { return true; }
+        ;
+        return false;
+    }
 }

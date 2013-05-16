@@ -255,6 +255,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
+        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown() || evt.isControlDown()) return false;
         new RemoveSelectionLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(selectedObjects)).actionPerformed(null);
         return true;
     }
@@ -266,18 +267,21 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected boolean onShortcutCopy(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
+        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) return false;
         TransferHandler.getCopyAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "copy"));
         return true;
     }
 
     @Override
     protected boolean onShortcutCut(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
+        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) return false;
         TransferHandler.getCutAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "cut"));
         return true;
     }
 
     @Override
     protected boolean onShortcutPaste(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
+        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) return false;
         TransferHandler.getPasteAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "paste"));
         return true;
     }

@@ -101,7 +101,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
             }
 
         };
-
+        name.setHelpText(_GUI._.InfoPanel_InfoPanel_customname_help());
         iconChange = new ExtButton(new AppAction() {
             {
                 setName(_GUI._.InfoPanel_changeicon());
@@ -165,6 +165,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
         add(iconlabel = label(_GUI._.InfoPanel_InfoPanel_icon()), "height 22!");
         add(iconChange, "newline,spanx");
         shortcut = new ExtTextField();
+        shortcut.setHelpText(_GUI._.InfoPanel_InfoPanel_shortcuthelp());
         shortcut.setEditable(false);
         shortcut.addKeyListener(new KeyListener() {
 
@@ -201,6 +202,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
                         protected void runInEDT() {
                             currentShortcut = null;
                             shortcut.setText("");
+                            save();
                         }
                     };
                 }

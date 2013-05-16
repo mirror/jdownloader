@@ -2645,7 +2645,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Main Menu" })
     String MainMenuManager_getName();
 
-    @Default(lngs = { "en" }, values = { "Shortcut" })
+    @Default(lngs = { "en" }, values = { "Custom Shortcut" })
     String InfoPanel_InfoPanel_shortcuts();
+
+    @Default(lngs = { "en" }, values = { "Click here & press a shortcut..." })
+    String InfoPanel_InfoPanel_shortcuthelp();
+
+    @Default(lngs = { "en" }, values = { "Enter a name for this action..." })
+    String InfoPanel_InfoPanel_customname_help();
 
 }

@@ -35,7 +35,7 @@ public class DeleteSelectionAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-
+        if (si.isAltDown() || si.isAltGraphDown() || si.isMetaDown()) return false;
         return !si.isEmpty();
     }
 
