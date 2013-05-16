@@ -2,7 +2,6 @@ package org.jdownloader.extensions.myjdownloader.api;
 
 import java.lang.reflect.Type;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
@@ -81,14 +80,13 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         }
     }
 
-    protected AtomicLong                         TIMESTAMP      = new AtomicLong(System.currentTimeMillis());
-    protected volatile String                    connectToken   = null;
+    protected AtomicLong                        TIMESTAMP    = new AtomicLong(System.currentTimeMillis());
+    protected volatile String                   connectToken = null;
 
-    protected final MyDownloaderExtensionConfig  config;
+    protected final MyDownloaderExtensionConfig config;
 
-    private MyJDownloaderExtension               extension;
-    private HashMap<String, ArrayList<RIDEntry>> rids;
-    private long                                 minAcceptedRID = Long.MIN_VALUE;
+    private MyJDownloaderExtension              extension;
+    private HashMap<String, RIDArray>           rids;
 
     public MyJDownloaderAPI(MyJDownloaderExtension myJDownloaderExtension) {
         super("JD_V1");
@@ -100,7 +98,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         br = new BasicHTTP();
         br.setAllowedResponseCodes(200, 503, 401, 407, 403, 500, 429);
         br.putRequestHeader("Content-Type", "application/json; charset=utf-8");
-        rids = new HashMap<String, ArrayList<RIDEntry>>();
+        rids = new HashMap<String, RIDArray>();
 
     }
 
@@ -112,9 +110,9 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
     public synchronized boolean validateRID(long rid, String sessionToken) {
 
         // TODO CLeanup
-        ArrayList<RIDEntry> ridList = rids.get(sessionToken);
+        RIDArray ridList = rids.get(sessionToken);
         if (ridList == null) {
-            ridList = new ArrayList<RIDEntry>();
+            ridList = new RIDArray();
             rids.put(sessionToken, ridList);
         }
 
@@ -136,10 +134,10 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
 
             }
         }
-        if (lowestRid > minAcceptedRID) {
-            this.minAcceptedRID = lowestRid;
+        if (lowestRid > ridList.getMinAcceptedRID()) {
+            ridList.setMinAcceptedRID(lowestRid);
         }
-        if (rid <= minAcceptedRID) {
+        if (rid <= ridList.getMinAcceptedRID()) {
             // rid too low
             logger.warning("received an outdated RID. Possible Replay Attack avoided");
             return false;
