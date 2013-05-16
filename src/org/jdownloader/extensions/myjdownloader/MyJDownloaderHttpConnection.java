@@ -71,7 +71,8 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         onException(new ApiInterfaceNotAvailable(), request, response);
     }
 
-    protected void onException(Throwable e, final HttpRequest request, final HttpResponse response) throws IOException {
+    @Override
+    public boolean onException(Throwable e, final HttpRequest request, final HttpResponse response) throws IOException {
         BasicRemoteAPIException apiException;
         if (!(e instanceof BasicRemoteAPIException)) {
             apiException = new InternalApiException(e);
@@ -80,8 +81,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         }
         this.response = new HttpResponse(this);
 
-        apiException.handle(this.response);
-
+        return apiException.handle(this.response);
     }
 
     // @Override
