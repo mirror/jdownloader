@@ -7,7 +7,6 @@ import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.EventObject;
 
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
@@ -206,13 +205,6 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         sortPackageChildren(newColumn.getRowSorter(), getExtTableModel().getNextSortIdentifier(newColumn.getSortOrderIdentifier()));
 
         return true;
-    }
-
-    @Override
-    public boolean editCellAt(int row, int column, EventObject e) {
-        boolean ret = super.editCellAt(row, column, e);
-
-        return ret;
     }
 
     @Override
