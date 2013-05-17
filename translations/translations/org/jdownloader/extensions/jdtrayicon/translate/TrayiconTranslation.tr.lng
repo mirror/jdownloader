@@ -13,6 +13,7 @@ jd_plugins_optional_jdtrayicon_jdlighttray=Sade Tepsi Simgesi
 jd_plugins_optional_jdtrayicon_jdlighttray_description=JDownloader'ı bildirim alanına küçültmeye veya kapatmaya, ve parola koruması gibi diğer ilgili özelliklere ve daha fazlasına izin verir.
 plugins_optional_JDLightTray_always=Her zaman
 plugins_optional_JDLightTray_closetotray2='Kapat <X>' Eylemine tıklayınca
+plugins_optional_JDLightTray_hideifframevisible=Eğer Pencere görünür ise Tepsiyi gizle
 plugins_optional_JDLightTray_linkgrabberresults=Yeni Bağlantılar yakalandıysa Ana Pencereyi en üste getir
 plugins_optional_JDLightTray_minimized=Sadece Ana Pencere simge durumuna küçültüldüğünde
 plugins_optional_JDLightTray_minimizetotray='Simge Durumuna <_>' Eylemine tıklayınca
