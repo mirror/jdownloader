@@ -13,6 +13,7 @@ jd_plugins_optional_jdtrayicon_jdlighttray=Icona di notifica
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Consente di minimizzare o chiudere JDownloader nella barra delle applicazioni  (Tray bar), e altre caratteristiche simili, quali protezione con password e altro ancora.
 plugins_optional_JDLightTray_always=Sempre
 plugins_optional_JDLightTray_closetotray2=Azione al clic su 'Chiudi <X>'
+plugins_optional_JDLightTray_hideifframevisible=Nascondi barra di sistema se Windows è visibile
 plugins_optional_JDLightTray_linkgrabberresults=Visualizza la finestra del Cattura Collegamenti
 plugins_optional_JDLightTray_minimized=Solo quando JD è minimizzato
 plugins_optional_JDLightTray_minimizetotray=Azione al clic su 'Minimizza <_>'
