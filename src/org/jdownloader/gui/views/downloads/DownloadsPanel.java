@@ -79,6 +79,10 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
     }
 
+    public DownloadsTable getTable() {
+        return table;
+    }
+
     private void layoutComponents() {
 
         if (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled()) {
@@ -203,8 +207,8 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     long contentChanges = DownloadController.getInstance().getContentChanges();
                     if (lastContentChanges != contentChanges && tableModel.isFilteredView()) {
                         /*
-                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the tablemodel to reflect
-                         * possible status changes in filtered view
+                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the
+                         * tablemodel to reflect possible status changes in filtered view
                          */
                         tableModel.recreateModel();
                     } else {

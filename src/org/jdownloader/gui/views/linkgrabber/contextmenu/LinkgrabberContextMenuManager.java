@@ -17,6 +17,7 @@ import org.jdownloader.gui.views.components.packagetable.context.PriorityHighAct
 import org.jdownloader.gui.views.components.packagetable.context.PriorityHigherAction;
 import org.jdownloader.gui.views.components.packagetable.context.PriorityHighestAction;
 import org.jdownloader.gui.views.components.packagetable.context.PriorityLowerAction;
+import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetCommentAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
@@ -118,6 +119,7 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
     private SettingsLGSubmenu createSettingsSubmenu() {
         SettingsLGSubmenu ret = new SettingsLGSubmenu();
 
+        ret.add(RenameAction.class);
         ret.add(CheckStatusAction.class);
 
         ret.add(URLEditorAction.class);

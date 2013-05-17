@@ -2654,4 +2654,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter a name for this action..." })
     String InfoPanel_InfoPanel_customname_help();
 
+    @Default(lngs = { "en" }, values = { "Rename" })
+    String RenameAction_RenameAction();
+
+    @Default(lngs = { "en" }, values = { "Rename the currently selected Link or Package" })
+    String RenameAction_RenameAction_tt();
+
 }

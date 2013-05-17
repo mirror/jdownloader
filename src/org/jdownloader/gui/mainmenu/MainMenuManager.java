@@ -28,9 +28,11 @@ import org.jdownloader.gui.mainmenu.container.AboutMenuContainer;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
 import org.jdownloader.gui.mainmenu.container.FileMenuContainer;
+import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.mainmenu.container.SettingsMenuContainer;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 
@@ -116,6 +118,9 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
         // mr.add(createAddonsMenu());
         mr.add(createAboutMenu());
 
+        OptionalContainer opt;
+        mr.add(opt = new OptionalContainer());
+        opt.add(RenameAction.class);
         // // add(new EditMenu());
         // add(new SettingsMenu());
         // add(AddonsMenu.getInstance());
