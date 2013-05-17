@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Icon;
 
@@ -74,13 +75,21 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         queue.allowCoreThreadTimeOut(true);
         this.pc = pc;
         asyncRefresh = new DelayedRunnable(queue, 150l, 250l) {
+            AtomicBoolean repainting = new AtomicBoolean(false);
+
             @Override
             public void delayedrun() {
                 new EDTRunner() {
                     @Override
                     protected void runInEDT() {
+                        if (repainting.get()) { return; }
                         /* we just want to repaint */
-                        getTable().repaint();
+                        try {
+                            repainting.set(true);
+                            getTable().repaint();
+                        } finally {
+                            repainting.set(false);
+                        }
                     }
                 };
             }
@@ -240,8 +249,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     /*
-     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of
-     * the new ArrayList
+     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of the new ArrayList
      */
     @Override
     public java.util.List<AbstractNode> sort(final java.util.List<AbstractNode> data, ExtColumn<AbstractNode> column) {

@@ -472,14 +472,14 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
+     * singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
+     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
+     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
+     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
+     * begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -747,7 +747,7 @@ public class OteUploadCom extends PluginForHost {
         String data = br.getRegex("\"data\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
         String expired = br.getRegex("\"expired\"\\s*?:\\s*?\"(\\d+)\"").getMatch(0);
         String trafficLeft = br.getRegex("\"trafficLeft\"\\s*?:\\s*?\"(\\d+)\"").getMatch(0);
-        if (data != null && data.contains("does not")) {
+        if (data != null && data.contains("does not") || expired == null) {
             ai.setStatus("Username/Password wrong?");
             account.setValid(false);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
