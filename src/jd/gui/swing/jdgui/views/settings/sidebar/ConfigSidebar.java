@@ -19,8 +19,10 @@ package jd.gui.swing.jdgui.views.settings.sidebar;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -85,27 +87,27 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
                     if (index >= 0 && getModel().getElementAt(index) instanceof AdvancedSettings) {
                         Point p = indexToLocation(index);
                         if (p != null) {
-                            g2.fillRect(0, p.y, list.getWidth(), 25);
+                            g2.fillRect(0, p.y, list.getWidth(), TreeRenderer.SMALL_DIMENSION.height);
                             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                         }
 
                     } else if (index >= 0 && getModel().getElementAt(index) instanceof ExtensionManager) {
                         Point p = indexToLocation(index);
                         if (p != null) {
-                            g2.fillRect(0, p.y, list.getWidth(), 25);
+                            g2.fillRect(0, p.y, list.getWidth(), TreeRenderer.SMALL_DIMENSION.height);
                             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                         }
 
                     } else {
                         Point p = indexToLocation(index);
                         if (p != null) {
-                            g2.fillRect(0, p.y, getWidth(), 55);
+                            g2.fillRect(0, p.y, getWidth(), TreeRenderer.DIMENSION.height);
 
                             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                         }
                     }
                 }
-
+                ConfigSidebar.this.revalidate();
             }
 
             // public Dimension getPreferredScrollableViewportSize() {
@@ -136,6 +138,22 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
         list.addMouseMotionListener(this);
         list.addMouseListener(this);
         list.setModel(treemodel = new SettingsSidebarModel());
+        // treemodel.addListDataListener(new ListDataListener() {
+        //
+        // @Override
+        // public void intervalRemoved(ListDataEvent e) {
+        // }
+        //
+        // @Override
+        // public void intervalAdded(ListDataEvent e) {
+        // }
+        //
+        // @Override
+        // public void contentsChanged(ListDataEvent e) {
+        // System.out.println("Updated");
+        // revalidate();
+        // }
+        // });
         list.setCellRenderer(new TreeRenderer());
 
         list.setOpaque(false);
@@ -176,7 +194,24 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
         setBackground(null);
         setOpaque(false);
         JScrollPane sp;
-        this.add(sp = new JScrollPane(list));
+
+        this.add(sp = new JScrollPane(list) {
+
+            public Dimension getPreferredSize() {
+                Dimension ret = super.getPreferredSize();
+                Insets borderInsets = getBorder().getBorderInsets(this);
+                ret.width = TreeRenderer.DIMENSION.width + getVerticalScrollBar().getPreferredSize().width + borderInsets.left + borderInsets.right;
+
+                return ret;
+            }
+
+            public Dimension getMinimumSize() {
+                Dimension pref = getPreferredSize();
+                pref.height = 0;
+                return pref;
+            }
+
+        });
 
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
         if (c >= 0) {

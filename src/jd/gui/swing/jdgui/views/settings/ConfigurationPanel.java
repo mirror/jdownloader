@@ -31,7 +31,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     private MigPanel                       right;
 
     public ConfigurationPanel() {
-        super(new MigLayout("ins 0", "[200!,grow,fill][grow,fill]", "[grow,fill]"));
+        super(new MigLayout("ins 0", "[][grow,fill]", "[grow,fill]"));
         sidebar = new ConfigSidebar();
         right = new RightPanel();
 
@@ -59,18 +59,22 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
             sidebar.updateAddons();
         }
         if (sidebar.getSelectedPanel() == null) {
-            Class<?> selected = null;
-            try {
-                String panelClass = cfg.getActiveConfigPanel();
-                selected = Class.forName(panelClass);
-            } catch (Throwable e) {
+            restoreSelection();
+        }
+    }
 
-            }
-            if (selected != null) {
-                sidebar.setSelectedTreeEntry(selected);
-            } else {
-                sidebar.setSelectedTreeEntry(ConfigPanelGeneral.class);
-            }
+    public void restoreSelection() {
+        Class<?> selected = null;
+        try {
+            String panelClass = cfg.getActiveConfigPanel();
+            selected = Class.forName(panelClass);
+        } catch (Throwable e) {
+
+        }
+        if (selected != null) {
+            sidebar.setSelectedTreeEntry(selected);
+        } else {
+            sidebar.setSelectedTreeEntry(ConfigPanelGeneral.class);
         }
     }
 

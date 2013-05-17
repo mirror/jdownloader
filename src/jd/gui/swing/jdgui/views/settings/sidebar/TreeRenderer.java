@@ -41,9 +41,9 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
 
     private static final long          serialVersionUID = -3927390875702401200L;
 
-    private static final Dimension     SMALL_DIMENSION  = new Dimension(0, 25);
+    public static final Dimension      SMALL_DIMENSION  = new Dimension(0, 25);
 
-    public static Dimension            DIMENSION        = new Dimension(0, 55);
+    public static final Dimension      DIMENSION        = new Dimension(0, 35);
 
     private final Font                 orgFont;
     private final Font                 boldFont;
@@ -70,6 +70,10 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
         lbl.setHorizontalAlignment(JLabel.CENTER);
         orgFont = lbl.getFont();
         boldFont = lbl.getFont().deriveFont(Font.BOLD);
+        lbl.setFont(boldFont);
+        lbl.setText("DUMMY");
+        // we need to update the height here - if font scale faktor is over 100% we need higher rows
+        TreeRenderer.DIMENSION.height += lbl.getPreferredSize().getHeight();
 
         // this.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
         f = lbl.getForeground();
@@ -93,6 +97,7 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
     }
 
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+
         this.setBorder(null);
         if (value == null) return this;
         if (value instanceof CheckBoxedEntry) {
@@ -104,6 +109,7 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
             lbl.setVerticalTextPosition(JLabel.CENTER);
             lbl.setHorizontalTextPosition(JLabel.RIGHT);
             lbl.setHorizontalAlignment(JLabel.CENTER);
+
             setPreferredSize(SMALL_DIMENSION);
             this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, selectedBackground));
         } else if (value instanceof ExtensionManager) {
@@ -124,6 +130,10 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
             lbl.setVerticalTextPosition(JLabel.BOTTOM);
             lbl.setHorizontalTextPosition(JLabel.CENTER);
             lbl.setHorizontalAlignment(JLabel.CENTER);
+
+            setPreferredSize(null);
+            Dimension pre = getPreferredSize();
+            TreeRenderer.DIMENSION.width = Math.max(TreeRenderer.DIMENSION.width, pre.width);
             setPreferredSize(TreeRenderer.DIMENSION);
 
         } else if (value instanceof ExtensionHeader) {

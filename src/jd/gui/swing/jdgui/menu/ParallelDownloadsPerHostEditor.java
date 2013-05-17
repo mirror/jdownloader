@@ -34,7 +34,7 @@ public class ParallelDownloadsPerHostEditor extends MenuEditor {
 
         add(lbl);
         add(new ExtCheckBox(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED, lbl, spinner), "width 20!");
-        add(spinner, "width 90!,height 20!");
+        add(spinner, "height " + Math.max(spinner.getEditor().getPreferredSize().height, 20) + "!,width " + getEditorWidth() + "!");
     }
 
 }

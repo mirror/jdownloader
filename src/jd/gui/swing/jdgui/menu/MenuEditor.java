@@ -30,7 +30,7 @@ public class MenuEditor extends MigPanel implements ToolTipHandler {
     }
 
     public MenuEditor(boolean b) {
-        super("ins 0", "6[grow,fill][90!,fill]", "[]");
+        super("ins 0", "6[grow,fill][fill]", "[]");
         shrink = b;
         this.tooltipFactory = new TooltipTextDelegateFactory(this);
 
@@ -60,6 +60,11 @@ public class MenuEditor extends MigPanel implements ToolTipHandler {
         return false;
     }
 
+    protected int getEditorWidth() {
+
+        return new JLabel("500.00 KB/s").getPreferredSize().width + 30;
+    }
+
     @Override
     public int getTooltipDelay(Point mousePositionOnScreen) {
         SwingUtilities.convertPointFromScreen(mousePositionOnScreen, this);
@@ -76,5 +81,9 @@ public class MenuEditor extends MigPanel implements ToolTipHandler {
     @Override
     public boolean isTooltipWithoutFocusEnabled() {
         return true;
+    }
+
+    public int getPreferredEditorWidth() {
+        return 100;
     }
 }

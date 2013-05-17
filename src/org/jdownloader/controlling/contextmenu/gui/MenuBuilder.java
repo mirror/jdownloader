@@ -51,7 +51,7 @@ public class MenuBuilder {
                 for (int i = 0; i < submenu.getText().length(); i++) {
 
                     mnem = org.appwork.swing.action.BasicAction.charToMnemonic(submenu.getText().charAt(i));
-                    if (!isMnemonicUsed(root, mnem)) {
+                    if (mnem > 0 && !isMnemonicUsed(root, mnem)) {
                         submenu.setMnemonic(mnem);
                         break;
                     }

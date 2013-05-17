@@ -105,7 +105,7 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
         final MigPanel settings = new MigPanel("ins 2 0 0 0 ,wrap 3", "[][fill][fill]", "[]2[]");
         SwingUtils.setOpaque(settings, false);
         settings.add(new JSeparator(JSeparator.VERTICAL), "spany,pushy,growy");
-        settings.add(new ChunksEditor(true), "height 20!");
+        settings.add(new ChunksEditor(true));
         settings.add(new ParalellDownloadsEditor(true));
         settings.add(new ParallelDownloadsPerHostEditor(true));
         settings.add(new SpeedlimitEditor(true));

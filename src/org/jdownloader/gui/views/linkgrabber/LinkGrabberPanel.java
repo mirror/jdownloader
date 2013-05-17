@@ -1,6 +1,8 @@
 package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -321,10 +323,13 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             if (sidebarScrollPane == null) {
                 createSidebar();
             }
-            this.add(tableScrollPane, "pushx,growx");
-            add(sidebarScrollPane, "width 240!");
+
+            Dimension a = tableScrollPane.getPreferredSize();
+            Dimension b = sidebarScrollPane.getPreferredSize();
+            this.add(tableScrollPane, "");
+            add(sidebarScrollPane);
         } else {
-            this.add(tableScrollPane, "pushx,growx,spanx");
+            this.add(tableScrollPane, "spanx");
 
         }
 
@@ -336,6 +341,19 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         sidebar = new LinkGrabberSidebar(table);
 
         sidebarScrollPane = new HeaderScrollPane(sidebar) {
+            public Dimension getPreferredSize() {
+                Dimension ret = super.getPreferredSize();
+                Insets borderInsets = getBorder().getBorderInsets(sidebarScrollPane);
+                ret.width = sidebar.getPreferredSize().width + getVerticalScrollBar().getPreferredSize().width + borderInsets.left + borderInsets.right;
+
+                return ret;
+            }
+
+            public Dimension getMinimumSize() {
+                Dimension pref = getPreferredSize();
+                pref.height = 0;
+                return pref;
+            }
 
             /**
              * 
@@ -356,7 +374,8 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             sidebarScrollPane.setOpaque(true);
 
         }
-        sidebarScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        sidebarScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        sidebarScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         sidebarScrollPane.setColumnHeaderView(new LinkGrabberSideBarHeader(table));
         // ExtButton bt = new ExtButton(new AppAction() {
         // {

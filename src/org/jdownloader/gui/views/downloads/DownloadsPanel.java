@@ -1,11 +1,11 @@
 package org.jdownloader.gui.views.downloads;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JScrollPane;
-import javax.swing.ScrollPaneConstants;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
@@ -82,14 +82,16 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     private void layoutComponents() {
 
         if (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled()) {
-            setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[grow,fill]2[]"));
-            this.add(tableScrollPane, "pushx,growx,spanx");
-            add(getOverView(), "spanx,height 73!");
-            add(bottomBar, "spanx,height 24!");
+            setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]2[]2[]"));
+            this.add(tableScrollPane, "");
+            Dimension p = tableScrollPane.getPreferredSize();
+            // add(Box.createHorizontalGlue());
+            add(getOverView(), "");
+            add(bottomBar, "height 24!");
         } else {
-            setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
-            this.add(tableScrollPane, "pushx,growx,spanx");
-            add(bottomBar, "spanx,height 24!");
+            setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow, fill]2[]"));
+            this.add(tableScrollPane, "");
+            add(bottomBar, "height 24!");
         }
 
     }
@@ -98,10 +100,11 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         if (overView == null) {
             overView = new DownloadOverview(table);
             overViewScrollBar = new DownloadOverviewHeaderScrollPane(overView);
+
             LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(overViewScrollBar);
 
-            overViewScrollBar.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-            overViewScrollBar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+            // overViewScrollBar.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+            // overViewScrollBar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
             overViewScrollBar.setColumnHeaderView(new OverViewHeader() {
 
                 @Override
