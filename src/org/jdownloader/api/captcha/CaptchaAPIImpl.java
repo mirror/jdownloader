@@ -15,6 +15,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.ReusableByteArrayOutputStream;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.Base64OutputStream;
 import org.appwork.utils.net.httpserver.responses.FileResponse;
@@ -41,7 +42,12 @@ public class CaptchaAPIImpl implements CaptchaAPI {
             if (entry.isDone()) continue;
             if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
                 CaptchaJob job = new CaptchaJob();
-                job.setType(entry.getChallenge().getClass().getSimpleName());
+                Class<?> cls = entry.getChallenge().getClass();
+                while (cls != null && StringUtils.isEmpty(job.getType())) {
+                    job.setType(cls.getSimpleName());
+                    cls = cls.getSuperclass();
+                }
+
                 job.setID(entry.getChallenge().getId().getID());
                 job.setHoster(((ImageCaptchaChallenge) entry.getChallenge()).getPlugin().getHost());
                 job.setCaptchaCategory(entry.getChallenge().getTypeID());
