@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
@@ -92,6 +93,8 @@ import org.appwork.utils.swing.dialog.Dialog;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends PluginForDecrypt {
+
+    private static ReentrantLock LOCKDIALOG = new ReentrantLock();
 
     public static class AdsCaptcha {
         private final Browser br;
@@ -672,78 +675,83 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
 
         public synchronized String showDialog(final String parameter) throws Exception {
-            DLURL = parameter;
+            LOCKDIALOG.lock();
             try {
-                parse();
-                load();
-            } catch (final Throwable e) {
-                e.printStackTrace();
-                throw new Exception(e.getMessage());
-            } finally {
+                DLURL = parameter;
                 try {
-                    rcBr.getHttpConnection().disconnect();
+                    parse();
+                    load();
                 } catch (final Throwable e) {
-                }
-            }
-
-            /* Bilderdownload und Verarbeitung */
-            sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte Puzzleteile
-            sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes Hintergrundbild
-
-            if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) return "CANCEL";
-
-            String out = null;
-            ArrayList<Integer> marray = new ArrayList<Integer>();
-
-            final String pS = sscFsmCheckTwo(PARAMS.get("s_s_c_web_server_sign"), PARAMS.get("s_s_c_web_server_sign") + Encoding.Base64Decode("S2hkMjFNNDc="));
-            String mmUrlReq = SERVERSTRING.replaceAll("cjs\\?pS=\\d+&cOut", "mm\\?pS=" + pS + "&cP");
-            mmUrlReq = mmUrlReq + "&mms=" + Math.random() + "&r=" + Math.random();
-
-            if (!isStableEnviroment()) {
-
-                final KeyCaptchaDialog vC = new KeyCaptchaDialog(0, "KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, null, rcBr, mmUrlReq);
-                vC.displayDialog();
-                out = vC.getReturnValue();
-                if (vC.getReturnmask() == 4) {
-                    out = "CANCEL";
-                }
-                marray.addAll(vC.mouseArray);
-
-            } else {
-                final KeyCaptchaDialogForStable vC = new KeyCaptchaDialogForStable("KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, rcBr, mmUrlReq);
-                // Warten bis der KeyCaptcha-Dialog geschlossen ist
-                synchronized (LOCK) {
+                    e.printStackTrace();
+                    throw new Exception(e.getMessage());
+                } finally {
                     try {
-                        LOCK.wait();
-                    } catch (final InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        rcBr.getHttpConnection().disconnect();
+                    } catch (final Throwable e) {
                     }
                 }
-                out = vC.POSITION;
-            }
-            if (out == null) return null;
-            if ("CANCEL".equals(out)) {
-                System.out.println("KeyCaptcha: User aborted captcha dialog.");
+
+                /* Bilderdownload und Verarbeitung */
+                sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte Puzzleteile
+                sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes Hintergrundbild
+
+                if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) return "CANCEL";
+
+                String out = null;
+                ArrayList<Integer> marray = new ArrayList<Integer>();
+
+                final String pS = sscFsmCheckTwo(PARAMS.get("s_s_c_web_server_sign"), PARAMS.get("s_s_c_web_server_sign") + Encoding.Base64Decode("S2hkMjFNNDc="));
+                String mmUrlReq = SERVERSTRING.replaceAll("cjs\\?pS=\\d+&cOut", "mm\\?pS=" + pS + "&cP");
+                mmUrlReq = mmUrlReq + "&mms=" + Math.random() + "&r=" + Math.random();
+
+                if (!isStableEnviroment()) {
+
+                    final KeyCaptchaDialog vC = new KeyCaptchaDialog(0, "KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, null, rcBr, mmUrlReq);
+                    vC.displayDialog();
+                    out = vC.getReturnValue();
+                    if (vC.getReturnmask() == 4) {
+                        out = "CANCEL";
+                    }
+                    marray.addAll(vC.mouseArray);
+
+                } else {
+                    final KeyCaptchaDialogForStable vC = new KeyCaptchaDialogForStable("KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, rcBr, mmUrlReq);
+                    // Warten bis der KeyCaptcha-Dialog geschlossen ist
+                    synchronized (LOCK) {
+                        try {
+                            LOCK.wait();
+                        } catch (final InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    }
+                    out = vC.POSITION;
+                }
+                if (out == null) return null;
+                if ("CANCEL".equals(out)) {
+                    System.out.println("KeyCaptcha: User aborted captcha dialog.");
+                    return out;
+                }
+
+                String key = rcBr.getRegex("\\|([0-9a-zA-Z]+)\'\\.split").getMatch(0);
+                if (key == null) key = Encoding.Base64Decode("OTNodk9FZmhNZGU=");
+
+                String cOut = "";
+                for (Integer i : marray) {
+                    if (cOut.length() > 1) cOut += ".";
+                    cOut += String.valueOf(i);
+                }
+
+                SERVERSTRING = SERVERSTRING.replace("cOut=", "cOut=" + sscFsmCheckTwo(out, key) + "..." + cOut + "&cP=");
+                rcBr.clearCookies(rcBr.getHost());
+                out = rcBr.getPage(SERVERSTRING.substring(0, SERVERSTRING.lastIndexOf("%7C")));
+                out = new Regex(out, "s_s_c_setcapvalue\\( \"(.*?)\" \\)").getMatch(0);
+                // validate final response
+                if (!out.matches("[0-9a-f]+\\|[0-9a-f]+\\|http://back\\d+\\.keycaptcha\\.com/swfs/ckc/[0-9a-f-]+\\|[0-9a-f-\\.]+\\|(0|1)")) return null;
                 return out;
+            } finally {
+                LOCKDIALOG.unlock();
             }
-
-            String key = rcBr.getRegex("\\|([0-9a-zA-Z]+)\'\\.split").getMatch(0);
-            if (key == null) key = Encoding.Base64Decode("OTNodk9FZmhNZGU=");
-
-            String cOut = "";
-            for (Integer i : marray) {
-                if (cOut.length() > 1) cOut += ".";
-                cOut += String.valueOf(i);
-            }
-
-            SERVERSTRING = SERVERSTRING.replace("cOut=", "cOut=" + sscFsmCheckTwo(out, key) + "..." + cOut + "&cP=");
-            rcBr.clearCookies(rcBr.getHost());
-            out = rcBr.getPage(SERVERSTRING.substring(0, SERVERSTRING.lastIndexOf("%7C")));
-            out = new Regex(out, "s_s_c_setcapvalue\\( \"(.*?)\" \\)").getMatch(0);
-            // validate final response
-            if (!out.matches("[0-9a-f]+\\|[0-9a-f]+\\|http://back\\d+\\.keycaptcha\\.com/swfs/ckc/[0-9a-f-]+\\|[0-9a-f-\\.]+\\|(0|1)")) return null;
-            return out;
         }
 
         private String sscFsmCheckFour(String arg0, final String arg1) {
@@ -1465,7 +1473,8 @@ public class LnkCrptWs extends PluginForDecrypt {
     }
 
     /**
-     * if packed js contain 'soft hyphen' encoding as \u00ad(unicode) or %C2%AD(uft-8) then result is broken in rhino decodeURIComponent('\u00ad') --> is empty.
+     * if packed js contain 'soft hyphen' encoding as \u00ad(unicode) or %C2%AD(uft-8) then result is broken in rhino
+     * decodeURIComponent('\u00ad') --> is empty.
      */
     public static class JavaScriptUnpacker {
 
