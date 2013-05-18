@@ -89,8 +89,7 @@ public class UpstoRe extends PluginForHost {
             br.postPage(downloadLink.getDownloadURL(), "free=Slow+download&hash=" + fid);
             if (br.containsHTML(">This file is available only for Premium users<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("hoster.upstore.premiumonly", "Only downloadable for premium users"));
             if (br.containsHTML(">Server for free downloads is overloaded<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 30 * 60 * 1000l);
-            // Same server error (displayed differently) also exists for premium
-            // users
+            // Same server error (displayed differently) also exists for premium users
             if (br.containsHTML(">Server with file not found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             // Waittime can be skipped
             final long timeBefore = System.currentTimeMillis();

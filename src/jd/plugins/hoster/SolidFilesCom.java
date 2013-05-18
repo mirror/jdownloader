@@ -65,7 +65,12 @@ public class SolidFilesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "download/", true, 1);
+        String dllink = br.getRegex("<a id=\"download-button\"[^\r\n]+href=\"(https?://[^\"']+)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(https?://\\w+\\.sfcdn\\.in/[^\"']+)").getMatch(0);
+            if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
