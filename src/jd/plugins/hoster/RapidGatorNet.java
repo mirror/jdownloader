@@ -56,7 +56,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -581,7 +580,7 @@ public class RapidGatorNet extends PluginForHost {
                 if (dllink == null) dllink = br.getRegex("\\'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
                 if (dllink == null) dllink = br.getRegex("\\'(http://pr\\d+\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
                 if (dllink == null) {
-                    if (br.containsHTML("You have reached daily quota of downloaded information for premium accounts")) {
+                    if (br.containsHTML("You have reached quota|You have reached daily quota of downloaded information for premium accounts")) {
                         logger.info("You have reached daily quota of downloaded information for premium accounts");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
