@@ -1,2 +1,6 @@
 Translator=Prevoditelj
+TranslatorExtensionGuiToggleAction_deselected=Otvori prevoditelja
+TranslatorExtensionGuiToggleAction_deselected_tt=Otvori karticu prevoditelja
+TranslatorExtensionGuiToggleAction_selected=Zatvori prevoditelja
+TranslatorExtensionGuiToggleAction_selected_tt=Zatvori karticu prevoditelja
 description=Ovaj dodatak omogućuje uređivanje JDownloader prijevoda.\r\nZa prevođenje Vam je potreban developer račun.

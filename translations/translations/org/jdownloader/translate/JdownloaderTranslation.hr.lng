@@ -19,6 +19,7 @@ LinkgrabberFilterRule_duplicate=%s1 (kopiranje)
 Main_run_autostart_=Pokretanje preuzimanja
 Main_run_autostart_msg=Preuzimanje će biti pokrenuto za par sekundi...
 Mainstart_now=Pokreni SADA!
+OptionalContainer_OptionalContainer=Više akcija...
 PackagizerSettings_folderbypackage_rule_name=Stvori podmapu po nazivu paketa
 RemoveAction_actionPerformed_rly_msg=Želite li obrisati odabrane uvjete?
 SetDownloadFolderAction_actionPerformed_=Razdvoji paket %s1
