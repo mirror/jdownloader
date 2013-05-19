@@ -84,7 +84,6 @@ public class DlPrtcCom extends PluginForDecrypt {
         prepBrowser(br);
         try {
             br.getPage(parameter);
-            correctBR();
             if (br.containsHTML(">Unfortunately, the link you are looking for is not found")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
@@ -103,15 +102,11 @@ public class DlPrtcCom extends PluginForDecrypt {
                         String captchaLink = getCaptchaLink();
                         captchaLink = "http://www.dl-protect.com" + captchaLink;
                         String code = getCaptchaCode(captchaLink, param);
-                        importantForm.put("secure", code);
+                        importantForm.put("secure_oo", code);
                     }
-                    // this is wrong
                     importantForm.put("i", Encoding.Base64Encode(String.valueOf(System.currentTimeMillis())));
                     br.submitForm(importantForm);
-                    if (getCaptchaLink() != null || br.containsHTML(CAPTCHAFAILED) || br.containsHTML(PASSWORDFAILED) || br.containsHTML(PASSWORDTEXT)) {
-                        correctBR();
-                        continue;
-                    }
+                    if (getCaptchaLink() != null || br.containsHTML(CAPTCHAFAILED) || br.containsHTML(PASSWORDFAILED) || br.containsHTML(PASSWORDTEXT)) continue;
                     break;
                 }
                 if (br.containsHTML(CAPTCHAFAILED) && br.containsHTML(CAPTCHAFAILED)) throw new DecrypterException("Wrong captcha and password entered!");
@@ -162,7 +157,8 @@ public class DlPrtcCom extends PluginForDecrypt {
 
     }
 
-    private String getCaptchaLink() {
+    private String getCaptchaLink() throws Exception {
+        correctBR();
         // proper captcha url seem to have 32 (md5) char length
         final String captchaLink = new Regex(correctedBR, "src=\"(/captcha\\.php\\?uid=[a-z0-9]{32})\"").getMatch(0);
         return captchaLink;
