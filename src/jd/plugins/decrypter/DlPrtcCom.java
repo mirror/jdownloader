@@ -27,6 +27,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -128,6 +129,9 @@ public class DlPrtcCom extends PluginForDecrypt {
                 continueForm.put("submitform", "");
             }
             br.submitForm(continueForm);
+        }
+        if (JDHash.getMD5(JDDETECTED).equals(JDHash.getMD5(br.toString()))) {
+            rmCookie(parameter);
         }
         final String linktext = br.getRegex("class=\"divlink link\" id=\"slinks\"><a(.*?)valign=\"top\" align=\"right\" width=\"500px\" height=\"280px\"><pre style=\"text\\-align:center\">").getMatch(0);
         if (linktext == null) {
