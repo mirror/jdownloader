@@ -49,8 +49,10 @@ public class DlPrtcCom extends PluginForDecrypt {
     private static final String  CAPTCHAFAILED  = ">The security code is incorrect";
     private static final String  PASSWORDTEXT   = ">Password :";
     private static final String  PASSWORDFAILED = ">The password is incorrect";
+    private static final String  JDDETECTED     = "JDownloader is prohibited.";
     private static String        agent          = null;
-    private static AtomicBoolean loaded         = new AtomicBoolean(false);
+    private static AtomicBoolean mfLoaded       = new AtomicBoolean(false);
+    private boolean              coLoaded       = false;
     private String               correctedBR    = "";
 
     private Browser prepBrowser(Browser prepBr) {
@@ -58,9 +60,9 @@ public class DlPrtcCom extends PluginForDecrypt {
         if (agent == null) agent = this.getPluginConfig().getStringProperty("agent", null);
         if (agent == null) {
             /* we first have to load the plugin, before we can reference it */
-            if (loaded.equals(false)) {
+            if (mfLoaded.equals(false)) {
                 JDUtilities.getPluginForHost("mediafire.com");
-                loaded.set(true);
+                mfLoaded.set(true);
             }
             agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
@@ -72,86 +74,83 @@ public class DlPrtcCom extends PluginForDecrypt {
             for (Map.Entry<String, String> entry : cookies.entrySet()) {
                 prepBr.setCookie(this.getHost(), entry.getKey(), entry.getValue());
             }
+            coLoaded = true;
         }
         // Prefer English language
+        if (!coLoaded) prepBr.setCookie(this.getHost(), "l", "en");
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         return prepBr;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceAll("dl\\-protect\\.com/(en|fr)/", "dl-protect.com/").replace("dl-protect.com/", "dl-protect.com/en/");
+        String parameter = param.toString().replaceAll("dl\\-protect\\.com/(en|fr)/", "dl-protect.com/");
         prepBrowser(br);
-        try {
-            br.getPage(parameter);
-            if (br.containsHTML(">Unfortunately, the link you are looking for is not found")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            if (br.containsHTML(PASSWORDTEXT) || br.containsHTML(CAPTCHATEXT)) {
-                for (int i = 0; i <= 5; i++) {
-                    Form importantForm = getForm();
-                    if (importantForm == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
-                    }
-                    if (br.containsHTML(PASSWORDTEXT)) {
-                        importantForm.put("pwd", getUserInput(null, param));
-                    }
-                    if (br.containsHTML(CAPTCHATEXT)) {
-                        String captchaLink = getCaptchaLink();
-                        captchaLink = "http://www.dl-protect.com" + captchaLink;
-                        String code = getCaptchaCode(captchaLink, param);
-                        importantForm.put("secure_oo", code);
-                    }
-                    importantForm.put("i", Encoding.Base64Encode(String.valueOf(System.currentTimeMillis())));
-                    br.submitForm(importantForm);
-                    if (getCaptchaLink() != null || br.containsHTML(CAPTCHAFAILED) || br.containsHTML(PASSWORDFAILED) || br.containsHTML(PASSWORDTEXT)) continue;
-                    break;
-                }
-                if (br.containsHTML(CAPTCHAFAILED) && br.containsHTML(CAPTCHAFAILED)) throw new DecrypterException("Wrong captcha and password entered!");
-                if (getCaptchaLink() != null || br.containsHTML(CAPTCHAFAILED) || br.containsHTML(CAPTCHATEXT)) throw new DecrypterException(DecrypterException.CAPTCHA);
-                if (br.containsHTML(PASSWORDTEXT) || br.containsHTML(PASSWORDFAILED)) throw new DecrypterException(DecrypterException.PASSWORD);
-            }
-
-            if (br.containsHTML(">Please click on continue to see the content")) {
-                Form continueForm = getForm();
-                if (continueForm == null) {
+        br.getPage(parameter);
+        if (br.containsHTML(">Unfortunately, the link you are looking for is not found")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(PASSWORDTEXT) || br.containsHTML(CAPTCHATEXT)) {
+            for (int i = 0; i <= 5; i++) {
+                Form importantForm = getForm();
+                if (importantForm == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                br.submitForm(continueForm);
+                if (br.containsHTML(PASSWORDTEXT)) {
+                    importantForm.put("pwd", getUserInput(null, param));
+                }
+                if (br.containsHTML(CAPTCHATEXT)) {
+                    String captchaLink = getCaptchaLink();
+                    captchaLink = "http://www.dl-protect.com" + captchaLink;
+                    String code = getCaptchaCode(captchaLink, param);
+                    importantForm.put("secure_oo", code);
+                }
+                importantForm.put("i", Encoding.Base64Encode(String.valueOf(System.currentTimeMillis())));
+                br.submitForm(importantForm);
+                if (getCaptchaLink() != null || br.containsHTML(CAPTCHAFAILED) || br.containsHTML(PASSWORDFAILED) || br.containsHTML(PASSWORDTEXT)) continue;
+                break;
             }
-            final String linktext = br.getRegex("class=\"divlink link\" id=\"slinks\"><a(.*?)valign=\"top\" align=\"right\" width=\"500px\" height=\"280px\"><pre style=\"text\\-align:center\">").getMatch(0);
-            if (linktext == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            final String[] links = new Regex(linktext, "href=\"([^\"\\']+)\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (String dl : links)
-                decryptedLinks.add(createDownloadlink(dl));
-
-            // saving session info can result in you not having to enter a captcha for each new link viewed!
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = br.getCookies(this.getHost());
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            this.getPluginConfig().setProperty("cookies", cookies);
-            this.getPluginConfig().setProperty("agent", agent);
-            this.getPluginConfig().save();
-
-        } catch (NullPointerException e) {
-            this.getPluginConfig().setProperty("cookies", Property.NULL);
-            this.getPluginConfig().setProperty("agent", Property.NULL);
-            this.getPluginConfig().save();
-            logger.warning("No longer using previously saved session information!, please try adding the link again! : " + parameter);
-            throw e;
+            if (br.containsHTML(CAPTCHAFAILED) && br.containsHTML(CAPTCHAFAILED)) throw new DecrypterException("Wrong captcha and password entered!");
+            if (getCaptchaLink() != null || br.containsHTML(CAPTCHAFAILED) || br.containsHTML(CAPTCHATEXT)) throw new DecrypterException(DecrypterException.CAPTCHA);
+            if (br.containsHTML(PASSWORDTEXT) || br.containsHTML(PASSWORDFAILED)) throw new DecrypterException(DecrypterException.PASSWORD);
         }
+
+        if (br.containsHTML(">Please click on continue to see the content")) {
+            Form continueForm = getForm();
+            if (continueForm == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            if (coLoaded) {
+                continueForm.remove("submitform");
+                continueForm.put("submitform", "");
+            }
+            br.submitForm(continueForm);
+        }
+        final String linktext = br.getRegex("class=\"divlink link\" id=\"slinks\"><a(.*?)valign=\"top\" align=\"right\" width=\"500px\" height=\"280px\"><pre style=\"text\\-align:center\">").getMatch(0);
+        if (linktext == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        final String[] links = new Regex(linktext, "href=\"([^\"\\']+)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        for (String dl : links)
+            decryptedLinks.add(createDownloadlink(dl));
+
+        // saving session info can result in you not having to enter a captcha for each new link viewed!
+        final HashMap<String, String> cookies = new HashMap<String, String>();
+        final Cookies add = br.getCookies(this.getHost());
+        for (final Cookie c : add.getCookies()) {
+            cookies.put(c.getKey(), c.getValue());
+        }
+        this.getPluginConfig().setProperty("cookies", cookies);
+        this.getPluginConfig().setProperty("agent", agent);
+        this.getPluginConfig().save();
 
         return decryptedLinks;
 
@@ -190,6 +189,14 @@ public class DlPrtcCom extends PluginForDecrypt {
                 }
             }
         }
+    }
+
+    private void rmCookie(String parameter) {
+        logger.warning("No longer using previously saved session information!, please try adding the link again! : " + parameter);
+        this.getPluginConfig().setProperty("cookies", Property.NULL);
+        this.getPluginConfig().setProperty("agent", Property.NULL);
+        this.getPluginConfig().save();
+        coLoaded = false;
     }
 
     /* NO OVERRIDE!! */
