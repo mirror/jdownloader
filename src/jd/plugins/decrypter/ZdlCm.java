@@ -21,13 +21,14 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.nutils.JDHash;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Zoodl.com" }, urls = { "http://[\\w\\.]*?zoodl\\.com/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zoodl.com" }, urls = { "http://[\\w\\.]*?zoodl\\.com/\\d+" }, flags = { 0 })
 public class ZdlCm extends PluginForDecrypt {
 
     public ZdlCm(PluginWrapper wrapper) {
@@ -41,6 +42,11 @@ public class ZdlCm extends PluginForDecrypt {
         String decLink;
 
         br.getPage(param);
+
+        if (JDHash.getMD5(br.toString()).equals("0055ef2a0f3890e671813d45084142f8")) {
+            // results is zoodl.com, effectively returning back to there own domain
+            return decryptedLinks;
+        }
 
         if (br.containsHTML("is password protected</td>")) {
             for (int retry = 1; retry <= 5; retry++) {

@@ -52,8 +52,8 @@ public class ZaycevNet extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("windowTitle: \\'Добавление комментария ([^<>\"/]*?)\\'").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>/\"]*?) скачать бесплатно mp3 download скачать без регистрации").getMatch(0);
+        String filename = br.getRegex("\\{ windowTitle:'Добавление комментария ([^']+)' \\}").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h6>Загрузка mp3 : (.*?)</h6>").getMatch(0);
         String filesize = br.getRegex("class=\"track\\-file\\-info__size\">Размер: ([^<>\"]*?)<meta").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()) + ".mp3");
