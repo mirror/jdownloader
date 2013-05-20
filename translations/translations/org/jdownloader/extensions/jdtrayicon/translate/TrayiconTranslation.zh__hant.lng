@@ -13,6 +13,7 @@ jd_plugins_optional_jdtrayicon_jdlighttray=系統列
 jd_plugins_optional_jdtrayicon_jdlighttray_description=允許最小化或關閉 JDownloader 到系統匣，和其他相關的功能，例如密碼保護和更多功能。
 plugins_optional_JDLightTray_always=總是
 plugins_optional_JDLightTray_closetotray2=按一下「關閉 <X>」動作
+plugins_optional_JDLightTray_hideifframevisible=如果可以看到視窗，隱藏系統匣圖示
 plugins_optional_JDLightTray_linkgrabberresults=如果擷取到新連結則顯示 JDownloader
 plugins_optional_JDLightTray_minimized=只有當主畫面被最小化時
 plugins_optional_JDLightTray_minimizetotray=按一下「最小化 <_>」動作
