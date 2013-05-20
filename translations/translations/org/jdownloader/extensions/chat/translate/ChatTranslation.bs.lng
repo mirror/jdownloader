@@ -1,3 +1,7 @@
+ChatExtensionGuiToggleAction_deselected=Otvori Razgovor
+ChatExtensionGuiToggleAction_deselected_tt=Otvori Tab za Razgovor
+ChatExtensionGuiToggleAction_selected=Zatvori Razgovor
+ChatExtensionGuiToggleAction_selected_tt=Zatvori Tab za Razgovor
 description=Kontaktirajte JDownloader Razvojni tim i Podršku
 gui_tab_title=%s1 Kanal
 jd_plugins_optional_jdchat_JDChatView_title=JD Podržava Razgovor

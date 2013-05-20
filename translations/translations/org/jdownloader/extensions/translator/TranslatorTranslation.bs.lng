@@ -1,2 +1,6 @@
 Translator=Prevodilac
+TranslatorExtensionGuiToggleAction_deselected=Otvori Prevodilac
+TranslatorExtensionGuiToggleAction_deselected_tt=Otvori Tab Prevodioca
+TranslatorExtensionGuiToggleAction_selected=Zatvori Prevodilac
+TranslatorExtensionGuiToggleAction_selected_tt=Zatvori Tab Prevodioca
 description=Ovaj dodatak može biti korišten za uređivanje JDownloader prijevoda. Za korištenje ovog dodatka morate imati razvojni nalog
