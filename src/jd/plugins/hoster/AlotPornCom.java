@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 public class AlotPornCom extends PluginForHost {
 
     // DEV NOTES
-    // only need uid for valid link!
+    // only need UID for a valid link!
 
     private String DLLINK = null;
 

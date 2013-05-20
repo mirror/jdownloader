@@ -78,6 +78,7 @@ public class SubeMe extends PluginForHost {
     // protocol: no https
     // captchatype: recaptcha, but never used as of vidembed
     // other: no redirects
+    //
 
     private void setConstants(Account account) {
         if (account != null && account.getBooleanProperty("nopremium")) {
