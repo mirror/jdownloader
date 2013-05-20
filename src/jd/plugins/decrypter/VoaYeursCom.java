@@ -51,6 +51,12 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        externID = br.getRegex("src='https?://alotporn\\.com/show\\.php\\?id=(\\d+)[^']+").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("http://alotporn.com/" + externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
         if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
         if (externID != null) {

@@ -42,7 +42,7 @@ public class XHamsterGallery extends PluginForDecrypt {
         final String parameterWihoutHtml = parameter.replace(".html", "");
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("Sorry, no photos found")) {
+        if (br.containsHTML("Sorry, no photos found|>Gallery not found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

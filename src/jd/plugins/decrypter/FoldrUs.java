@@ -21,12 +21,10 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "foldr.us" }, urls = { "http://(www\\.)?foldr\\.us/(foldr\\.php\\?id=|m/)[a-z0-9]+" }, flags = { 0 })
 public class FoldrUs extends PluginForDecrypt {
@@ -40,8 +38,12 @@ public class FoldrUs extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter + "&hl=de");
-        if (br.containsHTML("(Nicht gefunden|Dieser Foldr exisitiert nicht oder er wurde bereits gel)") || br.getURL().contains("not_found.php")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(Nicht gefunden|Dieser Foldr exisitiert nicht oder er wurde bereits gel)") || br.getURL().contains("not_found.php")) {
+            logger.info("Link not found! or has been deleted : " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<title>(.*?) \\| foldr\\.us</title>").getMatch(0);
+        // as of 20130520, site doesn't return any links...
         String[] links = br.getRegex("\"(http://relink\\.us/view\\.php\\?id=.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String dl : links)

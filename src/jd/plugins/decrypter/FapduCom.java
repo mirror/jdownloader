@@ -204,7 +204,7 @@ public class FapduCom extends PluginForDecrypt {
         filename = Encoding.htmlDecode(filename.trim());
         externID = br.getRegex("http://alotporn\\.com/embed\\.php\\?id=(\\d+)\\&").getMatch(0);
         if (externID != null) {
-            final DownloadLink dl = createDownloadlink("http://alotporn.com/" + externID + "/" + filename.replace(" ", "-") + "/");
+            final DownloadLink dl = createDownloadlink("http://alotporn.com/" + externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

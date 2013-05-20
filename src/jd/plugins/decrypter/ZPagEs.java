@@ -30,8 +30,13 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zpag.es" }, urls = { "http://(www\\.)?zpag\\.es/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zpag.es" }, urls = { "http://(www\\.)?zpag\\.es/([a-zA-Z0-9]{4}|\\d+/.+)" }, flags = { 0 })
 public class ZPagEs extends PluginForDecrypt {
+
+    // DEVNOTEs
+    // [a-zA-Z0-9]{4} seems that 4 is the min and max(that could see) from googling.
+    // \\d+/.+ = userid ?? + '/title'
+    // raztoki
 
     public ZPagEs(PluginWrapper wrapper) {
         super(wrapper);

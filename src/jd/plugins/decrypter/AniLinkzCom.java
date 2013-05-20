@@ -38,7 +38,7 @@ public class AniLinkzCom extends PluginForDecrypt {
     private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(youtube\\.com|veoh\\.com|nowvideo\\.eu|videobam\\.com|mp4upload\\.com|gorillavid\\.in|putlocker\\.com)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_UNSUPPORTED_HOSTER       = Pattern.compile("(facebook\\.com|google\\.com)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_SUPPORTED_FILE_EXTENSION = Pattern.compile("(\\.mp4|\\.flv|\\.fll)", Pattern.CASE_INSENSITIVE);
-    private static final String  INVALIDLINKS                     = "http://(www\\.)?anilinkz\\.com/(get|img|dsa|series|forums|files|category|\\?page=|faqs|.*?\\-list|.*?\\-info|\\?random).*?";
+    private static final String  INVALIDLINKS                     = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|series|forums|files|category|\\?page=|faqs|.*?\\-list|.*?\\-info|\\?random).*?";
 
     public AniLinkzCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -61,6 +61,11 @@ public class AniLinkzCom extends PluginForDecrypt {
         final Browser br2 = br.cloneBrowser();
         // set filepackage
         final String filepackage = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+        if (filepackage == null) {
+            logger.warning("filepackage == null: " + parameter);
+            logger.warning("Please report issue to JDownloader Development team!");
+            return null;
+        }
         // get Mirrors
         int mirrorCount = 0;
         final String[] img = br.getRegex("(/images/src\\d+\\.png)").getColumn(0);
@@ -87,16 +92,39 @@ public class AniLinkzCom extends PluginForDecrypt {
             }
             unescape.add(Encoding.htmlDecode(escapeAll));
             dllinks = new Regex(unescape.get(i), "<iframe src=\"(http://[^<>\"]*?)\"").getColumn(0);
+            // we should change this to an array as these can pick up false positives like javascript:void
             if (dllinks == null || dllinks.length == 0) {
-                dllinks = new Regex(unescape.get(i), "(href|url|file)=\"?(.*?)\"").getColumn(1);
+                // this is for daily motion embeded links
+                dllinks = new Regex(unescape.get(i), "src=\"(http[^\"]+dailymotion\\.com/swf/[^\"]+)").getColumn(0);
                 if (dllinks == null || dllinks.length == 0) {
-                    dllinks = new Regex(unescape.get(i), "src=\"(.*?)\"").getColumn(0);
+                    dllinks = new Regex(unescape.get(i), "(href|url|file)=\"?(.*?)\"").getColumn(1);
+                    if (dllinks == null || dllinks.length == 0) {
+                        dllinks = new Regex(unescape.get(i), "src=\"(.*?)\"").getColumn(0);
+                    }
                 }
             }
             if (dllinks.length > 0) {
                 for (String dllink : dllinks) {
                     try {
-                        if (dllink.contains("anilinkz.com/get")) {
+                        if (dllink.contains("auengine.com/embed.php")) {
+                            br2.getPage(dllink);
+                            dllink = br2.getRegex("url:\\s+'([^']+auengine\\.com%2Fvideos%2F[^']+)").getMatch(0);
+                            if (dllink != null) {
+                                dllink = "directhttp://" + Encoding.htmlDecode(dllink);
+                            } else {
+                                break;
+                            }
+                        } else if (dllink.contains("dailymotion.com/swf/")) {
+                            decryptedLinks.add(createDownloadlink(dllink));
+                        } else if (dllink.contains("videofun.me/embed/")) {
+                            br2.getPage(dllink);
+                            dllink = br2.getRegex("url:\\s+\"(https?://[^\"]+videofun\\.me%2Fvideos%2F[^\"]+)").getMatch(0);
+                            if (dllink != null) {
+                                dllink = "directhttp://" + Encoding.htmlDecode(dllink);
+                            } else {
+                                break;
+                            }
+                        } else if (dllink.contains("anilinkz.com/get")) {
                             br2.openGetConnection(dllink);
                             if (br2.getRedirectLocation() != null) {
                                 dllink = "directhttp://" + br2.getRedirectLocation().toString();
@@ -151,9 +179,6 @@ public class AniLinkzCom extends PluginForDecrypt {
                             ext = ext.substring(0, 4);
                         }
                         final DownloadLink dl = createDownloadlink(dllink.trim());
-                        final FilePackage fp = FilePackage.getInstance();
-                        fp.setName(filepackage.trim());
-                        fp.add(dl);
                         dl.setProperty("removeReferer", true);
                         if (ext != null && new Regex(dllink, PATTERN_SUPPORTED_HOSTER).count() == 0) {
                             final String filename = filepackage + "_mirror_" + (i + 1) + "_" + mirror + ext;
@@ -172,6 +197,11 @@ public class AniLinkzCom extends PluginForDecrypt {
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
+
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(filepackage.trim());
+        fp.addLinks(decryptedLinks);
+
         return decryptedLinks;
     }
 

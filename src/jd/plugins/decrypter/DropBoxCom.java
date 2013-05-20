@@ -21,6 +21,7 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -46,6 +47,20 @@ public class DropBoxCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("?dl=1", "");
         br.setCookie("http://dropbox.com", "locale", "en");
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(parameter);
+            if (con.getResponseCode() == 460) {
+                logger.info("Restricted Content: This file is no longer available. For additional information contact Dropbox Support. " + parameter);
+                return decryptedLinks;
+            }
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
         br.getPage(parameter);
         // Handling for single links
         if (br.containsHTML(new Regex(parameter, ".*?(dropbox\\.com/sh/[a-z0-9]+).+").getMatch(0) + "[^<>\"]+" + "dl=1\"")) {

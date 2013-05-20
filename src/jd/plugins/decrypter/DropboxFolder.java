@@ -31,6 +31,7 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/gallery/\\d+/\\d+/[^?]+\\?h=[0-9a-f]+" }, flags = { 0 })
 public class DropboxFolder extends PluginForDecrypt {
+
     private final String[] urlAttrs = { "video_url", "original", "extralarge", "large", "thumbnail" };
 
     public DropboxFolder(PluginWrapper wrapper) {

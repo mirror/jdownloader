@@ -48,10 +48,18 @@ public class ImagesHackUs extends PluginForDecrypt {
         if (br.getURL() != parameter) parameter = br.getURL();
         if (parameter.matches(".*?imageshack\\.us/photo/[^<>\"\\'/]+/\\d+/[^<>\"\\'/]+/?")) {
             String finallink = br.getRegex("<meta property=\"og:image\" content=\"(http://[^<>\"\\']+)\"").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("<link rel=\"image_src\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
             if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                finallink = br.getRegex("<link rel=\"image_src\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+                if (finallink == null) {
+                    // video link (eg .mp4)
+                    finallink = br.getRegex("file=(https?://[^&]+)").getMatch(0);
+                    if (finallink != null) {
+                        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                    } else {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                }
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {

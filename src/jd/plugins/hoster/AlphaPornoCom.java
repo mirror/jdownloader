@@ -91,7 +91,9 @@ public class AlphaPornoCom extends PluginForHost {
             filename = br.getRegex("<meta name=\"description\" content=\"(.*?) \\- video on Alpha Porno \\- Porn Tube\"/>").getMatch(0);
         }
         DLLINK = br.getRegex("video_url:.*?\\('(http://.*?)'\\)").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("video_url:.*?'(http://.*?)'").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf(".")).replaceAll("\\W", "");

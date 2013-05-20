@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -30,8 +30,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alotporn.com" }, urls = { "http://(www\\.)?alotporn\\.com/\\d+/[A-Za-z0-9\\-_]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alotporn.com" }, urls = { "http://(www\\.)?alotporn\\.com/\\d+(/[A-Za-z0-9\\-_]+/)?" }, flags = { 0 })
 public class AlotPornCom extends PluginForHost {
+
+    // DEV NOTES
+    // only need uid for valid link!
 
     private String DLLINK = null;
 
@@ -63,9 +66,17 @@ public class AlotPornCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
-        final String[] values = new Regex(downloadLink.getDownloadURL(), "http://.*?/(\\d+)/([\\w-]+)").getRow(0);
+        br.setFollowRedirects(true);
+        String dURL = null;
+        if (!downloadLink.getDownloadURL().matches("https?://(\\w+\\.)?alotporn\\.com/\\d+/.+")) {
+            br.getPage(downloadLink.getDownloadURL());
+            dURL = br.getURL();
+        } else {
+            dURL = downloadLink.getDownloadURL();
+        }
+        final String[] values = new Regex(dURL, "http://.*?/(\\d+)/([\\w-]+)").getRow(0);
         String filename = values[1].replaceAll("-", "_");
-        br.getPage("http://alotporn.com/modules/video/player/jw/con.php?id=" + values[0]);
+        br.getPage("http://alotporn.com/modules/video/player/nuevo/maconfig.php?id=" + values[0]);
         if (!br.containsHTML("<provider>http</provider>")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin update needed!"); }
         DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
         if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
