@@ -60,21 +60,22 @@ public class FileFactory extends PluginForHost {
     // of this plugin. Adjust COOKIE_HOST to suite future changes,
     // or remove COOKIE_HOST from that section of the script.
 
-    private static final String  FILESIZE          = "id=\"info\" class=\"metadata\">[\t\n\r ]+<span>(.*?) file uploaded";
-    private static AtomicInteger maxPrem           = new AtomicInteger(1);
-    private static final String  NO_SLOT           = ">All free download slots";
-    private static final String  NO_SLOT_USERTEXT  = "No free slots available";
-    private static final String  NOT_AVAILABLE     = "class=\"box error\"";
-    private static final String  SERVERFAIL        = "(<p>Your download slot has expired\\.|Unfortunately the file you have requested cannot be downloaded at this time)";
-    private static final String  LOGIN_ERROR       = "The email or password you have entered is incorrect";
-    private static final String  SERVER_DOWN       = "server hosting the file you are requesting is currently down";
-    private static final String  CAPTCHALIMIT      = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
-    private static Object        LOCK              = new Object();
-    private static final String  COOKIE_HOST       = "http://www.filefactory.com";
-    private String               dlUrl             = null;
-    private static final String  TRAFFICSHARELINK  = "filefactory.com/trafficshare/";
-    private static final String  TRAFFICSHARETEXT  = ">Download with FileFactory TrafficShare<";
-    private static final String  PASSWORDPROTECTED = ">You are trying to access a password protected file";
+    private static final String  FILESIZE           = "id=\"info\" class=\"metadata\">[\t\n\r ]+<span>(.*?) file uploaded";
+    private static AtomicInteger maxPrem            = new AtomicInteger(1);
+    private static final String  NO_SLOT            = ">All free download slots";
+    private static final String  NO_SLOT_USERTEXT   = "No free slots available";
+    private static final String  NOT_AVAILABLE      = "class=\"box error\"";
+    private static final String  SERVERFAIL         = "(<p>Your download slot has expired\\.|Unfortunately the file you have requested cannot be downloaded at this time)";
+    private static final String  LOGIN_ERROR        = "The email or password you have entered is incorrect";
+    private static final String  SERVER_DOWN        = "server hosting the file you are requesting is currently down";
+    private static final String  CAPTCHALIMIT       = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
+    private static Object        LOCK               = new Object();
+    private static final String  COOKIE_HOST        = "http://www.filefactory.com";
+    private String               dlUrl              = null;
+    private static final String  TRAFFICSHARELINK   = "filefactory.com/trafficshare/";
+    private static final String  TRAFFICSHARETEXT   = ">Download with FileFactory TrafficShare<";
+    private static final String  PASSWORDPROTECTED  = ">You are trying to access a password protected file";
+    private static final String  DBCONNECTIONFAILED = "Couldn't get valid connection to DB";
 
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
@@ -98,6 +99,7 @@ public class FileFactory extends PluginForHost {
         if (br.containsHTML(FileFactory.SERVERFAIL)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
         if (br.containsHTML(FileFactory.NOT_AVAILABLE)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.containsHTML(FileFactory.SERVER_DOWN)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
+        if (br.containsHTML(FileFactory.DBCONNECTIONFAILED)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l); }
     }
 
     @Override
