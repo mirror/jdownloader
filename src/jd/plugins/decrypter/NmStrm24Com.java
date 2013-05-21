@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-stream24.com" }, urls = { "http://(www\\.)?(anime\\-stream24\\.com/\\d+/\\d+/.*?|anime\\-stream24\\.info/s/[a-z0-9]+/[a-z0-9]+_\\d+)\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-stream24.com" }, urls = { "http://(www\\.)?(anime\\-stream24\\.(com|tv)/\\d+/\\d+/.*?|anime\\-stream24\\.info/s/[a-z0-9]+/[a-z0-9]+_\\d+)\\.html" }, flags = { 0 })
 public class NmStrm24Com extends PluginForDecrypt {
 
     public NmStrm24Com(PluginWrapper wrapper) {
@@ -122,6 +122,9 @@ public class NmStrm24Com extends PluginForDecrypt {
         if (externID != null) { return "http://www.mixturecloud.com/media/" + externID; }
         // For videozer.com, rutube.ru and probably more
         externID = new Regex(fragment, "name=\"movie\" value=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) { return externID; }
+        // Redirect to other domain?
+        externID = new Regex(fragment, "\"(http://(www\\.)?anime\\-stream24\\.tv/[^<>\"]*?)\" target=\"_blank\">Hier klicken um die Folge anzuschauen</a>").getMatch(0);
         if (externID != null) { return externID; }
         // Many directlinks or embed links are in here
         externID = new Regex(fragment, "flashvars=\\'file=(http://[^<>\"]*?)\\&").getMatch(0);

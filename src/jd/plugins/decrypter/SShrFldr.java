@@ -27,7 +27,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 // this plugin supports 'folders' and 'other files of this uploader'.
 
@@ -45,8 +44,14 @@ public class SShrFldr extends PluginForDecrypt {
         br.setCookie("http://www.crocko.com", "language", "en");
         br.setCustomCharset("utf-8");
         br.getPage(parameter);
-        if (br.containsHTML(">Error 404: Page not found<|No files in this folder|Folder not found|>the page you\\'re looking for <")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Either incorrect URL, folder or owner no longer exists, empty folder."));
-        if (br.containsHTML("Please wait a few seconds and try again")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Server error, please try again."));
+        if (br.containsHTML(">Error 404: Page not found<|No files in this folder|Folder not found|>the page you\\'re looking for <")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("Please wait a few seconds and try again")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML("<label>Password:</label> <input")) {
             for (int i = 0; i <= 3; i++) {
                 final String passCode = getUserInput("Enter password for: " + parameter, param);

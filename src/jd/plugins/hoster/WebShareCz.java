@@ -19,7 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "https?://(www\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}\\-)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "https?://(www\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}|#/file/[a-z0-9]+)" }, flags = { 0 })
 public class WebShareCz extends PluginForHost {
 
     public WebShareCz(PluginWrapper wrapper) {
@@ -46,20 +46,33 @@ public class WebShareCz extends PluginForHost {
         return -1;
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload("https://webshare.cz/#/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + "/");
+    }
+
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("https://webshare.cz/api/file_info/", "wst=&ident=" + getFID(link));
+        if (br.containsHTML("<status>FATAL</status>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = getXMLtagValue("name");
+        final String filesize = getXMLtagValue("size");
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        String dllink = br.getRegex("<a style=\"text-decoration: none;\" id=\"download_link\" href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(https?://dl\\d+\\.webshare\\.cz/\\d+/[A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
-            if (dllink == null) {
-                String fun = br.getRegex("var l\\s?=\\s?\"?\'?(.*?)\'?\"?\\;").getMatch(0);
-                dllink = fun != null ? Encoding.Base64Decode(fun) : null;
-            }
-        }
+        br.postPage("https://webshare.cz/api/file_link/", "wst=&ident=" + getFID(downloadLink));
+        final String dllink = getXMLtagValue("link");
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("(>Požadovaný soubor nebyl nalezen|>Requested file not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -68,19 +81,12 @@ public class WebShareCz extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Soubor nenalezen")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h3>Stahujete soubor: </h3>[\t\n\r ]+<div class=\"textbox\">([^<>\"\\']+)</div>").getMatch(0);
-        String filesize = br.getRegex("<h3>Velikost souboru je: </h3>[\t\n\r ]+<div class=\"textbox\">([^<>\"\\']+)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    private String getXMLtagValue(final String tagname) {
+        return br.getRegex("<" + tagname + ">([^<>\"]*?)</" + tagname + ">").getMatch(0);
+    }
+
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "file/([A-Za-z0-9]+)/").getMatch(0);
     }
 
     @Override

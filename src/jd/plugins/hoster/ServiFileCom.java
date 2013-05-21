@@ -189,15 +189,18 @@ public class ServiFileCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        String getLink = br.getRegex(GETLINKREGEX).getMatch(0);
-        if (getLink == null) getLink = br.getRegex(GETLINKREGEX2).getMatch(0);
-        if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(getLink);
+        if (!br.getURL().contains("/get/")) {
+            String getLink = br.getRegex(GETLINKREGEX).getMatch(0);
+            if (getLink == null) getLink = br.getRegex(GETLINKREGEX2).getMatch(0);
+            if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(getLink);
+        }
         // No multiple connections possible for premiumusers
         Form form = new Form();
         form.setMethod(MethodType.POST);
-        form.setAction(getLink);
+        form.setAction(br.getURL());
         form.put("task", "download");
         br.setFollowRedirects(true);
         boolean resume = true;

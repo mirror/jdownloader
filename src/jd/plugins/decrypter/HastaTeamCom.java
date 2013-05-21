@@ -27,7 +27,6 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -35,7 +34,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hastateam.com" }, urls = { "http://(www\\.)?hastateam\\.com/forum/viewtopic\\.php\\?f=\\d+\\&t=\\d+" }, flags = { 0 })
 public class HastaTeamCom extends PluginForDecrypt {
@@ -81,9 +79,9 @@ public class HastaTeamCom extends PluginForDecrypt {
         Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
         if (aa == null) {
             String username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + this.getHost() + " :");
-            if (username == null) throw new DecrypterException(JDL.L("plugins.decrypter.hastateamcom.nousername", "Username not entered!"));
+            if (username == null) return false;
             String password = UserIO.getInstance().requestInputDialog("Enter password for " + this.getHost() + " :");
-            if (password == null) throw new DecrypterException(JDL.L("plugins.decrypter.hastateamcom.nopassword", "Password not entered!"));
+            if (password == null) return false;
             aa = new Account(username, password);
         }
         try {

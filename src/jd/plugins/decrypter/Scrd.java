@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -74,7 +75,12 @@ public class Scrd extends PluginForDecrypt {
                 rc.load();
                 final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
                 final String c = this.getCaptchaCode(cf, param);
-                rc.setCode(c);
+                try {
+                    rc.setCode(c);
+                } catch (final BrowserException e) {
+                    logger.info("Failed to decrypt link because of a server error: " + parameter);
+                    return decryptedLinks;
+                }
                 if (br.containsHTML("Sicherheitscode")) {
                     continue;
                 }

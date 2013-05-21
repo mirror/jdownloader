@@ -67,7 +67,14 @@ public class HdMxTpsCom extends PluginForDecrypt {
                 finallink = br.getRegex("<br class=\"clearfloat\">[\t\n\r ]+<a href=\"(http.*?)\"").getMatch(0);
             }
         }
-        if (br.containsHTML("<title> \\-  // Free Download @ HDMixtapes\\.com </title>")) return decryptedLinks;
+        if (br.containsHTML("<title> \\-  // Free Download @ HDMixtapes\\.com </title>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("<span style=\"font\\-size:30px; color:#f5ffa5;\">New Singles</span>")) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
         if (finallink == null) {
             finallink = br.getRegex("<div style=\"margin-top:40px;\">[\t\n\r ]+<a href=\"(http.*?)\"").getMatch(0);
             if (finallink == null) {

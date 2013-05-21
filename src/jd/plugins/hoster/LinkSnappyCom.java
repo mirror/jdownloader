@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -30,6 +29,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -88,11 +88,13 @@ public class LinkSnappyCom extends PluginForHost {
         ac.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd MMMM yyyy", Locale.ENGLISH));
 
         // now it's time to get all supported hosts
-        getPageSecure("http://www.linksnappy.com/index.php?act=download");
-        hosts = br.getRegex("images/filehosts/small/([a-z0-9\\-\\.]+)\\.png\\) left no\\-repeat;\">OK</li>").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
-        if (hosts != null) {
-            supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=FILEHOSTS");
+        final String hostText = br.getRegex("\\{\"status\":\"OK\",\"error\":false,\"return\":\\{(.*?\\})\\}\\}").getMatch(0);
+        hosts = hostText.split("\\},");
+        for (final String hostInfo : hosts) {
+            final String host = new Regex(hostInfo, "\"([^<>\"]*?)\":\\{\"Status\":\"1\"").getMatch(0);
+            if (host != null) supportedHosts.add(host);
         }
         if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
             if (!supportedHosts.contains("uploaded.net")) {

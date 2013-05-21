@@ -41,7 +41,12 @@ public class DropboxFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getPage(parameter);
+        if (br.containsHTML("<div id=\"errorbox\">")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String fpName = br.getRegex("<h2>(?:Pictures|Fotos) in '(.*?)'</h2>").getMatch(0);
         final String[] links = br.getRegex("photos\\.push\\(\\{(.*?)\\}\\);").getColumn(0);
         if (links == null || links.length == 0) {
