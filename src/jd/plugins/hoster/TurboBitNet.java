@@ -721,7 +721,7 @@ public class TurboBitNet extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
-                account.setProperty("UA", UA);
+                account.setProperty("UA", UA.toString());
             } catch (final PluginException e) {
                 account.setProperty("UA", null);
                 account.setProperty("cookies", null);
