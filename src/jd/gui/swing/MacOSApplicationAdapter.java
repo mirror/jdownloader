@@ -16,13 +16,16 @@
 
 package jd.gui.swing;
 
+import java.awt.Image;
 import java.io.File;
 
 import javax.swing.JFrame;
 
 import jd.SecondLevelLaunch;
+import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.gui.swing.dialog.AboutDialog;
@@ -33,7 +36,11 @@ import jd.plugins.FilePackage;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.swing.EDTRunner;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.EnumKeyHandler;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -42,6 +49,7 @@ import org.jdownloader.icon.IconBadgePainter;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.MacDockProgressDisplay;
 import org.jdownloader.updatev2.RestartController;
 
 import com.apple.eawt.AboutHandler;
@@ -60,6 +68,9 @@ import com.apple.eawt.QuitHandler;
 import com.apple.eawt.QuitResponse;
 
 public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, PreferencesHandler, AppReOpenedListener, OpenFilesHandler, OpenURIHandler {
+
+    private static Thread       dockUpdater = null;
+    private static final Object LOCK        = new Object();
 
     public static void enableMacSpecial() {
         Application macApplication = Application.getApplication();
@@ -87,52 +98,150 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
             }
 
         });
+        SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
-        new Thread("DockUpdater") {
+            private DownloadWatchdogListener listener;
+
+            @Override
             public void run() {
-                boolean isDefault = true;
-                while (true) {
-                    if (DownloadWatchDog.getInstance().isRunning()) {
-                        switch (JsonConfig.create(GraphicalUserInterfaceSettings.class).getMacDockProgressDisplay()) {
-                        case NOTHING:
-                            if (!isDefault) {
-                                com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", 128));
-                                isDefault = true;
-                            }
-                            break;
-                        case TOTAL_PROGRESS:
-                            isDefault = false;
-                            final AggregatedNumbers aggn = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks()));
-                            new EDTRunner() {
+                IOEQ.add(new Runnable() {
 
-                                @Override
-                                protected void runInEDT() {
-                                    int percent = 0;
-                                    if (aggn.getTotalBytes() > 0) {
-                                        percent = (int) ((aggn.getLoadedBytes() * 100) / aggn.getTotalBytes());
-                                    }
-                                    ;
-                                    com.apple.eawt.Application.getApplication().setDockIconImage(new IconBadgePainter(NewTheme.I().getImage("logo/jd_logo_128_128", 128)).getImage(percent, percent + ""));
-                                    // JDGui.getInstance().getMainFrame().setIconImage(img);
-                                }
+                    @Override
+                    public void run() {
+                        com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", 128));
+                    }
+                });
+                EnumKeyHandler MacDOCKProgressDisplay = JsonConfig.create(GraphicalUserInterfaceSettings.class).getStorageHandler().getKeyHandler("MacDockProgressDisplay", EnumKeyHandler.class);
 
-                            };
-                        }
+                MacDOCKProgressDisplay.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
 
-                        try {
-                            Thread.sleep(5000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    } else {
-                        if (!isDefault) {
-                            com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", 128));
-                            isDefault = true;
+                    @Override
+                    public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+                    }
+
+                    @Override
+                    public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
+                        if (MacDockProgressDisplay.TOTAL_PROGRESS.equals(newValue)) {
+                            startDockUpdater();
+                        } else {
+                            stopDockUpdater();
                         }
                     }
-                }
+
+                });
+                DownloadWatchDog.getInstance().getEventSender().addListener(listener = new DownloadWatchdogListener() {
+
+                    @Override
+                    public void onDownloadWatchdogStateIsStopping() {
+                        stopDockUpdater();
+                    }
+
+                    @Override
+                    public void onDownloadWatchdogStateIsStopped() {
+                        stopDockUpdater();
+                    }
+
+                    @Override
+                    public void onDownloadWatchdogStateIsRunning() {
+                        startDockUpdater();
+                    }
+
+                    @Override
+                    public void onDownloadWatchdogStateIsPause() {
+                        startDockUpdater();
+                    }
+
+                    @Override
+                    public void onDownloadWatchdogStateIsIdle() {
+                    }
+
+                    @Override
+                    public void onDownloadWatchdogDataUpdate() {
+                    }
+                });
+                DownloadWatchDog.getInstance().notifyCurrentState(listener);
             }
-        }.start();
+
+        });
+
+    }
+
+    private static void startDockUpdater() {
+        synchronized (LOCK) {
+            if (JsonConfig.create(GraphicalUserInterfaceSettings.class).getMacDockProgressDisplay() != MacDockProgressDisplay.TOTAL_PROGRESS) return;
+            Thread ldockUpdater = dockUpdater;
+            if (ldockUpdater != null && ldockUpdater.isAlive()) return;
+            ldockUpdater = new Thread("MacDOCKUpdater") {
+                @Override
+                public void run() {
+                    int lastPercent = -1;
+                    try {
+                        while (Thread.currentThread() == dockUpdater) {
+                            try {
+                                try {
+                                    Thread.sleep(5000);
+                                } catch (InterruptedException e) {
+                                    LogController.GL.log(e);
+                                    break;
+                                }
+                                final AggregatedNumbers aggn = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks()));
+                                int percent = 0;
+                                if (aggn.getTotalBytes() > 0) {
+                                    percent = (int) ((aggn.getLoadedBytes() * 100) / aggn.getTotalBytes());
+                                }
+                                final int finalpercent = percent;
+                                if (lastPercent == finalpercent) continue;
+                                lastPercent = finalpercent;
+                                final Image image = new EDTHelper<Image>() {
+
+                                    @Override
+                                    public Image edtRun() {
+                                        return new IconBadgePainter(NewTheme.I().getImage("logo/jd_logo_128_128", 128)).getImage(finalpercent, finalpercent + "");
+                                    }
+
+                                }.getReturnValue();
+                                IOEQ.add(new Runnable() {
+
+                                    @Override
+                                    public void run() {
+                                        com.apple.eawt.Application.getApplication().setDockIconImage(image);
+                                    }
+                                });
+                            } catch (final Throwable e) {
+                                LogController.GL.log(e);
+                            }
+                        }
+                    } finally {
+                        /* restore default Icon */
+                        IOEQ.add(new Runnable() {
+                            @Override
+                            public void run() {
+                                com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", 128));
+                            }
+                        });
+                        /* release reference if this thread is current dockUpdater */
+                        synchronized (LOCK) {
+                            if (Thread.currentThread() == dockUpdater) {
+                                dockUpdater = null;
+                            }
+                        }
+                    }
+                    super.run();
+                }
+            };
+            ldockUpdater.setDaemon(true);
+            dockUpdater = ldockUpdater;
+            ldockUpdater.start();
+        }
+    }
+
+    private static void stopDockUpdater() {
+        synchronized (LOCK) {
+            if (dockUpdater == null) return;
+            Thread ldockUpdater = dockUpdater;
+            dockUpdater = null;
+            if (ldockUpdater != null && ldockUpdater.isDaemon()) ldockUpdater.interrupt();
+        }
     }
 
     private QuitResponse quitResponse = null;
