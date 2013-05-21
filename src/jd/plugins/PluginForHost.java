@@ -236,128 +236,129 @@ public abstract class PluginForHost extends Plugin {
             logger.warning(Exceptions.getStackTrace(e));
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } catch (SkipException e) {
+            if (getDownloadLink() != null) {
+                switch (e.getSkipRequest()) {
 
-            switch (e.getSkipRequest()) {
+                case BLOCK_ALL_CAPTCHAS:
+                    DownloadController.getInstance().set(new DownloadLinkWalker() {
 
-            case BLOCK_ALL_CAPTCHAS:
-                DownloadController.getInstance().set(new DownloadLinkWalker() {
-
-                    @Override
-                    public boolean accept(DownloadLink link) {
-                        /* no captcha, no need to skip */
-                        if (((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null) == false) return false;
-                        // is skipped. no reason to skip again
-                        if (link.isSkipped()) return false;
-                        // download is running. do not skip
-                        if (link.getDownloadInstance() != null) return false;
-                        // plugin is in progress. captcha has been entered
-                        PluginForHost livePlugin = link.getLivePlugin();
-                        if (livePlugin != null) {
-                            BasicCaptchaChallenge captchaChallenge = livePlugin.getLastCaptchaChallenge();
-                            if (captchaChallenge != null && captchaChallenge.isSolved()) return false;
+                        @Override
+                        public boolean accept(DownloadLink link) {
+                            /* no captcha, no need to skip */
+                            if (((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null) == false) return false;
+                            // is skipped. no reason to skip again
+                            if (link.isSkipped()) return false;
+                            // download is running. do not skip
+                            if (link.getDownloadInstance() != null) return false;
+                            // plugin is in progress. captcha has been entered
+                            PluginForHost livePlugin = link.getLivePlugin();
+                            if (livePlugin != null) {
+                                BasicCaptchaChallenge captchaChallenge = livePlugin.getLastCaptchaChallenge();
+                                if (captchaChallenge != null && captchaChallenge.isSolved()) return false;
+                            }
+                            return true;
                         }
-                        return true;
-                    }
 
-                    @Override
-                    public boolean accept(FilePackage fp) {
-                        return true;
-                    }
-
-                    @Override
-                    public void handle(DownloadLink link) {
-                        link.setSkipped(true);
-                    }
-
-                });
-                HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
-                break;
-            case BLOCK_HOSTER:
-                DownloadController.getInstance().set(new DownloadLinkWalker() {
-
-                    @Override
-                    public boolean accept(DownloadLink link) {
-                        // host does not match, no need to skip
-                        if (link.getHost().equals(getHost()) == false) return false;
-                        /* no captcha, no need to skip */
-                        if (((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null) == false) return false;
-                        // download is running. do not skip
-                        if (link.getDownloadInstance() != null) return false;
-                        // is skipped. no reason to skip again
-                        if (link.isSkipped()) return false;
-                        // plugin is in progress. captcha has been entered
-                        PluginForHost livePlugin = link.getLivePlugin();
-                        if (livePlugin != null) {
-                            BasicCaptchaChallenge captchaChallenge = livePlugin.getLastCaptchaChallenge();
-                            if (captchaChallenge != null && captchaChallenge.isSolved()) return false;
+                        @Override
+                        public boolean accept(FilePackage fp) {
+                            return true;
                         }
-                        return true;
-                    }
 
-                    @Override
-                    public boolean accept(FilePackage fp) {
-                        return true;
-                    }
-
-                    @Override
-                    public void handle(DownloadLink link) {
-                        link.setSkipped(true);
-                    }
-
-                });
-                HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
-                break;
-
-            case BLOCK_PACKAGE:
-                DownloadController.getInstance().set(new DownloadLinkWalker() {
-
-                    @Override
-                    public boolean accept(DownloadLink link) {
-                        // different packages, no need to skip
-                        if (link.getFilePackage() != getDownloadLink().getFilePackage()) return false;
-                        /* no captcha, no need to skip */
-                        if (((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null) == false) return false;
-                        // download is running. do not skip
-                        if (link.getDownloadInstance() != null) return false;
-                        // is skipped. no reason to skip again
-                        if (link.isSkipped()) return false;
-                        // plugin is in progress. captcha has been entered
-                        PluginForHost livePlugin = link.getLivePlugin();
-                        if (livePlugin != null) {
-                            BasicCaptchaChallenge captchaChallenge = livePlugin.getLastCaptchaChallenge();
-                            if (captchaChallenge != null && captchaChallenge.isSolved()) return false;
+                        @Override
+                        public void handle(DownloadLink link) {
+                            link.setSkipped(true);
                         }
-                        return true;
-                    }
 
-                    @Override
-                    public boolean accept(FilePackage fp) {
-                        return true;
-                    }
+                    });
+                    HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    break;
+                case BLOCK_HOSTER:
+                    DownloadController.getInstance().set(new DownloadLinkWalker() {
 
-                    @Override
-                    public void handle(DownloadLink link) {
-                        link.setSkipped(true);
-                    }
+                        @Override
+                        public boolean accept(DownloadLink link) {
+                            // host does not match, no need to skip
+                            if (link.getHost().equals(getHost()) == false) return false;
+                            /* no captcha, no need to skip */
+                            if (((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null) == false) return false;
+                            // download is running. do not skip
+                            if (link.getDownloadInstance() != null) return false;
+                            // is skipped. no reason to skip again
+                            if (link.isSkipped()) return false;
+                            // plugin is in progress. captcha has been entered
+                            PluginForHost livePlugin = link.getLivePlugin();
+                            if (livePlugin != null) {
+                                BasicCaptchaChallenge captchaChallenge = livePlugin.getLastCaptchaChallenge();
+                                if (captchaChallenge != null && captchaChallenge.isSolved()) return false;
+                            }
+                            return true;
+                        }
 
-                });
+                        @Override
+                        public boolean accept(FilePackage fp) {
+                            return true;
+                        }
 
-                HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                        @Override
+                        public void handle(DownloadLink link) {
+                            link.setSkipped(true);
+                        }
 
-                break;
+                    });
+                    HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    break;
 
-            case SINGLE:
-                getDownloadLink().setSkipped(true);
-                HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
-                break;
-            case TIMEOUT:
-                if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
+                case BLOCK_PACKAGE:
+                    DownloadController.getInstance().set(new DownloadLinkWalker() {
+
+                        @Override
+                        public boolean accept(DownloadLink link) {
+                            // different packages, no need to skip
+                            if (link.getFilePackage() != getDownloadLink().getFilePackage()) return false;
+                            /* no captcha, no need to skip */
+                            if (((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null) == false) return false;
+                            // download is running. do not skip
+                            if (link.getDownloadInstance() != null) return false;
+                            // is skipped. no reason to skip again
+                            if (link.isSkipped()) return false;
+                            // plugin is in progress. captcha has been entered
+                            PluginForHost livePlugin = link.getLivePlugin();
+                            if (livePlugin != null) {
+                                BasicCaptchaChallenge captchaChallenge = livePlugin.getLastCaptchaChallenge();
+                                if (captchaChallenge != null && captchaChallenge.isSolved()) return false;
+                            }
+                            return true;
+                        }
+
+                        @Override
+                        public boolean accept(FilePackage fp) {
+                            return true;
+                        }
+
+                        @Override
+                        public void handle(DownloadLink link) {
+                            link.setSkipped(true);
+                        }
+
+                    });
+
+                    HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+
+                    break;
+
+                case SINGLE:
                     getDownloadLink().setSkipped(true);
                     HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    break;
+                case TIMEOUT:
+                    if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
+                        getDownloadLink().setSkipped(true);
+                        HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    }
+                case REFRESH:
+                    // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
+                    break;
                 }
-            case REFRESH:
-                // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
-                break;
             }
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }

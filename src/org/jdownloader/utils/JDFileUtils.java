@@ -7,9 +7,6 @@ import java.io.IOException;
 import org.appwork.utils.Files;
 import org.appwork.utils.os.CrossSystem;
 
-import com.sun.jna.platform.mac.MacFileUtils;
-import com.sun.jna.platform.win32.W32FileUtils;
-
 public class JDFileUtils extends Files {
     /**
      * @param f
@@ -17,8 +14,8 @@ public class JDFileUtils extends Files {
 
     public static boolean isTrashSupported() {
         if (CrossSystem.isWindows()) {
-            return W32FileUtils.getInstance().hasTrash();
-        } else if (CrossSystem.isMac()) { return MacFileUtils.getInstance().hasTrash(); }
+            return com.sun.jna.platform.win32.W32FileUtils.getInstance().hasTrash();
+        } else if (CrossSystem.isMac()) { return com.sun.jna.platform.mac.MacFileUtils.getInstance().hasTrash(); }
 
         return false;
     }
@@ -30,12 +27,12 @@ public class JDFileUtils extends Files {
             for (File f : files) {
                 if (!f.exists()) { throw new FileNotFoundException(f.getAbsolutePath()); }
             }
-            W32FileUtils.getInstance().moveToTrash(files);
+            com.sun.jna.platform.win32.W32FileUtils.getInstance().moveToTrash(files);
         } else if (CrossSystem.isMac()) {
             for (File f : files) {
                 if (!f.exists()) { throw new FileNotFoundException(f.getAbsolutePath()); }
             }
-            MacFileUtils.getInstance().moveToTrash(files);
+            com.sun.jna.platform.mac.MacFileUtils.getInstance().moveToTrash(files);
 
         }
 

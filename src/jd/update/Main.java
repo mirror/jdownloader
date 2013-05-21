@@ -49,8 +49,6 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
-import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
-
 public class Main {
 
     private static int                   BOTHRESIZE  = GridBagConstraints.BOTH;
@@ -435,8 +433,9 @@ public class Main {
         }
         if (!plafisSet) {
             try {
-                UIManager.setLookAndFeel(new WindowsLookAndFeel());
+                UIManager.setLookAndFeel(new com.sun.java.swing.plaf.windows.WindowsLookAndFeel());
             } catch (UnsupportedLookAndFeelException e) {
+            } catch (final Throwable e) {
             }
         }
 

@@ -694,7 +694,7 @@ public class TurboBitNet extends PluginForHost {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "turbobit.net", "http://turbobit.net", true);
                     final String captchaLink = br.getRegex("\"(http://turbobit\\.net/captcha/[^<>\"]*?)\"").getMatch(0);
                     if (captchaLink != null) {
-                        final String code = getCaptchaCode(captchaLink, dummyLink);
+                        final String code = getCaptchaCode("NOTOLDTRBT", captchaLink, dummyLink);
                         String captchaSubtype = "3";
                         if (captchaLink.contains("/basic/")) captchaSubtype = "5";
                         br.postPage(MAINPAGE + "/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bcaptcha_response%5D=" + Encoding.urlEncode(code) + "&user%5Bcaptcha_type%5D=securimg&user%5Bcaptcha_subtype%5D=" + captchaSubtype + "&user%5Bsubmit%5D=Login");
@@ -706,7 +706,7 @@ public class TurboBitNet extends PluginForHost {
                         rc.setId(id);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode(cf, dummyLink);
+                        final String c = getCaptchaCode("RECAPTCHA", cf, dummyLink);
                         br.postPage(MAINPAGE + "/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&user%5Bcaptcha_type%5D=recaptcha&user%5Bcaptcha_subtype%5D=&user%5Bmemory%5D=on&user%5Bsubmit%5D=Login");
                     }
                 }

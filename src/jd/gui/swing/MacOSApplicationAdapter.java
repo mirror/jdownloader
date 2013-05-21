@@ -226,7 +226,6 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                             }
                         }
                     }
-                    super.run();
                 }
             };
             ldockUpdater.setDaemon(true);
