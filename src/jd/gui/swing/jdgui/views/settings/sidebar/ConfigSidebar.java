@@ -43,6 +43,7 @@ import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.ExtensionManage
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.controlling.SingleReachableState;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -270,6 +271,10 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
      */
     public void updateAddons() {
         treemodel.fill(false);
+    }
+
+    public SingleReachableState getTreeCompleteState() {
+        return treemodel.getTreeCompleteState();
     }
 
     public boolean treeInitiated() {

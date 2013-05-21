@@ -203,8 +203,8 @@ public class Captcha extends PixelGrid {
     private double             valityPercent;
 
     /**
-     * Diese Klasse beinhaltet ein 2D-Pixel-Grid. Sie stellt mehrere Methoden zur verfügung dieses Grid zu bearbeiten Um Grunde sind hier
-     * alle Methoden zu finden um ein captcha als ganzes zu bearbeiten
+     * Diese Klasse beinhaltet ein 2D-Pixel-Grid. Sie stellt mehrere Methoden zur verfügung dieses Grid zu bearbeiten Um Grunde sind hier alle Methoden zu
+     * finden um ein captcha als ganzes zu bearbeiten
      * 
      * @author JD-Team
      * @param width
@@ -614,13 +614,12 @@ public class Captcha extends PixelGrid {
         boolean perfectObjectDetection = true;
         // Kleine Objekte ausfiltern
         /*
-         * String removeObjectsContainingImage = "dog.png"; if (removeObjectsContainingImage != null && objects.size() > letterNum) {
-         * Captcha remImage = owner.createCaptcha(Utilities.loadImage(owner.getResourceFile (removeObjectsContainingImage)));
-         * java.util.List<Integer[]> blackPoints = new java.util.List<Integer[]>(); int avg = getAverage(); for (int y = 0; y <
-         * remImage.getHeight(); y++) { for (int x = 0; x < remImage.getWidth(); x++) { if (isElement(remImage.getPixelValue(x, y), avg)) {
-         * blackPoints.add(new Integer[] { x, y }); } } } ListIterator<PixelObject> iter = objects.listIterator(objects.size()); while
-         * (iter.hasPrevious() && objects.size() > letterNum) { PixelObject pixelObject = (PixelObject) iter.previous(); if
-         * (objectContainCaptcha(pixelObject, remImage, blackPoints)) {
+         * String removeObjectsContainingImage = "dog.png"; if (removeObjectsContainingImage != null && objects.size() > letterNum) { Captcha remImage =
+         * owner.createCaptcha(Utilities.loadImage(owner.getResourceFile (removeObjectsContainingImage))); java.util.List<Integer[]> blackPoints = new
+         * java.util.List<Integer[]>(); int avg = getAverage(); for (int y = 0; y < remImage.getHeight(); y++) { for (int x = 0; x < remImage.getWidth(); x++) {
+         * if (isElement(remImage.getPixelValue(x, y), avg)) { blackPoints.add(new Integer[] { x, y }); } } } ListIterator<PixelObject> iter =
+         * objects.listIterator(objects.size()); while (iter.hasPrevious() && objects.size() > letterNum) { PixelObject pixelObject = (PixelObject)
+         * iter.previous(); if (objectContainCaptcha(pixelObject, remImage, blackPoints)) {
          * 
          * iter.remove(); } } }
          */
@@ -1284,8 +1283,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Alternativ Methode über das gaps array. TODO: Nicht optimal. Das trim() kann man sich sparen indem man gleich die rihtige Arraygröße
-     * wählt
+     * Alternativ Methode über das gaps array. TODO: Nicht optimal. Das trim() kann man sich sparen indem man gleich die rihtige Arraygröße wählt
      * 
      * @param letterId
      * @param gaps
@@ -1563,8 +1561,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Setztd as interne Grid auf den ausgangszustand zurück. Funktioniert nur wenn dieser gespeichert ist. Im fehlerfall wird fals
-     * zurückgegegen
+     * Setztd as interne Grid auf den ausgangszustand zurück. Funktioniert nur wenn dieser gespeichert ist. Im fehlerfall wird fals zurückgegegen
      * 
      * @return
      */

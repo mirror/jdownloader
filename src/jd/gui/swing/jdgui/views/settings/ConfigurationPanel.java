@@ -59,22 +59,35 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
             sidebar.updateAddons();
         }
         if (sidebar.getSelectedPanel() == null) {
-            restoreSelection();
+            sidebar.getTreeCompleteState().executeWhenReached(new Runnable() {
+
+                @Override
+                public void run() {
+                    if (sidebar.getSelectedPanel() == null) {
+                        restoreSelection(true);
+                    }
+                }
+            });
         }
     }
 
-    public void restoreSelection() {
-        Class<?> selected = null;
+    public void restoreSelection(final boolean onlyOnEmptySelection) {
+        Class<?> selected = ConfigPanelGeneral.class;
         try {
             String panelClass = cfg.getActiveConfigPanel();
             selected = Class.forName(panelClass);
         } catch (Throwable e) {
 
         }
-        if (selected != null) {
-            sidebar.setSelectedTreeEntry(selected);
-        } else {
-            sidebar.setSelectedTreeEntry(ConfigPanelGeneral.class);
+        final Class<?> finalSelected = selected;
+        if (finalSelected != null) {
+            new EDTRunner() {
+                @Override
+                protected void runInEDT() {
+                    if (onlyOnEmptySelection && sidebar.getSelectedPanel() != null) return;
+                    sidebar.setSelectedTreeEntry(finalSelected);
+                }
+            };
         }
     }
 

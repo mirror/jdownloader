@@ -18,6 +18,7 @@ import jd.gui.swing.jdgui.views.settings.panels.packagizer.Packagizer;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
 import jd.gui.swing.jdgui.views.settings.panels.proxy.ProxyConfig;
 
+import org.appwork.controlling.SingleReachableState;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -48,6 +49,8 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     private ExtensionHeader        eh;
     private ExtensionManager       extm;
     private Object                 lock             = new Object();
+
+    private SingleReachableState   TREE_COMPLETE    = new SingleReachableState("TREE_COMPLETE");
 
     public SettingsSidebarModel() {
         super();
@@ -228,83 +231,87 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         new Thread("FillSettingsSideBarModel") {
             @Override
             public void run() {
-                synchronized (lock) {
-                    boolean withExtensions = finalWithExtensions;
-                    if (SecondLevelLaunch.EXTENSIONS_COMPLETE.isReached()) withExtensions = true;
-                    LazyExtension extract = null;
-                    try {
-                        if (withExtensions) extract = ExtensionController.getInstance().getExtension("org.jdownloader.extensions.extraction.ExtractionExtension");
-                    } catch (final Throwable e) {
-                        /* plugin not loaded yet */
-                    }
-                    LazyExtension tray = null;
-                    try {
-                        if (withExtensions) tray = ExtensionController.getInstance().getExtension("org.jdownloader.extensions.jdtrayicon.TrayExtension");
-                    } catch (final Throwable e) {
-                        /* plugin not loaded yet */
-                    }
-                    final LazyExtension finalExtract = extract;
-                    final LazyExtension finalTray = tray;
-                    getConfigPanelGeneral();
-                    getReconnectSettings();
-                    getProxyConfig();
-                    getAccountManagerSettings();
-                    getBasicAuthentication();
-                    getPluginSettings();
-                    getGUISettings();
-                    getLinkgrabber();
-                    getPackagizer();
-                    if (!Application.isJared(Application.class)) {
-                        getExtensionManager();
-                    }
-                    getAdvancedSettings();
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            removeAllElements();
-                            addElement(getConfigPanelGeneral());
-                            addElement(getReconnectSettings());
-                            addElement(getProxyConfig());
-                            addElement(getAccountManagerSettings());
-                            addElement(getBasicAuthentication());
-                            addElement(getPluginSettings());
-                            addElement(getGUISettings());
-                            addElement(getLinkgrabber());
-                            addElement(getPackagizer());
-                            if (finalExtract != null) addElement(finalExtract);
-                            if (finalTray != null) addElement(finalTray);
-                            if (!Application.isJared(Application.class)) {
-                                addElement(getExtensionManager());
-                            }
-                            addElement(getAdvancedSettings());
+                try {
+                    synchronized (lock) {
+                        boolean withExtensions = finalWithExtensions;
+                        if (SecondLevelLaunch.EXTENSIONS_COMPLETE.isReached()) withExtensions = true;
+                        LazyExtension extract = null;
+                        try {
+                            if (withExtensions) extract = ExtensionController.getInstance().getExtension("org.jdownloader.extensions.extraction.ExtractionExtension");
+                        } catch (final Throwable e) {
+                            /* plugin not loaded yet */
                         }
-                    };
-                    if (withExtensions) {
-                        final AtomicBoolean firstExtension = new AtomicBoolean(true);
-                        List<LazyExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
-                        if (pluginsOptional != null) {
-                            for (final LazyExtension plg : pluginsOptional) {
-                                System.out.println(plg.getClassname());
-                                if (contains(plg)) continue;
-                                if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;
-                                if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) continue;
-                                if (CrossSystem.isMac() && !plg.isMacRunnable()) continue;
-                                plg._getSettings().getStorageHandler().getEventSender().addListener(SettingsSidebarModel.this, true);
-                                new EDTRunner() {
+                        LazyExtension tray = null;
+                        try {
+                            if (withExtensions) tray = ExtensionController.getInstance().getExtension("org.jdownloader.extensions.jdtrayicon.TrayExtension");
+                        } catch (final Throwable e) {
+                            /* plugin not loaded yet */
+                        }
+                        final LazyExtension finalExtract = extract;
+                        final LazyExtension finalTray = tray;
+                        getConfigPanelGeneral();
+                        getReconnectSettings();
+                        getProxyConfig();
+                        getAccountManagerSettings();
+                        getBasicAuthentication();
+                        getPluginSettings();
+                        getGUISettings();
+                        getLinkgrabber();
+                        getPackagizer();
+                        if (!Application.isJared(Application.class)) {
+                            getExtensionManager();
+                        }
+                        getAdvancedSettings();
+                        new EDTRunner() {
 
-                                    @Override
-                                    protected void runInEDT() {
-                                        if (firstExtension.get()) {
-                                            addElement(getExtensionHeader());
-                                            firstExtension.set(false);
+                            @Override
+                            protected void runInEDT() {
+                                removeAllElements();
+                                addElement(getConfigPanelGeneral());
+                                addElement(getReconnectSettings());
+                                addElement(getProxyConfig());
+                                addElement(getAccountManagerSettings());
+                                addElement(getBasicAuthentication());
+                                addElement(getPluginSettings());
+                                addElement(getGUISettings());
+                                addElement(getLinkgrabber());
+                                addElement(getPackagizer());
+                                if (finalExtract != null) addElement(finalExtract);
+                                if (finalTray != null) addElement(finalTray);
+                                if (!Application.isJared(Application.class)) {
+                                    addElement(getExtensionManager());
+                                }
+                                addElement(getAdvancedSettings());
+                            }
+                        };
+                        if (withExtensions) {
+                            final AtomicBoolean firstExtension = new AtomicBoolean(true);
+                            List<LazyExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
+                            if (pluginsOptional != null) {
+                                for (final LazyExtension plg : pluginsOptional) {
+                                    System.out.println(plg.getClassname());
+                                    if (contains(plg)) continue;
+                                    if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;
+                                    if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) continue;
+                                    if (CrossSystem.isMac() && !plg.isMacRunnable()) continue;
+                                    plg._getSettings().getStorageHandler().getEventSender().addListener(SettingsSidebarModel.this, true);
+                                    new EDTRunner() {
+
+                                        @Override
+                                        protected void runInEDT() {
+                                            if (firstExtension.get()) {
+                                                addElement(getExtensionHeader());
+                                                firstExtension.set(false);
+                                            }
+                                            addElement(plg);
                                         }
-                                        addElement(plg);
-                                    }
-                                };
+                                    };
+                                }
                             }
                         }
                     }
+                } finally {
+                    TREE_COMPLETE.setReached();
                 }
             }
         }.start();
@@ -327,6 +334,13 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                 fireContentsChanged(this, 0, size() - 1);
             }
         };
+    }
+
+    /**
+     * @return the tREE_COMPLETE
+     */
+    public SingleReachableState getTreeCompleteState() {
+        return TREE_COMPLETE;
     }
 
 }
