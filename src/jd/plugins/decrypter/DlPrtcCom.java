@@ -104,6 +104,10 @@ public class DlPrtcCom extends PluginForDecrypt {
                 }
                 if (br.containsHTML(CAPTCHATEXT)) {
                     String captchaLink = getCaptchaLink();
+                    if (captchaLink == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
                     captchaLink = "http://www.dl-protect.com" + captchaLink;
                     String code = getCaptchaCode(captchaLink, param);
                     importantForm.put("secure_oo", code);
@@ -163,7 +167,10 @@ public class DlPrtcCom extends PluginForDecrypt {
     private String getCaptchaLink() throws Exception {
         correctBR();
         // proper captcha url seem to have 32 (md5) char length
-        final String captchaLink = new Regex(correctedBR, "src=\"(/captcha\\.php\\?uid=[a-z0-9]{32})\"").getMatch(0);
+        String captchaLink = new Regex(correctedBR, "src=\"(\\s+)?(/captcha\\.php\\?uid=[a-z0-9]{32})(\\s+)?\"").getMatch(1);
+        if (captchaLink == null) {
+            captchaLink = new Regex(correctedBR, "(/captcha\\.php\\?uid=[a-z0-9]{32})").getMatch(0);
+        }
         return captchaLink;
     }
 
