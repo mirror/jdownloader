@@ -64,6 +64,30 @@ public class SoundcloudCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        // start of file extension correction.
+        // required because original-format implies the uploaded format might not be what the end user downloads.
+        String oldName = link.getFinalFileName();
+        if (oldName == null) oldName = link.getName();
+        String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        String newExtension = null;
+        if (serverFilename == null) {
+            logger.info("Server filename is null, keeping filename: " + oldName);
+        } else {
+            if (serverFilename.contains(".")) {
+                newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+            } else {
+                logger.info("HTTP headers don't contain filename.extension information");
+            }
+        }
+        if (newExtension != null && !oldName.endsWith(newExtension)) {
+            String oldExtension = null;
+            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            if (oldExtension != null && oldExtension.length() <= 5) {
+                link.setFinalFileName(oldName.replace(oldExtension, newExtension));
+            } else {
+                link.setFinalFileName(oldName + newExtension);
+            }
+        }
         dl.startDownload();
     }
 

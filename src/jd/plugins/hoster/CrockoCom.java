@@ -268,7 +268,15 @@ public class CrockoCom extends PluginForHost {
         String filename = br.getRegex(">Download: +<strong>(.*?)</strong>").getMatch(0);
         if (filename == null) filename = br.getRegex(">Download:</span> <br />[\t\n\r ]+<strong>(.*?)</strong>").getMatch(0);
         final String filesize = br.getRegex("<span class=\"tip1\"><span class=\"inner\">(.*?)</span></span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            if (br.containsHTML("<h1>Software error:</h1>")) {
+                return AvailableStatus.UNCHECKABLE;
+            } else if (br.containsHTML("(<div class=\"search_result\">|<form method=\"POST\" action=\"/search_form\">)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         filename = filename.replaceAll("<br>", "");
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim() + "b"));

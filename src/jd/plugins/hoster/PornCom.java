@@ -65,18 +65,15 @@ public class PornCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL().replace("/embed/", "/"));
         if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<iframe title=\"(.*?)\"").getMatch(0);
+        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<div class=\"player\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?) \\- PORN\\.COM</title>").getMatch(0);
-            }
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("\"med\":\"(http:.*?)\"").getMatch(0);
+        DLLINK = br.getRegex("\"Med\"(,file)?:\"(http:.*?)\"").getMatch(1);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("\"low\":\"(http:.*?)\"").getMatch(0);
+            DLLINK = br.getRegex("\"Low\"(,file)?:\"(http:.*?)\"").getMatch(1);
             if (DLLINK == null) {
-                DLLINK = br.getRegex("\"trailer\":\"(http:.*?)\"").getMatch(0);
+                DLLINK = br.getRegex("\"trailer\"(file)?:\"(http:.*?)\"").getMatch(1);
             }
         }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
