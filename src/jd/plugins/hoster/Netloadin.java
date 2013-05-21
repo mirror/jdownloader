@@ -20,12 +20,18 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -40,6 +46,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.Uploadedto.StringContainer;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -60,12 +67,21 @@ public class Netloadin extends PluginForHost {
         return id;
     }
 
-    private boolean showDialog = false;
+    private boolean                showDialog      = false;
+    private final String           RECONNECTALWAYS = "RECONNECTALWAYS";
+    private Pattern                IPREGEX         = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicBoolean   hasDled         = new AtomicBoolean(false);
+    private static AtomicLong      timeBefore      = new AtomicLong(0);
+    private String                 LASTIP          = "LASTIP";
+    private static StringContainer lastIP          = new StringContainer();
+    private static final long      RECONNECTWAIT   = 600000;
+    private static String[]        IPCHECK         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     public Netloadin(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(1000l);
         this.enablePremium("http://netload.in/index.php?refer_id=134847&id=5");
+        setConfigElements();
     }
 
     private void checkErrors(DownloadLink downloadLink, Browser br, boolean checkFail) throws Exception {
@@ -294,20 +310,28 @@ public class Netloadin extends PluginForHost {
         workAroundTimeOut(br);
         requestFileInformation(downloadLink);
         checkShowFreeDialog();
-        br.setDebug(true);
-        this.setBrowserExclusive();
-        String ID = getID(downloadLink.getDownloadURL());
-        br.getPage("http://netload.in/json/datei" + ID + ".htm");
-        checkPassword(downloadLink, br);
-        checkErrors(downloadLink, br, false);
-        checkLimit(downloadLink, br);
-        String url = br.getRegex("link\":\"(http.*?)\"").getMatch(0);
-        if (url != null) {
-            url = url.replaceAll("\\\\/", "/");
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        String currentIP = getIP();
         try {
+            if (this.getPluginConfig().getBooleanProperty(RECONNECTALWAYS, false)) {
+                /**
+                 * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
+                 */
+                logger.info("New Download: currentIP = " + currentIP);
+                if (hasDled.get() && ipChanged(currentIP, downloadLink) == false) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, RECONNECTWAIT); }
+            }
+            br.setDebug(true);
+            this.setBrowserExclusive();
+            String ID = getID(downloadLink.getDownloadURL());
+            br.getPage("http://netload.in/json/datei" + ID + ".htm");
+            checkPassword(downloadLink, br);
+            checkErrors(downloadLink, br, false);
+            checkLimit(downloadLink, br);
+            String url = br.getRegex("link\":\"(http.*?)\"").getMatch(0);
+            if (url != null) {
+                url = url.replaceAll("\\\\/", "/");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
             try {
                 /* remove next major update */
@@ -317,8 +341,13 @@ public class Netloadin extends PluginForHost {
             } catch (Throwable e) {
             }
             dl.startDownload();
+            hasDled.set(true);
+        } catch (Exception e) {
+            hasDled.set(false);
+            throw e;
         } finally {
-            logger.info("used serverurl: " + url);
+            timeBefore.set(System.currentTimeMillis());
+            setIP(currentIP, downloadLink);
         }
 
     }
@@ -541,5 +570,61 @@ public class Netloadin extends PluginForHost {
             }
         } catch (Throwable e) {
         }
+    }
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), RECONNECTALWAYS, JDL.L("plugins.hoster.netloadin.alwaysReconnect", "Reconnect after every download")).setDefaultValue(false));
+    }
+
+    private String getIP() throws PluginException {
+        Browser ip = new Browser();
+        String currentIP = null;
+        ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(IPCHECK));
+        Collections.shuffle(checkIP);
+        for (String ipServer : checkIP) {
+            if (currentIP == null) {
+                try {
+                    ip.getPage(ipServer);
+                    currentIP = ip.getRegex(IPREGEX).getMatch(0);
+                    if (currentIP != null) break;
+                } catch (Throwable e) {
+                }
+            }
+        }
+        if (currentIP == null) {
+            logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return currentIP;
+    }
+
+    private boolean setIP(String IP, final DownloadLink link) throws PluginException {
+        synchronized (IPCHECK) {
+            if (IP != null && !new Regex(IP, IPREGEX).matches()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (ipChanged(IP, link) == false) {
+                // Static IP or failure to reconnect! We don't change lastIP
+                logger.warning("Your IP hasn't changed since last download");
+                return false;
+            } else {
+                String lastIP = IP;
+                link.setProperty(LASTIP, lastIP);
+                Netloadin.lastIP.string = lastIP;
+                logger.info("LastIP = " + lastIP);
+                return true;
+            }
+        }
+    }
+
+    private boolean ipChanged(String IP, DownloadLink link) throws PluginException {
+        String currentIP = null;
+        if (IP != null && new Regex(IP, IPREGEX).matches()) {
+            currentIP = IP;
+        } else {
+            currentIP = getIP();
+        }
+        if (currentIP == null) return false;
+        String lastIP = link.getStringProperty(LASTIP, null);
+        if (lastIP == null) lastIP = Netloadin.lastIP.string;
+        return !currentIP.equals(lastIP);
     }
 }

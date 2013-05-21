@@ -27,8 +27,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stagevu.com" }, urls = { "http://[\\w\\.]*?stagevu\\.com/video/[a-z0-9]{12}" }, flags = { 0 })
 public class StageVuCom extends PluginForHost {
 
@@ -67,9 +65,6 @@ public class StageVuCom extends PluginForHost {
             link.getLinkStatus().setStatusText("Only downloadable for registered users!");
             return AvailableStatus.TRUE;
         }
-        final String filesize = br.getRegex(">Filesize:</td><td>(.*?)</td>").getMatch(0);
-        if (filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

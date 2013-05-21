@@ -39,7 +39,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahni.si" }, urls = { "http://(www\\.)?(stiahni|stahni)\\.si/(download\\.php\\?id=|/file/)\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahni.si" }, urls = { "http://(www\\.)?(stiahni|stahni)\\.si/(download\\.php\\?id=|file/)\\d+" }, flags = { 2 })
 public class StiahniSi extends PluginForHost {
 
     public StiahniSi(PluginWrapper wrapper) {
@@ -60,7 +60,7 @@ public class StiahniSi extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage("http://www.stiahni.si/download.php?lang=en&id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
         if (br.containsHTML(">Súbor nebol nájdený<|>Súbor nikto nestiahol viac ako")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Download: <a href=\"#\">([^<>\"]*?)</a>").getMatch(0);
         String filesize = br.getRegex(">Size</td>[\t\n\r ]+<td class=\"value\">([^<>\"]*?)</td>").getMatch(0);
