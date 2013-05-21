@@ -81,7 +81,7 @@ public class FilezyNet extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.0
     // mods:
-    // non account: 2 * 1
+    // non account: 1 * 1
     // free account: untested, set FREE limits
     // premium account: 1 * 10
     // protocol: no https
@@ -197,7 +197,7 @@ public class FilezyNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -772,7 +772,7 @@ public class FilezyNet extends PluginForHost {
         login(account, false);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, -2, "freelink2");
+            doFree(downloadLink, false, 1, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
