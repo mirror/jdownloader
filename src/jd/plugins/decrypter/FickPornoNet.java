@@ -40,10 +40,14 @@ public class FickPornoNet extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String filename = br.getRegex("<center><h2>(.*?)</h2><br>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) fick porno</title>").getMatch(0);
+        if (filename == null || filename.equals("")) filename = br.getRegex("<title>(.*?) fick porno</title>").getMatch(0);
         if (filename == null) {
             logger.warning("fickporno decrypter broken(filename regex) for link: " + parameter);
             return null;
+        }
+        if (filename.equals("") && br.containsHTML("NA</table>")) {
+            logger.warning("fickporno decrypter link Not Avaialable!: " + parameter);
+            return decryptedLinks;
         }
         filename = filename.trim();
         String externID = br.getRegex("flashvars=\"file=(http.*?)http://static\\.youporn\\.com/r/").getMatch(0);
