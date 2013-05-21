@@ -19,6 +19,7 @@ LinkgrabberFilterRule_duplicate=%s1 (kopia)
 Main_run_autostart_=Uruchamianie Pobierania
 Main_run_autostart_msg=Pobieranie rozpocznie się za kilka sekund...
 Mainstart_now=Rozpocznij pobieranie!
+OptionalContainer_OptionalContainer=Więcej Poleceń
 PackagizerSettings_folderbypackage_rule_name=Stwórz podkatalogi wg nazw pakietów
 RemoveAction_actionPerformed_rly_msg=Naprawdę usunąć wszystkie wybrane reguły?
 SetDownloadFolderAction_actionPerformed_=Podziel Pakiet %s1

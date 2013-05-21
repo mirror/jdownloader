@@ -1,3 +1,7 @@
+ChatExtensionGuiToggleAction_deselected=Otwórz Czat
+ChatExtensionGuiToggleAction_deselected_tt=Otwórz zakładkę Czata
+ChatExtensionGuiToggleAction_selected=Zamknij Czat
+ChatExtensionGuiToggleAction_selected_tt=Zamknij zakładkę Czata
 description=Skontaktuj się z twórcami i osobami Wsparcia Technicznego JD
 gui_tab_title=Kanał %s1
 jd_plugins_optional_jdchat_JDChatView_title=Czat Wsparcia Technicznego JD (Support)

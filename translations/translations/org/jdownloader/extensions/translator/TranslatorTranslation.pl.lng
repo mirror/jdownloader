@@ -1,2 +1,6 @@
 Translator=Tłumacz (Translator)
+TranslatorExtensionGuiToggleAction_deselected=Otwórz Translatora (Tłumacza)
+TranslatorExtensionGuiToggleAction_deselected_tt=Otwórz zakładkę Translatora
+TranslatorExtensionGuiToggleAction_selected=Zamknij Translatora (Tłumacza)
+TranslatorExtensionGuiToggleAction_selected_tt=Zamknij zakładkę Translatora
 description=To rozszerzenie używane jest to edycji tłumaczenia tekstów komunikatów/okien dialogowych/opisów funkcji w jD.\r\nAby używać tego rozszerzenia potrzebne jest posiadanie konta developerskiego.
