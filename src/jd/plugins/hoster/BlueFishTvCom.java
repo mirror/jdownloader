@@ -92,7 +92,7 @@ public class BlueFishTvCom extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's BlueFishVOD Plugin helps downloading VideoClip from bluefishtv.com. Shahid provides different video qualities.";
+        return "JDownloader's BlueFishVOD Plugin helps downloading videoclips from bluefishtv.com. Bluefishtv.com provides different video qualities.";
     }
 
     @Override

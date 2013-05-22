@@ -65,9 +65,10 @@ public class FileniumCom extends PluginForHost {
     }
 
     /** The list of server values displayed to the user */
-    private final String[] domainsList    = new String[] { "filenium.com", "ams.filenium.com", "lon.filenium.com" };
-    private final String   domains        = "domains";
-    private String         SELECTEDDOMAIN = domainsList[0];
+    private final String[]                                 domainsList        = new String[] { "filenium.com", "ams.filenium.com", "lon.filenium.com" };
+    private final String                                   domains            = "domains";
+    private String                                         SELECTEDDOMAIN     = domainsList[0];
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     public Browser newBrowser() {
         br = new Browser();
@@ -130,9 +131,17 @@ public class FileniumCom extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if (account == null) {
-            /* without account its not possible to download the link */
-            return false;
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    return false;
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(downloadLink.getHost());
+                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                }
+            }
         }
         return true;
     }
@@ -150,16 +159,16 @@ public class FileniumCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         login(account, false);
-        handleDL(link, link.getDownloadURL(), false);
+        handleDL(link, link.getDownloadURL(), false, account);
     }
 
-    private void handleDL(DownloadLink link, String dllink, boolean liveLink) throws Exception {
+    private void handleDL(final DownloadLink link, String dllink, final boolean liveLink, final Account account) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
-            dl.startDownload();
+            if (!dl.startDownload()) tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             return;
         } else {
             if (liveLink == false && dl.getConnection().getResponseCode() == 404) {
@@ -174,6 +183,7 @@ public class FileniumCom extends PluginForHost {
              * download is not contentdisposition, so remove this host from premiumHosts list
              */
             br.followConnection();
+            if (br.containsHTML(">Error: Al recuperar enlace\\. No disponible temporalmente, disculpa las molestias<")) tempUnavailableHoster(account, link, 60 * 60 * 1000l);
         }
 
         /* temp disabled the host */
@@ -181,14 +191,14 @@ public class FileniumCom extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         login(acc, false);
         showMessage(link, "Task 1: Generating Link");
         String dllink = br.getPage("http://" + SELECTEDDOMAIN + "/?filenium&filez=" + Encoding.urlEncode(link.getDownloadURL()));
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replaceAll("\\\\/", "/");
         showMessage(link, "Task 2: Download begins!");
-        handleDL(link, dllink, true);
+        handleDL(link, dllink, true, acc);
     }
 
     @Override
@@ -262,6 +272,20 @@ public class FileniumCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
+        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap == null) {
+                unavailableMap = new HashMap<String, Long>();
+                hostUnavailableMap.put(account, unavailableMap);
+            }
+            /* wait to retry this host */
+            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+        }
+        throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
     private String getConfiguredDomain() {
