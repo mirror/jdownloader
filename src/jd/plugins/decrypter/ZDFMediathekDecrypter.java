@@ -145,9 +145,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 } else {
                                     if (streams[0].contains("mp4_rtmp")) {
                                         if (isStableEnviroment()) continue;
-                                        Browser rtmp = new Browser();
-                                        rtmp.getPage(stream[1]);
-                                        url = rtmp.getRegex("<default\\-stream\\-url>([^<]+)<").getMatch(0);
+                                        if (url.startsWith("http://")) {
+                                            Browser rtmp = new Browser();
+                                            rtmp.getPage(stream[1]);
+                                            url = rtmp.getRegex("<default\\-stream\\-url>([^<]+)<").getMatch(0);
+                                        }
                                         if (url == null) continue;
                                     }
                                     fmt = "hd";
