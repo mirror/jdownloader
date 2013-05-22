@@ -26,7 +26,7 @@ import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.remoteapi.events.EventPublisher;
 import org.appwork.remoteapi.events.EventsSender;
-import org.appwork.remoteapi.events.json.EventObject;
+import org.appwork.remoteapi.events.SimpleEventObject;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -77,7 +77,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                            HashMap<String, Object> data = new HashMap<String, Object>();
                                                                                            data.put("message", "Limitspeed");
                                                                                            data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
-                                                                                           EventObject eventObject = new EventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
+                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
                                                                                            for (EventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
@@ -97,7 +97,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                            HashMap<String, Object> data = new HashMap<String, Object>();
                                                                                            data.put("message", "LimitspeedActivated");
                                                                                            data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
-                                                                                           EventObject eventObject = new EventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
+                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
                                                                                            for (EventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
@@ -109,7 +109,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                            HashMap<String, Object> data = new HashMap<String, Object>();
                                                                                            data.put("message", "MaxDL");
                                                                                            data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getValue());
-                                                                                           EventObject eventObject = new EventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
+                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
                                                                                            for (EventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
@@ -125,7 +125,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                            HashMap<String, Object> data = new HashMap<String, Object>();
                                                                                            data.put("message", "MaxConDL");
                                                                                            data.put("data", CFG_GENERAL.MAX_CHUNKS_PER_FILE.getValue());
-                                                                                           EventObject eventObject = new EventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
+                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
                                                                                            for (EventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
@@ -141,7 +141,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                            HashMap<String, Object> data = new HashMap<String, Object>();
                                                                                            data.put("message", "MaxConHost");
                                                                                            data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getValue());
-                                                                                           EventObject eventObject = new EventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
+                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
                                                                                            for (EventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
@@ -160,7 +160,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                            HashMap<String, Object> data = new HashMap<String, Object>();
                                                                                            data.put("message", "MaxConHostActivated");
                                                                                            data.put("data", CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled());
-                                                                                           EventObject eventObject = new EventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
+                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
                                                                                            for (EventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
@@ -176,7 +176,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                            HashMap<String, Object> data = new HashMap<String, Object>();
                                                                                            data.put("message", "Reconnect");
                                                                                            data.put("data", CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled());
-                                                                                           EventObject eventObject = new EventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
+                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
                                                                                            for (EventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
@@ -192,7 +192,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                            HashMap<String, Object> data = new HashMap<String, Object>();
                                                                                            data.put("message", "Premium");
                                                                                            data.put("data", CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
-                                                                                           EventObject eventObject = new EventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
+                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data);
                                                                                            for (EventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
@@ -200,7 +200,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                    };
 
     private void publishEvent(EVENTID eventID, Object data) {
-        EventObject eventObject = new EventObject(this, eventID.name(), data);
+        SimpleEventObject eventObject = new SimpleEventObject(this, eventID.name(), data);
         for (EventsSender eventSender : eventSenders) {
             eventSender.publishEvent(eventObject, null);
         }

@@ -7,7 +7,7 @@ import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 
 import org.appwork.remoteapi.events.EventPublisher;
 import org.appwork.remoteapi.events.EventsSender;
-import org.appwork.remoteapi.events.json.EventObject;
+import org.appwork.remoteapi.events.SimpleEventObject;
 
 public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadWatchdogListener {
 
@@ -44,7 +44,7 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
 
     @Override
     public void onDownloadWatchdogStateIsPause() {
-        EventObject eventObject = new EventObject(this, EVENTID.PAUSED.name(), null);
+        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.PAUSED.name(), null);
         for (EventsSender eventSender : eventSenders) {
             eventSender.publishEvent(eventObject, null);
         }
@@ -52,7 +52,7 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
 
     @Override
     public void onDownloadWatchdogStateIsRunning() {
-        EventObject eventObject = new EventObject(this, EVENTID.RUNNING.name(), null);
+        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.RUNNING.name(), null);
         for (EventsSender eventSender : eventSenders) {
             eventSender.publishEvent(eventObject, null);
         }
@@ -60,7 +60,7 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
 
     @Override
     public void onDownloadWatchdogStateIsStopped() {
-        EventObject eventObject = new EventObject(this, EVENTID.STOPPED.name(), null);
+        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.STOPPED.name(), null);
         for (EventsSender eventSender : eventSenders) {
             eventSender.publishEvent(eventObject, null);
         }
