@@ -110,7 +110,9 @@ public class DlPrtcCom extends PluginForDecrypt {
                     }
                     captchaLink = "http://www.dl-protect.com" + captchaLink;
                     String code = getCaptchaCode(captchaLink, param);
-                    importantForm.put("secure_oo", code);
+                    String formName = importantForm.getRegex("<td>Copy the code :</td>.*?name=\"([^\"]+)\" maxlength=\"\\d+\"").getMatch(0);
+                    if (formName == null) formName = "secure";
+                    importantForm.put(formName, code);
                 }
                 importantForm.put("i", Encoding.Base64Encode(String.valueOf(System.currentTimeMillis())));
                 br.submitForm(importantForm);
