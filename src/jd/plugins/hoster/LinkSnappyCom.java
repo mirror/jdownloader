@@ -132,7 +132,7 @@ public class LinkSnappyCom extends PluginForHost {
         // all ok, start downloading...
         br.setFollowRedirects(true);
         for (int i = 1; i <= 10; i++) {
-            getPageSecure("http://gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"111472\",+\"pasword\"+:+\"" + account.getPass() + "\"}"));
+            getPageSecure("http://gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"pasword\"+:+\"" + account.getPass() + "\"}"));
             if (br.containsHTML("\"error\":\"Invalid file URL format\\.\"")) tempUnavailableHoster(account, link, 60 * 60 * 1000);
             String dllink = br.getRegex("\"generated\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
