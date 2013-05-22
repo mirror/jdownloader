@@ -28,6 +28,7 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -78,18 +79,24 @@ public class LinkSnappyCom extends PluginForHost {
             account.setValid(false);
             return ac;
         }
-        final String expireDate = br.getRegex("<strong>Expire Date:</strong> ([^<>\"]*?) \\(\\d+ days left\\)").getMatch(0);
-        if (expireDate == null) {
-            ac.setStatus("Account is invalid. Unsupported accounttype?!");
-            account.setValid(false);
-            return ac;
+        String accountType = null;
+        if (br.containsHTML("<strong>Expire Date:</strong> <span class=\"gold\">Lifetime</span>")) {
+            accountType = "Lifetime Premium Account";
+        } else {
+            final String expireDate = br.getRegex("<strong>Expire Date:</strong> ([^<>\"]*?) \\(\\d+ days left\\)").getMatch(0);
+            if (expireDate == null) {
+                ac.setStatus("Account is invalid. Unsupported accounttype?!");
+                account.setValid(false);
+                return ac;
+            }
+            // we have a valid premium account - let's check the expire date:
+            ac.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd MMMM yyyy", Locale.ENGLISH));
+            accountType = "Premium Account";
         }
-        // we have a valid premium account - let's check the expire date:
-        ac.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd MMMM yyyy", Locale.ENGLISH));
 
         // now it's time to get all supported hosts
         ArrayList<String> supportedHosts = new ArrayList<String>();
-        getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=FILEHOSTS");
+        getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=FILEHOSTS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
         final String hostText = br.getRegex("\\{\"status\":\"OK\",\"error\":false,\"return\":\\{(.*?\\})\\}\\}").getMatch(0);
         hosts = hostText.split("\\},");
         for (final String hostInfo : hosts) {
@@ -112,7 +119,7 @@ public class LinkSnappyCom extends PluginForHost {
         if (supportedHosts.size() == 0) {
             ac.setStatus("Account valid: 0 Hosts via linksnappy.com available");
         } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via linksnappy.com available");
+            ac.setStatus(accountType + " valid: " + supportedHosts.size() + " Hosts via linksnappy.com available");
             ac.setProperty("multiHostSupport", supportedHosts);
         }
         return ac;
@@ -125,7 +132,8 @@ public class LinkSnappyCom extends PluginForHost {
         // all ok, start downloading...
         br.setFollowRedirects(true);
         for (int i = 1; i <= 10; i++) {
-            getPageSecure("http://gen.linksnappy.com/genAPI.php?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&genLinks=%7B%22link%22+%3A+%22" + Encoding.urlEncode(link.getDownloadURL()) + "%22%2C+%22type%22+%3A+%22%22%2C+%22linkpass%22+%3A+%22%22%2C+%22fmt%22+%3A+%2235%22%2C+%22ytcountry%22+%3A+%22usa%22%7D&_=" + System.currentTimeMillis());
+            getPageSecure("http://gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"111472\",+\"pasword\"+:+\"" + account.getPass() + "\"}"));
+            if (br.containsHTML("\"error\":\"Invalid file URL format\\.\"")) tempUnavailableHoster(account, link, 60 * 60 * 1000);
             String dllink = br.getRegex("\"generated\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dllink = dllink.replace("\\", "");
@@ -155,6 +163,15 @@ public class LinkSnappyCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
+    }
+
+    private String encode(String value) {
+        value = value.replace("\"", "%22");
+        value = value.replace(":", "%3A");
+        value = value.replace("{", "%7B");
+        value = value.replace("}", "%7D");
+        value = value.replace(",", "%2C");
+        return value;
     }
 
     private void getPageSecure(final String page) throws IOException, PluginException {
@@ -246,7 +263,7 @@ public class LinkSnappyCom extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
+    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);

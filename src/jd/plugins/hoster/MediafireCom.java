@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 2 })
 public class MediafireCom extends PluginForHost {
 
     /** start of random agents **/
@@ -63,8 +63,8 @@ public class MediafireCom extends PluginForHost {
     private static final ArrayList<String> stringAgent = new ArrayList<String>();
 
     /**
-     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd access logs.
-     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
+     * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
@@ -274,8 +274,8 @@ public class MediafireCom extends PluginForHost {
     private static final ArrayList<String> portableAgent = new ArrayList<String>();
 
     /**
-     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from httpd access logs.
-     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
+     * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
@@ -408,7 +408,7 @@ public class MediafireCom extends PluginForHost {
                 }
 
             }
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
+            throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
         }
     }
 
@@ -828,15 +828,10 @@ public class MediafireCom extends PluginForHost {
                 @Override
                 protected boolean isCorrect() {
                     Form form = this.br.getFormbyProperty("name", "form_password");
-                    boolean b = this.br.containsHTML("dh\\(''\\)");
-                    if (b == false) {
-                        String dh = br.getRegex("dh\\('(.*?)'\\)").getMatch(0);
-                        if (dh != null && dh.trim().equals(curPw)) {
-                            b = true;
-                        }
-                    }
-                    if (form == null && b == false) return true;
-                    return form != null && !b;
+                    if (form != null)
+                        return false;
+                    else
+                        return true;
                 }
 
             }.run();
@@ -1020,10 +1015,10 @@ public class MediafireCom extends PluginForHost {
         }
         if (eBr.getURL().matches(".+/error\\.php\\?errno=394.+?")) {
             /*
-             * The file you attempted to download is an archive that is encrypted or password protected. MediaFire does not support unlimited downloads of
-             * encrypted or password protected archives and the limit for this file has been reached. MediaFire understands the need for users to transfer
-             * encrypted and secured files, we offer this service starting at $1.50 per month. We have informed the owner that sharing of this file has been
-             * limited and how they can resolve this issue.
+             * The file you attempted to download is an archive that is encrypted or password protected. MediaFire does not support
+             * unlimited downloads of encrypted or password protected archives and the limit for this file has been reached. MediaFire
+             * understands the need for users to transfer encrypted and secured files, we offer this service starting at $1.50 per month. We
+             * have informed the owner that sharing of this file has been limited and how they can resolve this issue.
              */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible, retriction based on uploaders account");
         }

@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "online.nolife-tv.com" }, urls = { "http://(www\\.)?online\\.nolife\\-tvdecrypted\\.com/index\\.php\\?id=\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "online.nolife-tv.com" }, urls = { "http://(www\\.)?online\\.nolife\\-tv\\.com/emission/#\\!/\\d+/[a-z0-9\\-_]+" }, flags = { 2 })
 public class OnlineNoLifeTvCom extends PluginForHost {
 
     private String              DLLINK              = null;
@@ -174,17 +174,15 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:21.0) Gecko/20100101 Firefox/21.0");
         /* Richtige Dateigröße bezogen auf den Accounttyp erhalten */
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null && br.getCookie(MAINPAGE, "bbpassword") == null) {
             login(aa, false);
         }
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://online.nolife-tv.com/index.php") || br.containsHTML("<title>Nolife Online</title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<div id=\"ligne_titre_big\" style=\"margin\\-top:10px;\">(.*?)</div><div").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>Nolife Online \\- (.*?)( \\- [A-Za-z]+ \\d+)?</title>").getMatch(0);
-        }
+        if (br.containsHTML("<title>Nolife Online \\- </title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("<title>Nolife Online \\- ([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         filename = Encoding.htmlDecode(filename);
         if (!br.containsHTML("flashvars")) {
