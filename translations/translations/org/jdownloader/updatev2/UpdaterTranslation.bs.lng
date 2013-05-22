@@ -1,4 +1,5 @@
 RestartController_confirmToExit_=Srvarno Izaći?
+RestartController_confirmToExit_msg=Da li stvarno želite da zatvorite JDownloader?
 confirmdialog_new_update_available_answer_later=Kasnije
 confirmdialog_new_update_available_answer_later_install=Kasnije
 confirmdialog_new_update_available_answer_now=Preuzmi sada
@@ -21,6 +22,7 @@ installframe_statusmsg_installing=Instalacija je u toku - molimo sačekajte...
 installframe_statusmsg_interrupted=Ndgradnja je prekinuta
 installframe_statusmsg_prepare=Prirpema za instalaciju...
 installframe_statusmsg_preparing=Priprema paketa nadgradnje...
+installframe_statusmsg_preparing_eta=Procijenjeno preostalo vrijeme čekanja: %s1
 installframe_statusmsg_selfupdate=Pronađena je Nova Verzija JDownloader-a
 installframe_statusmsg_selfupdate_validating=Validacija Instalacije. Ovo može potrejati do 5 minuta...
 installframe_statusmsg_waitingforapplication=Čekanje na Aplikaciju!
