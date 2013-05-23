@@ -225,7 +225,6 @@ public class Srnnks extends PluginForDecrypt {
                     try {
                         RUNNING.incrementAndGet();
                         synchronized (LOCK) {
-                            System.out.println(parameter.getCryptedUrl());
                             synchronized (Srnnks.GLOBAL_LOCK) {
                                 Thread.sleep(FW_WAIT);
                                 try {
@@ -266,14 +265,17 @@ public class Srnnks extends PluginForDecrypt {
 
                             forms = this.br.getForms();
                             int bestdist = Integer.MAX_VALUE;
-                            for (final Form form1 : forms) {
-                                final int dist = EditDistance.damerauLevenshteinDistance(sublink, form1.getAction());
-                                if (dist < bestdist) {
-                                    form = form1;
-                                    bestdist = dist;
+                            if (forms != null) {
+                                for (final Form form1 : forms) {
+                                    if (form1.getAction() == null) continue;
+                                    final int dist = EditDistance.damerauLevenshteinDistance(sublink, form1.getAction());
+                                    if (dist < bestdist) {
+                                        form = form1;
+                                        bestdist = dist;
+                                    }
                                 }
                             }
-                            if (form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
+                            if (form != null && form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
                                 /*
                                  * this form contains captcha image, so it must be valid
                                  */
