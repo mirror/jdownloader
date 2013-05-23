@@ -34,6 +34,8 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
+import sun.swing.SwingUtilities2;
+
 public class PremiumAccountTableModel extends ExtTableModel<Account> implements AccountCheckerEventListener {
 
     private static final long      serialVersionUID       = 3120481189794897020L;
@@ -180,9 +182,22 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
             @Override
-            public String getStringValue(Account value) {
-                if (getWidth() < 60) return "";
+            public void configureRendererComponent(Account value, boolean isSelected, boolean hasFocus, int row, int column) {
+                this.rendererIcon.setIcon(this.getIcon(value));
+                String str = null;
+                if (getWidth() > 60) str = this.getStringValue(value);
+                if (str == null) {
+                    str = "";
+                }
+                if (this.getTableColumn() != null) {
+                    this.rendererField.setText(SwingUtilities2.clipStringIfNecessary(this.rendererField, this.rendererField.getFontMetrics(this.rendererField.getFont()), str, this.getTableColumn().getWidth() - this.rendererIcon.getPreferredSize().width - 5));
+                } else {
+                    this.rendererField.setText(str);
+                }
+            }
 
+            @Override
+            public String getStringValue(Account value) {
                 return value.getHoster();
             }
 
