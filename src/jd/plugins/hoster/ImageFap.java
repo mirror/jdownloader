@@ -134,7 +134,7 @@ public class ImageFap extends PluginForHost {
             // Only set subdirectory if it wasn't set before or we'll get
             // subfolders
             // in subfolders which is bad
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, imagelink);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, imagelink, false, 1);
             if (dl.getConnection().getResponseCode() == 404) {
                 dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
