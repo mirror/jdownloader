@@ -283,13 +283,14 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                                 }
                                 addElement(getAdvancedSettings());
                             }
-                        };
+                        }.waitForEDT();
                         if (withExtensions) {
                             final AtomicBoolean firstExtension = new AtomicBoolean(true);
                             List<LazyExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
                             if (pluginsOptional != null) {
                                 for (final LazyExtension plg : pluginsOptional) {
-                                    System.out.println(plg.getClassname());
+                                    if ("org.jdownloader.extensions.extraction.ExtractionExtension".equals(plg.getClassname())) continue;
+                                    if ("org.jdownloader.extensions.jdtrayicon.TrayExtension".equals(plg.getClassname())) continue;
                                     if (contains(plg)) continue;
                                     if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;
                                     if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) continue;
