@@ -170,6 +170,7 @@ public class Vipfilecom extends PluginForHost {
         String link = getLinkViaSkymonkDownloadMethod(downloadLink.getDownloadURL());
         boolean skymonk = link == null ? false : true;
         if (link == null) {
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:21.0) Gecko/20100101 Firefox/21.0");
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             br.setFollowRedirects(false);
