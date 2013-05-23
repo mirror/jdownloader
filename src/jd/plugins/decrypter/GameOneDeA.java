@@ -34,6 +34,7 @@ import javax.xml.xpath.XPathFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -145,6 +146,7 @@ public class GameOneDeA extends PluginForDecrypt {
 
             fpName = fpName.replaceAll(" (-|~) Teil \\d+", "");
             fpName = fpName.replaceAll("\\.", "/");
+            fpName = Encoding.htmlDecode(fpName);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
 
