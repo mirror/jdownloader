@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -63,19 +62,16 @@ public class FuxCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<title>Fux \\- Error \\- Page not found</title>|<h2>Page<br />not found</h2>|We can\\'t find that page you\\'re looking for|<h3>Oops\\!</h3>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<li><h3>(.*?)</h3></li>").getMatch(0);
+        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
-            logger.warning("Couldn't find 'filename'");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = br.getRegex("<title>(.*?) \\- FUX</title>").getMatch(0);
+            if (filename == null) {
+                logger.warning("Couldn't find 'filename'");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        String player = br.getRegex("<script type=\"text/javascript\" src=\"(/players/FuxStream/Configurations/video\\.php\\?idm=\\d+)\"></script>").getMatch(0);
-        if (player == null) {
-            logger.warning("Couldn't find 'player'");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        Browser br2 = br.cloneBrowser();
-        br2.getPage(player);
-        String DLLINK = br2.getRegex("videoURL=\\'(.*?)\\'").getMatch(0);
+        // seems to be listed in order highest quality to lowest. 20130513
+        String DLLINK = br.getRegex("sources: \\[[\r\n\t ]+\\{[\r\n\t ]+file: \"(http[^\"]+)").getMatch(0);
         if (DLLINK == null) {
             logger.warning("Couldn't find 'DDLINK'");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -84,7 +80,9 @@ public class FuxCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename.trim());
         if (DLLINK.contains(".m4v"))
             downloadLink.setFinalFileName(filename + ".m4v");
-        else
+        else if (DLLINK.contains(".mp4")) {
+            downloadLink.setFinalFileName(filename + ".mp4");
+        } else
             downloadLink.setFinalFileName(filename + ".flv");
         // In case the link redirects to the finallink
         br.setFollowRedirects(true);
