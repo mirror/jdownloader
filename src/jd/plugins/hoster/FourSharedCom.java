@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FourSharedCom extends PluginForHost {
 
     public final String   PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
-    private String        agent                                     = null;
+    private String        agent                                     = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0";
     private final String  PASSWORDTEXT                              = "enter a password to access";
     private static Object LOCK                                      = new Object();
     private final String  COOKIE_HOST                               = "http://4shared.com";
