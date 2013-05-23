@@ -65,8 +65,7 @@ public class Vipfilecom extends PluginForHost {
     }
 
     /**
-     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per
-     * minute
+     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per minute
      * */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -257,6 +256,7 @@ public class Vipfilecom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:21.0) Gecko/20100101 Firefox/21.0");
         br.postPage(APIPAGE, "r=[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/direct_links\",{\"link\":\"" + downloadLink.getDownloadURL() + "\",\"pass\":\"" + account.getPass() + "\"}]]");
         if (br.containsHTML("data\":\"bad password\"")) {
             logger.info("Wrong password, disabling the account!");
@@ -269,6 +269,8 @@ public class Vipfilecom extends PluginForHost {
             dlUrl = dlUrl.replace("\\", "");
         else
             dlUrl = handleOldPremiumPassWay(account, downloadLink);
+        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dlUrl = dlUrl.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("Finallink doesn't lead to a file!");
