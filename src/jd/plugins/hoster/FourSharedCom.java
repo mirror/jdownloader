@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -49,11 +49,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio|mp3|office|rar|zip|archive|music)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
-    public final String   PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
-    private String        agent                                     = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0";
-    private final String  PASSWORDTEXT                              = "enter a password to access";
-    private static Object LOCK                                      = new Object();
-    private final String  COOKIE_HOST                               = "http://4shared.com";
+    public final String            PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
+    private static StringContainer agent                                     = new StringContainer();
+    private final String           PASSWORDTEXT                              = "enter a password to access";
+    private static Object          LOCK                                      = new Object();
+    private final String           COOKIE_HOST                               = "http://4shared.com";
 
     public FourSharedCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -67,6 +67,23 @@ public class FourSharedCom extends PluginForHost {
     private static final String DOWNLOADSTREAMS              = "DOWNLOADSTREAMS";
     private static final String DOWNLOADSTREAMSERRORHANDLING = "DOWNLOADSTREAMSERRORHANDLING";
 
+    public static class StringContainer {
+        public String string = null;
+    }
+
+    private Browser prepBrowser(Browser prepBr) {
+        if (agent.string == null) {
+            /*
+             * we first have to load the plugin, before we can reference it
+             */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.setCookie("http://www.4shared.com", "4langcookie", "en");
+        return prepBr;
+    }
+
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.viajd", ".com").replaceFirst("https:", "http:"));
@@ -74,14 +91,7 @@ public class FourSharedCom extends PluginForHost {
             boolean fixLink = true;
             try {
                 final Browser br = new Browser();
-                if (agent == null) {
-                    /*
-                     * we first have to load the plugin, before we can reference it
-                     */
-                    JDUtilities.getPluginForHost("mediafire.com");
-                    agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
-                }
-                br.getHeaders().put("User-Agent", agent);
+                prepBrowser(br);
                 br.setFollowRedirects(false);
                 br.getPage(link.getDownloadURL());
                 final String newLink = br.getRedirectLocation();
@@ -167,8 +177,7 @@ public class FourSharedCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
-        // If file isn't available for freeusers we can still try to get the
-        // streamlink
+        // If file isn't available for free users we can still try to get the stream link
         if (br.containsHTML("In order to download files bigger that 500MB you need to login at 4shared") && url == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L(PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM, "Files over 500MB are only downloadable for premiumusers!"));
         if (url == null) {
             url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]+)\"  ?class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
@@ -176,7 +185,7 @@ public class FourSharedCom extends PluginForHost {
                 url = br.getRegex("\"(http://(www\\.)?4shared(\\-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
             }
             if (url == null) {
-                // Maybe directdownload
+                // Maybe direct download
                 url = getDirectDownloadlink();
                 if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
@@ -299,15 +308,7 @@ public class FourSharedCom extends PluginForHost {
             try {
                 /** Load everything required login and fetchAccountInfo also! */
                 br.setCookiesExclusive(true);
-                if (agent == null) {
-                    /*
-                     * we first have to load the plugin, before we can reference it
-                     */
-                    JDUtilities.getPluginForHost("mediafire.com");
-                    agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
-                }
-                br.getHeaders().put("User-Agent", agent);
-                br.setReadTimeout(3 * 60 * 1000);
+                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -322,6 +323,7 @@ public class FourSharedCom extends PluginForHost {
                         return;
                     }
                 }
+                br.setReadTimeout(3 * 60 * 1000);
                 br.getPage("http://www.4shared.com/");
                 br.setCookie("http://www.4shared.com", "4langcookie", "en");
                 br.postPage("http://www.4shared.com/login", "callback=jsonp" + System.currentTimeMillis() + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=false&doNotRedirect=true");
@@ -382,8 +384,7 @@ public class FourSharedCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         try {
             setBrowserExclusive();
-            br.getHeaders().put("User-Agent", agent);
-            br.setCookie("http://www.4shared.com", "4langcookie", "en");
+            prepBrowser(br);
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             // need password?
@@ -400,7 +401,7 @@ public class FourSharedCom extends PluginForHost {
             String size = br.getRegex("<td class=\"finforight lgraybox\" style=\"border\\-top:1px #dddddd solid\">([0-9,]+ [a-zA-Z]+)</td>").getMatch(0);
             if (size == null) {
                 size = br.getRegex("<span title=\"Size: (.*?)\">").getMatch(0);
-                // For mp3 stream- and maybe also normal streamlinks
+                // For mp3 stream- and maybe also normal stream links
                 if (size == null) size = br.getRegex("class=\"fileOwner dark\\-gray lucida f11\">[^<>\"/]*?</a>([^<>\"]*?) \\|").getMatch(0);
             }
             if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
