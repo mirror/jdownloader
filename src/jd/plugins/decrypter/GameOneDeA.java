@@ -217,6 +217,7 @@ public class GameOneDeA extends PluginForDecrypt {
                         dllink = node.getTextContent();
                         if (dllink == null) continue;
                         String q = new Regex(dllink, "(\\d+)k_").getMatch(0);
+                        if (q == null) q = new Regex(dllink, "_\\d+x(\\d+)_").getMatch(0);
                         q = q == null ? "" : quality(Integer.parseInt(q));
                         String ext = dllink.substring(dllink.lastIndexOf("."));
                         ext = ext == null || ext.length() > 4 ? ".flv" : ext;
@@ -248,7 +249,7 @@ public class GameOneDeA extends PluginForDecrypt {
 
     private String quality(final int q) {
         if (q <= 350) { return "LOW"; }
-        if (q <= 850) { return "MEDIUM"; }
+        if (q < 720) { return "MEDIUM"; }
         return "HIGH";
     }
 
