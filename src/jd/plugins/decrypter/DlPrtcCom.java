@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -52,6 +53,7 @@ public class DlPrtcCom extends PluginForDecrypt {
     private static final String  PASSWORDFAILED = ">The password is incorrect";
     private static final String  JDDETECTED     = "JDownloader is prohibited.";
     private static String        agent          = null;
+    private static AtomicInteger maxConProIns   = new AtomicInteger(1);
     private static AtomicBoolean mfLoaded       = new AtomicBoolean(false);
     private boolean              coLoaded       = false;
     private String               correctedBR    = "";
@@ -162,6 +164,9 @@ public class DlPrtcCom extends PluginForDecrypt {
         this.getPluginConfig().setProperty("agent", agent);
         this.getPluginConfig().save();
 
+        // once the first session is saved, lets ramp things up!
+        // if (maxConProIns.equals(1)) maxConProIns.set(4);
+
         return decryptedLinks;
 
     }
@@ -169,9 +174,9 @@ public class DlPrtcCom extends PluginForDecrypt {
     private String getCaptchaLink() throws Exception {
         correctBR();
         // proper captcha url seem to have 32 (md5) char length
-        String captchaLink = new Regex(correctedBR, "src=\"(\\s+)?(/captcha\\.php\\?uid=[a-z0-9]{32})(\\s+)?\"").getMatch(1);
+        String captchaLink = new Regex(correctedBR, "src=\"(\\s+)?(/captcha\\.php\\?uid=_?[a-z0-9]{32})(\\s+)?\"").getMatch(1);
         if (captchaLink == null) {
-            captchaLink = new Regex(correctedBR, "(/captcha\\.php\\?uid=[a-z0-9]{32})").getMatch(0);
+            captchaLink = new Regex(correctedBR, "(/captcha\\.php\\?uid=_?[a-z0-9]{32})").getMatch(0);
         }
         return captchaLink;
     }
@@ -209,12 +214,18 @@ public class DlPrtcCom extends PluginForDecrypt {
         this.getPluginConfig().setProperty("cookies", Property.NULL);
         this.getPluginConfig().setProperty("agent", Property.NULL);
         this.getPluginConfig().save();
+        maxConProIns.set(1);
         coLoaded = false;
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
+    }
+
+    public int getMaxConcurrentProcessingInstances() {
+        // works best with the cache session, otherwise first import results in many captchas!
+        return maxConProIns.get();
     }
 
 }
