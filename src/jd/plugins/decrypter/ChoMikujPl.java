@@ -56,6 +56,10 @@ public class ChoMikujPl extends PluginForDecrypt {
     private static final String VIDEOENDINGS             = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
     private static final String UNSUPPORTED              = "http://(www\\.)?chomikuj\\.pl//?(action/[^<>\"]+|(Media|Kontakt|PolitykaPrywatnosci|Empty|Abuse|Sugestia|LostPassword|Zmiany|Regulamin|Platforma)\\.aspx|favicon\\.ico)";
 
+    public int getMaxConcurrentProcessingInstances() {
+        return 4;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("chomikujpagedecrypt.pl/", "chomikuj.pl/").replace("chomikuj.pl//", "chomikuj.pl/");
