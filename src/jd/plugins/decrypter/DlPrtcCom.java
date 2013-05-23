@@ -166,7 +166,7 @@ public class DlPrtcCom extends PluginForDecrypt {
 
         // once the first session is saved, lets ramp things up!
         // if (maxConProIns.equals(1)) maxConProIns.set(4);
-
+        // rmCookie(parameter);
         return decryptedLinks;
 
     }
@@ -177,7 +177,19 @@ public class DlPrtcCom extends PluginForDecrypt {
         String captchaLink = new Regex(correctedBR, "src=\"(\\s+)?(/captcha\\.php\\?uid=_?[a-z0-9]{32})(\\s+)?\"").getMatch(1);
         if (captchaLink == null) {
             captchaLink = new Regex(correctedBR, "(/captcha\\.php\\?uid=_?[a-z0-9]{32})").getMatch(0);
+            if (captchaLink == null) {
+                String[] imgs = new Regex(correctedBR, "<img[^>]+(/captcha\\.php\\?[^\"]+)").getColumn(0);
+                if (imgs != null && imgs.length != 0) {
+                    for (String img : imgs) {
+                        if (new Regex(img, "([a-z0-9]{32})").matches()) {
+                            captchaLink = img;
+                        }
+                    }
+                }
+            }
         }
+        // implement a verification of captcha link to prevent fakes.
+
         return captchaLink;
     }
 
