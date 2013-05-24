@@ -19,7 +19,7 @@ public class PauseDownloadsAction extends ToolBarAction implements DownloadWatch
 
     public PauseDownloadsAction(SelectionInfo<?, ?> selection) {
         setIconKey("media-playback-pause");
-
+        setSelected(false);
         setTooltipText(_GUI._.gui_menu_action_break2_desc(JsonConfig.create(GeneralSettings.class).getPauseSpeed()));
 
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
