@@ -876,7 +876,6 @@ public class TbCm extends PluginForDecrypt {
 
                         DownloadLink dlink = this.createDownloadlink(link.replaceFirst("http", "httpJDYoutube"));
                         dlink.setProperty("ALLOW_DUPE", true);
-                        filePackage.add(dlink);
                         dlink.setBrowserUrl(url);
 
                         String name = YT_FILENAME + " (" + track[3] + ").xml";
@@ -885,6 +884,7 @@ public class TbCm extends PluginForDecrypt {
                         dlink.setProperty("subtitle", true);
 
                         decryptedLinks.add(dlink);
+                        filePackage.add(dlink);
                     }
                 }
 

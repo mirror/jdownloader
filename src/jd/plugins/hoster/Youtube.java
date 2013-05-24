@@ -42,7 +42,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "(httpJDYoutube://[\\w\\.\\-]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+&.+(&fmt=\\d+)?))|(httpJDYoutube://video\\.google\\.com/timedtext\\?type=track&name=.*?\\&lang=[a-z]{2}\\&v=[a-z\\-_A-Z0-9]+)|(httpJDYoutube://img\\.youtube.com/vi/[a-z\\-_A-Z0-9]+/(hqdefault|mqdefault|default|maxresdefault).jpg)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "(httpJDYoutube://[\\w\\.\\-]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+&.+(&fmt=\\d+)?))|(httpJDYoutube://video\\.google\\.com/timedtext\\?type=track&name=.*?\\&lang=[a-z\\-]{2,}\\&v=[a-z\\-_A-Z0-9]+)|(httpJDYoutube://img\\.youtube.com/vi/[a-z\\-_A-Z0-9]+/(hqdefault|mqdefault|default|maxresdefault).jpg)" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
     private static Object       lock                    = new Object();
@@ -186,7 +186,13 @@ public class Youtube extends PluginForHost {
         downloadLink.setProperty("valid", false);
         this.requestFileInformation(downloadLink);
         this.br.setDebug(true);
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+        int maxChunks = 0;
+        boolean resume = true;
+        if (downloadLink.getBooleanProperty("subtitle", false) || downloadLink.getBooleanProperty("thumbnail", false)) {
+            maxChunks = 1;
+            resume = false;
+        }
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), resume, maxChunks);
         if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !downloadLink.getBooleanProperty("subtitle", false) && !downloadLink.getBooleanProperty("thumbnail", false)) {
             downloadLink.setProperty("valid", false);
             this.dl.getConnection().disconnect();
@@ -204,7 +210,13 @@ public class Youtube extends PluginForHost {
         /* we now have to get fresh links */
         this.requestFileInformation(downloadLink);
         this.br.setDebug(true);
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+        int maxChunks = 0;
+        boolean resume = true;
+        if (downloadLink.getBooleanProperty("subtitle", false) || downloadLink.getBooleanProperty("thumbnail", false)) {
+            maxChunks = 1;
+            resume = false;
+        }
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), resume, maxChunks);
         if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video")) {
             downloadLink.setProperty("valid", false);
             this.dl.getConnection().disconnect();
@@ -378,13 +390,21 @@ public class Youtube extends PluginForHost {
         // System.out.println("Youtube: " + downloadLink);
 
         if (downloadLink.getBooleanProperty("subtitle", false) || downloadLink.getBooleanProperty("thumbnail", false)) {
-            URLConnectionAdapter urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+            URLConnectionAdapter urlConnection = null;
+            try {
+                urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
 
-            if (urlConnection.getResponseCode() == 404) return AvailableStatus.FALSE;
+                if (urlConnection.getResponseCode() == 404) return AvailableStatus.FALSE;
 
-            String size = urlConnection.getHeaderField("Content-Length");
-            downloadLink.setDownloadSize(Long.parseLong(size));
-            return AvailableStatus.TRUE;
+                String size = urlConnection.getHeaderField("Content-Length");
+                downloadLink.setDownloadSize(Long.parseLong(size));
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    urlConnection.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
         }
 
         downloadLink.setProperty("STREAMING", true);
