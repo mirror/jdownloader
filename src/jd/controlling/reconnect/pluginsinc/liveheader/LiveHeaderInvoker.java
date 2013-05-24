@@ -403,7 +403,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
     }
 
     private String getModifiedVariable(String key) throws ReconnectException {
-
+        if ("timestamp".equalsIgnoreCase(key)) { return "" + System.currentTimeMillis(); }
         // random value
         if (key.toLowerCase(Locale.ENGLISH).startsWith("random:")) {
             try {

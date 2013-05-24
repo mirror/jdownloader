@@ -6,7 +6,6 @@ import java.util.List;
 
 import jd.controlling.IOEQ;
 import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
@@ -17,8 +16,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
 public class CheckStatusAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
 
@@ -48,19 +45,6 @@ public class CheckStatusAction<PackageType extends AbstractPackageNode<ChildrenT
                     }
                 }
                 LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-                linkChecker.setLinkCheckHandler(new LinkCheckerHandler<CheckableLink>() {
-
-                    @Override
-                    public void linkCheckDone(CheckableLink link) {
-                        if (link instanceof CrawledLink) {
-                            System.out.println("refresh linkgrabber");
-                            LinkGrabberTableModel.getInstance().refreshModel(true);
-                        } else if (link instanceof DownloadLink) {
-                            System.out.println("refresh downloadtable");
-                            DownloadsTableModel.getInstance().refreshModel(true);
-                        }
-                    }
-                });
                 linkChecker.check(checkableLinks);
             }
 

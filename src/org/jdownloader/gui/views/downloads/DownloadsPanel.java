@@ -207,8 +207,8 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     long contentChanges = DownloadController.getInstance().getContentChanges();
                     if (lastContentChanges != contentChanges && tableModel.isFilteredView()) {
                         /*
-                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the
-                         * tablemodel to reflect possible status changes in filtered view
+                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the tablemodel to reflect
+                         * possible status changes in filtered view
                          */
                         tableModel.recreateModel();
                     } else {
@@ -241,7 +241,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         case REMOVE_CONTENT:
             tableModel.recreateModel();
             break;
-        case REFRESH_DATA:
+        case REFRESH_CONTENT:
             tableModel.refreshModel();
             break;
         }
@@ -251,22 +251,5 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        // if (!newValue && keyHandler ==
-        // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_VISIBLE) {
-        // JDGui.help(_GUI._.LinkGrabberPanel_onConfigValueModified_title_(),
-        // _GUI._.LinkGrabberPanel_onConfigValueModified_msg_(),
-        // NewTheme.I().getIcon("warning_green", 32));
-        //
-        // }
-        // new EDTRunner() {
-        //
-        // @Override
-        // protected void runInEDT() {
-        // removeAll();
-        // layoutComponents();
-        //
-        // revalidate();
-        // }
-        // };
     }
 }

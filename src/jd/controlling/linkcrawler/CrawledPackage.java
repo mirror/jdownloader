@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Locale;
 
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.ChildComparator;
 import jd.controlling.packagecontroller.PackageController;
@@ -162,8 +163,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     /**
-     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to
-     * return the actuall downloadloadfolder
+     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to return the actuall
+     * downloadloadfolder
      * 
      * @return
      */
@@ -203,7 +204,9 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public void setName(String name) {
+        if (name != null && name.equals(this.name)) return;
         this.name = name;
+        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledPackageProperty(this, CrawledPackageProperty.Property.NAME, name));
     }
 
     public void setDownloadFolder(String downloadFolder) {
@@ -214,6 +217,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
             this.downloadFolder = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
             this.downloadFolderSet = false;
         }
+        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledPackageProperty(this, CrawledPackageProperty.Property.FOLDER, downloadFolder));
     }
 
     public void setEnabled(boolean b) {
@@ -260,9 +264,10 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     @Override
     public void nodeUpdated(AbstractNode source, NOTIFY notify, Object param) {
         PackageController<CrawledPackage, CrawledLink> n = getControlledBy();
+        if (n == null) return;
         AbstractNode lsource = source;
         if (lsource == null) lsource = this;
-        if (n != null) n.nodeUpdated(lsource, notify, param);
+        n.nodeUpdated(lsource, notify, param);
     }
 
 }

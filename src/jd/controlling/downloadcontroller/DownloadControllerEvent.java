@@ -33,7 +33,6 @@ public class DownloadControllerEvent extends SimpleEvent<DownloadController, Obj
     }
 
     public static enum TYPE {
-        REFRESH_DATA,
         REFRESH_STRUCTURE,
         REMOVE_CONTENT,
         ADD_CONTENT,

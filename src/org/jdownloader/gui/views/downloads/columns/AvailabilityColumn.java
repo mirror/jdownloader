@@ -5,10 +5,12 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
@@ -75,17 +77,19 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
                 }
             }
         } else if (value instanceof CrawledPackage) {
-            int size = ((CrawledPackage) value).getView().getItems().size();
-            int off = ((CrawledPackage) value).getView().getOfflineCount();
-            int on = ((CrawledPackage) value).getView().getOnlineCount();
+            CrawledPackageView view = ((CrawledPackage) value).getView();
+            int size = view.getItems().size();
+            int off = view.getOfflineCount();
+            int on = view.getOnlineCount();
             if (on == size) return online;
             if (off == size) return offline;
             if ((off == 0 && on == 0) || (on == 0 && off > 0)) { return unknown; }
             return mixed;
         } else if (value instanceof FilePackage) {
-            int size = ((FilePackage) value).getView().getItems().size();
-            int off = ((FilePackage) value).getView().getOfflineCount();
-            int on = ((FilePackage) value).getView().getOnlineCount();
+            FilePackageView view = ((FilePackage) value).getView();
+            int size = view.getItems().size();
+            int off = view.getOfflineCount();
+            int on = view.getOnlineCount();
             if (on == size) return online;
             if (off == size) return offline;
             if ((off == 0 && on == 0) || (on == 0 && off > 0)) { return unknown; }

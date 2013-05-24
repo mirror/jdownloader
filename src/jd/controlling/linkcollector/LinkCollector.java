@@ -21,6 +21,7 @@ import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
+import jd.controlling.linkcrawler.CrawledLinkProperty;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerFilter;
@@ -896,10 +897,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
-    public void refreshData() {
-        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_DATA));
-    }
-
     public java.util.List<FilePackage> convert(final List<CrawledLink> links, final boolean removeLinks) {
         if (links == null || links.size() == 0) return null;
         return IOEQ.getQueue().addWait(new QueueAction<java.util.List<FilePackage>, RuntimeException>() {
@@ -1416,10 +1413,20 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         super.nodeUpdated(source, notify, param);
         switch (notify) {
         case PROPERTY_CHANCE:
-            refreshData();
+            if (param instanceof CrawledLinkProperty) {
+                CrawledLinkProperty eventPropery = (CrawledLinkProperty) param;
+                switch (eventPropery.getProperty()) {
+                case NAME:
+                case ENABLED:
+                case AVAILABILITY:
+                    eventPropery.getCrawledLink().getParentNode().getView().requestUpdate();
+                    break;
+                }
+            }
+            eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_DATA, new Object[] { source, param }, QueuePriority.LOW));
             break;
         case STRUCTURE_CHANCE:
-            _controllerStructureChanged(QueuePriority.LOW);
+            eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE, new Object[] { source, param }, QueuePriority.LOW));
             break;
         }
     }

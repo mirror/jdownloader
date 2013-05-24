@@ -74,9 +74,7 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
             public void run() {
                 boolean enable = state.equals(State.ALL_DISABLED);
                 for (ChildrenType a : selection.getChildren()) {
-
                     a.setEnabled(enable);
-
                 }
             }
         }, true);

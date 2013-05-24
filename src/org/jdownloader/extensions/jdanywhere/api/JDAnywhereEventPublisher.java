@@ -17,8 +17,8 @@ import jd.controlling.linkcollector.VariousCrawledPackage;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.DownloadLinkProperty;
-import jd.plugins.DownloadLink.DownloadLinkProperty.Property;
+import jd.plugins.DownloadLinkProperty;
+import jd.plugins.DownloadLinkProperty.Property;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 

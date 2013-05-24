@@ -13,6 +13,7 @@ import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLinkProperty;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
@@ -93,12 +94,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
-     * about how to prozess the file afterwards.
+     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info about how to prozess
+     * the file afterwards.
      * 
      * example:<br>
-     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
-     * different.
+     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID different.
      * 
      * @return
      */
@@ -223,11 +223,13 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public void setName(String name) {
+        if (name != null && name.equals(this.name)) return;
         if (StringUtils.isEmpty(name)) {
             this.name = null;
         } else {
             this.name = name;
         }
+        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.NAME, getName()));
     }
 
     /* returns unmodified name variable */
@@ -285,7 +287,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public void setEnabled(boolean b) {
         if (b == enabledState) return;
         enabledState = b;
-        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE, null);
+        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.ENABLED, b));
     }
 
     public long getCreated() {
@@ -439,9 +441,29 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     @Override
     public void nodeUpdated(AbstractNode source, NOTIFY notify, Object param) {
         CrawledPackage lparent = parent;
+        if (lparent == null) return;
         AbstractNode lsource = source;
+        if (lsource != null && lsource instanceof DownloadLink) {
+            if (param instanceof DownloadLinkProperty) {
+                DownloadLinkProperty propertyEvent = (DownloadLinkProperty) param;
+                switch (propertyEvent.getProperty()) {
+                case AVAILABILITY:
+                    nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.AVAILABILITY, propertyEvent.getValue()));
+                    return;
+                case ENABLED:
+                    nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.ENABLED, propertyEvent.getValue()));
+                    return;
+                case NAME:
+                    nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.NAME, propertyEvent.getValue()));
+                    return;
+                case PRIORITY:
+                    nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.PRIORITY, propertyEvent.getValue()));
+                    return;
+                }
+            }
+        }
         if (lsource == null) lsource = this;
-        if (lparent != null) lparent.nodeUpdated(lsource, notify, param);
+        lparent.nodeUpdated(lsource, notify, param);
     }
 
 }

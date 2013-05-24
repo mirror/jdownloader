@@ -38,6 +38,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.parser.Regex;
 import jd.plugins.DeleteTo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
@@ -788,16 +789,26 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     @Override
     public void nodeUpdated(AbstractNode source, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY notify, Object param) {
         super.nodeUpdated(source, notify, param);
-        if (source instanceof DownloadLink) {
-            switch (notify) {
-            case STRUCTURE_CHANCE:
-                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE, new Object[] { source, param }));
-                break;
-            case PROPERTY_CHANCE:
-                broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_CONTENT, new Object[] { source, param }));
-                break;
+        switch (notify) {
+        case PROPERTY_CHANCE:
+            if (param instanceof DownloadLinkProperty) {
+                DownloadLinkProperty eventPropery = (DownloadLinkProperty) param;
+                switch (eventPropery.getProperty()) {
+                case NAME:
+                case RESET:
+                case ENABLED:
+                case AVAILABILITY:
+                    eventPropery.getDownloadLink().getParentNode().getView().requestUpdate();
+                    break;
+                }
             }
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_CONTENT, new Object[] { source, param }));
+            break;
+        case STRUCTURE_CHANCE:
+            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE, new Object[] { source, param }));
+            break;
         }
+
     }
 
     @Override

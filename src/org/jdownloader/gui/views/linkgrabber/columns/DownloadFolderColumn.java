@@ -109,7 +109,6 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
                         @Override
                         protected Object run() {
                             p.setDownloadFolder(value);
-                            LinkCollector.getInstance().refreshData();
                             return null;
                         }
                     });

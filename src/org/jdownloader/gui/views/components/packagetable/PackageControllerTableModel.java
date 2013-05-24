@@ -53,7 +53,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     private static final String                                                          SORT_ORIGINAL  = "ORIGINAL";
 
     private DelayedRunnable                                                              asyncRefresh;
-    protected PackageController<PackageType, ChildrenType>                               pc;
+    protected final PackageController<PackageType, ChildrenType>                         pc;
     private DelayedRunnable                                                              asyncRecreate  = null;
     private java.util.List<PackageControllerTableModelFilter<PackageType, ChildrenType>> tableFilters   = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
     private LinkedList<TableDataModifier>                                                tableModifiers = new LinkedList<TableDataModifier>();
@@ -68,7 +68,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
     private DelayedRunnable             asyncRecreateFast;
 
-    public PackageControllerTableModel(PackageController<PackageType, ChildrenType> pc, String id) {
+    public PackageControllerTableModel(final PackageController<PackageType, ChildrenType> pc, String id) {
         super(id);
         resetSorting();
         queue.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
@@ -79,6 +79,12 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
             @Override
             public void delayedrun() {
+                java.util.List<PackageType> packages = getAllPackageNodes();
+                for (PackageType pkg : packages) {
+                    if (pkg.getView() != null && pkg.getView().updateRequired()) {
+                        pkg.getView().update();
+                    }
+                }
                 new EDTRunner() {
                     @Override
                     protected void runInEDT() {

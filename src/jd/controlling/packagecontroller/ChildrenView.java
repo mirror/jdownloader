@@ -1,17 +1,18 @@
 package jd.controlling.packagecontroller;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.DomainInfo;
 
 public abstract class ChildrenView<T> {
-    /**
-	 * 
-	 */
-    private static final long serialVersionUID = 5324936310983343571L;
 
-    abstract public void update(ArrayList<T> items);
+    abstract public void update(List<T> items);
+
+    abstract public void update();
+
+    abstract public void requestUpdate();
+
+    abstract public boolean updateRequired();
 
     abstract public DomainInfo[] getDomainInfos();
 
