@@ -181,7 +181,7 @@ public class DlPrtcCom extends PluginForDecrypt {
                 String[] imgs = new Regex(correctedBR, "<img[^>]+(/captcha\\.php\\?[^\"]+)").getColumn(0);
                 if (imgs != null && imgs.length != 0) {
                     for (String img : imgs) {
-                        if (new Regex(img, "([a-z0-9]{32})").matches()) {
+                        if (new Regex(img, "([a-z0-9]{28,32})").matches()) {
                             captchaLink = img;
                         }
                     }
