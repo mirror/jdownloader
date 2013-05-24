@@ -480,7 +480,7 @@ public class MediafireCom extends PluginForHost {
         } else {
             br.setFollowRedirects(true);
             this.br.getPage("http://www.mediafire.com/myaccount.php");
-            String trafficleft = this.br.getRegex("View Statistics.*?class=\"lg-txt\">(.*?)</div").getMatch(0);
+            String trafficleft = this.br.getRegex("View Statistics</a></span>.+</div>.+class=\"lg-txt\">([^<>]+)</div>").getMatch(0);
             if (trafficleft != null) {
                 trafficleft = trafficleft.trim();
                 if (Regex.matches(trafficleft, Pattern.compile("(tb|tbyte|terabyte|tib)", Pattern.CASE_INSENSITIVE))) {
@@ -687,9 +687,9 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        this.requestFileInformation(downloadLink);
+        requestFileInformation(downloadLink);
         if (downloadLink.getBooleanProperty("privatefolder")) throw new PluginException(LinkStatus.ERROR_FATAL, PRIVATEFOLDERUSERTEXT);
-        this.login(br, account, false);
+        login(br, account, false);
         if (account.getBooleanProperty("freeaccount")) {
             doFree(downloadLink, account);
         } else {
@@ -743,7 +743,7 @@ public class MediafireCom extends PluginForHost {
             } else if (url == null && useAPI == false) {
                 this.fileID = getID(downloadLink);
                 br.setFollowRedirects(false);
-                br.getPage("/download/" + fileID);
+                br.getPage("http://www.mediafire.com/download/" + fileID);
                 /* url should be downloadlink when directDownload is enabled */
                 url = getURL(br);
                 if (url == null) {
