@@ -97,7 +97,7 @@ public class UltraMegaBitCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("<h3 id=\"download_delay\">Please wait\\.\\.\\.</h3>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            if (br.containsHTML("<h3 id=\"download_delay\">Please wait\\.\\.\\.</h3>")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSum()); }
             if (br.containsHTML("guests are only able to download 1 file every")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
             if (br.containsHTML(">Account limitation notice")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
             if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -223,6 +223,19 @@ public class UltraMegaBitCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    private long waitSum() {
+        // time into the future
+        String test = br.getRegex("ts = \\((\\d+)").getMatch(0);
+        // current time
+        long ct = System.currentTimeMillis();
+        // ms wait
+        long wait1 = Integer.parseInt(test);
+        wait1 += 3600;
+        wait1 = wait1 * 1000;
+        long result = wait1 - ct;
+        return result;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
