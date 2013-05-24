@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))/([a-z]+/)?folders/.+" }, flags = { 0 })
@@ -45,7 +46,9 @@ public class DpstFlsCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (MAINPAGE == null || DOMAINS == null) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("depositfiles.com");
+            final PluginForHost depositfilesPlugin = JDUtilities.getPluginForHost("depositfiles.com");
+            ((jd.plugins.hoster.DepositFiles) depositfilesPlugin).setMainpage();
+
             MAINPAGE = jd.plugins.hoster.DepositFiles.MAINPAGE.string;
             DOMAINS = jd.plugins.hoster.DepositFiles.DOMAINS;
             if (MAINPAGE == null || DOMAINS == null) {
@@ -75,6 +78,9 @@ public class DpstFlsCm extends PluginForDecrypt {
             for (String data : finalLinks) {
                 decryptedLinks.add(createDownloadlink(data));
             }
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.info("Folderlink is empty: " + parameter);
         }
         return decryptedLinks;
     }

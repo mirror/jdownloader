@@ -92,7 +92,7 @@ public class DepositFiles extends PluginForHost {
         this.enablePremium("http://depositfiles.com/signup.php?ref=down1");
     }
 
-    private void setMainpage() {
+    public void setMainpage() {
         if (MAINPAGE == null || MAINPAGE.string == null) {
             try {
                 Browser testBr = new Browser();

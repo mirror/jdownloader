@@ -23,12 +23,10 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3.uzhgorod.name" }, urls = { "http://(www\\.)?mp3\\.uzhgorod\\.name/(\\d+/\\d+/\\d+/|mp3music/\\d+-).+\\.html" }, flags = { 0 })
 public class MpUzhgrdNme extends PluginForDecrypt {
@@ -43,7 +41,10 @@ public class MpUzhgrdNme extends PluginForDecrypt {
         br.setCustomCharset("windows-1251");
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("К сожалению, данная страница для Вас не доступна, возможно был изменен ее адрес или она была удалена\\. Пожалуйста, воспользуйтесь поиском")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("К сожалению, данная страница для Вас не доступна, возможно был изменен ее адрес или она была удалена\\. Пожалуйста, воспользуйтесь поиском")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<title>(.*?)\\&raquo; Территория Меломана").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
