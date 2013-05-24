@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -743,7 +743,7 @@ public class MediafireCom extends PluginForHost {
             } else if (url == null && useAPI == false) {
                 this.fileID = getID(downloadLink);
                 br.setFollowRedirects(false);
-                br.getPage("http://www.mediafire.com/?" + fileID);
+                br.getPage("/download/" + fileID);
                 /* url should be downloadlink when directDownload is enabled */
                 url = getURL(br);
                 if (url == null) {
@@ -765,8 +765,7 @@ public class MediafireCom extends PluginForHost {
                 if (this.br.getRequest().getHttpConnection().getResponseCode() == 403) {
                     logger.info("Error (3)");
                 } else if (this.br.getRequest().getHttpConnection().getResponseCode() == 200 && passwordprotected) {
-                    // workaround for api error:
-                    // try website password solving
+                    // workaround for api error: try website password solving
                     this.handlePremiumPassword(downloadLink, account);
                     return;
                 }
