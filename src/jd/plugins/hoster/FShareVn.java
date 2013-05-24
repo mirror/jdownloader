@@ -18,11 +18,15 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,6 +49,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fshare.vn", "mega.1280.com" }, urls = { "http://(www\\.)?(mega\\.1280\\.com|fshare\\.vn)/file/[0-9A-Z]+", "dgjediz65854twsdfbtzoi6UNUSED_REGEX" }, flags = { 2, 0 })
 public class FShareVn extends PluginForHost {
@@ -275,17 +280,9 @@ public class FShareVn extends PluginForHost {
                     // login.put("url_refe", Encoding.urlEncode("/index.php"));
                     // login.put("auto_login", "1");
                 }
+                // stable postPage or submitForm doesn't contain this header...
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 br.submitForm(login);
-                // stable br.postPage doesn't contain this header...
-                // br.getHeaders().put("Content-Type",
-                // "application/x-www-form-urlencoded");
-                // stable also doesn't respect current browser protocol, so you
-                // must provide full url
-                // br.postPage("https://www.fshare.vn/login.php",
-                // "login_useremail=" + Encoding.urlEncode(account.getUser()) +
-                // "&login_password=" + Encoding.urlEncode(account.getPass()) +
-                // "&url_refe=" + Encoding.urlEncode("/index.php") +
-                // "&auto_login=1");
 
                 if (br.getCookie(this.getHost(), "fshare_userpass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
@@ -307,6 +304,16 @@ public class FShareVn extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        String revsion = JDUtilities.getRevision();
+        if (revsion == null || revsion.length() < 3) {
+            revsion = "0";
+        } else {
+            revsion = revsion.replaceAll(",|\\.", "");
+        }
+        final int rev = Integer.parseInt(revsion);
+        if (rev < 10000) {
+            premiumWarning();
+        }
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
@@ -364,5 +371,38 @@ public class FShareVn extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    private static void premiumWarning() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        // if ("de".equalsIgnoreCase(lng)) {
+                        // title = "fshare.vn Premium-Probleme";
+                        // message = "\r\n";
+                        // message += "\r\n";
+                        // message += "";
+                        // } else {
+                        title = "fshare.vn Premium Issues";
+                        message = "Hi, This version of JDownloader can not be used to login into fshare.vn, you will need to to install JDownloader 2.\r\n";
+                        message += "More information can be found on our fourm, when selecting OK you will proceed to our forum in your default web browser.\r\n";
+                        message += "http://board.jdownloader.org/showthread.php?t=37365\r\n";
+                        // }
+                        if (CrossSystem.isOpenBrowserSupported()) {
+                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
+                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
     }
 }
