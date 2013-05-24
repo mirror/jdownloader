@@ -16,6 +16,7 @@ LinkgrabberFilterRule_duplicate=%s1 (复制)
 Main_run_autostart_=正在开始下载
 Main_run_autostart_msg=下载将会在几秒后开始...
 Mainstart_now=立即开始!
+OptionalContainer_OptionalContainer=更多动作...
 PackagizerSettings_folderbypackage_rule_name=按包名创建子文件夹
 RemoveAction_actionPerformed_rly_msg=真的要删除全部选择的规则??
 SetDownloadFolderAction_actionPerformed_=分割包 %s1
