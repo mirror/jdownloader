@@ -44,6 +44,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -76,7 +77,7 @@ public class XenuBoxCom extends PluginForHost {
     // free account: same as above (not tested)
     // premium account: 20 * unlimited
     // protocol: https not setup correctly
-    // captchatype: recaptcha
+    // captchatype: keyCaptcha
     // other: no redirects
     // other: they break free links totally even for links under size
     // requirement. downloads in premium just fine == dodgey hoster.
@@ -257,6 +258,15 @@ public class XenuBoxCom extends PluginForHost {
                     dlForm = rc.getForm();
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
+                } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
+                    logger.info("Detected captcha method \"keycaptca\"");
+                    PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
+                    final String result = kc.showDialog(downloadLink.getDownloadURL());
+                    if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
+                    dlForm.put("capcode", result);
+                    /** wait time is often skippable for reCaptcha handling */
+                    skipWaittime = false;
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(passCode, dlForm, downloadLink);

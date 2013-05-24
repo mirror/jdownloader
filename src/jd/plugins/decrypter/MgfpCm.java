@@ -92,7 +92,6 @@ public class MgfpCm extends PluginForDecrypt {
             /**
              * Max number of images per page = 1000, if we got more we always have at least 2 pages
              */
-            // &nbsp; <a class=link3 href="?gid=4003171&amp;page=1&amp;view=2">:: next ::</a>
             final String[] pages = br.getRegex("<a class=link3 href=\"\\?(pgid=\\&amp;gid=\\d+\\&amp;page=|gid=\\d+\\&amp;page=)(\\d+)").getColumn(1);
             if (pages != null && pages.length != 0) for (final String page : pages)
                 if (!allPages.contains(page)) allPages.add(page);

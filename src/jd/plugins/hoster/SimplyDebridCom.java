@@ -197,6 +197,10 @@ public class SimplyDebridCom extends PluginForHost {
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.getPage(dllink);
+            if (br.containsHTML("This error have been sent to our services this one is going to be fixed as soon as possible<")) {
+                logger.info("Possible simply-debrid.com bug, NO JDownloader bug!");
+                logger.info("Directlink: " + dllink);
+            }
             if (br.containsHTML("php_network_getaddresses: getaddrinfo failed: No address associated with hostname")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
         }
         if (!dl.getConnection().isContentDisposition()) {

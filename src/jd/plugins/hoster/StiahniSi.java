@@ -118,7 +118,7 @@ public class StiahniSi extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
                 br.postPage("http://www.stiahni.si/user/login.php?r=reg", "remember=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.containsHTML(">Incorrec?t user name or password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.containsHTML("name=\\'unsuccessful\\' value=\\'1\\'/>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -145,7 +145,7 @@ public class StiahniSi extends PluginForHost {
             throw e;
         }
         br.getPage("http://www.stiahni.si/user/dashboard.php");
-        final String expire = br.getRegex("style=\"margin: 45px 0 0 30px;\">[\t\n\r ]+<div class=\"name\">Premium until:[\t\n\r ]+<span>([^<>\"]*?)<span").getMatch(0);
+        final String expire = br.getRegex("type=\\'hidden\\' name=\\'premiumUntil\\' value=\\'([^<>\"]*?)\\'/>").getMatch(0);
         if (expire == null) {
             account.setValid(false);
             return ai;

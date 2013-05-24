@@ -38,11 +38,15 @@ public class MikSeriNet extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         String parameter = param.toString();
         String anID = new Regex(parameter, "mikseri\\.net/artists/[^\"\\']+\\.(\\d+)").getMatch(0);
         if (anID != null) parameter = "http://www.mikseri.net/artists/?id=" + anID;
         br.getPage(parameter);
+        if (br.getURL().contains("/search.php")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (parameter.matches(".*?mikseri.net/artists/\\?id=.*?")) {
             String fpName = br.getRegex("<meta name=\"og:title\" content=\"(.*?)\"").getMatch(0);
             if (fpName == null) {

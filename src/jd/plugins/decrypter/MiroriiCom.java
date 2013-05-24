@@ -37,7 +37,7 @@ public class MiroriiCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCustomCharset("utf-8");
         br.getPage(parameter);
-        if (br.containsHTML(">Désolé mais ce fichier n\\'est pas ou plus disponible")) {
+        if (br.containsHTML(">Désolé, mais ce fichier n'est pas ou plus")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
