@@ -46,7 +46,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.Uploadedto.StringContainer;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -76,6 +75,16 @@ public class Netloadin extends PluginForHost {
     private static StringContainer lastIP          = new StringContainer();
     private static final long      RECONNECTWAIT   = 600000;
     private static String[]        IPCHECK         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+
+    public static class StringContainer {
+        //
+        public String string = null;
+
+        @Override
+        public String toString() {
+            return string;
+        }
+    }
 
     public Netloadin(PluginWrapper wrapper) {
         super(wrapper);
