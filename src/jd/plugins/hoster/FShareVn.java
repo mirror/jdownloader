@@ -313,6 +313,8 @@ public class FShareVn extends PluginForHost {
         final int rev = Integer.parseInt(revsion);
         if (rev < 10000) {
             premiumWarning();
+            account.setValid(false);
+            return ai;
         }
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
