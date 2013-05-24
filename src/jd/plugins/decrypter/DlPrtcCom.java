@@ -178,14 +178,13 @@ public class DlPrtcCom extends PluginForDecrypt {
         if (captchaLink == null) {
             captchaLink = new Regex(correctedBR, "(/captcha\\.php\\?uid=_?[a-z0-9]{32})").getMatch(0);
             if (captchaLink == null) {
-                String[] imgs = new Regex(correctedBR, "<img[^>]+(/captcha\\.php\\?[^\"]+)").getColumn(0);
-                if (imgs != null && imgs.length != 0) {
-                    for (String img : imgs) {
-                        if (new Regex(img, "([a-z0-9]{28,32})").matches()) {
-                            captchaLink = img;
-                        }
-                    }
-                }
+                captchaLink = new Regex(correctedBR, "<img[^>]+(/captcha\\.php\\?[^\"]+)").getMatch(0);
+                // String[] imgs = new Regex(correctedBR, "<img[^>]+(/captcha\\.php\\?[^\"]+)").getColumn(0);
+                // if (imgs != null && imgs.length != 0) {
+                // for (String img : imgs) {
+                // if (new Regex(img, "([a-z0-9]{28,32})").matches()) {
+                // captchaLink = img; } }
+                // }
             }
         }
         // implement a verification of captcha link to prevent fakes.
