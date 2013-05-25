@@ -92,7 +92,7 @@ gui_downloadlink_hostertempunavail=[Actualment no es possible descarregar]
 gui_downloadlink_hosterwaittime=[espereu IP nova]
 gui_downloadview_statustext_jac=Reconeixent Captcha
 gui_javacheck_newerjavaavailable_msg=Tot i que JDownloader funciona amb la vostra versió de Java, et recomanem instal·lar la última actualització\n\nAixí, el JDownloader serà més estable i ràpid. \n\n\n\n Visiteu http://jdownloader.org/download.
-gui_javacheck_newerjavaavailable_title=S'ha trobat una versió més antiga de Java: %s1!
+gui_javacheck_newerjavaavailable_title=S'ha trobat una versió més antiga del Java: %s1!
 gui_mainframe_title_updatemessage2=%s1 actualitzacions disponibles
 gui_menu_extensions=Eines
 gui_setting_folderchooser_title=Escull directori
@@ -128,7 +128,7 @@ jd_controlling_SingleDownloadController_askexists_title=L'arxiu existeix
 jd_controlling_reconnect_Reconnector_progress_failed2=La reconnexió ha fallat molts cops i ha estat desactivada. Si us plau, revisa la teva configuració!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>S'ha triat no reconnectar</u></b><br/><p>La Reconnexió és un mètode per evitar els temps d'espera que imposen alguns servidors als seus serveis gratuïts. No serveix de res en comptes Premium.</p><p>Més informació sobre la reconnexió <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>aquí</a>.</p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=No reconnectis
-jd_plugins_PluginUtils_askPassword=Si us plau entra la contrasenya per %s1
+jd_plugins_PluginUtils_askPassword=Si us plau, introduïu la contrasenya per %s1
 literally_offline=En línia
 literally_yes=Sí
 pattern_password=пароль|пасс|pa?s?w|passwort|password|passw?|pw

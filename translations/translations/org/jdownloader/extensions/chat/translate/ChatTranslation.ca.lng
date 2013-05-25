@@ -1,7 +1,7 @@
 ChatExtensionGuiToggleAction_deselected=Obrir el xat
 ChatExtensionGuiToggleAction_deselected_tt=Obrir la pestanya de traducció
-ChatExtensionGuiToggleAction_selected=Tancar xat
-ChatExtensionGuiToggleAction_selected_tt=Tancar la pestanya del xat
+ChatExtensionGuiToggleAction_selected=Tanca el xat
+ChatExtensionGuiToggleAction_selected_tt=Tanca la pestanya del xat
 description=Contacta amb els desenvolupadors i ajudants del JDownloader
 gui_tab_title=Canal %s1
 jd_plugins_optional_jdchat_JDChatView_title=Xat de suport de JDownloader

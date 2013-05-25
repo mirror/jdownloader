@@ -16,7 +16,7 @@ interaction_shutdown_dialog_msg_closejd=<h2><font color="red">Es tancarà JDownl
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">El sistema es posara en mode d'hivernació!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">El sistema s'apaga!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">El sistema es posara en moda d'espera!</font></h2>
-interaction_shutdown_dialog_title_closejd=Voldeu tancar el JD?
+interaction_shutdown_dialog_title_closejd=Voleu tancar el JD?
 interaction_shutdown_dialog_title_hibernate=Hivernar?
 interaction_shutdown_dialog_title_shutdown=Apagar?
 interaction_shutdown_dialog_title_standby=Espera?

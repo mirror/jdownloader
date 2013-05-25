@@ -1,7 +1,7 @@
 JDGui_windowClosing_try_answer_totaskbar=Minimitzar a la bara de tasques
 JDGui_windowClosing_try_answer_tray=Oculta a l'àrea de notificació
 JDGui_windowClosing_try_asnwer_close=Tanca el JDownloader
-JDGui_windowClosing_try_msg_2=Si us plau trieu entre:\n   - Tanca el JDownloader (cancel·lant tots els processos en funcionament)\n   - Minimitza'l a la barra de tasques (les descàrregues continuaran)\n   - Oculta'l a l'àrea de notificacions del sistema (les descàrregues continuaran en segon pla)
+JDGui_windowClosing_try_msg_2=Si us plau, trieu entre:\n   - Tanca el JDownloader (cancel·lant tots els processos en funcionament)\n   - Minimitza'l a la barra de tasques (les descàrregues continuaran)\n   - Oculta'l a l'àrea de notificacions del sistema (les descàrregues continuaran en segon pla)
 JDGui_windowClosing_try_title_=Tanca a l'àrea de notificació
 OnCloseAction_exit=Tanca l'aplicació
 OnCloseAction_totaskbar=Minimitzar a la bara de tasques
