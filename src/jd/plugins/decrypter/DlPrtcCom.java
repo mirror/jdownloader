@@ -134,14 +134,14 @@ public class DlPrtcCom extends PluginForDecrypt {
             }
             if (coLoaded) {
                 continueForm.remove("submitform");
-                continueForm.put("submitform", "");
+                // continueForm.put("submitform", "");
             }
             br.submitForm(continueForm);
         }
         if (JDHash.getMD5(JDDETECTED).equals(JDHash.getMD5(br.toString()))) {
             rmCookie(parameter);
         }
-        final String linktext = br.getRegex("class=\"divlink link\" id=\"slinks\"><a(.*?)valign=\"top\" align=\"right\" width=\"500px\" height=\"280px\"><pre style=\"text\\-align:center\">").getMatch(0);
+        String linktext = br.getRegex("class=\"divlink link\"\\s+id=\"slinks\"><a(.*?)valign=\"top\" align=\"right\" width=\"500px\" height=\"280px\"><pre style=\"text\\-align:center\">").getMatch(0);
         if (linktext == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -178,7 +178,10 @@ public class DlPrtcCom extends PluginForDecrypt {
         if (captchaLink == null) {
             captchaLink = new Regex(correctedBR, "(/captcha\\.php\\?uid=_?[a-z0-9]{32})").getMatch(0);
             if (captchaLink == null) {
-                captchaLink = new Regex(correctedBR, "<img[^>]+(/captcha\\.php\\?[^\"]+)").getMatch(0);
+                captchaLink = new Regex(correctedBR, "src=[^>]+(/captcha\\.php\\?[^\"]+)").getMatch(0);
+                if (captchaLink == null) {
+                    captchaLink = new Regex(correctedBR, "(/captcha\\.php\\?[^\"']+)").getMatch(0);
+                }
                 // String[] imgs = new Regex(correctedBR, "<img[^>]+(/captcha\\.php\\?[^\"]+)").getColumn(0);
                 // if (imgs != null && imgs.length != 0) {
                 // for (String img : imgs) {
@@ -209,7 +212,7 @@ public class DlPrtcCom extends PluginForDecrypt {
         // <center><img id="captcha_" src="/captcha.php?uid=a1" style="display:none">
         regexStuff.add("(<img[^>]+display:(\\s+)?(none|hidden)\">)");
         regexStuff.add("(<img[^>]+display:(\\s+)?(none|hidden)'>)");
-
+        regexStuff.add("(\\{[^\\}]+getElementById\\('captcha'\\)[^\\}]+/captcha\\.php[^\\}]+)");
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
             if (results != null) {
