@@ -680,7 +680,7 @@ public class MediafireCom extends PluginForHost {
     private String getID(DownloadLink link) {
         String fileID = new Regex(link.getDownloadURL(), "\\?([a-zA-Z0-9]+)").getMatch(0);
         if (fileID == null) {
-            fileID = new Regex(link.getDownloadURL(), "file/([a-zA-Z0-9]+)").getMatch(0);
+            fileID = new Regex(link.getDownloadURL(), "(file|download)/([a-zA-Z0-9]+)").getMatch(1);
         }
         return fileID;
     }
