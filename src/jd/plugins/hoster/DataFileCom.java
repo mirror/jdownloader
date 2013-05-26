@@ -56,7 +56,7 @@ public class DataFileCom extends PluginForHost {
         return "http://www.datafile.com/terms.html";
     }
 
-    private static final String PREMIUMONLY = "\"Sorry\\. Only premium users can download this file\"";
+    private static final String PREMIUMONLY = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only users with<br />Premium account!<)";
 
     /**
      * They have a linkchecker but it doesn't show filenames if they're not included in the URL: http://www.datafile.com/linkchecker.html
@@ -85,11 +85,7 @@ public class DataFileCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(PREMIUMONLY)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
-            }
+            // not possible to download under handleFree!
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
         String dllink = checkDirectLink(downloadLink, "directlink");
