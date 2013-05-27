@@ -172,6 +172,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
         String passwordTxt = password.getText();
         if (!StringUtils.isEmpty(passwordTxt)) {
+            /* avoid empty hashsets */
             HashSet<String> passwords = JSonStorage.restoreFromString(passwordTxt, new TypeRef<HashSet<String>>() {
             }, new HashSet<String>());
             if (passwords == null || passwords.size() == 0) {
