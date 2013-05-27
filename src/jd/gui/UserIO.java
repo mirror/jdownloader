@@ -109,8 +109,7 @@ public class UserIO {
      */
     public static final int RETURN_CANCEL                  = 1 << 2;
     /**
-     * don't show again flag has been set. the dialog may has been visible. if RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this
-     * flag latly
+     * don't show again flag has been set. the dialog may has been visible. if RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this flag latly
      */
     public static final int RETURN_DONT_SHOW_AGAIN         = 1 << 3;
     /**
@@ -268,7 +267,7 @@ public class UserIO {
         Thread currentThread = Thread.currentThread();
         if (currentThread instanceof LinkCrawlerThread) {
             /* Crawler */
-            PluginForDecrypt plugin = ((LinkCrawlerThread) currentThread).getCurrentPlugin();
+            PluginForDecrypt plugin = (PluginForDecrypt) ((LinkCrawlerThread) currentThread).getCurrentOwner();
             LinkCrawler linkCrawler = ((LinkCrawlerThread) currentThread).getCurrentLinkCrawler();
 
             String e = title;

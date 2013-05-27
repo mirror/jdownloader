@@ -207,7 +207,7 @@ public class LinkCrawler {
         if (!checkStartNotify()) return;
         try {
             if (StringUtils.isEmpty(text)) return;
-            if (insideDecrypterPlugin()) {
+            if (insideCrawlerPlugin()) {
                 java.util.List<CrawledLink> links = _crawl(text, url, allowDeep);
                 crawl(links);
             } else {
@@ -244,7 +244,7 @@ public class LinkCrawler {
         if (!checkStartNotify()) return;
         try {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
-            if (insideDecrypterPlugin()) {
+            if (insideCrawlerPlugin()) {
                 /*
                  * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting for linkcrawler
                  * results
@@ -270,12 +270,20 @@ public class LinkCrawler {
         }
     }
 
-    public static boolean insideDecrypterPlugin() {
-        if (Thread.currentThread() instanceof LinkCrawlerThread && ((LinkCrawlerThread) Thread.currentThread()).isLinkCrawlerThreadUsedbyDecrypter()) {
-            return true;
-        } else {
-            return false;
+    public static boolean insideCrawlerPlugin() {
+        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+            Object owner = ((LinkCrawlerThread) Thread.currentThread()).getCurrentOwner();
+            if (owner != null && owner instanceof PluginForDecrypt) return true;
         }
+        return false;
+    }
+
+    public static boolean insideHosterPlugin() {
+        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+            Object owner = ((LinkCrawlerThread) Thread.currentThread()).getCurrentOwner();
+            if (owner != null && owner instanceof PluginForHost) return true;
+        }
+        return false;
     }
 
     /*
@@ -466,7 +474,7 @@ public class LinkCrawler {
                                         }
                                     });
                                     if (allPossibleCryptedLinks != null) {
-                                        if (insideDecrypterPlugin()) {
+                                        if (insideCrawlerPlugin()) {
                                             /*
                                              * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
                                              * waiting for linkcrawler results
@@ -508,7 +516,7 @@ public class LinkCrawler {
                                 try {
                                     final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pDecrypt.getPattern(), possibleCryptedLink, null);
                                     if (allPossibleCryptedLinks != null) {
-                                        if (insideDecrypterPlugin()) {
+                                        if (insideCrawlerPlugin()) {
                                             /*
                                              * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
                                              * waiting for linkcrawler results
@@ -560,7 +568,7 @@ public class LinkCrawler {
                     /* now we will walk through all available hoster plugins */
                     for (final LazyHostPlugin pHost : pHosts) {
                         if (pHost.canHandle(url)) {
-                            if (insideDecrypterPlugin()) {
+                            if (insideCrawlerPlugin()) {
                                 if (generation != this.getCrawlerGeneration(false)) {
                                     /* LinkCrawler got aborted! */
                                     return;
@@ -613,7 +621,7 @@ public class LinkCrawler {
                         }
                         forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink);
                         if (directHTTP.canHandle(url)) {
-                            if (insideDecrypterPlugin()) {
+                            if (insideCrawlerPlugin()) {
                                 if (generation != this.getCrawlerGeneration(false)) {
                                     /* LinkCrawler got aborted! */
                                     return;
@@ -639,7 +647,7 @@ public class LinkCrawler {
                     /* now we will check for generic ftp links */
                     if (ftp != null) {
                         if (ftp.canHandle(url)) {
-                            if (insideDecrypterPlugin()) {
+                            if (insideCrawlerPlugin()) {
                                 if (generation != this.getCrawlerGeneration(false)) {
                                     /* LinkCrawler got aborted! */
                                     return;
@@ -665,7 +673,7 @@ public class LinkCrawler {
                     }
                     if (possibleCryptedLink.isCrawlDeep()) {
                         /* the link is allowed to crawlDeep */
-                        if (insideDecrypterPlugin()) {
+                        if (insideCrawlerPlugin()) {
                             if (generation != this.getCrawlerGeneration(false)) {
                                 /* LinkCrawler got aborted! */
                                 return;
@@ -758,7 +766,7 @@ public class LinkCrawler {
                 if (Thread.currentThread() instanceof LinkCrawlerThread) {
                     lct = (LinkCrawlerThread) Thread.currentThread();
                 }
-                boolean lctb = false;
+                Object owner = null;
                 LinkCrawler previousCrawler = null;
                 boolean oldDebug = false;
                 boolean oldVerbose = false;
@@ -769,8 +777,8 @@ public class LinkCrawler {
                     logger.info("Processing: " + possibleCryptedLink.getURL());
                     if (lct != null) {
                         /* mark thread to be used by crawler plugin */
-                        lctb = lct.isLinkCrawlerThreadUsedbyDecrypter();
-                        lct.setLinkCrawlerThreadUsedbyDecrypter(true);
+                        owner = lct.getCurrentOwner();
+                        lct.setCurrentOwner(wplg);
                         previousCrawler = lct.getCurrentLinkCrawler();
                         lct.setCurrentLinkCrawler(this);
                         /* save old logger/states */
@@ -820,7 +828,7 @@ public class LinkCrawler {
                 } finally {
                     if (lct != null) {
                         /* reset thread to last known used state */
-                        lct.setLinkCrawlerThreadUsedbyDecrypter(lctb);
+                        lct.setCurrentOwner(owner);
                         lct.setCurrentLinkCrawler(previousCrawler);
                         lct.setLogger(oldLogger);
                         lct.setVerbose(oldVerbose);
@@ -994,7 +1002,7 @@ public class LinkCrawler {
             if (Thread.currentThread() instanceof LinkCrawlerThread) {
                 lct = (LinkCrawlerThread) Thread.currentThread();
             }
-            boolean lctb = false;
+            Object owner = null;
             LinkCrawler previousCrawler = null;
             boolean oldDebug = false;
             boolean oldVerbose = false;
@@ -1004,8 +1012,8 @@ public class LinkCrawler {
                 logger.setAllowTimeoutFlush(false);
                 if (lct != null) {
                     /* mark thread to be used by crawler plugin */
-                    lctb = lct.isLinkCrawlerThreadUsedbyDecrypter();
-                    lct.setLinkCrawlerThreadUsedbyDecrypter(true);
+                    owner = lct.getCurrentOwner();
+                    lct.setCurrentOwner(plg);
                     previousCrawler = lct.getCurrentLinkCrawler();
                     lct.setCurrentLinkCrawler(this);
                     /* save old logger/states */
@@ -1044,7 +1052,7 @@ public class LinkCrawler {
             } finally {
                 if (lct != null) {
                     /* reset thread to last known used state */
-                    lct.setLinkCrawlerThreadUsedbyDecrypter(lctb);
+                    lct.setCurrentOwner(owner);
                     lct.setCurrentLinkCrawler(previousCrawler);
                     lct.setLogger(oldLogger);
                     lct.setVerbose(oldVerbose);
@@ -1100,11 +1108,10 @@ public class LinkCrawler {
             if (Thread.currentThread() instanceof LinkCrawlerThread) {
                 lct = (LinkCrawlerThread) Thread.currentThread();
             }
-            boolean lctb = false;
+            Object owner = null;
             LinkCrawlerDistributer dist = null;
             DelayedRunnable distributeLinksDelayer = null;
             LinkCrawler previousCrawler = null;
-            PluginForDecrypt previousPlugin = null;
             java.util.List<DownloadLink> decryptedPossibleLinks = null;
             try {
                 final java.util.List<CrawledLink> distributedLinks = new ArrayList<CrawledLink>();
@@ -1189,10 +1196,8 @@ public class LinkCrawler {
                 });
                 if (lct != null) {
                     /* mark thread to be used by decrypter plugin */
-                    lctb = lct.isLinkCrawlerThreadUsedbyDecrypter();
-                    previousPlugin = lct.getCurrentPlugin();
-                    lct.setCurrentPlugin(wplg);
-                    lct.setLinkCrawlerThreadUsedbyDecrypter(true);
+                    owner = lct.getCurrentOwner();
+                    lct.setCurrentOwner(wplg);
                     previousCrawler = lct.getCurrentLinkCrawler();
                     lct.setCurrentLinkCrawler(this);
                     /* save old logger/states */
@@ -1224,12 +1229,11 @@ public class LinkCrawler {
             } finally {
                 if (lct != null) {
                     /* reset thread to last known used state */
-                    lct.setLinkCrawlerThreadUsedbyDecrypter(lctb);
+                    lct.setCurrentOwner(owner);
                     lct.setCurrentLinkCrawler(previousCrawler);
                     lct.setLogger(oldLogger);
                     lct.setVerbose(oldVerbose);
                     lct.setDebug(oldDebug);
-                    lct.setCurrentPlugin(previousPlugin);
                 }
                 /* remove distributer from plugin */
                 wplg.setDistributer(null);
