@@ -45,8 +45,15 @@ public class DiskYandexNet extends PluginForHost {
         return "https://disk.yandex.net/";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
+    public void correctDownloadLink(DownloadLink link) throws PluginException {
         link.setUrlDownload(link.getDownloadURL().replace("mail.yandex.ru/", "disk.yandex.net/").replace("#", "?hash="));
+        if (!link.getDownloadURL().matches("(" + shortURLs + ")")) {
+            String protocol = new Regex(link.getDownloadURL(), "(https?)://").getMatch(0);
+            String hashID = new Regex(link.getDownloadURL(), "hash=(.+)$").getMatch(0);
+            if (protocol == null || hashID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            link.setUrlDownload(protocol + "://disk.yandex.com/public/?hash=" + hashID);
+        }
+
     }
 
     private String getHashID(DownloadLink link) throws PluginException {
@@ -69,6 +76,9 @@ public class DiskYandexNet extends PluginForHost {
             }
             if (!br.getURL().matches(primaryURLs)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setUrlDownload(new Regex(br.getURL(), "(" + primaryURLs + ")").getMatch(0));
+            // lets format back into single url format, as short links redirect to different the different domains depending on geolcoation
+            // and we need English for Error catching!
+            correctDownloadLink(link);
         } else {
             br.getPage(link.getDownloadURL());
         }
@@ -85,7 +95,7 @@ public class DiskYandexNet extends PluginForHost {
             filesize = parse("size");
             if (filesize != null) filesize = filesize + "b";
         } else {
-            if (br.containsHTML("<title>The file you are looking for could not be found.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found — Yandex\\.Disk</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = br.getRegex("<title>(.*?) \\— Yandex\\.Disk</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("b\\-text_title\">(.*?)</span>").getMatch(0);
             filesize = br.getRegex("<span class=\"b\\-text\">(.*?), uploaded").getMatch(0);
@@ -109,7 +119,8 @@ public class DiskYandexNet extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (br.getURL().contains("&final=true")) {
             // this is prob wrong
-            // br.postPage("/handlers.jsx", "_c&public_url=1&_handlers=disk-file-info&_locale=en&_page=disk-share&_service=disk&hash=" + Encoding.urlEncode(getHashID(downloadLink)));
+            // br.postPage("/handlers.jsx", "_c&public_url=1&_handlers=disk-file-info&_locale=en&_page=disk-share&_service=disk&hash=" +
+            // Encoding.urlEncode(getHashID(downloadLink)));
             logger.warning("Component disabled. Please report the source URL to JDownloader Development Team so we can fix!");
         } else {
             br.postPage("/handlers.jsx", "_ckey=" + ckey + "&_name=getLinkFileDownload&hash=" + Encoding.urlEncode(getHashID(downloadLink)));
