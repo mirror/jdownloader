@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -65,14 +66,21 @@ public class WorldClipsRu extends PluginForHost {
         final String[] rows = new Regex(off, "<td>([^<>\"]*?)</td>").getColumn(0);
         if (rows == null || rows.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final Regex urlFilename = new Regex(link.getDownloadURL(), "worldclips\\.ru/clips/([^<>\"/]*?)/([^<>\"/]+)");
-        final String filename = urlFilename.getMatch(0) + " - " + urlFilename.getMatch(1) + "." + rows[1];
+        String filename = urlFilename.getMatch(0) + " - " + urlFilename.getMatch(1) + "." + rows[1];
         String filesize = rows[0];
         filesize = filesize.replace("Г", "G");
         filesize = filesize.replace("М", "M");
         filesize = filesize.replaceAll("(к|К)", "k");
         filesize = filesize.replaceAll("(Б|б)", "");
         filesize = filesize + "b";
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        try {
+            String charSet = br.getHttpConnection().getCharset();
+            /* everything works with UTF-8, if you have different charset, then you have to use this than default one */
+            filename = URLDecoder.decode(filename, charSet);
+            link.setFinalFileName(filename.trim());
+        } catch (final Throwable e) {
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        }
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }

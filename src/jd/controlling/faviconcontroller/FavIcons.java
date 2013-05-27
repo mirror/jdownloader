@@ -283,7 +283,7 @@ public class FavIcons {
         try {
             /* we first try favicon.ico in root */
             favBr.setFollowRedirects(true);
-            favBr.getHeaders().put("Accept-Encoding", "");
+            favBr.getHeaders().put("Accept-Encoding", null);
             con = favBr.openGetConnection(url);
             if (con.isOK()) {
                 /* we use bufferedinputstream to reuse it later if needed */
