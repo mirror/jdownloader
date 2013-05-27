@@ -454,7 +454,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public String getLinkID() {
         String ret = this.getStringProperty(PROPERTY_LINKDUPEID, null);
-        if (ret == null) return this.getDownloadURL();
         return ret;
     }
 
@@ -834,10 +833,18 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      *            Die URL von der heruntergeladen werden soll
      */
     public void setUrlDownload(String urlDownload) {
+        String previousURLDownload = this.urlDownload;
         if (urlDownload != null) {
+            if (previousURLDownload != null && previousURLDownload.equals(urlDownload)) return;
             this.urlDownload = new String(urlDownload.trim());
         } else {
             this.urlDownload = null;
+        }
+        if (previousURLDownload != null && !previousURLDownload.equals(urlDownload)) {
+            if (getLinkID() == null) {
+                /* downloadURL changed, so set original one as linkID, so all dupemaps still work */
+                setLinkID(previousURLDownload);
+            }
         }
     }
 

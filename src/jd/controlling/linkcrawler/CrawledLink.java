@@ -103,7 +103,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      * @return
      */
     public String getLinkID() {
-        if (dlLink != null) return dlLink.getLinkID();
+        String linkID = null;
+        if (dlLink != null) linkID = dlLink.getLinkID();
+        if (linkID != null) return linkID;
         return getURL();
     }
 
