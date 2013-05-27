@@ -27,6 +27,7 @@ import java.util.List;
 
 import jd.config.Property;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.ChildComparator;
 import jd.controlling.packagecontroller.PackageController;
@@ -346,7 +347,10 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             Log.L.severe("FilePackage: setDownloadDirectory only allows absolute pathes! Using default one!");
             folder = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         }
+        String lFolder = getDownloadDirectory();
+        if (lFolder != null && lFolder.equals(folder)) return;
         downloadDirectory = folder;
+        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.FOLDER, getDownloadDirectory()));
     }
 
     /**
@@ -355,10 +359,13 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * @param name
      */
     public void setName(String name) {
+        String lName = getName();
         if (StringUtils.isEmpty(name)) {
             name = _JDT._.controller_packages_defaultname();
         }
+        if (lName != null && lName.equals(name)) return;
         this.name = name.trim();
+        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.NAME, getName()));
     }
 
     /**
