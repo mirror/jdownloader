@@ -121,13 +121,13 @@ public class OneEightZeroUploadCom extends PluginForHost {
         if (new Regex(correctedBR, Pattern.compile("(>File Not Found, Copyright infringement issue, file expired or deleted by its owner\\.|>No such file|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = new Regex(br, "type=\"hidden\" name=\"fname\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = new Regex(correctedBR, "nowrap><b>(.*?)</b>").getMatch(0);
+            filename = new Regex(br, "<b>Filename:</b></td><td nowrap>(.*?)</td>").getMatch(0);
         }
         String filesize = new Regex(br, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(br, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                filesize = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+                filesize = new Regex(br, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
