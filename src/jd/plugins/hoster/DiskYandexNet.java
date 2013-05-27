@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?((((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=]+|#[A-Za-z0-9%\\/+=]+))|(yadi\\.sk|yadisk)/d/[A-Za-z0-9\\-_]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?((((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=]+|#[A-Za-z0-9%\\/+=]+))|(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+)" }, flags = { 0 })
 public class DiskYandexNet extends PluginForHost {
 
     private static final String primaryURLs = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=]+|#[A-Za-z0-9%\\/+=]+)";
@@ -58,7 +58,7 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         // redirect links
@@ -109,8 +109,7 @@ public class DiskYandexNet extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (br.getURL().contains("&final=true")) {
             // this is prob wrong
-            // br.postPage("/handlers.jsx", "_c&public_url=1&_handlers=disk-file-info&_locale=en&_page=disk-share&_service=disk&hash=" +
-            // Encoding.urlEncode(getHashID(downloadLink)));
+            // br.postPage("/handlers.jsx", "_c&public_url=1&_handlers=disk-file-info&_locale=en&_page=disk-share&_service=disk&hash=" + Encoding.urlEncode(getHashID(downloadLink)));
             logger.warning("Component disabled. Please report the source URL to JDownloader Development Team so we can fix!");
         } else {
             br.postPage("/handlers.jsx", "_ckey=" + ckey + "&_name=getLinkFileDownload&hash=" + Encoding.urlEncode(getHashID(downloadLink)));

@@ -72,8 +72,9 @@ public class FlashxTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String dllink = null;
         // 1
-        String regex = "\"(http://flashx\\.tv/player/embed_player\\.php\\?[^<>\"]*?)\"";
+        String regex = "\"(http://(flashx\\.tv/player/embed_player\\.php|play\\.flashx\\.tv/player/embed\\.php)\\?[^<>\"]*?)\"";
         final String firstlink = br.getRegex(regex).getMatch(0);
         if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(firstlink);
@@ -90,7 +91,7 @@ public class FlashxTv extends PluginForHost {
         if (thirdLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(thirdLink);
 
-        String dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+        dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
         if (dl.getConnection().getContentType().contains("html")) {
