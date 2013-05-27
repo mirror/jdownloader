@@ -36,7 +36,7 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "https?://(www\\.)?mega\\.co\\.nz/#![a-zA-Z0-9]+![a-zA-Z0-9_,\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "https?://(www\\.)?mega\\.co\\.nz/#N?![a-zA-Z0-9]+![a-zA-Z0-9_,\\-]+" }, flags = { 0 })
 public class MegaConz extends PluginForHost {
     private static AtomicLong CS      = new AtomicLong(System.currentTimeMillis());
     private final String      USE_SSL = "USE_SSL_V2";
@@ -62,11 +62,21 @@ public class MegaConz extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         setBrowserExclusive();
-        String fileID = getFileID(link);
-        String keyString = getFileKey(link);
+        boolean publicFile = true;
+        String fileID = getPublicFileID(link);
+        String keyString = getPublicFileKey(link);
+        if (fileID == null) {
+            fileID = getNodeFileID(link);
+            keyString = getNodeFileKey(link);
+            publicFile = false;
+        }
         if (fileID == null || keyString == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("APPID", "JDownloader");
-        br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
+        if (publicFile) {
+            br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
+        } else {
+            br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
+        }
         String fileSize = br.getRegex("\"s\"\\s*?:\\s*?(\\d+)").getMatch(0);
         if (fileSize == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -114,10 +124,20 @@ public class MegaConz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        String fileID = getFileID(link);
-        String keyString = getFileKey(link);
+        boolean publicFile = true;
+        String fileID = getPublicFileID(link);
+        String keyString = getPublicFileKey(link);
+        if (fileID == null) {
+            fileID = getNodeFileID(link);
+            keyString = getNodeFileKey(link);
+            publicFile = false;
+        }
         if (fileID == null || keyString == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
+        if (publicFile) {
+            br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
+        } else {
+            br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
+        }
         String downloadURL = br.getRegex("\"g\"\\s*?:\\s*?\"(https?.*?)\"").getMatch(0);
         if (downloadURL == null) {
             String error = getError(br);
@@ -276,12 +296,20 @@ public class MegaConz extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    private String getFileID(DownloadLink link) {
+    private String getPublicFileID(DownloadLink link) {
         return new Regex(link.getDownloadURL(), "#\\!([a-zA-Z0-9]+)\\!").getMatch(0);
     }
 
-    private String getFileKey(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "\\![a-zA-Z0-9]+\\!([a-zA-Z0-9_,\\-]+)").getMatch(0);
+    private String getPublicFileKey(DownloadLink link) {
+        return new Regex(link.getDownloadURL(), "#\\![a-zA-Z0-9]+\\!([a-zA-Z0-9_,\\-]+)").getMatch(0);
+    }
+
+    private String getNodeFileID(DownloadLink link) {
+        return new Regex(link.getDownloadURL(), "#N\\!([a-zA-Z0-9]+)\\!").getMatch(0);
+    }
+
+    private String getNodeFileKey(DownloadLink link) {
+        return new Regex(link.getDownloadURL(), "#N\\![a-zA-Z0-9]+\\!([a-zA-Z0-9_,\\-]+)").getMatch(0);
     }
 
     private byte[] b64decode(String data) {
