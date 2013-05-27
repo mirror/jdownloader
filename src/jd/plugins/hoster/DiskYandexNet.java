@@ -30,10 +30,10 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?((((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=]+|#[A-Za-z0-9%\\/+=]+))|(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?((((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=]+|#[A-Za-z0-9%\\/+=]+))|(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+)" }, flags = { 0 })
 public class DiskYandexNet extends PluginForHost {
 
-    private static final String primaryURLs = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=]+|#[A-Za-z0-9%\\/+=]+)";
+    private static final String primaryURLs = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=]+|#[A-Za-z0-9%\\/+=]+)";
     private static final String shortURLs   = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
 
     public DiskYandexNet(PluginWrapper wrapper) {
