@@ -272,11 +272,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
 
         Archive archive = extrctor.buildArchive(link);
-        link.onArchiveFinished(archive);
-        logger.info("Created Archive: " + archive);
-        // Log.L.info("Created Archive: " + archive);
-        logger.info("Files: " + archive.getArchiveFiles());
-
+        if (archive != null) {
+            link.onArchiveFinished(archive);
+            logger.info("Created Archive: " + archive);
+            // Log.L.info("Created Archive: " + archive);
+            logger.info("Files: " + archive.getArchiveFiles());
+        }
         return archive;
     }
 

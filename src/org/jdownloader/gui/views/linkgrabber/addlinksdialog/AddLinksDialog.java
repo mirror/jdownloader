@@ -170,13 +170,16 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         ret.setPackageName(packagename.getText());
         ret.setAutoExtract(this.extractToggle.isSelected());
 
-        HashSet<String> passwords = JSonStorage.restoreFromString(password.getText(), new TypeRef<HashSet<String>>() {
-        }, new HashSet<String>());
-        if (passwords == null || passwords.size() == 0) {
-            passwords = new HashSet<String>();
-            passwords.add(password.getText());
+        String passwordTxt = password.getText();
+        if (!StringUtils.isEmpty(passwordTxt)) {
+            HashSet<String> passwords = JSonStorage.restoreFromString(passwordTxt, new TypeRef<HashSet<String>>() {
+            }, new HashSet<String>());
+            if (passwords == null || passwords.size() == 0) {
+                passwords = new HashSet<String>();
+                passwords.add(password.getText());
+            }
+            ret.setExtractPasswords(passwords);
         }
-        ret.setExtractPasswords(passwords);
         ret.setPriority((Priority) priority.getSelectedItem());
         ret.setDownloadPassword(downloadPassword.getText());
 

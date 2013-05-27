@@ -161,6 +161,10 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
                 }
             }
         }
+        if (BooleanStatus.UNSET != getDefaultAutoExtract()) {
+            /* make sure the autoextractValue is written to archiveSettings */
+            archive.getSettings();
+        }
         if (pws.size() > 0) {
             HashSet<String> storedPws = archive.getSettings().getPasswords();
             if (storedPws != null) {
