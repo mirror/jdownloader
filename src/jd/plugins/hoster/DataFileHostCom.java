@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafilehost.com" }, urls = { "http://(www\\.)?datafilehost\\.com/download\\-[a-z0-9]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafilehost.com" }, urls = { "http://((www\\.)?datafilehost\\.com/download\\-[a-z0-9]+\\.html|www\\d+\\.datafilehost\\.com/d/[a-z0-9]+)" }, flags = { 0 })
 public class DataFileHostCom extends PluginForHost {
 
     public DataFileHostCom(PluginWrapper wrapper) {
@@ -59,7 +59,7 @@ public class DataFileHostCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = br.getRegex("\"(http://(www\\.)datafilehost\\.com/get\\.php\\?file=[a-z0-9]+)\"").getMatch(0);
+        final String dllink = br.getRegex("(\"|\\')(http://(www(\\d+)?\\.)?datafilehost\\.com/get\\.php\\?file=[a-z0-9]+)(\"|\\')").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
