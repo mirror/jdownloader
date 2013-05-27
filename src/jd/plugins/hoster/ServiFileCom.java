@@ -40,7 +40,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "servifile.com" }, urls = { "http://(www\\.)?servifile\\.com/files/[^/]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "servifile.com" }, urls = { "http://(www\\.)?servifile\\.com/(get|files)/[^/]+" }, flags = { 2 })
 public class ServiFileCom extends PluginForHost {
 
     public ServiFileCom(PluginWrapper wrapper) {
@@ -59,6 +59,11 @@ public class ServiFileCom extends PluginForHost {
     private static final String PREMIUMLIMIT  = "out of 200\\.00 GB</td>";
     private static final String PREMIUMTEXT   = ">Account type:</td>[\t\n\r ]+<td><b>Premium</b>";
     private static Object       LOCK          = new Object();
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replace("/get/", "/files/"));
+    }
 
     // Using FreakshareScript 1.2
     @Override
@@ -109,6 +114,14 @@ public class ServiFileCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("(files per hour for free users\\.</div>|>Los usuarios de Cuenta Gratis pueden descargar)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            if (br.containsHTML("Free users have a limit of")) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only for premium users");
+            }
             final String unknownError = br.getRegex("class=\"error\">(.*?)\"").getMatch(0);
             if (unknownError != null) logger.warning("Unknown error occured: " + unknownError);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

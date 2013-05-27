@@ -248,13 +248,16 @@ public class OldRAFDownload extends DownloadInterface {
         if (this.plugin.getBrowser().isDebug()) logger.finest("\r\n" + request.printHeaders());
         connection = request.getHttpConnection();
         if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, BrowserAdapter.ERROR_REDIRECTED);
-        if (connection.getRange() != null) {
+        String contentType = connection.getContentType();
+        boolean trustFileSize = contentType == null || (!contentType.contains("html") && contentType.contains("text"));
+        logger.info("Trust FileSize: " + trustFileSize + " " + contentType);
+        if (connection.getRange() != null && trustFileSize) {
             /* we have a range response, let's use it */
             if (connection.getRange()[2] > 0) {
                 this.setFilesizeCheck(true);
                 this.downloadLink.setDownloadSize(connection.getRange()[2]);
             }
-        } else if (resumed == false && connection.getLongContentLength() > 0 && connection.isOK()) {
+        } else if (resumed == false && connection.getLongContentLength() > 0 && connection.isOK() && trustFileSize) {
             this.setFilesizeCheck(true);
             this.downloadLink.setDownloadSize(connection.getLongContentLength());
         }
