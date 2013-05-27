@@ -59,8 +59,7 @@ public class UpdateController implements UpdateCallbackInterface {
     private UpdateSettings settings;
 
     /**
-     * Create a new instance of UpdateController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of UpdateController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private UpdateController() {
         confirmedThreads = new HashSet<Thread>();
@@ -216,7 +215,8 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public void setGuiVisible(boolean b) {
-        handler.setGuiVisible(b, true);
+        UpdateHandler lhandler = handler;
+        if (lhandler != null) lhandler.setGuiVisible(b, true);
     }
 
     @Override
@@ -229,9 +229,9 @@ public class UpdateController implements UpdateCallbackInterface {
 
             @Override
             protected void runInEDT() {
-
-                if (handler != null && handler.isGuiVisible()) {
-                    handler.setGuiVisible(true, true);
+                UpdateHandler lhandler = handler;
+                if (lhandler != null && lhandler.isGuiVisible()) {
+                    lhandler.setGuiVisible(true, true);
 
                 }
             }
