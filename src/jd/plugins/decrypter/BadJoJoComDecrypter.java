@@ -78,10 +78,9 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://stileproject.com/video/" + externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
-        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        externID = br.getRegex("\"(http://(www\\.)?pornhub\\.com/embed/[a-z0-9]+)\"").getMatch(0);
         if (externID != null) {
-            DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
+            DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

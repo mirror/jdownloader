@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -39,8 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksnappy.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class LinkSnappyCom extends PluginForHost {
@@ -72,25 +69,17 @@ public class LinkSnappyCom extends PluginForHost {
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
 
-        login(account, true);
-        getPageSecure("http://www.linksnappy.com/members/index.php?act=index");
-        if (br.getCookie("http://www.linksnappy.com/", "lseSavePass") == null) {
+        if (!login(account)) {
             ac.setStatus("Account is invalid. Wrong password?");
             account.setValid(false);
             return ac;
         }
         String accountType = null;
-        if (br.containsHTML("<strong>Expire Date:</strong> <span class=\"gold\">Lifetime</span>")) {
+        final String expire = br.getRegex("\"expire\":\"([^<>\"]*?)\"").getMatch(0);
+        if ("lifetime".equals(expire)) {
             accountType = "Lifetime Premium Account";
         } else {
-            final String expireDate = br.getRegex("<strong>Expire Date:</strong> ([^<>\"]*?) \\(\\d+ days left\\)").getMatch(0);
-            if (expireDate == null) {
-                ac.setStatus("Account is invalid. Unsupported accounttype?!");
-                account.setValid(false);
-                return ac;
-            }
-            // we have a valid premium account - let's check the expire date:
-            ac.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd MMMM yyyy", Locale.ENGLISH));
+            ac.setValidUntil(Long.parseLong(expire) * 1000);
             accountType = "Premium Account";
         }
 
@@ -127,10 +116,9 @@ public class LinkSnappyCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        login(account, false);
-
-        // all ok, start downloading...
         br.setFollowRedirects(true);
+        /** Site login still needed because authorization doesn't work yet via API */
+        loginSite(account, true);
         for (int i = 1; i <= 10; i++) {
             getPageSecure("http://gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"pasword\"+:+\"" + account.getPass() + "\"}"));
             if (br.containsHTML("\"error\":\"Invalid file URL format\\.\"")) tempUnavailableHoster(account, link, 60 * 60 * 1000);
@@ -226,7 +214,16 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private boolean login(final Account account) throws Exception {
+        /** Load cookies */
+        br.setCookiesExclusive(true);
+        getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=USERDETAILS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
+        if (br.containsHTML("\"status\":\"ERROR\"")) return false;
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loginSite(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             /** Load cookies */
             br.setCookiesExclusive(true);

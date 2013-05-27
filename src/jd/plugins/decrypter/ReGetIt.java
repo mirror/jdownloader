@@ -21,12 +21,10 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reget.it" }, urls = { "http://(www\\.)?reget\\.it/[A-Za-z0-9]+" }, flags = { 0 })
 public class ReGetIt extends PluginForDecrypt {
@@ -39,7 +37,10 @@ public class ReGetIt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML(">File not found<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML(">File not found<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         // Get file/packagename
         String fpName = br.getRegex("<title>Download file (.*?) \\&mdash;").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<h2>(.*?)</h2>").getMatch(0);

@@ -200,6 +200,17 @@ public class Youtube extends PluginForHost {
         }
         if (this.dl.startDownload()) {
             this.postprocess(downloadLink);
+        } else {
+            try {
+                final long lastProgress = downloadLink.getLongProperty("lastprogress", -1);
+                if (lastProgress > 0) {
+                    logger.info("LastProgress is: " + lastProgress);
+                }
+                final long progress = downloadLink.getPluginProgress().getTotal();
+                logger.info("Stopped at current process: " + downloadLink.getPluginProgress().getTotal());
+                downloadLink.setProperty("lastprogress", progress);
+            } catch (final Exception e) {
+            }
         }
     }
 
@@ -224,6 +235,17 @@ public class Youtube extends PluginForHost {
         }
         if (this.dl.startDownload()) {
             this.postprocess(downloadLink);
+        } else {
+            try {
+                final long lastProgress = downloadLink.getLongProperty("lastprogress", -1);
+                if (lastProgress > 0) {
+                    logger.info("LastProgress is: " + lastProgress);
+                }
+                final long progress = downloadLink.getPluginProgress().getTotal();
+                logger.info("Stopped at current process: " + downloadLink.getPluginProgress().getTotal());
+                downloadLink.setProperty("lastprogress", progress);
+            } catch (final Exception e) {
+            }
         }
     }
 

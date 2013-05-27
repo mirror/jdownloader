@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -44,7 +43,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio|mp3|office|rar|zip|archive|music)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
@@ -326,7 +324,7 @@ public class FourSharedCom extends PluginForHost {
                 br.setReadTimeout(3 * 60 * 1000);
                 br.getPage("http://www.4shared.com/");
                 br.setCookie("http://www.4shared.com", "4langcookie", "en");
-                br.postPage("http://www.4shared.com/login", "callback=jsonp" + System.currentTimeMillis() + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=false&doNotRedirect=true");
+                br.postPage("https://www.4shared.com/login", "callback=jsonp" + System.currentTimeMillis() + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=false&doNotRedirect=true");
                 final String premlogin = br.getCookie("http://www.4shared.com", "premiumLogin");
                 if (premlogin == null || !premlogin.contains("true")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 if (br.getCookie("http://www.4shared.com", "Password") == null || br.getCookie("http://www.4shared.com", "Login") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
@@ -360,15 +358,12 @@ public class FourSharedCom extends PluginForHost {
             ai.setTrafficMax(SizeFormatter.getSize(dat[1]));
             ai.setTrafficLeft((long) (ai.getTrafficMax() * (100.0 - Float.parseFloat(dat[0])) / 100.0));
         }
-        final String accountDetails = br.getRegex("(/account/(myAccount|settingsAjax)\\.jsp\\?sId=([^\"]+))").getMatch(2);
-        if (accountDetails == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://www.4shared.com/account/myAccountAjax.jsp?sId=" + accountDetails);
-        final String expire = br.getRegex("<td>Expiration Date:</td>.*?<td>(.*?)<span").getMatch(0);
-        String accType = br.getRegex("Account Type:</td>.*?>(.*?)(&|<)").getMatch(0);
+        br.getPage("http://www.4shared.com/web/account/settings/overview");
+        final String expire = br.getRegex(">Expires in:</div>[\t\n\r ]+<div class=\"trafficDigits floatRight alignRight bold\">(\\d+) days</div>").getMatch(0);
+        final String accType = br.getRegex(">Account type:</div>[\t\n\r ]+<div class=\"trafficDigits floatRight alignRight bold\">(.*?)</div").getMatch(0);
         if (expire == null || accType == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy", Locale.UK) + (24 * 60 * 60 * 1000l));
-        accType = accType.trim();
-        if ("FREE".equalsIgnoreCase(accType)) {
+        ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expire) * 24 * 60 * 60 * 1000l));
+        if ("FREE  (<a href=\"/premium.jsp\">Upgrade</a>)".equalsIgnoreCase(accType)) {
             ai.setStatus("Registered (free) User");
             account.setValid(true);
             account.setProperty("nopremium", true);

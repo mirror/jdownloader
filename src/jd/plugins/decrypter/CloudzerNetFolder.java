@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudzer.net" }, urls = { "http://(www\\.)?(cloudzer\\.net|clz\\.to)/folder/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudzer.net" }, urls = { "http://(www\\.)?(cloudzer\\.net|clz\\.to)/(folder|f)/[a-z0-9]+" }, flags = { 0 })
 public class CloudzerNetFolder extends PluginForDecrypt {
 
     public CloudzerNetFolder(PluginWrapper wrapper) {
@@ -38,7 +38,7 @@ public class CloudzerNetFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("clz.to/", "cloudzer.net/");
+        final String parameter = param.toString().replace("clz.to/", "cloudzer.net/").replace("/f/", "/folder/");
         // Prefer english language
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setFollowRedirects(true);

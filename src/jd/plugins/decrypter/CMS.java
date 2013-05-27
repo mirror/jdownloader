@@ -94,11 +94,8 @@ public class CMS extends PluginForDecrypt {
                 br.getPage(br.getRedirectLocation());
             }
             String capTxt = "";
-            String host = br.getHost();
+            final String host = new Regex(br.getURL(), "(https?://(www\\.)?[a-z0-9\\-\\.]*?)/").getMatch(0);
 
-            if (!host.startsWith("http")) {
-                host = "http://" + host;
-            }
             ArrayList<String> pwList = null;
             String pass = br.getRegex(Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (pass == null) {

@@ -56,7 +56,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision: 19039 $", interfaceVersion = 2, names = { "cloudzer.net" }, urls = { "http://(www\\.)?(cloudzer\\.net/.*?(file/|\\?id=|\\&id=)[\\w]+/?|clz\\.to/(file/)?[\\w]+/?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19039 $", interfaceVersion = 2, names = { "cloudzer.net" }, urls = { "http://(www\\.)?(cloudzer\\.net/.*?(file/|\\?id=|\\&id=)[\\w]+/?|clz\\.to/(file/)?(?!f/)[\\w]+/?)" }, flags = { 2 })
 public class CloudzerNet extends PluginForHost {
 
     public static class StringContainer {

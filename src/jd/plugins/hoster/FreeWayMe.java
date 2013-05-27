@@ -198,7 +198,7 @@ public class FreeWayMe extends PluginForHost {
             } else if (error.equalsIgnoreCase("Sie haben nicht genug Traffic, um diesen Download durchzuführen.")) {
                 tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
             } else if (error.startsWith("Sie können nicht mehr parallele Downloads durchführen")) {
-                tempUnavailableHoster(acc, link, 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 1 * 60 * 1000l);
             } else if (error.startsWith("Ung&uuml;ltiger Hoster")) {
                 tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Dieser Hoster ist aktuell leider nicht aktiv.")) {

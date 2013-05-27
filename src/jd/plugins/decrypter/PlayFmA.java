@@ -22,6 +22,7 @@ import java.util.TreeSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -56,7 +57,10 @@ public class PlayFmA extends PluginForDecrypt {
         for (final String page : finalPages) {
             progress.increase(1);
             final String[] matches = br.getRegex("#play_\\d+").getColumn(-1);
-            if (matches == null || matches.length == 0) { return null; }
+            if (matches == null || matches.length == 0) {
+                logger.info("Seems like there is no downloadable content for link: " + parameter);
+                return decryptedLinks;
+            }
             for (final String match : matches) {
                 song.add(match);
             }
@@ -64,10 +68,13 @@ public class PlayFmA extends PluginForDecrypt {
                 br.getPage("http://www.play.fm" + page);
             }
         }
-        if (song == null || song.size() == 0) { return null; }
+        if (song == null || song.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName.trim());
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
         for (final String url : song) {
             final DownloadLink dlLink = createDownloadlink("http://www.play.fm/" + url);
             fp.add(dlLink);

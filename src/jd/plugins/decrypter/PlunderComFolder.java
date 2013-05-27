@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://(www\\.)?plunder\\.com/.+/.+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://(www\\.)?plunder\\.com/.+/(?!support|browse|privacy|tos|dmca).+/" }, flags = { 0 })
 public class PlunderComFolder extends PluginForDecrypt {
 
     public PlunderComFolder(PluginWrapper wrapper) {
