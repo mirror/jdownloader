@@ -20,15 +20,11 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -117,10 +113,8 @@ public class LinkSnappyCom extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         br.setFollowRedirects(true);
-        /** Site login still needed because authorization doesn't work yet via API */
-        loginSite(account, true);
         for (int i = 1; i <= 10; i++) {
-            getPageSecure("http://gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"pasword\"+:+\"" + account.getPass() + "\"}"));
+            getPageSecure("http://gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"password\"+:+\"" + account.getPass() + "\"}"));
             if (br.containsHTML("\"error\":\"Invalid file URL format\\.\"")) tempUnavailableHoster(account, link, 60 * 60 * 1000);
             String dllink = br.getRegex("\"generated\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -222,38 +216,42 @@ public class LinkSnappyCom extends PluginForHost {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
-    private void loginSite(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            /** Load cookies */
-            br.setCookiesExclusive(true);
-            final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (account.isValid()) {
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        this.br.setCookie(COOKIE_HOST, key, value);
-                    }
-                    return;
-                }
-            }
-            postPageSecure("http://www.linksnappy.com/members/index.php?act=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
-
-            /** Save cookies */
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies(COOKIE_HOST);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty("name", Encoding.urlEncode(account.getUser()));
-            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-            account.setProperty("cookies", cookies);
-        }
-    }
+    /** Not needed anymore but is still working */
+    // @SuppressWarnings("unchecked")
+    // private void loginSite(final Account account, final boolean force) throws Exception {
+    // synchronized (LOCK) {
+    // /** Load cookies */
+    // br.setCookiesExclusive(true);
+    // final Object ret = account.getProperty("cookies", null);
+    // boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name",
+    // Encoding.urlEncode(account.getUser())));
+    // if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass",
+    // Encoding.urlEncode(account.getPass())));
+    // if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+    // final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+    // if (account.isValid()) {
+    // for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+    // final String key = cookieEntry.getKey();
+    // final String value = cookieEntry.getValue();
+    // this.br.setCookie(COOKIE_HOST, key, value);
+    // }
+    // return;
+    // }
+    // }
+    // postPageSecure("http://www.linksnappy.com/members/index.php?act=login", "username=" + Encoding.urlEncode(account.getUser()) +
+    // "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
+    //
+    // /** Save cookies */
+    // final HashMap<String, String> cookies = new HashMap<String, String>();
+    // final Cookies add = this.br.getCookies(COOKIE_HOST);
+    // for (final Cookie c : add.getCookies()) {
+    // cookies.put(c.getKey(), c.getValue());
+    // }
+    // account.setProperty("name", Encoding.urlEncode(account.getUser()));
+    // account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+    // account.setProperty("cookies", cookies);
+    // }
+    // }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
