@@ -298,28 +298,20 @@ public class NosUploadCom extends PluginForHost {
 
     public String getDllink() {
         String dllink = br.getRedirectLocation();
+        if (dllink == null) dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
+        if (dllink == null) dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
+        if (dllink == null) dllink = new Regex(correctedBR, "<input type=button onClick=\"location.href=\\'([^\\'\"]+)").getMatch(0);
+        if (dllink == null) dllink = new Regex(correctedBR, "dirtyOrangeButton.*?href=\"(https?://.*?)\">Download").getMatch(0);
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-                if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
-                        if (dllink == null) {
-                            dllink = new Regex(correctedBR, "<input type=button onClick=\"location.href=\\'([^\\'\"]+)").getMatch(0);
-                            if (dllink == null) {
-                                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                    for (String crypted : cryptedScripts) {
-                                        dllink = decodeDownloadLink(crypted);
-                                        if (dllink != null) break;
-                                    }
-                                }
-                            }
-                        }
-                    }
+            String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+            if (cryptedScripts != null && cryptedScripts.length != 0) {
+                for (String crypted : cryptedScripts) {
+                    dllink = decodeDownloadLink(crypted);
+                    if (dllink != null) break;
                 }
+
             }
         }
         return dllink;

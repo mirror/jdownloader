@@ -13,7 +13,6 @@ import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
-import jd.controlling.linkcollector.VariousCrawledPackage;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.DownloadLink;
@@ -436,7 +435,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
         if (event.getParameters() != null) {
             for (Object object : event.getParameters()) {
                 if (object instanceof CrawledLink) linkCollectorApiLinkAdded((CrawledLink) object);
-                if (object instanceof CrawledPackage || object instanceof VariousCrawledPackage) linkCollectorApiPackageAdded((CrawledPackage) event.getParameter());
+                if (object instanceof CrawledPackage) linkCollectorApiPackageAdded((CrawledPackage) event.getParameter());
             }
         }
     }

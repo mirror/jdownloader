@@ -6,6 +6,7 @@ import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.swing.dialog.Dialog;
@@ -35,7 +36,8 @@ public class RemoveSelectionLinkgrabberAction extends AppAction {
             boolean containsOnline = false;
 
             for (CrawledLink cl : si.getChildren()) {
-                if (LinkCollector.getInstance().isOfflinePackage(cl.getParentNode())) continue;
+                if (TYPE.OFFLINE == cl.getParentNode().getType()) continue;
+                if (TYPE.POFFLINE == cl.getParentNode().getType()) continue;
                 if (cl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
                     containsOnline = true;
                     break;

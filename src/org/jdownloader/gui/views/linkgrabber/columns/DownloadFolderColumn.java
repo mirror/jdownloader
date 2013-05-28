@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcollector.VariousCrawledPackage;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
@@ -102,27 +102,25 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             return;
         } else if (object instanceof CrawledLink) {
             final CrawledPackage p = ((CrawledLink) object).getParentNode();
-            if (!(p instanceof VariousCrawledPackage)) {
-                try {
-                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(p.getName()), _JDT._.SetDownloadFolderAction_msg(p.getName(), 1), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
-                    IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
-                        @Override
-                        protected Object run() {
-                            p.setDownloadFolder(value);
-                            return null;
-                        }
-                    });
-                    return;
-                } catch (DialogClosedException e) {
-                    return;
-                } catch (DialogCanceledException e) {
-                    /* user clicked no */
-                }
+            try {
+                Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(p.getName()), _JDT._.SetDownloadFolderAction_msg(p.getName(), 1), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
+                IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
+                    @Override
+                    protected Object run() {
+                        p.setDownloadFolder(value);
+                        return null;
+                    }
+                });
+                return;
+            } catch (DialogClosedException e) {
+                return;
+            } catch (DialogCanceledException e) {
+                /* user clicked no */
             }
+
             final CrawledPackage pkg = new CrawledPackage();
             pkg.setExpanded(true);
-            pkg.setCreated(System.currentTimeMillis());
-            if (p instanceof VariousCrawledPackage) {
+            if (TYPE.NORMAL != p.getType()) {
                 pkg.setName(LinknameCleaner.cleanFileName(object.getName()));
             } else {
                 pkg.setName(p.getName());

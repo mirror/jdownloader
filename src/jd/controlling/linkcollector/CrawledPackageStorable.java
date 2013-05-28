@@ -26,19 +26,23 @@ public class CrawledPackageStorable implements Storable {
 
     /* this one is correct during JSON serialization */
     public TYPE getType() {
-        if (pkg instanceof OfflineCrawledPackage) return TYPE.OFFLINE;
-        if (pkg instanceof PermanentOfflinePackage) return TYPE.POFFLINE;
-        if (pkg instanceof VariousCrawledPackage) return TYPE.VARIOUS;
-        return TYPE.NORMAL;
+        switch (pkg.getType()) {
+        case NORMAL:
+            return TYPE.NORMAL;
+        case OFFLINE:
+            return TYPE.OFFLINE;
+        case POFFLINE:
+            return TYPE.POFFLINE;
+        case VARIOUS:
+            return TYPE.VARIOUS;
+        default:
+            return TYPE.NORMAL;
+        }
     }
 
     public void setType(TYPE type) {
+        if (type == null) type = TYPE.NORMAL;
         this.type = type;
-    }
-
-    /* this one was set by JSON on restore */
-    public TYPE _getType() {
-        return type;
     }
 
     public long getUID() {
@@ -49,7 +53,7 @@ public class CrawledPackageStorable implements Storable {
         pkg.getUniqueID().setID(id);
     }
 
-    private CrawledPackage                 pkg;
+    private CrawledPackage                      pkg;
     private java.util.List<CrawledLinkStorable> links;
 
     public String getComment() {
@@ -152,6 +156,20 @@ public class CrawledPackageStorable implements Storable {
     }
 
     public CrawledPackage _getCrawledPackage() {
+        switch (type) {
+        case NORMAL:
+            pkg.setType(jd.controlling.linkcrawler.CrawledPackage.TYPE.NORMAL);
+            break;
+        case OFFLINE:
+            pkg.setType(jd.controlling.linkcrawler.CrawledPackage.TYPE.OFFLINE);
+            break;
+        case POFFLINE:
+            pkg.setType(jd.controlling.linkcrawler.CrawledPackage.TYPE.POFFLINE);
+            break;
+        case VARIOUS:
+            pkg.setType(jd.controlling.linkcrawler.CrawledPackage.TYPE.VARIOUS);
+            break;
+        }
         return pkg;
     }
 

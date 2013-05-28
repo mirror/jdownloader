@@ -5,9 +5,9 @@ import java.util.List;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcollector.VariousCrawledPackage;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
 
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -34,7 +34,6 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
 
     @Override
     protected void set(CrawledPackage pkg, String absolutePath) {
-
         pkg.setDownloadFolder(absolutePath);
     }
 
@@ -42,8 +41,7 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
     protected CrawledPackage createNewByPrototype(SelectionInfo<CrawledPackage, CrawledLink> si, CrawledPackage entry) {
         final CrawledPackage pkg = new CrawledPackage();
         pkg.setExpanded(true);
-        pkg.setCreated(System.currentTimeMillis());
-        if (entry instanceof VariousCrawledPackage) {
+        if (TYPE.NORMAL != entry.getType()) {
             pkg.setName(LinknameCleaner.cleanFileName(si.getSelectedLinksByPackage(entry).get(0).getName()));
         } else {
             pkg.setName(entry.getName());

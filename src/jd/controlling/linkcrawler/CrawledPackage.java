@@ -20,60 +20,77 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledPackage> {
 
-    public static final String                             PACKAGETAG        = "<jd:" + PackagizerController.PACKAGENAME + ">";
+    public static final String                       PACKAGETAG  = "<jd:" + PackagizerController.PACKAGENAME + ">";
 
-    public static final ChildComparator<CrawledLink>       SORTER_ASC        = new ChildComparator<CrawledLink>() {
+    public static final ChildComparator<CrawledLink> SORTER_ASC  = new ChildComparator<CrawledLink>() {
 
-                                                                                 public int compare(CrawledLink o1, CrawledLink o2) {
-                                                                                     String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
-                                                                                     String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
-                                                                                     if (o1s == null) {
-                                                                                         o1s = "";
-                                                                                     }
-                                                                                     if (o2s == null) {
-                                                                                         o2s = "";
-                                                                                     }
-                                                                                     return o1s.compareTo(o2s);
+                                                                     public int compare(CrawledLink o1, CrawledLink o2) {
+                                                                         String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
+                                                                         String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
+                                                                         if (o1s == null) {
+                                                                             o1s = "";
+                                                                         }
+                                                                         if (o2s == null) {
+                                                                             o2s = "";
+                                                                         }
+                                                                         return o1s.compareTo(o2s);
 
-                                                                                 }
+                                                                     }
 
-                                                                                 @Override
-                                                                                 public String getID() {
-                                                                                     return "jd.controlling.linkcrawler.CrawledPackage";
-                                                                                 }
+                                                                     @Override
+                                                                     public String getID() {
+                                                                         return "jd.controlling.linkcrawler.CrawledPackage";
+                                                                     }
 
-                                                                                 @Override
-                                                                                 public boolean isAsc() {
-                                                                                     return true;
-                                                                                 }
-                                                                             };
-    public static final ChildComparator<CrawledLink>       SORTER_DESC       = new ChildComparator<CrawledLink>() {
+                                                                     @Override
+                                                                     public boolean isAsc() {
+                                                                         return true;
+                                                                     }
+                                                                 };
+    public static final ChildComparator<CrawledLink> SORTER_DESC = new ChildComparator<CrawledLink>() {
 
-                                                                                 public int compare(CrawledLink o1, CrawledLink o2) {
-                                                                                     String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
-                                                                                     ;
-                                                                                     String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
-                                                                                     ;
-                                                                                     if (o1s == null) {
-                                                                                         o1s = "";
-                                                                                     }
-                                                                                     if (o2s == null) {
-                                                                                         o2s = "";
-                                                                                     }
-                                                                                     return o2s.compareTo(o1s);
+                                                                     public int compare(CrawledLink o1, CrawledLink o2) {
+                                                                         String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
+                                                                         ;
+                                                                         String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
+                                                                         ;
+                                                                         if (o1s == null) {
+                                                                             o1s = "";
+                                                                         }
+                                                                         if (o2s == null) {
+                                                                             o2s = "";
+                                                                         }
+                                                                         return o2s.compareTo(o1s);
 
-                                                                                 }
+                                                                     }
 
-                                                                                 @Override
-                                                                                 public String getID() {
-                                                                                     return "jd.controlling.linkcrawler.CrawledPackage";
-                                                                                 }
+                                                                     @Override
+                                                                     public String getID() {
+                                                                         return "jd.controlling.linkcrawler.CrawledPackage";
+                                                                     }
 
-                                                                                 @Override
-                                                                                 public boolean isAsc() {
-                                                                                     return false;
-                                                                                 }
-                                                                             };
+                                                                     @Override
+                                                                     public boolean isAsc() {
+                                                                         return false;
+                                                                     }
+                                                                 };
+
+    public static enum TYPE {
+        NORMAL,
+        OFFLINE,
+        POFFLINE,
+        VARIOUS
+    }
+
+    private TYPE type = TYPE.NORMAL;
+
+    public void setType(TYPE type) {
+        this.type = type;
+    }
+
+    public TYPE getType() {
+        return type;
+    }
 
     private java.util.List<CrawledLink>                    children;
     private String                                         comment           = null;
@@ -205,6 +222,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     public void setName(String name) {
         if (name != null && name.equals(this.name)) return;
+        setType(TYPE.NORMAL);
         this.name = name;
         nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledPackageProperty(this, CrawledPackageProperty.Property.NAME, name));
     }
