@@ -18,7 +18,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     private final List<String>                eventIDs;
 
     public DownloadControllerEventPublisher() {
-        eventIDs = new ArrayList<>();
+        eventIDs = new ArrayList<String>();
         for (DownloadControllerEvent.TYPE t : DownloadControllerEvent.TYPE.values()) {
             eventIDs.add(t.name());
         }
