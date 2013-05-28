@@ -13,6 +13,7 @@ jd_plugins_optional_jdtrayicon_jdlighttray=Tray
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Ermöglicht es JDownloader in den Tray (Rechts unten bei der Uhr) zu legen. Über ein Trayicon können die wichtigsten Funktionen weiterhin erreicht werden.
 plugins_optional_JDLightTray_always=Immer
 plugins_optional_JDLightTray_closetotray2=Auf 'Schließen <x>' klicken Aktion
+plugins_optional_JDLightTray_hideifframevisible=Tray verstecken, wenn das Fenster sichtbar ist
 plugins_optional_JDLightTray_linkgrabberresults=Hauptfenster zeigen wenn neue Links gesammelt wurden
 plugins_optional_JDLightTray_minimized=Nur wenn das Hauptfenster minimiert ist
 plugins_optional_JDLightTray_minimizetotray=Auf  'Minimieren <_>' klicken Aktion
