@@ -30,8 +30,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" }, flags = { 2 })
 public class DropboxCom extends PluginForHost {
-    private static Object                   LOCK       = new Object();
-    private static HashMap<String, Cookies> accountMap = new HashMap<String, Cookies>();
 
     public DropboxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,11 +42,30 @@ public class DropboxCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("#", "%23"));
     }
 
+    private static Object                   LOCK            = new Object();
+    private static HashMap<String, Cookies> accountMap      = new HashMap<String, Cookies>();
+    private boolean                         TEMPUNAVAILABLE = false;
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (link.getBooleanProperty("decrypted")) {
             br.setCookie("http://dropbox.com", "locale", "en");
-            br.getPage(link.getDownloadURL());
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(link.getDownloadURL());
+                if (con.getResponseCode() == 509) {
+                    link.getLinkStatus().setStatusText("Temporarily unavailable");
+                    TEMPUNAVAILABLE = true;
+                    return AvailableStatus.TRUE;
+                }
+                br.followConnection();
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+
             if (br.containsHTML("(>Error \\(404\\)<|>Dropbox \\- 404<|>We can\\'t find the page you\\'re looking for)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             String filename = br.getRegex("content=\"([^<>/]*?)\" property=\"og:title\"").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -101,6 +118,7 @@ public class DropboxCom extends PluginForHost {
             return;
         } else if (link.getBooleanProperty("decrypted")) {
             requestFileInformation(link);
+            if (TEMPUNAVAILABLE) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL() + "?dl=1", true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("Directlink leads to HTML code...");

@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -34,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(art/[\\w\\-]+|((gallery|favourites)/\\d+(\\?offset=\\d+)?|(gallery|favourites)/(\\?offset=\\d+)?))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/((gallery|favourites)/\\d+(\\?offset=\\d+)?|(gallery|favourites)/(\\?offset=\\d+)?)" }, flags = { 0 })
 public class DevArtCm extends PluginForDecrypt {
 
     public DevArtCm(PluginWrapper wrapper) {
@@ -102,39 +101,7 @@ public class DevArtCm extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         }
-        // art links just grab final link
-        else if (parameter.contains("/art/")) {
-            parseArtPage(decryptedLinks, parameter);
-        }
         return decryptedLinks;
-    }
-
-    private void parseArtPage(ArrayList<DownloadLink> ret, String parameter) throws Exception {
-        boolean ratedContent = false;
-        // login if required, else don't
-        if (br.containsHTML(">Mature Content Filter</a>")) {
-            String artPageURL = br.getURL();
-            if (!login()) { return; }
-            br.getPage(artPageURL);
-        }
-        String dllink = null;
-        // define page as mature content
-        if (br.containsHTML(">Mature Content</span>") && !br.containsHTML(">Mature Content Filter<")) {
-            ratedContent = true;
-            dllink = br.getRegex("class=\"thumb ismature\" href=\"" + br.getURL() + "\" title=\"[^<>\"/]+\" data\\-super\\-img=\"(http://[^<>\"]*?)\"").getMatch(0);
-        } else {
-
-            dllink = br.getRegex("name=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
-        }
-
-        if (dllink != null) {
-            final DownloadLink dl = createDownloadlink("DEVART://" + Encoding.htmlDecode(dllink));
-            dl.setProperty("ratedContent", ratedContent);
-            ret.add(dl);
-        } else {
-            logger.warning("Error within parseArtPage");
-            return;
-        }
     }
 
     private void parsePage(ArrayList<DownloadLink> ret, String host, String parameter) throws Exception {
@@ -146,9 +113,8 @@ public class DevArtCm extends PluginForDecrypt {
             return;
         }
         if (artlinks != null && artlinks.length != 0) {
-            for (String al : artlinks) {
-                br.getPage(al);
-                parseArtPage(ret, parameter);
+            for (final String al : artlinks) {
+                ret.add(createDownloadlink(al));
             }
         }
         if (nextPage != null && !parameter.contains("?offset=")) {

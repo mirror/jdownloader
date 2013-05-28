@@ -44,6 +44,10 @@ public class ZyvNt extends PluginForDecrypt {
         final String artist = br.getRegex("<title>Автор ([^<>\"/]*?) и его композиции</title>").getMatch(0);
         String[][] fileInfo = br.getRegex("class=\"track artist_img_left\"><a href=\"(/pages/\\d+/\\d+\\.shtml)\">([^<>/\"]*?)</a></td><td class=\"date\">\\d{2}\\.\\d{2}\\.\\d{2}</td><td class=\"bitrate\">[0-9\t\n\r ]+</td><td class=\"size\">(\\d+(\\.\\d+)?)</td>").getMatches();
         if (fileInfo == null || fileInfo.length == 0) {
+            if (br.containsHTML(">Нет информации<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

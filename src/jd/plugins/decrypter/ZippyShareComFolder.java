@@ -36,7 +36,7 @@ public class ZippyShareComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (!br.containsHTML("class=\"listingplikow\">")) {
+        if (!br.containsHTML("class=\"filerow even\">")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

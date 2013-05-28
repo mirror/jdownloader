@@ -37,8 +37,13 @@ public class YunFileComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceAll("http://(www\\.)?(yunfile|filemarkets|yfdisk)\\.com/", "http://yunfile.com/");
+        br.setCookie("http://yunfile.com/", "language", "en_us");
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML("\\[ The uploader has no shared file lists\\.\\! \\]")) {
+            logger.info("This link contains no downloadable content: " + parameter);
+            return decryptedLinks;
+        }
         final String[] links = br.getRegex("\"(http://(www\\.)?yunfile\\.com/file/[a-z0-9]+/[a-z0-9]+/?)\"").getColumn(0);
         final String[] folders = br.getRegex("(http://(www\\.)?yunfile\\.com/ls/[a-z0-9]+/[a-z0-9]+)").getColumn(0);
         if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {

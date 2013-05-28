@@ -46,8 +46,9 @@ public class XXXBlg extends PluginForDecrypt {
         pwList.add("xxx-blog.org");
         pwList.add("xxx-blog.to");
         parameter = parameter.substring(parameter.lastIndexOf("http://"));
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("Fehler 404 \\- Seite nicht gefunden") || br.containsHTML(">403 Forbidden<") || br.containsHTML("No htmlCode read")) {
+        if (br.containsHTML("Fehler 404 \\- Seite nicht gefunden") || br.containsHTML(">403 Forbidden<") || br.containsHTML("No htmlCode read") || br.getURL().equals("http://xxx-blog.to/")) {
             logger.warning("Link offline or invalid: " + parameter);
             return decryptedLinks;
         }

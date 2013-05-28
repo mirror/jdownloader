@@ -54,6 +54,13 @@ public class DropBoxCom extends PluginForDecrypt {
                 logger.info("Restricted Content: This file is no longer available. For additional information contact Dropbox Support. " + parameter);
                 return decryptedLinks;
             }
+            // Temporarily unavailable links
+            if (con.getResponseCode() == 509) {
+                final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
+                dl.setProperty("decrypted", true);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             br.followConnection();
         } finally {
             try {

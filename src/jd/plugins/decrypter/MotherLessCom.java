@@ -132,6 +132,7 @@ public class MotherLessCom extends PluginForDecrypt {
             fpName = br.getRegex("<title>MOTHERLESS\\.COM \\- Go Ahead She Isn\\'t Looking\\! :  (.*?)</title>").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<div class=\"member\\-bio\\-username\">.*?\\'s Gallery \\&bull; (.*?)</div>").getMatch(0);
+                if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?) \\- MOTHERLESS\\.COM</title>").getMatch(0);
             }
         }
         // grabs final page as count.
@@ -145,7 +146,7 @@ public class MotherLessCom extends PluginForDecrypt {
         progress.setRange(numberOfPages);
         logger.info("Found " + numberOfPages + " page(s), decrypting now...");
         for (int i = 1; i <= numberOfPages; i++) {
-            String[] picturelinks = br.getRegex("class=\"thumbnail mediatype_image\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a([\t\n\r ]+)?href=\"((http://motherless\\.com)?/[A-Z0-9]+(/[A-Z0-9]+)?)\"").getColumn(1);
+            String[] picturelinks = br.getRegex("class=\"thumbnail\\-img\\-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a[\t\n\r ]+href=\"(/[A-Z0-9]+/[A-Z0-9]+)\"").getColumn(0);
             // stupid site jumps URLS for NextPage depending on parameter
             String NextPage = br.getRegex("<a href=\"(/[A-Z0-9]{7,9}\\?page=\\d+)\"[^>]+>NEXT").getMatch(0);
             if (picturelinks != null && picturelinks.length != 0) {

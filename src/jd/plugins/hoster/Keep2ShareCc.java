@@ -56,7 +56,7 @@ public class Keep2ShareCc extends PluginForHost {
         return "http://keep2share.cc/page/terms.html";
     }
 
-    private static final String DOWNLOADPOSSIBLE = ">Downloading file:<";
+    private static final String DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -92,13 +92,14 @@ public class Keep2ShareCc extends PluginForHost {
         }
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            if (br.containsHTML(DOWNLOADPOSSIBLE) || br.containsHTML(">If you want downloading file on slow speed")) {
+            if (br.containsHTML(DOWNLOADPOSSIBLE)) {
                 dllink = getDllink();
+                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 if (br.containsHTML("Traffic limit exceed\\!<br>|Download count files exceed!<br>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
                 final String uniqueID = br.getRegex("name=\"slow_id\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (uniqueID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                br.postPage(br.getURL(), "slow_id=" + uniqueID);
+                br.postPage(br.getURL(), "yt0=&slow_id=" + uniqueID);
                 // can be here also, raztoki 20130521!
                 dllink = getDllink();
                 if (dllink == null) {
@@ -121,7 +122,7 @@ public class Keep2ShareCc extends PluginForHost {
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         final String c = getCaptchaCode(cf, downloadLink);
-                        br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
+                        br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&yt0=&uniqueId=" + uniqueID);
                         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     } else {
                         final String captchaLink = br.getRegex("\"(/file/captcha\\.html\\?[^\"]+)\"").getMatch(0);
@@ -139,13 +140,18 @@ public class Keep2ShareCc extends PluginForHost {
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.postPage(br.getURL(), "free=1&uniqueId=" + uniqueID);
                     dllink = getDllink();
+                    if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = dllink.replace("\\", "");
+            // Try again...
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
@@ -153,8 +159,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     private String getDllink() throws PluginException {
         String dllink = br.getRegex("(\\'|\")(/file/url\\.html\\?file=[a-z0-9]+)(\\'|\")").getMatch(1);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://keep2share.cc" + dllink;
+        if (dllink != null) dllink = "http://keep2share.cc" + dllink;
         return dllink;
     }
 
@@ -165,7 +170,7 @@ public class Keep2ShareCc extends PluginForHost {
                 Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseCode() == 401) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
@@ -262,6 +267,7 @@ public class Keep2ShareCc extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("Traffic limit exceed\\!<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         String dllink = br.getRegex("\\'(/file/url\\.html\\?file=[a-z0-9]+)\\'").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");

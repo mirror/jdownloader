@@ -44,7 +44,7 @@ public class ZPagEs extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
     private static Object       LOCK         = new Object();
-    private static final String LINKREGEX    = "window\\.location = \"(http://.*?)\"";
+    private static final String LINKREGEX    = "window\\.location = \"(https?://.*?)\"";
     private static final String CAPTCHATEXT  = "google\\.com/recaptcha/api";
     private static final String CAPTCHATEXT2 = "zpag.es/cap";
 
@@ -73,7 +73,7 @@ public class ZPagEs extends PluginForDecrypt {
                 if (br.containsHTML(CAPTCHATEXT) || br.getURL().contains(CAPTCHATEXT2)) throw new DecrypterException(DecrypterException.CAPTCHA);
 
             }
-            String link = br.getRegex(LINKREGEX).getMatch(0);
+            final String link = br.getRegex(LINKREGEX).getMatch(0);
             if (link == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

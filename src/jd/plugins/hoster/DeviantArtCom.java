@@ -25,7 +25,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -37,7 +36,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "DEVART://.+" }, flags = { 2 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+" }, flags = { 2 })
 public class DeviantArtCom extends PluginForHost {
 
     /**
@@ -62,47 +63,32 @@ public class DeviantArtCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("DEVART://", ""));
     }
 
-    public boolean checkLinks(DownloadLink[] urls) {
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            for (DownloadLink dl : urls) {
-                URLConnectionAdapter con = br.openGetConnection(dl.getDownloadURL());
-                dl.setName(getFileNameFromHeader(con));
-                dl.setDownloadSize(con.getLongContentLength());
-                dl.setAvailable(true);
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("/error\\-title\\-oops\\.png\\)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("<title>([^<>\"]*?) on deviantART</title>").getMatch(0);
+        final String ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
+        final String filesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "." + ext.trim().toLowerCase());
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
-        if (checkLinks(new DownloadLink[] { downloadLink }) == false) {
-            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!downloadLink.isAvailabilityStatusChecked()) {
-            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        final String dllink = getDllink();
+        // Disable chunks as we only download pictures
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return downloadLink.getAvailableStatus();
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        if (Boolean.FALSE.equals(downloadLink.getProperty("ratedContent"))) {
-            String dllink = downloadLink.getDownloadURL();
-            if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
-        } else {
-            // final links can be downloaded without logging in but -meh-
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Download only works with an account");
-        }
+        dl.startDownload();
     }
 
     @Override
@@ -111,16 +97,29 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         login(account, br, false);
-        String dllink = downloadLink.getDownloadURL();
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        final String dllink = getDllink();
+        // Disable chunks as we only download pictures
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getDllink() throws PluginException {
+        String dllink = null;
+        if (br.containsHTML(">Mature Content</span>") && !br.containsHTML(">Mature Content Filter<")) {
+            dllink = br.getRegex("class=\"thumb ismature\" href=\"" + br.getURL() + "\" title=\"[^<>\"/]+\" data\\-super\\-img=\"(http://[^<>\"]*?)\"").getMatch(0);
+        } else {
+            dllink = br.getRegex("name=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return dllink;
     }
 
     @Override
