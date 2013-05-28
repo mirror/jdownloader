@@ -3,6 +3,7 @@ package jd.plugins;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.ChildrenView;
@@ -25,7 +26,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     private int                          offline             = 0;
     private int                          online              = 0;
-    private long                         updatesRequired     = 0;
+    private AtomicLong                   updatesRequired     = new AtomicLong(0);
     private long                         updatesDone         = -1;
 
     private java.util.List<DownloadLink> items               = new ArrayList<DownloadLink>();
@@ -76,7 +77,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     @Override
     public void update() {
-        long lupdatesRequired = updatesRequired;
+        long lupdatesRequired = updatesRequired.get();
         lastUpdateTimestamp = System.currentTimeMillis();
         synchronized (this) {
             /* this is called for repaint, so only update values that could have changed for existing items */
@@ -188,14 +189,13 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             }
             offline = newOffline;
             online = newOnline;
-
+            updatesDone = lupdatesRequired;
         }
-        updatesDone = lupdatesRequired;
     }
 
     @Override
     public void update(List<DownloadLink> updatedItems) {
-        long lupdatesRequired = updatesRequired;
+        long lupdatesRequired = updatesRequired.get();
         lastUpdateTimestamp = System.currentTimeMillis();
         synchronized (this) {
             /* this is called for tablechanged, so update everything for given items */
@@ -311,8 +311,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             online = newOnline;
             items = updatedItems;
             infos = newInfos.toArray(new DomainInfo[newInfos.size()]);
+            updatesDone = lupdatesRequired;
         }
-        updatesDone = lupdatesRequired;
     }
 
     @Override
@@ -336,12 +336,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     @Override
     public void requestUpdate() {
-        updatesRequired++;
+        updatesRequired.incrementAndGet();
     }
 
     @Override
     public boolean updateRequired() {
-        boolean ret = updatesRequired != updatesDone;
+        boolean ret = updatesRequired.get() != updatesDone;
         if (ret == false) {
             ret = fp.isEnabled() && (System.currentTimeMillis() - lastUpdateTimestamp > GUIUPDATETIMEOUT) && DownloadWatchDog.getInstance().hasRunningDownloads(fp);
         }

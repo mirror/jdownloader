@@ -183,7 +183,6 @@ public class LinkStatus implements Serializable {
             if (downloadLink.getFinishedDate() == -1l) downloadLink.setFinishedDate(System.currentTimeMillis());
         }
         lastestStatus = status;
-        notifyChanges();
     }
 
     public String getMessage(boolean customizedMessageOnly) {
@@ -310,7 +309,6 @@ public class LinkStatus implements Serializable {
     }
 
     public void reset(boolean resetRetryCounter) {
-        notifyChanges();
         setStatus(TODO);
         setLatestStatus(TODO);
         errorMessage = null;
@@ -338,18 +336,18 @@ public class LinkStatus implements Serializable {
     public void setInProgress(final boolean b) {
         if (b == this.inProgress) return;
         this.inProgress = b;
-        notifyChanges();
+        notifyChanges(new LinkStatusProperty(this, LinkStatusProperty.Property.PROGRESS, b));
     }
 
     public void setActive(final boolean b) {
         if (b == isActive) return;
         isActive = b;
-        notifyChanges();
+        notifyChanges(new LinkStatusProperty(this, LinkStatusProperty.Property.ACTIVE, b));
     }
 
-    private void notifyChanges() {
+    private void notifyChanges(LinkStatusProperty property) {
         DownloadLink dl = this.downloadLink;
-        if (dl != null) dl.getFilePackage().nodeUpdated(dl, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, null);
+        if (dl != null) dl.getFilePackage().nodeUpdated(dl, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, property);
     }
 
     /**
@@ -369,8 +367,9 @@ public class LinkStatus implements Serializable {
     }
 
     public void setStatusText(final String l) {
+        if (statusText != null && statusText.equals(l)) return;
         statusText = l;
-        notifyChanges();
+        notifyChanges(new LinkStatusProperty(this, LinkStatusProperty.Property.STATUSTEXT, l));
     }
 
     public void setValue(final long i) {
@@ -431,6 +430,10 @@ public class LinkStatus implements Serializable {
         return hasStatus(ERROR_ALREADYEXISTS) || hasStatus(FINISHED);
     }
 
+    public DownloadLink _getDownloadLink() {
+        return downloadLink;
+    }
+
     /**
      * Use this function to reset linkstatus to {@link #TODO}, if no notResetIfFlag match.
      */
@@ -463,7 +466,6 @@ public class LinkStatus implements Serializable {
             linkStatus.setLatestStatus(curLState);
             linkStatus.setErrorMessage(tmp2);
             linkStatus.setStatusText(tmp3);
-            notifyChanges();
         }
     }
 }

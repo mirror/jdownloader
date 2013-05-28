@@ -194,6 +194,7 @@ class SplitUtil {
                         return false;
                     }
                 } else {
+                    archive.addExtractedFiles(file);
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_OUTPUTFILE_EXIST);
                     return false;
                 }

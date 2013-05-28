@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.packagecontroller.ChildrenView;
@@ -18,7 +19,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     private int                         offline         = 0;
     private int                         online          = 0;
     private java.util.List<CrawledLink> items           = new ArrayList<CrawledLink>();
-    private long                        updatesRequired = 0;
+    private AtomicLong                  updatesRequired = new AtomicLong(0);
     private long                        updatesDone     = -1;
 
     public CrawledPackageView() {
@@ -28,7 +29,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     @Override
     public void update() {
-        long lupdatesRequired = updatesRequired;
+        long lupdatesRequired = updatesRequired.get();
         synchronized (this) {
             /* this is called for repaint, so only update values that could have changed for existing items */
             List<CrawledLink> litems = getItems();
@@ -63,12 +64,12 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             enabled = newEnabled;
             offline = newOffline;
             online = newOnline;
+            updatesDone = lupdatesRequired;
         }
-        updatesDone = lupdatesRequired;
     }
 
     public void update(List<CrawledLink> updatedItems) {
-        long lupdatesRequired = updatesRequired;
+        long lupdatesRequired = updatesRequired.get();
         synchronized (this) {
             /* this is called for tablechanged, so update everything for given items */
             boolean newEnabled = false;
@@ -107,8 +108,8 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             online = newOnline;
             items = updatedItems;
             domainInfos = domains.toArray(new DomainInfo[] {});
+            updatesDone = lupdatesRequired;
         }
-        updatesDone = lupdatesRequired;
     }
 
     public void clear() {
@@ -143,12 +144,12 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     @Override
     public void requestUpdate() {
-        updatesRequired++;
+        updatesRequired.incrementAndGet();
     }
 
     @Override
     public boolean updateRequired() {
-        return updatesRequired != updatesDone;
+        return updatesRequired.get() != updatesDone;
     }
 
 }

@@ -594,6 +594,7 @@ public class Multi extends IExtraction {
                         }
                     } else {
                         /* skip file */
+                        archive.addExtractedFiles(extractTo);
                         progressInBytes += item.getSize();
                         ctrl.setProgress(progressInBytes / size);
                         continue;

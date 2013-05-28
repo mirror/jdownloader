@@ -41,6 +41,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.LinkStatusProperty;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
@@ -791,7 +792,16 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         super.nodeUpdated(source, notify, param);
         switch (notify) {
         case PROPERTY_CHANCE:
-            if (param instanceof DownloadLinkProperty) {
+            if (param instanceof LinkStatusProperty) {
+                LinkStatusProperty eventPropery = (LinkStatusProperty) param;
+                switch (eventPropery.getProperty()) {
+                case ACTIVE:
+                case PROGRESS:
+                    DownloadLink link = eventPropery.getLinkStatus()._getDownloadLink();
+                    if (link != null) link.getParentNode().getView().requestUpdate();
+                    break;
+                }
+            } else if (param instanceof DownloadLinkProperty) {
                 DownloadLinkProperty eventPropery = (DownloadLinkProperty) param;
                 switch (eventPropery.getProperty()) {
                 case NAME:

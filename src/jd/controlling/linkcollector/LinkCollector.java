@@ -352,6 +352,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             protected Void run() throws RuntimeException {
                 try {
+                    if (link.getDownloadLink() != null) {
+                        /* set CrawledLink as changeListener to its DownloadLink */
+                        link.getDownloadLink().setNodeChangeListener(link);
+                    }
                     PackageInfo dpi = link.getDesiredPackageInfo();
                     UniqueAlltimeID uID = null;
 
@@ -1035,6 +1039,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     try {
                         for (final CrawledPackage filePackage : lpackages2) {
                             for (CrawledLink link : filePackage.getChildren()) {
+                                if (link.getDownloadLink() != null) {
+                                    /* set CrawledLink as changeListener to its DownloadLink */
+                                    link.getDownloadLink().setNodeChangeListener(link);
+                                }
                                 /* keep maps up2date */
                                 dupeCheckMap.add(link.getLinkID());
                                 java.util.List<CrawledLink> list = getIdentifiedMap(link.getHost(), hosterMap);

@@ -100,6 +100,7 @@ public class XtreamSplit extends IExtraction {
                         return;
                     }
                 } else {
+                    archive.addExtractedFiles(file);
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_OUTPUTFILE_EXIST);
                     return;
                 }

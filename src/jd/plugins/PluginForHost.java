@@ -228,7 +228,6 @@ public abstract class PluginForHost extends Plugin {
                 linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
                 linkStatus.addStatus(latest);
                 linkStatus.setStatusText(status);
-                linkStatus.setStatusIcon(null);
             }
             if (!c.isSolved()) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return c.getResult().getValue();
@@ -361,6 +360,8 @@ public abstract class PluginForHost extends Plugin {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } finally {
+            linkStatus.setStatusIcon(null);
         }
     }
 

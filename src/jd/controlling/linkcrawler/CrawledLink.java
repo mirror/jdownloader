@@ -175,7 +175,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
-        if (dlLink != null) dlLink.setNodeChangeListener(this);
         passwordForward(dlLink);
     }
 
@@ -188,10 +187,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public void setDownloadLink(DownloadLink dlLink) {
-        if (this.dlLink != null) this.dlLink.setNodeChangeListener(null);
         this.dlLink = dlLink;
         passwordForward(dlLink);
-        if (dlLink != null) dlLink.setNodeChangeListener(this);
     }
 
     public CrawledLink(CryptedLink cLink) {
