@@ -9,6 +9,7 @@ public class CaptchaJob implements Storable {
     private long   linkID;
     private String type;
     private String captchaCategory;
+    private String explain;
 
     /**
      * @return the type
@@ -70,6 +71,14 @@ public class CaptchaJob implements Storable {
 
     public void setCaptchaCategory(String captchaCategory) {
         this.captchaCategory = captchaCategory;
+    }
+
+    public String getExplain() {
+        return explain;
+    }
+
+    public void setExplain(String explain) {
+        this.explain = explain;
     }
 
 }

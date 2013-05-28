@@ -8,13 +8,16 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.jdownloader.api.accounts.AccountAPIImpl;
+import org.jdownloader.api.captcha.CaptchaAPIEventPublisher;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
 import org.jdownloader.api.config.AdvancedConfigManagerAPIImpl;
 import org.jdownloader.api.content.ContentAPIImpl;
+import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
 import org.jdownloader.api.downloads.DownloadWatchDogEventPublisher;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.jd.JDAPIImpl;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
+import org.jdownloader.api.linkcollector.LinkCollectorEventPublisher;
 import org.jdownloader.api.polling.PollingAPIImpl;
 import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
 
@@ -54,6 +57,9 @@ public class RemoteAPIController {
         register(new PollingAPIImpl());
         register(eventsapi = new EventsAPI());
         register(new DownloadWatchDogEventPublisher());
+        register(new CaptchaAPIEventPublisher());
+        register(new LinkCollectorEventPublisher());
+        register(new DownloadControllerEventPublisher());
         register(new ExtensionsAPIImpl());
     }
 

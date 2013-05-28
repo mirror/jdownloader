@@ -40,10 +40,15 @@ public interface CaptchaAPI extends RemoteAPIInterface {
     @ApiDoc("returns a list of all available captcha jobs")
     public List<CaptchaJob> list();
 
+    @ApiDoc("Returns Captcha Image as Base64 encoded data url")
     public void get(RemoteAPIRequest request, final RemoteAPIResponse response, final long id) throws InternalApiException, RemoteAPIException;
+
+    @ApiDoc("Returns CaptchaJob Object for the given id")
+    public CaptchaJob getCaptchaJob(final long id);
 
     public boolean solve(final long id, String result) throws RemoteAPIException;
 
     public boolean abort(final long id) throws RemoteAPIException;
 
+    public boolean skip(final long id) throws RemoteAPIException;
 }

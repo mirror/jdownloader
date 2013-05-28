@@ -86,5 +86,4 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
             DownloadWatchDog.getInstance().getEventSender().removeListener(this);
         }
     }
-
 }

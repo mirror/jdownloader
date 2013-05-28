@@ -31,7 +31,6 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 public class CaptchaAPIImpl implements CaptchaAPI {
 
     public CaptchaAPIImpl() {
-
         // ChallengeResponseController.getInstance().getEventSender().addListener(this);
     }
 
@@ -146,6 +145,43 @@ public class CaptchaAPIImpl implements CaptchaAPI {
         return true;
     }
 
+    @SuppressWarnings("static-access")
+    public boolean skip(long id) throws RemoteAPIException {
+        // SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
+        // if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new
+        // RemoteAPIException(CaptchaAPI.Error.NOT_AVAILABLE); }
+        //
+        // // ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
+        // job.kill();
+
+        SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
+        job.getChallenge().getDownloadLink(job.getChallenge()).setSkipped(true);
+
+        return true;
+    }
+
+    @Override
+    public CaptchaJob getCaptchaJob(long id) {
+        SolverJob<?> entry = ChallengeResponseController.getInstance().getJobById(id);
+        CaptchaJob ret = new CaptchaJob();
+
+        Class<?> cls = entry.getChallenge().getClass();
+        while (cls != null && StringUtils.isEmpty(ret.getType())) {
+            ret.setType(cls.getSimpleName());
+            cls = cls.getSuperclass();
+        }
+
+        ret.setID(entry.getChallenge().getId().getID());
+        ret.setHoster(((ImageCaptchaChallenge) entry.getChallenge()).getPlugin().getHost());
+        ret.setCaptchaCategory(entry.getChallenge().getTypeID());
+        ret.setExplain(entry.getChallenge().getExplain());
+
+        if (entry.getChallenge().getDownloadLink(entry.getChallenge()) != null) {
+            ret.setLink(entry.getChallenge().getDownloadLink(entry.getChallenge()).getUniqueID().getID());
+        }
+
+        return ret;
+    }
     // public void captchaTodo(CaptchaHandler controller) {
     // sendEvent(controller, "new");
     // }

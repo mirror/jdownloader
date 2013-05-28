@@ -21,7 +21,6 @@ public class DownloadWatchdogEventSender extends Eventsender<DownloadWatchdogLis
             break;
         case STATE_STOPPED:
             listener.onDownloadWatchdogStateIsStopped();
-
             break;
         case STATE_STOPPING:
             listener.onDownloadWatchdogStateIsStopping();

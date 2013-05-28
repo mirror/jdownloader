@@ -4,16 +4,15 @@ import java.util.EventListener;
 
 public interface DownloadWatchdogListener extends EventListener {
 
-    void onDownloadWatchdogDataUpdate();
+	void onDownloadWatchdogDataUpdate();
 
-    void onDownloadWatchdogStateIsIdle();
+	void onDownloadWatchdogStateIsIdle();
 
-    void onDownloadWatchdogStateIsPause();
+	void onDownloadWatchdogStateIsPause();
 
-    void onDownloadWatchdogStateIsRunning();
+	void onDownloadWatchdogStateIsRunning();
 
-    void onDownloadWatchdogStateIsStopped();
+	void onDownloadWatchdogStateIsStopped();
 
-    void onDownloadWatchdogStateIsStopping();
-
+	void onDownloadWatchdogStateIsStopping();
 }
