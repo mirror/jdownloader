@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.co", "nowvideo.eu" }, urls = { "http://(www\\.)?(nowvideo\\.(eu|co|ch)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(eu|co|ch)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(eu|co|ch)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(eu|co|ch)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
 public class NowVideoEu extends PluginForHost {
 
     public NowVideoEu(PluginWrapper wrapper) {
