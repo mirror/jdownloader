@@ -79,9 +79,8 @@ public class DiskYandexNet extends PluginForHost {
             // lets format back into single url format, as short links redirect to different the different domains depending on geolcoation
             // and we need English for Error catching!
             correctDownloadLink(link);
-        } else {
-            br.getPage(link.getDownloadURL());
         }
+        br.getPage(link.getDownloadURL());
         String filename;
         String filesize;
         if (br.getURL().contains("&final=true")) {
