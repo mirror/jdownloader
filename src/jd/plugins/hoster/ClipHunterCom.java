@@ -111,7 +111,7 @@ public class ClipHunterCom extends PluginForHost {
         // parse decryptalgo
         final Browser br2 = br.cloneBrowser();
         br2.getPage(jsUrl);
-        String decryptAlgo = new Regex(br2, "decrypt\\:\\s?function(.*?)\\}\\;").getMatch(0);
+        String decryptAlgo = new Regex(br2, "decrypt\\:\\s?function(.*?\\})(,|;)").getMatch(0);
         if (decryptAlgo == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         decryptAlgo = "function decrypt" + decryptAlgo + ";";
         DLLINK = getHighestQuality(encryptedUrls, decryptAlgo);
