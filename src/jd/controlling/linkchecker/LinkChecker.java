@@ -143,7 +143,7 @@ public class LinkChecker<E extends CheckableLink> {
         if (Plugin.FTP_HOST.equalsIgnoreCase(host) || Plugin.DIRECT_HTTP_HOST.equalsIgnoreCase(host) || Plugin.HTTP_LINKS_HOST.equalsIgnoreCase(host)) {
             /* direct and ftp links are divided by their hostname */
             String specialHost = Browser.getHost(dlLink.getDownloadURL());
-            if (specialHost != null) host = specialHost;
+            if (specialHost != null) host = host + "_" + specialHost;
         }
         boolean started = false;
         synchronized (this) {
