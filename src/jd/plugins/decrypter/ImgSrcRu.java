@@ -75,7 +75,9 @@ public class ImgSrcRu extends PluginForDecrypt {
         prepBr.getHeaders().put("User-Agent", agent);
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         prepBr.setCookie(this.getHost(), "iamlegal", "yeah");
+        prepBr.setCookie(this.getHost(), "lang", "en");
         prepBr.setCookie(this.getHost(), "per_page", "48");
+
         return prepBr;
     }
 
@@ -185,8 +187,12 @@ public class ImgSrcRu extends PluginForDecrypt {
             imgs.add(br.getURL().replaceFirst("https?://imgsrc.ru", ""));
         }
         String[] links = br.getRegex("<a href='(/" + username + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)#bp'>").getColumn(0);
-        if (links == null || links.length == 0) return;
-        imgs.addAll(Arrays.asList(links));
+        if (links == null || links.length == 0) {
+            logger.warning("Possible plugin error: Please confirm in your webbrowser that this album " + parameter + " contains more than one image. If it does please report this issue to JDownloader Development Team.");
+        }
+        if (links != null && links.length != 0) {
+            imgs.addAll(Arrays.asList(links));
+        }
 
         if (imgs.size() != 0) {
             for (String dl : imgs) {

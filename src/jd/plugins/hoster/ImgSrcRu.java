@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision: 15419 $", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[a-zA-Z0-9]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15419 $", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" }, flags = { 0 })
 public class ImgSrcRu extends PluginForHost {
 
     // DEV NOTES
@@ -93,6 +93,7 @@ public class ImgSrcRu extends PluginForHost {
         prepBr.getHeaders().put("User-Agent", agent);
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         prepBr.setCookie(this.getHost(), "iamlegal", "yeah");
+        prepBr.setCookie(this.getHost(), "lang", "en");
         prepBr.setCookie(this.getHost(), "per_page", "48");
         return prepBr;
     }
