@@ -3,12 +3,9 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
-import javax.swing.filechooser.FileFilter;
-
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
@@ -34,19 +31,6 @@ public class SetExtractToAction extends AbstractExtractionAction {
 
     public void actionPerformed(ActionEvent e) {
 
-        FileFilter ff = new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                if (pathname.isDirectory()) return true;
-                return false;
-            }
-
-            @Override
-            public String getDescription() {
-                return org.jdownloader.extensions.extraction.translate.T._.plugins_optional_extraction_filefilter_extractto();
-            }
-        };
-        ArchiveFactory dlAF = archives.get(0).getFactory();
         File extractto = _getExtension().getFinalExtractToFolder(archives.get(0));
 
         while (extractto != null && !extractto.isDirectory()) {
@@ -54,7 +38,6 @@ public class SetExtractToAction extends AbstractExtractionAction {
         }
         try {
             File path = DownloadFolderChooserDialog.open(extractto, false, org.jdownloader.extensions.extraction.translate.T._.extract_to2());
-
             if (path == null) return;
             for (Archive archive : archives) {
                 archive.getSettings().setExtractPath(path.getAbsolutePath());

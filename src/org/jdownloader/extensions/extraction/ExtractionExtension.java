@@ -45,6 +45,7 @@ import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuItemProperty;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -670,14 +671,19 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     public File getFinalExtractToFolder(Archive archive) {
         String path = null;
         if (archive.getSettings().getExtractionInfo() != null) {
-            /* archive already extracted, use extracttofolder */
             path = archive.getSettings().getExtractionInfo().getExtractToFolder();
+            if (!StringUtils.isEmpty(path)) {
+                /* archive already extracted, use extracttofolder */
+                return new File(path);
+            }
         }
         if (StringUtils.isEmpty(path)) {
-            /* use customized extracttofolder */
             path = archive.getSettings().getExtractPath();
+            if (!StringUtils.isEmpty(path)) {
+                /* use customized extracttofolder */
+                return new File(path);
+            }
         }
-        if (!StringUtils.isEmpty(path)) { return new File(path); }
         if (getSettings().isCustomExtractionPathEnabled()) {
             /* customized extractpath is enabled */
             path = getSettings().getCustomExtractionPath();
@@ -687,6 +693,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             path = archive.getFactory().createDefaultExtractToPath(archive);
         }
         if (StringUtils.isEmpty(path)) return null;
+        path = PackagizerController.replaceDynamicTags(path, archive.getName());
         File ret = new File(path);
         if (getSettings().isSubpathEnabled()) {
             if (getSettings().getSubPathFilesTreshhold() > archive.getContentView().getFileCount() + archive.getContentView().getDirectoryCount()) return ret;

@@ -24,6 +24,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
@@ -45,6 +46,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     public static final String                    ORGFILETYPE  = "orgfiletype";
     public static final String                    HOSTER       = "hoster";
     public static final String                    SOURCE       = "source";
+
     public static final String                    PACKAGENAME  = "packagename";
     public static final String                    SIMPLEDATE   = "simpledate";
 
@@ -326,6 +328,35 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             if (!lgr.checkSource(link)) continue;
             set(link, lgr);
         }
+    }
+
+    public static String replaceDynamicTags(String input, String packageName) {
+        String ret = input;
+        if (StringUtils.isEmpty(ret)) return ret;
+        String PACKAGETAG = "<jd:" + PackagizerController.PACKAGENAME + ">";
+        String DATETAG = "<jd:" + PackagizerController.SIMPLEDATE + ":";
+        if (ret.contains(PACKAGETAG)) {
+            if (StringUtils.isEmpty(packageName)) {
+                ret = ret.replace(PACKAGETAG, "");
+            } else {
+                ret = ret.replace(PACKAGETAG, CrossSystem.alleviatePathParts(packageName));
+            }
+            ret = ret.replace("//", "/").replace("\\\\", "\\");
+        }
+        if (ret.contains(DATETAG)) {
+            int start = ret.indexOf(DATETAG);
+            int end = start + DATETAG.length();
+            while (end < ret.length() && ret.charAt(end) != '>') {
+                end++;
+            }
+            try {
+                SimpleDateFormat format = new SimpleDateFormat(ret.substring(start + DATETAG.length(), end));
+                ret = ret.replace(ret.substring(start, end + 1), format.format(new Date()));
+            } catch (Throwable e) {
+                ret = ret.replace(ret.substring(start, end + 1), "");
+            }
+        }
+        return ret;
     }
 
     protected void set(CrawledLink link, PackagizerRuleWrapper lgr) {

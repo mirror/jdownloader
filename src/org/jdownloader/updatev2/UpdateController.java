@@ -92,11 +92,11 @@ public class UpdateController implements UpdateCallbackInterface {
 
     }
 
-    private boolean isThreadConfirmed() {
+    private synchronized boolean isThreadConfirmed() {
         return confirmedThreads.contains(Thread.currentThread());
     }
 
-    private void setUpdateConfirmed(boolean b) {
+    private synchronized void setUpdateConfirmed(boolean b) {
         if (b) {
             confirmedThreads.add(Thread.currentThread());
         } else {
@@ -131,13 +131,15 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public String getAppID() {
-        if (handler == null) { return "NotConnected"; }
-        return handler.getAppID();
+        UpdateHandler lhandler = handler;
+        if (lhandler == null) { return "NotConnected"; }
+        return lhandler.getAppID();
     }
 
     public void runUpdateChecker(boolean manually) {
-
-        handler.runUpdateCheck(manually);
+        UpdateHandler lhandler = handler;
+        if (lhandler == null) { return; }
+        lhandler.runUpdateCheck(manually);
     }
 
     @Override
@@ -429,7 +431,6 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public void installUpdates(InstallLog log) {
-
         handler.installPendingUpdates(log);
     }
 

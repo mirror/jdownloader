@@ -1,16 +1,22 @@
 package org.jdownloader.extensions.extraction.bindings.crawledlink;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
@@ -29,6 +35,14 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
 
     private CrawledLink getFirstLink() {
         return getLinks().get(0);
+    }
+
+    private CrawledLink getFirstLink(Archive archive) {
+        if (archive.getFirstArchiveFile() instanceof CrawledLinkArchiveFile) { return ((CrawledLinkArchiveFile) archive.getFirstArchiveFile()).getLinks().get(0); }
+        for (ArchiveFile af : archive.getArchiveFiles()) {
+            if (af instanceof CrawledLinkArchiveFile) { return ((CrawledLinkArchiveFile) af).getLinks().get(0); }
+        }
+        throw new WTFException("Archive should always have at least one link");
     }
 
     public java.util.List<ArchiveFile> createPartFileList(String file, String pattern) {
@@ -92,10 +106,74 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
     }
 
     public String createDefaultExtractToPath(Archive archive) {
+        try {
+            CrawledLink firstLink = getFirstLink(archive);
+            return LinkTreeUtils.getDownloadDirectory(firstLink).getAbsolutePath();
+        } catch (final Throwable e) {
+        }
         return null;
     }
 
-    public String createExtractSubPath(String path, Archive archiv) {
+    public String createExtractSubPath(String path, Archive archive) {
+        CrawledLink link = getFirstLink(archive);
+        try {
+            CrawledPackage fp = link.getParentNode();
+            if (path.contains(PACKAGENAME)) {
+                String packageName = CrossSystem.alleviatePathParts(fp.getName());
+                if (!StringUtils.isEmpty(packageName)) {
+                    path = path.replace(PACKAGENAME, packageName);
+                } else {
+                    path = path.replace(PACKAGENAME, "");
+                }
+            }
+            if (path.contains(ARCHIVENAME)) {
+                String archiveName = CrossSystem.alleviatePathParts(archive.getName());
+                if (!StringUtils.isEmpty(archiveName)) {
+                    path = path.replace(ARCHIVENAME, archiveName);
+                } else {
+                    path = path.replace(ARCHIVENAME, "");
+                }
+            }
+            if (path.contains(HOSTER)) {
+                String hostName = CrossSystem.alleviatePathParts(link.getHost());
+                if (!StringUtils.isEmpty(hostName)) {
+                    path = path.replace(HOSTER, hostName);
+                } else {
+                    path = path.replace(HOSTER, "");
+                }
+            }
+            if (path.contains("$DATE:")) {
+                int start = path.indexOf("$DATE:");
+                int end = start + 6;
+                while (end < path.length() && path.charAt(end) != '$') {
+                    end++;
+                }
+                try {
+                    SimpleDateFormat format = new SimpleDateFormat(path.substring(start + 6, end));
+                    path = path.replace(path.substring(start, end + 1), format.format(new Date()));
+                } catch (Throwable e) {
+                    path = path.replace(path.substring(start, end + 1), "");
+                }
+            }
+            if (path.contains(SUBFOLDER)) {
+                String defaultDest = createDefaultExtractToPath(archive);
+                if (!StringUtils.isEmpty(defaultDest)) {
+                    String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(defaultDest, "");
+                    if (StringUtils.isEmpty(dif) || new File(dif).isAbsolute()) {
+                        path = path.replace(SUBFOLDER, "");
+                    } else {
+                        path = path.replace(SUBFOLDER, CrossSystem.alleviatePathParts(dif));
+                    }
+                } else {
+                    path = path.replace(SUBFOLDER, "");
+                }
+            }
+            path = path.replaceAll("[/]+", "\\\\");
+            path = path.replaceAll("[\\\\]+", "\\\\");
+            return path;
+        } catch (Exception e) {
+            Log.exception(e);
+        }
         return null;
     }
 
@@ -110,9 +188,8 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
     @Override
     public File getFolder() {
         try {
-
             return LinkTreeUtils.getDownloadDirectory(getFirstLink());
-        } catch (NullPointerException e) {
+        } catch (Throwable e) {
             return new File(JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
         }
     }

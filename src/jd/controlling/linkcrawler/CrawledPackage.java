@@ -13,14 +13,11 @@ import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledPackage> {
-
-    public static final String                       PACKAGETAG  = "<jd:" + PackagizerController.PACKAGENAME + ">";
 
     public static final ChildComparator<CrawledLink> SORTER_ASC  = new ChildComparator<CrawledLink>() {
 
@@ -93,20 +90,21 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     private java.util.List<CrawledLink>                    children;
-    private String                                         comment           = null;
-    private PackageController<CrawledPackage, CrawledLink> controller        = null;
+    private String                                         comment                = null;
+    private PackageController<CrawledPackage, CrawledLink> controller             = null;
 
-    private long                                           created           = System.currentTimeMillis();
+    private long                                           created                = System.currentTimeMillis();
 
-    private String                                         name              = null;
+    private String                                         name                   = null;
 
-    private String                                         downloadFolder    = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+    private String                                         downloadFolder         = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
 
-    private boolean                                        downloadFolderSet = false;
+    private boolean                                        downloadFolderSet      = false;
 
-    private boolean                                        expanded          = false;
-    private transient UniqueAlltimeID                      uniqueID          = new UniqueAlltimeID();
+    private boolean                                        expanded               = false;
+    private transient UniqueAlltimeID                      uniqueID               = new UniqueAlltimeID();
     protected CrawledPackageView                           view;
+    private String                                         compiledDownloadFolder = null;
 
     private ChildComparator<CrawledLink>                   sorter;
 
@@ -159,16 +157,16 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     public String getDownloadFolder() {
         // replace variables in downloadfolder
-        int limit = JsonConfig.create(GeneralSettings.class).getSubfolderThreshold();
-        if (limit > getChildren().size()) {
-            if (downloadFolder.contains(CrawledPackage.PACKAGETAG)) {
-                //
-                return downloadFolder.replace(PACKAGETAG, "").replace("//", "/").replace("\\\\", "\\");
-            }
-
+        String ret = compiledDownloadFolder;
+        if (ret != null) return ret;
+        ret = downloadFolder;
+        String packageName = getName();
+        if (JsonConfig.create(GeneralSettings.class).getSubfolderThreshold() > getChildren().size()) {
+            packageName = null;
         }
-        return downloadFolder.replace(PACKAGETAG, CrossSystem.alleviatePathParts(getName()));
-
+        ret = PackagizerController.replaceDynamicTags(ret, packageName);
+        compiledDownloadFolder = ret;
+        return ret;
     }
 
     public long getFinishedDate() {
@@ -224,7 +222,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         if (name != null && name.equals(this.name)) return;
         setType(TYPE.NORMAL);
         this.name = name;
-        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledPackageProperty(this, CrawledPackageProperty.Property.NAME, name));
+        compiledDownloadFolder = null;
+        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledPackageProperty(this, CrawledPackageProperty.Property.NAME, getName()));
     }
 
     public void setDownloadFolder(String downloadFolder) {
@@ -235,7 +234,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
             this.downloadFolder = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
             this.downloadFolderSet = false;
         }
-        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledPackageProperty(this, CrawledPackageProperty.Property.FOLDER, downloadFolder));
+        compiledDownloadFolder = null;
+        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledPackageProperty(this, CrawledPackageProperty.Property.FOLDER, getDownloadFolder()));
     }
 
     public void setEnabled(boolean b) {

@@ -39,35 +39,38 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     }
 
-    public String createExtractSubPath(String path, Archive archiv) {
-        DownloadLink link = getFirstLink(archiv);
+    public String createExtractSubPath(String path, Archive archive) {
+        DownloadLink link = getFirstLink(archive);
         try {
             FilePackage fp = link.getFilePackage();
-            String packageName = null;
-            if (FilePackage.isDefaultFilePackage(fp)) {
-                packageName = link.getStringProperty(DownloadLink.PROPERTY_LASTFPNAME, null);
-            } else {
-                packageName = CrossSystem.alleviatePathParts(link.getFilePackage().getName());
+            if (path.contains(PACKAGENAME)) {
+                String packageName = null;
+                if (FilePackage.isDefaultFilePackage(fp)) {
+                    packageName = link.getStringProperty(DownloadLink.PROPERTY_LASTFPNAME, null);
+                } else {
+                    packageName = CrossSystem.alleviatePathParts(link.getFilePackage().getName());
+                }
+                if (!StringUtils.isEmpty(packageName)) {
+                    path = path.replace(PACKAGENAME, packageName);
+                } else {
+                    path = path.replace(PACKAGENAME, "");
+                }
             }
-            if (!StringUtils.isEmpty(packageName)) {
-                path = path.replace(PACKAGENAME, packageName);
-            } else {
-                path = path.replace(PACKAGENAME, "");
-                Log.L.severe("Could not set packagename for " + archiv.getFirstArchiveFile().getFilePath());
+            if (path.contains(ARCHIVENAME)) {
+                String archiveName = CrossSystem.alleviatePathParts(archive.getName());
+                if (!StringUtils.isEmpty(archiveName)) {
+                    path = path.replace(ARCHIVENAME, archiveName);
+                } else {
+                    path = path.replace(ARCHIVENAME, "");
+                }
             }
-            String archiveName = CrossSystem.alleviatePathParts(archiv.getName());
-            if (!StringUtils.isEmpty(archiveName)) {
-                path = path.replace(ARCHIVENAME, archiveName);
-            } else {
-                path = path.replace(ARCHIVENAME, "");
-                Log.L.severe("Could not set archivename for " + archiv.getFirstArchiveFile().getFilePath());
-            }
-            String hostName = CrossSystem.alleviatePathParts(link.getHost());
-            if (!StringUtils.isEmpty(hostName)) {
-                path = path.replace(HOSTER, hostName);
-            } else {
-                path = path.replace(HOSTER, "");
-                Log.L.severe("Could not set hoster for " + archiv.getFirstArchiveFile().getFilePath());
+            if (path.contains(HOSTER)) {
+                String hostName = CrossSystem.alleviatePathParts(link.getHost());
+                if (!StringUtils.isEmpty(hostName)) {
+                    path = path.replace(HOSTER, hostName);
+                } else {
+                    path = path.replace(HOSTER, "");
+                }
             }
             if (path.contains("$DATE:")) {
                 int start = path.indexOf("$DATE:");
@@ -80,14 +83,16 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                     path = path.replace(path.substring(start, end + 1), format.format(new Date()));
                 } catch (Throwable e) {
                     path = path.replace(path.substring(start, end + 1), "");
-                    Log.L.severe("Could not set extraction date. Maybe pattern is wrong. For " + archiv.getFirstArchiveFile().getFilePath());
                 }
             }
-            String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
-            if (new File(dif).isAbsolute()) {
-                dif = "";
+            if (path.contains(SUBFOLDER)) {
+                String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
+                if (StringUtils.isEmpty(dif) || new File(dif).isAbsolute()) {
+                    path = path.replace(SUBFOLDER, "");
+                } else {
+                    path = path.replace(SUBFOLDER, CrossSystem.alleviatePathParts(dif));
+                }
             }
-            path = path.replace(SUBFOLDER, CrossSystem.alleviatePathParts(dif));
             path = path.replaceAll("[/]+", "\\\\");
             path = path.replaceAll("[\\\\]+", "\\\\");
             return path;
@@ -159,10 +164,8 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     private DownloadLink getFirstLink(Archive archive) {
         if (archive.getFirstArchiveFile() instanceof DownloadLinkArchiveFile) { return ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getDownloadLinks().get(0); }
-
         for (ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof DownloadLinkArchiveFile) { return ((DownloadLinkArchiveFile) af).getDownloadLinks().get(0); }
-
         }
         throw new WTFException("Archive should always have at least one link");
     }
@@ -204,7 +207,6 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     @Override
     public void onArchiveFinished(Archive archive) {
-
         String id = getID();
         if (id == null) {
             for (ArchiveFile af : archive.getArchiveFiles()) {
@@ -217,8 +219,6 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         if (id == null) {
             id = createUniqueAlltimeID();
         }
-
-        // link
         for (ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof DownloadLinkArchiveFile) {
                 for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
@@ -226,7 +226,6 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 }
             }
         }
-
     }
 
     public synchronized static String createUniqueAlltimeID() {

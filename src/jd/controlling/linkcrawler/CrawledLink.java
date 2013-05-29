@@ -32,9 +32,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         TEMP_UNKNOWN
     }
 
-    protected static final String PACKAGETAG = "<jd:" + PackagizerController.PACKAGENAME + ">";
-
-    private boolean               crawlDeep  = false;
+    private boolean crawlDeep = false;
 
     public boolean isCrawlDeep() {
         return crawlDeep;
@@ -204,9 +202,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         String lname = name;
         if (lname != null) {
             CrawledPackage lparent = this.getParentNode();
-            if (lparent == null) return lname;
-            /* special case of PackageCustomizer Filename */
-            return name.replace(PACKAGETAG, lparent.getName());
+            String packageName = null;
+            if (lparent != null) packageName = lparent.getName();
+            return PackagizerController.replaceDynamicTags(lname, packageName);
         }
         if (dlLink != null) return dlLink.getName();
         return "DUMMY";

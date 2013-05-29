@@ -15,7 +15,6 @@ public class UpdateAction extends ToolBarAction {
     private static final long serialVersionUID = 1L;
 
     public UpdateAction(SelectionInfo<?, ?> selection) {
-
         setIconKey("update");
         setEnabled(true);
     }

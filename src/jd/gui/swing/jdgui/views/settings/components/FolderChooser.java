@@ -93,7 +93,6 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
         setting = true;
         try {
             super.setPath(t);
-
         } finally {
             setting = false;
         }

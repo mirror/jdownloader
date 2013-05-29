@@ -10,7 +10,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
-import jd.controlling.linkcrawler.CrawledPackage;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
@@ -27,6 +26,7 @@ import org.appwork.utils.swing.dialog.ExtFileSystemView;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.HomeFolder;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
 import org.jdownloader.images.NewTheme;
@@ -37,7 +37,8 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     private javax.swing.JCheckBox cbPackage;
     private File                  path;
     private boolean               packageSubFolderSelectionVisible;
-    private boolean               subfolder = false;
+    private boolean               subfolder  = false;
+    private final String          PACKAGETAG = "<jd:" + PackagizerController.PACKAGENAME + ">";
 
     /**
      * @param flag
@@ -48,9 +49,12 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     public DownloadFolderChooserDialog(File path, String title, String okOption, String cancelOption) {
         super(0, title, okOption, cancelOption);
         this.path = path;
-        if (path != null && path.getName().equals(CrawledPackage.PACKAGETAG)) {
-            subfolder = true;
-            this.path = path.getParentFile();
+        if (path != null) {
+            if (path.getAbsolutePath().endsWith(PACKAGETAG)) {
+                subfolder = true;
+                this.path = path.getParentFile();
+            }
+            setPreSelection(this.path);
         }
         setView(JsonConfig.create(GraphicalUserInterfaceSettings.class).getFileChooserView());
     }
@@ -108,7 +112,11 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
             }
             if (cbPackage != null && cbPackage.isSelected()) {
-                return new File[] { new File(f, CrawledPackage.PACKAGETAG) };
+                if (cbPackage.isSelected() && f.getAbsolutePath().endsWith(PACKAGETAG)) {
+                    return new File[] { f };
+                } else {
+                    return new File[] { new File(f, PACKAGETAG) };
+                }
             } else {
                 if (f.exists() && !f.canWrite()) return null;
                 return new File[] { f };
@@ -164,8 +172,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
-     * exist
+     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must exist
      * 
      * @param file
      * @return
@@ -201,7 +208,6 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         }
 
         d.setQuickSelectionList(DownloadPath.loadList(path != null ? path.getAbsolutePath() : null));
-        d.setPreSelection(path);
         d.setFileSelectionMode(FileChooserSelectionMode.DIRECTORIES_ONLY);
 
         final File[] dest = Dialog.getInstance().showDialog(d);
