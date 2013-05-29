@@ -276,14 +276,14 @@ public class VKontakteRu extends PluginForDecrypt {
         final String[][] regexesAllOthers = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
         final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 80, 40, 80, parameter, "al=1&part=1&offset=");
         String albumID = new Regex(parameter, "/(album.+)").getMatch(0);
-        for (String element : decryptedData) {
+        for (final String element : decryptedData) {
             if (albumID == null) albumID = "tag" + new Regex(element, "\\?tag=(\\d+)").getMatch(0);
             /** Pass those goodies over to the hosterplugin */
-            DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + element);
+            final DownloadLink dl = createDownloadlink("http://vk.com/photo" + element);
             dl.setProperty("albumid", albumID);
             decryptedLinks.add(dl);
         }
-        FilePackage fp = FilePackage.getInstance();
+        final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "/(album|tag)(.+)").getMatch(1));
         fp.setProperty("CLEANUP_NAME", false);
         fp.addLinks(decryptedLinks);
