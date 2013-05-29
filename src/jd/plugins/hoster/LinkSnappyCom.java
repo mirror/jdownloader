@@ -66,7 +66,7 @@ public class LinkSnappyCom extends PluginForHost {
         ac.setProperty("multiHostSupport", Property.NULL);
 
         if (!login(account)) {
-            ac.setStatus("Account is invalid. Wrong password?");
+            ac.setStatus("Account is invalid. Wrong username or password?");
             account.setValid(false);
             return ac;
         }
