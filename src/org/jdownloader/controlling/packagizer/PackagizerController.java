@@ -440,9 +440,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 for (ArchiveFile af : ((ExtractionController) caller).getArchiv().getArchiveFiles()) {
                     if (af instanceof DownloadLinkArchiveFile) {
                         for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
-                            CrawledLink cl = new CrawledLink(link);
                             for (File f : fileList) {
                                 if (f.exists()) {
+                                    CrawledLink cl = new CrawledLink(link);
                                     cl.setName(f.getName());
                                     runAfterExtraction(f, cl);
                                 }
@@ -450,16 +450,17 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         }
                     }
                 }
-
             }
-
         }
     }
 
     private void runAfterExtraction(File f, CrawledLink link) {
         java.util.List<PackagizerRuleWrapper> lfileFilter = fileFilter;
+        String originalFolder = f.getParent();
+        String moveToFolder = originalFolder;
+        String originalFileName = link.getName();
         for (PackagizerRuleWrapper lgr : lfileFilter) {
-            if (!StringUtils.isEmpty(lgr.getRule().getFilename()) || !StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
+            if (!StringUtils.isEmpty(lgr.getRule().getRename()) || !StringUtils.isEmpty(lgr.getRule().getMoveto())) {
                 if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {
                     try {
                         if (!lgr.checkHoster(link)) continue;
@@ -479,31 +480,26 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         if (!lgr.checkFileType(link)) continue;
                     }
                 }
-                String downloadPath = f.getParent();
-                String filename = f.getName();
-                if (!StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
-                    /* customize download destination folder */
-                    String path = replaceVariables(lgr.getRule().getDownloadDestination(), link, lgr);
-                    if (new File(path).isAbsolute()) {
-                        downloadPath = path;
-                    } else {
-                        downloadPath = new File(downloadPath, path).getAbsolutePath();
-                    }
-
+                if (!StringUtils.isEmpty(lgr.getRule().getRename())) {
+                    /* rename */
+                    link.setName(replaceVariables(lgr.getRule().getRename(), link, lgr));
                 }
-                if (!StringUtils.isEmpty(lgr.getRule().getFilename())) {
-                    /* customize filename */
-                    filename = replaceVariables(lgr.getRule().getFilename(), link, lgr);
+                if (!StringUtils.isEmpty(lgr.getRule().getMoveto())) {
+                    /* move */
+                    moveToFolder = replaceVariables(lgr.getRule().getMoveto(), link, lgr);
                 }
-
-                File newFile = new File(downloadPath, filename);
-                newFile.getParentFile().mkdirs();
-                if (!f.equals(newFile) && f.renameTo(newFile)) {
-                    Log.L.info("Packagizer Renamed " + f + " to " + newFile);
-                    FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { newFile }));
-                } else {
-                    Log.L.warning("Packagizer could not rename " + f + " to " + newFile + " already exists?:" + newFile.exists());
-                }
+            }
+        }
+        if (!originalFolder.equals(moveToFolder) || !originalFileName.equals(link.getName())) {
+            File newFile = new File(moveToFolder, link.getName());
+            if (newFile.getParentFile().exists() == false && newFile.getParentFile().mkdirs() == false) {
+                Log.L.warning("Packagizer could not create " + newFile.getParentFile());
+                return;
+            } else if (f.renameTo(newFile) == false) {
+                Log.L.warning("Packagizer could not move/rename " + f + " to" + newFile);
+            } else {
+                Log.L.info("Packagizer moved/renamed " + f + " to " + newFile);
+                FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { newFile }));
             }
         }
     }

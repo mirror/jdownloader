@@ -107,6 +107,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private JLabel         lblPackagename;
     private JLabel         lblExtract;
     private JLabel         lblChunks;
+    private JLabel         lblMove;
     private JComboBox      cobExtract;
     private JComboBox      cobAutostart;
     private JComboBox      cobAutoAdd;
@@ -216,8 +217,12 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
         if (cbDest.isSelected()) {
             DownloadPath.saveList(fpDest.getPath());
-
         }
+        if (cbMove.isSelected()) {
+            DownloadPath.saveList(fpMove.getPath());
+        }
+        rule.setMoveto(cbMove.isSelected() ? fpMove.getPath() : null);
+        rule.setRename(cbRename.isSelected() ? txtRename.getText() : null);
 
         rule.setChunks(cbChunks.isSelected() ? ((Number) spChunks.getValue()).intValue() : -1);
         rule.setPriority(cbPriority.isSelected() ? prio : null);
@@ -250,15 +255,17 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         setPluginStatusFilter(rule.getPluginStatusFilter());
         txtPackagename.setText(rule.getPackageName());
         txtNewFilename.setText(rule.getFilename());
+        txtRename.setText(rule.getRename());
         txtTestUrl.setText(rule.getTestUrl());
         fpDest.setQuickSelectionList(DownloadPath.loadList(rule.getDownloadDestination()));
         fpDest.setPath(rule.getDownloadDestination());
+        fpDest.setQuickSelectionList(DownloadPath.loadList(rule.getMoveto()));
+        fpMove.setPath(rule.getMoveto());
 
         cbExtract.setSelected(rule.isAutoExtractionEnabled() != null);
 
         if (rule.getChunks() > 0) {
             spChunks.setValue(rule.getChunks());
-
         }
         cbStart.setSelected(rule.isAutoStartEnabled() != null);
         cbAdd.setSelected(rule.isAutoAddEnabled() != null);
@@ -269,6 +276,8 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         cbChunks.setSelected(rule.getChunks() > 0);
         cbName.setSelected(!StringUtils.isEmpty(rule.getFilename()));
         cbDest.setSelected(!StringUtils.isEmpty(rule.getDownloadDestination()));
+        cbMove.setSelected(!StringUtils.isEmpty(rule.getMoveto()));
+        cbRename.setSelected(!StringUtils.isEmpty(rule.getRename()));
         cbPackagename.setSelected(!StringUtils.isEmpty(rule.getPackageName()));
         cbPriority.setSelected(rule.getPriority() != null);
 
@@ -321,6 +330,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     }
 
     private PathChooser   fpDest;
+    private PathChooser   fpMove;
     private FilterPanel   fpPriority;
     private ExtTextField  txtPackagename;
 
@@ -340,11 +350,15 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private ExtCheckBox   cbStart;
     private ExtCheckBox   cbAdd;
     private ExtCheckBox   cbName;
+    private ExtCheckBox   cbRename;
     private JLabel        lblFilename;
+    private JLabel        lblRename;
     private ExtTextField  txtNewFilename;
+    private ExtTextField  txtRename;
     private JToggleButton cbAlways;
+    private ExtCheckBox   cbMove;
 
-    public void addConditionGui(JComponent panel) {
+    public void addConditionGui(final JComponent panel) {
         cbAlways = new ExtCheckBox();
         panel.add(cbAlways);
         panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_always()), "spanx");
@@ -353,7 +367,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     @Override
     public JComponent layoutDialogContent() {
         MigPanel ret = (MigPanel) super.layoutDialogContent();
-
+        /* THEN SET */
         ret.add(createHeader(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_then()), "gaptop 10, spanx,growx,pushx");
         lblDest = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_dest());
         lblPriority = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_priority());
@@ -526,6 +540,78 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         ret.add(cobAutostart, "spanx,growx,pushx");
 
         link(cbStart, lblAutostart, cobAutostart);
+        /* THEN DO */
+        ret.add(createHeader(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_do()), "gaptop 10, spanx,growx,pushx");
+
+        lblMove = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_move());
+        fpMove = new PathChooser("PackagizerMove", true) {
+
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            public File doFileChooser() {
+                try {
+                    return DownloadFolderChooserDialog.open(getFile(), true, getDialogTitle());
+                } catch (DialogClosedException e) {
+                    e.printStackTrace();
+                } catch (DialogCanceledException e) {
+                    e.printStackTrace();
+                }
+                return null;
+
+            }
+
+            @Override
+            public JPopupMenu getPopupMenu(ExtTextField txt, CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+                JPopupMenu menu = new JPopupMenu();
+                JMenu sub = createVariablesMenu(txt);
+
+                menu.add(sub);
+                menu.add(new JSeparator());
+                menu.add(cutAction);
+                menu.add(copyAction);
+                menu.add(pasteAction);
+                menu.add(deleteAction);
+                menu.add(selectAction);
+                return menu;
+            }
+
+        };
+        fpMove.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_dest_help());
+        cbMove = new ExtCheckBox(fpMove);
+        ret.add(cbMove);
+        ret.add(lblMove, "spanx 2");
+        ret.add(fpMove, "spanx,pushx,growx");
+        link(cbMove, lblMove, fpMove);
+
+        lblRename = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_rename());
+        txtRename = new ExtTextField() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+                JPopupMenu menu = new JPopupMenu();
+                menu.add(createVariablesMenu(txtRename));
+                menu.add(new JSeparator());
+                menu.add(cutAction);
+                menu.add(copyAction);
+                menu.add(pasteAction);
+                menu.add(deleteAction);
+                menu.add(selectAction);
+                return menu;
+            }
+        };
+        txtRename.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_filename_help_());
+        cbRename = new ExtCheckBox(txtRename);
+        ret.add(cbRename);
+        ret.add(lblRename, "spanx 2");
+        ret.add(txtRename, "spanx,pushx,growx");
+        link(cbRename, lblRename, txtRename);
 
         updateGUI();
 

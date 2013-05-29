@@ -1070,6 +1070,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download Directory" })
     String PackagizerFilterRuleDialog_layoutDialogContent_dest();
 
+    @Default(lngs = { "en" }, values = { "Move to" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_move();
+
     @Default(lngs = { "en" }, values = { "Priority" })
     String PackagizerFilterRuleDialog_layoutDialogContent_priority();
 
@@ -1082,8 +1085,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Chunks/Connections" })
     String PackagizerFilterRuleDialog_layoutDialogContent_chunks();
 
-    @Default(lngs = { "en" }, values = { "... then set" })
+    @Default(lngs = { "en" }, values = { "... then set (before downloading)" })
     String PackagizerFilterRuleDialog_layoutDialogContent_then();
+
+    @Default(lngs = { "en" }, values = { "... then do (after extraction/merging)" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_do();
 
     @Default(lngs = { "en" }, values = { "Date or Time" })
     String PackagizerFilterRuleDialog_createVariablesMenu_date();
@@ -1468,6 +1474,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Filename" })
     String PackagizerFilterRuleDialog_layoutDialogContent_filename();
+
+    @Default(lngs = { "en" }, values = { "Rename" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_rename();
 
     @Default(lngs = { "en" }, values = { "Enter Package Name Pattern..." })
     String PackagizerFilterRuleDialog_layoutDialogContent_packagename_help_();

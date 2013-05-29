@@ -75,8 +75,27 @@ public class PackagizerRule extends FilterRule implements Storable {
 
     private Priority priority    = null;
     private String   packageName = null;
-    private Boolean  autoExtractionEnabled;
-    private Boolean  autoAddEnabled;
+    private String   rename      = null;
+
+    public String getRename() {
+        return rename;
+    }
+
+    public void setRename(String rename) {
+        this.rename = rename;
+    }
+
+    public String getMoveto() {
+        return moveto;
+    }
+
+    public void setMoveto(String moveto) {
+        this.moveto = moveto;
+    }
+
+    private String  moveto = null;
+    private Boolean autoExtractionEnabled;
+    private Boolean autoAddEnabled;
 
     public Boolean isAutoAddEnabled() {
         return autoAddEnabled;
