@@ -574,7 +574,7 @@ public class CloudzerNet extends PluginForHost {
             try {
                 String token = account.getStringProperty("token", null);
                 if (token != null && liveToken == false) return token;
-                br.postPage("http://api.cloudzer.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getSHA1(URLDecoder.decode(account.getPass(), "UTF-8").toLowerCase(Locale.ENGLISH)) + "&ishash=1&app=JDownloader");
+                br.postPage("http://cloudzer.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getSHA1(URLDecoder.decode(account.getPass(), "UTF-8").toLowerCase(Locale.ENGLISH)) + "&ishash=1&app=JDownloader");
                 token = br.getRegex("access_token\":\"(.*?)\"").getMatch(0);
                 if (token == null) handleErrorCode(br, account, token, true);
                 account.setProperty("token", token);
@@ -592,7 +592,7 @@ public class CloudzerNet extends PluginForHost {
             try {
                 String tokenType = account.getStringProperty("tokenType", null);
                 if (tokenType != null && liveToken == false) return tokenType;
-                br.getPage("http://api.cloudzer.net/api/user/jdownloader?access_token=" + token);
+                br.getPage("http://cloudzer.net/api/user/jdownloader?access_token=" + token);
                 tokenType = br.getRegex("account_type\":\\s*?\"(premium|free)").getMatch(0);
                 if (tokenType == null) handleErrorCode(br, account, token, true);
                 account.setProperty("tokenType", tokenType);
@@ -633,7 +633,7 @@ public class CloudzerNet extends PluginForHost {
         // }
         logger.info("Premium mode");
         String id = getID(downloadLink);
-        br.postPage("http://api.cloudzer.net/api/download/jdownloader", "access_token=" + token + "&auth=" + id);
+        br.postPage("http://cloudzer.net/api/download/jdownloader", "access_token=" + token + "&auth=" + id);
         String url = br.getRegex("link\":\\s*?\"(http.*?)\"").getMatch(0);
         String sha1 = br.getRegex("sha1\":\\s*?\"([0-9a-fA-F]+)\"").getMatch(0);
         String name = br.getRegex("name\":\\s*?\"(.*?)\"").getMatch(0);
