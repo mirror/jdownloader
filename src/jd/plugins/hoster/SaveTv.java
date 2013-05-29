@@ -81,6 +81,7 @@ public class SaveTv extends PluginForHost {
 
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null) {
+            link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
             link.getLinkStatus().setStatusText("Kann Links ohne gültigen Account nicht überprüfen");
             return AvailableStatus.UNCHECKABLE;
         }
@@ -100,7 +101,10 @@ public class SaveTv extends PluginForHost {
             br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">false</adFreeSpecified></GetStreamingUrl></v:Body></v:Envelope>");
             filename = br.getRegex("<a:Filename>([^<>\"]*?)</a").getMatch(0);
             filesize = br.getRegex("<a:SizeMB>(\\d+)</a:SizeMB>").getMatch(0);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (filename == null || filesize == null) {
+                link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filesize += " KB";
         } else {
             final DecimalFormat df = new DecimalFormat("0000");

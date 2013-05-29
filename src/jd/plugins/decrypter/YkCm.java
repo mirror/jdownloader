@@ -88,16 +88,31 @@ public class YkCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.getURL().equals("http://v.youku.com/index/y404/")) {
+            logger.info("");
+            final DownloadLink dl = createDownloadlink("http://f.youku.com/player/getFlvPath/sid" + new Regex(parameter, "youku\\.com/(.+)").getMatch(0));
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
 
         videoId = br.getRegex("var videoId2= \\'(.*?)\\'").getMatch(0);
-        if (videoId == null) { return null; }
+        if (videoId == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         // get Playlist
         final Date date = new Date();
         final SimpleDateFormat sdf = new SimpleDateFormat("Z");
         final String jsonString = br.getPage("http://v.youku.com/player/getPlayList/VideoIDS/" + videoId + "/timezone/" + sdf.format(date).substring(0, 3) + "/version/5/source/video?password=&n=3&ran=" + (int) (Math.random() * 9999));
         if (br.containsHTML("Sorry, this video can only be streamed within Mainland China\\.")) {
             logger.info("Stopping decrypt process, video only available in mainland china: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("\"error_code\":\\-6")) {
+            logger.info("Password protected links aren't supported yet: " + parameter);
             return decryptedLinks;
         }
         if (!jsonParser(jsonString)) { return null; }

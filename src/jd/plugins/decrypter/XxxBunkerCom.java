@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunker\\.com/(?!search|javascript|tos|flash|footer|display|videoList|embedcode_|)[a-z0-9_\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunker\\.com/(?!search|javascript|tos|flash|footer|display|videoList|embedcode_)[a-z0-9_\\-]+" }, flags = { 0 })
 public class XxxBunkerCom extends PluginForDecrypt {
 
     public XxxBunkerCom(PluginWrapper wrapper) {
@@ -39,7 +39,8 @@ public class XxxBunkerCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String filename = br.getRegex("<title>xxxbunker\\.com : ([^<>\"]*?)</title>").getMatch(0);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("class=vpVideoTitle><h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
         // filename needed for all IDs below here
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -69,6 +70,13 @@ public class XxxBunkerCom extends PluginForDecrypt {
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
             dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("file%3D(http[^<>\"]*?)%26amp%").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
+            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

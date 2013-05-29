@@ -45,8 +45,9 @@ public class DeviantArtCom extends PluginForHost {
      * @author raztoki
      */
 
-    private static final String COOKIE_HOST = "http://www.deviantart.com";
-    private static Object       LOCK        = new Object();
+    private static final String COOKIE_HOST         = "http://www.deviantart.com";
+    private static Object       LOCK                = new Object();
+    private static final String MATURECONTENTFILTER = ">Mature Content Filter<";
 
     public DeviantArtCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,11 +70,23 @@ public class DeviantArtCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("/error\\-title\\-oops\\.png\\)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<title>([^<>\"]*?) on deviantART</title>").getMatch(0);
-        final String ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
+        // Motionbooks are not supported (yet)
+        if (br.containsHTML(",target: \\'motionbooks/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>([^<>\"]*?) on deviantART</title>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
+        if (br.containsHTML(MATURECONTENTFILTER)) {
+            link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
+            link.setName(filename);
+            return AvailableStatus.TRUE;
+        }
+        String ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
+        if (ext == null) {
+            ext = getDllink().substring(getDllink().lastIndexOf(".") + 1);
+        }
         final String filesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "." + ext.trim().toLowerCase());
+        if (filesize == null || ext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(filename + "." + ext.trim().toLowerCase());
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
         return AvailableStatus.TRUE;
     }
@@ -81,6 +94,14 @@ public class DeviantArtCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(MATURECONTENTFILTER)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Mature content can only be downloaded via account");
+        }
         final String dllink = getDllink();
         // Disable chunks as we only download pictures
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -113,7 +134,7 @@ public class DeviantArtCom extends PluginForHost {
 
     private String getDllink() throws PluginException {
         String dllink = null;
-        if (br.containsHTML(">Mature Content</span>") && !br.containsHTML(">Mature Content Filter<")) {
+        if (br.containsHTML(">Mature Content</span>")) {
             dllink = br.getRegex("class=\"thumb ismature\" href=\"" + br.getURL() + "\" title=\"[^<>\"/]+\" data\\-super\\-img=\"(http://[^<>\"]*?)\"").getMatch(0);
         } else {
             dllink = br.getRegex("name=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(0);

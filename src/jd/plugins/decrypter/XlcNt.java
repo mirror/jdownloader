@@ -25,34 +25,27 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xlice.net" }, urls = { "http://[\\w\\.]*?xlice\\.net/download/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xlice.net" }, urls = { "http://(www\\.)?xlice\\.net/download/[a-z0-9]+" }, flags = { 0 })
 public class XlcNt extends PluginForDecrypt {
 
     public XlcNt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         br.getPage(parameter);
-
-        String links[] = br.getRegex("onclick=\"location.href='(.*?)';").getColumn(0);
-
-        if (links == null) { return null; }
-
-        progress.setRange(links.length);
+        String links[] = br.getRegex("onclick=\"location\\.href=\\'(.*?)\\';").getColumn(0);
+        if (links == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String element : links) {
             decryptedLinks.add(createDownloadlink(element));
-            progress.increase(1);
         }
-
         return decryptedLinks;
     }
-
-    // @Override
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {

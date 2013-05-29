@@ -58,6 +58,8 @@ public class FilePlanetaCom extends PluginForHost {
     private String               correctedBR         = "";
     private static final String  PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String  COOKIE_HOST         = "http://fileplaneta.com";
+    // domain names used within download links.
+    private static final String  DOMAINS             = "(fileplaneta\\.com)";
     private static final String  MAINTENANCE         = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
@@ -95,7 +97,7 @@ public class FilePlanetaCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.setCookie(COOKIE_HOST, "lang", "english");
+        prepBrowser(br);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches() || correctedBR.contains("Извините, мы вынуждены на неопределённое время прекратить обслуживание зарубежных посетителей в бесплатном режиме")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
@@ -240,22 +242,28 @@ public class FilePlanetaCom extends PluginForHost {
             sendForm(dlForm);
             logger.info("Submitted DLForm");
             checkErrors(downloadLink, true, passCode);
-            /** Unusual part for xfilesharing start */
-            String s = br.getRegex("\\&s=([a-z0-9]+)\\&ajax=1").getMatch(0);
-            if (s == null) s = br.getRegex("<script>console\\.log\\(\\'([a-z0-9]+)\\'\\)</script>").getMatch(0);
-            if (s == null) {
-                logger.warning("s is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            waitTime(System.currentTimeMillis(), downloadLink);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            getPage("http://fileplaneta.com/?op=download2&id=" + fid + "&s=" + s + "&ajax=1");
-            checkErrors(downloadLink, true, passCode);
             dllink = getDllink();
-            /** Unusual part for xfilesharing end */
             if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /** Unusual part for xfilesharing start */
+                String s = br.getRegex("\\&s=([a-z0-9]+)\\&ajax=1").getMatch(0);
+                if (s == null) s = br.getRegex("<script>console\\.log\\(\\'([a-z0-9]+)\\'\\)</script>").getMatch(0);
+                if (s == null) {
+                    logger.warning("s is null");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                waitTime(System.currentTimeMillis(), downloadLink);
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("Accept", "application/json, text/javascript, */*");
+                br.getHeaders().put("Accept-Charset", null);
+                br.setCookie(COOKIE_HOST, "download_referer", Encoding.urlEncode_light(br.getURL()));
+                getPage("http://fileplaneta.com/?op=download2&id=" + fid + "&s=" + s + "&ajax=1");
+                checkErrors(downloadLink, true, passCode);
+                dllink = getDllink();
+                /** Unusual part for xfilesharing end */
+                if (dllink == null) {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -428,7 +436,7 @@ public class FilePlanetaCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                br.setCookie(COOKIE_HOST, "lang", "english");
+                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -508,19 +516,13 @@ public class FilePlanetaCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = new Regex(correctedBR, "\"(http://fileplaneta\\.com/d/[a-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
-                    if (dllink == null) {
-                        String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                        if (cryptedScripts != null && cryptedScripts.length != 0) {
-                            for (String crypted : cryptedScripts) {
-                                dllink = decodeDownloadLink(crypted);
-                                if (dllink != null) break;
-                            }
-                        }
+                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                    for (String crypted : cryptedScripts) {
+                        dllink = decodeDownloadLink(crypted);
+                        if (dllink != null) break;
                     }
                 }
             }
@@ -628,6 +630,15 @@ public class FilePlanetaCom extends PluginForHost {
         pwform.put("password", passCode);
         logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
         return Encoding.urlEncode(passCode);
+    }
+
+    public void prepBrowser(final Browser br) {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:21.0) Gecko/20100101 Firefox/21.0");
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        br.setCookie(COOKIE_HOST, "rgoods_1", "1");
+        br.setCookie(COOKIE_HOST, "ad_rot", "0");
     }
 
     @Override

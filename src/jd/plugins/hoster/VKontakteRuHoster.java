@@ -47,21 +47,22 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(vkontaktedecrypted\\.ru/(picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?|audiolink/\\d+|videolink/\\d+)|vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+)" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
-    private static final String DOMAIN         = "http://vk.com";
-    private static Object       LOCK           = new Object();
-    private String              FINALLINK      = null;
-    private static final String AUDIOLINK      = "http://vkontaktedecrypted\\.ru/audiolink/\\d+";
-    private static final String VIDEOLINK      = "http://vkontaktedecrypted\\.ru/videolink/\\d+";
-    private static final String DOCLINK        = "http://vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+";
-    private int                 MAXCHUNKS      = 1;
+    private static final String DOMAIN               = "http://vk.com";
+    private static Object       LOCK                 = new Object();
+    private String              FINALLINK            = null;
+    private static final String AUDIOLINK            = "http://vkontaktedecrypted\\.ru/audiolink/\\d+";
+    private static final String VIDEOLINK            = "http://vkontaktedecrypted\\.ru/videolink/\\d+";
+    private static final String DOCLINK              = "http://vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+";
+    private int                 MAXCHUNKS            = 1;
     /** Settings stuff */
-    private final String        USECOOKIELOGIN = "USECOOKIELOGIN";
-    private final String        FASTLINKCHECK  = "FASTLINKCHECK";
-    private static final String ALLOW_BEST     = "ALLOW_BEST";
-    private static final String ALLOW_240P     = "ALLOW_240P";
-    private static final String ALLOW_360P     = "ALLOW_360P";
-    private static final String ALLOW_480P     = "ALLOW_480P";
-    private static final String ALLOW_720P     = "ALLOW_720P";
+    private final String        USECOOKIELOGIN       = "USECOOKIELOGIN";
+    private final String        FASTLINKCHECK        = "FASTLINKCHECK";
+    private final String        FASTPICTURELINKCHECK = "FASTPICTURELINKCHECK";
+    private static final String ALLOW_BEST           = "ALLOW_BEST";
+    private static final String ALLOW_240P           = "ALLOW_240P";
+    private static final String ALLOW_360P           = "ALLOW_360P";
+    private static final String ALLOW_480P           = "ALLOW_480P";
+    private static final String ALLOW_720P           = "ALLOW_720P";
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
@@ -149,13 +150,12 @@ public class VKontakteRuHoster extends PluginForHost {
                 filename = Encoding.htmlDecode(filename.trim());
                 if (!linkOk(link, filename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
+                final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
+                getPageSafe("http://vk.com/photo" + photoID, aa);
+                if (br.containsHTML("Access denied")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 String albumID = link.getStringProperty("albumid");
-                String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
-                if (albumID == null || photoID == null) {
-                    // This should never happen
-                    logger.warning("A property couldn't be found!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                if (albumID == null) albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
+                if (albumID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.getPage("http://vk.com/photo" + photoID);
                 /* seems we have to refesh the login process */
                 if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
@@ -190,7 +190,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     }
 
-    // If an account security check appears, it will also be handled
+    // If an account security check appears, it be handled
     private void getPageSafe(final String page, final Account acc) throws Exception {
         br.getPage(page);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
@@ -373,6 +373,7 @@ public class VKontakteRuHoster extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USECOOKIELOGIN, JDL.L("plugins.hoster.vkontakteruhoster.alwaysUseCookiesForLogin", "Always use cookies for login (this can cause out of date errors)")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastLinkcheck", "Fast LinkCheck for video links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTPICTURELINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastPictureLinkcheck", "Fast LinkCheck for picture links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.youtube.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
         getConfig().addEntry(hq);

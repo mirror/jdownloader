@@ -70,6 +70,13 @@ public class VKontakteRu extends PluginForDecrypt {
         br.setReadTimeout(3 * 60 * 1000);
         String parameter = param.toString().replace("vkontakte.ru/", "vk.com/").replace("https://", "http://");
         br.setCookiesExclusive(false);
+        if (parameter.matches(PATTERN_PHOTO_SINGLE)) {
+            /**
+             * Single photo links, those are just passed to the hosterplugin! Example:http://vk.com/photo125005168_269986868
+             */
+            decryptedLinks = decryptSinglePhoto(decryptedLinks, parameter);
+            return decryptedLinks;
+        }
         synchronized (LOCK) {
             try {
                 /** Login process */
@@ -120,11 +127,6 @@ public class VKontakteRu extends PluginForDecrypt {
                      * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
                      */
                     decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter);
-                } else if (parameter.matches(PATTERN_PHOTO_SINGLE)) {
-                    /**
-                     * Single photo links, those are just passed to the hosterplugin! Example:http://vk.com/photo125005168_269986868
-                     */
-                    decryptedLinks = decryptSinglePhoto(decryptedLinks, parameter);
                 } else if (parameter.matches(PATTERN_PHOTO_ALBUMS)) {
                     /**
                      * Photo albums lists/overviews Example: http://vk.com/albums46486585
@@ -145,7 +147,10 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.warning("Browser exception thrown: " + e.getMessage());
                 logger.warning("Decrypter failed for link: " + parameter);
             }
-            if (decryptedLinks != null && decryptedLinks.size() > 0) sleep(2500l, param);
+            if (decryptedLinks != null && decryptedLinks.size() > 0) {
+                logger.info("Done, decrypted: " + decryptedLinks.size() + " links!");
+                sleep(2500l, param);
+            }
         }
         return decryptedLinks;
 
@@ -275,7 +280,6 @@ public class VKontakteRu extends PluginForDecrypt {
             if (albumID == null) albumID = "tag" + new Regex(element, "\\?tag=(\\d+)").getMatch(0);
             /** Pass those goodies over to the hosterplugin */
             DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + element);
-            dl.setAvailable(true);
             dl.setProperty("albumid", albumID);
             decryptedLinks.add(dl);
         }
@@ -286,14 +290,11 @@ public class VKontakteRu extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> decryptSinglePhoto(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
-        String albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
-        if (albumID == null) {
-            logger.warning("Decrypter broken for link: " + parameter + "\n");
-            return null;
-        }
+    private ArrayList<DownloadLink> decryptSinglePhoto(final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws IOException {
+        final SubConfiguration cfg = SubConfiguration.getConfig("vkontakte.ru");
+        final boolean fastLinkcheck = cfg.getBooleanProperty("FASTPICTURELINKCHECK", false);
         final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + new Regex(parameter, ".*?vk\\.com/photo" + "(.+)").getMatch(0));
-        dl.setProperty("albumid", albumID);
+        if (fastLinkcheck) dl.setAvailable(true);
         decryptedLinks.add(dl);
         return decryptedLinks;
     }
@@ -571,10 +572,10 @@ public class VKontakteRu extends PluginForDecrypt {
         int correntOffset = 0;
         int maxOffset = Integer.parseInt(endOffset);
         while (correntOffset < maxOffset) {
-            correntOffset += 10;
+            correntOffset += 20;
             logger.info("Decrypting offset " + correntOffset + " / " + maxOffset);
-            if (correntOffset > 10) {
-                br.postPage("http://vk.com/al_wall.php", "act=get_wall&al=1&fixed=&offset=" + correntOffset + "&owner_id=" + userID + "&type=all");
+            if (correntOffset > 30) {
+                br.postPage(br.getURL(), "al=1&part=1&offset=" + correntOffset);
                 if (br.toString().length() < 100) {
                     logger.info("Wall decrypted, stopping...");
                     break;

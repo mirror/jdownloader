@@ -120,7 +120,7 @@ public class NmLdsrg extends PluginForDecrypt {
             for (int i = 0; i <= 3; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, param);
-                ajax.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                ajax.postPage(br.getURL(), "action=web&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                 if (ajax.containsHTML("ok\":false")) {
                     rc.reload();
                     continue;
@@ -131,13 +131,15 @@ public class NmLdsrg extends PluginForDecrypt {
                 logger.info("Captcha wrong, stopping...");
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
-            String dllink = ajax.getRegex("\"response\":\\[?\"(http[^<>\"]*?)\"").getMatch(0);
+            String dllink = ajax.getRegex("\"response\":\\[?\"([^<>\"]*?)\"").getMatch(0);
             // Links can fail for multiple reasons so let's skip them
             if (dllink == null) {
                 logger.info("Found a dead link: " + link);
                 logger.info("Mainlink: " + parameter);
                 continue;
             }
+            dllink = dllink.replace("\\", "");
+            if (!dllink.startsWith("http")) dllink = Encoding.Base64Decode(dllink);
             final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(dllink.replace("\\", "")));
             dl.setSourcePluginPasswordList(passwords);
             try {
