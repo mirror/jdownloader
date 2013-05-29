@@ -118,16 +118,15 @@ public class CaptchaAPIImpl implements CaptchaAPI {
         ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
 
         if (challenge instanceof BasicCaptchaChallenge) {
-
             String res = JSonStorage.restoreFromString("\"" + result + "\"", new TypeRef<String>() {
             });
 
-            ((SolverJob<String>) job).addAnswer(new CaptchaResponse(null, res, 100));
+            ((SolverJob<String>) job).addAnswer(new CaptchaResponse((BasicCaptchaChallenge) challenge, null, res, 100));
         } else if (challenge instanceof ClickCaptchaChallenge) {
             ClickedPoint res = JSonStorage.restoreFromString(result, new TypeRef<ClickedPoint>() {
             });
 
-            ((SolverJob<ClickedPoint>) job).addAnswer(new ClickCaptchaResponse(this, res, 100));
+            ((SolverJob<ClickedPoint>) job).addAnswer(new ClickCaptchaResponse((ClickCaptchaChallenge) challenge, this, res, 100));
         } else {
             throw new RemoteAPIException(CaptchaAPI.Error.UNKNOWN_CHALLENGETYPE, challenge.getClass().getName());
 

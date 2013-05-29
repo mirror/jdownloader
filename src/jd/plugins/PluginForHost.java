@@ -57,10 +57,13 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -77,20 +80,20 @@ import org.jdownloader.translate._JDT;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
-    private static Pattern[]      PATTERNS             = new Pattern[] {
-                                                       /**
-                                                        * these patterns should split filename and fileextension (extension must include the point)
-                                                        */
-                                                       // multipart rar archives
+    private static Pattern[]               PATTERNS              = new Pattern[] {
+                                                                 /**
+                                                                  * these patterns should split filename and fileextension (extension must include the point)
+                                                                  */
+                                                                 // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
-    private LazyHostPlugin        lazyP                = null;
+    private LazyHostPlugin                 lazyP                 = null;
     /**
      * Is true if the user has answerd a captcha challenge. does not say anything whether if the answer was correct or not
      */
-    private BasicCaptchaChallenge lastCaptchaChallenge = null;
+    private transient ResponseList<String> lastChallengeResponse = null;
 
     public LazyHostPlugin getLazyP() {
         return lazyP;
@@ -170,6 +173,50 @@ public abstract class PluginForHost extends Plugin {
         return getCaptchaCode(methodname, captchaFile, 0, downloadLink, null, null);
     }
 
+    public void invalidateLastChallengeResponse() {
+        try {
+            ResponseList<String> lLastChallengeResponse = lastChallengeResponse;
+            if (lLastChallengeResponse != null) {
+                /* TODO: inform other solver that their response was not used */
+                AbstractResponse<?> response = lLastChallengeResponse.get(0);
+                if (response.getSolver() instanceof ChallengeResponseValidation) {
+                    ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
+                    try {
+                        validation.setInvalid(response);
+                    } catch (final Throwable e) {
+                        LogSource.exception(getLogger(), e);
+                    }
+                }
+            }
+        } finally {
+            lastChallengeResponse = null;
+        }
+    }
+
+    public void validateLastChallengeResponse() {
+        try {
+            ResponseList<String> lLastChallengeResponse = lastChallengeResponse;
+            if (lLastChallengeResponse != null) {
+                /* TODO: inform other solver that their response was not used */
+                AbstractResponse<?> response = lLastChallengeResponse.get(0);
+                if (response.getSolver() instanceof ChallengeResponseValidation) {
+                    ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
+                    try {
+                        validation.setValid(response);
+                    } catch (final Throwable e) {
+                        LogSource.exception(getLogger(), e);
+                    }
+                }
+            }
+        } finally {
+            lastChallengeResponse = null;
+        }
+    }
+
+    public boolean hasChallengeResponse() {
+        return lastChallengeResponse != null;
+    }
+
     protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws PluginException {
         final LinkStatus linkStatus = link.getLinkStatus();
         final String status = linkStatus.getStatusText();
@@ -217,7 +264,7 @@ public abstract class PluginForHost extends Plugin {
                 }
 
             };
-            lastCaptchaChallenge = c;
+            invalidateLastChallengeResponse();
             if (CaptchaBlackList.getInstance().matches(c)) {
                 logger.warning("Cancel. Blacklist Matching");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -229,7 +276,11 @@ public abstract class PluginForHost extends Plugin {
                 linkStatus.addStatus(latest);
                 linkStatus.setStatusText(status);
             }
-            if (!c.isSolved()) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (!c.isSolved()) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                lastChallengeResponse = c.getResult();
+            }
             return c.getResult().getValue();
         } catch (InterruptedException e) {
             logger.warning(Exceptions.getStackTrace(e));
@@ -251,10 +302,7 @@ public abstract class PluginForHost extends Plugin {
                             if (link.getDownloadInstance() != null) return false;
                             // plugin is in progress. captcha has been entered
                             PluginForHost livePlugin = link.getLivePlugin();
-                            if (livePlugin != null) {
-                                BasicCaptchaChallenge captchaChallenge = livePlugin.getLastCaptchaChallenge();
-                                if (captchaChallenge != null && captchaChallenge.isSolved()) return false;
-                            }
+                            if (livePlugin != null && livePlugin.hasChallengeResponse()) { return false; }
                             return true;
                         }
 
@@ -286,10 +334,7 @@ public abstract class PluginForHost extends Plugin {
                             if (link.isSkipped()) return false;
                             // plugin is in progress. captcha has been entered
                             PluginForHost livePlugin = link.getLivePlugin();
-                            if (livePlugin != null) {
-                                BasicCaptchaChallenge captchaChallenge = livePlugin.getLastCaptchaChallenge();
-                                if (captchaChallenge != null && captchaChallenge.isSolved()) return false;
-                            }
+                            if (livePlugin != null && livePlugin.hasChallengeResponse()) { return false; }
                             return true;
                         }
 
@@ -322,10 +367,7 @@ public abstract class PluginForHost extends Plugin {
                             if (link.isSkipped()) return false;
                             // plugin is in progress. captcha has been entered
                             PluginForHost livePlugin = link.getLivePlugin();
-                            if (livePlugin != null) {
-                                BasicCaptchaChallenge captchaChallenge = livePlugin.getLastCaptchaChallenge();
-                                if (captchaChallenge != null && captchaChallenge.isSolved()) return false;
-                            }
+                            if (livePlugin != null && livePlugin.hasChallengeResponse()) { return false; }
                             return true;
                         }
 
@@ -396,10 +438,6 @@ public abstract class PluginForHost extends Plugin {
         return false;
     }
 
-    public BasicCaptchaChallenge getLastCaptchaChallenge() {
-        return lastCaptchaChallenge;
-    }
-
     @Override
     public String getHost() {
         return lazyP.getDisplayName();
@@ -412,7 +450,7 @@ public abstract class PluginForHost extends Plugin {
 
     @Override
     public void clean() {
-        lastCaptchaChallenge = null;
+        lastChallengeResponse = null;
         try {
             dl.getConnection().disconnect();
         } catch (Throwable e) {
@@ -695,8 +733,6 @@ public abstract class PluginForHost extends Plugin {
             try {
                 downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(dl.getManagedConnetionHandler());
             } catch (final Throwable e) {
-            } finally {
-                clean();
             }
         }
     }

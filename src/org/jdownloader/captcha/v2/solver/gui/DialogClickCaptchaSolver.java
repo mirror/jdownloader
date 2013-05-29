@@ -45,7 +45,7 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
                 handler.run();
 
                 if (handler.getPoint() != null) {
-                    solverJob.addAnswer(new ClickCaptchaResponse(this, handler.getPoint(), 100));
+                    solverJob.addAnswer(new ClickCaptchaResponse(captchaChallenge, this, handler.getPoint(), 100));
                 }
             }
         }

@@ -73,7 +73,7 @@ public class CBSolver extends ChallengeSolver<String> {
                     ret = new String(http.getPage(new URL(url)));
                     job.getLogger().info("Answer " + ret);
                     if (ret.startsWith("OK-answered-")) {
-                        job.addAnswer(new CaptchaResponse(this, ret.substring("OK-answered-".length()), 100));
+                        job.addAnswer(new CaptchaResponse(challenge, this, ret.substring("OK-answered-".length()), 100));
                         return;
                     }
                     checkInterruption();
@@ -84,7 +84,6 @@ public class CBSolver extends ChallengeSolver<String> {
                 job.getLogger().log(e);
             } finally {
 
-                
             }
 
         }

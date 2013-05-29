@@ -365,6 +365,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     protected void onErrorCaptcha() {
+        if (originalPlugin != livePlugin) {
+            originalPlugin.invalidateLastChallengeResponse();
+        }
+        livePlugin.invalidateLastChallengeResponse();
         downloadLogger.warning("Captcha not correct-> will retry!");
         retry();
     }
@@ -569,8 +573,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         }
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss
-         * in ms. value==0 macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
+         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());

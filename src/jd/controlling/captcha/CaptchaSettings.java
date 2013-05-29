@@ -56,9 +56,16 @@ public interface CaptchaSettings extends ConfigInterface {
     @AboutConfig
     @DefaultIntValue(95)
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Do not Change me unless you know 100000% what this value is used for!")
-    int getAutoCaptchaErrorTreshold();
+    int getAutoCaptchaPriorityThreshold();
 
-    void setAutoCaptchaErrorTreshold(int value);
+    void setAutoCaptchaPriorityThreshold(int value);
+
+    @AboutConfig
+    @DefaultIntValue(90)
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Do not Change me unless you know 100000% what this value is used for!")
+    int getDefaultJACTrustThreshold();
+
+    void setDefaultJACTrustThreshold(int value);
 
     @AboutConfig
     @DefaultIntValue(15000)

@@ -90,7 +90,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
                     handler.run();
 
                     if (StringUtils.isNotEmpty(handler.getCaptchaCode())) {
-                        job.addAnswer(new CaptchaResponse(this, handler.getCaptchaCode(), 100));
+                        job.addAnswer(new CaptchaResponse(captchaChallenge, this, handler.getCaptchaCode(), 100));
                     }
                 } finally {
                     job.getLogger().info("Dialog closed. Response far: " + job.getResponse());

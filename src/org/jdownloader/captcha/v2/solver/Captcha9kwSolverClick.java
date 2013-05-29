@@ -108,7 +108,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
                         String antwort = ret.substring("OK-answered-".length());
                         String[] splitResult = antwort.split("x");
 
-                        solverJob.addAnswer(new ClickCaptchaResponse(this, new ClickedPoint(Integer.parseInt(splitResult[0]), Integer.parseInt(splitResult[1])), 100));
+                        solverJob.addAnswer(new ClickCaptchaResponse(captchaChallenge, this, new ClickedPoint(Integer.parseInt(splitResult[0]), Integer.parseInt(splitResult[1])), 100));
                         return;
                     }
                     checkInterruption();

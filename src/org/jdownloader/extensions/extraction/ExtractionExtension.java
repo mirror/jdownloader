@@ -686,6 +686,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             /* extractpath is still emptry, create default one */
             path = archive.getFactory().createDefaultExtractToPath(archive);
         }
+        if (StringUtils.isEmpty(path)) return null;
         File ret = new File(path);
         if (getSettings().isSubpathEnabled()) {
             if (getSettings().getSubPathFilesTreshhold() > archive.getContentView().getFileCount() + archive.getContentView().getDirectoryCount()) return ret;

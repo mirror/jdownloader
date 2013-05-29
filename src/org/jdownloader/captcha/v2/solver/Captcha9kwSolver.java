@@ -106,7 +106,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> {
                     ret = new String(http.getPage(new URL(url)));
                     job.getLogger().info("9kw.eu Answer " + count9kw + "s: " + ret);
                     if (ret.startsWith("OK-answered-")) {
-                        job.addAnswer(new CaptchaResponse(this, ret.substring("OK-answered-".length()), 100));
+                        job.addAnswer(new CaptchaResponse(challenge, this, ret.substring("OK-answered-".length()), 100));
                         return;
                     }
                     checkInterruption();

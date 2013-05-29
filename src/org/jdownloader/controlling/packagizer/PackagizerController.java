@@ -426,7 +426,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     private void runAfterExtraction(File f, CrawledLink link) {
-
         java.util.List<PackagizerRuleWrapper> lfileFilter = fileFilter;
         for (PackagizerRuleWrapper lgr : lfileFilter) {
             if (!StringUtils.isEmpty(lgr.getRule().getFilename()) || !StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
