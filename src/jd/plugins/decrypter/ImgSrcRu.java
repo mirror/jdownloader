@@ -34,11 +34,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/preword\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html|main/pic_tape\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?)" }, flags = { 2 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/(preword|pic_tape|warn|pic)\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html)" }, flags = { 2 })
 public class ImgSrcRu extends PluginForDecrypt {
 
     // dev notes
-    // &pwd= is a session id for that given path once you answered you can re-enter that album using that arg.
+    // &pwd= is a md5 hash id once you've provided password for that album.
 
     public ImgSrcRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,7 +95,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 }
             }
 
-            username = br.getRegex("on ([^\">\r\n]+)\\.iMGSRC\\.RU( @ iMGSRC\\.RU)?").getMatch(0);
+            username = br.getRegex("on ([^\">\r\n ]+)\\.iMGSRC\\.RU( @ iMGSRC\\.RU)?").getMatch(0);
             if (username == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -107,11 +107,10 @@ public class ImgSrcRu extends PluginForDecrypt {
                 return null;
             }
 
-            // Using pic_tape as 12 large images are shown on one page vs doing 48 individual for single image display * page
             uaid = new Regex(parameter, "ad=(\\d+)").getMatch(0);
             if (uaid == null) {
                 uaid = new Regex(parameter, "/a(\\d+)\\.html").getMatch(0);
-                // ask the user if they want to decrypt the single page or entire album.
+                // ask the user if they want to decrypt the single page or entire album????
 
                 // if they copy non album links we need to find the album id within html
                 uaid = br.getRegex("\\?ad=(\\d+)").getMatch(0);
@@ -126,8 +125,7 @@ public class ImgSrcRu extends PluginForDecrypt {
             parameter = "http://imgsrc.ru/" + username + "/a" + uaid + ".html";
             param.setCryptedUrl(parameter);
 
-            // pic_tape if (!getPage("http://imgsrc.ru/main/pic_tape.php?ad=" + uid + "&pwd=", parameter, param)) {
-            if (!br.getURL().matches(parameter + "(.+)?")) {
+            if (!br.getURL().matches(parameter + ".*?")) {
                 if (!getPage(parameter, param)) {
                     if (offline || exaustedPassword) {
                         return decryptedLinks;
@@ -186,7 +184,6 @@ public class ImgSrcRu extends PluginForDecrypt {
         } else {
             imgs.add(br.getURL().replaceFirst("https?://imgsrc.ru", ""));
         }
-        // pic_tape String[] links = br.getRegex("<img class=\"big\" src='(https?://[^']+)").getColumn(0);
         String[] links = br.getRegex("<a href='(/" + username + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)#bp'>").getColumn(0);
         if (links == null || links.length == 0) return;
         imgs.addAll(Arrays.asList(links));
@@ -204,7 +201,6 @@ public class ImgSrcRu extends PluginForDecrypt {
     }
 
     private boolean parseNextPage(CryptedLink param) throws Exception {
-        // pic_tape String nextPage = br.getRegex("<a href=('|\")?(/main/pic_tape\\.php\\?ad=" + uid + "[^>'\"]+)>next").getMatch(1);
         String nextPage = br.getRegex("<a href=(\"|')?(/" + username + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)(\"|')?>(▶|&#9654;)</a>").getMatch(1);
         if (nextPage != null) {
             if (!getPage(nextPage, param)) { return false; }
@@ -264,7 +260,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                     pwd = br.getRegex("\\?pwd=([a-z0-9]{32})").getMatch(0);
                 }
                 if (br.containsHTML(">Album foreword:[^\r\n]+Continue to album >></a>")) {
-                    final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=[a-z0-9]{32}))\\'").getMatch(0);
+                    final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=([a-z0-9]{32})?)?)\\'").getMatch(0);
                     if (newLink == null) {
                         logger.warning("Couldn't process Album forward: " + parameter);
                         return false;

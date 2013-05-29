@@ -184,7 +184,7 @@ public class ImgSrcRu extends PluginForHost {
                     br.getPage(br.getURL() + "?warned=yeah");
                 }
                 if (br.containsHTML(">Album foreword:[^\r\n]+Continue to album >></a>")) {
-                    final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=[a-z0-9]{32}))\\'").getMatch(0);
+                    final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=([a-z0-9]{32})?)?)\\'").getMatch(0);
                     if (newLink == null) {
                         logger.warning("Couldn't process Album forward");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
