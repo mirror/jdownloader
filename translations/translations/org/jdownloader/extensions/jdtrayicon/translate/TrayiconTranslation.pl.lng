@@ -13,6 +13,7 @@ jd_plugins_optional_jdtrayicon_jdlighttray=Zasobnik systemowy
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Pozwala na zminimalizowanie JDownloader do Zasobnika systemowego (Tray), ustawia preferencje dla tej funkcjonalności.
 plugins_optional_JDLightTray_always=Zawsze
 plugins_optional_JDLightTray_closetotray2=Naciśnij (X) aby Zamknąć
+plugins_optional_JDLightTray_hideifframevisible=Ukryj Zasobnik, jeśli Oknoe jest widoczne
 plugins_optional_JDLightTray_linkgrabberresults=Przywrócenie głównego okna Aplikacji, jeśli nowe Linki zostaną dodane/wyszukane
 plugins_optional_JDLightTray_minimized=Tylko wtedy, jeśli główne okno aplikacji jest zminimalizowane
 plugins_optional_JDLightTray_minimizetotray=Naciśnij (_) aby zminimalizować
