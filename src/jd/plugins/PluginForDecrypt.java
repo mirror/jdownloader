@@ -39,10 +39,13 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.blacklist.CrawlerBlackListEntry;
+import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
@@ -53,13 +56,14 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
  */
 public abstract class PluginForDecrypt extends Plugin {
 
-    private LinkCrawlerDistributer distributer = null;
+    private LinkCrawlerDistributer         distributer           = null;
 
-    private LazyCrawlerPlugin      lazyC       = null;
-    private CrawledLink            currentLink = null;
-    private LinkCrawlerAbort       linkCrawlerAbort;
+    private LazyCrawlerPlugin              lazyC                 = null;
+    private CrawledLink                    currentLink           = null;
+    private LinkCrawlerAbort               linkCrawlerAbort;
 
-    private LinkCrawler            crawler;
+    private LinkCrawler                    crawler;
+    private transient ResponseList<String> lastChallengeResponse = null;
 
     /**
      * @return the distributer
@@ -148,8 +152,8 @@ public abstract class PluginForDecrypt extends Plugin {
     public abstract ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception;
 
     /**
-     * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen
-     * Vector<String> mit den decoded Links setzen
+     * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen Vector<String> mit den decoded
+     * Links setzen
      * 
      * @param cryptedLink
      *            Ein einzelner verschlüsselter Link
@@ -165,6 +169,7 @@ public abstract class PluginForDecrypt extends Plugin {
         boolean showException = true;
         Throwable exception = null;
         try {
+            lastChallengeResponse = null;
             this.currentLink = source;
             /*
              * we now lets log into plugin specific loggers with all verbose/debug on
@@ -174,8 +179,10 @@ public abstract class PluginForDecrypt extends Plugin {
             br.setDebug(true);
             /* now we let the decrypter do its magic */
             tmpLinks = decryptIt(cryptLink, progress);
+            validateLastChallengeResponse();
         } catch (DecrypterException e) {
             if (DecrypterException.CAPTCHA.equals(e.getMessage())) {
+                invalidateLastChallengeResponse();
                 showException = false;
             } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
                 showException = false;
@@ -206,6 +213,7 @@ public abstract class PluginForDecrypt extends Plugin {
             exception = e;
             LogSource.exception(logger, e);
         } finally {
+            lastChallengeResponse = null;
             this.currentLink = null;
         }
         if (tmpLinks == null && showException) {
@@ -305,6 +313,50 @@ public abstract class PluginForDecrypt extends Plugin {
         return getCaptchaCode(methodname, captchaFile, 0, param, null, null);
     }
 
+    public void invalidateLastChallengeResponse() {
+        try {
+            ResponseList<String> lLastChallengeResponse = lastChallengeResponse;
+            if (lLastChallengeResponse != null) {
+                /* TODO: inform other solver that their response was not used */
+                AbstractResponse<?> response = lLastChallengeResponse.get(0);
+                if (response.getSolver() instanceof ChallengeResponseValidation) {
+                    ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
+                    try {
+                        validation.setInvalid(response);
+                    } catch (final Throwable e) {
+                        LogSource.exception(getLogger(), e);
+                    }
+                }
+            }
+        } finally {
+            lastChallengeResponse = null;
+        }
+    }
+
+    public void validateLastChallengeResponse() {
+        try {
+            ResponseList<String> lLastChallengeResponse = lastChallengeResponse;
+            if (lLastChallengeResponse != null) {
+                /* TODO: inform other solver that their response was not used */
+                AbstractResponse<?> response = lLastChallengeResponse.get(0);
+                if (response.getSolver() instanceof ChallengeResponseValidation) {
+                    ChallengeResponseValidation validation = (ChallengeResponseValidation) response.getSolver();
+                    try {
+                        validation.setValid(response);
+                    } catch (final Throwable e) {
+                        LogSource.exception(getLogger(), e);
+                    }
+                }
+            }
+        } finally {
+            lastChallengeResponse = null;
+        }
+    }
+
+    public boolean hasChallengeResponse() {
+        return lastChallengeResponse != null;
+    }
+
     /**
      * 
      * @param method
@@ -329,27 +381,21 @@ public abstract class PluginForDecrypt extends Plugin {
         if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
             file = new File(orgCaptchaImage);
         }
+
         BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag) {
             @Override
             public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
-                boolean ret;
                 switch (skipRequest) {
-
                 case BLOCK_ALL_CAPTCHAS:
-
                     return true;
-
                 case BLOCK_HOSTER:
-
                     return PluginForDecrypt.this.getHost().equals(Challenge.getHost(challenge));
-
                 default:
                     return false;
-
                 }
             }
         };
-
+        invalidateLastChallengeResponse();
         if (CaptchaBlackList.getInstance().matches(c)) {
             logger.warning("Cancel. Blacklist Matching");
             throw new DecrypterException(DecrypterException.CAPTCHA);
@@ -385,8 +431,8 @@ public abstract class PluginForDecrypt extends Plugin {
             }
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-
         if (!c.isSolved()) throw new DecrypterException(DecrypterException.CAPTCHA);
+        lastChallengeResponse = c.getResult();
         return c.getResult().getValue();
 
     }
