@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -32,6 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -41,10 +44,18 @@ public class TeraFilesNet extends PluginForHost {
     public TeraFilesNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.terafiles.net/index.php");
+        setConfigElements();
+    }
+
+    public static final String USEALWAYSHTTP = "USEALWAYSHTTP";
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), TeraFilesNet.USEALWAYSHTTP, JDL.L("plugins.hoster.terafilesnet.usealwayshttp", "Use http (on) or ftp (off) connection for downloads")).setDefaultValue(true));
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         boolean dl_fail = false;
+        final boolean useAlwaysHttp = this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.TeraFilesNet.USEALWAYSHTTP, true);
         br.setFollowRedirects(false);
         String fileID = new Regex(downloadLink.getDownloadURL(), "terafiles\\.net/v-(\\d+)\\.html").getMatch(0);
         String sessID = br.getRegex("sessdl=([a-z0-9]+)\\'").getMatch(0);
@@ -52,7 +63,7 @@ public class TeraFilesNet extends PluginForHost {
         br.getPage("http://www.terafiles.net/ftp_download.php?id=" + fileID + "&sessdl=" + sessID);
         if (br.containsHTML("Warning</b>:  include(includes-download/captcha_error\\.php)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
         String http_dl = br.getRegex("<a href=\"(http[^\"]+)\">ce second lien</a>").getMatch(0);
-        if (http_dl != null) {
+        if (http_dl != null && useAlwaysHttp == true) {
             Browser br2 = br.cloneBrowser();
             // http method preferred as chunks are possible!
             dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, http_dl, true, 0);
@@ -67,7 +78,7 @@ public class TeraFilesNet extends PluginForHost {
             }
             if (!dl.getConnection().getContentType().contains("html")) dl.startDownload();
         }
-        if (http_dl == null || dl_fail == true) {
+        if (http_dl == null || dl_fail == true || useAlwaysHttp == false) {
             String ftp_dl = br.getRegex("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"\\d+;URL=(ftp://.*?)\">").getMatch(0);
             if (ftp_dl == null) {
                 ftp_dl = br.getRegex(">Connexion au serveur FTP en cours\\. Merci de patienter\\.<br /><a href=\"(ftp://.*?)\"").getMatch(0);
