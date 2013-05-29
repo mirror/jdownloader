@@ -379,7 +379,7 @@ public class FavIcons {
             if (!StringUtils.isEmpty(url)) {
                 /* favicon tag with ico extension */
                 favBr.setFollowRedirects(false);
-                favBr.getHeaders().put("Accept-Encoding", "");
+                favBr.getHeaders().put("Accept-Encoding", null);
                 con = favBr.openGetConnection(url);
                 /* we use bufferedinputstream to reuse it later if needed */
                 inputStream = new BufferedInputStream(con.getInputStream());
