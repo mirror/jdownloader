@@ -184,7 +184,8 @@ public class ImgSrcRu extends PluginForHost {
                 if (br.containsHTML(">This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk</u>")) {
                     br.getPage(br.getURL() + "?warned=yeah");
                 }
-                if (br.containsHTML(">Album foreword:[^\r\n]+Continue to album >></a>")) {
+                // needs to be before password
+                if (br.containsHTML(">Album foreword:.+Continue to album >></a>")) {
                     final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=([a-z0-9]{32})?)?)\\'").getMatch(0);
                     if (newLink == null) {
                         logger.warning("Couldn't process Album forward");

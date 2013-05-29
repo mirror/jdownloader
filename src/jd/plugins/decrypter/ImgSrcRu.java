@@ -171,10 +171,7 @@ public class ImgSrcRu extends PluginForDecrypt {
         // first link = album uid (uaid), these uid's are not transferable to picture ids (upid). But once you are past album page
         // br.getURL() is the correct upid.
         if (br.getURL().contains("/a" + uaid)) {
-            String currentID = br.getRegex("<img class=cur src=('|\")?https?://.+imgsrc\\.ru/[a-z]/" + username + "/\\d+/(\\d+)").getMatch(1);
-            if (currentID == null) {
-                currentID = br.getRegex("<img class=big src=('|\")?(https?://.+imgsrc\\.ru/[a-z]/" + username + "/\\d+/(\\d+)").getMatch(1);
-            }
+            String currentID = br.getRegex("<img class=(cur|big) src=('|\")?https?://.+imgsrc\\.ru/[a-z]/" + username + "/\\d+/(\\d+)").getMatch(2);
             if (currentID != null) {
                 currentID = "/" + username + "/" + currentID + ".html";
                 if (pwd != null) currentID += "?pwd=" + pwd;
@@ -233,6 +230,15 @@ public class ImgSrcRu extends PluginForDecrypt {
                 if (br.containsHTML(">This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk</u>")) {
                     br.getPage(br.getURL() + "?warned=yeah");
                 }
+                // needs to be before password
+                if (br.containsHTML(">Album foreword:.+Continue to album >></a>")) {
+                    final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=([a-z0-9]{32})?)?)\\'").getMatch(0);
+                    if (newLink == null) {
+                        logger.warning("Couldn't process Album forward: " + parameter);
+                        return false;
+                    }
+                    br.getPage(newLink);
+                }
                 if (br.containsHTML(">Album owner has protected his work from unauthorized access")) {
                     Form pwForm = br.getFormbyProperty("name", "passchk");
                     if (pwForm == null) {
@@ -264,14 +270,6 @@ public class ImgSrcRu extends PluginForDecrypt {
                     this.getPluginConfig().setProperty("lastusedpassword", password);
                     this.getPluginConfig().save();
                     pwd = br.getRegex("\\?pwd=([a-z0-9]{32})").getMatch(0);
-                }
-                if (br.containsHTML(">Album foreword:[^\r\n]+Continue to album >></a>")) {
-                    final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=([a-z0-9]{32})?)?)\\'").getMatch(0);
-                    if (newLink == null) {
-                        logger.warning("Couldn't process Album forward: " + parameter);
-                        return false;
-                    }
-                    br.getPage(newLink);
                 }
                 if (br.getURL().equals("http://imgsrc.ru/")) {
                     offline = true;
