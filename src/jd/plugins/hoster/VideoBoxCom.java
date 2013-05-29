@@ -16,13 +16,14 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -39,57 +40,81 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudstor.es" }, urls = { "http://(www\\.)?cloudstor\\.es/f/[A-Za-z0-9]+/(\\d+/)?" }, flags = { 2 })
-public class CloudStorEs extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobox.com" }, urls = { "http://(www\\.)?videobox\\.com/(movie\\-details\\?contentId=|flashPage/)\\d+" }, flags = { 2 })
+public class VideoBoxCom extends PluginForHost {
 
-    public CloudStorEs(PluginWrapper wrapper) {
+    public VideoBoxCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://cloudstor.es/packages/");
+        this.enablePremium("http://www.videobox.com/tour/home/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://cloudstor.es/policies/tos/";
+        return "http://www.videobox.com/public/terms-of-service";
     }
 
+    private String DLLINK = null;
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa == null) {
+            link.getLinkStatus().setStatusText("Only checkable with enabled premium account");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        login(aa, false);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Error 404: Page Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fInfo = br.getRegex("<h1>([^<>\"]*?)</h1>[^<>\"]*? \\| (\\d+(\\.\\d+)? [A-Za-z]{1,5})[ ]+</div>");
-        final String filename = fInfo.getMatch(0);
-        final String filesize = fInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        if (br.containsHTML("<title> \\-  \\- VideoBox</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("\"upgrade\":true")) {
+            link.getLinkStatus().setStatusText("Account upgrade needed to download this");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String sessionID = br.getCookie("http://videobox.com/", "JSESSIONID");
+        if (sessionID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://www.videobox.com/content/details/generate/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/content-column.json?x-user-name=" + aa.getUser() + "&x-session-key=" + sessionID + "&callback=metai.buildMovieDetails");
+        final String filename = getJson("name", br.toString());
+        String firstSceneID = new Regex(link.getDownloadURL(), "videobox\\.com/flashPage/(\\d+)").getMatch(0);
+        if (firstSceneID == null) firstSceneID = br.getRegex("\"firstSceneId\" : (\\d+)").getMatch(0);
+        if (firstSceneID == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://www.videobox.com/content/download/options/" + firstSceneID + ".json?x-user-name=" + aa.getUser() + "&x-session-key=" + sessionID + "&callback=metai.buildDownloadLinks");
+        final String dlSource = getDlInfo();
+        String filesize = getJson("size", dlSource);
+        DLLINK = getJson("url", dlSource);
+        if (filesize == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + DLLINK.substring(DLLINK.lastIndexOf(".")));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        final Regex dlInfo = br.getRegex("id: \\'(\\d+)\\', part: \\'(\\d+)\\', token: \\'([a-z0-9]+)\\'");
-        if (dlInfo.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        // jd0.9 doesn't set this following header with postPage or submitform. JD2 does!
-        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        br.postPage("http://cloudstor.es/submit/_dl_isozone.php", "id=" + dlInfo.getMatch(0) + "&part=" + dlInfo.getMatch(1) + "&token=" + dlInfo.getMatch(2));
-        br.getHeaders().put("Content-Type", null);
-        String dllink = br.toString();
-        if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) dllink = br.getRegex("(http://[^\r\n]+)").getMatch(0);
-        if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.getURL().equals("http://cloudstor.es/503.php")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultaneous downloads, wait till you can start another download...", 5 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    private String getDlInfo() {
+        final String[] qualities = { "DVD", "H264_640", "HIGH", "H264_IPOD" };
+        String qualityInfo = null;
+        for (final String quality : qualities) {
+            qualityInfo = br.getRegex("(\"res\" : \"" + quality + "\".*?)\\}").getMatch(0);
+            if (qualityInfo != null) break;
         }
-        dl.startDownload();
+        return qualityInfo;
     }
 
-    private static final String MAINPAGE = "http://cloudstor.es";
+    private String getJson(final String parameter, final String source) {
+        String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = new Regex(source, "\"" + parameter + "\"([ ]+)?:([ ]+)?\"([^<>\"]*?)\"").getMatch(2);
+        return result;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) throw (PluginException) e;
+        }
+        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+    }
+
+    private static final String MAINPAGE = "http://videobox.com";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
@@ -113,8 +138,8 @@ public class CloudStorEs extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPage("http://cloudstor.es/authlogin/", "remember=on&button=Submit&frmLogin=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "cloudstores_pass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage("https://www.videobox.com/j_spring_security_check", "_spring_security_remember_me=true&login-page=login-page&j_username=" + Encoding.urlEncode(account.getUser()) + "&j_password=" + Encoding.urlEncode(account.getPass()) + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100));
+                if (br.getCookie(MAINPAGE, "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -140,14 +165,14 @@ public class CloudStorEs extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("http://cloudstor.es/cp/my-account/");
+        br.getPage("https://www.videobox.com/billing/account");
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("Next Payment Due[\t\n\r ]+<div class=\"cp_row_right\">([^<>\"]*?)</div>").getMatch(0);
+        final String expire = br.getRegex(">next statement</div>[\t\n\r ]+<div class=\"value\">([^<>\"]*?)</div>").getMatch(0);
         if (expire == null) {
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "MMMM dd, yyyy", Locale.ENGLISH));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "MM/dd/yyyy", Locale.ENGLISH));
         }
         account.setValid(true);
         ai.setStatus("Premium User");
@@ -158,8 +183,7 @@ public class CloudStorEs extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
