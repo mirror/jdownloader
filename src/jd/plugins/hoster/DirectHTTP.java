@@ -725,6 +725,12 @@ public class DirectHTTP extends PluginForHost {
              */
             br.getHeaders().put("Referer", "https://sites.google.com");
         }
+        if (downloadLink.getDownloadURL().contains("fastpic.ru")) {
+            /*
+             * it seems google checks referer and ip must have called the page lately
+             */
+            br.getHeaders().put("Referer", "https://fastpic.ru");
+        }
     }
 
     public void setDownloadLink(final DownloadLink link) {
