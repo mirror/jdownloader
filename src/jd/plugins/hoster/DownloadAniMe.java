@@ -196,7 +196,7 @@ public class DownloadAniMe extends PluginForHost {
                     if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
                 }
                 /* Captcha START */
-                if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
+                if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|/recaptcha/api/challenge)").matches()) {
                     logger.info("Detected captcha method \"Re Captcha\" for this host");
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
