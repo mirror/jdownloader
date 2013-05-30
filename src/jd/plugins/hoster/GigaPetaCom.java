@@ -167,7 +167,7 @@ public class GigaPetaCom extends PluginForHost {
         br.setDebug(true);
         br.getPage("http://gigapeta.com/");
         br.postPage("http://gigapeta.com/", "auth_login=" + Encoding.urlEncode(account.getUser()) + "&auth_passwd=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://gigapeta.com/", "sess") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://gigapeta.com/", "adv_sess") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.containsHTML("You have <b>basic</b> account")) {
             nopremium = true;
             simultanpremium.set(1);

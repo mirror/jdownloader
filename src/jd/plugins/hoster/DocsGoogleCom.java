@@ -116,9 +116,9 @@ public class DocsGoogleCom extends PluginForHost {
         }
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = br.getRegex("<a href=\"([^\"]+)\">Download anyway</a>").getMatch(0);
-            if (dllink == null) { 
-                dllink = br.getRegex("<a href=\"(/uc\\?export=download[^\"]+)\">").getMatch(0);
+            dllink = br.getRegex("href=\"([^\"]+)\">Download anyway</a>").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("href=\"(/uc\\?export=download[^\"]+)\">").getMatch(0);
                 if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage(HTMLEntities.unhtmlentities(dllink));
