@@ -13,6 +13,7 @@ jd_plugins_optional_jdtrayicon_jdlighttray=Εικονίδιο
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Επιτρέπει την ελαχιστοποίηση ή το κλείσιμο του JDownloader στην Περιοχή ειδοποιήσεων, καθώς και άλλες σχετικές δυνατότητες όπως προστασία με κωδικό και άλλα.
 plugins_optional_JDLightTray_always=Πάντα
 plugins_optional_JDLightTray_closetotray2=Ενέργεια κατά το Κλείσιμο ( x )
+plugins_optional_JDLightTray_hideifframevisible=Απόκρυψη του Εικονιδίου εάν το Παράθυρο είναι ορατό
 plugins_optional_JDLightTray_linkgrabberresults=Μεταφορά στο προσκήνιο κατά τη Συλλογή νέων Συνδέσμων
 plugins_optional_JDLightTray_minimized=Μόνο όταν το παράθυρο είναι ελαχιστοποιημένο
 plugins_optional_JDLightTray_minimizetotray=Ενέργεια κατά την Ελαχιστοποίηση ( _ )
