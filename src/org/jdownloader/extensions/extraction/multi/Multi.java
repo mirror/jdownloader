@@ -199,25 +199,23 @@ public class Multi extends IExtraction {
             archive.setType(ArchiveType.SINGLE_FILE);
             archive.setFirstArchiveFile(link);
         } else {
-
             for (ArchiveFile l : archive.getArchiveFiles()) {
-                if (archive.getFirstArchiveFile() == null && l.getFilePath().matches(REGEX_FIRST_PART_MULTI_RAR)) {
-                    archive.setType(ArchiveType.MULTI_RAR);
-                    archive.setFirstArchiveFile(l);
-                    // l.isValid()
+                if ((archive.getType() == null || ArchiveType.MULTI_RAR == archive.getType()) && (l.getFilePath().matches(REGEX_FIRST_PART_MULTI_RAR) || l.getFilePath().matches(REGEX_ZERO_PART_MULTI_RAR))) {
+                    if (archive.getFirstArchiveFile() == null) {
+                        archive.setType(ArchiveType.MULTI_RAR);
+                        archive.setFirstArchiveFile(l);
+                    } else {
+                        /* find the part with lowest number */
+                        String newPartNumber = new Regex(l.getFilePath(), REGEX_FIND_PARTNUMBER_MULTIRAR).getMatch(0);
+                        String oldPartNumber = new Regex(archive.getFirstArchiveFile().getFilePath(), REGEX_FIND_PARTNUMBER_MULTIRAR).getMatch(0);
+                        if (Integer.parseInt(newPartNumber) < Integer.parseInt(oldPartNumber)) {
+                            archive.setFirstArchiveFile(l);
+                        }
+                    }
                     if (!l.isValid()) {
                         /* this should help finding the link that got downloaded */
                         continue;
                     }
-                    break;
-                } else if (l.getFilePath().matches(REGEX_ZERO_PART_MULTI_RAR)) {
-                    archive.setType(ArchiveType.MULTI_RAR);
-                    archive.setFirstArchiveFile(l);
-                    if (!l.isValid()) {
-                        /* this should help finding the link that got downloaded */
-                        continue;
-                    }
-                    break;
                 } else if (l.getFilePath().matches(REGEX_ENDS_WITH_DOT_RAR) && !l.getFilePath().matches(REGEX_ANY_MULTI_RAR_PART_FILE)) {
                     if (archive.getArchiveFiles().size() == 1) {
                         archive.setType(ArchiveType.SINGLE_FILE);
@@ -231,7 +229,7 @@ public class Multi extends IExtraction {
                         continue;
                     }
                     break;
-                } else if (l.getFilePath().matches(REGEX_FIRST_PART_7ZIP)) {
+                } else if ((archive.getType() == null || ArchiveType.MULTI == archive.getType()) && l.getFilePath().matches(REGEX_FIRST_PART_7ZIP)) {
                     archive.setType(ArchiveType.MULTI);
                     archive.setFirstArchiveFile(l);
                     if (!l.isValid()) {
@@ -862,7 +860,10 @@ public class Multi extends IExtraction {
                                 }
                             }, password);
                             if (ExtractOperationResult.DATAERROR.equals(result)) {
-                                /* 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native -> crash jvm) */
+                                /*
+                                 * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native ->
+                                 * crash jvm)
+                                 */
                                 return false;
                             }
                             if (ExtractOperationResult.OK.equals(result)) {
