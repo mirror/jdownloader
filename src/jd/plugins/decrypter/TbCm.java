@@ -511,7 +511,7 @@ public class TbCm extends PluginForDecrypt {
                     this.put(5, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Stereo" });
                     this.put(6, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
                 }
-                if (flv.get() || best) {
+                if (flv.get()) {
                     if (q240p || best) {
                         this.put(5, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo", "240p" });
                     }
@@ -524,7 +524,7 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 // **** 3GP *****
-                if (threegp || best) {
+                if (threegp) {
                     if (q240p || best) {
                         this.put(13, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AAC", "Mono", "240p" });
                     }
@@ -537,7 +537,7 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 // **** MP4 *****
-                if (mp4 || best) {
+                if (mp4) {
                     if (q360p || best) {
                         this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
                     }
@@ -553,7 +553,7 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 // **** WebM *****
-                if (webm || best) {
+                if (webm) {
                     if (q360p || best) {
                         this.put(43, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
                     }
@@ -570,7 +570,7 @@ public class TbCm extends PluginForDecrypt {
 
                 // **** 3D *****/
                 if (threeD) {
-                    if (webm || best) {
+                    if (webm) {
                         if (q360p || best) {
                             this.put(100, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
                         }
@@ -581,7 +581,7 @@ public class TbCm extends PluginForDecrypt {
                             this.put(102, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "720p" });
                         }
                     }
-                    if (mp4 || best) {
+                    if (mp4) {
                         if (q360p || best) {
                             this.put(82, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
                         }
