@@ -1,3 +1,7 @@
+ChatExtensionGuiToggleAction_deselected=Öppna Chat
+ChatExtensionGuiToggleAction_deselected_tt=Öppna Chat tab
+ChatExtensionGuiToggleAction_selected=Stäng Char
+ChatExtensionGuiToggleAction_selected_tt=Stäng Chat tab
 description=Kontakt JDownloader utvecklare och användarstöd
 gui_tab_title=%s1 Kanal
 jd_plugins_optional_jdchat_JDChatView_title=JD Support Chat

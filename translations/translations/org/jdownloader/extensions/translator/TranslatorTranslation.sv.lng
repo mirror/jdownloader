@@ -1,2 +1,6 @@
 Translator=Översättare
+TranslatorExtensionGuiToggleAction_deselected=Öppna Translator
+TranslatorExtensionGuiToggleAction_deselected_tt=Öppna Translatorflik
+TranslatorExtensionGuiToggleAction_selected=Stäng Translator
+TranslatorExtensionGuiToggleAction_selected_tt=Stän Translatorflik
 description=Detta tillägg kan användas för att redigera översättningar. Du behöver ett utvecklingskonto för att kunna använda detta tillägg

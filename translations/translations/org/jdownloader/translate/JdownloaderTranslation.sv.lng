@@ -19,6 +19,7 @@ LinkgrabberFilterRule_duplicate=%s1 (kopia)
 Main_run_autostart_=Startar nerladdningar
 Main_run_autostart_msg=Nerladdning påbörjar om några sekunder.
 Mainstart_now=Starta NU!
+OptionalContainer_OptionalContainer=Flera aktioner...
 PackagizerSettings_folderbypackage_rule_name=Skapa underkatalog per paketnamn
 RemoveAction_actionPerformed_rly_msg=Ta bort alla valda regler??
 SetDownloadFolderAction_actionPerformed_=Dela paket %s1

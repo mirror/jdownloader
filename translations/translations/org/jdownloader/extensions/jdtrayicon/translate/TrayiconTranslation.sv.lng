@@ -13,6 +13,7 @@ jd_plugins_optional_jdtrayicon_jdlighttray=Light Tray
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Tillåter minimering eller stängning av JDownloader till notifikationsområdet och andra relatera funktioner som lösenordsskyddning
 plugins_optional_JDLightTray_always=Alltid
 plugins_optional_JDLightTray_closetotray2=Klicka på 'Stäng <X> Aktivitet
+plugins_optional_JDLightTray_hideifframevisible=Dölj Tray om Fönster är synligt
 plugins_optional_JDLightTray_linkgrabberresults=Visa JDownloader om nya länkar har fångats
 plugins_optional_JDLightTray_minimized=Endast när huvudfönster är minimerat
 plugins_optional_JDLightTray_minimizetotray=Klicka på ' Minimera <_> Aktivitet
