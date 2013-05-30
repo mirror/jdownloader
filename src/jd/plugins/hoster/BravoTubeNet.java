@@ -88,7 +88,8 @@ public class BravoTubeNet extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
-        DLLINK = br.getRegex("video_url:.*?\\('(http://.*?)'\\)").getMatch(0);
+        DLLINK = br.getRegex("video_url:.*?'(http://.*?)\\'").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("(\\'|\")(http://(www\\.)?bravotube\\.net/get_file/[^<>\"]*?)(\\'|\")").getMatch(1);
         if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();

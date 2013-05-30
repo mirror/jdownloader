@@ -25,7 +25,9 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -48,6 +50,7 @@ public class DeviantArtCom extends PluginForHost {
     private static final String COOKIE_HOST         = "http://www.deviantart.com";
     private static Object       LOCK                = new Object();
     private static final String MATURECONTENTFILTER = ">Mature Content Filter<";
+    private String              DLLINK              = null;
 
     public DeviantArtCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,19 +78,55 @@ public class DeviantArtCom extends PluginForHost {
         String filename = br.getRegex("<title>([^<>\"]*?) on deviantART</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.htmlDecode(filename.trim());
-        if (br.containsHTML(MATURECONTENTFILTER)) {
-            link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
-            link.setName(filename);
-            return AvailableStatus.TRUE;
+        String ext = null;
+        String filesize = null;
+        if (br.containsHTML(">Download File<")) {
+            final Regex fInfo = br.getRegex("<strong>Download File</strong><br/>[\t\n\r ]+<small>([A-Za-z0-9]{1,5}), ([^<>\"]*?)</small>");
+            ext = fInfo.getMatch(0);
+            filesize = fInfo.getMatch(1);
+            DLLINK = br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
+            if (ext == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            DLLINK = Encoding.htmlDecode(DLLINK.trim());
+        } else {
+            if (br.containsHTML(MATURECONTENTFILTER)) {
+                link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
+                link.setName(filename);
+                return AvailableStatus.TRUE;
+            }
+            ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
+            if (ext == null) {
+                try {
+                    ext = getDllink().substring(getDllink().lastIndexOf(".") + 1);
+                } catch (final Exception e) {
+                    // No dllink found, hopefully link is offline
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            }
+            filesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
+            // Maybe its a video
+            if (filesize == null) filesize = br.getRegex("<label>File Size:</label>([^<>\"]*?)<br/>").getMatch(0);
+            if (ext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
-        if (ext == null) {
-            ext = getDllink().substring(getDllink().lastIndexOf(".") + 1);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        } else {
+            final Browser br2 = br.cloneBrowser();
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openGetConnection(getDllink());
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
         }
-        final String filesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
-        if (filesize == null || ext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(filename + "." + ext.trim().toLowerCase());
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
         return AvailableStatus.TRUE;
     }
 
@@ -102,9 +141,8 @@ public class DeviantArtCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Mature content can only be downloaded via account");
         }
-        final String dllink = getDllink();
-        // Disable chunks as we only download pictures
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        // Disable chunks as we only download pictures or small files
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -134,12 +172,18 @@ public class DeviantArtCom extends PluginForHost {
 
     private String getDllink() throws PluginException {
         String dllink = null;
-        if (br.containsHTML(">Mature Content</span>")) {
-            dllink = br.getRegex("class=\"thumb ismature\" href=\"" + br.getURL() + "\" title=\"[^<>\"/]+\" data\\-super\\-img=\"(http://[^<>\"]*?)\"").getMatch(0);
-        } else {
-            dllink = br.getRegex("name=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
+        // Check if it's a video
+        dllink = br.getRegex("\"src\":\"(http:[^<>\"]*?mp4)\"").getMatch(0);
+        if (dllink == null) {
+            if (br.containsHTML(">Mature Content</span>")) {
+                dllink = br.getRegex("class=\"thumb ismature\" href=\"" + br.getURL() + "\" title=\"[^<>\"/]+\" data\\-super\\-img=\"(http://[^<>\"]*?)\"").getMatch(0);
+            } else {
+                dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
+            }
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.replace("\\", "");
+        DLLINK = dllink;
         return dllink;
     }
 

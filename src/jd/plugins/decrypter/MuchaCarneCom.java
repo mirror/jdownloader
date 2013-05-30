@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muchacarne.com" }, urls = { "http://(www\\.)?muchacarne\\.com/hosted\\-id\\d+\\-.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muchacarne.com" }, urls = { "http://(www\\.)?muchacarne\\.(com|xxx)/hosted(\\-id\\d+\\-.*?\\.html|/media/[a-z0-9\\-]+,\\d+\\.php)" }, flags = { 0 })
 public class MuchaCarneCom extends PluginForDecrypt {
 
     public MuchaCarneCom(PluginWrapper wrapper) {
@@ -38,14 +38,14 @@ public class MuchaCarneCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String parameter = param.toString();
+        String parameter = param.toString().replace("muchacarne.com/", "muchacarne.xxx/");
         br.getPage(parameter);
         if ("http://www.muchacarne.com/".equals(br.getURL()) || br.containsHTML("http\\-equiv=\"refresh\" content=\"\\d+;url=http://muchacarne\\.xxx/\">")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
-        String filename = br.getRegex("<title>([^<>\"]*?) at MuchaCarne\\.com</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?)\\- MuchaCarne\\.xxx</title>").getMatch(0);
         String externID = br.getRedirectLocation();
         if (externID != null) {
             DownloadLink dl = createDownloadlink(externID);
@@ -216,6 +216,10 @@ public class MuchaCarneCom extends PluginForDecrypt {
             }
         }
         if (br.containsHTML("megaporn\\.com/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("\\'http://promo\\.isharemycash\\.com/embeddedflash\\.php")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
