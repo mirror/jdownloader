@@ -28,7 +28,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apple.com" }, urls = { "http://[\\w\\.]*?apple\\.com/trailers/[a-zA-Z0-9_/]+/" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apple.com" }, urls = { "http://[\\w\\.]*?apple\\.com/trailers/[a-zA-Z0-9_]+/[a-zA-Z0-9_]+/" }, flags = { 0 })
 public class AppleTrailer extends PluginForDecrypt {
 
     public AppleTrailer(PluginWrapper wrapper) {
@@ -66,35 +68,61 @@ public class AppleTrailer extends PluginForDecrypt {
                 return null;
             }
             String filename = title + " - " + hitname;
-            String[] vids = new Regex(hit, "<li class=\"hd\">(.*?)</li>").getColumn(0);
-            if (vids == null || vids.length == 0) {
-                logger.warning("Plugin defect, could not find 'vids' : " + parameter.toString());
-                return null;
-            }
-            for (String vid : vids) {
-                String[][] matches = new Regex(vid, "href=\"([^\"]+)#[^>]+>(.*?)</a>").getMatches();
-                if (matches == null || matches.length == 0) {
-                    logger.warning("Plugin defect, could not find 'matches' : " + parameter.toString());
+
+            // mostly the remainder of the old code, only useful when they show 'download links'
+            String[] oldHits = new Regex(hit, "class=\"hd\".*?href=\"((http://.*?apple[^<>]*?|/[^<>]*?)_h?\\d+p\\.mov)\"").getColumn(0);
+            if (oldHits != null && oldHits.length != 0) {
+                for (String oldHit : oldHits) {
+                    /* correct url */
+                    String url = oldHit.replaceFirst("movies\\.", "www.");
+                    /* get format */
+                    String format = new Regex(url, "_h?(\\d+)p").getMatch(0);
+                    /* get filename */
+                    String fname = filename + " (" + format + "p_HD)" + url.substring(url.lastIndexOf("."));
+                    if (fname == null || format == null) continue;
+                    /* get size */
+                    String size = new Regex(hit, "class=\"hd\".*?>.*?" + oldHit + ".*?" + format + "p \\((\\d+ ?MB)\\)").getMatch(0);
+                    /* correct url if its relative */
+                    if (!url.startsWith("http")) url = "http://trailers.apple.com" + url;
+                    DownloadLink dlLink = createDownloadlink(url.replace(".apple.com", ".appledecrypted.com"));
+                    if (size != null) dlLink.setDownloadSize(SizeFormatter.getSize(size));
+                    dlLink.setFinalFileName(fname);
+                    dlLink.setProperty("Referer", parameter.toString());
+                    dlLink.setAvailable(true);
+                    decryptedLinks.add(dlLink);
+                }
+            } else {
+                // new stuff, no need todo this if the provide the download links, this gets it out of js for playing in quicktime
+                String[] vids = new Regex(hit, "<li class=\"hd\">(.*?)</li>").getColumn(0);
+                if (vids == null || vids.length == 0) {
+                    logger.warning("Plugin defect, could not find 'vids' : " + parameter.toString());
                     return null;
                 }
-                for (String[] match : matches) {
-                    String url = match[0];
-                    String video_name = filename + " (" + match[1].replaceAll("</?span>", "_") + ")";
-                    br2 = br.cloneBrowser();
-                    url = url.replace("includes/", "includes/" + hitname.toLowerCase().replace(" ", "") + "/");
-                    br2.getPage(url);
-                    url = br2.getRegex("href=\"([^\\?\"]+).*?\">Click to Play</a>").getMatch(0);
-                    if (url == null) {
-                        logger.warning("Plugin defect, could not find 'url' : " + parameter.toString());
+                for (String vid : vids) {
+                    String[][] matches = new Regex(vid, "href=\"([^\"]+)#[^>]+>(.*?)</a>").getMatches();
+                    if (matches == null || matches.length == 0) {
+                        logger.warning("Plugin defect, could not find 'matches' : " + parameter.toString());
                         return null;
                     }
-                    url = url.replace("/trailers.apple.com/", "/trailers.appledecrypted.com/");
-                    String extension = url.substring(url.lastIndexOf("."));
-                    DownloadLink dlLink = createDownloadlink(url);
-                    dlLink.setFinalFileName(video_name + extension);
-                    dlLink.setAvailable(true);
-                    dlLink.setProperty("Referer", parameter.toString());
-                    decryptedLinks.add(dlLink);
+                    for (String[] match : matches) {
+                        String url = match[0];
+                        String video_name = filename + " (" + match[1].replaceFirst("<span>", "_").replaceFirst("</span>", "") + ")";
+                        br2 = br.cloneBrowser();
+                        url = url.replace("includes/", "includes/" + hitname.toLowerCase().replace(" ", "") + "/");
+                        br2.getPage(url);
+                        url = br2.getRegex("href=\"([^\\?\"]+).*?\">Click to Play</a>").getMatch(0);
+                        if (url == null) {
+                            logger.warning("Plugin defect, could not find 'url' : " + parameter.toString());
+                            return null;
+                        }
+                        url = url.replace("/trailers.apple.com/", "/trailers.appledecrypted.com/");
+                        String extension = url.substring(url.lastIndexOf("."));
+                        DownloadLink dlLink = createDownloadlink(url);
+                        dlLink.setFinalFileName(video_name + extension);
+                        dlLink.setAvailable(true);
+                        dlLink.setProperty("Referer", parameter.toString());
+                        decryptedLinks.add(dlLink);
+                    }
                 }
             }
         }
