@@ -40,6 +40,10 @@ public class DashboardApi implements IDashboardApi {
     PollingAPIImpl            plAPI = new PollingAPIImpl();
     JDownloaderToolBarAPIImpl tbAPI = new JDownloaderToolBarAPIImpl();
 
+    public String apiVersion() {
+        return "1.0.20130505";
+    }
+
     /*
      * (non-Javadoc)
      * 

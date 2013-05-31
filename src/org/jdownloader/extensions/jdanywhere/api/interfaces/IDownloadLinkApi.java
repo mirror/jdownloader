@@ -14,6 +14,8 @@ public interface IDownloadLinkApi extends RemoteAPIInterface {
 
     public abstract List<DownloadLinkStorable> list(long ID);
 
+    public abstract byte[] listcompressed(long ID);
+
     public abstract boolean remove(List<Long> linkIds);
 
     // Sets the enabled flag of a downloadlink

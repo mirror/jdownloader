@@ -63,4 +63,6 @@ public interface IDashboardApi extends RemoteAPIInterface {
 
     public boolean activatePremium(boolean value);
 
+    public String apiVersion();
+
 }

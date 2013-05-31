@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.jdanywhere.api;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,6 +9,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.storage.JSonStorage;
 import org.jdownloader.extensions.jdanywhere.api.interfaces.IFilePackageApi;
 import org.jdownloader.extensions.jdanywhere.api.storable.FilePackageInfoStorable;
 import org.jdownloader.extensions.jdanywhere.api.storable.FilePackageStorable;
@@ -32,6 +34,27 @@ public class FilePackageApi implements IFilePackageApi {
         } finally {
             dlc.readUnlock(b);
         }
+
+    }
+
+    @Override
+    public byte[] listcompressed() {
+        DownloadController dlc = DownloadController.getInstance();
+        boolean b = dlc.readLock();
+        try {
+            java.util.List<FilePackageStorable> ret = new ArrayList<FilePackageStorable>(dlc.size());
+            for (FilePackage fpkg : dlc.getPackages()) {
+                ret.add(new FilePackageStorable(fpkg));
+            }
+            String returnValue = JSonStorage.toString(ret);
+            return Helper.compress(returnValue);
+            // return ret;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            dlc.readUnlock(b);
+        }
+        return null;
     }
 
     @Override

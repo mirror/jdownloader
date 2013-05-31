@@ -1,6 +1,9 @@
 package org.jdownloader.extensions.jdanywhere.api;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
+import java.util.zip.GZIPOutputStream;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
@@ -68,5 +71,14 @@ public class Helper {
             dlc.readUnlock(b);
         }
         return sdl;
+    }
+
+    public static byte[] compress(String str) throws IOException {
+        if (str == null || str.length() == 0) { return str.getBytes(); }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        GZIPOutputStream gzip = new GZIPOutputStream(out);
+        gzip.write(str.getBytes());
+        gzip.close();
+        return out.toByteArray();
     }
 }

@@ -14,11 +14,14 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkProperty;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageProperty;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.DownloadLinkProperty.Property;
 import jd.plugins.FilePackage;
+import jd.plugins.FilePackageProperty;
 import jd.plugins.LinkStatus;
 
 import org.appwork.controlling.StateEvent;
@@ -49,6 +52,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
         LINKCHANGED,
         LINKSTATUSCHANGED,
         PACKAGEFINISHED,
+        FILEPACKAGESTATUSCHANGED,
         DOWNLOADLINKADDED,
         DOWNLOADLINKREMOVED,
         DOWNLOADPACKAGEADDED,
@@ -58,12 +62,14 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
         LINKCOLLECTORLINKADDED,
         LINKCOLLECTORLINKREMOVED,
         LINKCOLLECTORPACKAGEADDED,
-        LINKCOLLECTORPACKAGEREMOVED
+        LINKCOLLECTORPACKAGEREMOVED,
+        CRAWLEDLINKSTATUSCHANGED,
+        CRAWLEDPACKAGESTATUSCHANGED
     }
 
     @Override
     public String[] getPublisherEventIDs() {
-        return new String[] { EVENTID.SETTINGSCHANGED.name(), EVENTID.LINKCHANGED.name(), EVENTID.LINKSTATUSCHANGED.name(), EVENTID.PACKAGEFINISHED.name(), EVENTID.DOWNLOADLINKADDED.name(), EVENTID.DOWNLOADLINKREMOVED.name(), EVENTID.DOWNLOADPACKAGEADDED.name(), EVENTID.DOWNLOADPACKAGEREMOVED.name(), EVENTID.CAPTCHA.name(), EVENTID.RUNNINGSTATE.name(), EVENTID.LINKCOLLECTORLINKADDED.name(), EVENTID.LINKCOLLECTORLINKREMOVED.name(), EVENTID.LINKCOLLECTORPACKAGEADDED.name(), EVENTID.LINKCOLLECTORPACKAGEREMOVED.name() };
+        return new String[] { EVENTID.SETTINGSCHANGED.name(), EVENTID.LINKCHANGED.name(), EVENTID.LINKSTATUSCHANGED.name(), EVENTID.FILEPACKAGESTATUSCHANGED.name(), EVENTID.PACKAGEFINISHED.name(), EVENTID.DOWNLOADLINKADDED.name(), EVENTID.DOWNLOADLINKREMOVED.name(), EVENTID.DOWNLOADPACKAGEADDED.name(), EVENTID.DOWNLOADPACKAGEREMOVED.name(), EVENTID.CAPTCHA.name(), EVENTID.RUNNINGSTATE.name(), EVENTID.LINKCOLLECTORLINKADDED.name(), EVENTID.LINKCOLLECTORLINKREMOVED.name(), EVENTID.LINKCOLLECTORPACKAGEADDED.name(), EVENTID.LINKCOLLECTORPACKAGEREMOVED.name(), EVENTID.CRAWLEDLINKSTATUSCHANGED.name(), EVENTID.CRAWLEDPACKAGESTATUSCHANGED.name() };
     }
 
     @Override
@@ -279,6 +285,25 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                     }
                 }
 
+            } else if (event.getParameter() instanceof FilePackage) {
+                FilePackage dl = (FilePackage) event.getParameter();
+                if (dl != null) {
+                    HashMap<String, Object> data = new HashMap<String, Object>();
+                    Object param = event.getParameter(1);
+                    if (param instanceof FilePackageProperty) {
+                        data.put("packageID", dl.getUniqueID().toString());
+                        data.put("NewValue", ((FilePackageProperty) param).getValue());
+                        switch (((FilePackageProperty) param).getProperty()) {
+                        case NAME:
+                            data.put("action", "NameChanged");
+                            break;
+                        case FOLDER:
+                            data.put("action", "FolderChanged");
+                            break;
+                        }
+                        publishEvent(EVENTID.FILEPACKAGESTATUSCHANGED, data);
+                    }
+                }
             }
             break;
         case REMOVE_CONTENT:
@@ -409,6 +434,52 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
 
     @Override
     public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+        if (event.getParameter() instanceof CrawledLink) {
+            CrawledLink cl = (CrawledLink) event.getParameter();
+            if (cl != null) {
+                HashMap<String, Object> data = new HashMap<String, Object>();
+                Object param = event.getParameter(1);
+                if (param instanceof CrawledLinkProperty) {
+                    data.put("linkID", cl.getUniqueID().getID());
+                    data.put("packageID", cl.getParentNode().getUniqueID().toString());
+                    data.put("NewValue", ((CrawledLinkProperty) param).getValue());
+                    switch (((CrawledLinkProperty) param).getProperty()) {
+                    case NAME:
+                        data.put("action", "NameChanged");
+                        break;
+                    case PRIORITY:
+                        data.put("action", "PriorityChanged");
+                        break;
+                    case ENABLED:
+                        data.put("action", "EnabledChanged");
+                        break;
+                    case AVAILABILITY:
+                        data.put("action", "AvailabilityChanged");
+                        break;
+                    }
+                    publishEvent(EVENTID.CRAWLEDLINKSTATUSCHANGED, data);
+                }
+            }
+        } else if (event.getParameter() instanceof CrawledPackage) {
+            CrawledPackage cl = (CrawledPackage) event.getParameter();
+            if (cl != null) {
+                HashMap<String, Object> data = new HashMap<String, Object>();
+                Object param = event.getParameter(1);
+                if (param instanceof CrawledPackageProperty) {
+                    data.put("packageID", cl.getUniqueID().toString());
+                    data.put("NewValue", ((CrawledPackageProperty) param).getValue());
+                    switch (((CrawledPackageProperty) param).getProperty()) {
+                    case NAME:
+                        data.put("action", "NameChanged");
+                        break;
+                    case FOLDER:
+                        data.put("action", "FolderChanged");
+                        break;
+                    }
+                    publishEvent(EVENTID.CRAWLEDPACKAGESTATUSCHANGED, data);
+                }
+            }
+        }
     }
 
     @Override
@@ -488,6 +559,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
             DownloadController.getInstance().addListener(this, true);
             ChallengeResponseController.getInstance().getEventSender().addListener(this);
             LinkCollector.getInstance().getEventsender().addListener(this, true);
+            DownloadWatchDog.getInstance().getStateMachine().addListener(this);
             DownloadWatchDog.getInstance().getEventSender().addListener(this);
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(downloadSpeedLimitEventListener, false);
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(downloadSpeedLimitEnabledEventListener, false);
@@ -507,6 +579,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
             DownloadController.getInstance().removeListener(this);
             ChallengeResponseController.getInstance().getEventSender().removeListener(this);
             LinkCollector.getInstance().getEventsender().removeListener(this);
+            DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
             DownloadWatchDog.getInstance().getEventSender().removeListener(this);
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().removeListener(downloadSpeedLimitEventListener);
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().removeListener(downloadSpeedLimitEnabledEventListener);

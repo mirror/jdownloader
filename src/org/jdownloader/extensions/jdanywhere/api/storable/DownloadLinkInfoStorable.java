@@ -36,6 +36,10 @@ public class DownloadLinkInfoStorable implements Storable {
 
     private DownloadLink link;
 
+    @SuppressWarnings("unused")
+    private DownloadLinkInfoStorable() {
+    }
+
     public DownloadLinkInfoStorable(DownloadLink link) {
         this.link = link;
     }

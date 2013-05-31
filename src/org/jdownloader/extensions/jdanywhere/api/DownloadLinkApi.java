@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.jdanywhere.api;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,6 +8,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.storage.JSonStorage;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.extensions.jdanywhere.api.interfaces.IDownloadLinkApi;
 import org.jdownloader.extensions.jdanywhere.api.storable.DownloadLinkInfoStorable;
@@ -32,6 +34,28 @@ public class DownloadLinkApi implements IDownloadLinkApi {
                         links.add(new DownloadLinkStorable(link));
                     }
                     return links;
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public byte[] listcompressed(long ID) {
+        DownloadController dlc = DownloadController.getInstance();
+        for (FilePackage fpkg : dlc.getPackages()) {
+            if (fpkg.getUniqueID().getID() == ID) {
+                synchronized (fpkg) {
+                    List<DownloadLinkStorable> links = new ArrayList<DownloadLinkStorable>(fpkg.size());
+                    for (DownloadLink link : fpkg.getChildren()) {
+                        links.add(new DownloadLinkStorable(link));
+                    }
+                    String returnValue = JSonStorage.toString(links);
+                    try {
+                        return Helper.compress(returnValue);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }

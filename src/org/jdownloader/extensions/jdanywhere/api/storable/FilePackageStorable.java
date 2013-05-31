@@ -44,6 +44,20 @@ public class FilePackageStorable implements Storable {
         return pkg.getView().getSize();
     }
 
+    public long getFinished() {
+        long finished = 1;
+        synchronized (pkg) {
+            for (DownloadLink link : pkg.getChildren()) {
+                if (link.getFinishedDate() == -1) {
+
+                    finished = -1;
+                    break;
+                }
+            }
+        }
+        return finished;
+    }
+
     // public String getDirectory() {
     // return pkg.getDownloadDirectory();
     // }
