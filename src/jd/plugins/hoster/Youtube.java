@@ -62,9 +62,10 @@ public class Youtube extends PluginForHost {
     private static final String ALLOW_240P              = "ALLOW_240P_V2";
     private static final String ALLOW_360P              = "ALLOW_360P_V2";
     private static final String ALLOW_480P              = "ALLOW_480P_V2";
+    private static final String ALLOW_520P              = "ALLOW_520P_V2";
     private static final String ALLOW_720P              = "ALLOW_720P_V2";
     private static final String ALLOW_1080P             = "ALLOW_1080P_V2";
-    private static final String ALLOW_ORIGINAL          = "ALLOW_ORIGINAL_V2";
+    private static final String ALLOW_3072P             = "ALLOW_3072P_V2";
     private static final String ALLOW_BEST              = "ALLOW_BEST2";
     private static final String ALLOW_SUBTITLES         = "ALLOW_SUBTITLES_V2";
     private static final String GROUP_FORMAT            = "GROUP_FORMAT";
@@ -285,7 +286,7 @@ public class Youtube extends PluginForHost {
                 String checkConnection = br.getRegex("iframeUri: \\'(https.*?)\\'").getMatch(0);
                 if (checkConnection != null) {
                     /*
-                     * dont know if this is important but seems to set pstMsg to 1 ;)
+                     * don't know if this is important but seems to set pstMsg to 1 ;)
                      */
                     checkConnection = unescape(checkConnection);
                     try {
@@ -407,8 +408,7 @@ public class Youtube extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        // For streaming extension to tell her that these links can be streamed
-        // without account
+        // For streaming extension to tell her that these links can be streamed without account
         // System.out.println("Youtube: " + downloadLink);
 
         if (downloadLink.getBooleanProperty("subtitle", false) || downloadLink.getBooleanProperty("thumbnail", false)) {
@@ -490,9 +490,6 @@ public class Youtube extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SUBTITLES, JDL.L("plugins.hoster.youtube.grabsubtitles", "Grab subtitles?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GROUP_FORMAT, JDL.L("plugins.hoster.youtube.groupbyformat", "Group by format?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.youtube.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
-        getConfig().addEntry(hq);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_WEBM, JDL.L("plugins.hoster.youtube.checkwebm", "Grab WEBM?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MP4, JDL.L("plugins.hoster.youtube.checkmp4", "Grab MP4?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MP3, JDL.L("plugins.hoster.youtube.checkmp3", "Grab MP3?")).setDefaultValue(true));
@@ -503,11 +500,13 @@ public class Youtube extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240P, JDL.L("plugins.hoster.youtube.check240p", "Grab 240p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, JDL.L("plugins.hoster.youtube.check360p", "Grab 360p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480P, JDL.L("plugins.hoster.youtube.check480p", "Grab 480p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_520P, JDL.L("plugins.hoster.youtube.check520p", "Grab 520p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720P, JDL.L("plugins.hoster.youtube.check720p", "Grab 720p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080P, JDL.L("plugins.hoster.youtube.check1080p", "Grab 1080p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_ORIGINAL, JDL.L("plugins.hoster.youtube.checkoriginal", "Grab Original?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_3072P, JDL.L("plugins.hoster.youtube.check3072p", "Grab 3072p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.youtube.checkbest", "Grabs the best videos within your speficied Resolution and File parameters above!")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_3D, JDL.L("plugins.hoster.youtube.preferd", "Prefer 3D Videos?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_3D, JDL.L("plugins.hoster.youtube.preferd", "Allow 3D Videos?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_THUMBNAIL_MAX, JDL.L("plugins.hoster.youtube.grabrhumbnailmax", "Grab max. resulution thumbnail?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_THUMBNAIL_HQ, JDL.L("plugins.hoster.youtube.grabrhumbnailhq", "Grab HQ (480x360) thumbnail?")).setDefaultValue(false));

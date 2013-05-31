@@ -492,16 +492,18 @@ public class TbCm extends PluginForDecrypt {
                 boolean q240p = cfg.getBooleanProperty("ALLOW_240P_V2", true);
                 boolean q360p = cfg.getBooleanProperty("ALLOW_360P_V2", true);
                 boolean q480p = cfg.getBooleanProperty("ALLOW_480P_V2", true);
+                boolean q520p = cfg.getBooleanProperty("ALLOW_520P_V2", true);
                 boolean q720p = cfg.getBooleanProperty("ALLOW_720P_V2", true);
                 boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P_V2", true);
-                boolean qOriginal = cfg.getBooleanProperty("ALLOW_ORIGINAL_V2", true);
-                if (q240p == false && q360p == false && q480p == false && q720p == false && q1080p == false && qOriginal == false && threeD == false) {
+                boolean q3072p = cfg.getBooleanProperty("ALLOW_ORIGINAL_V2", true);
+                if (!q240p && !q360p && !q480p && !q520p && !q720p && !q1080p && !q3072p && !threeD) {
                     q240p = true;
-                    q480p = true;
                     q360p = true;
+                    q480p = true;
+                    q520p = true;
                     q720p = true;
                     q1080p = true;
-                    qOriginal = true;
+                    q3072p = true;
                     threeD = true;
                 }
 
@@ -512,58 +514,65 @@ public class TbCm extends PluginForDecrypt {
                     this.put(6, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
                 }
                 if (flv.get()) {
-                    if (q240p || best) {
+                    if (q240p) {
+                        // video bit rate @ 0.25Mbit/second
                         this.put(5, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo", "240p" });
                     }
-                    if (q360p || best) {
+                    if (q240p) {
+                        // video bit rate @ 0.8Mbit/second
+                        this.put(6, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo", "240p" });
+                    }
+                    if (q360p) {
                         this.put(34, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo", "360p" });
                     }
-                    if (q480p || best) {
+                    if (q480p) {
                         this.put(35, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo", "480p" });
                     }
                 }
 
                 // **** 3GP *****
                 if (threegp) {
-                    if (q240p || best) {
-                        this.put(13, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AAC", "Mono", "240p" });
-                    }
-                    if (q144p || best) {
+                    // according to wiki the video format is unknown. we rate this as mono! need to look into 3gp more to confirm.
+                    if (q144p) {
                         this.put(17, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "144p" });
                     }
-                    if (q240p || best) {
+                    if (q240p) {
+                        this.put(13, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AAC", "Mono", "240p" });
+                    }
+                    if (q240p) {
                         this.put(36, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "240p" });
                     }
                 }
 
                 // **** MP4 *****
                 if (mp4) {
-                    if (q360p || best) {
+                    if (q360p) {
+                        // 270p / 360p
                         this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
                     }
-                    if (q720p || best) {
+                    if (q720p) {
                         this.put(22, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
                     }
-                    if (q1080p || best) {
-                        this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080" });
+                    if (q1080p) {
+                        this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080p" });
                     }
-                    if (qOriginal || best) {
-                        this.put(38, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "Original" });
+                    if (q3072p) {
+                        this.put(38, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "3072p" });
                     }
                 }
 
                 // **** WebM *****
                 if (webm) {
-                    if (q360p || best) {
+                    if (q360p) {
                         this.put(43, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
                     }
-                    if (q480p || best) {
+                    if (q480p) {
                         this.put(44, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "480p" });
                     }
-                    if (q720p || best) {
+                    if (q720p) {
                         this.put(45, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "720p" });
                     }
-                    if (q1080p || best) {
+                    if (q1080p) {
                         this.put(46, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "1080p" });
                     }
                 }
@@ -571,28 +580,28 @@ public class TbCm extends PluginForDecrypt {
                 // **** 3D *****/
                 if (threeD) {
                     if (webm) {
-                        if (q360p || best) {
+                        if (q360p) {
                             this.put(100, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
                         }
-                        if (q360p || best) {
+                        if (q360p) {
                             this.put(101, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
                         }
-                        if (q720p || best) {
+                        if (q720p) {
                             this.put(102, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "720p" });
                         }
                     }
                     if (mp4) {
-                        if (q360p || best) {
-                            this.put(82, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
-                        }
-                        if (q240p || best) {
+                        if (q240p) {
                             this.put(83, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "240p" });
                         }
-                        if (q720p || best) {
-                            this.put(84, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
+                        if (q360p) {
+                            this.put(82, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
                         }
-                        if (qOriginal || best) {
+                        if (q520p) {
                             this.put(85, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "520p" });
+                        }
+                        if (q720p) {
+                            this.put(84, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
                         }
                     }
                 }
@@ -628,7 +637,7 @@ public class TbCm extends PluginForDecrypt {
                     continue;
                 }
                 verifyAge = false;
-                final HashMap<Integer, String[]> LinksFound = this.getLinks(url, prem, this.br, 0);
+                HashMap<Integer, String[]> LinksFound = this.getLinks(url, prem, this.br, 0);
                 String error = br.getRegex("<div id=\"unavailable\\-message\" class=\"\">[\t\n\r ]+<span class=\"yt\\-alert\\-vertical\\-trick\"></span>[\t\n\r ]+<div class=\"yt\\-alert\\-message\">([^<>\"]*?)</div>").getMatch(0);
                 // Removed due wrong offline detection
                 // if (error == null) error = br.getRegex("<div class=\"yt\\-alert\\-message\">(.*?)</div>").getMatch(0);
@@ -674,70 +683,73 @@ public class TbCm extends PluginForDecrypt {
                     if (id != null) YT_FILENAME = id;
                 }
 
-                /* check for wished formats first */
+                /*
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
+                 * return multiple results if they are in the same quality rating
+                 */
                 if (best) {
-                    if (LinksFound.get(38) != null) {
-                        // original mp4
-                        String[] temp = LinksFound.get(38);
-                        LinksFound.clear();
-                        LinksFound.put(38, temp);
-                    } else if (LinksFound.get(37) != null || LinksFound.get(46) != null) {
+                    final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
+                    if (LinksFound.get(38) != null && ytVideo.containsKey(38)) {
+                        // 3072p mp4
+                        if (LinksFound.containsKey(38) && ytVideo.containsKey(38)) bestFound.put(38, LinksFound.get(38));
+                    } else if ((LinksFound.containsKey(37) && ytVideo.containsKey(37)) || (LinksFound.containsKey(46) && ytVideo.containsKey(46))) {
                         // 1080p mp4
-                        String[] temp1 = LinksFound.get(37);
+                        if (LinksFound.containsKey(37) && ytVideo.containsKey(37)) bestFound.put(37, LinksFound.get(37));
                         // 1080p webm
-                        String[] temp2 = LinksFound.get(46);
-                        LinksFound.clear();
-                        if (temp1 != null) LinksFound.put(37, temp1);
-                        if (temp2 != null) LinksFound.put(46, temp2);
-                    } else if (LinksFound.get(45) != null || LinksFound.get(22) != null || LinksFound.get(102) != null || LinksFound.get(84) != null) {
-                        // 720p webm
-                        String[] temp1 = LinksFound.get(45);
+                        if (LinksFound.containsKey(46) && ytVideo.containsKey(46)) bestFound.put(46, LinksFound.get(46));
+                    } else if ((LinksFound.containsKey(22) && ytVideo.containsKey(22)) || (LinksFound.containsKey(45) && ytVideo.containsKey(45)) || (LinksFound.containsKey(84) && ytVideo.containsKey(84)) || (LinksFound.containsKey(102) && ytVideo.containsKey(102))) {
                         // 720p mp4
-                        String[] temp2 = LinksFound.get(22);
-                        // 720p(3d) webm
-                        String[] temp3 = LinksFound.get(102);
+                        if (LinksFound.containsKey(22) && ytVideo.containsKey(22)) bestFound.put(22, LinksFound.get(22));
+                        // 720p webm
+                        if (LinksFound.containsKey(45) && ytVideo.containsKey(45)) bestFound.put(45, LinksFound.get(45));
                         // 720p(3d) mp4
-                        String[] temp4 = LinksFound.get(84);
-                        LinksFound.clear();
-                        if (temp1 != null) LinksFound.put(45, temp1);
-                        if (temp2 != null) LinksFound.put(22, temp2);
-                        if (temp3 != null) LinksFound.put(102, temp3);
-                        if (temp4 != null) LinksFound.put(84, temp4);
-                    } else if (LinksFound.get(35) != null || LinksFound.get(44) != null) {
+                        if (LinksFound.containsKey(84) && ytVideo.containsKey(84)) bestFound.put(84, LinksFound.get(84));
+                        // 720p(3d) webm
+                        if (LinksFound.containsKey(102) && ytVideo.containsKey(102)) bestFound.put(102, LinksFound.get(102));
+                    } else if (LinksFound.containsKey(85) && ytVideo.containsKey(85)) {
+                        // 520p(3d) mp4
+                        if (LinksFound.containsKey(85) && ytVideo.containsKey(85)) bestFound.put(85, LinksFound.get(85));
+                    } else if ((LinksFound.containsKey(35) && ytVideo.containsKey(35)) || (LinksFound.containsKey(44) && ytVideo.containsKey(44))) {
                         // 480p flv
-                        String[] temp1 = LinksFound.get(35);
+                        if (LinksFound.containsKey(35) && ytVideo.containsKey(35)) bestFound.put(35, LinksFound.get(35));
                         // 480p webm
-                        String[] temp2 = LinksFound.get(44);
-                        LinksFound.clear();
-                        if (temp1 != null) LinksFound.put(35, temp1);
-                        if (temp2 != null) LinksFound.put(44, temp2);
-                    } else if (LinksFound.get(43) != null || LinksFound.get(18) != null || LinksFound.get(34) != null || LinksFound.get(100) != null || LinksFound.get(101) != null || LinksFound.get(82) != null) {
-                        // 360p
-                        String[] temp1 = LinksFound.get(43);
-                        String[] temp2 = LinksFound.get(18);
-                        String[] temp3 = LinksFound.get(34);
-                        // 360p(3d) webm
-                        String[] temp4 = LinksFound.get(100);
-                        // 360p(3d) webm
-                        String[] temp5 = LinksFound.get(101);
+                        if (LinksFound.containsKey(44) && ytVideo.containsKey(44)) bestFound.put(44, LinksFound.get(44));
+                    } else if ((LinksFound.containsKey(18) && ytVideo.containsKey(18)) || (LinksFound.containsKey(34) && ytVideo.containsKey(34)) || (LinksFound.containsKey(43) && ytVideo.containsKey(43)) || (LinksFound.containsKey(82) && ytVideo.containsKey(82) || (LinksFound.containsKey(100) && ytVideo.containsKey(100)) || (LinksFound.containsKey(101) && ytVideo.containsKey(101)))) {
+                        // 360p mp4
+                        if (LinksFound.containsKey(18) && ytVideo.containsKey(18)) bestFound.put(18, LinksFound.get(18));
+                        // 360p flv
+                        if (LinksFound.containsKey(34) && ytVideo.containsKey(34)) bestFound.put(34, LinksFound.get(34));
+                        // 360p webm
+                        if (LinksFound.containsKey(43) && ytVideo.containsKey(43)) bestFound.put(43, LinksFound.get(43));
                         // 360p(3d) mp4
-                        String[] temp6 = LinksFound.get(82);
-                        LinksFound.clear();
-                        if (temp1 != null) LinksFound.put(43, temp1);
-                        if (temp2 != null) LinksFound.put(18, temp2);
-                        if (temp3 != null) LinksFound.put(34, temp3);
-                        if (temp4 != null) LinksFound.put(100, temp4);
-                        if (temp5 != null) LinksFound.put(101, temp5);
-                        if (temp6 != null) LinksFound.put(82, temp6);
-                    } else if (LinksFound.get(13) != null || LinksFound.get(17) != null || LinksFound.get(5) != null) {
-                        // 240p
-                        String[] temp1 = LinksFound.get(13);
-                        String[] temp2 = LinksFound.get(17);
-                        String[] temp3 = LinksFound.get(5);
-                        LinksFound.clear();
-                        if (temp1 != null) LinksFound.put(13, temp1);
-                        if (temp2 != null) LinksFound.put(17, temp2);
-                        if (temp3 != null) LinksFound.put(5, temp3);
+                        if (LinksFound.containsKey(82) && ytVideo.containsKey(82)) bestFound.put(82, LinksFound.get(82));
+                        // 360p(3d) webm ** need to figure out which is what, could create a dupe when saving .
+                        if (LinksFound.containsKey(100) && ytVideo.containsKey(100)) bestFound.put(100, LinksFound.get(100));
+                        // 360p(3d) webm ** need to figure out which is what, could create a dupe when saving.
+                        if (LinksFound.containsKey(101) && ytVideo.containsKey(101)) bestFound.put(101, LinksFound.get(101));
+                    } else if ((LinksFound.containsKey(5) && ytVideo.containsKey(5)) || (LinksFound.containsKey(6) && ytVideo.containsKey(6)) || (LinksFound.containsKey(13) && ytVideo.containsKey(13)) || (LinksFound.containsKey(36) && ytVideo.containsKey(36)) || (LinksFound.containsKey(83) && ytVideo.containsKey(83))) {
+                        // 240p flv @ video bit rate @ 0.25Mbit/second
+                        if (LinksFound.containsKey(5) && ytVideo.containsKey(5) && !LinksFound.containsKey(6))
+                            bestFound.put(5, LinksFound.get(5));
+                        // 240p flv @ video bit rate @ 0.8Mbit/second
+                        else if (LinksFound.containsKey(6) && ytVideo.containsKey(6)) bestFound.put(6, LinksFound.get(6));
+                        // 240p 3gp mono ** according to wiki this has the highest video rate. but we rate this as mono! need to look into
+                        // 3gp more to confirm
+                        if (LinksFound.containsKey(13) && ytVideo.containsKey(13) && !LinksFound.containsKey(36))
+                            bestFound.put(13, LinksFound.get(13));
+                        // 240p 3gp stereo
+                        else if (LinksFound.containsKey(36) && ytVideo.containsKey(36)) bestFound.put(36, LinksFound.get(36));
+                        // 240p(3d) mp4
+                        if (LinksFound.containsKey(83) && ytVideo.containsKey(83)) bestFound.put(83, LinksFound.get(83));
+                    } else if ((LinksFound.containsKey(17) && ytVideo.containsKey(17))) {
+                        // 144p 3gp
+                        if (LinksFound.containsKey(17) && ytVideo.containsKey(17)) bestFound.put(17, LinksFound.get(17));
+                    }
+                    if (bestFound.isEmpty()) {
+                        logger.warning("ERROR: in best code");
+                        return null;
+                    } else {
+                        LinksFound = bestFound;
                     }
                 }
 
