@@ -54,8 +54,7 @@ public class AsixFilesCom extends PluginForHost {
 
     public AsixFilesCom(PluginWrapper wrapper) {
         super(wrapper);
-        // Is made for free accounts at the moment but should also work for
-        // premium
+        // Is made for free accounts at the moment but should also work for premium
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
@@ -178,8 +177,7 @@ public class AsixFilesCom extends PluginForHost {
             downloadLink.setMD5Hash(md5hash);
         }
         br.setFollowRedirects(false);
-        // Videolinks can already be found here, if a link is found here we can
-        // skip waittimes and captchas
+        // Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
         dllink = getDllink();
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
@@ -312,8 +310,7 @@ public class AsixFilesCom extends PluginForHost {
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
-            // Who needs half points ? If we have a dot in the points, just
-            // remove it
+            // Who needs half points ? If we have a dot in the points, just remove it
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
                 points = points.replace(dot, "");
@@ -447,9 +444,17 @@ public class AsixFilesCom extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
     }
 
     private void login(Account account) throws Exception {
@@ -475,7 +480,7 @@ public class AsixFilesCom extends PluginForHost {
             }
         } else {
             try {
-                maxPrem.set(-1);
+                maxPrem.set(20);
                 account.setMaxSimultanDownloads(-1);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
@@ -555,16 +560,4 @@ public class AsixFilesCom extends PluginForHost {
         }
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }

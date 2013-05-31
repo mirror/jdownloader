@@ -54,16 +54,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class BoosterKingCom extends PluginForHost {
 
     private String              BRBEFORE            = "";
-
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-
     private static final String COOKIE_HOST         = "http://boosterking.com";
-
     public boolean              NOPREMIUM           = false;
-
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static Object       LOCK                = new Object();
+
+    // DEV NOTES
+    // captchatype: null
 
     public BoosterKingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -215,8 +214,7 @@ public class BoosterKingCom extends PluginForHost {
                 dllink = null;
             }
         }
-        // Videolinks can already be found here, if a link is found here we can
-        // skip waittimes and captchas
+        // Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
         if (dllink == null) dllink = getDllink();
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
@@ -348,8 +346,7 @@ public class BoosterKingCom extends PluginForHost {
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
-            // Who needs half points ? If we have a dot in the points, just
-            // remove it
+            // Who needs half points ? If we have a dot in the points, just remove it
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
                 points = points.replace(dot, "");
@@ -359,7 +356,13 @@ public class BoosterKingCom extends PluginForHost {
         account.setValid(true);
         String availabletraffic = new Regex(BRBEFORE, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            availabletraffic.trim();
+            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+            if (!availabletraffic.startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setTrafficLeft(0);
+            }
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -494,12 +497,20 @@ public class BoosterKingCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return false;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return false;
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")
@@ -625,16 +636,4 @@ public class BoosterKingCom extends PluginForHost {
         }
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }

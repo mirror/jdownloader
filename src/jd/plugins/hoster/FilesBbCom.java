@@ -31,7 +31,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -67,7 +66,7 @@ public class FilesBbCom extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static String        agent                        = RandomUserAgent.generate();
+    private static String        agent                        = null;
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
 
@@ -78,7 +77,7 @@ public class FilesBbCom extends PluginForHost {
     // free account:
     // premium account:
     // protocol: no https
-    // captchatype: null
+    // captchatype: 4num
     // other: no redirects
     // other: provider has issues, sometimes works and others not.
 
@@ -99,11 +98,19 @@ public class FilesBbCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
         return false;
     }
 
@@ -113,15 +120,12 @@ public class FilesBbCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.setReadTimeout(8 * 30 * 1000);
         br.setConnectTimeout(8 * 30 * 1000);
-
-        // if (agent == null) {
-        // we first have to load the plugin, before we can reference it */
-        //
-        // JDUtilities.getPluginForHost("mediafire.com");
-        // agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
-        //
-        // }
-        br.getHeaders().put("User-Agent", FilesBbCom.agent);
+        if (agent == null) {
+            // we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
     }
 
     @Override
@@ -328,7 +332,13 @@ public class FilesBbCom extends PluginForHost {
         account.setValid(true);
         String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            availabletraffic.trim();
+            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+            if (!availabletraffic.startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setTrafficLeft(0);
+            }
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -696,16 +706,4 @@ public class FilesBbCom extends PluginForHost {
         }
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }

@@ -92,9 +92,17 @@ public class FiberUploadCom extends PluginForHost {
         return false;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -179,8 +187,7 @@ public class FiberUploadCom extends PluginForHost {
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // this is for sites with multiple f1 forms deep. This does not hurt
-            // or interfere any other sections of this script
+            // this is for sites with multiple f1 forms deep. This does not hurt or interfere any other sections of this script
             for (int i = 0; i <= 3; i++) {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
@@ -511,7 +518,13 @@ public class FiberUploadCom extends PluginForHost {
         account.setValid(true);
         String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            availabletraffic.trim();
+            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+            if (!availabletraffic.startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setTrafficLeft(0);
+            }
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -533,7 +546,7 @@ public class FiberUploadCom extends PluginForHost {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
                 try {
-                    maxPrem.set(-1);
+                    maxPrem.set(20);
                     account.setMaxSimultanDownloads(-1);
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
@@ -685,16 +698,4 @@ public class FiberUploadCom extends PluginForHost {
         }
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }
