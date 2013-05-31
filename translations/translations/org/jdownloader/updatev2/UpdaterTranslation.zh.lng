@@ -1,3 +1,7 @@
+RestartController_confirmToExit_=确定退出？
+RestartController_confirmToExit_msg=您是否真的退出 JDownloader?
+TranslationProxyDialogAuthRequired=JDownloader 不能连接到 %s1! 您的代理服务器需要身份验证。\n检查您的证书...
+TranslationProxyDialogNoConnection=JDownloader 不能连接到 %s1! 请检查您的连接设置...
 close_jd=没有足够权限写入 %s1。\r\n尝试关闭所有运行中的 JDownloader 和 Java 进程并在之后重试!\r\n如果问题在系统重启后仍然发生，请联系您的技术支持。
 confirmdialog_new_update_available_answer_later=稍后
 confirmdialog_new_update_available_answer_later_install=稍后

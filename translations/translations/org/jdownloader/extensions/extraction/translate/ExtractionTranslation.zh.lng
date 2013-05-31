@@ -36,6 +36,7 @@ file_exists_not=文件存在不
 filename=文件名
 files=文件
 hoster=托管主机
+linkname=压缩文档
 local=文件状态
 menu_tools_extract_files=提取文件
 name=压缩文档提取器
