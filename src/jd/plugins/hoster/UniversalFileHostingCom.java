@@ -51,6 +51,24 @@ public class UniversalFileHostingCom extends PluginForHost {
         return "http://www.universalfilehosting.com/terms-of-use";
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return false;
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return false;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return false;
+        }
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();

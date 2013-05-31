@@ -53,6 +53,25 @@ public class UploadLuxCom extends PluginForHost {
         return "http://www.uploadlux.com/conditions";
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return false;
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return false;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return false;
+        }
+        return false;
+    }
+
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("https://www.uploadlux.com/l-" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }

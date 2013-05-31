@@ -600,7 +600,13 @@ public class SanShareCom extends PluginForHost {
         account.setValid(true);
         final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            availabletraffic.trim();
+            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+            if (!availabletraffic.startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setTrafficLeft(0);
+            }
         } else {
             ai.setUnlimitedTraffic();
         }

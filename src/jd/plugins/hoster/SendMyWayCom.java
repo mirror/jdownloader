@@ -90,10 +90,17 @@ public class SendMyWayCom extends PluginForHost {
         return false;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        // type recaptcha
-        return true;
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -169,8 +176,7 @@ public class SendMyWayCom extends PluginForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                // stable is lame, issue finding input data fields correctly.
-                // eg. closes at ' quotation mark - remove when jd2 goes stable!
+                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -360,8 +366,7 @@ public class SendMyWayCom extends PluginForHost {
     public void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
-                // handle password has failed in the past, additional try
-                // catching / resetting values
+                // handle password has failed in the past, additional try catching / resetting values
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
@@ -503,7 +508,13 @@ public class SendMyWayCom extends PluginForHost {
         account.setValid(true);
         String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            availabletraffic.trim();
+            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+            if (!availabletraffic.startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setTrafficLeft(0);
+            }
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -656,19 +667,6 @@ public class SendMyWayCom extends PluginForHost {
         }
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
-
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
@@ -688,8 +686,7 @@ public class SendMyWayCom extends PluginForHost {
         return dllink;
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
-    // String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 

@@ -71,17 +71,10 @@ public class VidToMe extends PluginForHost {
     private final boolean        useRUA                       = false;
 
     // Connection Management
-    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
-    // fail. .:. use [1-20]
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
-    // set true if the hoster allows every 'account type' (non account|free
-    // account|paid account) allow own connection threshold.
+    // set true if the hoster allows every 'account type' (non account|free account|paid account) allow own connection threshold.
     private final boolean        allowConcurrent              = true;
-
-    private final String         quality                      = "quality";
-
-    /** The list of server values displayed to the user */
-    private final String[]       qualitylist                  = new String[] { "720p", "360p", "240p" };
 
     // DEV NOTES
     // XfileShare Version 3.0.2.0
@@ -119,7 +112,7 @@ public class VidToMe extends PluginForHost {
      * */
     public VidToMe(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
         this.setConfigElements();
     }
 
@@ -128,8 +121,16 @@ public class VidToMe extends PluginForHost {
         return false;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
         return false;
     }
 
@@ -216,8 +217,7 @@ public class VidToMe extends PluginForHost {
             checkErrors(downloadLink, false);
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
-                // stable is lame, issue finding input data fields correctly.
-                // eg. closes at ' quotation mark - remove when jd2 goes stable!
+                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
@@ -375,8 +375,7 @@ public class VidToMe extends PluginForHost {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
-        // remove custom rules first!!! As html can change because of generic
-        // cleanup rules.
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
@@ -508,52 +507,6 @@ public class VidToMe extends PluginForHost {
         return finallink;
     }
 
-    private String getConfiguredQualityDownloadlink(final DownloadLink dl, final String source) {
-        switch (getPluginConfig().getIntegerProperty(quality, -1)) {
-        case 0:
-            logger.fine("Quality 720p is configured");
-            get720p(dl, source);
-            if (dllink == null) {
-                get360p(dl, source);
-                if (dllink == null) {
-                    get240p(dl, source);
-                }
-            }
-            break;
-        case 1:
-            logger.fine("Quality 360p is configured");
-            get360p(dl, source);
-            if (dllink == null) {
-                get720p(dl, source);
-                if (dllink == null) {
-                    get240p(dl, source);
-                }
-            }
-            break;
-        case 2:
-            logger.fine("Quality 240p is configured");
-            get240p(dl, source);
-            if (dllink == null) {
-                get360p(dl, source);
-                if (dllink == null) {
-                    get720p(dl, source);
-                }
-            }
-            break;
-        default:
-            logger.fine("No quality is configured, returning default quality (720p)");
-            get720p(dl, source);
-            if (dllink == null) {
-                get360p(dl, source);
-                if (dllink == null) {
-                    get240p(dl, source);
-                }
-            }
-            break;
-        }
-        return dllink;
-    }
-
     private void get720p(final DownloadLink dl, final String source) {
         dllink = new Regex(source, "label:\"720p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink != null) addQualityToFilename(dl, "720p");
@@ -614,7 +567,13 @@ public class VidToMe extends PluginForHost {
         account.setValid(true);
         final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            availabletraffic.trim();
+            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+            if (!availabletraffic.startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setTrafficLeft(0);
+            }
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -763,10 +722,8 @@ public class VidToMe extends PluginForHost {
         }
     }
 
-    // *****************************************************************************************************
-    // //
-    // The components below doesn't require coder interaction, or configuration
-    // !
+    // ***************************************************************************************************** //
+    // The components below doesn't require coder interaction, or configuration !
 
     private String                                            correctedBR                  = "";
     private String                                            passCode                     = null;
@@ -784,8 +741,7 @@ public class VidToMe extends PluginForHost {
     private static AtomicInteger                              totalMaxSimultanPremDownload = new AtomicInteger(1);
     private static AtomicInteger                              maxFree                      = new AtomicInteger(1);
     private static AtomicInteger                              maxPrem                      = new AtomicInteger(1);
-    // connections you can make to a given 'host' file server (not dynamic),
-    // this assumes each server is setup identically.
+    // connections you can make to a given 'host' file server (not dynamic), this assumes each server is setup identically.
     private static AtomicInteger                              maxNonAccSimDlPerHost        = new AtomicInteger(20);
     private static AtomicInteger                              maxFreeAccSimDlPerHost       = new AtomicInteger(20);
     private static AtomicInteger                              maxPremAccSimDlPerHost       = new AtomicInteger(20);
@@ -861,8 +817,7 @@ public class VidToMe extends PluginForHost {
         if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         String newExtension = null;
-        // some streaming sites do not provide proper file.extension within
-        // headers (Content-Disposition or the fail over getURL()).
+        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
         if (serverFilename.contains(".")) {
             newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
         } else {
@@ -990,8 +945,7 @@ public class VidToMe extends PluginForHost {
      * */
     private synchronized void controlHost(Account account, DownloadLink downloadLink, boolean action) throws Exception {
 
-        // xfileshare valid links are either
-        // https://((sub.)?domain|IP)(:port)?/blah
+        // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
         usedHost = new Regex(dllink, "https?://([^/\\:]+)").getMatch(0);
         if (dllink == null || usedHost == null) {
             if (dllink == null)
@@ -1022,13 +976,11 @@ public class VidToMe extends PluginForHost {
         }
         user = user + " @ " + acctype;
 
-        // save finallink and use it for later, this script can determine if
-        // it's usable at a later stage. (more for dev purposes)
+        // save finallink and use it for later, this script can determine if it's usable at a later stage. (more for dev purposes)
         downloadLink.setProperty(directlinkproperty, dllink);
 
         if (!action) {
-            // download finished (completed, failed, etc), check for value and
-            // remove a value
+            // download finished (completed, failed, etc), check for value and remove a value
             Integer usedSlots = getHashedHashedValue(account);
             if (usedSlots == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             setHashedHashKeyValue(account, -1);
@@ -1038,8 +990,7 @@ public class VidToMe extends PluginForHost {
                 logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
             }
         } else {
-            // New download started, check finallink host against hostMap values
-            // && max(Free|Prem)SimDlHost!
+            // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
 
             /*
              * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads
@@ -1082,8 +1033,7 @@ public class VidToMe extends PluginForHost {
         if (!hostMap.isEmpty()) {
             // load hostMap within holder if not empty
             holder = hostMap.get(account);
-            // remove old hashMap reference, prevents creating duplicate entry
-            // of 'account' when returning result.
+            // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
             if (holder.containsKey(account)) hostMap.remove(account);
         }
         String currentKey = getHashedHashedKey(account);
@@ -1102,8 +1052,7 @@ public class VidToMe extends PluginForHost {
             }
         }
         if (holder.isEmpty()) {
-            // the last value(download) within holder->account. Remove entry to
-            // reduce memory allocation
+            // the last value(download) within holder->account. Remove entry to reduce memory allocation
             hostMap.remove(account);
         } else {
             // put updated holder back into hostMap
@@ -1172,8 +1121,7 @@ public class VidToMe extends PluginForHost {
         return false;
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
-    // String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 
@@ -1223,17 +1171,55 @@ public class VidToMe extends PluginForHost {
         return new Form(data);
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
+    private final String   quality     = "quality";
+
+    /** The list of server values displayed to the user */
+    private final String[] qualitylist = new String[] { "720p", "360p", "240p" };
+
+    private String getConfiguredQualityDownloadlink(final DownloadLink dl, final String source) {
+        switch (getPluginConfig().getIntegerProperty(quality, -1)) {
+        case 0:
+            logger.fine("Quality 720p is configured");
+            get720p(dl, source);
+            if (dllink == null) {
+                get360p(dl, source);
+                if (dllink == null) {
+                    get240p(dl, source);
+                }
+            }
+            break;
+        case 1:
+            logger.fine("Quality 360p is configured");
+            get360p(dl, source);
+            if (dllink == null) {
+                get720p(dl, source);
+                if (dllink == null) {
+                    get240p(dl, source);
+                }
+            }
+            break;
+        case 2:
+            logger.fine("Quality 240p is configured");
+            get240p(dl, source);
+            if (dllink == null) {
+                get360p(dl, source);
+                if (dllink == null) {
+                    get720p(dl, source);
+                }
+            }
+            break;
+        default:
+            logger.fine("No quality is configured, returning default quality (720p)");
+            get720p(dl, source);
+            if (dllink == null) {
+                get360p(dl, source);
+                if (dllink == null) {
+                    get240p(dl, source);
+                }
+            }
+            break;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
+        return dllink;
     }
 
     private void setConfigElements() {

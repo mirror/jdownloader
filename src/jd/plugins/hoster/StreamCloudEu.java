@@ -79,6 +79,24 @@ public class StreamCloudEu extends PluginForHost {
         return COOKIE_HOST + "tos.html";
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return false;
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return false;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return false;
+        }
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -143,6 +161,7 @@ public class StreamCloudEu extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("No File")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Final Link not found on host server!"); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("freelink", dllink);
@@ -204,7 +223,13 @@ public class StreamCloudEu extends PluginForHost {
         account.setValid(true);
         final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            availabletraffic.trim();
+            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+            if (!availabletraffic.startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setTrafficLeft(0);
+            }
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -538,16 +563,4 @@ public class StreamCloudEu extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }

@@ -81,7 +81,7 @@ public class RyuShareCom extends PluginForHost {
     // free account: same as above
     // premium: unlimited
     // protocol: no https
-    // captchatype: null
+    // captchatype: keycaptcha
     // other: i've been able to connect with 7 chunks at times.. it's not reliable if 4 causes problems reduce it more.
 
     @Override
@@ -104,8 +104,16 @@ public class RyuShareCom extends PluginForHost {
         return false;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
         return false;
     }
 
@@ -525,7 +533,13 @@ public class RyuShareCom extends PluginForHost {
         account.setValid(true);
         String availabletraffic = new Regex(br, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            availabletraffic.trim();
+            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+            if (!availabletraffic.startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setTrafficLeft(0);
+            }
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -547,7 +561,7 @@ public class RyuShareCom extends PluginForHost {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
                 try {
-                    maxPrem.set(-1);
+                    maxPrem.set(20);
                     account.setMaxSimultanDownloads(-1);
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
@@ -739,19 +753,6 @@ public class RyuShareCom extends PluginForHost {
             logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
             if (tt > 0) sleep(tt * 1000l, downloadLink);
         }
-    }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
     }
 
 }

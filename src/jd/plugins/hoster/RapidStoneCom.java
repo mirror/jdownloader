@@ -120,9 +120,17 @@ public class RapidStoneCom extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -142,8 +150,7 @@ public class RapidStoneCom extends PluginForHost {
         String[] fileInfo = new String[3];
         // scan the first page
         scanInfo(fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission
-        // critical
+        // scan the second page. filesize[1] and md5hash[2] are not mission critical
         if (fileInfo[0] == null) {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
@@ -233,8 +240,7 @@ public class RapidStoneCom extends PluginForHost {
             checkErrors(downloadLink, false);
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
-                // stable is lame, issue finding input data fields correctly.
-                // eg. closes at ' quotation mark - remove when jd2 goes stable!
+                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
@@ -392,8 +398,7 @@ public class RapidStoneCom extends PluginForHost {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
-        // remove custom rules first!!! As html can change because of generic
-        // cleanup rules.
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
@@ -430,8 +435,7 @@ public class RapidStoneCom extends PluginForHost {
     private void checkErrors(DownloadLink theLink, boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
-                // handle password has failed in the past, additional try
-                // catching / resetting values
+                // handle password has failed in the past, additional try catching / resetting values
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
@@ -571,7 +575,13 @@ public class RapidStoneCom extends PluginForHost {
         account.setValid(true);
         final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            availabletraffic.trim();
+            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+            if (!availabletraffic.startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setTrafficLeft(0);
+            }
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -818,8 +828,7 @@ public class RapidStoneCom extends PluginForHost {
         if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         String newExtension = null;
-        // some streaming sites do not provide proper file.extension within
-        // headers (Content-Disposition or the fail over getURL()).
+        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
         if (serverFilename.contains(".")) {
             newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
         } else {
@@ -1128,8 +1137,7 @@ public class RapidStoneCom extends PluginForHost {
         return false;
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
-    // String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 
@@ -1179,16 +1187,4 @@ public class RapidStoneCom extends PluginForHost {
         return new Form(data);
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }

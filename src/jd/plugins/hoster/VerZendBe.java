@@ -243,8 +243,7 @@ public class VerZendBe extends PluginForHost {
                 }
             }
         }
-        // Videolinks can already be found here, if a link is found here we can
-        // skip waittimes and captchas
+        // Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (BRBEFORE.contains("\"download1\"")) {
@@ -424,8 +423,16 @@ public class VerZendBe extends PluginForHost {
         return false;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return false;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return false;
+        }
         return false;
     }
 
@@ -450,16 +457,4 @@ public class VerZendBe extends PluginForHost {
         }
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }
