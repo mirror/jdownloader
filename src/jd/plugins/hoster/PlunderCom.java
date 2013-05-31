@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2011  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -26,10 +26,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-//plunder.com by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://[\\w\\.]*?(youdownload\\.eu|binarybooty\\.com|mashupscene\\.com|plunder\\.com|files\\.youdownload\\.com)/((-download-[a-z0-9]+|.+-download-.+)\\.htm|(?!/)[0-9a-z]+)" }, flags = { 0 })
 public class PlunderCom extends PluginForHost {
 
+    /**
+     * @author pspzockerscene
+     */
     public PlunderCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -37,6 +39,24 @@ public class PlunderCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.plunder.com/x/tos";
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return false;
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return false;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return false;
+        }
+        return false;
     }
 
     @Override
@@ -48,15 +68,15 @@ public class PlunderCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL() + "?showlink=1");
-        String dllink = br.getRegex("class=button href=\\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.plunder\\.com/x/.*?/.*?)\"").getMatch(0);
+        String dllink = br.getRegex("/h2><a href=(\"|')?(http://[^<>\"']+)").getMatch(1);
+        if (dllink == null) dllink = br.getRegex("(\"|')?(http://[a-z0-9]+\\.plunder\\.com/x/[^<>\"']+)").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if ((dl.getConnection().getContentType().contains("html"))) {
             br.followConnection();
             String checklink = br.getURL();
             if (br.containsHTML("Too many downloads from this IP") || checklink.contains("/blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads!", 10 * 60 * 1000l);
-            if (br.containsHTML("You must log in to download more this session") || checklink.contains("/login/")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Register or perform a reconnect to download more!", 10 * 60 * 1001l);
+            if (br.containsHTML("You must log in to download more this session") || checklink.contains("/login/") || checklink.contains("/register/")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Register or perform a reconnect to download more!", 10 * 60 * 1001l);
             if (checklink.contains("/error")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
