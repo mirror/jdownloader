@@ -672,7 +672,7 @@ public class Uploadedto extends PluginForHost {
             case 2:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "User does not exist!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 3:
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong username and/or password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help: If your password contains special characters, change it and try again!\r\n\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: Falls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 4:
                 if (acc != null) {
                     synchronized (acc) {

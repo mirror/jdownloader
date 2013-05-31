@@ -93,6 +93,7 @@ public class BoxNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie("http://box.com", "country_code", "US");
         /** Correct old box.NET links */
         correctDownloadLink(parameter);
         // setup referrer and cookies for single file downloads

@@ -43,7 +43,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
         br.setCookie("http://hulkshare.com/", "lang", "english");
         br.getPage(parameter);
         String argh = br.getRedirectLocation();
-        if (br.containsHTML("class=\"bigDownloadBtn") || argh != null) {
+        if (br.containsHTML("class=\"bigDownloadBtn") || br.containsHTML(">The owner of this file doesn\\'t allow downloading") || argh != null) {
             decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
             return decryptedLinks;
         }

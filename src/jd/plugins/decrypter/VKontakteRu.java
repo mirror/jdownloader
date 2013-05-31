@@ -80,14 +80,17 @@ public class VKontakteRu extends PluginForDecrypt {
         synchronized (LOCK) {
             try {
                 /** Login process */
-                if (!getUserLogin(false)) { return decryptedLinks; }
+                if (!getUserLogin(false)) {
+                    logger.info("Existing account is invalid or no account available, cannot decrypt link: " + parameter);
+                    return decryptedLinks;
+                }
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
                 /**
                  * Retry if login failed Those are 2 different errormessages but refreshing the cookies works fine for both
                  * */
                 String cookie = br.getCookie("http://vk.com", "remixsid");
-                if (br.containsHTML(">Security Check<") || cookie == null || "deleted".equals(cookie)) {
+                if (br.containsHTML(">Security Check<") || "deleted".equals(cookie) || cookie == null || cookie.equals("")) {
                     this.getPluginConfig().setProperty("logincounter", "-1");
                     this.getPluginConfig().save();
                     br.clearCookies(DOMAIN);

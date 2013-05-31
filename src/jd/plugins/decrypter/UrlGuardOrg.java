@@ -50,7 +50,7 @@ public class UrlGuardOrg extends PluginForDecrypt {
             return decryptedLinks;
         }
         // Invalid link
-        if (br.containsHTML(">403 Forbidden<")) {
+        if (br.containsHTML(">403 Forbidden<|>404 Not Found<")) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }

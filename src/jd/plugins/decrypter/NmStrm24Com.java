@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -55,7 +56,12 @@ public class NmStrm24Com extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             String fpName = br.getRegex("\\'pageName\\': \\'([^<>\"\\']+)\\'").getMatch(0);
-            if (fpName != null) fpName = br.getRegex("class=\\'post\\-title entry\\-title\\'>[\t\n\r ]+<a href=\\'http://[^<>\"\\']+\\'>([^<>\"\\']+)</a>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("class=\\'post\\-title entry\\-title\\'>[\t\n\r ]+<a href=\\'http://[^<>\"\\']+\\'>([^<>\"\\']+)</a>").getMatch(0);
+            if (fpName == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            fpName = Encoding.htmlDecode(fpName.trim());
             final String[] fragments = br.getRegex("<div id=\"fragment\\-\\d+\"(.*?)<br />").getColumn(0);
             if ((fragments == null || fragments.length == 0) && !br.containsHTML(">Mirror")) {
                 logger.warning("Link doesn't contain any downloadable links: " + parameter);
@@ -78,15 +84,23 @@ public class NmStrm24Com extends PluginForDecrypt {
                     if (dl != null) decryptedLinks.add(dl);
                 }
             }
+            final String[] specialFragments = br.getRegex("\"(http://embed\\.publicvideohost\\.org/v\\.php\\?w=\\d+\\&h=\\d+\\&v=\\d+)\"").getColumn(0);
+            if (specialFragments != null && specialFragments.length != 0) {
+                for (final String specialFragment : specialFragments) {
+                    br.getPage(specialFragment);
+                    final String finallink = br.getRegex("file: \"(http://[^<>\"]*?)\",").getMatch(0);
+                    if (finallink != null) {
+                        decryptedLinks.add(createDownloadlink(finallink));
+                    }
+                }
+            }
             if (decryptedLinks == null || decryptedLinks.size() == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
-                fp.addLinks(decryptedLinks);
-            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
@@ -96,7 +110,10 @@ public class NmStrm24Com extends PluginForDecrypt {
         if (externID != null) {
             br.getPage(externID);
             final String finallink = br.getRegex("\"stream_h264_url\":\"(http:[^<>\"\\']+)\"").getMatch(0);
-            return ("directhttp://" + finallink.replace("\\", ""));
+            if (finallink != null)
+                return ("directhttp://" + finallink.replace("\\", ""));
+            else
+                return null;
         }
         externID = new Regex(fragment, "/pl/mod\\.php\\?id=([a-z0-9]+)\"").getMatch(0);
         if (externID == null) externID = new Regex(fragment, "modovideo\\.com/frame\\.php\\?v=([a-z0-9]+)\\&").getMatch(0);

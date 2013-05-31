@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://(www\\.)?antena3\\.com/[\\-/\\w]+_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://(www\\.)?antena3decrypted\\.com/[^<>\"]*?\\.html" }, flags = { 0 })
 public class Antena3Com extends PluginForHost {
 
     private String baseLink = "http://desprogresiva.antena3.com/";
@@ -43,6 +43,10 @@ public class Antena3Com extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.antena3.com/a3tv2004/web/html/legal/index.htm";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("antena3decrypted.com/", "antena3.com/"));
     }
 
     @Override
@@ -78,8 +82,7 @@ public class Antena3Com extends PluginForHost {
     }
 
     private String getXML() throws IOException, PluginException {
-        String urlxml = br.getRegex("<link rel=\"video_src\" href=\"http://www.antena3.com/static/swf/A3Player.swf\\?xml=(.*?)\"/>").getMatch(0);
-        if (urlxml == null) urlxml = br.getRegex("name=\"flashvars\" value=\"xml=(http://[^<>\"]*?)\"").getMatch(0);
+        final String urlxml = br.getRegex("(http://(www\\.)?antena3\\.com/videoxml/[^<>\"]*?\\.xml)").getMatch(0);
         if (urlxml == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return br.getPage(urlxml);
     }

@@ -129,8 +129,9 @@ public class MotherLessCom extends PluginForHost {
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    private void getVideoLink(DownloadLink parameter) throws IOException, PluginException {
+    private void getVideoLink(final DownloadLink parameter) throws IOException, PluginException {
         br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("<img src=\"/images/icons/exclamation\\.png\" style=\"margin\\-top: \\-5px;\" />[\t\n\r ]+404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         DLLINK = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?\\.flv)\\'\\)").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9]+/[^<>\"]*?\\.flv)\"").getMatch(0);

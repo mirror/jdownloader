@@ -23,11 +23,9 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -48,7 +46,10 @@ public class LetitBitNet extends PluginForDecrypt {
         final String parameter = param.toString().replace("www.", "");
         prepBr(br);
         br.getPage(parameter);
-        if (!br.containsHTML("<td width=\"700\" colspan=\"2\">") || br.containsHTML("<h2>Owner: </h2>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (!br.containsHTML("<td width=\"700\" colspan=\"2\">") || br.containsHTML("<h2>Owner: </h2>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         // only this link format contains spanning pages. pages/folder/ doesn't seem to!
         String uid = new Regex(parameter, "(/folder/\\d+/\\d+)").getMatch(0);
         // first page

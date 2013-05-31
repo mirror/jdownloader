@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -52,7 +53,7 @@ public class WorldStarHipHopCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://worldstaruncut.com/", "worldstarAdultOk", "true");
         br.setFollowRedirects(true);
@@ -73,6 +74,13 @@ public class WorldStarHipHopCom extends PluginForHost {
                     if (filename == null) filename = br.getRegex("<span style=\"display:none;\">Watching: (.*?)</span><img src=\"").getMatch(0);
                 }
             }
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("videoplayer\\.vevo\\.com/embed/embedded\"")) {
+                filename = Encoding.htmlDecode(filename.trim());
+                downloadLink.getLinkStatus().setStatusText("This video is blocked in your country");
+                downloadLink.setName(filename + ".mp4");
+                return AvailableStatus.TRUE;
+            }
             dllink = br.getRegex("v=playFLV\\.php\\?loc=(http://.*?\\.(mp4|flv))\\&amp;").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("(http://hwcdn\\.net/[a-z0-9]+/cds/\\d+/\\d+/\\d+/.*?\\.(mp4|flv))").getMatch(0);
@@ -82,8 +90,8 @@ public class WorldStarHipHopCom extends PluginForHost {
                 }
             }
         }
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = filename.trim();
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
         String ext = ".mp4";
         if (!dllink.endsWith(".mp4")) ext = ".flv";
         downloadLink.setFinalFileName(filename + ext);
@@ -107,8 +115,9 @@ public class WorldStarHipHopCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("videoplayer\\.vevo\\.com/embed/embedded\"")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This video is blocked in your country"); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

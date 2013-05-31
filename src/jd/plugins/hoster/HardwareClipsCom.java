@@ -62,9 +62,20 @@ public class HardwareClipsCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.setCookie("http://www.hardwareclips.com/", "hideBrowserLanguage", "1");
-        br.getPage(downloadLink.getDownloadURL());
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (con.getResponseCode() == 302) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("(Dieses Video existiert nicht\\.|Es wurde entweder gelöscht, als ungeeignet markiert oder einfach noch nicht freigeschaltet\\.)") || br.getURL().contains("type=video_missing")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) \\| HardwareClips \\- Dein Hardware Video\\-Portal</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
@@ -77,7 +88,6 @@ public class HardwareClipsCom extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
             if (!con.getContentType().contains("html"))

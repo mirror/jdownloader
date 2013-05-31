@@ -237,7 +237,7 @@ public class IFilezCom extends PluginForHost {
     }
 
     public void handleErrors() throws PluginException {
-        if (br.containsHTML("(>File was not found in the depFile database\\.|It is possible that you provided wrong link.<|>Файл не найден в базе depfile\\.com\\. Возможно Вы неправильно указали ссылку\\.<|The file was blocked by the copyright holder)")) {
+        if (br.containsHTML("(>File was not found in the depFile database\\.|It is possible that you provided wrong link.<|>Файл не найден в базе depfile\\.com\\. Возможно Вы неправильно указали ссылку\\.<|The file was blocked by the copyright holder|>Page Not Found)")) {
             logger.warning("File not found OR file removed from provider");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

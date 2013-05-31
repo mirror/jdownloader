@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/shared/(?!static)[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/(shared|s)/(?!static)[a-z0-9]+" }, flags = { 0 })
 public class BxNt extends PluginForDecrypt {
     private static final String  BASE_URL_PATTERN             = "(https?://(www|[a-z0-9\\-_]+)\\.box\\.com/shared/\\w+)(#\\w*)?";
     private static final Pattern FEED_FILEINFO_PATTERN        = Pattern.compile("<item>(.*?)<\\/item>", Pattern.DOTALL);
@@ -48,6 +48,7 @@ public class BxNt extends PluginForDecrypt {
         String cryptedlink = parameter.toString().replace("box.net/", "box.com/").replace("box.com/s/", "box.com/shared/");
         logger.finer("Decrypting: " + cryptedlink);
         // check if page is a rss feed
+        br.setCookie("http://box.com", "country_code", "US");
         if (cryptedlink.endsWith("rss.xml")) {
             if (feedExists(cryptedlink)) {
                 decryptFeed(cryptedlink);
@@ -67,7 +68,7 @@ public class BxNt extends PluginForDecrypt {
             }
             if (decryptedLinks.size() == 0) {
                 logger.info("Haven't found any links to decrypt, now trying decryptSingleDLPage");
-                decryptedLinks.add(createDownloadlink(parameter.toString().replaceAll("box\\.(net|com)/shared", "boxdecrypted.com/shared")));
+                decryptedLinks.add(createDownloadlink(cryptedlink.replaceAll("box\\.com/shared", "boxdecrypted.com/shared")));
             }
         }
         return decryptedLinks;
