@@ -135,20 +135,6 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                 }
                 if (!linkOk(link, link.getFinalFileName())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (link.getDownloadURL().matches(DOCLINK)) {
-                MAXCHUNKS = 0;
-                getPageSafe(link.getDownloadURL(), aa, link);
-                if (br.containsHTML("File deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                if (br.containsHTML("This document is available only to its owner\\.")) {
-                    link.getLinkStatus().setStatusText("This document is available only to its owner");
-                    link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-                    return AvailableStatus.TRUE;
-                }
-                String filename = br.getRegex("title>([^<>\"]*?)</title>").getMatch(0);
-                FINALLINK = br.getRegex("var src = \\'(http://[^<>\"]*?)\\';").getMatch(0);
-                if (filename == null || FINALLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                filename = Encoding.htmlDecode(filename.trim());
-                if (!linkOk(link, filename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
                 getPageSafe("http://vk.com/photo" + photoID, aa, link);
@@ -190,7 +176,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     }
 
-    // If an account security check appears, it be handled
+    // Handly all kinds of stuff that disturbs the downloadflow
     private void getPageSafe(final String page, final Account acc, final DownloadLink dl) throws Exception {
         br.getPage(page);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
@@ -199,9 +185,19 @@ public class VKontakteRuHoster extends PluginForHost {
             login(br, acc, true);
             br.getPage(page);
         } else if (br.containsHTML("You tried to load the same page more than once in one second")) {
-            logger.info("Avoiding 'You tried to load the same page more than once in one second' by waiting 2 seconds and re-accessing link...");
-            this.sleep(2000l, dl);
-            br.getPage(page);
+            for (int i = 1; i <= 5; i++) {
+                logger.info("Try " + i + " / 5 : Avoiding 'You tried to load the same page more than once in one second' by waiting 2 seconds and re-accessing link...");
+                this.sleep(2000l, dl);
+                br.getPage(page);
+                if (br.containsHTML("You tried to load the same page more than once in one second")) continue;
+                break;
+            }
+            if (br.containsHTML("You tried to load the same page more than once in one second")) {
+                logger.info("Failed to avoid 'You tried to load the same page more than once in one second'...");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l);
+            } else {
+                logger.info("Avoided 'You tried to load the same page more than once in one second' successfully!");
+            }
         }
     }
 
@@ -214,10 +210,11 @@ public class VKontakteRuHoster extends PluginForHost {
             con = br2.openGetConnection(FINALLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-                if (finalfilename == null)
+                if (finalfilename == null) {
                     downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-                else
+                } else {
                     downloadLink.setFinalFileName(finalfilename);
+                }
             } else {
                 return false;
             }
