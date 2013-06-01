@@ -1,4 +1,5 @@
 LogAction=Vytvoriť log
+LogAction_actionPerformed_wait_=Čakajte prosím...
 LogAction_tooltip=Vytvoriť log
 LogModel_initColumns_time_=Čas
 SendLogDialog_SendLogDialog_title_=Poslať hlásenie o chybe
