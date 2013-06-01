@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stolenvideos.net" }, urls = { "http://(www\\.)?stolenvideos\\.net/\\d+/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stolenvideos.net" }, urls = { "http://(www\\.)?stolenvideos\\.net/(tube/video/[a-z0-9\\-]+\\-[A-Za-z0-9]+\\.html|\\d+/[A-Za-z0-9\\-_]+\\.html)" }, flags = { 0 })
 public class StolenVideosNet extends PluginForDecrypt {
 
     public StolenVideosNet(PluginWrapper wrapper) {
@@ -39,7 +39,6 @@ public class StolenVideosNet extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String tempID = br.getRedirectLocation();
-        String filename = br.getRegex("<title>([^<>\"]*?)\\-  Stolen XXX Videos \\- Daily Free XXX Porn Videos</title>").getMatch(0);
         if (tempID != null && tempID.length() < 40) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -49,13 +48,8 @@ public class StolenVideosNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("\"file=(http://hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv)\\&").getMatch(0);
-        if (tempID == null) tempID = br.getRegex("\"(http://[a-z0-9]+\\.yourvoyeurvideos\\.com/mp4/\\d+\\.mp4)\"").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
+        String filename = br.getRegex("<title>([^<>\"]*?)\\- Stolen XXX Videos - Daily Free XXX Porn Videos</title>").getMatch(0);
+
         tempID = br.getRegex("\"http://(www\\.)?pornyeah\\.com/videos/[a-z0-9\\-]+\\-(\\d+)\\.html\"").getMatch(1);
         if (tempID == null) tempID = br.getRegex("pornyeah\\.com/playerConfig\\.php\\?[^<>\"]*?\\|(\\d+)\\|\\d+\"").getMatch(0);
         if (tempID != null) {
@@ -76,9 +70,13 @@ public class StolenVideosNet extends PluginForDecrypt {
         }
         filename = Encoding.htmlDecode(filename.trim());
         tempID = br.getRegex("\\&file=(http://[^<>\"]*?\\.flv)\\&").getMatch(0);
+        if (tempID == null) {
+            tempID = br.getRegex("\\('(https?://(\\w+\\.)?stolenvideos\\.net/[^'\\)]+)'\\)").getMatch(0);
+        }
         if (tempID != null) {
+            filename = filename + tempID.substring(tempID.lastIndexOf("."));
             DownloadLink dl = createDownloadlink("directhttp://" + tempID);
-            dl.setFinalFileName(filename + ".flv");
+            dl.setFinalFileName(filename);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
