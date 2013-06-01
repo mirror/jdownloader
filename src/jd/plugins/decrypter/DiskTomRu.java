@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "disk.tom.ru" }, urls = { "http://([\\w]+\\.)?disk\\.tom\\.ru/[a-z0-9]{7}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "disk.tom.ru" }, urls = { "^http://([\\w]+\\.)?disk\\.tom\\.ru/[a-z0-9]{7}$" }, flags = { 0 })
 public class DiskTomRu extends PluginForDecrypt {
 
     /**
