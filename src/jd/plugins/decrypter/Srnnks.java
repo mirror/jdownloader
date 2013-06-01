@@ -39,7 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.EditDistance;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "dokujunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/.*?/[a-z]{2}[_-].*", "http://[\\w\\.]*?dokujunkies\\.org/[\\w\\-/]+.*\\.html" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "dokujunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/((?!serie).*?/[a-z]{2}[_-].*|go\\-[a-f0-9]{128}/)", "http://[\\w\\.]*?dokujunkies\\.org/[\\w\\-/]+.*\\.html" }, flags = { 0, 0 })
 public class Srnnks extends PluginForDecrypt {
     class DecryptRunnable implements Runnable {
 
@@ -55,8 +55,7 @@ public class Srnnks extends PluginForDecrypt {
 
         public void run() {
 
-            // sj heuristic detection. this makes the jobber useless... but we
-            // have to use the 300 ms to work around sj's firewall
+            // sj heuristic detection. this makes the jobber useless... but we have to use the 300 ms to work around sj's firewall
             try {
                 Thread.sleep(FW_WAIT);
                 try {
@@ -68,7 +67,7 @@ public class Srnnks extends PluginForDecrypt {
                 if (this.br.getRedirectLocation() != null) {
                     this.results.add(Srnnks.this.createDownloadlink(this.br.getRedirectLocation()));
                 } else {
-                    // not sure if there are stil pages that use this old system
+                    // not sure if there are still pages that use this old system
 
                     final String link = this.br.getRegex("SRC=\"(http://download\\.serienjunkies\\.org.*?)\"").getMatch(0);
 
@@ -184,7 +183,6 @@ public class Srnnks extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, final ProgressController progress) throws Exception {
-
         // crude importation method from doju -> serien
         if (parameter.getCryptedUrl().contains("dokujunkies.org")) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -205,39 +203,37 @@ public class Srnnks extends PluginForDecrypt {
             return decryptedLinks;
 
         } else if (parameter.getCryptedUrl().contains("serienjunkies.org")) {
-            try {
-                // Browser.setRequestIntervalLimitGlobal("serienjunkies.org",
-                // 400);
-                // Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org",
-                // 400);
+            if (parameter.getCryptedUrl().matches(".+/go\\-[a-f0-9]{128}/")) {
+                ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+                // redirect support if the user adds copies these temp hash
+                br.setFollowRedirects(false);
+                br.getPage(parameter.getCryptedUrl());
+                String link = br.getRedirectLocation();
+                if (link != null) {
+                    decryptedLinks.add(createDownloadlink(link));
+                    return decryptedLinks;
+                } else {
+                    logger.warning("Failed to find temp redirect link location!");
+                }
+            } else {
+                try {
+                    // Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
+                    // Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
 
-                final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-                Form[] forms;
-                // progress.setStatusText("Lade Downloadseite");
+                    final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+                    Form[] forms;
+                    // progress.setStatusText("Lade Downloadseite");
 
-                for (int i = 0; i < 5; i++) {
-                    progress.setRange(100);
-                    try {
-                        if (isAbort()) return new ArrayList<DownloadLink>(ret);
-                    } catch (final Throwable e) {
-                        /* not available in old 09581 stable */
-                    }
-                    try {
-                        RUNNING.incrementAndGet();
-                        synchronized (LOCK) {
-                            synchronized (Srnnks.GLOBAL_LOCK) {
-                                Thread.sleep(FW_WAIT);
-                                try {
-                                    if (isAbort()) return new ArrayList<DownloadLink>(ret);
-                                } catch (final Throwable e) {
-                                    /* not available in old 09581 stable */
-                                }
-                                this.br.getPage(parameter.getCryptedUrl());
-                            }
-                            if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
-
-                            if (this.br.containsHTML("<FRAME SRC")) {
-                                // progress.setStatusText("Lade Downloadseitenframe");
+                    for (int i = 0; i < 5; i++) {
+                        progress.setRange(100);
+                        try {
+                            if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                        } catch (final Throwable e) {
+                            /* not available in old 09581 stable */
+                        }
+                        try {
+                            RUNNING.incrementAndGet();
+                            synchronized (LOCK) {
                                 synchronized (Srnnks.GLOBAL_LOCK) {
                                     Thread.sleep(FW_WAIT);
                                     try {
@@ -245,174 +241,182 @@ public class Srnnks extends PluginForDecrypt {
                                     } catch (final Throwable e) {
                                         /* not available in old 09581 stable */
                                     }
-                                    this.br.getPage(this.br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
+                                    this.br.getPage(parameter.getCryptedUrl());
                                 }
-                            }
-                            if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
-                            progress.increase(5);
+                                if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
 
-                            // linkendung kommt auch im action der form vor
-                            final String sublink = parameter.getCryptedUrl().substring(parameter.getCryptedUrl().indexOf("org/") + 3);
-
-                            // try captcha max 5 times
-
-                            progress.setRange(100);
-                            progress.setStatus(5);
-
-                            // suche wahrscheinlichste form
-                            // progress.setStatusText("Suche Captcha Form");
-                            Form form = null;
-
-                            forms = this.br.getForms();
-                            int bestdist = Integer.MAX_VALUE;
-                            if (forms != null) {
-                                for (final Form form1 : forms) {
-                                    if (form1.getAction() == null) continue;
-                                    final int dist = EditDistance.damerauLevenshteinDistance(sublink, form1.getAction());
-                                    if (dist < bestdist) {
-                                        form = form1;
-                                        bestdist = dist;
+                                if (this.br.containsHTML("<FRAME SRC")) {
+                                    // progress.setStatusText("Lade Downloadseitenframe");
+                                    synchronized (Srnnks.GLOBAL_LOCK) {
+                                        Thread.sleep(FW_WAIT);
+                                        try {
+                                            if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                        } catch (final Throwable e) {
+                                            /* not available in old 09581 stable */
+                                        }
+                                        this.br.getPage(this.br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
                                     }
                                 }
-                            }
-                            if (form != null && form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
-                                /*
-                                 * this form contains captcha image, so it must be valid
-                                 */
-                            } else if (bestdist > 100) {
-                                form = null;
-                            }
-
-                            if (form == null) { throw new Exception("Serienjunkies Captcha Form konnte nicht gefunden werden!"); }
-                            progress.increase(5);
-
-                            // das bild in der Form ist das captcha
-                            String captchaLink = new Regex(form.getHtmlCode(), "<IMG SRC=\"(.*?)\"").getMatch(0);
-                            // if (captchaLink == null) { throw new
-                            // Exception("Serienjunkies Captcha konnte nicht gefunden werden!");
-                            // }
-                            if (captchaLink != null) {
-                                System.out.println("CAPTCHA!!!");
-                                // only each 5 link needs captchas
-                                if (!captchaLink.toLowerCase().startsWith("http://")) {
-                                    String base = new Regex(br.getURL(), "(http.*?\\.org)").getMatch(0);
-                                    if (base != null) {
-                                        captchaLink = base + captchaLink;
-                                    } else {
-                                        captchaLink = "http://download.serienjunkies.org" + captchaLink;
-                                    }
-                                }
-
-                                crawlStatus = br.getRegex("<TITLE>.* \\- (.*?)</TITLE>").getMatch(0);
-                                if (crawlStatus == null) crawlStatus = "";
-                                crawlStatus += "(" + RUNNING.intValue() + " pending)";
-                                final File captcha = this.getLocalCaptchaFile(".png");
-                                // captcha laden
-                                synchronized (Srnnks.GLOBAL_LOCK) {
-                                    Thread.sleep(FW_WAIT);
-                                    try {
-                                        if (isAbort()) return new ArrayList<DownloadLink>(ret);
-                                    } catch (final Throwable e) {
-                                        /* not available in old 09581 stable */
-                                    }
-                                    final URLConnectionAdapter urlc = this.br.cloneBrowser().openGetConnection(captchaLink);
-                                    Browser.download(captcha, urlc);
-                                }
-                                if ("7ebca510a6a18c1e8f6e8d98c3118874".equals(JDHash.getMD5(captcha))) {
-                                    // dummy captcha without content.. wait
-                                    // before reloading
-                                    logger.warning("Dummy Captcha. wait 3 seconds");
-                                    Thread.sleep(3000);
-                                    try {
-                                        if (isAbort()) return new ArrayList<DownloadLink>(ret);
-                                    } catch (final Throwable e) {
-                                        /* not available in old 09581 stable */
-                                    }
-                                    continue;
-                                }
-                                String code;
-                                // wenn es ein Einzellink ist soll die
-                                // Captchaerkennung benutzt werden
-
-                                if (captchaLink.contains(".gif")) {
-                                    code = this.getCaptchaCode("einzellinks.serienjunkies.org", captcha, parameter);
-                                } else {
-                                    code = this.getCaptchaCode(captcha, parameter);
-                                }
-
-                                if (code == null) { return ret; }
-                                if (code.length() != 3) {
-                                    progress.setStatus(30);
-                                    Thread.sleep(1100);
-                                    continue;
-                                }
+                                if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
                                 progress.increase(5);
 
-                                form.getInputFieldByType("text").setValue(code);
-                                // System.out.println(code);
-                                synchronized (Srnnks.GLOBAL_LOCK) {
-                                    Thread.sleep(FW_WAIT);
-                                    this.br.submitForm(form);
+                                // linkendung kommt auch im action der form vor
+                                final String sublink = parameter.getCryptedUrl().substring(parameter.getCryptedUrl().indexOf("org/") + 3);
+
+                                // try captcha max 5 times
+
+                                progress.setRange(100);
+                                progress.setStatus(5);
+
+                                // suche wahrscheinlichste form
+                                // progress.setStatusText("Suche Captcha Form");
+                                Form form = null;
+
+                                forms = this.br.getForms();
+                                int bestdist = Integer.MAX_VALUE;
+                                if (forms != null) {
+                                    for (final Form form1 : forms) {
+                                        if (form1.getAction() == null) continue;
+                                        final int dist = EditDistance.damerauLevenshteinDistance(sublink, form1.getAction());
+                                        if (dist < bestdist) {
+                                            form = form1;
+                                            bestdist = dist;
+                                        }
+                                    }
+                                }
+                                if (form != null && form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
+                                    /*
+                                     * this form contains captcha image, so it must be valid
+                                     */
+                                } else if (bestdist > 100) {
+                                    form = null;
                                 }
 
-                            } else {
-                                System.out.println("CAPTCHA SKIP!!!");
-                            }
+                                if (form == null) { throw new Exception("Serienjunkies Captcha Form konnte nicht gefunden werden!"); }
+                                progress.increase(5);
 
-                        }
-                    } finally {
-                        System.out.println(RUNNING.decrementAndGet());
-                    }
+                                // das bild in der Form ist das captcha
+                                String captchaLink = new Regex(form.getHtmlCode(), "<IMG SRC=\"(.*?)\"").getMatch(0);
+                                // if (captchaLink == null) { throw new Exception("Serienjunkies Captcha konnte nicht gefunden werden!"); }
+                                if (captchaLink != null) {
+                                    System.out.println("CAPTCHA!!!");
+                                    // only each 5 link needs captchas
+                                    if (!captchaLink.toLowerCase().startsWith("http://")) {
+                                        String base = new Regex(br.getURL(), "(http.*?\\.org)").getMatch(0);
+                                        if (base != null) {
+                                            captchaLink = base + captchaLink;
+                                        } else {
+                                            captchaLink = "http://download.serienjunkies.org" + captchaLink;
+                                        }
+                                    }
 
-                    if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
-                    if (this.br.getRedirectLocation() != null) {
-                        ret.add(this.createDownloadlink(this.br.getRedirectLocation()));
-                        progress.doFinalize();
-                        return new ArrayList<DownloadLink>(ret);
-                    } else {
-                        progress.setStatus(0);
-                        forms = this.br.getForms();
-                        // suche die downloadlinks
-                        final ArrayList<String> actions = new ArrayList<String>();
-                        for (final Form frm : forms) {
-                            if (frm.getAction().contains("download.serienjunkies.org") && !frm.getAction().contains("firstload") && !frm.getAction().equals("http://mirror.serienjunkies.org")) {
-                                actions.add(frm.getAction());
+                                    crawlStatus = br.getRegex("<TITLE>.* \\- (.*?)</TITLE>").getMatch(0);
+                                    if (crawlStatus == null) crawlStatus = "";
+                                    crawlStatus += "(" + RUNNING.intValue() + " pending)";
+                                    final File captcha = this.getLocalCaptchaFile(".png");
+                                    // captcha laden
+                                    synchronized (Srnnks.GLOBAL_LOCK) {
+                                        Thread.sleep(FW_WAIT);
+                                        try {
+                                            if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                        } catch (final Throwable e) {
+                                            /* not available in old 09581 stable */
+                                        }
+                                        final URLConnectionAdapter urlc = this.br.cloneBrowser().openGetConnection(captchaLink);
+                                        Browser.download(captcha, urlc);
+                                    }
+                                    if ("7ebca510a6a18c1e8f6e8d98c3118874".equals(JDHash.getMD5(captcha))) {
+                                        // dummy captcha without content.. wait before reloading
+                                        logger.warning("Dummy Captcha. wait 3 seconds");
+                                        Thread.sleep(3000);
+                                        try {
+                                            if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                        } catch (final Throwable e) {
+                                            /* not available in old 09581 stable */
+                                        }
+                                        continue;
+                                    }
+                                    String code;
+                                    // wenn es ein Einzellink ist soll die Captchaerkennung benutzt werden
+
+                                    if (captchaLink.contains(".gif")) {
+                                        code = this.getCaptchaCode("einzellinks.serienjunkies.org", captcha, parameter);
+                                    } else {
+                                        code = this.getCaptchaCode(captcha, parameter);
+                                    }
+
+                                    if (code == null) { return ret; }
+                                    if (code.length() != 3) {
+                                        progress.setStatus(30);
+                                        Thread.sleep(1100);
+                                        continue;
+                                    }
+                                    progress.increase(5);
+
+                                    form.getInputFieldByType("text").setValue(code);
+                                    // System.out.println(code);
+                                    synchronized (Srnnks.GLOBAL_LOCK) {
+                                        Thread.sleep(FW_WAIT);
+                                        this.br.submitForm(form);
+                                    }
+
+                                } else {
+                                    System.out.println("CAPTCHA SKIP!!!");
+                                }
+
                             }
+                        } finally {
+                            System.out.println(RUNNING.decrementAndGet());
                         }
-                        // es wurden keine Links gefunden also wurde das Captcha
-                        // falsch eingegeben
-                        if (actions.size() == 0) {
+
+                        if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
+                        if (this.br.getRedirectLocation() != null) {
+                            ret.add(this.createDownloadlink(this.br.getRedirectLocation()));
+                            progress.doFinalize();
+                            return new ArrayList<DownloadLink>(ret);
+                        } else {
+                            progress.setStatus(0);
+                            forms = this.br.getForms();
+                            // suche die downloadlinks
+                            final ArrayList<String> actions = new ArrayList<String>();
+                            for (final Form frm : forms) {
+                                if (frm.getAction().contains("download.serienjunkies.org") && !frm.getAction().contains("firstload") && !frm.getAction().equals("http://mirror.serienjunkies.org")) {
+                                    actions.add(frm.getAction());
+                                }
+                            }
+                            // es wurden keine Links gefunden also wurde das Captcha falsch eingegeben
+                            if (actions.size() == 0) {
+                                progress.setStatus(10);
+                                // progress.setStatusText("Captcha code falsch");
+                                continue;
+                            }
+                            // we need the 300 ms gap between two requests..
+                            progress.setRange(10 + actions.size());
                             progress.setStatus(10);
-                            // progress.setStatusText("Captcha code falsch");
-                            continue;
-                        }
-                        // we need the 300 ms gap between two requests..
-                        progress.setRange(10 + actions.size());
-                        progress.setStatus(10);
-                        synchronized (Srnnks.GLOBAL_LOCK) {
-                            for (int d = 0; d < actions.size(); d++) {
-                                try {
-                                    if (isAbort()) return new ArrayList<DownloadLink>(ret);
-                                } catch (final Throwable e) {
-                                    /* not available in old 09581 stable */
+                            synchronized (Srnnks.GLOBAL_LOCK) {
+                                for (int d = 0; d < actions.size(); d++) {
+                                    try {
+                                        if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                    } catch (final Throwable e) {
+                                        /* not available in old 09581 stable */
+                                    }
+                                    this.new DecryptRunnable(actions.get(d), this.br.cloneBrowser(), ret).run();
+                                    progress.increase(1);
                                 }
-                                this.new DecryptRunnable(actions.get(d), this.br.cloneBrowser(), ret).run();
-                                progress.increase(1);
                             }
+
+                            // wenn keine links drinnen sind ist bestimmt was mit dem captcha schief gegangen einfach nochmal versuchen
+                            if (ret.size() != 0) { return ret; }
                         }
 
-                        // wenn keine links drinnen sind ist bestimmt was mit
-                        // dem captcha schief gegangen einfach nochmal versuchen
-                        if (ret.size() != 0) { return ret; }
                     }
+                    return new ArrayList<DownloadLink>(ret);
 
+                } catch (final Exception e) {
+                    throw e;
+                } finally {
+                    progress.doFinalize();
                 }
-                return new ArrayList<DownloadLink>(ret);
-
-            } catch (final Exception e) {
-                throw e;
-            } finally {
-                progress.doFinalize();
             }
         }
         return new ArrayList<DownloadLink>();
