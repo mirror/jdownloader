@@ -13,6 +13,8 @@ DataCompareDialog_layoutDialogContent_user=Meno užívateľa
 DataCompareDialog_layoutDialogContent_user_help=Zadajte meno užívateľa webového rozhrania...
 DataCompareDialog_layoutDialogContent_webinterface=Webové rozhranie routera
 DataCompareDialog_open_webinterface=Otvoriť webové rozhranie
+LiveHeaderReconnect_getGUI_help_password=Zadajte heslo webového rozhrania...
+LiveHeaderReconnect_getGUI_help_user=Zadajte meno užívateľa webového rozhrania...
 gui_btn_abort=Prerušiť
 gui_btn_cancel=Zrušiť
 gui_btn_help=Pomocník
@@ -35,3 +37,4 @@ jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_wa
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=Kontrola IP zakázaná!
 literally_password=Heslo
 literally_router_model=Model routera
+literally_username=Meno užívateľa

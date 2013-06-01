@@ -12,7 +12,7 @@ interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Počítač sa vyp
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Počítač prejde do režimu spánku!</font></h2>
 interaction_shutdown_dialog_title_closejd=Zatvoriť JD?
 interaction_shutdown_dialog_title_hibernate=Hibernovať?
-interaction_shutdown_dialog_title_shutdown=Vypnúť!
+interaction_shutdown_dialog_title_shutdown=Vypnúť?
 interaction_shutdown_dialog_title_standby=Uspať?
 jd_plugins_optional_jdshutdown=JD Vypnutie
 lit_shutdownn=Vypnúť
