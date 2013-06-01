@@ -10,6 +10,7 @@ installframe_statusmsg_interrupted=Aktualizácia bola prerušená
 literally_cancel=Zrušiť
 update_dialog_cancel=Zrušiť
 update_dialog_msg_x_updates_available=Aktualizácia je pripravená na inštaláciu. Prajete si spustiť aktualizáciu teraz?
+update_dialog_news_button=Otvoriť zoznam zmien
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Aktualizácia(e) k dispozícii
 update_dialog_yes=Áno (odporúčane)
