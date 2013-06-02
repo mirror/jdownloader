@@ -511,8 +511,8 @@ public class TbCm extends PluginForDecrypt {
                 boolean q520p = cfg.getBooleanProperty("ALLOW_520P_V2", true);
                 boolean q720p = cfg.getBooleanProperty("ALLOW_720P_V2", true);
                 boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P_V2", true);
-                boolean q3072p = cfg.getBooleanProperty("ALLOW_ORIGINAL_V2", true);
-                if (!q144p && !q240p && !q360p && !q480p && !q520p && !q720p && !q1080p && !q3072p && !threeD) {
+                boolean original = cfg.getBooleanProperty("ALLOW_ORGINAL_V2", true);
+                if (!q144p && !q240p && !q360p && !q480p && !q520p && !q720p && !q1080p && !original && !threeD) {
                     q144p = true;
                     q240p = true;
                     q360p = true;
@@ -520,7 +520,7 @@ public class TbCm extends PluginForDecrypt {
                     q520p = true;
                     q720p = true;
                     q1080p = true;
-                    q3072p = true;
+                    original = true;
                     threeD = true;
                 }
 
@@ -573,7 +573,8 @@ public class TbCm extends PluginForDecrypt {
                     if (q1080p) {
                         this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080p" });
                     }
-                    if (q3072p) {
+                    // maybe this varies?? wiki says 3072p but I've seen less. eg :: 38 2048x1536 9 0 115,
+                    if (original) {
                         this.put(38, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "3072p" });
                     }
                 }
@@ -1152,6 +1153,8 @@ public class TbCm extends PluginForDecrypt {
                     Videoq = "1080p";
                 } else if (q > 576) {
                     Videoq = "720p";
+                } else if (q > 480) {
+                    Videoq = "520p";
                 } else if (q > 360) {
                     Videoq = "480p";
                 } else if (q > 240) {

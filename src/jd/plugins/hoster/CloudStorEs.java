@@ -42,6 +42,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudstor.es" }, urls = { "http://(www\\.)?cloudstor\\.es/f/[A-Za-z0-9]+/(\\d+/)?" }, flags = { 2 })
 public class CloudStorEs extends PluginForHost {
 
+    private static final String veryBusy = "We are currently very busy\\. Please check back soon!";
+
     public CloudStorEs(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://cloudstor.es/packages/");
@@ -58,6 +60,10 @@ public class CloudStorEs extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Error 404: Page Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(veryBusy)) {
+            // could be a temp issue??
+            return AvailableStatus.UNCHECKABLE;
+        }
         final Regex fInfo = br.getRegex("<h1>([^<>\"]*?)</h1>[^<>\"]*? \\| (\\d+(\\.\\d+)? [A-Za-z]{1,5})[ ]+</div>");
         final String filename = fInfo.getMatch(0);
         final String filesize = fInfo.getMatch(1);
@@ -70,6 +76,10 @@ public class CloudStorEs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(veryBusy)) {
+            // could be a temp issue?? but we can't download...
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000);
+        }
         final Regex dlInfo = br.getRegex("id: \\'(\\d+)\\', part: \\'(\\d+)\\', token: \\'([a-z0-9]+)\\'");
         if (dlInfo.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -157,6 +167,10 @@ public class CloudStorEs extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        if (br.containsHTML(veryBusy)) {
+            // could be a temp issue?? but we can't download...
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000);
+        }
         login(account, false);
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);

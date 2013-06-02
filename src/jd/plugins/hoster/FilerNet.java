@@ -195,7 +195,7 @@ public class FilerNet extends PluginForHost {
             prepBrowser();
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
             try {
-                callAPI("http://api.filer.net/profile.json");
+                callAPI("http://api.filer.net/api/profile.json");
                 if (br.getRedirectLocation() != null) callAPI(br.getRedirectLocation());
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
