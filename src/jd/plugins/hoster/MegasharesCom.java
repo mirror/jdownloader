@@ -156,11 +156,11 @@ public class MegasharesCom extends PluginForHost {
                 account.setProperty("cookies", null);
                 account.setValid(false);
                 if (br.containsHTML("PIN is incorrect")) {
-                    ai.setStatus("Error during login - PIN is incorrect");
-                } else if (br.containsHTML("Invalid Username")) {
-                    ai.setStatus("Check username or if you using linkcard for login then the card may expired or has no more links");
+                    ai.setStatus("\r\nError during login - PIN is incorrect");
+                } else if (br.containsHTML("Invalid Username|>Error during login \\- Login failed for user")) {
+                    ai.setStatus("\r\nPlease check username, or if you're using a linkcard for login,\r\nthe card may have expired or has no more links.");
                 } else {
-                    ai.setStatus("Please use *My Megashares* Account!Create one and link with your linkcard");
+                    ai.setStatus("\r\nPlease use *My Megashares* Account!\r\nCreate one and link with your linkcard.");
                 }
                 return ai;
             }
@@ -168,7 +168,7 @@ public class MegasharesCom extends PluginForHost {
             String validUntil = br.getRegex("premium_info_box\">Period Ends:(.*?)<").getMatch(0);
             if (validUntil == null) {
                 account.setProperty("cookies", null);
-                ai.setStatus("Invalid accounttype: Free accounts are not supported for this host!");
+                ai.setStatus("Invalid account type: Free accounts are not supported!");
                 account.setValid(false);
             } else {
                 account.setValid(true);

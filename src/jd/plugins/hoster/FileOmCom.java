@@ -54,20 +54,20 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "goldbytez.com" }, urls = { "https?://(www\\.)?goldbytez\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class GoldBytezCom extends PluginForHost {
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "fileom.com" }, urls = { "https?://(www\\.)?fileom\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class FileOmCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private static final String        COOKIE_HOST                  = "http://goldbytez.com";
+    private static final String        COOKIE_HOST                  = "http://fileom.com";
     // domain names used within download links.
-    private static final String        DOMAINS                      = "(goldbytez\\.com)";
+    private static final String        DOMAINS                      = "(fileom\\.com)";
     private static final String        PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private static final String        MAINTENANCE                  = ">This server is in maintenance mode";
     private static final boolean       videoHoster                  = false;
     private static final boolean       supportsHTTPS                = false;
     private static final boolean       useRUA                       = false;
-    private static final boolean       useAlternativeExpire         = true;
+    private static final boolean       useAlternativeExpire         = false;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
@@ -76,28 +76,28 @@ public class GoldBytezCom extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.2.8
     // last XfileSharingProBasic compare :: 20887
-    // mods:
+    // mods: traffic left, space used
     // protocol: no https
-    // captchatype: 4dignum
+    // captchatype: recaptcha
     // other: no redirects
 
     private void setConstants(Account account) {
         if (account != null && account.getBooleanProperty("nopremium")) {
-            // free account
+            // free account ** TESTED **
             chunks = 1;
-            resumes = false;
+            resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("nopremium")) {
-            // prem account
+            // prem account ** NOT TESTED **
             chunks = 0;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
         } else {
-            // non account
+            // non account ** TESTED **
             chunks = 1;
-            resumes = false;
+            resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
         }
@@ -117,7 +117,7 @@ public class GoldBytezCom extends PluginForHost {
     }
 
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
@@ -137,7 +137,7 @@ public class GoldBytezCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public GoldBytezCom(PluginWrapper wrapper) {
+    public FileOmCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -578,7 +578,7 @@ public class GoldBytezCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String space[][] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getMatches();
+        final String space[][] = new Regex(correctedBR, "<b>[\r\n\t ]+([0-9\\.]+) ?(KB|MB|GB|TB)?[\r\n\t ]+of").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
             // free users it's provided by default
             ai.setUsedSpace(space[0][0] + " " + space[0][1]);
@@ -587,9 +587,12 @@ public class GoldBytezCom extends PluginForHost {
             ai.setUsedSpace(space[0][0] + "Mb");
         }
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        String availabletraffic = new Regex(correctedBR, "<b>[\r\n\t ]+(\\d+)[\r\n\t ]+[\r\n\t ]+Mb</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
+            if (!availabletraffic.endsWith("Mb")) {
+                availabletraffic += " Mb";
+            }
             // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
             if (!availabletraffic.startsWith("-")) {
                 ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
