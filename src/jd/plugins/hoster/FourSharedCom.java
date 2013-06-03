@@ -353,15 +353,19 @@ public class FourSharedCom extends PluginForHost {
         if (redirect == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.setFollowRedirects(true);
         br.getPage(redirect);
-        final String[] dat = br.getRegex("Bandwidth\\:.*?<div class=\"quotacount\">(.+?)\\% of (.*?)</div>").getRow(0);
-        if (dat != null && dat.length == 2) {
-            ai.setTrafficMax(SizeFormatter.getSize(dat[1]));
-            ai.setTrafficLeft((long) (ai.getTrafficMax() * (100.0 - Float.parseFloat(dat[0])) / 100.0));
-        }
-        br.getPage("http://www.4shared.com/web/account/settings/overview");
-        final String expire = br.getRegex(">Expires in:</div>[\t\n\r ]+<div class=\"trafficDigits floatRight alignRight bold\">(\\d+) days</div>").getMatch(0);
-        final String accType = br.getRegex(">Account type:</div>[\t\n\r ]+<div class=\"trafficDigits floatRight alignRight bold\">(.*?)</div").getMatch(0);
+        br.getPage("/web/account/settings/overview");
+        final String expire = br.getRegex(">Expires in:</div>[\t\n\r ]+<div[^>]+>(\\d+) days</div>").getMatch(0);
+        final String accType = br.getRegex(">Account type:</div>[\t\n\r ]+<div[^>]+>(.*?)</div").getMatch(0);
+        final String usedSpace = br.getRegex(">Used space:</div>[\t\n\r ]+<div[^>]+>([0-9\\.]+(KB|MB|GB|TB)) of").getMatch(0);
+        final String[] traffic = br.getRegex(">Premium traffic:</div>[\t\n\r ]+<div[^>]+>([0-9\\.]+(KB|MB|GB|TB)) of ([0-9\\.]+(KB|MB|GB|TB))").getRow(0);
         if (expire == null || accType == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        if (usedSpace != null) {
+            ai.setUsedSpace(SizeFormatter.getSize(usedSpace));
+        }
+        if (traffic != null && traffic.length == 4) {
+            ai.setTrafficLeft(SizeFormatter.getSize(traffic[2]) - SizeFormatter.getSize(traffic[0]));
+            ai.setTrafficMax(SizeFormatter.getSize(traffic[2]));
+        }
         ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expire) * 24 * 60 * 60 * 1000l));
         if ("FREE  (<a href=\"/premium.jsp\">Upgrade</a>)".equalsIgnoreCase(accType)) {
             ai.setStatus("Registered (free) User");
