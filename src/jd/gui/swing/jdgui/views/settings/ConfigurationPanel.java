@@ -58,17 +58,28 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
         if (SecondLevelLaunch.GUI_COMPLETE.isReached() && sidebar.treeInitiated() == false) {
             sidebar.updateAddons();
         }
-        if (sidebar.getSelectedPanel() == null) {
-            sidebar.getTreeCompleteState().executeWhenReached(new Runnable() {
+        new EDTRunner() {
+            protected void runInEDT() {
+                if (sidebar.getSelectedPanel() == null) {
+                    sidebar.getTreeCompleteState().executeWhenReached(new Runnable() {
 
-                @Override
-                public void run() {
-                    if (sidebar.getSelectedPanel() == null) {
-                        restoreSelection(true);
-                    }
+                        @Override
+                        public void run() {
+                            new EDTRunner() {
+
+                                @Override
+                                protected void runInEDT() {
+                                    if (sidebar.getSelectedPanel() == null) {
+                                        restoreSelection(true);
+                                    }
+                                }
+                            };
+                        }
+                    });
                 }
-            });
-        }
+            };
+        };
+
     }
 
     public void restoreSelection(final boolean onlyOnEmptySelection) {
@@ -97,20 +108,15 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     }
 
     public void valueChanged(ListSelectionEvent e) {
-        new Thread() {
-            public void run() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
                 final SwitchPanel p = sidebar.getSelectedPanel();
                 if (p == null) return;
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        setContent(p);
-                    }
-                };
+                setContent(p);
             }
-        }.start();
-
+        };
         // invalidate();
     }
 

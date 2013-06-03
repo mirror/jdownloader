@@ -2,12 +2,10 @@ package jd.gui.swing.jdgui.views.settings.sidebar;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.Font;
 
 import javax.swing.Box;
 import javax.swing.ImageIcon;
-import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -17,17 +15,19 @@ import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ColorUtils;
+import org.appwork.utils.swing.renderer.RenderLabel;
+import org.appwork.utils.swing.renderer.RendererCheckBox;
 import org.jdownloader.images.NewTheme;
 
 public class ExtensionPanelListRenderer extends JPanel implements ListCellRenderer {
     private static final long serialVersionUID = 1L;
-    private JLabel            lbl;
+    private RenderLabel       lbl;
     private Font              orgFont;
     private Font              boldFont;
     private Color             f;
     private Color             b2;
     private Color             a;
-    private JCheckBox         cb;
+    private RendererCheckBox  cb;
 
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         CheckBoxedEntry ext = (CheckBoxedEntry) value;
@@ -68,16 +68,11 @@ public class ExtensionPanelListRenderer extends JPanel implements ListCellRender
         lbl.setText(name);
     }
 
-    @Override
-    public Dimension getPreferredSize() {
-        return TreeRenderer.DIMENSION;
-    }
-
     public ExtensionPanelListRenderer() {
         super(new MigLayout("ins 0 ,wrap 3", "[][grow,fill][]", "[]"));
 
-        lbl = new JLabel();
-        cb = new JCheckBox();
+        lbl = new RenderLabel();
+        cb = new RendererCheckBox();
         add(cb, "aligny top,width 20!,sg border");
         add(lbl, "");
         add(Box.createGlue(), "sg border");

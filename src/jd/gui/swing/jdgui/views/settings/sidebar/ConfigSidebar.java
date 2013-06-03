@@ -22,7 +22,6 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -200,15 +199,16 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
 
             public Dimension getPreferredSize() {
                 Dimension ret = super.getPreferredSize();
-                Insets borderInsets = getBorder().getBorderInsets(this);
-                ret.width = TreeRenderer.DIMENSION.width + getVerticalScrollBar().getPreferredSize().width + borderInsets.left + borderInsets.right;
-
+                ret.width = TreeRenderer.DIMENSION.width + getVerticalScrollBar().getPreferredSize().width;
                 return ret;
             }
 
             public Dimension getMinimumSize() {
                 Dimension pref = getPreferredSize();
+                if (pref.height == 0) return pref;
+                pref = new Dimension(pref);
                 pref.height = 0;
+                super.setMinimumSize(pref);
                 return pref;
             }
 
@@ -227,7 +227,7 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
             public void valueChanged(ListSelectionEvent e) {
                 SwitchPanel op = getSelectedPanel();
                 if (op instanceof ExtensionConfigPanel) {
-                    ((ExtensionConfigPanel<?>) op).getExtension().getSettings().getStorageHandler().getEventSender().addListener(ConfigSidebar.this);
+                    ((ExtensionConfigPanel<?>) op).getExtension().getSettings().getStorageHandler().getEventSender().addListener(ConfigSidebar.this, true);
                 }
             }
         });
