@@ -27,6 +27,7 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -104,16 +105,35 @@ public class YkCm extends PluginForDecrypt {
             return null;
         }
         // get Playlist
-        final Date date = new Date();
-        final SimpleDateFormat sdf = new SimpleDateFormat("Z");
-        final String jsonString = br.getPage("http://v.youku.com/player/getPlayList/VideoIDS/" + videoId + "/timezone/" + sdf.format(date).substring(0, 3) + "/version/5/source/video?password=&n=3&ran=" + (int) (Math.random() * 9999));
+        String jsonString = br.getPage(jsonRequest());
         if (br.containsHTML("Sorry, this video can only be streamed within Mainland China\\.")) {
             logger.info("Stopping decrypt process, video only available in mainland china: " + parameter);
             return decryptedLinks;
         }
         if (br.containsHTML("\"error_code\":\\-6")) {
-            logger.info("Password protected links aren't supported yet: " + parameter);
-            return decryptedLinks;
+            int repeat = 3;
+            for (int i = 0; i <= repeat; i++) {
+                String password = null;
+                if (i == 0) {
+                    password = this.getPluginConfig().getStringProperty("lastusedpassword");
+                }
+                if (password == null) {
+                    password = getUserInput("Please enter the password for this Video.", param);
+                }
+                if (password == null || password.length() == 0) {
+                    logger.info("Password field cancelled. : " + parameter);
+                    return decryptedLinks;
+                }
+                jsonString = br.getPage(jsonRequest().replace("password=&", "password=" + Encoding.urlEncode(password) + "&"));
+                if (br.containsHTML("\"error_code\":\\-(6|7)")) {
+                    logger.info("Wrong password, try again! : " + parameter);
+                    if (i + 1 == repeat) { return decryptedLinks; }
+                    continue;
+                } else {
+                    this.getPluginConfig().setProperty("lastusedpassword", password);
+                    break;
+                }
+            }
         }
         if (!jsonParser(jsonString)) { return null; }
 
@@ -168,6 +188,12 @@ public class YkCm extends PluginForDecrypt {
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) { return null; }
         return decryptedLinks;
+    }
+
+    private String jsonRequest() {
+        final Date date = new Date();
+        final SimpleDateFormat sdf = new SimpleDateFormat("Z");
+        return "http://v.youku.com/player/getPlayList/VideoIDS/" + videoId + "/timezone/" + sdf.format(date).substring(0, 3) + "/version/5/source/video?password=&n=3&ran=" + (int) (Math.random() * 9999);
     }
 
     private String getSid() {
