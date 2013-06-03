@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -39,6 +40,8 @@ public class NmLdsrg extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static boolean loaded = false;
+
     /*
      * Note: FilePackage gets overridden when crypt-it.com (link protection service) used. Old posts + streaming links still get caught.
      */
@@ -51,6 +54,12 @@ public class NmLdsrg extends PluginForDecrypt {
         String parameter = param.toString();
         String fpName = null;
         br.setCookiesExclusive(true);
+        if (!loaded) {
+            JDUtilities.getPluginForHost("mediafire.com");
+            loaded = true;
+        }
+        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         if (parameter.contains("/redirect/")) {
             links.add(parameter);
         } else {
@@ -64,51 +73,77 @@ public class NmLdsrg extends PluginForDecrypt {
             String[] continueLinks = br.getRegex("\"(http://(www\\.)?anime\\-loads\\.org/redirect/\\d+/[a-z0-9]+)\"").getColumn(0);
             if (continueLinks == null || continueLinks.length == 0) return null;
             if (continueLinks != null && continueLinks.length != 0) {
-                for (String singlelink : continueLinks) {
-                    links.add(singlelink);
-                }
+                links.addAll(Arrays.asList(continueLinks));
             }
         }
-        final Browser ajax = br.cloneBrowser();
-        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+
+        FilePackage fp = FilePackage.getInstance();
+        fp.setProperty("ALLOW_MERGE", true);
+        if (fpName != null) {
+            fp.setName(fpName.trim());
+        }
+
         for (final String link : links) {
-            br.getPage(link);
-            if (br.containsHTML("No htmlCode read")) {
+            Browser br2 = br.cloneBrowser();
+            if (!parameter.contains("/redirect/")) {
+                br2.getPage(link);
+            }
+            if (br2.containsHTML("No htmlCode read")) {
                 logger.info("Link offline: " + link);
                 continue;
             }
 
-            // Try adding links via CNL
-            ajax.postPage(br.getURL(), "action=cnl");
-            final String jk = ajax.getRegex("name=\"jk\" value=\"([^<>\"]*?)\"").getMatch(0);
-            final String crypted = ajax.getRegex("name=\"crypted\" value=\"([^<>\"]*?)\"").getMatch(0);
-            final String passwrds = ajax.getRegex("name=\"passwords\" value=\"([^<>\"]*?)\"").getMatch(0);
-            final String source = ajax.getRegex("name=\"source\" value=\"([^<>\"]*?)\"").getMatch(0);
-            if (jk != null && crypted != null) {
-                String cnl2post = "jk=" + Encoding.urlEncode(jk) + "&crypted=" + Encoding.urlEncode(crypted);
-                if (passwrds != null) cnl2post += "&passwords=" + Encoding.urlEncode(source);
-                if (source != null) cnl2post += "&source=" + Encoding.urlEncode(source);
-                try {
-                    br.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
-                    br.postPage("http://127.0.0.1:9666/flash/addcrypted2", cnl2post);
-                    if (br.containsHTML("success")) {
-                        logger.info("CNL2 = works!");
-                        // Add this to prevent out of date errors because links are added via CNL, decryptedLinks list will be empty!
-                        decryptedLinks.add(createDownloadlink("http://dummylink.de/dg5649hz09tjkhomdfrlmgoelrhmk"));
-                        continue;
-                    }
-                    if (br.containsHTML("^failed")) {
-                        logger.warning("anime-loads.org: CNL2 Postrequest was failed! Please upload now a logfile, contact our support and add this loglink to your bugreport!");
-                        logger.warning("anime-loads.org: CNL2 Message: " + br.toString());
-                    }
-                } catch (Throwable e) {
-                    logger.info("anime-loads.org: ExternInterface(CNL2) is disabled!");
-                }
-                br.getPage(link);
+            final Browser ajax = br2.cloneBrowser();
+            final Browser adbr = br2.cloneBrowser();
+
+            ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            ajax.getHeaders().put("Accept-Charset", null);
+            ajax.getHeaders().put("Cache-Control", null);
+            ajax.getHeaders().put("Pragma", null);
+            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+
+            // they check if you hit up this step or not!!
+            // <iframe id="ad" scrolling="auto" src="http://www.anime-loads.org/redirect/animemanga" frameborder="0"
+            // allowtransparency="true"></iframe>
+            String ad_redirect = br2.getRegex("<iframe[^>]+id=\"ad\"[^>]+src=(\"|')?((https?://(www\\.)?anime\\-loads\\.org)?/redirect/[a-z]+)").getMatch(1);
+            if (ad_redirect == null) {
+                logger.warning("Could not find 'ad_redirect' : " + br.getURL());
+            } else {
+                adbr.getPage(ad_redirect);
             }
-            br.getHeaders().put("jd.randomNumber", "");
+
+            // disabled by raztoki 20130603, this requires the same captcha method as web!
+            // Try adding links via CNL
+            // ajax.postPage(br.getURL(), "action=cnl");
+            // final String jk = ajax.getRegex("name=\"jk\" value=\"([^<>\"]*?)\"").getMatch(0);
+            // final String crypted = ajax.getRegex("name=\"crypted\" value=\"([^<>\"]*?)\"").getMatch(0);
+            // final String passwrds = ajax.getRegex("name=\"passwords\" value=\"([^<>\"]*?)\"").getMatch(0);
+            // final String source = ajax.getRegex("name=\"source\" value=\"([^<>\"]*?)\"").getMatch(0);
+            // if (jk != null && crypted != null) {
+            // String cnl2post = "jk=" + Encoding.urlEncode(jk) + "&crypted=" + Encoding.urlEncode(crypted);
+            // if (passwrds != null) cnl2post += "&passwords=" + Encoding.urlEncode(source);
+            // if (source != null) cnl2post += "&source=" + Encoding.urlEncode(source);
+            // try {
+            // br.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
+            // br.postPage("http://127.0.0.1:9666/flash/addcrypted2", cnl2post);
+            // if (br.containsHTML("success")) {
+            // logger.info("CNL2 = works!");
+            // // Add this to prevent out of date errors because links are added via CNL, decryptedLinks list will be empty!
+            // decryptedLinks.add(createDownloadlink("http://dummylink.de/dg5649hz09tjkhomdfrlmgoelrhmk"));
+            // continue;
+            // }
+            // if (br.containsHTML("^failed")) {
+            // logger.warning("anime-loads.org: CNL2 Postrequest was failed! Please upload now a logfile, contact our support and add this loglink to your bugreport!");
+            // logger.warning("anime-loads.org: CNL2 Message: " + br.toString());
+            // }
+            // } catch (Throwable e) {
+            // logger.info("anime-loads.org: ExternInterface(CNL2) is disabled!");
+            // }
+            // br.getPage(link);
+            // }
+            // br.getHeaders().put("jd.randomNumber", "");
             // CNL failed? Add links via webdecryption!
-            final String rcID = br.getRegex("google\\.com/recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+            final String rcID = br2.getRegex("google\\.com/recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
             if (rcID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -120,7 +155,7 @@ public class NmLdsrg extends PluginForDecrypt {
             for (int i = 0; i <= 3; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, param);
-                ajax.postPage(br.getURL(), "action=web&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                ajax.postPage(br2.getURL(), "action=web&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                 if (ajax.containsHTML("ok\":false")) {
                     rc.reload();
                     continue;
@@ -141,6 +176,7 @@ public class NmLdsrg extends PluginForDecrypt {
             dllink = dllink.replace("\\", "");
             if (!dllink.startsWith("http")) dllink = Encoding.Base64Decode(dllink);
             final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(dllink.replace("\\", "")));
+            fp.add(dl);
             dl.setSourcePluginPasswordList(passwords);
             try {
                 distribute(dl);
@@ -152,11 +188,6 @@ public class NmLdsrg extends PluginForDecrypt {
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
-        }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
         }
         if (links.size() > 0 && decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
