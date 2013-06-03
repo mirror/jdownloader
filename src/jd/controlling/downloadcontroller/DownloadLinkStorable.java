@@ -6,7 +6,9 @@ import jd.crypt.JDCrypt;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging.Log;
 
@@ -45,6 +47,7 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public HashMap<String, Object> getProperties() {
+        if (crypt()) return null;
         /* WORKAROUND for Idiots using null as HashMap Key :p */
         HashMap<String, Object> properties = link.getProperties();
         if (properties != null) properties.remove(null);
@@ -52,6 +55,7 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public void setProperties(HashMap<String, Object> props) {
+        if (props == null || props.size() == 0) return;
         this.link.setProperties(props);
     }
 
@@ -95,7 +99,7 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public String getURL() {
-        if (link.gotBrowserUrl()) {
+        if (crypt()) {
             byte[] crypted = JDCrypt.encrypt(link.getDownloadURL(), KEY);
             return CRYPTED + Base64.encodeToString(crypted, false);
         } else {
@@ -167,4 +171,33 @@ public class DownloadLinkStorable implements Storable {
         return link;
     }
 
+    private boolean crypt() {
+        return link.gotBrowserUrl() || DownloadLink.LINKTYPE_CONTAINER == link.getLinkType();
+    }
+
+    /**
+     * @return the propertiesString
+     */
+    public String getPropertiesString() {
+        if (crypt()) {
+            HashMap<String, Object> properties = link.getProperties();
+            if (properties != null) properties.remove(null);
+            byte[] crypted = JDCrypt.encrypt(JSonStorage.toString(properties), KEY);
+            return CRYPTED + Base64.encodeToString(crypted, false);
+        }
+        return null;
+    }
+
+    /**
+     * @param propertiesString
+     *            the propertiesString to set
+     */
+    public void setPropertiesString(String propertiesString) {
+        if (propertiesString != null && propertiesString.startsWith(CRYPTED)) {
+            byte[] bytes = Base64.decodeFast(propertiesString.substring(CRYPTED.length()));
+            HashMap<String, Object> properties = JSonStorage.restoreFromString(JDCrypt.decrypt(bytes, KEY), new TypeRef<HashMap<String, Object>>() {
+            });
+            link.setProperties(properties);
+        }
+    }
 }
