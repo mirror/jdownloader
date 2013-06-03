@@ -41,7 +41,7 @@ public class MegaConz extends PluginForHost {
     private static AtomicLong CS      = new AtomicLong(System.currentTimeMillis());
     private final String      USE_SSL = "USE_SSL_V2";
     private static String     USE_TMP = "USE_TMP_V2";
-    private boolean           isTmp   = this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.MegaConz.USE_TMP, true);
+    private boolean           isTmp   = false;
 
     public MegaConz(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,8 +61,13 @@ public class MegaConz extends PluginForHost {
         }
     }
 
+    private void setConstants() {
+        isTmp = this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.MegaConz.USE_TMP, true);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        setConstants();
         setBrowserExclusive();
         boolean publicFile = true;
         String fileID = getPublicFileID(link);
