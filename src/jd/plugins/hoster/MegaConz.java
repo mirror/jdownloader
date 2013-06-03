@@ -22,6 +22,7 @@ import javax.crypto.spec.SecretKeySpec;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Base64;
@@ -40,8 +41,7 @@ import jd.utils.locale.JDL;
 public class MegaConz extends PluginForHost {
     private static AtomicLong CS      = new AtomicLong(System.currentTimeMillis());
     private final String      USE_SSL = "USE_SSL_V2";
-    private static String     USE_TMP = "USE_TMP_V2";
-    private boolean           isTmp   = false;
+    private final String      USE_TMP = "USE_TMP_V2";
 
     public MegaConz(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,13 +61,12 @@ public class MegaConz extends PluginForHost {
         }
     }
 
-    private void setConstants() {
-        isTmp = this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.MegaConz.USE_TMP, true);
+    private boolean useTMP() {
+        return this.getPluginConfig().getBooleanProperty(USE_TMP, false);
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        setConstants();
         setBrowserExclusive();
         boolean publicFile = true;
         String fileID = getPublicFileID(link);
@@ -102,7 +101,7 @@ public class MegaConz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             // we can not 'rename' filename once the download started, could be problematic!
-            if (link.getDownloadCurrent() == 0 && isTmp) {
+            if (link.getDownloadCurrent() == 0 && useTMP()) {
                 link.setFinalFileName(fileName + ".tmp");
                 link.setProperty("usedTMP", true);
                 try {
@@ -114,7 +113,7 @@ public class MegaConz extends PluginForHost {
                 // leave the fk alone
             } else {
                 link.setFinalFileName(fileName);
-                link.setProperty("usedTMP", false);
+                link.setProperty("usedTMP", Property.NULL);
                 try {
                     link.setComment(null);
                 } catch (Throwable e) {
@@ -264,7 +263,7 @@ public class MegaConz extends PluginForHost {
         File dec = new File(link.getFileOutput() + ".decrypted");
         File org = new File(link.getFileOutput());
         File fin = new File(link.getFileOutput());
-        if (link.getBooleanProperty("usedTMP")) {
+        if (link.getBooleanProperty("usedTMP", false)) {
             fin = new File(link.getFileOutput().replaceFirst("\\.tmp$", ""));
         }
         if (dec.exists() && dec.delete() == false) throw new IOException("Could not delete " + dec);
@@ -326,6 +325,7 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.setProperty("usedTMP", Property.NULL);
     }
 
     private String getPublicFileID(DownloadLink link) {
