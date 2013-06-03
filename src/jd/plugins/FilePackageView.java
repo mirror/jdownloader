@@ -1,6 +1,7 @@
 package jd.plugins;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -92,7 +93,9 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             long fpSPEED = 0;
             boolean sizeKnown = false;
             boolean fpRunning = false;
-            HashSet<String> names = new HashSet<String>();
+            HashMap<String, Long> downloadSizes = new HashMap<String, Long>();
+            HashMap<String, Long> downloadDone = new HashMap<String, Long>();
+            HashSet<String> eta = new HashSet<String>();
             boolean allFinished = true;
             synchronized (fp) {
                 for (DownloadLink link : fp.getChildren()) {
@@ -110,16 +113,30 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
                         newEnabledCount++;
                     }
-                    if (names.add(link.getName())) {
-                        /* only counts unique filenames */
-                        newSize += link.getDownloadSize();
-                        newDone += link.getDownloadCurrent();
-                        /* ETA calculation */
-                        if (link.isEnabled() && !link.getLinkStatus().isFinished()) {
-                            /* link must be enabled and not finished state */
-                            boolean linkRunning = link.getLinkStatus().isPluginActive();
+                    Long downloadSize = downloadSizes.get(link.getName());
+                    if (downloadSize == null) {
+                        downloadSizes.put(link.getName(), link.getDownloadSize());
+                        downloadDone.put(link.getName(), link.getDownloadCurrent());
+                    } else {
+                        if (!eta.contains(link.getName())) {
+                            if (link.isEnabled()) {
+                                downloadSizes.put(link.getName(), link.getDownloadSize());
+                                downloadDone.put(link.getName(), link.getDownloadCurrent());
+                            } else if (downloadSize < link.getDownloadSize()) {
+                                downloadSizes.put(link.getName(), link.getDownloadSize());
+                                downloadDone.put(link.getName(), link.getDownloadCurrent());
+                            }
+                        }
+                    }
+
+                    /* ETA calculation */
+                    if (link.isEnabled() && !link.getLinkStatus().isFinished()) {
+                        /* link must be enabled and not finished state */
+                        boolean linkRunning = link.getLinkStatus().isPluginActive();
+                        if (linkRunning || eta.contains(link.getName()) == false) {
                             if (linkRunning) {
                                 fpRunning = true;
+                                eta.add(link.getName());
                             }
                             if (link.getDownloadMax() >= 0) {
                                 /* we know at least one filesize */
@@ -153,6 +170,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                             }
                         }
                     }
+
                     if (link.isEnabled() && !link.getLinkStatus().isFinished()) {
                         /* we still have an enabled link which is not finished */
                         allFinished = false;
@@ -163,6 +181,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                         newFinishedDate = link.getFinishedDate();
                     }
                 }
+            }
+            for (Long size : downloadSizes.values()) {
+                newSize += size;
+            }
+            for (Long done : downloadDone.values()) {
+                newDone += done;
             }
             size = newSize;
             done = newDone;
@@ -210,7 +234,9 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             long fpSPEED = 0;
             boolean sizeKnown = false;
             boolean fpRunning = false;
-            HashSet<String> names = new HashSet<String>();
+            HashMap<String, Long> downloadSizes = new HashMap<String, Long>();
+            HashMap<String, Long> downloadDone = new HashMap<String, Long>();
+            HashSet<String> eta = new HashSet<String>();
             HashSet<DomainInfo> newInfos = new HashSet<DomainInfo>();
             boolean allFinished = true;
             synchronized (fp) {
@@ -230,17 +256,32 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
                         newEnabledCount++;
                     }
-                    if (names.add(link.getName())) {
-                        /* only counts unique filenames */
-                        newSize += link.getDownloadSize();
-                        newDone += link.getDownloadCurrent();
-                        /* ETA calculation */
-                        if (link.isEnabled() && !link.getLinkStatus().isFinished()) {
-                            /* link must be enabled and not finished state */
-                            boolean linkRunning = link.getLinkStatus().isPluginActive();
+                    Long downloadSize = downloadSizes.get(link.getName());
+                    if (downloadSize == null) {
+                        downloadSizes.put(link.getName(), link.getDownloadSize());
+                        downloadDone.put(link.getName(), link.getDownloadCurrent());
+                    } else {
+                        if (!eta.contains(link.getName())) {
+                            if (link.isEnabled()) {
+                                downloadSizes.put(link.getName(), link.getDownloadSize());
+                                downloadDone.put(link.getName(), link.getDownloadCurrent());
+                            } else if (downloadSize < link.getDownloadSize()) {
+                                downloadSizes.put(link.getName(), link.getDownloadSize());
+                                downloadDone.put(link.getName(), link.getDownloadCurrent());
+                            }
+                        }
+                    }
+
+                    /* ETA calculation */
+                    if (link.isEnabled() && !link.getLinkStatus().isFinished()) {
+                        /* link must be enabled and not finished state */
+                        boolean linkRunning = link.getLinkStatus().isPluginActive();
+                        if (linkRunning || eta.contains(link.getName()) == false) {
                             if (linkRunning) {
                                 fpRunning = true;
+                                eta.add(link.getName());
                             }
+
                             if (link.getDownloadMax() >= 0) {
                                 /* we know at least one filesize */
                                 sizeKnown = true;
@@ -273,6 +314,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                             }
                         }
                     }
+
                     if (link.isEnabled() && !link.getLinkStatus().isFinished()) {
                         /* we still have an enabled link which is not finished */
                         allFinished = false;
@@ -283,6 +325,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                         newFinishedDate = link.getFinishedDate();
                     }
                 }
+            }
+            for (Long size : downloadSizes.values()) {
+                newSize += size;
+            }
+            for (Long done : downloadDone.values()) {
+                newDone += done;
             }
             size = newSize;
             done = newDone;
