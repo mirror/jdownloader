@@ -40,6 +40,8 @@ import jd.utils.locale.JDL;
 public class MegaConz extends PluginForHost {
     private static AtomicLong CS      = new AtomicLong(System.currentTimeMillis());
     private final String      USE_SSL = "USE_SSL_V2";
+    private static String     USE_TMP = "USE_TMP_V2";
+    private boolean           isTmp   = this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.MegaConz.USE_TMP, true);
 
     public MegaConz(PluginWrapper wrapper) {
         super(wrapper);
@@ -94,7 +96,26 @@ public class MegaConz extends PluginForHost {
         if (fileName == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            link.setFinalFileName(fileName);
+            // we can not 'rename' filename once the download started, could be problematic!
+            if (link.getDownloadCurrent() == 0 && isTmp) {
+                link.setFinalFileName(fileName + ".tmp");
+                link.setProperty("usedTMP", true);
+                try {
+                    link.setComment(".tmp will be removed after decryption!");
+                } catch (Throwable e) {
+                }
+                link.getLinkStatus().setStatusText(".tmp will be removed after decryption!");
+            } else if (link.getDownloadCurrent() != 0) {
+                // leave the fk alone
+            } else {
+                link.setFinalFileName(fileName);
+                link.setProperty("usedTMP", false);
+                try {
+                    link.setComment(null);
+                } catch (Throwable e) {
+                }
+                link.getLinkStatus().setStatusText(null);
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -222,6 +243,8 @@ public class MegaConz extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megaconz.usetmp", "Add '.tmp' extension to the end of real filenames for the download process?")).setDefaultValue(false));
+
     }
 
     private void decrypt(DownloadLink link, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IOException {
@@ -235,6 +258,10 @@ public class MegaConz extends PluginForHost {
         final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
         File dec = new File(link.getFileOutput() + ".decrypted");
         File org = new File(link.getFileOutput());
+        File fin = new File(link.getFileOutput());
+        if (link.getBooleanProperty("usedTMP")) {
+            fin = new File(link.getFileOutput().replaceFirst("\\.tmp$", ""));
+        }
         if (dec.exists() && dec.delete() == false) throw new IOException("Could not delete " + dec);
         FileInputStream fis = null;
         FileOutputStream fos = null;
@@ -265,7 +292,7 @@ public class MegaConz extends PluginForHost {
             }
             deleteOutput = false;
             org.delete();
-            dec.renameTo(org);
+            dec.renameTo(fin);
             link.getLinkStatus().setStatusText("Finished");
         } finally {
             try {
