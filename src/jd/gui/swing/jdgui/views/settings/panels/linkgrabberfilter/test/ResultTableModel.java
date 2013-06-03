@@ -119,6 +119,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
                     return _GUI._.ConditionDialog_layoutDialogContent_offline_();
                 case ONLINE:
                     return _GUI._.ConditionDialog_layoutDialogContent_online_();
+                case UNKNOWN:
                 case TEMP_UNKNOWN:
                     return _GUI._.ConditionDialog_layoutDialogContent_uncheckable_();
 
@@ -148,6 +149,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
                     return NewTheme.getInstance().getIcon("checkbox_false", 16);
                 case ONLINE:
                     return NewTheme.getInstance().getIcon("checkbox_true", 16);
+                case UNKNOWN:
                 case TEMP_UNKNOWN:
                     return NewTheme.getInstance().getIcon("checkbox_undefined", 16);
 

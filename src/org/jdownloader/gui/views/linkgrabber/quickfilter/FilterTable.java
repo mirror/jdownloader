@@ -260,16 +260,23 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
 
     protected boolean processKeyBinding(final KeyStroke stroke, final KeyEvent evt, final int condition, final boolean pressed) {
         if (!pressed) { return super.processKeyBinding(stroke, evt, condition, pressed); }
-
         switch (evt.getKeyCode()) {
         case KeyEvent.VK_ENTER:
         case KeyEvent.VK_BACK_SPACE:
         case KeyEvent.VK_DELETE:
             new EnabledAllAction(getExtTableModel().getSelectedObjects()).actionPerformed(null);
             return true;
-
+        case KeyEvent.VK_X:
+        case KeyEvent.VK_V:
+        case KeyEvent.VK_C:
+            /* ignore copy, paste,cut */
+            return true;
+        case KeyEvent.VK_UP:
+        case KeyEvent.VK_DOWN:
+            /* ignore move */
+            if (evt.isMetaDown() || evt.isControlDown()) { return true; }
         }
-        return false;
+        return super.processKeyBinding(stroke, evt, condition, pressed);
     }
 
     protected void updateNow() {
