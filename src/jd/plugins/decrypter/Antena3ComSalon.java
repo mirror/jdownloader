@@ -65,12 +65,14 @@ public class Antena3ComSalon extends PluginForDecrypt {
             }
         } else {
             ArrayList<String> done = new ArrayList<String>();
-            final String[] allXMLs = br.getRegex("(http://(www\\.)?antena3\\.com/videoxml/\\d+/\\d{4}/\\d{2}/\\d{2}/\\d+\\.xml)").getColumn(0);
+            String[] allXMLs = br.getRegex("(http://(www\\.)?antena3\\.com/videoxml/\\d+/\\d{4}/\\d{2}/\\d{2}/\\d+\\.xml)").getColumn(0);
+            if (allXMLs == null || allXMLs.length == 0) allXMLs = br.getRegex("player_capitulo\\.xml=\'([^\']+)\'").getColumn(0);
             if (allXMLs == null || allXMLs.length == 0) {
                 logger.warning("Decrypter broken for link: " + link.toString());
                 return null;
             }
-            for (final String singleXML : allXMLs) {
+            for (String singleXML : allXMLs) {
+                if (!singleXML.startsWith("http://")) singleXML = "http://www.antena3.com" + singleXML;
                 if (done.contains(singleXML)) continue;
                 br.getPage(singleXML);
                 final String finallink = br.getRegex("<urlShared><\\!\\[CDATA\\[(http://[^<>\"]*?\\.html)\\]\\]></urlShared>").getMatch(0);

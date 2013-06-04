@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/(?!link\\-deleted\\.php|index|login)[^<>\"/#]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/(?!link\\-deleted\\.php|index|login)[^<>]+" }, flags = { 0 })
 public class AdfLy extends PluginForDecrypt {
 
     public AdfLy(PluginWrapper wrapper) {
@@ -45,6 +45,14 @@ public class AdfLy extends PluginForDecrypt {
         final String parameter = param.toString().replace("www.", "").replace("https://", "http://");
         br.setFollowRedirects(false);
         br.setReadTimeout(3 * 60 * 1000);
+        if (!parameter.matches("https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/\\d+")) {
+            String linkInsideLink = new Regex(parameter, "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/\\d+/(.+)").getMatch(2);
+            linkInsideLink = "http://" + linkInsideLink;
+            if (!linkInsideLink.matches("https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/.+")) {
+                decryptedLinks.add(createDownloadlink(linkInsideLink));
+                return decryptedLinks;
+            }
+        }
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0");
         boolean skipWait = true;
         for (int i = 0; i <= 2; i++) {

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -40,7 +41,12 @@ public class DoriDroNet extends PluginForDecrypt {
             DownloadLink dl = createDownloadlink(parameter.replace("doridro.net/", "doridrodecrypted.net/"));
             decryptedLinks.add(dl);
         } else {
-            br.getPage(parameter);
+            try {
+                br.getPage(parameter);
+            } catch (final BrowserException e) {
+                logger.info("Failed to decrypt link because of server error: " + parameter);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("<title>(.*?) Album Download</title>").getMatch(0);
             String[] links = br.getRegex("<td bgcolor=\"#666666\"><a href=\"(http://.*?)\"").getColumn(0);
             if (links == null || links.length == 0) {

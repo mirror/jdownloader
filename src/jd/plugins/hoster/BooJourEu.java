@@ -46,7 +46,7 @@ public class BooJourEu extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Removed for Copyright Infringement")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<h1 style=\"margin:0;padding:10px 3px 3px;color:#222;font\\-size:20px;\">([^<>\"]*?)</h1>").getMatch(0);
+        final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
@@ -57,9 +57,11 @@ public class BooJourEu extends PluginForHost {
         requestFileInformation(downloadLink);
         final String varA = br.getRegex("name=\"([^<>\"]*?)\" id=\"a\"").getMatch(0);
         final String varB = br.getRegex("name=\"([^<>\"]*?)\" id=\"b\"").getMatch(0);
-        if (varA == null || varB == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage(downloadLink.getDownloadURL(), varA + "=" + varB + "&" + varB + "=" + varA + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100));
-        String dllink = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        final String[][] otherStuff = br.getRegex("<input type=\"hidden\" value=\"(\\d+)\" class=\"textbox\" name=\"(\\d+)\"").getMatches();
+        if (varA == null || varB == null || otherStuff.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String postData = varA + "=" + varB + "&" + otherStuff[1][1] + "=" + otherStuff[1][0] + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100);
+        br.postPage(downloadLink.getDownloadURL(), postData);
+        String dllink = br.getRegex("url: \\'(http://[a-z0-9\\-]+\\.boojour\\.eu/[^<>\"]*?)\\'").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\\'(http://\\d+\\.boojour\\.eu/v/\\d+/[a-z0-9]+\\.flv)\\'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);

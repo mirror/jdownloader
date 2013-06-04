@@ -194,7 +194,7 @@ public class VKontakteRuHoster extends PluginForHost {
             }
             if (br.containsHTML("You tried to load the same page more than once in one second")) {
                 logger.info("Failed to avoid 'You tried to load the same page more than once in one second'...");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l);
             } else {
                 logger.info("Avoided 'You tried to load the same page more than once in one second' successfully!");
             }

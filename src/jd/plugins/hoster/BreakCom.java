@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://(www\\.)?breakdecrypted\\.com/(index|usercontent|skittles)/[A-Za-z0-9\\-_/]+\\-\\d+$" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://(www\\.)?breakdecrypted\\.com/(index|usercontent|skittles|video)/[A-Za-z0-9\\-_/]+\\-\\d+$" }, flags = { 0 })
 public class BreakCom extends PluginForHost {
 
     private String dlink = null;

@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -40,6 +41,8 @@ public class VDiskCn extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> allPages = new ArrayList<String>();
         String parameter = param.toString();
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
         br.getPage(parameter);
         if (br.containsHTML(">找不到您需要的页面\\!<|可能您访问的内容已经删除，或您无权访问本页面。<")) {
             logger.info("Link offline: " + parameter);
@@ -54,10 +57,21 @@ public class VDiskCn extends PluginForDecrypt {
         }
         int lastPage = Integer.parseInt(allPages.get(allPages.size() - 1));
         for (int i = 1; i <= lastPage; i++) {
-            if (i != 1) br.getPage(parameter + "?p=" + i);
-            final String[][] links = br.getRegex("\\'(/down/index/[A-Z0-9]+)\\'.*?blank'>(.*?)</a.*?sizeinfo'>(.*?)\\&").getMatches();
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
+            logger.info("Decrypting page " + i + " of " + lastPage);
+            String currentPage = parameter;
+            try {
+                if (i != 1) {
+                    currentPage = parameter + "?p=" + i;
+                    br.getPage(currentPage);
+                }
+            } catch (final SocketTimeoutException e) {
+                logger.info("Failed to decrypt current page (timeout) -> Skipping link: " + currentPage);
+            }
+            final String[][] links = br.getRegex("\\'(/down/index/[A-Z0-9]+)\\'.*?blank\\'>(.*?)</a.*?sizeinfo\\'>(.*?)\\&").getMatches();
+            if ((links == null || links.length == 0) && br.containsHTML("此处有个隐藏文件,只有上传者可见\\.\\.\\.")) {
+                logger.info("Current page contains only inaccessable links, skipping that: " + currentPage);
+            } else if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for current link: " + currentPage);
                 return null;
             }
             DownloadLink link;

@@ -64,6 +64,10 @@ public class ClpfshD extends PluginForDecrypt {
         br.clearCookies(getHost());
         br.setFollowRedirects(true);
         final Regex regexInfo = new Regex(br.getPage(parameter), PATTERN_TITEL);
+        if (br.getURL().contains("clipfish.de/special/cfhome/home/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String tmpStr = regexInfo.getMatch(0);
         if (tmpStr == null) {
             tmpStr = br.getRegex("<h2>([^<]+)</h2>").getMatch(0);

@@ -208,7 +208,8 @@ public class Keep2ShareCc extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getPage("http://keep2share.cc/login.html");
-                String postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&yt0=Login&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                String postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
                 // Handle stupid login captcha
                 final String captchaLink = br.getRegex("\"(/auth/captcha\\.html\\?v=[a-z0-9]+)\"").getMatch(0);
                 if (captchaLink != null) {
@@ -217,7 +218,7 @@ public class Keep2ShareCc extends PluginForHost {
                     postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(code);
                 }
                 br.postPage("http://keep2share.cc/login.html", postData);
-                if (!br.containsHTML("a href=\"/premium.html\" class=\"premium\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.containsHTML(">Please fill in the form with your login credentials")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -243,15 +244,22 @@ public class Keep2ShareCc extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        ai.setUnlimitedTraffic();
+        br.getPage("http://keep2share.cc/site/profile.html");
+        // if (!br.containsHTML(">Account type:<a href=\"/premium\\.html\"")) {
+        // account.setValid(false);
+        // return ai;
+        // }
+        final String availableTraffic = br.getRegex("Available traffic: ([^<>\"]*?)</a>").getMatch(0);
+        if (availableTraffic != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
+        } else {
+            ai.setUnlimitedTraffic();
+        }
         String expire = br.getRegex("class=\"premium\">Premium:[\t\n\r ]+(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
         if (expire == null) expire = br.getRegex("Premium expires:\\s*?<b>(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
         if (expire == null) {
             if (br.containsHTML(">Premium:[\t\n\r ]+LifeTime")) {
                 ai.setStatus("Premium Lifetime User");
-            } else {
-                account.setValid(false);
-                return ai;
             }
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));

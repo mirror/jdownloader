@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "d-h.st" }, urls = { "http://(www\\.)?d\\-h\\.st/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "d-h.st" }, urls = { "http://(www\\.)?d\\-h\\.st/(?!donate)[A-Za-z0-9]+" }, flags = { 0 })
 public class DhSt extends PluginForHost {
 
     public DhSt(PluginWrapper wrapper) {
@@ -47,6 +47,8 @@ public class DhSt extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>File Not Found<|>The file you were looking for could not be found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // For invalid links
+        if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Filename:</span> <div title=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Dev\\-Host \\- ([^<>\"]*?) \\- The Ultimate Free File Hosting / File Sharing Service</title>").getMatch(0);
         String filesize = br.getRegex("\\((\\d+ bytes)\\)").getMatch(0);

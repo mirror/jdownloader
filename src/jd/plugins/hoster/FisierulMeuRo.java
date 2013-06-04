@@ -65,7 +65,7 @@ public class FisierulMeuRo extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
-        if (br.containsHTML("Ne pare rau, dar acest fisier are o adresa gresita.") || br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Ne pare rau, dar acest fisier are o adresa gresita\\.") || br.containsHTML("404 Not Found") || br.toString().length() < 6000) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String name = br.getRegex(Pattern.compile("Numele Fisierului:</b>(.*?)</div>", Pattern.DOTALL)).getMatch(0).trim();
         if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filesize = br.getRegex(Pattern.compile("<div class=\"dwn_text\"><b>Marimea Fisierului:</b>(.*?)</div>", Pattern.DOTALL)).getMatch(0).trim();

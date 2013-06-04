@@ -56,7 +56,9 @@ public class FileToLinkCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Sorry, this file does not exist\\.<") || br.getURL().equals("http://www.filetolink.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Sorry, this file does not exist\\.<") || br.getURL().contains("filetolink.com/d/notfound.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // For invalid links
+        if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(LOGINNEEDED)) {
             downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
             return AvailableStatus.TRUE;

@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -52,30 +53,42 @@ public class LiveMixTapesCom extends PluginForHost {
     }
 
     private void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        if (!br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String captchaUrl = br.getRegex("\"(/captcha/captcha\\.gif\\?\\d+)\"").getMatch(0);
-        if (captchaUrl == null) captchaUrl = br.getRegex("<td width=\"200\">[\t\n\r ]+<img src=\"(/.*?)\"").getMatch(0);
-        if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        captchaUrl = "http://www.livemixtapes.com" + captchaUrl;
-        String code = getCaptchaCode(captchaUrl, downloadLink);
-        // Usually we have a waittime here but it can be skipped
-        // int waittime = 40;
-        // String wait =
-        // br.getRegex("<span id=\"counter\">(\\d+)</span>").getMatch(0);
-        // if (wait == null) wait = br.getRegex("wait: (\\d+)").getMatch(0);
-        // if (wait != null) {
-        // waittime = Integer.parseInt(wait);
-        // if (waittime > 1000) waittime = waittime / 1000;
-        // sleep(waittime * 1001, downloadLink);
-        // }
         br.setFollowRedirects(false);
-        try {
-            br.postPage(br.getURL(), "code=" + code);
-        } catch (Exception e) {
+        String dllink = null;
+        if (br.containsHTML(MUSTBELOGGEDIN)) {
+            final Browser br2 = br.cloneBrowser();
+            try {
+                br2.getPage("http://www.livemixtapes.com/play/" + new Regex(downloadLink.getDownloadURL(), "download(/mp3)?/(\\d+)").getMatch(1));
+                dllink = br2.getRedirectLocation();
+            } catch (final Exception e) {
+
+            }
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.livemixtapescom.only4registered", ONLYREGISTEREDUSERTEXT));
+        } else {
+            if (!br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String captchaUrl = br.getRegex("\"(/captcha/captcha\\.gif\\?\\d+)\"").getMatch(0);
+            if (captchaUrl == null) captchaUrl = br.getRegex("<td width=\"200\">[\t\n\r ]+<img src=\"(/.*?)\"").getMatch(0);
+            if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            captchaUrl = "http://www.livemixtapes.com" + captchaUrl;
+            String code = getCaptchaCode(captchaUrl, downloadLink);
+            // Usually we have a waittime here but it can be skipped
+            // int waittime = 40;
+            // String wait =
+            // br.getRegex("<span id=\"counter\">(\\d+)</span>").getMatch(0);
+            // if (wait == null) wait = br.getRegex("wait: (\\d+)").getMatch(0);
+            // if (wait != null) {
+            // waittime = Integer.parseInt(wait);
+            // if (waittime > 1000) waittime = waittime / 1000;
+            // sleep(waittime * 1001, downloadLink);
+            // }
+            try {
+                br.postPage(br.getURL(), "code=" + code);
+            } catch (Exception e) {
+            }
+            if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            dllink = br.getRedirectLocation();
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -117,7 +130,6 @@ public class LiveMixTapesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(MUSTBELOGGEDIN)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.livemixtapescom.only4registered", ONLYREGISTEREDUSERTEXT));
         doFree(downloadLink);
     }
 
@@ -161,15 +173,18 @@ public class LiveMixTapesCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>Not Found</|The page you requested could not be found\\.<|>This mixtape is no longer available for download.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = null, filesize = null;
         if (br.containsHTML(MUSTBELOGGEDIN)) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.livemixtapescom.only4registered", ONLYREGISTEREDUSERTEXT));
-            return AvailableStatus.TRUE;
+            final Regex fileInfo = br.getRegex("<td height=\"35\"><div style=\"padding\\-left: 8px\">([^<>\"]*?)</div></td>[\t\n\r ]+<td align=\"center\">([^<>\"]*?)</td>");
+            filename = fileInfo.getMatch(0);
+            filesize = fileInfo.getMatch(1);
+        } else {
+            final Regex fileInfo = br.getRegex("<td height=\"35\">\\&nbsp;\\&nbsp;\\&nbsp;(.*?)</td>[\t\n\r ]+<td align=\"center\">(.*?)</td>");
+            filename = fileInfo.getMatch(0);
+            filesize = fileInfo.getMatch(1);
         }
-        Regex fileInfo = br.getRegex("<td height=\"35\">\\&nbsp;\\&nbsp;\\&nbsp;(.*?)</td>[\t\n\r ]+<td align=\"center\">(.*?)</td>");
-        final String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
