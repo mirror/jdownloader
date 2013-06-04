@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apple.com" }, urls = { "http://[\\w\\.]*?apple\\.com/trailers/[a-zA-Z0-9_]+/[a-zA-Z0-9_]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apple.com" }, urls = { "http://[\\w\\.]*?apple\\.com/trailers/(disney|dreamworks|filmdistrict|focus_features|fox|fox_searchlight|independent|lions_gate|magnolia|marvel|paramount|picturehouse|sony|sony_pictures|summit|universial|wb|weinstien)/[a-zA-Z0-9_]+/" }, flags = { 0 })
 public class AppleTrailer extends PluginForDecrypt {
 
     public AppleTrailer(PluginWrapper wrapper) {
@@ -48,17 +48,17 @@ public class AppleTrailer extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        String title = br.getRegex("var trailerTitle = \\'(.*?)\\';").getMatch(0);
-        if (title == null) title = br.getRegex("name=\"omni_page\" content=\"(.*?)\"").getMatch(0);
+        String title = br.getRegex("var trailerTitle\\s+= '(.*?)';").getMatch(0);
+        if (title == null) title = br.getRegex("name=\"omni_page\" content=\"Movie Trailers - (.*?)\"").getMatch(0);
         Browser br2 = br.cloneBrowser();
 
         br2.getPage(parameter.toString() + "includes/playlists/web.inc");
-        if (title == null) title = br2.getRegex("var trailerTitle = \\'(.*?)';").getMatch(0);
+        if (title == null) title = br2.getRegex("var trailerTitle = '(.*?)';").getMatch(0);
         if (title == null) {
-            logger.warning("Plugin defect, could not find \\'title\\' : " + parameter.toString());
+            logger.warning("Plugin defect, could not find 'title' : " + parameter.toString());
             return null;
         }
-        String[] hits = br2.getRegex("(<li class=\\'trailer ([a-z]+)?\\'>.*?</li><)").getColumn(0);
+        String[] hits = br2.getRegex("(<li class='trailer ([a-z]+)?'>.*?</li><)").getColumn(0);
         if (hits == null || hits.length == 0) {
             logger.warning("Plugin defect, could not find 'hits' : " + parameter.toString());
             return null;
