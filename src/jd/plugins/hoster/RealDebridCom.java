@@ -223,29 +223,28 @@ public class RealDebridCom extends PluginForHost {
                 br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink));
             }
             if (br.containsHTML("\"error\":4,")) {
-                //
+                logger.warning("Problemo in the old corral");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not download from " + mName);
             }
         }
         String generatedLinks = br.getRegex("\"generated_links\":\\[\\[(.*?)\\]\\]").getMatch(0);
         String genLnks[] = new Regex(generatedLinks, "\"([^\"]*?)\"").getColumn(0);
         if (genLnks == null || genLnks.length == 0) {
-            if (br.containsHTML("error\":10,")) {
+            if (br.containsHTML("error\":6,")) {
+                // {"error":6,"message":"Daily limit exceeded."}
+                logger.info("You have run out of download quota for this hoster");
+
+            } else if (br.containsHTML("error\":10,")) {
                 logger.info("File's hoster is in maintenance. Try again later");
                 removeHostFromMultiHost(link, acc);
-            }
-            if (br.containsHTML("error\":11,")) {
+            } else if (br.containsHTML("error\":11,")) {
                 logger.info("Host seems buggy, remove it from list");
                 removeHostFromMultiHost(link, acc);
-            }
-
-            if (br.containsHTML("error\":12")) {
+            } else if (br.containsHTML("error\":12,")) {
                 /* You have too many simultaneous downloads */
                 MAX_DOWNLOADS.set(RUNNING_DOWNLOADS.get());
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 12: You have too many simultaneous downloads", 20 * 1000l);
-            }
-
-            if (br.containsHTML("error\":(13|9),")) {
+            } else if (br.containsHTML("error\":(13|9),")) {
                 String num = "";
                 if (br.containsHTML("error\":13,")) {
                     num = "13";
@@ -266,10 +265,12 @@ public class RealDebridCom extends PluginForHost {
                     link.getLinkStatus().setRetryCount(0);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                String msg = link.getLinkStatus().getRetryCount() + 1 + " / 3";
+                String msg = (link.getLinkStatus().getRetryCount() + 1) + " / 3";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error " + num + " : Retry " + msg, 120 * 1000l);
+            } else {
+                // unknown error
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         showMessage(link, "Task 2: Download begins!");
         int counter = 0;
@@ -319,7 +320,11 @@ public class RealDebridCom extends PluginForHost {
         if (acctype.equals("premium")) {
             ai.setStatus("Premium User");
         } else {
-            // unhandled account type here.
+            // non supported account type here.
+            logger.warning("Sorry we do not support this account type at this stage.");
+            account.setValid(false);
+            ai.setProperty("multiHostSupport", Property.NULL);
+            return ai;
         }
         if ("01/01/1970 01:00:00".equals(expire)) {
             ai.setValidUntil(-1);
@@ -339,9 +344,6 @@ public class RealDebridCom extends PluginForHost {
             if (supportedHosts.contains("freakshare.net")) {
                 supportedHosts.add("freakshare.com");
             }
-            /*
-             * set ArrayList<String> with all supported multiHosts of this service
-             */
             // workaround for uploaded.to
             if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
                 if (!supportedHosts.contains("uploaded.net")) {
@@ -359,7 +361,6 @@ public class RealDebridCom extends PluginForHost {
             account.setProperty("multiHostSupport", Property.NULL);
             logger.info("Could not fetch ServerList: " + e.toString());
         }
-
         return ai;
     }
 
@@ -383,6 +384,7 @@ public class RealDebridCom extends PluginForHost {
                         return;
                     }
                 }
+                br.setFollowRedirects(true);
                 br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Hash.getMD5(account.getPass()) + "&captcha_challenge=&captcha_answer=&time=" + System.currentTimeMillis());
                 if (br.getCookie(mProt + mName, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
@@ -397,6 +399,8 @@ public class RealDebridCom extends PluginForHost {
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
+            } finally {
+                br.setFollowRedirects(false);
             }
         }
     }
@@ -417,11 +421,11 @@ public class RealDebridCom extends PluginForHost {
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return true;
+            return false;
         }
         if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
-            return true;
+            return false;
         }
         return false;
     }
