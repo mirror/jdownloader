@@ -81,7 +81,7 @@ public class IconBadgePainter {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                 g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                ((Graphics2D) g2).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
+                ((Graphics2D) g2).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
                 final Area a = new Area(shape);
 
                 g2.setColor(Color.WHITE);
@@ -117,7 +117,7 @@ public class IconBadgePainter {
                 try {
                     while (true) {
                         try {
-                            Dialog.getInstance().showConfirmDialog(0, "title", "msg", new ImageIcon(new IconBadgePainter(NewTheme.I().getImage("logo/jd_logo_128_128", 128)).getImage(75, "75")), null, null);
+                            Dialog.getInstance().showConfirmDialog(0, "title", "msg", new ImageIcon(new IconBadgePainter(NewTheme.I().getImage("logo/jd_logo_128_128", 128)).getImage(23, "23")), null, null);
                         } catch (DialogClosedException e) {
                             e.printStackTrace();
                         }
