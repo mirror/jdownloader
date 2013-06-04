@@ -55,6 +55,7 @@ public class ChoMikujPl extends PluginForDecrypt {
     private static final String ENDINGS                  = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip)";
     private static final String VIDEOENDINGS             = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
     private static final String UNSUPPORTED              = "http://(www\\.)?chomikuj\\.pl//?(action/[^<>\"]+|(Media|Kontakt|PolitykaPrywatnosci|Empty|Abuse|Sugestia|LostPassword|Zmiany|Regulamin|Platforma)\\.aspx|favicon\\.ico)";
+    private static Object       LOCK                     = new Object();
 
     public int getMaxConcurrentProcessingInstances() {
         return 4;
@@ -254,33 +255,40 @@ public class ChoMikujPl extends PluginForDecrypt {
         final boolean decryptFolders = chomikujpl.getPluginConfig().getBooleanProperty(jd.plugins.hoster.ChoMikujPl.DECRYPTFOLDERS, false);
         // Password handling
         if (br.containsHTML(PASSWORDTEXT)) {
-            prepareBrowser(parameter, br);
-            final Form pass = br.getFormbyProperty("id", "LoginToFolder");
-            if (pass == null) {
-                logger.warning(ERROR + " :: Can't find Password Form!");
-                return null;
-            }
-            for (int i = 0; i <= 3; i++) {
-                FOLDERPASSWORD = param.getStringProperty("password");
-                if (FOLDERPASSWORD == null) {
-                    FOLDERPASSWORD = getUserInput(null, param);
+            // prevent more than one password from processing and displaying at any point in time!
+            synchronized (LOCK) {
+                prepareBrowser(parameter, br);
+                final Form pass = br.getFormbyProperty("id", "LoginToFolder");
+                if (pass == null) {
+                    logger.warning(ERROR + " :: Can't find Password Form!");
+                    return null;
                 }
-                pass.put("Password", FOLDERPASSWORD);
-                br.submitForm(pass);
-                if (br.containsHTML("\\{\"IsSuccess\":true")) {
-                    break;
-                } else {
-                    // Maybe password was saved before but has changed in the
-                    // meantime!
-                    param.setProperty("password", Property.NULL);
-                    continue;
+                for (int i = 0; i <= 3; i++) {
+                    FOLDERPASSWORD = param.getStringProperty("password");
+                    if (FOLDERPASSWORD == null) {
+                        FOLDERPASSWORD = getUserInput(null, param);
+
+                    }
+                    // you should exit if they enter blank password!
+                    if (FOLDERPASSWORD == null || FOLDERPASSWORD.length() == 0) {
+                        return decryptedLinks; 
+                    }
+                    pass.put("Password", FOLDERPASSWORD);
+                    br.submitForm(pass);
+                    if (br.containsHTML("\\{\"IsSuccess\":true")) {
+                        break;
+                    } else {
+                        // Maybe password was saved before but has changed in the meantime!
+                        param.setProperty("password", Property.NULL);
+                        continue;
+                    }
                 }
+                if (!br.containsHTML("\\{\"IsSuccess\":true")) {
+                    logger.warning("Wrong password!");
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
+                saveLink = parameter;
             }
-            if (!br.containsHTML("\\{\"IsSuccess\":true")) {
-                logger.warning("Wrong password!");
-                throw new DecrypterException(DecrypterException.PASSWORD);
-            }
-            saveLink = parameter;
         }
         logger.info("Looking how many pages we got here for link " + parameter + " ...");
 
@@ -296,8 +304,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             return null;
         } else if (pageCount == 0) pageCount = 1;
 
-        // More than one page? Every page goes back into the decrypter as a
-        // single link!
+        // More than one page? Every page goes back into the decrypter as a single link!
         if (pageCount > 1 && !param.toString().matches(PAGEDECRYPTLINK)) {
             logger.info("Found " + pageCount + " pages. Adding those for the decryption now.");
             for (int i = 1; i <= pageCount; i++) {

@@ -55,8 +55,8 @@ public class PluginUtils {
     }
 
     public static String askPassword(String message, final CryptedLink link) {
-
-        if (message == null) message = _JDT._.jd_plugins_PluginUtils_askPassword(link.getCryptedUrl());
+        // with null message, long urls will push out the length of the dialog. Lets prevent that.
+        if (message == null) message = _JDT._.jd_plugins_PluginUtils_askPassword(link.getCryptedUrl().substring(0, 117) + "...");
         final String password = askPassword(message, link.getDecrypterPassword());
         return password;
     }
