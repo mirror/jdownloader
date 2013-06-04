@@ -70,6 +70,7 @@ public class VKontakteRu extends PluginForDecrypt {
         br.setReadTimeout(3 * 60 * 1000);
         String parameter = param.toString().replace("vkontakte.ru/", "vk.com/").replace("https://", "http://");
         br.setCookiesExclusive(false);
+        prepBrowser(br);
         if (parameter.matches(PATTERN_PHOTO_SINGLE)) {
             /**
              * Single photo links, those are just passed to the hosterplugin! Example:http://vk.com/photo125005168_269986868
@@ -106,7 +107,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     final boolean hasPassed = handleSecurityCheck(parameter);
                     if (!hasPassed) {
                         logger.warning("Security check failed for link: " + parameter);
-                        return null;
+                        return decryptedLinks;
                     }
                     br.getPage(parameter);
                 }
@@ -754,14 +755,23 @@ public class VKontakteRu extends PluginForDecrypt {
             final String hash = br.getRegex("hash: \\'([^<>\"]*?)\\'").getMatch(0);
             if (to == null || hash == null) { return false; }
             final String code = UserIO.getInstance().requestInputDialog("Enter the last 4 digits of your phone number for vkontakte.ru :");
-            ajaxBR.postPage("http://vk.com/login.php", "act=security_check&al=1&al_page=3&code=" + code + "&hash=" + Encoding.urlEncode(hash) + "&to=" + Encoding.urlEncode(to));
-            // TODO: Add russian lang support here
-            if (!ajaxBR.containsHTML(">Leider sind die von Ihnen eingegebenen Zahlen nicht richtig")) {
+            ajaxBR.postPage("https://vk.com/login.php", "act=security_check&al=1&al_page=3&code=" + code + "&hash=" + Encoding.urlEncode(hash) + "&to=" + Encoding.urlEncode(to));
+            if (!ajaxBR.containsHTML(">Unfortunately, the numbers you have entered are incorrect")) {
                 hasPassed = true;
+                break;
+            }
+            if (ajaxBR.containsHTML("You can try again in \\d+ hour")) {
+                logger.info("Failed security check, account is banned for some hours!");
                 break;
             }
         }
         return hasPassed;
+    }
+
+    private void prepBrowser(final Browser br) {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:21.0) Gecko/20100101 Firefox/21.0");
+        // Set english language
+        br.setCookie("http://vk.com/", "remixlang", "3");
     }
 
     /* NO OVERRIDE!! */

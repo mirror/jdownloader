@@ -45,7 +45,7 @@ import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/(?:(?!(?>\\btrack\\b|\\btag\\b|\\bartist\\b))(?!developers|categories)[\\w\\-])+/(?!activity)[\\w\\-]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/[\\w\\-]+/[\\w\\-]+/" }, flags = { 0 })
 public class MxCloudCom extends PluginForDecrypt {
 
     private String MAINPAGE = "http://www.mixcloud.com";
@@ -53,6 +53,8 @@ public class MxCloudCom extends PluginForDecrypt {
     public MxCloudCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String INVALIDLINKS = "http://(www\\.)?mixcloud\\.com/((developers|categories|media)/.+|[\\w\\-]+/playlists.+)";
 
     private byte[] AESdecrypt(final byte[] plain, final byte[] key, final byte[] iv) throws Exception {
         final KeyParameter keyParam = new KeyParameter(key);
@@ -76,6 +78,10 @@ public class MxCloudCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setReadTimeout(3 * 60 * 1000);
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             logger.info("Unsupported or offline link: " + parameter);

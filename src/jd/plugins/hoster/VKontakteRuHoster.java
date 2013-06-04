@@ -290,7 +290,7 @@ public class VKontakteRuHoster extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
+                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -306,8 +306,6 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                // Set english language
-                br.setCookie(DOMAIN, "remixlang", "3");
                 br.getPage("http://vk.com/login.php");
                 String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
                 if (damnIPH == null) damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
@@ -344,6 +342,12 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private void prepBrowser(final Browser br) {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:21.0) Gecko/20100101 Firefox/21.0");
+        // Set english language
+        br.setCookie("http://vk.com/", "remixlang", "3");
     }
 
     /** Same function in hoster and decrypterplugin, sync it!! */

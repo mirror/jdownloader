@@ -43,17 +43,22 @@ public class AppleTrailer extends PluginForDecrypt {
 
         br.getPage(parameter.toString());
 
-        String title = br.getRegex("var trailerTitle = '(.*?)';").getMatch(0);
+        if (br.containsHTML(">Hmm, the page you’re looking for can’t be found")) {
+            logger.info("Link offline: " + parameter.toString());
+            return decryptedLinks;
+        }
+
+        String title = br.getRegex("var trailerTitle = \\'(.*?)\\';").getMatch(0);
         if (title == null) title = br.getRegex("name=\"omni_page\" content=\"(.*?)\"").getMatch(0);
         Browser br2 = br.cloneBrowser();
 
         br2.getPage(parameter.toString() + "includes/playlists/web.inc");
-        if (title == null) title = br2.getRegex("var trailerTitle = '(.*?)';").getMatch(0);
+        if (title == null) title = br2.getRegex("var trailerTitle = \\'(.*?)';").getMatch(0);
         if (title == null) {
-            logger.warning("Plugin defect, could not find 'title' : " + parameter.toString());
+            logger.warning("Plugin defect, could not find \\'title\\' : " + parameter.toString());
             return null;
         }
-        String[] hits = br2.getRegex("(<li class='trailer ([a-z]+)?'>.*?</li><)").getColumn(0);
+        String[] hits = br2.getRegex("(<li class=\\'trailer ([a-z]+)?\\'>.*?</li><)").getColumn(0);
         if (hits == null || hits.length == 0) {
             logger.warning("Plugin defect, could not find 'hits' : " + parameter.toString());
             return null;
