@@ -20,7 +20,7 @@ public class LinkStatusAPIStorable implements Storable {
         return ls.getErrorMessage();
     }
 
-    public Integer getStauts() {
+    public Integer getStatus() {
         return ls.getStatus();
     }
 
