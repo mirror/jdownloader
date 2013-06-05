@@ -64,12 +64,14 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
         LINKCOLLECTORPACKAGEADDED,
         LINKCOLLECTORPACKAGEREMOVED,
         CRAWLEDLINKSTATUSCHANGED,
-        CRAWLEDPACKAGESTATUSCHANGED
+        CRAWLEDPACKAGESTATUSCHANGED,
+        LINKENABLEDCHANGED,
+        CRAWLEDLINKENABLEDCHANGED
     }
 
     @Override
     public String[] getPublisherEventIDs() {
-        return new String[] { EVENTID.SETTINGSCHANGED.name(), EVENTID.LINKCHANGED.name(), EVENTID.LINKSTATUSCHANGED.name(), EVENTID.FILEPACKAGESTATUSCHANGED.name(), EVENTID.PACKAGEFINISHED.name(), EVENTID.DOWNLOADLINKADDED.name(), EVENTID.DOWNLOADLINKREMOVED.name(), EVENTID.DOWNLOADPACKAGEADDED.name(), EVENTID.DOWNLOADPACKAGEREMOVED.name(), EVENTID.CAPTCHA.name(), EVENTID.RUNNINGSTATE.name(), EVENTID.LINKCOLLECTORLINKADDED.name(), EVENTID.LINKCOLLECTORLINKREMOVED.name(), EVENTID.LINKCOLLECTORPACKAGEADDED.name(), EVENTID.LINKCOLLECTORPACKAGEREMOVED.name(), EVENTID.CRAWLEDLINKSTATUSCHANGED.name(), EVENTID.CRAWLEDPACKAGESTATUSCHANGED.name() };
+        return new String[] { EVENTID.CRAWLEDLINKENABLEDCHANGED.name(), EVENTID.LINKENABLEDCHANGED.name(), EVENTID.SETTINGSCHANGED.name(), EVENTID.LINKCHANGED.name(), EVENTID.LINKSTATUSCHANGED.name(), EVENTID.FILEPACKAGESTATUSCHANGED.name(), EVENTID.PACKAGEFINISHED.name(), EVENTID.DOWNLOADLINKADDED.name(), EVENTID.DOWNLOADLINKREMOVED.name(), EVENTID.DOWNLOADPACKAGEADDED.name(), EVENTID.DOWNLOADPACKAGEREMOVED.name(), EVENTID.CAPTCHA.name(), EVENTID.RUNNINGSTATE.name(), EVENTID.LINKCOLLECTORLINKADDED.name(), EVENTID.LINKCOLLECTORLINKREMOVED.name(), EVENTID.LINKCOLLECTORPACKAGEADDED.name(), EVENTID.LINKCOLLECTORPACKAGEREMOVED.name(), EVENTID.CRAWLEDLINKSTATUSCHANGED.name(), EVENTID.CRAWLEDPACKAGESTATUSCHANGED.name() };
     }
 
     @Override
@@ -251,7 +253,8 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                 break;
                             case ENABLED:
                                 data.put("action", "EnabledChanged");
-                                publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_ENABLED_" + dl.getUniqueID().getID());
+                                data.put("packageValue", GetFilePackageEnbled(dl.getFilePackage()));
+                                publishEvent(EVENTID.LINKENABLEDCHANGED, data, "DOWNLOADLINK_ENABLED_" + dl.getUniqueID().getID());
                                 break;
                             case AVAILABILITY:
                                 data.put("action", "AvailabilityChanged");
@@ -335,6 +338,32 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
             }
             break;
         }
+    }
+
+    private String GetFilePackageEnbled(FilePackage pkg) {
+        int enabled = -1;
+        synchronized (pkg) {
+            for (DownloadLink link : pkg.getChildren()) {
+                if (enabled != 2) {
+                    if (link.isEnabled()) {
+                        if (enabled == -1) {
+                            enabled = 1;
+                        } else if (enabled == 0) {
+                            enabled = 2;
+                            break;
+                        }
+                    } else {
+                        if (enabled == -1) {
+                            enabled = 0;
+                        } else if (enabled == 1) {
+                            enabled = 2;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return String.valueOf(enabled);
     }
 
     private void downloadApiLinkAdded(DownloadLink link) {
@@ -469,8 +498,9 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                         break;
                     case ENABLED:
                         data.put("action", "EnabledChanged");
+                        data.put("packageValue", GetCrawledPackageEnbled(cl.getParentNode()));
                         id = "CRAWLEDLINK_ENABLED_" + cl.getUniqueID().getID();
-                        publishEvent(EVENTID.CRAWLEDLINKSTATUSCHANGED, data, id);
+                        publishEvent(EVENTID.CRAWLEDLINKENABLEDCHANGED, data, id);
                         break;
                     case AVAILABILITY:
                         data.put("action", "AvailabilityChanged");
@@ -504,6 +534,32 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                 }
             }
         }
+    }
+
+    private String GetCrawledPackageEnbled(CrawledPackage pkg) {
+        int enabled = -1;
+        synchronized (pkg) {
+            for (CrawledLink link : pkg.getChildren()) {
+                if (enabled != 2) {
+                    if (link.isEnabled()) {
+                        if (enabled == -1) {
+                            enabled = 1;
+                        } else if (enabled == 0) {
+                            enabled = 2;
+                            break;
+                        }
+                    } else {
+                        if (enabled == -1) {
+                            enabled = 0;
+                        } else if (enabled == 1) {
+                            enabled = 2;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return String.valueOf(enabled);
     }
 
     @Override
