@@ -75,6 +75,7 @@ public class RealDebridCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(2 * 60 * 1000);
         br.setReadTimeout(2 * 60 * 1000);
+        br.setFollowRedirects(true);
     }
 
     @Override
@@ -384,7 +385,6 @@ public class RealDebridCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(true);
                 br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Hash.getMD5(account.getPass()) + "&captcha_challenge=&captcha_answer=&time=" + System.currentTimeMillis());
                 if (br.getCookie(mProt + mName, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
@@ -399,8 +399,6 @@ public class RealDebridCom extends PluginForHost {
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
-            } finally {
-                br.setFollowRedirects(false);
             }
         }
     }
