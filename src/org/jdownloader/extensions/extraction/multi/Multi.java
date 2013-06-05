@@ -27,13 +27,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IInStream;
-import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.ISevenZipInArchive;
 import net.sf.sevenzipjbinding.SevenZip;
 import net.sf.sevenzipjbinding.SevenZipException;
@@ -59,7 +59,6 @@ import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.ExtractionException;
 import org.jdownloader.extensions.extraction.IExtraction;
-import org.jdownloader.extensions.extraction.Signature;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 
@@ -71,7 +70,7 @@ import org.jdownloader.extensions.extraction.content.PackedFile;
  */
 public class Multi extends IExtraction {
 
-    private static final String Z_D_$ = "(\\.z)(\\d+)$";
+    private static final String      Z_D_$                                                       = "(\\.z)(\\d+)$";
 
     /**
      * Helper for the passwordfinding method.
@@ -79,29 +78,6 @@ public class Multi extends IExtraction {
      * @author botzi
      * 
      */
-    private static class BooleanHelper {
-        private boolean bool;
-
-        BooleanHelper() {
-            bool = false;
-        }
-
-        /**
-         * Marks that the boolean was found.
-         */
-        void found() {
-            bool = true;
-        }
-
-        /**
-         * Returns the result.
-         * 
-         * @return The result.
-         */
-        boolean getBoolean() {
-            return bool;
-        }
-    }
 
     private static final String      _7Z_D                                                       = "\\.7z\\.?(\\d+)$";
     private static final String      REGEX_ANY_7ZIP_PART                                         = "(?i).*\\.7z\\.\\d+$";
@@ -794,95 +770,66 @@ public class Multi extends IExtraction {
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
             }
 
-            final BooleanHelper passwordfound = new BooleanHelper();
+            final AtomicBoolean passwordfound = new AtomicBoolean(false);
             HashSet<String> checkedExtensions = new HashSet<String>();
-            for (final ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
-                if (item.isFolder() || (item.getSize() == 0 && item.getPackedSize() == 0)) {
-                    /*
-                     * we also check for items with size ==0, they should have a packedsize>0
-                     */
-                    continue;
+            if (ArchiveFormat.SEVEN_ZIP == format) {
+                int[] in = new int[inArchive.getNumberOfItems()];
+                for (int i = 0; i < in.length; i++) {
+                    in[i] = i;
                 }
-                if (ctl.gotKilled()) {
-                    /* extraction got aborted */
-                    break;
+                try {
+                    inArchive.extract(in, false, new Seven7ExtractorCallback(inArchive, passwordfound, password, buffer, config.getMaxPasswordCheckSize(), ctl.getFileSignatures()));
+                } catch (SevenZipException e) {
+                    // An error will be thrown if the write method
+                    // returns
+                    // 0.
                 }
-                final String path = item.getPath();
-                String ext = Files.getExtension(path);
-                if (checkedExtensions.add(ext) || !optimized) {
-                    if (!passwordfound.getBoolean()) {
-                        try {
-                            buffer.reset();
-                            final ReusableByteArrayOutputStream signatureBuffer = buffer;
-                            final long maxPWCheckSize = config.getMaxPasswordCheckSize() * 1024;
-
-                            final int signatureMinLength;
-                            if (new Regex(path, ".+\\.iso").matches()) {
-                                signatureMinLength = 37000;
-                            } else if (new Regex(path, ".+\\.mp3").matches()) {
-                                signatureMinLength = 512;
-                            } else {
-                                signatureMinLength = 32;
-                            }
-                            logger.fine("Try to crack " + path);
-                            ExtractOperationResult result = item.extractSlow(new ISequentialOutStream() {
-                                public int write(byte[] data) throws SevenZipException {
-                                    int toWrite = Math.min(signatureBuffer.free(), data.length);
-                                    if (toWrite > 0) {
-                                        /* we still have enough buffer left to write the data */
-                                        signatureBuffer.write(data, 0, toWrite);
-                                    }
-                                    if (signatureBuffer.size() >= signatureMinLength) {
-                                        /* we have enough data available for a signature check */
-                                        StringBuilder sigger = new StringBuilder();
-                                        for (int i = 0; i < signatureBuffer.size() - 1; i++) {
-                                            String s = Integer.toHexString(signatureBuffer.getInternalBuffer()[i]);
-                                            s = (s.length() < 2 ? "0" + s : s);
-                                            s = s.substring(s.length() - 2);
-                                            sigger.append(s);
-                                        }
-                                        Signature signature = ctl.getFileSignatures().getSignature(sigger.toString());
-                                        if (signature != null) {
-                                            if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(path).matches()) {
-                                                /* signature matches, lets abort PWFinding now */
-                                                passwordfound.found();
-                                                return 0;
-                                            }
-                                        }
-                                    }
-                                    if (item.getSize() <= maxPWCheckSize) {
-                                        /* we still allow further extraction as the itemSize <= maxPWCheckSize */
-                                        return data.length;
-                                    } else {
-                                        /* this will throw SevenZipException */
-                                        return 0;
-                                    }
-                                }
-                            }, password);
-                            if (ExtractOperationResult.DATAERROR.equals(result)) {
-                                /*
-                                 * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native ->
-                                 * crash jvm)
-                                 */
-                                return false;
-                            }
-                            if (ExtractOperationResult.OK.equals(result)) {
-                                passwordfound.found();
-                            }
-                        } catch (SevenZipException e) {
-
-                            // An error will be thrown if the write method
-                            // returns
-                            // 0.
-                        }
-                    } else {
-                        /* pw found */
+            } else {
+                SignatureCheckingOutStream signatureOutStream = new SignatureCheckingOutStream(passwordfound, ctl.getFileSignatures(), buffer, config.getMaxPasswordCheckSize() * 1024);
+                for (final ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
+                    if (item.isFolder() || (item.getSize() == 0 && item.getPackedSize() == 0)) {
+                        /*
+                         * we also check for items with size ==0, they should have a packedsize>0
+                         */
+                        continue;
+                    }
+                    if (ctl.gotKilled()) {
+                        /* extraction got aborted */
                         break;
                     }
+                    final String path = item.getPath();
+                    String ext = Files.getExtension(path);
+                    if (checkedExtensions.add(ext) || !optimized) {
+                        if (!passwordfound.get()) {
+                            try {
+                                signatureOutStream.reset();
+                                signatureOutStream.setSignatureLength(path, item.getSize());
+                                logger.fine("Try to crack " + path);
+                                ExtractOperationResult result = item.extractSlow(signatureOutStream, password);
+                                if (ExtractOperationResult.DATAERROR.equals(result)) {
+                                    /*
+                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native -> crash jvm)
+                                     */
+                                    return false;
+                                }
+                                if (ExtractOperationResult.OK.equals(result)) {
+                                    passwordfound.set(true);
+                                }
+                            } catch (SevenZipException e) {
+
+                                // An error will be thrown if the write method
+                                // returns
+                                // 0.
+                            }
+                        } else {
+                            /* pw found */
+                            break;
+                        }
+                    }
+                    // if (filter(item.getPath())) continue;
                 }
-                // if (filter(item.getPath())) continue;
             }
-            if (!passwordfound.getBoolean()) return false;
+            if (!passwordfound.get()) return false;
             archive.setFinalPassword(password);
             updateContentView(inArchive.getSimpleInterface());
             return true;

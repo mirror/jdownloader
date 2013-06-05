@@ -248,18 +248,21 @@ public class OldRAFDownload extends DownloadInterface {
         if (this.plugin.getBrowser().isDebug()) logger.finest("\r\n" + request.printHeaders());
         connection = request.getHttpConnection();
         if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, BrowserAdapter.ERROR_REDIRECTED);
-        String contentType = connection.getContentType();
-        boolean trustFileSize = contentType == null || (!contentType.contains("html") && contentType.contains("text"));
-        logger.info("Trust FileSize: " + trustFileSize + " " + contentType);
-        if (connection.getRange() != null && trustFileSize) {
-            /* we have a range response, let's use it */
-            if (connection.getRange()[2] > 0) {
+        if (downloadLink.getVerifiedFileSize() < 0) {
+            /* only set DownloadSize if we do not have a verified FileSize yet */
+            String contentType = connection.getContentType();
+            boolean trustFileSize = contentType == null || (!contentType.contains("html") && contentType.contains("text"));
+            logger.info("Trust FileSize: " + trustFileSize + " " + contentType);
+            if (connection.getRange() != null && trustFileSize) {
+                /* we have a range response, let's use it */
+                if (connection.getRange()[2] > 0) {
+                    this.setFilesizeCheck(true);
+                    this.downloadLink.setDownloadSize(connection.getRange()[2]);
+                }
+            } else if (resumed == false && connection.getLongContentLength() > 0 && connection.isOK() && trustFileSize) {
                 this.setFilesizeCheck(true);
-                this.downloadLink.setDownloadSize(connection.getRange()[2]);
+                this.downloadLink.setDownloadSize(connection.getLongContentLength());
             }
-        } else if (resumed == false && connection.getLongContentLength() > 0 && connection.isOK() && trustFileSize) {
-            this.setFilesizeCheck(true);
-            this.downloadLink.setDownloadSize(connection.getLongContentLength());
         }
         if (connection.getResponseCode() == 416 && resumed == true && downloadLink.getChunksProgress().length == 1 && downloadLink.getVerifiedFileSize() == downloadLink.getChunksProgress()[0] + 1) {
             logger.info("Faking Content-Disposition for already finished downloads");

@@ -277,6 +277,7 @@ public class RPNetBiz extends PluginForHost {
 
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
+            URLConnectionAdapter postback = null;
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
@@ -295,7 +296,7 @@ public class RPNetBiz extends PluginForHost {
                         return;
                     }
                 }
-                URLConnectionAdapter postback = br.openPostConnection(mPremium + "login.php", "username=" + account.getUser() + "&password=" + account.getPass() + "&login=");
+                postback = br.openPostConnection(mPremium + "login.php", "username=" + account.getUser() + "&password=" + account.getPass() + "&login=");
                 if (postback.getResponseCode() != 302) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -309,6 +310,11 @@ public class RPNetBiz extends PluginForHost {
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
+            } finally {
+                try {
+                    postback.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
     }
