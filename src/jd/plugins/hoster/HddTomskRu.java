@@ -142,6 +142,11 @@ public class HddTomskRu extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public void reset() {
     }
 
