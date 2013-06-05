@@ -102,7 +102,7 @@ public class Rdrctr extends PluginForDecrypt {
                 offline = true;
             } else if (parameter.contains("bit.ly/") && br.containsHTML(">Something\\'s wrong here|>Uh oh, bitly couldn\\'t find a link for the|Page Not Found")) {
                 offline = true;
-            } else if (parameter.contains("is.gd/") && br.containsHTML(">Sorry, we couldn't find the shortened URL you requested") || br.containsHTML(">Link Disabled<")) {
+            } else if (parameter.contains("is.gd/") && br.containsHTML(">Sorry, we couldn't find the shortened URL you requested") || br.containsHTML(">Link Disabled<") || parameter.equals("http://is.gd") || parameter.equals("http://www.is.gd")) {
                 offline = true;
             }
             if (offline) {

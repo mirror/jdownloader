@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doridro.net" }, urls = { "http://(www\\.)?doridro\\.net/download/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doridro.net" }, urls = { "http://(www\\.)?doridro\\.net/download/[^<>\"]+" }, flags = { 0 })
 public class DoriDroNet extends PluginForDecrypt {
 
     public DoriDroNet(PluginWrapper wrapper) {
@@ -47,13 +47,20 @@ public class DoriDroNet extends PluginForDecrypt {
                 logger.info("Failed to decrypt link because of server error: " + parameter);
                 return decryptedLinks;
             }
+            if (br.containsHTML(">414 Request\\-URI Too Large<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("<title>(.*?) Album Download</title>").getMatch(0);
             String[] links = br.getRegex("<td bgcolor=\"#666666\"><a href=\"(http://.*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 links = br.getRegex("\"(http://doridro\\.net/download/.+/.+/.*?)\"").getColumn(0);
                 if (links == null || links.length == 0) links = br.getRegex("<td bgcolor=\"#666666\"><a href=\"(http://doridro\\.net/download/.+/.*?)\"").getColumn(0);
             }
-            if (links == null || links.length == 0) return null;
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             progress.setRange(links.length);
             for (String singleLink : links) {
                 if (!singleLink.substring(singleLink.length() - 5, singleLink.length()).equals(".html")) {

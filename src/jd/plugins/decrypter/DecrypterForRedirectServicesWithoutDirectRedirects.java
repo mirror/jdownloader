@@ -721,6 +721,10 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             br.postPage(parameter, "dl=1");
             finallink = br.getRegex("Click on Download below to start the download</div>.*? <a href=\"(http[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("lnx.lu/") || parameter.contains("z.gs/") || parameter.contains("url.fm/")) {
+            if (br.containsHTML("No htmlCode read")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             finallink = br.getRegex("\"(/\\?click=[^<>\"/]*?)\"").getMatch(0);
             if (finallink != null) {
                 br.getPage("http://lnx.lu" + finallink);

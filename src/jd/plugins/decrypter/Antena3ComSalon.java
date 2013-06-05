@@ -68,6 +68,10 @@ public class Antena3ComSalon extends PluginForDecrypt {
             String[] allXMLs = br.getRegex("(http://(www\\.)?antena3\\.com/videoxml/\\d+/\\d{4}/\\d{2}/\\d{2}/\\d+\\.xml)").getColumn(0);
             if (allXMLs == null || allXMLs.length == 0) allXMLs = br.getRegex("player_capitulo\\.xml=\'([^\']+)\'").getColumn(0);
             if (allXMLs == null || allXMLs.length == 0) {
+                if (br.containsHTML("class=\"publi_horizontal\"")) {
+                    logger.info("There is nothing to decrypt: " + link.toString());
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypter broken for link: " + link.toString());
                 return null;
             }

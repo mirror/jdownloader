@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Szort.pl" }, urls = { "http://(www\\.)?szort\\.pl/.{3,}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Szort.pl" }, urls = { "http://(www\\.)?szort\\.pl/(?!style.css).{3,}" }, flags = { 0 })
 public class SzrtPl extends PluginForDecrypt {
 
     public SzrtPl(PluginWrapper wrapper) {

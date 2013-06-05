@@ -16,11 +16,13 @@
 
 package jd.plugins.decrypter;
 
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -42,12 +44,22 @@ public class SnrlCm extends PluginForDecrypt {
         String parameter = param.toString();
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(parameter);
-            if (con.getResponseCode() == 410) {
-                logger.info("Link offline: " + parameter);
+            try {
+                con = br.openGetConnection(parameter);
+                if (con.getResponseCode() == 410 || con.getResponseCode() == 503) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
+                try {
+                    br.followConnection();
+                } catch (final BrowserException e) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
+            } catch (final SocketTimeoutException e) {
+                logger.info("Link offline (timeout): " + parameter);
                 return decryptedLinks;
             }
-            br.followConnection();
         } finally {
             try {
                 con.disconnect();
@@ -57,7 +69,16 @@ public class SnrlCm extends PluginForDecrypt {
         String url = null;
         if (br.getRedirectLocation() != null) {
             url = br.getRedirectLocation();
-            br.getPage(url);
+            try {
+                br.getPage(url);
+            } catch (final BrowserException e) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+        }
+        if (br.containsHTML(">An error has occurred:<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         }
 
         // Password

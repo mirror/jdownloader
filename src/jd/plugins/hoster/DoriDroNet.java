@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doridro.net" }, urls = { "http://(www\\.)?doridrodecrypted\\.net/download/[^<>\"]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doridro.net" }, urls = { "http://(www\\.)?doridrodecrypted\\.net/download/[^<>\"]\\.html" }, flags = { 0 })
 public class DoriDroNet extends PluginForHost {
 
     public DoriDroNet(PluginWrapper wrapper) {
@@ -60,6 +60,7 @@ public class DoriDroNet extends PluginForHost {
         String filename = br.getRegex("<meta name=\"audio_title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("Title: ([^<>\"]+)<br").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename.equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         return AvailableStatus.TRUE;
     }
