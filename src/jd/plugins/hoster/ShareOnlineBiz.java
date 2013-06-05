@@ -569,7 +569,7 @@ public class ShareOnlineBiz extends PluginForHost {
             dl.startDownload();
         } else {
             br.followConnection();
-            errorHandling(br, parameter, null, null);
+            errorHandling(br, parameter, account, infos);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
