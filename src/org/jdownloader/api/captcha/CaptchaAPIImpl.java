@@ -162,6 +162,8 @@ public class CaptchaAPIImpl implements CaptchaAPI {
     @Override
     public CaptchaJob getCaptchaJob(long id) {
         SolverJob<?> entry = ChallengeResponseController.getInstance().getJobById(id);
+        if (entry == null) { return null; }
+
         CaptchaJob ret = new CaptchaJob();
 
         Class<?> cls = entry.getChallenge().getClass();

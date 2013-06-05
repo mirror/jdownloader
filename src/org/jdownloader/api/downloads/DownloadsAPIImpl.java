@@ -199,10 +199,10 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 infomap.put("eta", -1);
             }
             if (queryParams._getQueryParam("finished", Boolean.class, false)) {
-                infomap.put("finished", (dl.getLinkStatus().getLatestStatus() == LinkStatus.FINISHED));
+                infomap.put("finished", (dl.getLinkStatus() != null && dl.getLinkStatus().getLatestStatus() == LinkStatus.FINISHED));
             }
             if (queryParams._getQueryParam("linkStatus", Boolean.class, false)) {
-                infomap.put("linkStatus", (dl.getLinkStatus()));
+                infomap.put("linkStatus", new LinkStatusAPIStorable(dl.getLinkStatus()));
             }
             if (queryParams._getQueryParam("running", Boolean.class, false)) {
                 infomap.put("running", dwd.getRunningDownloadLinks().contains(dl));
