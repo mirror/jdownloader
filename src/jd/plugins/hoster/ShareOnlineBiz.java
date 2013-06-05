@@ -514,12 +514,13 @@ public class ShareOnlineBiz extends PluginForHost {
         if (url != null && url.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 5 * 60 * 1000l);
         if (url == null || !url.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
-        if (!dl.getConnection().isContentDisposition()) {
+        if (dl.getConnection().isContentDisposition() || (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("octet-stream"))) {
+            dl.startDownload();
+        } else {
             br.followConnection();
             errorHandling(br, downloadLink, null, null);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
     }
 
     @Override
@@ -564,12 +565,13 @@ public class ShareOnlineBiz extends PluginForHost {
         logger.info("used url: " + dlURL);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, maxChunksnew.get());
-        if (!dl.getConnection().isContentDisposition()) {
+        if (dl.getConnection().isContentDisposition() || (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("octet-stream"))) {
+            dl.startDownload();
+        } else {
             br.followConnection();
-            errorHandling(br, parameter, account, infos);
+            errorHandling(br, parameter, null, null);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
     }
 
     // do not add @Override here to keep 0.* compatibility
