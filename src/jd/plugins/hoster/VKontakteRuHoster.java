@@ -63,11 +63,13 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String ALLOW_360P           = "ALLOW_360P";
     private static final String ALLOW_480P           = "ALLOW_480P";
     private static final String ALLOW_720P           = "ALLOW_720P";
+    private static final String TEMPORARILYBLOCKED   = "You tried to load the same page more than once in one second|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
         setConfigElements();
+        this.setStartIntervall(1 * 1000l);
     }
 
     @Override
@@ -184,21 +186,9 @@ public class VKontakteRuHoster extends PluginForHost {
             // Force login
             login(br, acc, true);
             br.getPage(page);
-        } else if (br.containsHTML("You tried to load the same page more than once in one second")) {
-            for (int i = 1; i <= 5; i++) {
-                logger.info("Try " + i + " / 5 : Avoiding 'You tried to load the same page more than once in one second' by waiting 2 seconds and re-accessing link...");
-                this.sleep(2000l, dl);
-                br.getPage(page);
-                if (br.containsHTML("You tried to load the same page more than once in one second")) continue;
-                break;
-            }
-            if (br.containsHTML("You tried to load the same page more than once in one second")) {
-                logger.info("Failed to avoid 'You tried to load the same page more than once in one second'...");
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l);
-            } else {
-                logger.info("Avoided 'You tried to load the same page more than once in one second' successfully!");
-            }
-        }
+        } else if (br.containsHTML(TEMPORARILYBLOCKED)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l);
+        } else if (br.containsHTML("http\\-equiv=\"refresh\" content=\"\\d+; URL=/badbrowser\\.php\"")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This link is not downloadable"); }
     }
 
     private boolean linkOk(final DownloadLink downloadLink, final String finalfilename) throws IOException {

@@ -312,7 +312,9 @@ public class VKontakteRu extends PluginForDecrypt {
             /* not needed as we already have requested this page */
             // br.getPage(parameter);
         }
-        final String numberOfEntrys = br.getRegex("\\| (\\d+) albums?</title>").getMatch(0);
+        String numberOfEntrys = br.getRegex("\\| (\\d+) albums?</title>").getMatch(0);
+        // Language independant
+        if (numberOfEntrys == null) numberOfEntrys = br.getRegex("class=\"summary\">(\\d+)").getMatch(0);
         final String startOffset = br.getRegex("var preload = \\[(\\d+),\"").getMatch(0);
         if (numberOfEntrys == null || startOffset == null) {
             logger.warning("Decrypter broken for link: " + parameter);

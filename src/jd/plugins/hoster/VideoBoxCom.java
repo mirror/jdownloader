@@ -24,10 +24,11 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -40,7 +41,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobox.com" }, urls = { "http://(www\\.)?videobox\\.com/(movie\\-details\\?contentId=|flashPage/)\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobox.com" }, urls = { "http://(www\\.)?videoboxdecrypted\\.com/decryptedscene/\\d+" }, flags = { 2 })
 public class VideoBoxCom extends PluginForHost {
 
     public VideoBoxCom(PluginWrapper wrapper) {
@@ -63,45 +64,43 @@ public class VideoBoxCom extends PluginForHost {
             link.getLinkStatus().setStatusText("Only checkable with enabled premium account");
             return AvailableStatus.UNCHECKABLE;
         }
-        login(aa, false);
+        login(aa, false, this.br);
+        final String sessionID = br.getCookie("http://videobox.com/", "JSESSIONID");
+        DLLINK = checkDirectLink(link, "directlink");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<title> \\-  \\- VideoBox</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("\"upgrade\":true")) {
-            link.getLinkStatus().setStatusText("Account upgrade needed to download this");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (DLLINK == null) {
+            br.getPage("http://www.videobox.com/content/download/options/" + link.getStringProperty("sceneid", null) + ".json?x-user-name=" + Encoding.urlEncode(aa.getUser()) + "&x-session-key=" + sessionID + "&callback=metai.buildDownloadLinks");
+            DLLINK = getSpecifiedQuality(link.getStringProperty("quality", null));
         }
-        final String sessionID = br.getCookie("http://videobox.com/", "JSESSIONID");
-        if (sessionID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://www.videobox.com/content/details/generate/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/content-column.json?x-user-name=" + aa.getUser() + "&x-session-key=" + sessionID + "&callback=metai.buildMovieDetails");
-        final String filename = getJson("name", br.toString());
-        String firstSceneID = new Regex(link.getDownloadURL(), "videobox\\.com/flashPage/(\\d+)").getMatch(0);
-        if (firstSceneID == null) firstSceneID = br.getRegex("\"firstSceneId\" : (\\d+)").getMatch(0);
-        if (firstSceneID == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://www.videobox.com/content/download/options/" + firstSceneID + ".json?x-user-name=" + aa.getUser() + "&x-session-key=" + sessionID + "&callback=metai.buildDownloadLinks");
-        final String dlSource = getDlInfo();
-        String filesize = getJson("size", dlSource);
-        DLLINK = getJson("url", dlSource);
-        if (filesize == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + DLLINK.substring(DLLINK.lastIndexOf(".")));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        link.setFinalFileName(link.getStringProperty("finalname", null));
+        link.setDownloadSize(SizeFormatter.getSize(link.getStringProperty("plainfilesize", null)));
         return AvailableStatus.TRUE;
     }
 
-    private String getDlInfo() {
-        final String[] qualities = { "DVD", "H264_640", "HIGH", "H264_IPOD" };
-        String qualityInfo = null;
-        for (final String quality : qualities) {
-            qualityInfo = br.getRegex("(\"res\" : \"" + quality + "\".*?)\\}").getMatch(0);
-            if (qualityInfo != null) break;
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
         }
-        return qualityInfo;
+        return dllink;
     }
 
-    private String getJson(final String parameter, final String source) {
-        String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\"([ ]+)?:([ ]+)?\"([^<>\"]*?)\"").getMatch(2);
-        return result;
+    private String getSpecifiedQuality(final String quality) throws PluginException {
+        final String qualityInfo = br.getRegex("(\"res\" : \"" + quality + "\".*?)\\}").getMatch(0);
+        if (qualityInfo == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return qualityInfo;
     }
 
     @Override
@@ -118,7 +117,7 @@ public class VideoBoxCom extends PluginForHost {
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force, final Browser br) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -132,7 +131,7 @@ public class VideoBoxCom extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
+                            br.setCookie(MAINPAGE, key, value);
                         }
                         return;
                     }
@@ -142,7 +141,7 @@ public class VideoBoxCom extends PluginForHost {
                 if (br.getCookie(MAINPAGE, "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
+                final Cookies add = br.getCookies(MAINPAGE);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -160,7 +159,7 @@ public class VideoBoxCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            login(account, true, this.br);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
@@ -182,7 +181,7 @@ public class VideoBoxCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        login(account, false, this.br);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
