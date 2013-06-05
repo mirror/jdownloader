@@ -13,6 +13,7 @@ jd_plugins_optional_jdtrayicon_jdlighttray=Lagani Tray
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Dozvoljava minimiziranje ili zatvaranje JDownloader-a u zonu za obavještenja, kao i druge odgovarajuće mogućnosti kao zaštita šifrom i drugo.
 plugins_optional_JDLightTray_always=Uvijek
 plugins_optional_JDLightTray_closetotray2=Kliknite na 'Zatvori'<x>' Akciju
+plugins_optional_JDLightTray_hideifframevisible=Sakrij ikonicu u sistemskom tray-u ako je prozor vidljiv
 plugins_optional_JDLightTray_linkgrabberresults=Postavi Glavni prozor na vrh ako su ugrabljeni novi Linkovi
 plugins_optional_JDLightTray_minimized=Samo kada je Glavni okvir minimiziran
 plugins_optional_JDLightTray_minimizetotray=Kliknite na 'Minimiziraj'<_>' Akciju
