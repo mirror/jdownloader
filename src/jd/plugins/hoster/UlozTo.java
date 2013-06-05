@@ -95,12 +95,10 @@ public class UlozTo extends PluginForHost {
             br.postPage(br.getURL() + "?do=askAgeForm-submit", "agree=Souhlas%C3%ADm");
             handleRedirect(downloadLink);
         }
-        // Wrong links show the mainpage so here we check if we got the mainpage
-        // or not
-        if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("(<title>Ulož\\.to</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Wrong links show the mainpage so here we check if we got the mainpage or not
+        if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 - Page not found</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(PASSWORDPROTECTED)) {
-            String filename = br.getRegex("<title>([^<>\"]*?) \\| Uloz\\.to</title>").getMatch(0);
+            String filename = br.getRegex("<title>([^<>]+) \\| Uloz\\.to</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("<p>The <strong>([^<>\"]*?)</strong>").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
@@ -282,6 +280,19 @@ public class UlozTo extends PluginForHost {
         return true;
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
+
     public void login(final Account account) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -326,16 +337,4 @@ public class UlozTo extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), UlozTo.REPEAT_CAPTCHA, JDL.L("plugins.hoster.uloz.to.captchas", "Solve captcha by replaying previous (disable to solve manually)")).setDefaultValue(true));
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }
