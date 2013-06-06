@@ -207,10 +207,6 @@ public class RealDebridCom extends PluginForHost {
         } else {
             br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink));
         }
-        if (br.containsHTML("\"error\":5,")) {
-            /* no happy hour */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        }
         if (br.containsHTML("\"error\":4,")) {
             if (dllink.contains("https://")) {
                 dllink = dllink.replace("https://", "http://");
@@ -231,6 +227,16 @@ public class RealDebridCom extends PluginForHost {
         String generatedLinks = br.getRegex("\"generated_links\":\\[\\[(.*?)\\]\\]").getMatch(0);
         String genLnks[] = new Regex(generatedLinks, "\"([^\"]*?)\"").getColumn(0);
         if (genLnks == null || genLnks.length == 0) {
+            if (br.containsHTML("\"error\":3,")) {
+                // {"error":3,"message":"Ein dedicated Server wurde erkannt, es ist dir nicht erlaubt Links zu generieren"}
+                // dedicated server is detected, it does not allow you to generate links
+                logger.info("Dedicated server detected, account disabled");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            if (br.containsHTML("\"error\":5,")) {
+                /* no happy hour */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             if (br.containsHTML("error\":6,")) {
                 // {"error":6,"message":"Daily limit exceeded."}
                 logger.info("You have run out of download quota for this hoster");
