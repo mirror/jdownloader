@@ -511,7 +511,7 @@ public class TbCm extends PluginForDecrypt {
                 boolean q520p = cfg.getBooleanProperty("ALLOW_520P_V2", true);
                 boolean q720p = cfg.getBooleanProperty("ALLOW_720P_V2", true);
                 boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P_V2", true);
-                boolean original = cfg.getBooleanProperty("ALLOW_ORGINAL_V2", true);
+                boolean original = cfg.getBooleanProperty("ALLOW_ORIGINAL_V2", true);
                 if (!q144p && !q240p && !q360p && !q480p && !q520p && !q720p && !q1080p && !original && !threeD) {
                     q144p = true;
                     q240p = true;
