@@ -257,9 +257,10 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     @Override
     public String toString() {
-        if (true && dlLink != null) return dlLink.getName();
         CrawledLink parentL = sourceLink;
         StringBuilder sb = new StringBuilder();
+        sb.append("NAME:");
+        sb.append(getName());
         if (parentL != null) {
             sb.append(parentL.toString() + "-->");
         }

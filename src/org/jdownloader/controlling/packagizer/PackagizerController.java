@@ -19,6 +19,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
@@ -495,9 +496,21 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             if (newFile.getParentFile().exists() == false && newFile.getParentFile().mkdirs() == false) {
                 Log.L.warning("Packagizer could not create " + newFile.getParentFile());
                 return;
-            } else if (f.renameTo(newFile) == false) {
-                Log.L.warning("Packagizer could not move/rename " + f + " to" + newFile);
-            } else {
+            }
+            boolean successful = false;
+            if ((successful = f.renameTo(newFile)) == false) {
+                Log.L.warning("Packagizer rename failed " + f + " to" + newFile);
+                try {
+                    Log.L.warning("Packagizer try copy " + f + " to" + newFile);
+                    IO.copyFile(f, newFile);
+                    f.delete();
+                    successful = true;
+                } catch (final Throwable e) {
+                    newFile.delete();
+                    Log.L.warning("Packagizer could not move/rename " + f + " to" + newFile);
+                }
+            }
+            if (successful) {
                 Log.L.info("Packagizer moved/renamed " + f + " to " + newFile);
                 FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { newFile }));
             }
