@@ -1,12 +1,9 @@
 addons_jdshutdown_statusmessage_disabled=The system will NOT be shut down by JDownloader
 addons_jdshutdown_statusmessage_enabled=JDownloader will shut down your system after downloads are finished!
 gui_config_jdshutdown_close=Close JDownloader
-gui_config_jdshutdown_enabledOnStart=Enabled on Start
 gui_config_jdshutdown_forceshutdown=Force Shutdown (Not for all OS)
 gui_config_jdshutdown_hibernate=Hibernate (Not for all OS)
 gui_config_jdshutdown_mode=Mode:
-gui_config_jdshutdown_osx_force_long=Install Force Shutdown (MacOSX only)
-gui_config_jdshutdown_osx_force_short=Install
 gui_config_jdshutdown_shutdown=Shutdown
 gui_config_jdshutdown_standby=Standby (Not for all OS)
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader will be closed!</font></h2>

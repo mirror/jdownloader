@@ -1,11 +1,8 @@
-approve_WatchAsYouDownload_Message=Do you wish to watch as you download this file?
-approve_WatchAsYouDownload_Title=Neembuu watch as you download
 basicMountLocation=Basic Mount Location
 browse=Browse
 checkVFSButton=Check virtual filesystem capability
 couldNotOpenMountLocation=Could not open mount location
 description=Stream Data - Watch as you download
-failed_WatchAsYouDownload_Message=Could not start a watch as you download session for\n
 failed_WatchAsYouDownload_Title=Neembuu watch as you download failed.
 filePanel_advancedViewButton=Advanced Controls
 filePanel_autoCompleteButtonDisabled=Download as less as possible
