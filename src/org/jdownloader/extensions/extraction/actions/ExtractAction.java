@@ -56,7 +56,7 @@ public class ExtractAction extends AbstractExtractionAction {
         };
 
         File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, UserIO.FILES_ONLY, ff, true, null, null);
-        if (files == null) return;
+        if (files == null || files.length == 0) return;
 
         for (final File archiveStartFile : files) {
 
