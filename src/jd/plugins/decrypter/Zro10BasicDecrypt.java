@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://(www\\.)?((zero10\\.info|save\\-link\\.info|share\\-link\\.info|h\\-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(get\\.(el3lam|sirtggp))\\.com|tanzel\\.eb2a\\.com/short|go4down\\.(com|net)/short|angel\\-tears\\.com/short|imzdb\\.com|dvd4arablinks\\.com|lionzlinks\\.com|mazajna\\.com/links|tvegy\\.info|forexurls\\.net|myurls\\.ca|zmelody\\.com|forexshare\\.net|link\\.arabda3m\\.com|wwenews\\.us|ymoviez\\.com)/[0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zero10.info" }, urls = { "http://(www\\.)?((zero10\\.info|save\\-link\\.info|share\\-link\\.info|h\\-link\\.us|zero10\\.us|(darkhorse|brg8)\\.fi5\\.us|arbforce\\.com/short|(get\\.(el3lam|sirtggp))\\.com|tanzel\\.eb2a\\.com/short|go4down\\.(com|net)/short|angel\\-tears\\.com/short|imzdb\\.com|dvd4arablinks\\.com|lionzlinks\\.com|mazajna\\.com/links|tvegy\\.info|forexurls\\.net|zmelody\\.com|forexshare\\.net|link\\.arabda3m\\.com|wwenews\\.us|ymoviez\\.com)/[0-9]+)" }, flags = { 0 })
 public class Zro10BasicDecrypt extends PluginForDecrypt {
 
     public Zro10BasicDecrypt(PluginWrapper wrapper) {

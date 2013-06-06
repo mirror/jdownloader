@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkhalt.com" }, urls = { "http://(www\\.)?(umediafire|linkhalt)\\.com/(\\?d=[A-Za-z0-9]+|index\\.php\\?p=[\\da-zA-Z]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkhalt.com" }, urls = { "http://(www\\.)?linkhalt\\.com/(\\?d=[A-Za-z0-9]+|index\\.php\\?p=[\\da-zA-Z]+)" }, flags = { 0 })
 public class UMediafireCom extends PluginForDecrypt {
 
     public UMediafireCom(PluginWrapper wrapper) {
@@ -36,7 +36,7 @@ public class UMediafireCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("umediafire.com/", "linkhalt.com/");
+        String parameter = param.toString();
         br.getPage(parameter);
 
         if (parameter.contains("/index.php?p=")) {

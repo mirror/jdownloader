@@ -75,7 +75,8 @@ public class VKontakteRu extends PluginForDecrypt {
             /**
              * Single photo links, those are just passed to the hosterplugin! Example:http://vk.com/photo125005168_269986868
              */
-            decryptedLinks = decryptSinglePhoto(decryptedLinks, parameter);
+            final DownloadLink decryptedPhotolink = getSinglePhotoDownloadLink(new Regex(parameter, "((\\-)?\\d+_\\d+)").getMatch(0));
+            decryptedLinks.add(decryptedPhotolink);
             return decryptedLinks;
         }
         synchronized (LOCK) {
@@ -283,7 +284,7 @@ public class VKontakteRu extends PluginForDecrypt {
         for (final String element : decryptedData) {
             if (albumID == null) albumID = "tag" + new Regex(element, "\\?tag=(\\d+)").getMatch(0);
             /** Pass those goodies over to the hosterplugin */
-            final DownloadLink dl = createDownloadlink("http://vk.com/photo" + element);
+            final DownloadLink dl = getSinglePhotoDownloadLink(element);
             dl.setProperty("albumid", albumID);
             decryptedLinks.add(dl);
         }
@@ -294,13 +295,12 @@ public class VKontakteRu extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> decryptSinglePhoto(final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws IOException {
+    private DownloadLink getSinglePhotoDownloadLink(final String photoID) throws IOException {
         final SubConfiguration cfg = SubConfiguration.getConfig("vkontakte.ru");
         final boolean fastLinkcheck = cfg.getBooleanProperty("FASTPICTURELINKCHECK", false);
-        final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + new Regex(parameter, ".*?vk\\.com/photo" + "(.+)").getMatch(0));
+        final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + photoID);
         if (fastLinkcheck) dl.setAvailable(true);
-        decryptedLinks.add(dl);
-        return decryptedLinks;
+        return dl;
     }
 
     private ArrayList<DownloadLink> decryptPhotoAlbums(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
@@ -592,10 +592,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Current offset has no downloadable links, continuing...");
                 continue;
             }
-            for (final String photoLink : photoLinks) {
-                final String completeVideolink = "http://vk.com/photo" + photoLink;
-                final DownloadLink dl = createDownloadlink(completeVideolink);
-                dl.setAvailable(true);
+            for (final String photoID : photoLinks) {
+                final DownloadLink dl = getSinglePhotoDownloadLink(photoID);
                 decryptedLinks.add(dl);
             }
         }
