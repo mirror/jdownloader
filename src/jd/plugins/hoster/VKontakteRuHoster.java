@@ -186,9 +186,9 @@ public class VKontakteRuHoster extends PluginForHost {
             // Force login
             login(br, acc, true);
             br.getPage(page);
-        } else if (br.containsHTML(TEMPORARILYBLOCKED)) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l);
-        } else if (br.containsHTML("http\\-equiv=\"refresh\" content=\"\\d+; URL=/badbrowser\\.php\"")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This link is not downloadable"); }
+        } else if (br.containsHTML(TEMPORARILYBLOCKED)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l); }
+        // else if (br.containsHTML("NOT_HANDLED_CORRECTLY_YET")) { throw new PluginException(LinkStatus.ERROR_FATAL,
+        // "This link is not downloadable"); }
     }
 
     private boolean linkOk(final DownloadLink downloadLink, final String finalfilename) throws IOException {

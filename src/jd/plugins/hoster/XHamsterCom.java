@@ -40,6 +40,9 @@ public class XHamsterCom extends PluginForHost {
         return "http://xhamster.com/terms.php";
     }
 
+    /**
+     * NOTE: They also have .mp4 version of the videos i nthe html code -> For mobile devices Those are a bit smaller in size
+     * */
     public String getDllink() throws IOException, PluginException {
         String dllink = null;
         String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);

@@ -60,11 +60,12 @@ public class VideoSlasherCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         final Regex fileInfo = br.getRegex("<h1 style=\"margin:20px 20px 10px 20px\">([^<>\"]*?) \\((\\d+(,\\d+)? [A-Za-z]{1,5})\\)</h1>");
-        final String filename = fileInfo.getMatch(0);
+        String filename = fileInfo.getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\| VideoSlasher\\.com</title>").getMatch(0);
         final String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -73,6 +74,7 @@ public class VideoSlasherCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
         br.postPage(br.getURL(), "foo=bar&confirm=Close+Ad+and+Watch+as+Free+User");
+        if (br.containsHTML(">This material has been removed due to infringement|>Not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String playlist = br.getRegex("\\'(/playlist/[a-z0-9]+)\\'").getMatch(0);
         if (playlist == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.videoslasher.com" + playlist);

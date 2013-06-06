@@ -40,7 +40,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -73,7 +72,7 @@ public class FourUpMe extends PluginForHost {
     // premium account: chunks * maxdls
     // protocol: no https
     // captchatype: 4dignum
-    // other: redirects to current cookiehost. it also redirects away from the cookiehost/uid
+    // other: redirects to current cookiehost. it also redirects away from the cookiehost/uid, custom waittime regex
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -483,7 +482,7 @@ public class FourUpMe extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        final String ttt = new Regex(correctedBR, ">Wait <span id=\"[a-z0-9]+\" style=\"color:#498fc9\">(\\d+)</span> seconds</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

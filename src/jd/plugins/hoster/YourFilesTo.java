@@ -51,22 +51,6 @@ public class YourFilesTo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-
-        String link = br.getRegex("var bla = 'http://http:/(.*?)';").getMatch(0);
-        link = Encoding.urlDecode(link.replace("dumdidum", ""), true);
-        link = Encoding.urlDecode(link.replace("dumdidu", ""), true);
-
-        Browser brc = br.cloneBrowser();
-        dl = BrowserAdapter.openDownload(brc, downloadLink, link);
-        /* Workaround für fehlerhaften Filename Header */
-        String name = Plugin.getFileNameFromHeader(dl.getConnection());
-        if (name != null) downloadLink.setFinalFileName(Encoding.deepHtmlDecode(name));
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -86,6 +70,32 @@ public class YourFilesTo extends PluginForHost {
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+
+        String link = br.getRegex("var bla = \\'http://http:/(.*?)\\';").getMatch(0);
+        link = Encoding.urlDecode(link.replace("dumdidum", ""), true);
+        link = Encoding.urlDecode(link.replace("dumdidu", ""), true);
+
+        final Browser brc = br.cloneBrowser();
+        dl = BrowserAdapter.openDownload(brc, downloadLink, link);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            // Falls das nicht geht müssen Downloads bei diesem Fall so geladen werden: http://yourfiles.to/download.php?id=7777777&type=2
+            if (br.getURL().contains("error=1&code=DL_CaptchaInvalid")) throw new PluginException(LinkStatus.ERROR_RETRY);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Workaround für fehlerhaften Filename Header */
+        String name = Plugin.getFileNameFromHeader(dl.getConnection());
+        if (name != null) downloadLink.setFinalFileName(Encoding.deepHtmlDecode(name));
+        dl.startDownload();
+    }
+
+    private void getPageSafe(final String page) {
+
     }
 
     @Override
