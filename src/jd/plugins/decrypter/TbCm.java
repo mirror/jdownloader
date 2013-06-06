@@ -334,10 +334,12 @@ public class TbCm extends PluginForDecrypt {
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (PLUGIN_DISABLED.get() == true) return decryptedLinks;
+        // should consider looking for videoId with regex "((\\?|&)v=|/embed/)([a-z0-9\\-_]+)")
+        // along with playlist references, rather than cleaning up this way as it's leading to false positives.
         String parameter = param.toString().replace("watch#!v", "watch?v");
         parameter = parameter.replaceFirst("(verify_age\\?next_url=\\/?)", "");
         parameter = parameter.replaceFirst("(%3Fv%3D)", "?v=");
-        parameter = parameter.replaceFirst("(watch\\?.*?v)", "watch?v");
+        parameter = parameter.replaceFirst("(watch\\?.*?v=)", "watch?v=");
         parameter = parameter.replaceFirst("/embed/", "/watch?v=");
         parameter = parameter.replaceFirst("https", "http");
 
