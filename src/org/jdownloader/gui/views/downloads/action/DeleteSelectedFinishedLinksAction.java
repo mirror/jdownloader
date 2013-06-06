@@ -29,7 +29,7 @@ public class DeleteSelectedFinishedLinksAction extends AppAction {
 
         List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
         for (DownloadLink dl : si.getChildren()) {
-            if (!dl.getLinkStatus().isFinished()) {
+            if (dl.getLinkStatus().isFinished()) {
                 nodesToDelete.add(dl);
             }
         }
