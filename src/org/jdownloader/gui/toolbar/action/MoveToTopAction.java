@@ -6,6 +6,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
 public class MoveToTopAction extends AbstractMoveAction {
 
@@ -21,7 +23,9 @@ public class MoveToTopAction extends AbstractMoveAction {
             DownloadsTable table = ((DownloadsTable) DownloadsTableModel.getInstance().getTable());
             setDelegateAction(table.getMoveTopAction());
         } else {
-            setDelegateAction(null);
+
+            LinkGrabberTable table = ((LinkGrabberTable) LinkGrabberTableModel.getInstance().getTable());
+            setDelegateAction(table.getMoveTopAction());
         }
     }
 

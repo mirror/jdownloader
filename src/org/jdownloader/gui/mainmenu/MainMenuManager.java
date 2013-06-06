@@ -119,7 +119,8 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
         mr.add(createAboutMenu());
 
         OptionalContainer opt;
-        mr.add(opt = new OptionalContainer());
+        mr.add(opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN));
+
         opt.add(RenameAction.class);
         // // add(new EditMenu());
         // add(new SettingsMenu());

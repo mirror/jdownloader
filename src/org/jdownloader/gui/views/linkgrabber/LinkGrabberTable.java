@@ -255,7 +255,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected boolean updateMoveButtonEnabledStatus() {
-        return false;
+        return super.updateMoveButtonEnabledStatus();
     }
 
     @Override

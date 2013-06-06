@@ -218,30 +218,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isSaveDownloadViewCrossSessionEnabled();
 
     @AboutConfig
-    @DescriptionForConfigEntry("True if move button should be visible in downloadview")
-    @DefaultBooleanValue(false)
-    @RequiresRestart
-    boolean isShowMoveDownButton();
-
-    @DescriptionForConfigEntry("True if move button should be visible in downloadview")
-    @AboutConfig
-    @RequiresRestart
-    @DefaultBooleanValue(false)
-    boolean isShowMoveToBottomButton();
-
-    @DescriptionForConfigEntry("True if move button should be visible in downloadview")
-    @RequiresRestart
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    boolean isShowMoveToTopButton();
-
-    @DescriptionForConfigEntry("True if move button should be visible in downloadview")
-    @AboutConfig
-    @RequiresRestart
-    @DefaultBooleanValue(false)
-    boolean isShowMoveUpButton();
-
-    @AboutConfig
     @DescriptionForConfigEntry("Highlight Column in Downloadview if table is not in downloadsortorder")
     @DefaultBooleanValue(true)
     @RequiresRestart
@@ -327,14 +303,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @DefaultEnumValue("FILENAME")
     void setSelectedDownloadSearchCategory(LinktablesSearchCategory selectedCategory);
-
-    void setShowMoveDownButton(boolean b);
-
-    void setShowMoveToBottomButton(boolean b);
-
-    void setShowMoveToTopButton(boolean b);
-
-    void setShowMoveUpButton(boolean b);
 
     void setSortColumnHighlightEnabled(boolean b);
 

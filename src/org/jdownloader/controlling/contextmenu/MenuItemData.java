@@ -216,6 +216,9 @@ public class MenuItemData implements Storable {
             action.setAccelerator(KeyStroke.getKeyStroke(getShortcut()));
         }
         JMenuItem ret = action.isToggle() ? new JCheckBoxMenuItem(action) : new JMenuItem(action);
+
+        ret.getAccessibleContext().setAccessibleName(action.getName());
+        ret.getAccessibleContext().setAccessibleDescription(action.getTooltipText());
         if (StringUtils.isNotEmpty(name)) {
             ret.setText(name);
         }

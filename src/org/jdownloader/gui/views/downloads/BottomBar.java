@@ -190,20 +190,6 @@ public class BottomBar extends MigPanel {
         }
         add(combo, "height 24!,aligny top,gapleft 2");
 
-        if (config.isShowMoveToTopButton()) {
-            addButton(table.getMoveTopAction()).setFocusable(false);
-        }
-        if (config.isShowMoveUpButton()) {
-            addButton(table.getMoveUpAction()).setFocusable(false);
-
-        }
-        if (config.isShowMoveDownButton()) {
-            addButton(table.getMoveDownAction()).setFocusable(false);
-        }
-        if (config.isShowMoveToBottomButton()) {
-            addButton(table.getMoveToBottomAction()).setFocusable(false);
-        }
-
         // CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
         //
         // @Override
