@@ -19,7 +19,6 @@ interaction_shutdown_dialog_msg_standby=<h2><font color="red">Systemet kommer at
 interaction_shutdown_dialog_title_closejd=Stänga ner JD?
 interaction_shutdown_dialog_title_hibernate=Viloläge?
 interaction_shutdown_dialog_title_shutdown=Stänga av?
-interaction_shutdown_dialog_title_standby=Standby?
 jd_plugins_optional_jdshutdown=JD Avstängning
 jd_plugins_optional_jdshutdown_description=Automatiskt stänga av, viloläge eller avsluta JDownloader när nerladdningar är klar.
 lit_shutdownn=Stäng av

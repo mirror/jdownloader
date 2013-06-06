@@ -11,7 +11,6 @@ Extraction_onShutdownRequest_msg=Avbryt Extrahering?
 ImportAction_tt=Importera regler från *.jdfilter (*.jdregexfilter) filer
 LinkCollector_addCrawledLink_offlinepackage=Offline filer
 LinkCollector_addCrawledLink_variouspackage=Olika filer
-LinkCollector_archiv=%s1
 LinkCollector_onShutdownRequest_=LinkCollector pågår!
 LinkCollector_onShutdownRequest_msg=Vill du avaktivera LinkCollector?
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=Offline filer
@@ -130,7 +129,6 @@ jd_controlling_reconnect_Reconnector_progress_failed2=Återuppkoppling misslycka
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Ingen Återuppkoppling vald</u></b><br/><p>Återuppkoppling är en avancerad funktion för att hoppa över långa väntetider som vissa hosts påtvingar fria användare. <br>Den ger ingen hjälp om du har premium konton.</p><p>Läs mer om återuppkoppling <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>här</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Ingen Återuppkoppling
 jd_plugins_PluginUtils_askPassword=Ange lösenordet för %s1
-literally_offline=Offline
 literally_yes=Ja
 pattern_password=пароль|пасс|pa?s?w|passwort|password|passw?|pw
 pluginforhost_infogenerator_title=Konto %s1@%s2

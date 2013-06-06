@@ -60,7 +60,6 @@ update_dialog_cancel=Avbryt!
 update_dialog_later=Fråga mig senare
 update_dialog_msg_x_updates_available=Uppdateringarna är redo att installeras. Vill du installera nu?
 update_dialog_news_button=Öppna ändringslogg
-update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Uppdatering(ar) tillgängliga
 update_dialog_yes=Ja (rekommenderas)
 update_in_next_session=Avbryt och fråga inte igen förän efter nästa omstart
