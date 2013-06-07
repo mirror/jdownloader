@@ -25,6 +25,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import jd.config.Property;
@@ -65,6 +67,8 @@ public class AccountController implements AccountControllerListener {
 
     private static AccountController                                             INSTANCE         = new AccountController();
 
+    public final ScheduledThreadPoolExecutor                                     TIMINGQUEUE      = new ScheduledThreadPoolExecutor(1);
+
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
                                                                                                       @Override
@@ -84,6 +88,8 @@ public class AccountController implements AccountControllerListener {
 
     private AccountController() {
         super();
+        TIMINGQUEUE.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
+        TIMINGQUEUE.allowCoreThreadTimeOut(true);
         config = JsonConfig.create(AccountSettings.class);
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
@@ -104,7 +110,7 @@ public class AccountController implements AccountControllerListener {
                 acc.setAccountController(this);
             }
         }
-        delayedSaver = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000, 30000) {
+        delayedSaver = new DelayedRunnable(TIMINGQUEUE, 5000, 30000) {
 
             @Override
             public void delayedrun() {

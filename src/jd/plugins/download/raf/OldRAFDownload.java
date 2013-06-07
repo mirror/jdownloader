@@ -516,9 +516,7 @@ public class OldRAFDownload extends DownloadInterface {
                         // forced download, or simple download button.
                         // We shall skip this link and disable all in this
                         // filepackage
-                        for (DownloadLink dl : downloadLink.getFilePackage().getChildren()) {
-                            dl.setEnabled(false);
-                        }
+                        downloadLink.getFilePackage().setEnabled(false);
                         /* TODO: change me */
                         throw new PluginException(LinkStatus.ERROR_FATAL);
                     }
@@ -812,13 +810,16 @@ public class OldRAFDownload extends DownloadInterface {
                         success = hash.equalsIgnoreCase(hashFile);
                     } else {
                         DownloadLink sfv = null;
-                        synchronized (downloadLink.getFilePackage()) {
+                        boolean readL = downloadLink.getFilePackage().getModifyLock().readLock();
+                        try {
                             for (DownloadLink dl : downloadLink.getFilePackage().getChildren()) {
                                 if (dl.getFileOutput().toLowerCase().endsWith(".sfv")) {
                                     sfv = dl;
                                     break;
                                 }
                             }
+                        } finally {
+                            downloadLink.getFilePackage().getModifyLock().readUnlock(readL);
                         }
                         /* SFV File Available, lets use it */
                         if (sfv != null && sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {

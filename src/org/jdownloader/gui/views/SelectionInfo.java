@@ -140,32 +140,41 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 allPkg.add((PackageType) node);
                 if (!((PackageType) node).isExpanded()) {
                     // add allTODO
-                    List<ChildrenType> childs = ((PackageType) node).getChildren();
-                    ret.addAll(childs);
+                    boolean readL = ((PackageType) node).getModifyLock().readLock();
+                    try {
+                        ret.addAll(((PackageType) node).getChildren());
+                    } finally {
+                        ((PackageType) node).getModifyLock().readUnlock(readL);
+                    }
                     fullPkg.add((PackageType) node);
 
                 } else {
-                    List<ChildrenType> childs = ((PackageType) node).getChildren();
-                    boolean containsNone = true;
-                    boolean containsAll = true;
-                    java.util.List<ChildrenType> selected = new ArrayList<ChildrenType>();
-                    for (ChildrenType l : childs) {
-                        if (has.contains(l)) {
-                            selected.add(l);
-                            containsNone = false;
+                    boolean readL = ((PackageType) node).getModifyLock().readLock();
+                    try {
+                        List<ChildrenType> childs = ((PackageType) node).getChildren();
+                        boolean containsNone = true;
+                        boolean containsAll = true;
+                        java.util.List<ChildrenType> selected = new ArrayList<ChildrenType>();
+                        for (ChildrenType l : childs) {
+                            if (has.contains(l)) {
+                                selected.add(l);
+                                containsNone = false;
+                            } else {
+                                containsAll = false;
+                            }
+
+                        }
+                        if (containsAll || containsNone) {
+                            ret.addAll(childs);
+                            fullPkg.add((PackageType) node);
                         } else {
-                            containsAll = false;
-                        }
+                            if (incPkg.add((PackageType) node)) {
+                                incompleteSelectecPackages.put((PackageType) node, selected);
+                            }
 
-                    }
-                    if (containsAll || containsNone) {
-                        ret.addAll(childs);
-                        fullPkg.add((PackageType) node);
-                    } else {
-                        if (incPkg.add((PackageType) node)) {
-                            incompleteSelectecPackages.put((PackageType) node, selected);
                         }
-
+                    } finally {
+                        ((PackageType) node).getModifyLock().readUnlock(readL);
                     }
                 }
             }
@@ -293,8 +302,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe {@link #getChildren()}
-     * instead
+     * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe {@link #getChildren()} instead
      * 
      * @return
      */
@@ -312,8 +320,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Not all links of a package may have been selected @see ( {@link #getIncompletePackages()}. to get a list of all selected links for a
-     * certain package, use this method
+     * Not all links of a package may have been selected @see ( {@link #getIncompletePackages()}. to get a list of all selected links for a certain package, use
+     * this method
      * 
      * @param pkg
      * @return
@@ -321,7 +329,12 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     public List<ChildrenType> getSelectedLinksByPackage(PackageType pkg) {
         List<ChildrenType> ret = incompleteSelectecPackages.get(pkg);
         if (ret != null) return ret;
-        return pkg.getChildren();
+        boolean readL = pkg.getModifyLock().readLock();
+        try {
+            return new ArrayList<ChildrenType>(pkg.getChildren());
+        } finally {
+            pkg.getModifyLock().readUnlock(readL);
+        }
 
     }
 

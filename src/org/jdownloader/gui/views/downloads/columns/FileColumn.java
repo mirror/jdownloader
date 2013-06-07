@@ -20,6 +20,9 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
@@ -35,19 +38,20 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import sun.swing.SwingUtilities2;
 
-public class FileColumn extends ExtTextColumn<AbstractNode> {
+public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericConfigEventListener<Boolean> {
 
     /**
      * 
      */
-    private static final long serialVersionUID = -2963955407564917958L;
+    private static final long serialVersionUID  = -2963955407564917958L;
     protected Border          leftGapBorder;
     private ImageIcon         iconPackageOpen;
     private ImageIcon         iconPackageClosed;
     private ImageIcon         iconArchive;
     private ImageIcon         iconArchiveOpen;
     protected Border          normalBorder;
-    private boolean           selectAll        = false;
+    private boolean           selectAll         = false;
+    private boolean           hideSinglePackage = true;
 
     public FileColumn() {
         super(_GUI._.filecolumn_title());
@@ -58,6 +62,8 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
         iconArchive = NewTheme.I().getIcon("tree_archive", 32);
         iconPackageClosed = NewTheme.I().getIcon("tree_package_closed", 32);
         setClickcount(0);
+        hideSinglePackage = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
+        CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.getEventSender().addListener(this, true);
     }
 
     public boolean isPaintWidthLockIcon() {
@@ -189,7 +195,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
             renderer.setBorder(normalBorder);
         } else if (value instanceof AbstractPackageChildrenNode) {
             AbstractPackageNode parent = ((AbstractPackageNode) ((AbstractPackageChildrenNode) value).getParentNode());
-            if (parent != null && parent.getChildren().size() == 1 && CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled()) {
+            if (parent != null && parent.getChildren().size() == 1 && hideSinglePackage) {
                 renderer.setBorder(normalBorder);
             } else {
                 renderer.setBorder(leftGapBorder);
@@ -237,6 +243,15 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public final String getStringValue(AbstractNode value) {
         return value.getName();
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+        hideSinglePackage = newValue;
     }
 
 }

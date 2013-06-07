@@ -97,7 +97,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             HashMap<String, Long> downloadDone = new HashMap<String, Long>();
             HashSet<String> eta = new HashSet<String>();
             boolean allFinished = true;
-            synchronized (fp) {
+            boolean readL = fp.getModifyLock().readLock();
+            try {
                 for (DownloadLink link : fp.getChildren()) {
                     if (AvailableStatus.FALSE == link.getAvailableStatus()) {
                         // offline
@@ -181,6 +182,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                         newFinishedDate = link.getFinishedDate();
                     }
                 }
+            } finally {
+                fp.getModifyLock().readUnlock(readL);
             }
             for (Long size : downloadSizes.values()) {
                 newSize += size;
@@ -239,7 +242,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             HashSet<String> eta = new HashSet<String>();
             HashSet<DomainInfo> newInfos = new HashSet<DomainInfo>();
             boolean allFinished = true;
-            synchronized (fp) {
+            boolean readL = fp.getModifyLock().readLock();
+            try {
                 for (DownloadLink link : fp.getChildren()) {
                     newInfos.add(link.getDomainInfo(true));
                     if (AvailableStatus.FALSE == link.getAvailableStatus()) {
@@ -325,6 +329,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                         newFinishedDate = link.getFinishedDate();
                     }
                 }
+            } finally {
+                fp.getModifyLock().readUnlock(readL);
             }
             for (Long size : downloadSizes.values()) {
                 newSize += size;

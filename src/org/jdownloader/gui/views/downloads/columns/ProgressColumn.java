@@ -123,20 +123,21 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 mpb.getModel().setRanges(ranges.toArray(new Range[] {}));
             }
         } else if (obj instanceof FilePackage) {
-            synchronized (obj) {
-                long size = ((FilePackage) obj).getView().getSize();
-                mpb.getModel().setMaximum(size);
-                java.util.List<Range> ranges = new ArrayList<Range>();
+            long size = ((FilePackage) obj).getView().getSize();
+            mpb.getModel().setMaximum(size);
+            java.util.List<Range> ranges = new ArrayList<Range>();
 
+            boolean readL = ((FilePackage) obj).getModifyLock().readLock();
+            try {
                 List<DownloadLink> children = ((FilePackage) obj).getChildren();
-                int count = children.size();
-
                 long all = 0;
-                for (int i = 0; i < count; i++) {
+                for (int i = 0; i < children.size(); i++) {
                     ranges.add(new Range(all, all + children.get(i).getDownloadCurrent()));
                     all += children.get(i).getDownloadSize();
                 }
                 mpb.getModel().setRanges(ranges.toArray(new Range[] {}));
+            } finally {
+                ((FilePackage) obj).getModifyLock().readUnlock(readL);
             }
         }
     }

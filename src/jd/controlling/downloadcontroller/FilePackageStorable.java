@@ -21,10 +21,13 @@ public class FilePackageStorable implements Storable {
     public FilePackageStorable(FilePackage filePackage) {
         this.filePackage = filePackage;
         links = new ArrayList<DownloadLinkStorable>(filePackage.size());
-        synchronized (filePackage) {
+        boolean readL = filePackage.getModifyLock().readLock();
+        try {
             for (DownloadLink link : filePackage.getChildren()) {
                 links.add(new DownloadLinkStorable(link));
             }
+        } finally {
+            filePackage.getModifyLock().readUnlock(readL);
         }
     }
 

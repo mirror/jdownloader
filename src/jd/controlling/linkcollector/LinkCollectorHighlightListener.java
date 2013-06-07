@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import jd.controlling.IOEQ;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 
@@ -13,7 +12,7 @@ import org.appwork.scheduler.DelayedRunnable;
 public abstract class LinkCollectorHighlightListener implements LinkCollectorListener {
     private final long                       cleanupTIMEOUT = 30000;
     private HashMap<LinkCollectingJob, Long> newJobMap      = new HashMap<LinkCollectingJob, Long>();
-    private DelayedRunnable                  delayedCleanup = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000l, 60000l) {
+    private DelayedRunnable                  delayedCleanup = new DelayedRunnable(LinkCollector.getInstance().TIMINGQUEUE, 5000l, 60000l) {
 
                                                                 @Override
                                                                 public void delayedrun() {

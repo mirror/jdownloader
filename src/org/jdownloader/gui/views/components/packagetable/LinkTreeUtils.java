@@ -14,7 +14,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.settings.GeneralSettings;
 
 public class LinkTreeUtils {
 
@@ -25,7 +27,12 @@ public class LinkTreeUtils {
                 ret.add((CrawledLink) a);
             } else if (a instanceof CrawledPackage) {
                 if (!((CrawledPackage) a).isExpanded()) {
-                    ret.addAll(((CrawledPackage) a).getChildren());
+                    boolean readL = ((CrawledPackage) a).getModifyLock().readLock();
+                    try {
+                        ret.addAll(((CrawledPackage) a).getChildren());
+                    } finally {
+                        ((CrawledPackage) a).getModifyLock().readUnlock(readL);
+                    }
                 }
             }
         }
@@ -70,27 +77,31 @@ public class LinkTreeUtils {
                 // want only these few links.
                 // if we selected a package, and it is NOT expanded, we want all
                 // links
-
-                if (!((AbstractPackageNode) node).isExpanded()) {
-                    // add allTODO
-                    List<T> childs = ((AbstractPackageNode) node).getChildren();
-                    ret.addAll(childs);
-                    // LinkGrabberTableModel.getInstance().getAllChildrenNodes()
-                } else {
-                    List<T> childs = ((AbstractPackageNode) node).getChildren();
-                    boolean containsNone = true;
-                    boolean containsAll = true;
-                    for (AbstractNode l : childs) {
-                        if (has.contains(l)) {
-                            containsNone = false;
-                        } else {
-                            containsAll = false;
-                        }
-
-                    }
-                    if (containsAll || containsNone) {
+                boolean readL = ((AbstractPackageNode) node).getModifyLock().readLock();
+                try {
+                    if (!((AbstractPackageNode) node).isExpanded()) {
+                        // add allTODO
+                        List<T> childs = ((AbstractPackageNode) node).getChildren();
                         ret.addAll(childs);
+                        // LinkGrabberTableModel.getInstance().getAllChildrenNodes()
+                    } else {
+                        List<T> childs = ((AbstractPackageNode) node).getChildren();
+                        boolean containsNone = true;
+                        boolean containsAll = true;
+                        for (AbstractNode l : childs) {
+                            if (has.contains(l)) {
+                                containsNone = false;
+                            } else {
+                                containsAll = false;
+                            }
+
+                        }
+                        if (containsAll || containsNone) {
+                            ret.addAll(childs);
+                        }
                     }
+                } finally {
+                    ((AbstractPackageNode) node).getModifyLock().readUnlock(readL);
                 }
             }
         }
@@ -143,7 +154,7 @@ public class LinkTreeUtils {
 
     public static HashSet<String> getURLs(List<AbstractNode> links) {
         HashSet<String> urls = new HashSet<String>();
-        if (links == null) return urls;
+        if (links == null || links.size() == 0) return urls;
         String rawURL = null;
         for (AbstractNode node : links) {
             DownloadLink link = null;
@@ -153,8 +164,11 @@ public class LinkTreeUtils {
                 link = ((CrawledLink) node).getDownloadLink();
             } else if (node instanceof AbstractPackageNode) {
                 List<AbstractNode> children = null;
-                synchronized (node) {
+                boolean readL = ((AbstractPackageNode) node).getModifyLock().readLock();
+                try {
                     children = ((AbstractPackageNode) node).getChildren();
+                } finally {
+                    ((AbstractPackageNode) node).getModifyLock().readUnlock(readL);
                 }
                 urls.addAll(getURLs(children));
             }
@@ -171,8 +185,7 @@ public class LinkTreeUtils {
                 }
             }
         }
-        if (links.size() == 1 && rawURL != null && false) {
-            /* TODO: #5707 */
+        if (links.size() == 1 && rawURL != null && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
             urls.clear();
             urls.add(rawURL);
         }

@@ -134,10 +134,15 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             if (pc.indexOf(parent) != index--) return true;
         }
         if (sameParent != null) {
-            index = sameParent.getChildren().size() - 1;
-            for (int i = selectedChld.size() - 1; i >= 0; i--) {
-                ChildrenType child = selectedChld.get(i);
-                if (sameParent.indexOf(child) != index--) return true;
+            boolean readL = sameParent.getModifyLock().readLock();
+            try {
+                index = sameParent.getChildren().size() - 1;
+                for (int i = selectedChld.size() - 1; i >= 0; i--) {
+                    ChildrenType child = selectedChld.get(i);
+                    if (sameParent.indexOf(child) != index--) return true;
+                }
+            } finally {
+                sameParent.getModifyLock().readUnlock(readL);
             }
         }
         return false;
@@ -221,16 +226,17 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         if (selectedChld.size() > 0) {
                             ChildrenType after = null;
                             ParentType pkg = selectedChld.get(0).getParentNode();
-                            synchronized (pkg) {
-                                try {
-                                    int index = pkg.indexOf(selectedChld.get(0)) - 2;
-                                    if (index >= 0) {
-                                        /* move after this element */
-                                        after = pkg.getChildren().get(index);
-                                    }/* else move to top */
-                                } catch (final Throwable e) {
-                                    Log.exception(e);
-                                }
+                            boolean readL = pkg.getModifyLock().readLock();
+                            try {
+                                int index = pkg.indexOf(selectedChld.get(0)) - 2;
+                                if (index >= 0) {
+                                    /* move after this element */
+                                    after = pkg.getChildren().get(index);
+                                }/* else move to top */
+                            } catch (final Throwable e) {
+                                Log.exception(e);
+                            } finally {
+                                pkg.getModifyLock().readUnlock(readL);
                             }
                             pc.move(selectedChld, pkg, after);
                         }
@@ -279,14 +285,15 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         if (selectedChld.size() > 0) {
                             ChildrenType after = null;
                             ParentType pkg = selectedChld.get(0).getParentNode();
-                            synchronized (pkg) {
-                                try {
-                                    /* move after after element or max at bottom */
-                                    int index = Math.min(pkg.getChildren().size() - 1, pkg.indexOf(selectedChld.get(selectedChld.size() - 1)) + 1);
-                                    after = pkg.getChildren().get(index);
-                                } catch (final Throwable e) {
-                                    Log.exception(e);
-                                }
+                            boolean readL = pkg.getModifyLock().readLock();
+                            try {
+                                /* move after after element or max at bottom */
+                                int index = Math.min(pkg.getChildren().size() - 1, pkg.indexOf(selectedChld.get(selectedChld.size() - 1)) + 1);
+                                after = pkg.getChildren().get(index);
+                            } catch (final Throwable e) {
+                                Log.exception(e);
+                            } finally {
+                                pkg.getModifyLock().readUnlock(readL);
                             }
                             pc.move(selectedChld, pkg, after);
                         }
@@ -334,12 +341,13 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         if (selectedChld.size() > 0) {
                             ChildrenType after = null;
                             ParentType pkg = selectedChld.get(0).getParentNode();
-                            synchronized (pkg) {
-                                try {
-                                    after = pkg.getChildren().get(pkg.getChildren().size() - 1);
-                                } catch (final Throwable e) {
-                                    Log.exception(e);
-                                }
+                            boolean readL = pkg.getModifyLock().readLock();
+                            try {
+                                after = pkg.getChildren().get(pkg.getChildren().size() - 1);
+                            } catch (final Throwable e) {
+                                Log.exception(e);
+                            } finally {
+                                pkg.getModifyLock().readUnlock(readL);
                             }
                             pc.move(selectedChld, pkg, after);
                         }
@@ -504,12 +512,15 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             if (node instanceof AbstractPackageChildrenNode<?>) {
                 if (!links.contains(node)) links.add((ChildrenType) node);
             } else {
-                synchronized (node) {
+                boolean readL = ((AbstractPackageNode) node).getModifyLock().readLock();
+                try {
                     for (final ChildrenType dl : ((ParentType) node).getChildren()) {
                         if (!links.contains(dl)) {
                             links.add(dl);
                         }
                     }
+                } finally {
+                    ((AbstractPackageNode) node).getModifyLock().readUnlock(readL);
                 }
             }
         }

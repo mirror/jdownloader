@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import jd.controlling.captcha.SkipException;
 
@@ -14,6 +15,10 @@ public class JobRunnable<T> implements Runnable {
     private boolean                                 canceled;
 
     public final static ScheduledThreadPoolExecutor TIMINGQUEUE = new ScheduledThreadPoolExecutor(1);
+    static {
+        TIMINGQUEUE.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
+        TIMINGQUEUE.allowCoreThreadTimeOut(true);
+    }
 
     public JobRunnable(ChallengeSolver<T> challengeSolver, SolverJob<T> job) {
         this.job = job;

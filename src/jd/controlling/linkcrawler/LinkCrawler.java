@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -15,7 +16,6 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import jd.config.Property;
-import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.http.Browser;
 import jd.parser.html.HTMLParser;
@@ -45,37 +45,39 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class LinkCrawler {
 
-    private LazyHostPlugin              directHTTP                  = null;
-    private LazyHostPlugin              ftp                         = null;
-    private java.util.List<CrawledLink> crawledLinks                = new ArrayList<CrawledLink>();
-    private AtomicInteger               crawledLinksCounter         = new AtomicInteger(0);
-    private java.util.List<CrawledLink> filteredLinks               = new ArrayList<CrawledLink>();
-    private AtomicInteger               filteredLinksCounter        = new AtomicInteger(0);
-    private java.util.List<CrawledLink> brokenLinks                 = new ArrayList<CrawledLink>();
-    private AtomicInteger               brokenLinksCounter          = new AtomicInteger(0);
-    private java.util.List<CrawledLink> unhandledLinks              = new ArrayList<CrawledLink>();
-    private AtomicInteger               unhandledLinksCounter       = new AtomicInteger(0);
-    private AtomicInteger               crawler                     = new AtomicInteger(0);
-    private static AtomicInteger        CRAWLER                     = new AtomicInteger(0);
-    private HashSet<String>             duplicateFinderContainer    = new HashSet<String>();
-    private HashSet<String>             duplicateFinderCrawler      = new HashSet<String>();
-    private HashSet<String>             duplicateFinderFinal        = new HashSet<String>();
-    private HashSet<String>             duplicateFinderDeep         = new HashSet<String>();
-    private LinkCrawlerHandler          handler                     = null;
-    protected static ThreadPoolExecutor threadPool                  = null;
+    private LazyHostPlugin                          directHTTP                  = null;
+    private LazyHostPlugin                          ftp                         = null;
+    private java.util.List<CrawledLink>             crawledLinks                = new ArrayList<CrawledLink>();
+    private AtomicInteger                           crawledLinksCounter         = new AtomicInteger(0);
+    private java.util.List<CrawledLink>             filteredLinks               = new ArrayList<CrawledLink>();
+    private AtomicInteger                           filteredLinksCounter        = new AtomicInteger(0);
+    private java.util.List<CrawledLink>             brokenLinks                 = new ArrayList<CrawledLink>();
+    private AtomicInteger                           brokenLinksCounter          = new AtomicInteger(0);
+    private java.util.List<CrawledLink>             unhandledLinks              = new ArrayList<CrawledLink>();
+    private AtomicInteger                           unhandledLinksCounter       = new AtomicInteger(0);
+    private AtomicInteger                           crawler                     = new AtomicInteger(0);
+    private static AtomicInteger                    CRAWLER                     = new AtomicInteger(0);
+    private HashSet<String>                         duplicateFinderContainer    = new HashSet<String>();
+    private HashSet<String>                         duplicateFinderCrawler      = new HashSet<String>();
+    private HashSet<String>                         duplicateFinderFinal        = new HashSet<String>();
+    private HashSet<String>                         duplicateFinderDeep         = new HashSet<String>();
+    private LinkCrawlerHandler                      handler                     = null;
+    protected static ThreadPoolExecutor             threadPool                  = null;
 
-    private LinkCrawlerFilter           filter                      = null;
-    private volatile boolean            allowCrawling               = true;
-    private AtomicInteger               crawlerGeneration           = new AtomicInteger(0);
-    private LinkCrawler                 parentCrawler               = null;
-    private final long                  created;
+    private LinkCrawlerFilter                       filter                      = null;
+    private volatile boolean                        allowCrawling               = true;
+    private AtomicInteger                           crawlerGeneration           = new AtomicInteger(0);
+    private LinkCrawler                             parentCrawler               = null;
+    private final long                              created;
 
-    public static final String          PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
-    public static final String          PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
-    public static final String          PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
-    public static final UniqueAlltimeID PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
-    private boolean                     doDuplicateFinderFinalCheck = true;
-    private List<LazyHostPlugin>        pHosts;
+    public static final String                      PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
+    public static final String                      PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
+    public static final String                      PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
+    public static final UniqueAlltimeID             PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
+    private boolean                                 doDuplicateFinderFinalCheck = true;
+    private List<LazyHostPlugin>                    pHosts;
+
+    public final static ScheduledThreadPoolExecutor TIMINGQUEUE                 = new ScheduledThreadPoolExecutor(1);
 
     public boolean isDoDuplicateFinderFinalCheck() {
         if (parentCrawler != null) parentCrawler.isDoDuplicateFinderFinalCheck();
@@ -97,6 +99,8 @@ public class LinkCrawler {
                                                       };
 
     static {
+        TIMINGQUEUE.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
+        TIMINGQUEUE.allowCoreThreadTimeOut(true);
         int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
         int keepAlive = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getThreadKeepAlive(), 100);
 
@@ -1121,7 +1125,7 @@ public class LinkCrawler {
                 if (maximumDelay == 0) {
                     maximumDelay = -1;
                 }
-                distributeLinksDelayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, minimumDelay, maximumDelay) {
+                distributeLinksDelayer = new DelayedRunnable(TIMINGQUEUE, minimumDelay, maximumDelay) {
 
                     @Override
                     public void delayedrun() {

@@ -57,6 +57,7 @@ public class WatchAsYouDownloadAction extends AppAction {
             fp.setProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.INITIATED_BY_WATCH_ACTION, true);
 
             // resetting all links, everytime, to ensure that not even one file is ignored
+            /* TODO: proper sync here */
             for (DownloadLink link : fp.getChildren()) {
                 if (link.getLinkStatus().isPluginActive()) {
                     /*

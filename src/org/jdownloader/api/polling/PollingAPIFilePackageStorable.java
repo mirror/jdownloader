@@ -22,7 +22,7 @@ public class PollingAPIFilePackageStorable implements Storable {
     public PollingAPIFilePackageStorable(FilePackage link) {
         this.fp = link;
         packageView = new FilePackageView(fp);
-        packageView.update(fp.getChildren());
+        packageView.update();
     }
 
     public Long getUUID() {
@@ -30,7 +30,6 @@ public class PollingAPIFilePackageStorable implements Storable {
     }
 
     public Long getDone() {
-
         return packageView.getDone();
     }
 

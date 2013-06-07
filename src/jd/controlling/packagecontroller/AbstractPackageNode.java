@@ -10,6 +10,8 @@ public interface AbstractPackageNode<V extends AbstractPackageChildrenNode<E>, E
 
     List<V> getChildren();
 
+    ModifyLock getModifyLock();
+
     void sort();
 
     void setCurrentSorter(ChildComparator<V> comparator);

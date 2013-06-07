@@ -6,6 +6,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.plugins.DownloadLink;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 
 public class CrawledLinkStorable implements Storable {
 
@@ -89,11 +90,18 @@ public class CrawledLinkStorable implements Storable {
     }
 
     public ArchiveInfoStorable getArchiveInfo() {
-        return new ArchiveInfoStorable(link.getArchiveInfo());
+        if (link.hasArchiveInfo()) return new ArchiveInfoStorable(link.getArchiveInfo());
+        return null;
     }
 
     public void setArchiveInfo(ArchiveInfoStorable info) {
-        if (info != null) link.setArchiveInfo(info._getArchiveInfo());
+        if (info != null) {
+            boolean setArchiveInfo = BooleanStatus.UNSET != info.getAutoExtract() && info.getAutoExtract() != null;
+            if (setArchiveInfo == false) setArchiveInfo = info.getExtractionPasswords() != null && info.getExtractionPasswords().size() > 0;
+            if (setArchiveInfo) {
+                link.setArchiveInfo(info._getArchiveInfo());
+            }
+        }
     }
 
 }

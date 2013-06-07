@@ -90,8 +90,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
     }
 
     /**
-     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
 
     private MainToolbarManager() {
@@ -128,10 +127,10 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         mr.add(StopDownloadsAction.class);
 
         mr.add(new SeperatorData());
-        mr.add(new MenuItemData(new ActionData(MoveToTopAction.class), MenuItemProperty.ALWAYS_HIDDEN));
-        mr.add(new MenuItemData(new ActionData(MoveUpAction.class), MenuItemProperty.ALWAYS_HIDDEN));
-        mr.add(new MenuItemData(new ActionData(MoveDownAction.class), MenuItemProperty.ALWAYS_HIDDEN));
-        mr.add(new MenuItemData(new ActionData(MoveToBottomAction.class), MenuItemProperty.ALWAYS_HIDDEN));
+        mr.add(new MenuItemData(new ActionData(MoveToTopAction.class)));
+        mr.add(new MenuItemData(new ActionData(MoveUpAction.class)));
+        mr.add(new MenuItemData(new ActionData(MoveDownAction.class)));
+        mr.add(new MenuItemData(new ActionData(MoveToBottomAction.class)));
         mr.add(new SeperatorData());
         mr.add(ClipBoardToggleAction.class);
         mr.add(AutoReconnectToggleAction.class);

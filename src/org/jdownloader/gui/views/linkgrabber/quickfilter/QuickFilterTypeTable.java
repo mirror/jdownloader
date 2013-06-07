@@ -53,28 +53,24 @@ public class QuickFilterTypeTable extends FilterTable {
             }
         }
 
-        boolean readL = LinkCollector.getInstance().readLock();
-        try {
-            for (CrawledPackage pkg : LinkCollector.getInstance().getPackages()) {
-                synchronized (pkg) {
-                    for (CrawledLink link : pkg.getChildren()) {
-                        if (map.add(link)) {
-                            filteredLinks.add(link);
-                        }
-                        String ext = Files.getExtension(link.getName());
-                        for (Filter filter : allFilters) {
-                            if (((ExtensionFilter) filter).isFiltered(ext)) {
-
-                                filtersInUse.add(filter);
-
-                                break;
-                            }
+        for (CrawledPackage pkg : LinkCollector.getInstance().getPackagesCopy()) {
+            boolean readL = pkg.getModifyLock().readLock();
+            try {
+                for (CrawledLink link : pkg.getChildren()) {
+                    if (map.add(link)) {
+                        filteredLinks.add(link);
+                    }
+                    String ext = Files.getExtension(link.getName());
+                    for (Filter filter : allFilters) {
+                        if (((ExtensionFilter) filter).isFiltered(ext)) {
+                            filtersInUse.add(filter);
+                            break;
                         }
                     }
                 }
+            } finally {
+                pkg.getModifyLock().readUnlock(readL);
             }
-        } finally {
-            LinkCollector.getInstance().readUnlock(readL);
         }
 
         for (Filter filter : filtersInUse) {

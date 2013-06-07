@@ -572,8 +572,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         }
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss
-         * in ms. value==0 macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
+         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());
@@ -733,7 +733,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
                         FilePackage fp = downloadLink.getFilePackage();
                         FilePackageView fpv = new FilePackageView(fp);
-                        fpv.update(fp.getChildren());
+                        fpv.update();
                         if (fpv.isFinished() && fpv.getDisabledCount() == 0) {
 
                             LogController.GL.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");

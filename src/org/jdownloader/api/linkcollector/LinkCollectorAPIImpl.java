@@ -10,6 +10,7 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.FilePackage;
 
@@ -26,18 +27,20 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
+        ArrayList<CrawledPackage> packages = lc.getPackagesCopy();
 
-        boolean b = lc.readLock();
-        try {
-            if (startWith > lc.getPackages().size() - 1) return result;
-            if (startWith < 0) startWith = 0;
-            if (maxResults < 0) maxResults = lc.getPackages().size();
+        if (startWith > lc.getPackages().size() - 1) return result;
+        if (startWith < 0) startWith = 0;
+        if (maxResults < 0) maxResults = lc.getPackages().size();
 
-            for (int i = startWith; i < startWith + maxResults; i++) {
+        for (int i = startWith; i < startWith + maxResults; i++) {
 
-                CrawledPackage pkg = lc.getPackages().get(i);
+            CrawledPackage pkg = packages.get(i);
+            boolean readL = pkg.getModifyLock().readLock();
+            try {
                 CrawledPackageAPIStorable cps = new CrawledPackageAPIStorable(pkg);
-
+                CrawledPackageView view = new CrawledPackageView();
+                view.update(pkg.getChildren());
                 QueryResponseMap infomap = new QueryResponseMap();
                 if (queryParams._getQueryParam("saveTo", Boolean.class, false)) {
                     infomap.put("saveTo", pkg.getRawDownloadFolder());
@@ -47,7 +50,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                     for (CrawledLink cl : pkg.getChildren()) {
                         size = size + cl.getSize();
                     }
-                    infomap.put("size", pkg.getView().getFileSize());
+                    infomap.put("size", view.getFileSize());
                 }
                 if (queryParams._getQueryParam("childCount", Boolean.class, false)) {
                     infomap.put("childCount", pkg.getChildren().size());
@@ -69,9 +72,9 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 if (i == lc.getPackages().size() - 1) {
                     break;
                 }
+            } finally {
+                pkg.getModifyLock().readUnlock(readL);
             }
-        } finally {
-            lc.readUnlock(b);
         }
 
         return result;
@@ -116,7 +119,12 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         // collect children of the selected packages and convert to storables for response
         List<CrawledLink> links = new ArrayList<CrawledLink>();
         for (CrawledPackage pkg : matched) {
-            links.addAll(pkg.getChildren());
+            boolean readL = pkg.getModifyLock().readLock();
+            try {
+                links.addAll(pkg.getChildren());
+            } finally {
+                pkg.getModifyLock().readUnlock(readL);
+            }
         }
 
         if (links.isEmpty()) return result;

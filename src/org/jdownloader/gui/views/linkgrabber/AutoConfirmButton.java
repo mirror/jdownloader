@@ -172,7 +172,6 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                     @Override
                     protected void runInEDT() {
                         timer.stop();
-                        System.out.println("AUTOADD");
                         setVisible(false);
                         IOEQ.add(new Runnable() {
 

@@ -9,6 +9,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.ChildComparator;
+import jd.controlling.packagecontroller.ModifyLock;
 import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.storage.config.JsonConfig;
@@ -105,6 +106,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private transient UniqueAlltimeID                      uniqueID               = new UniqueAlltimeID();
     protected CrawledPackageView                           view;
     private String                                         compiledDownloadFolder = null;
+    private transient ModifyLock                           lock                   = new ModifyLock();
 
     private ChildComparator<CrawledLink>                   sorter;
 
@@ -114,7 +116,6 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     public CrawledPackage() {
         children = new ArrayList<CrawledLink>();
-        view = new CrawledPackageView();
         if (JsonConfig.create(GeneralSettings.class).isAutoSortChildrenEnabled()) {
             sorter = SORTER_ASC;
         }
@@ -130,9 +131,13 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     @Override
     public void sort() {
-        synchronized (this) {
-            if (sorter == null) return;
-            Collections.sort(children, sorter);
+        ChildComparator<CrawledLink> lsorter = sorter;
+        if (lsorter == null) return;
+        try {
+            getModifyLock().writeLock();
+            Collections.sort(children, lsorter);
+        } finally {
+            getModifyLock().writeUnlock();
         }
     }
 
@@ -246,6 +251,13 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public CrawledPackageView getView() {
+        if (view != null) return view;
+        synchronized (this) {
+            if (view == null) {
+                CrawledPackageView lfpInfo = new CrawledPackageView();
+                view = lfpInfo;
+            }
+        }
         return view;
     }
 
@@ -254,8 +266,11 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public int indexOf(CrawledLink child) {
-        synchronized (this) {
+        boolean readL = getModifyLock().readLock();
+        try {
             return children.indexOf(child);
+        } finally {
+            if (readL) getModifyLock().readUnlock(readL);
         }
     }
 
@@ -266,16 +281,6 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     @Override
     public void setCurrentSorter(ChildComparator<CrawledLink> comparator) {
-
-        // if (comparator != null) {
-        // if (comparator.isAsc()) {
-        // Log.L.info("Sort ASC " + comparator.getID());
-        // } else {
-        // Log.L.info("Sort DESC " + comparator.getID());
-        // }
-        // } else {
-        // Log.L.info("UNSORTED");
-        // }
         sorter = comparator;
     }
 
@@ -286,6 +291,11 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         AbstractNode lsource = source;
         if (lsource == null) lsource = this;
         n.nodeUpdated(lsource, notify, param);
+    }
+
+    @Override
+    public ModifyLock getModifyLock() {
+        return lock;
     }
 
 }

@@ -9,9 +9,6 @@ import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import jd.controlling.IOEQ;
 
@@ -39,11 +36,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return contentChanged.get();
     }
 
-    protected LinkedList<PackageType>    packages  = new LinkedList<PackageType>();
-
-    private final ReentrantReadWriteLock lock      = new ReentrantReadWriteLock();
-    private final ReadLock               readLock  = this.lock.readLock();
-    private final WriteLock              writeLock = this.lock.writeLock();
+    protected ArrayList<PackageType> packages = new ArrayList<PackageType>();
+    private ModifyLock               lock     = new ModifyLock();
 
     /**
      * add a Package at given position position in this PackageController. in case the Package is already controlled by this PackageController this function
@@ -72,15 +66,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    writeLock();
-                    try {
-                        synchronized (pkg) {
-                            pkg.setCurrentSorter(comparator);
-                            pkg.sort();
-                        }
-                    } finally {
-                        writeUnlock();
-                    }
+                    pkg.setCurrentSorter(comparator);
+                    pkg.sort();
                     structureChanged.incrementAndGet();
                     _controllerStructureChanged(this.getQueuePrio());
                     return null;
@@ -153,7 +140,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             currentIndex++;
                         }
                         if (!done || addLast) {
-                            packages.addLast(pkg);
+                            packages.add(pkg);
                         }
                         pkg.setControlledBy(PackageController.this);
                     } finally {
@@ -185,7 +172,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                 @Override
                 protected Void run() throws RuntimeException {
                     boolean removed = false;
-                    java.util.List<ChildType> remove = null;
                     PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
                     if (controller == null) {
                         logger.log(new Throwable("NO CONTROLLER!!!"));
@@ -204,16 +190,18 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             writeUnlock();
                         }
                     }
-                    synchronized (pkg) {
-                        remove = new ArrayList<ChildType>(pkg.getChildren());
-                    }
-                    if (removed && remove != null) {
+                    if (removed) {
+                        java.util.List<ChildType> remove = null;
+                        boolean readL = pkg.getModifyLock().readLock();
+                        try {
+                            remove = new ArrayList<ChildType>(pkg.getChildren());
+                        } finally {
+                            pkg.getModifyLock().readUnlock(readL);
+                        }
                         if (remove.size() > 0) {
                             childrenChanged.incrementAndGet();
                             controller._controllerParentlessLinks(remove, this.getQueuePrio());
                         }
-                    }
-                    if (removed) {
                         controller.structureChanged.incrementAndGet();
                         controller._controllerPackageNodeRemoved(pkg, this.getQueuePrio());
                         _controllerStructureChanged(this.getQueuePrio());
@@ -280,7 +268,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         boolean readL = readLock();
         try {
             for (PackageType pkg : packages) {
-                synchronized (pkg) {
+                boolean readL2 = pkg.getModifyLock().readLock();
+                try {
                     for (ChildType child : pkg.getChildren()) {
                         if (filter != null && filter.returnMaxResults() > 0 && ret.size() == filter.returnMaxResults()) {
                             /* max results found, lets return */
@@ -290,6 +279,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             ret.add(child);
                         }
                     }
+                } finally {
+                    pkg.getModifyLock().readUnlock(readL2);
                 }
             }
         } finally {
@@ -420,52 +411,46 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             controller.removeChildren(cpkg, next.getValue(), false);
                         }
                     }
-                    writeLock();
+
                     try {
-                        synchronized (pkg) {
-                            int destIndex = index;
-                            List<ChildType> pkgchildren = pkg.getChildren();
-                            /* remove all */
-                            /*
-                             * TODO: speed optimization, we have to correct the index to match changes in children structure
-                             */
+                        pkg.getModifyLock().writeLock();
 
-                            for (ChildType child : elementsToMove) {
-                                int childI = pkgchildren.indexOf(child);
-                                if (childI >= 0) {
-                                    if (childI < destIndex) destIndex -= 1;
-                                    pkgchildren.remove(childI);
-                                }
+                        int destIndex = index;
+                        List<ChildType> pkgchildren = pkg.getChildren();
+                        /* remove all */
+                        /*
+                         * TODO: speed optimization, we have to correct the index to match changes in children structure
+                         */
+                        for (ChildType child : elementsToMove) {
+                            int childI = pkgchildren.indexOf(child);
+                            if (childI >= 0) {
+                                if (childI < destIndex) destIndex -= 1;
+                                pkgchildren.remove(childI);
                             }
-
-                            /* add at wanted position */
-                            if (destIndex < 0 || destIndex > pkgchildren.size()) {
-                                /* add at the end */
-                                ChildComparator<ChildType> sorter = pkg.getCurrentSorter();
-                                if (sorter != null) {
-                                    for (ChildType c : elementsToMove) {
-
-                                        pkgchildren.add(search(pkgchildren, c, sorter), c);
-                                    }
-
-                                } else {
-                                    pkgchildren.addAll(elementsToMove);
-                                }
-
-                            } else {
-                                pkg.setCurrentSorter(null);
-                                pkgchildren.addAll(destIndex, elementsToMove);
-                            }
-
-                            for (ChildType child : elementsToMove) {
-                                child.setParentNode(pkg);
-                            }
-                            autoFileNameCorrection(pkgchildren);
                         }
-                        pkg.nodeUpdated(null, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE, null);
+                        /* add at wanted position */
+                        if (destIndex < 0 || destIndex > pkgchildren.size()) {
+                            /* add at the end */
+                            ChildComparator<ChildType> sorter = pkg.getCurrentSorter();
+                            if (sorter != null) {
+                                for (ChildType c : elementsToMove) {
+                                    pkgchildren.add(search(pkgchildren, c, sorter), c);
+                                }
+                            } else {
+                                pkgchildren.addAll(elementsToMove);
+                            }
+                        } else {
+                            pkg.setCurrentSorter(null);
+                            pkgchildren.addAll(destIndex, elementsToMove);
+                        }
+                        for (ChildType child : elementsToMove) {
+                            child.setParentNode(pkg);
+                        }
+                        autoFileNameCorrection(pkgchildren);
                     } finally {
-                        writeUnlock();
+                        pkg.getModifyLock().writeUnlock();
                     }
+                    pkg.nodeUpdated(null, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE, null);
                     structureChanged.incrementAndGet();
                     if (newChildren) childrenChanged.incrementAndGet();
                     _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
@@ -498,33 +483,31 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         logger.log(new Throwable("NO CONTROLLER!!!"));
                         return null;
                     }
-                    writeLock();
                     try {
-                        synchronized (pkg) {
-                            List<ChildType> pkgchildren = pkg.getChildren();
-                            Iterator<ChildType> it = links.iterator();
-                            while (it.hasNext()) {
-                                ChildType dl = it.next();
-                                if (pkgchildren.remove(dl)) {
-                                    /*
-                                     * set FilePackage to null if the link was controlled by this FilePackage
-                                     */
-                                    if (dl.getParentNode() == pkg) {
-                                        dl.setParentNode(null);
-                                    } else {
-                                        logger.log(new Throwable("removing children from wrong parent?!?!?"));
-                                    }
+                        pkg.getModifyLock().writeLock();
+                        List<ChildType> pkgchildren = pkg.getChildren();
+                        Iterator<ChildType> it = links.iterator();
+                        while (it.hasNext()) {
+                            ChildType dl = it.next();
+                            if (pkgchildren.remove(dl)) {
+                                /*
+                                 * set FilePackage to null if the link was controlled by this FilePackage
+                                 */
+                                if (dl.getParentNode() == pkg) {
+                                    dl.setParentNode(null);
                                 } else {
-                                    /* child not part of given package */
-                                    it.remove();
-
+                                    logger.log(new Throwable("removing children from wrong parent?!?!?"));
                                 }
+                            } else {
+                                /* child not part of given package */
+                                it.remove();
+
                             }
                         }
-                        pkg.nodeUpdated(null, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE, null);
                     } finally {
-                        writeUnlock();
+                        pkg.getModifyLock().writeUnlock();
                     }
+                    pkg.nodeUpdated(null, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE, null);
                     if (links.size() > 0) {
                         controller.structureChanged.incrementAndGet();
                         if (doNotifyParentlessLinks) {
@@ -546,14 +529,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
             @Override
             protected Void run() throws RuntimeException {
-                java.util.List<PackageType> clearList = null;
-                boolean readL = readLock();
-                try {
-                    clearList = new ArrayList<PackageType>(packages);
-                } finally {
-                    readUnlock(readL);
-                }
-                for (PackageType pkg : clearList) {
+                for (PackageType pkg : getPackagesCopy()) {
                     removePackage(pkg);
                 }
                 return null;
@@ -570,13 +546,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                 for (PackageType srcPkg : srcPkgs) {
                     int destination = 0;
                     if (internalafterDest != null) {
-                        int destI = 0;
-                        boolean readL = readLock();
-                        try {
-                            destI = packages.indexOf(internalafterDest);
-                        } finally {
-                            readUnlock(readL);
-                        }
+                        int destI = indexOf(internalafterDest);
                         destination = Math.max(destI, 0) + 1;
                     }
                     addmovePackageAt(srcPkg, destination);
@@ -595,10 +565,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
             protected Void run() throws RuntimeException {
                 int destination = 0;
                 if (afterLink != null) {
-                    int destI = 0;
-                    synchronized (dstPkg) {
-                        destI = dstPkg.getChildren().indexOf(afterLink);
-                    }
+                    int destI = dstPkg.indexOf(afterLink);
                     destination = Math.max(destI, 0) + 1;
                 }
                 moveOrAddAt(dstPkg, srcLinks, destination);
@@ -618,36 +585,33 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     abstract protected void _controllerPackageNodeStructureChanged(PackageType pkg, QueuePriority priority);
 
     public boolean readLock() {
-        if (!this.writeLock.isHeldByCurrentThread()) {
-            this.readLock.lock();
-            return true;
-        }
-        return false;
+        return lock.readLock();
     }
 
     public void readUnlock(boolean state) {
-        if (state == false) return;
-        readUnlock();
-    }
-
-    public void readUnlock() {
-        try {
-            this.readLock.unlock();
-        } catch (final IllegalMonitorStateException e) {
-            logger.log(e);
-        }
+        lock.readUnlock(state);
     }
 
     public void writeLock() {
-        this.writeLock.lock();
+        lock.writeLock();
     }
 
     public void writeUnlock() {
-        this.writeLock.unlock();
+        lock.writeUnlock();
     }
 
-    public LinkedList<PackageType> getPackages() {
+    public ArrayList<PackageType> getPackages() {
         return packages;
+    }
+
+    public ArrayList<PackageType> getPackagesCopy() {
+        final boolean readL = readLock();
+        try {
+            /* get all packages from controller */
+            return new ArrayList<PackageType>(getPackages());
+        } finally {
+            readUnlock(readL);
+        }
     }
 
     public void nodeUpdated(AbstractNode source, NOTIFY notify, Object param) {

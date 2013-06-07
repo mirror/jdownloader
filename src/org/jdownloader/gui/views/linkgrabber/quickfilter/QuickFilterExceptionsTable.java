@@ -221,7 +221,6 @@ public class QuickFilterExceptionsTable extends FilterTable {
     public void reset() {
         Collection<Filter> lfilters = filterMap.values();
         for (Filter filter : lfilters) {
-
             filter.setCounter(0);
         }
     }

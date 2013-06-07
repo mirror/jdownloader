@@ -37,22 +37,20 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     public List<FilePackageAPIStorable> queryPackages(APIQuery queryParams) {
         DownloadController dlc = DownloadController.getInstance();
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        ArrayList<FilePackage> packages = dlc.getPackagesCopy();
+        List<FilePackageAPIStorable> ret = new ArrayList<FilePackageAPIStorable>(dlc.size());
+        int startWith = queryParams.getStartAt();
+        int maxResults = queryParams.getMaxResults();
+        if (startWith > dlc.size() - 1) return ret;
+        if (startWith < 0) startWith = 0;
+        if (maxResults < 0) maxResults = dlc.size();
 
-        boolean b = dlc.readLock();
-        try {
-            List<FilePackageAPIStorable> ret = new ArrayList<FilePackageAPIStorable>(dlc.size());
-
-            int startWith = queryParams.getStartAt();
-            int maxResults = queryParams.getMaxResults();
-
-            if (startWith > dlc.size() - 1) return ret;
-            if (startWith < 0) startWith = 0;
-            if (maxResults < 0) maxResults = dlc.size();
-
-            for (int i = startWith; i < Math.min(startWith + maxResults, dlc.size()); i++) {
-                FilePackage fp = dlc.getPackages().get(i);
+        for (int i = startWith; i < Math.min(startWith + maxResults, dlc.size()); i++) {
+            FilePackage fp = packages.get(i);
+            boolean readL = fp.getModifyLock().readLock();
+            try {
                 FilePackageView fpView = new FilePackageView(fp);
-                fpView.update(fp.getChildren());
+                fpView.update();
                 FilePackageAPIStorable fps = new FilePackageAPIStorable(fp);
 
                 QueryResponseMap infomap = new QueryResponseMap();
@@ -118,11 +116,11 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
                 fps.setInfoMap(infomap);
                 ret.add(fps);
+            } finally {
+                fp.getModifyLock().readUnlock(readL);
             }
-            return ret;
-        } finally {
-            dlc.readUnlock(b);
         }
+        return ret;
     }
 
     @SuppressWarnings("rawtypes")
@@ -148,26 +146,31 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
         List<FilePackage> matched = new ArrayList<FilePackage>();
 
-        boolean b = dlc.readLock();
-        try {
-            // if no specific uuids are specified collect all packages
-            if (packageUUIDs.isEmpty()) {
-                matched = dlc.getPackages();
-            } else {
+        // if no specific uuids are specified collect all packages
+        if (packageUUIDs.isEmpty()) {
+            matched = dlc.getPackagesCopy();
+        } else {
+            boolean b = dlc.readLock();
+            try {
                 for (FilePackage pkg : dlc.getPackages()) {
                     if (packageUUIDs.contains(pkg.getUniqueID().getID())) {
                         matched.add(pkg);
                     }
                 }
+            } finally {
+                dlc.readUnlock(b);
             }
-        } finally {
-            dlc.readUnlock(b);
         }
 
         // collect children of the selected packages and convert to storables for response
         List<DownloadLink> links = new ArrayList<DownloadLink>();
         for (FilePackage pkg : matched) {
-            links.addAll(pkg.getChildren());
+            boolean b = pkg.getModifyLock().readLock();
+            try {
+                links.addAll(pkg.getChildren());
+            } finally {
+                pkg.getModifyLock().readUnlock(b);
+            }
         }
 
         if (links.isEmpty()) return result;
@@ -233,25 +236,18 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
         DownloadController dlc = DownloadController.getInstance();
 
-        List<DownloadLink> rmv;
+        List<DownloadLink> rmv = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+            @Override
+            public int returnMaxResults() {
+                return 0;
+            }
 
-        boolean b = dlc.readLock();
-        try {
-            rmv = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-                @Override
-                public int returnMaxResults() {
-                    return 0;
-                }
-
-                @Override
-                public boolean acceptNode(DownloadLink node) {
-                    if (linkIds.contains(node.getUniqueID().getID())) return true;
-                    return false;
-                }
-            });
-        } finally {
-            dlc.readUnlock(b);
-        }
+            @Override
+            public boolean acceptNode(DownloadLink node) {
+                if (linkIds.contains(node.getUniqueID().getID())) return true;
+                return false;
+            }
+        });
 
         dlc.writeLock();
         dlc.removeChildren(rmv);
@@ -266,25 +262,18 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
         DownloadController dlc = DownloadController.getInstance();
 
-        List<DownloadLink> sdl;
+        List<DownloadLink> sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+            @Override
+            public int returnMaxResults() {
+                return 0;
+            }
 
-        boolean b = dlc.readLock();
-        try {
-            sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-                @Override
-                public int returnMaxResults() {
-                    return 0;
-                }
-
-                @Override
-                public boolean acceptNode(DownloadLink node) {
-                    if (linkIds.contains(node.getUniqueID().getID())) return true;
-                    return false;
-                }
-            });
-        } finally {
-            dlc.readUnlock(b);
-        }
+            @Override
+            public boolean acceptNode(DownloadLink node) {
+                if (linkIds.contains(node.getUniqueID().getID())) return true;
+                return false;
+            }
+        });
 
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
         dwd.forceDownload(sdl);
@@ -298,25 +287,18 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
         DownloadController dlc = DownloadController.getInstance();
 
-        List<DownloadLink> sdl;
+        List<DownloadLink> sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+            @Override
+            public int returnMaxResults() {
+                return 0;
+            }
 
-        boolean b = dlc.readLock();
-        try {
-            sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-                @Override
-                public int returnMaxResults() {
-                    return 0;
-                }
-
-                @Override
-                public boolean acceptNode(DownloadLink node) {
-                    if (linkIds.contains(node.getUniqueID().getID())) return true;
-                    return false;
-                }
-            });
-        } finally {
-            dlc.readUnlock(b);
-        }
+            @Override
+            public boolean acceptNode(DownloadLink node) {
+                if (linkIds.contains(node.getUniqueID().getID())) return true;
+                return false;
+            }
+        });
 
         for (DownloadLink dl : sdl) {
             dl.setEnabled(true);
@@ -331,25 +313,18 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
         DownloadController dlc = DownloadController.getInstance();
 
-        List<DownloadLink> sdl;
+        List<DownloadLink> sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+            @Override
+            public int returnMaxResults() {
+                return 0;
+            }
 
-        boolean b = dlc.readLock();
-        try {
-            sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-                @Override
-                public int returnMaxResults() {
-                    return 0;
-                }
-
-                @Override
-                public boolean acceptNode(DownloadLink node) {
-                    if (linkIds.contains(node.getUniqueID().getID())) return true;
-                    return false;
-                }
-            });
-        } finally {
-            dlc.readUnlock(b);
-        }
+            @Override
+            public boolean acceptNode(DownloadLink node) {
+                if (linkIds.contains(node.getUniqueID().getID())) return true;
+                return false;
+            }
+        });
 
         for (DownloadLink dl : sdl) {
             dl.setEnabled(false);
@@ -387,27 +362,4 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         return true;
     }
 
-    private List<DownloadLink> getDownloadLinks(final List<Long> linkIds) {
-        DownloadController dlc = DownloadController.getInstance();
-        List<DownloadLink> sdl;
-
-        dlc.readLock();
-        try {
-            sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-                @Override
-                public int returnMaxResults() {
-                    return 0;
-                }
-
-                @Override
-                public boolean acceptNode(DownloadLink node) {
-                    if (linkIds.contains(node.getUniqueID().getID())) return true;
-                    return false;
-                }
-            });
-        } finally {
-            dlc.readUnlock();
-        }
-        return sdl;
-    }
 }

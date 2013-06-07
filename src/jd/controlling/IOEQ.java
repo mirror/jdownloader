@@ -18,6 +18,7 @@ public class IOEQ {
     public final static ScheduledThreadPoolExecutor TIMINGQUEUE = new ScheduledThreadPoolExecutor(1);
     static {
         TIMINGQUEUE.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
+        TIMINGQUEUE.allowCoreThreadTimeOut(true);
     }
     private static final Queue                      INSTANCE    = new Queue("InOrderExcecutionQueue") {
 

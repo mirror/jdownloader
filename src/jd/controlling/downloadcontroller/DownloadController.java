@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 
 import jd.config.NoOldJDDataBaseFoundException;
@@ -95,6 +97,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     private boolean                                                                    allowLoad    = true;
 
+    public final ScheduledThreadPoolExecutor                                           TIMINGQUEUE  = new ScheduledThreadPoolExecutor(1);
+
     private static DownloadController                                                  INSTANCE     = new DownloadController();
 
     private static Object                                                              SAVELOADLOCK = new Object();
@@ -107,6 +111,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     private DownloadController() {
+        TIMINGQUEUE.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
+        TIMINGQUEUE.allowCoreThreadTimeOut(true);
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
@@ -135,7 +141,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 return "save downloadlist...";
             }
         });
-        asyncSaving = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000l, 60000l) {
+        asyncSaving = new DelayedRunnable(TIMINGQUEUE, 5000l, 60000l) {
 
             @Override
             public void delayedrun() {
@@ -248,8 +254,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         final boolean readL = readLock();
         try {
             for (final FilePackage fp : packages) {
-                synchronized (fp) {
+                final boolean readL2 = fp.getModifyLock().readLock();
+                try {
                     ret.addAll(fp.getChildren());
+                } finally {
+                    if (readL2) fp.getModifyLock().readUnlock(readL2);
                 }
             }
         } finally {
@@ -268,12 +277,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     public java.util.List<DownloadLink> getDownloadLinksbyStatus(FilePackage fp, int status) {
         final java.util.List<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (fp != null) {
-            synchronized (fp) {
+            boolean readL = fp.getModifyLock().readLock();
+            try {
                 for (DownloadLink dl : fp.getChildren()) {
                     if (dl.getLinkStatus().hasStatus(status)) {
                         ret.add(dl);
                     }
                 }
+            } finally {
+                fp.getModifyLock().readUnlock(readL);
             }
         }
         return ret;
@@ -285,33 +297,31 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     protected void getDownloadStatus(final DownloadInformations ds) {
         ds.reset();
         ds.addRunningDownloads(DownloadWatchDog.getInstance().getActiveDownloads());
-        final boolean readL = readLock();
-        try {
-            LinkStatus linkStatus;
-            boolean isEnabled;
-            for (final FilePackage fp : packages) {
-                synchronized (fp) {
-                    ds.addPackages(1);
-                    ds.addDownloadLinks(fp.size());
-                    for (final DownloadLink l : fp.getChildren()) {
-                        linkStatus = l.getLinkStatus();
-                        isEnabled = l.isEnabled();
-                        if (!linkStatus.hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && isEnabled) {
-                            ds.addTotalDownloadSize(l.getDownloadSize());
-                            ds.addCurrentDownloadSize(l.getDownloadCurrent());
-                        }
-                        if (linkStatus.hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
-                            ds.addDuplicateDownloads(1);
-                        } else if (!isEnabled) {
-                            ds.addDisabledDownloads(1);
-                        } else if (linkStatus.hasStatus(LinkStatus.FINISHED)) {
-                            ds.addFinishedDownloads(1);
-                        }
+        LinkStatus linkStatus;
+        boolean isEnabled;
+        for (final FilePackage fp : getPackagesCopy()) {
+            boolean readL = fp.getModifyLock().readLock();
+            try {
+                ds.addPackages(1);
+                ds.addDownloadLinks(fp.size());
+                for (final DownloadLink l : fp.getChildren()) {
+                    linkStatus = l.getLinkStatus();
+                    isEnabled = l.isEnabled();
+                    if (!linkStatus.hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && isEnabled) {
+                        ds.addTotalDownloadSize(l.getDownloadSize());
+                        ds.addCurrentDownloadSize(l.getDownloadCurrent());
+                    }
+                    if (linkStatus.hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+                        ds.addDuplicateDownloads(1);
+                    } else if (!isEnabled) {
+                        ds.addDisabledDownloads(1);
+                    } else if (linkStatus.hasStatus(LinkStatus.FINISHED)) {
+                        ds.addFinishedDownloads(1);
                     }
                 }
+            } finally {
+                fp.getModifyLock().readUnlock(readL);
             }
-        } finally {
-            readUnlock(readL);
         }
     }
 
@@ -323,31 +333,29 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      */
     public DownloadLink getFirstLinkThatBlocks(final DownloadLink link) {
         if (link == null) return null;
-        final boolean readL = readLock();
-        try {
-            for (final FilePackage fp : packages) {
-                synchronized (fp) {
-                    for (DownloadLink nextDownloadLink : fp.getChildren()) {
-                        if (nextDownloadLink == link) continue;
-                        if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
-                            if (new File(nextDownloadLink.getFileOutput()).exists()) {
-                                /*
-                                 * fertige datei sollte auch auf der platte sein und nicht nur als fertig in der liste
-                                 */
-                                return nextDownloadLink;
-                            }
+        for (final FilePackage fp : getPackagesCopy()) {
+            boolean readL = fp.getModifyLock().readLock();
+            try {
+                for (DownloadLink nextDownloadLink : fp.getChildren()) {
+                    if (nextDownloadLink == link) continue;
+                    if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
+                        if (new File(nextDownloadLink.getFileOutput()).exists()) {
+                            /*
+                             * fertige datei sollte auch auf der platte sein und nicht nur als fertig in der liste
+                             */
+                            return nextDownloadLink;
                         }
-                        if (nextDownloadLink.getLinkStatus().isPluginInProgress() && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) return nextDownloadLink;
                     }
+                    if (nextDownloadLink.getLinkStatus().isPluginInProgress() && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) return nextDownloadLink;
                 }
+            } finally {
+                fp.getModifyLock().readUnlock(readL);
             }
-        } finally {
-            readUnlock(readL);
         }
         return null;
     }
 
-    public LinkedList<FilePackage> getPackages() {
+    public ArrayList<FilePackage> getPackages() {
         return packages;
     }
 
@@ -360,17 +368,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     public boolean hasDownloadLinkwithURL(final String url) {
         if (url != null) {
             final String correctUrl = url.trim();
-            final boolean readL = readLock();
-            try {
-                for (final FilePackage fp : packages) {
-                    synchronized (fp) {
-                        for (DownloadLink dl : fp.getChildren()) {
-                            if (correctUrl.equalsIgnoreCase(dl.getDownloadURL())) return true;
-                        }
+            for (final FilePackage fp : getPackagesCopy()) {
+                boolean readL2 = fp.getModifyLock().readLock();
+                try {
+                    for (DownloadLink dl : fp.getChildren()) {
+                        if (correctUrl.equalsIgnoreCase(dl.getDownloadURL())) return true;
                     }
+                } finally {
+                    fp.getModifyLock().readUnlock(readL2);
                 }
-            } finally {
-                readUnlock(readL);
             }
         }
         return false;
@@ -764,16 +770,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      */
     public void saveDownloadLinks() {
         if (isSaveAllowed() == false) return;
-        java.util.List<FilePackage> packages = null;
-        final boolean readL = this.readLock();
-        try {
-            packages = new ArrayList<FilePackage>(this.packages);
-        } finally {
-            readUnlock(readL);
-        }
         /* save as new Json ZipFile */
         try {
-            save(packages, null);
+            save(getPackagesCopy(), null);
         } catch (IOException e) {
             logger.log(e);
         }

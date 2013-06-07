@@ -188,6 +188,12 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isAddNewLinksOnTop();
 
     @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isCopySingleRealURL();
+
+    void setCopySingleRealURL(boolean b);
+
+    @AboutConfig
     boolean isAutoaddLinksAfterLinkcheck();
 
     @AboutConfig

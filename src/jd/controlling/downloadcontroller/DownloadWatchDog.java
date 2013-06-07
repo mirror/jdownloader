@@ -351,17 +351,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         ProxyController.getInstance().removeIPBlockTimeout(null, true);
         /* reset temp unavailble times for all ips */
         ProxyController.getInstance().removeHostBlockedTimeout(null, false);
-        synchronized (DownloadController.getInstance()) {
-            for (final FilePackage filePackage : DownloadController.getInstance().getPackages()) {
-                synchronized (filePackage) {
-                    for (final DownloadLink link : filePackage.getChildren()) {
-                        /*
-                         * do not reset if link is offline, finished , already exist or pluginerror (because only plugin updates can fix this)
-                         */
-                        link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFECT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
-                    }
-                }
-            }
+        for (final DownloadLink link : DownloadController.getInstance().getAllDownloadLinks()) {
+            /*
+             * do not reset if link is offline, finished , already exist or pluginerror (because only plugin updates can fix this)
+             */
+            link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFECT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
         }
     }
 
@@ -888,7 +882,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             return false;
         }
         if (stop instanceof FilePackage) {
-            synchronized (stop) {
+            boolean readL = ((FilePackage) stop).getModifyLock().readLock();
+            try {
                 for (final DownloadLink dl : ((FilePackage) stop).getChildren()) {
                     synchronized (downloadControlHistory) {
                         if (downloadControlHistory.get(dl) != null) {
@@ -903,6 +898,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                     return false;
                 }
+            } finally {
+                ((FilePackage) stop).getModifyLock().readUnlock(readL);
             }
             return true;
         }
@@ -1285,64 +1282,63 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     ProxyController.getInstance().removeIPBlockTimeout(null, true);
                                     resetWaitingNewIP = true;
                                 }
-                                final boolean readL = DownloadController.getInstance().readLock();
-                                try {
-                                    long currentStructure = DownloadController.getInstance().getPackageControllerChanges();
-                                    long currentContent = DownloadController.getInstance().getContentChanges();
-                                    if (currentStructure != lastStructureChange || currentContent != lastContentChange) {
-                                        /*
-                                         * create a map holding all possible links sorted by their position in list and their priority
-                                         * 
-                                         * by doing this we don't have to walk through possible links multiple times to find next download link, as the list
-                                         * itself will already be correct sorted
-                                         */
-                                        HashMap<Long, java.util.List<DownloadLink>> optimizedList = new HashMap<Long, java.util.List<DownloadLink>>();
-                                        /*
-                                         * changes in DownloadController available, refresh DownloadList
-                                         */
-                                        int skippedLinksCounterTmp = 0;
-                                        for (FilePackage fp : DownloadController.getInstance().getPackages()) {
-                                            synchronized (fp) {
-                                                for (DownloadLink fpLink : fp.getChildren()) {
-                                                    if (fpLink.isSkipped()) skippedLinksCounterTmp++;
-                                                    if (fpLink.getDefaultPlugin() == null) continue;
-                                                    if (!fpLink.isEnabled()) continue;
-                                                    if (fpLink.isSkipped()) continue;
-                                                    if (fpLink.getAvailableStatus() == AvailableStatus.FALSE) continue;
-                                                    if (fpLink.getLinkStatus().isPluginActive() == false) {
-                                                        if (fpLink.getLinkStatus().isFinished()) continue;
-                                                        if (fpLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE)) continue;
-                                                    }
-                                                    long prio = fpLink.getPriority();
-                                                    java.util.List<DownloadLink> list = optimizedList.get(prio);
-                                                    if (list == null) {
-                                                        list = new ArrayList<DownloadLink>();
-                                                        optimizedList.put(prio, list);
-                                                    }
-                                                    list.add(fpLink);
-                                                }
-                                            }
-                                        }
-                                        skippedLinksCounter = skippedLinksCounterTmp;
-                                        links.clear();
-                                        /*
-                                         * move optimizedList to list in a sorted way
-                                         */
-                                        while (!optimizedList.isEmpty()) {
-                                            /*
-                                             * find next highest priority and add the links
-                                             */
-                                            Long highest = Collections.max(optimizedList.keySet());
-                                            java.util.List<DownloadLink> ret = optimizedList.remove(highest);
-                                            if (ret != null) links.addAll(ret);
-                                        }
-                                        lastStructureChange = currentStructure;
-                                        lastContentChange = currentContent;
 
-                                        eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.DATA_UPDATE));
+                                long currentStructure = DownloadController.getInstance().getPackageControllerChanges();
+                                long currentContent = DownloadController.getInstance().getContentChanges();
+                                if (currentStructure != lastStructureChange || currentContent != lastContentChange) {
+                                    /*
+                                     * create a map holding all possible links sorted by their position in list and their priority
+                                     * 
+                                     * by doing this we don't have to walk through possible links multiple times to find next download link, as the list itself
+                                     * will already be correct sorted
+                                     */
+                                    HashMap<Long, java.util.List<DownloadLink>> optimizedList = new HashMap<Long, java.util.List<DownloadLink>>();
+                                    /*
+                                     * changes in DownloadController available, refresh DownloadList
+                                     */
+                                    int skippedLinksCounterTmp = 0;
+                                    for (FilePackage fp : DownloadController.getInstance().getPackagesCopy()) {
+                                        boolean readL = fp.getModifyLock().readLock();
+                                        try {
+                                            for (DownloadLink fpLink : fp.getChildren()) {
+                                                if (fpLink.isSkipped()) skippedLinksCounterTmp++;
+                                                if (fpLink.getDefaultPlugin() == null) continue;
+                                                if (!fpLink.isEnabled()) continue;
+                                                if (fpLink.isSkipped()) continue;
+                                                if (fpLink.getAvailableStatus() == AvailableStatus.FALSE) continue;
+                                                if (fpLink.getLinkStatus().isPluginActive() == false) {
+                                                    if (fpLink.getLinkStatus().isFinished()) continue;
+                                                    if (fpLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE)) continue;
+                                                }
+                                                long prio = fpLink.getPriority();
+                                                java.util.List<DownloadLink> list = optimizedList.get(prio);
+                                                if (list == null) {
+                                                    list = new ArrayList<DownloadLink>();
+                                                    optimizedList.put(prio, list);
+                                                }
+                                                list.add(fpLink);
+                                            }
+                                        } finally {
+                                            fp.getModifyLock().readUnlock(readL);
+                                        }
                                     }
-                                } finally {
-                                    DownloadController.getInstance().readUnlock(readL);
+                                    skippedLinksCounter = skippedLinksCounterTmp;
+                                    links.clear();
+                                    /*
+                                     * move optimizedList to list in a sorted way
+                                     */
+                                    while (!optimizedList.isEmpty()) {
+                                        /*
+                                         * find next highest priority and add the links
+                                         */
+                                        Long highest = Collections.max(optimizedList.keySet());
+                                        java.util.List<DownloadLink> ret = optimizedList.remove(highest);
+                                        if (ret != null) links.addAll(ret);
+                                    }
+                                    lastStructureChange = currentStructure;
+                                    lastContentChange = currentContent;
+
+                                    eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.DATA_UPDATE));
                                 }
 
                                 try {

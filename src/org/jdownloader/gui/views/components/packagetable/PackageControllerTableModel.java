@@ -70,9 +70,9 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
     public PackageControllerTableModel(final PackageController<PackageType, ChildrenType> pc, String id) {
         super(id);
-        resetSorting();
         queue.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
         queue.allowCoreThreadTimeOut(true);
+        resetSorting();
         this.pc = pc;
         asyncRefresh = new DelayedRunnable(queue, 150l, 250l) {
             AtomicBoolean repainting = new AtomicBoolean(false);
@@ -279,17 +279,9 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 Log.exception(e);
             }
         }
-        java.util.List<PackageType> packages = null;
-        final boolean readL = pc.readLock();
-        try {
-            /* get all packages from controller */
-            packages = new ArrayList<PackageType>(pc.size());
-            packages.addAll(pc.getPackages());
-        } finally {
-            pc.readUnlock(readL);
-        }
-        java.util.List<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = this.tableFilters;
 
+        java.util.List<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = this.tableFilters;
+        ArrayList<PackageType> packages = pc.getPackagesCopy();
         /* filter packages */
         for (int index = packages.size() - 1; index >= 0; index--) {
             PackageType pkg = packages.get(index);
@@ -313,8 +305,11 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         java.util.List<AbstractNode> newData = new ArrayList<AbstractNode>(Math.max(data.size(), packages.size()));
         for (PackageType node : packages) {
             ArrayList<ChildrenType> files = null;
-            synchronized (node) {
+            boolean readL = ((PackageType) node).getModifyLock().readLock();
+            try {
                 files = new ArrayList<ChildrenType>(((PackageType) node).getChildren());
+            } finally {
+                ((PackageType) node).getModifyLock().readUnlock(readL);
             }
             /* filter children of this package */
             for (int index = files.size() - 1; index >= 0; index--) {
@@ -328,7 +323,13 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 }
             }
             if (node.getView() != null) {
-                node.getView().update(files);
+                if (files.size() == 0) {
+                    node.getView().clear();
+                    /* no visible children, skip PackageNode */
+                    continue;
+                } else {
+                    node.getView().update(files);
+                }
             }
             if (files.size() == 1 && hideSingleChildPackages) {
                 newData.addAll(files);
@@ -338,10 +339,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                     /* we only have to sort children if the package is expanded */
                     Collections.sort(files, column.getRowSorter());
                 }
-                if (files.size() > 0) {
-                    /* only add package node if it contains children */
-                    newData.add(node);
-                }
+                /* only add package node if it contains children */
+                newData.add(node);
                 if (!expanded) {
                     /* not expanded */
                     continue;
@@ -373,7 +372,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         for (AbstractNode node : data) {
             if (node instanceof AbstractPackageNode) {
                 AbstractPackageNode pkg = (AbstractPackageNode) node;
-                synchronized (pkg) {
+                boolean readL = pkg.getModifyLock().readLock();
+                try {
                     for (Object node2 : pkg.getChildren()) {
                         if (node2 instanceof AbstractPackageChildrenNode) {
                             boolean filtered = false;
@@ -388,6 +388,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                             }
                         }
                     }
+                } finally {
+                    pkg.getModifyLock().readUnlock(readL);
                 }
             } else if (node instanceof AbstractPackageChildrenNode) {
                 ret.add((ChildrenType) node);

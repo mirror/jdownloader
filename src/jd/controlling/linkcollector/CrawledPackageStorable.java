@@ -147,11 +147,14 @@ public class CrawledPackageStorable implements Storable {
 
     public CrawledPackageStorable(CrawledPackage pkg) {
         this.pkg = pkg;
-        links = new ArrayList<CrawledLinkStorable>(pkg.getChildren().size());
-        synchronized (pkg) {
+        boolean readL = pkg.getModifyLock().readLock();
+        try {
+            links = new ArrayList<CrawledLinkStorable>(pkg.getChildren().size());
             for (CrawledLink link : pkg.getChildren()) {
                 links.add(new CrawledLinkStorable(link));
             }
+        } finally {
+            pkg.getModifyLock().readUnlock(readL);
         }
     }
 
@@ -205,12 +208,15 @@ public class CrawledPackageStorable implements Storable {
     public void setLinks(java.util.List<CrawledLinkStorable> links) {
         if (links != null) {
             this.links = links;
-            synchronized (pkg) {
+            try {
+                pkg.getModifyLock().writeLock();
                 for (CrawledLinkStorable link : links) {
                     CrawledLink l = link._getCrawledLink();
                     pkg.getChildren().add(l);
                     l.setParentNode(pkg);
                 }
+            } finally {
+                pkg.getModifyLock().writeUnlock();
             }
         }
     }

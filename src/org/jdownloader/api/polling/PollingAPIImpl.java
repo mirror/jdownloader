@@ -68,11 +68,16 @@ public class PollingAPIImpl implements PollingAPI {
 
             // if packages is expanded in view, current state of all running links inside the package
             if (expandedPackageUUIDs.contains(fp.getUniqueID().getID())) {
-                for (DownloadLink dl : fp.getChildren()) {
-                    if (dwd.getRunningDownloadLinks().contains(dl)) {
-                        PollingAPIDownloadLinkStorable pdls = new PollingAPIDownloadLinkStorable(dl);
-                        fps.getLinks().add(pdls);
+                boolean readL = fp.getModifyLock().readLock();
+                try {
+                    for (DownloadLink dl : fp.getChildren()) {
+                        if (dwd.getRunningDownloadLinks().contains(dl)) {
+                            PollingAPIDownloadLinkStorable pdls = new PollingAPIDownloadLinkStorable(dl);
+                            fps.getLinks().add(pdls);
+                        }
                     }
+                } finally {
+                    fp.getModifyLock().readUnlock(readL);
                 }
             }
             fpas.add(fps);

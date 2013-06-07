@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.ModifyLock;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
@@ -52,49 +53,28 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             // not yet packagized
             ret.add(this);
         } else {
-            List<CrawledLink> links = getFirstLink().getParentNode().getView().getItems();
-            // for (CrawledLink l : ) {
-            // if (l.getName().equals(file) || pat.matcher(l.getName()).matches()) {
-            // CrawledLinkArchiveFile claf = new CrawledLinkArchiveFile(l);
-            // // if(claf.isComplete()&&claf.isValid()){
-            // boolean contains = false;
-            // for (Iterator<ArchiveFile> it = ret.iterator(); it.hasNext();) {
-            // ArchiveFile af = it.next();
-            // if (af.equals(claf)) {
-            // if (!af.isComplete() || !af.isValid()) {
-            // it.remove();
-            // } else {
-            // contains = true;
-            // }
-            // }
-            // }
-            //
-            // if (!contains) {
-            // ret.add(claf);
-            // }
-            // // }
-            // }
-            // }
+            ModifyLock modifyLock = getFirstLink().getParentNode().getModifyLock();
+            boolean readL = modifyLock.readLock();
+            try {
+                List<CrawledLink> links = getFirstLink().getParentNode().getChildren();
+                HashMap<String, CrawledLinkArchiveFile> map = new HashMap<String, CrawledLinkArchiveFile>();
+                for (CrawledLink l : links) {
+                    if (l.getName().equals(file) || pat.matcher(l.getName()).matches()) {
+                        CrawledLinkArchiveFile af = map.get(l.getName());
+                        if (af == null) {
+                            af = new CrawledLinkArchiveFile(l);
 
-            HashMap<String, CrawledLinkArchiveFile> map = new HashMap<String, CrawledLinkArchiveFile>();
-
-            for (CrawledLink l : links) {
-                if (l.getName().equals(file) || pat.matcher(l.getName()).matches()) {
-                    CrawledLinkArchiveFile af = map.get(l.getName());
-                    if (af == null) {
-                        af = new CrawledLinkArchiveFile(l);
-
-                        map.put(l.getName(), af);
-                        ret.add(af);
-                    } else {
-                        af.addMirror(l);
+                            map.put(l.getName(), af);
+                            ret.add(af);
+                        } else {
+                            af.addMirror(l);
+                        }
                     }
                 }
-
+            } finally {
+                modifyLock.readUnlock(readL);
             }
-
         }
-
         return ret;
     }
 

@@ -66,36 +66,33 @@ public class QuickFilterHosterTable extends FilterTable {
 
         java.util.List<CrawledLink> filteredLinks = new ArrayList<CrawledLink>();
         /* update filter list */
-        boolean readL = LinkCollector.getInstance().readLock();
-        try {
-            // update all filters
-            for (CrawledPackage pkg : LinkCollector.getInstance().getPackages()) {
-                synchronized (pkg) {
-                    for (CrawledLink link : pkg.getChildren()) {
-                        if (map.add(link)) {
-                            filteredLinks.add(link);
-                        }
-                        String hoster = link.getDomainInfo().getTld();
-                        if (hoster != null) {
-                            Filter filter = null;
-                            filter = filterMap.get(hoster);
-                            if (filter == null) {
-                                /*
-                                 * create new filter entry and set its icon
-                                 */
-                                filter = createFilter(hoster);
-                                filter.setIcon(FavIcons.getFavIcon(hoster, filter, true));
-                                filterMap.put(hoster, filter);
-                            }
-                            filtersInUse.add(filter);
 
+        // update all filters
+        for (CrawledPackage pkg : LinkCollector.getInstance().getPackagesCopy()) {
+            boolean readL = pkg.getModifyLock().readLock();
+            try {
+                for (CrawledLink link : pkg.getChildren()) {
+                    if (map.add(link)) {
+                        filteredLinks.add(link);
+                    }
+                    String hoster = link.getDomainInfo().getTld();
+                    if (hoster != null) {
+                        Filter filter = null;
+                        filter = filterMap.get(hoster);
+                        if (filter == null) {
+                            /*
+                             * create new filter entry and set its icon
+                             */
+                            filter = createFilter(hoster);
+                            filter.setIcon(FavIcons.getFavIcon(hoster, filter, true));
+                            filterMap.put(hoster, filter);
                         }
+                        filtersInUse.add(filter);
                     }
                 }
+            } finally {
+                pkg.getModifyLock().readUnlock(readL);
             }
-
-        } finally {
-            LinkCollector.getInstance().readUnlock(readL);
         }
 
         for (Filter filter : filtersInUse) {

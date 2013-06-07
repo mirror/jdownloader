@@ -432,6 +432,10 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return archiveInfo;
     }
 
+    public boolean hasArchiveInfo() {
+        return archiveInfo != null;
+    }
+
     public void setArchiveInfo(ArchiveInfo archiveInfo) {
         this.archiveInfo = archiveInfo;
     }
