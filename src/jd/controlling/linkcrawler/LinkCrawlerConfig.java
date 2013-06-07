@@ -5,6 +5,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 
 public interface LinkCrawlerConfig extends ConfigInterface {
 
@@ -23,5 +24,14 @@ public interface LinkCrawlerConfig extends ConfigInterface {
     int getThreadKeepAlive();
 
     void setThreadKeepAlive(int i);
+
+    @DefaultIntValue(2 * 1024 * 1024)
+    @AboutConfig
+    @RequiresRestart
+    @DescriptionForConfigEntry("max. bytes for page request during deep decrypt")
+    @SpinnerValidator(min = 1 * 1024 * 1024, max = 5 * 1024 * 1024)
+    int getDeepDecryptLoadLimit();
+
+    void setDeepDecryptLoadLimit(int l);
 
 }

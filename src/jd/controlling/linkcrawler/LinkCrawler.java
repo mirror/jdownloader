@@ -397,6 +397,7 @@ public class LinkCrawler {
                     if (possibleCryptedLinks != null) crawl(possibleCryptedLinks);
                 } else {
                     /* try to load the webpage and find links on it */
+                    br.setLoadLimit(Math.max(1 * 1024 * 1024, JsonConfig.create(LinkCrawlerConfig.class).getDeepDecryptLoadLimit()));
                     br.followConnection();
                     String baseUrl = new Regex(source.getURL(), "(.+)/").getMatch(0);
                     if (baseUrl != null && !baseUrl.endsWith("/")) {
@@ -424,6 +425,7 @@ public class LinkCrawler {
 
                 }
             } catch (Throwable e) {
+                e.printStackTrace();
             } finally {
                 try {
                     br.getHttpConnection().disconnect();
