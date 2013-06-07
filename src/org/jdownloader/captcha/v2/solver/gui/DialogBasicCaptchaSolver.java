@@ -12,6 +12,7 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solver.CBSolver;
 import org.jdownloader.captcha.v2.solver.Captcha9kwSolver;
+import org.jdownloader.captcha.v2.solver.CaptchaResolutorCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
@@ -45,7 +46,8 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
 
                 if (config.getCaptchaDialog9kwTimeout() > 0) job.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolver.getInstance());
                 if (config.getCaptchaDialogCaptchaBroptherhoodTimeout() > 0) job.waitFor(config.getCaptchaDialogCaptchaBroptherhoodTimeout(), CBSolver.getInstance());
-
+                if (config.getCaptchaDialogResolutorCaptchaTimeout()> 0) job.waitFor(config.getCaptchaDialogResolutorCaptchaTimeout(), CaptchaResolutorCaptchaSolver.getInstance());
+                
                 job.getLogger().info("JAC is done. Response so far: " + job.getResponse());
                 ChallengeSolverJobListener jacListener = null;
                 checkInterruption();
