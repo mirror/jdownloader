@@ -10,10 +10,10 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 import javax.imageio.ImageIO;
-import javax.swing.JOptionPane;
 
 import jd.controlling.captcha.CaptchaSettings;
 
+import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.Challenge;
@@ -42,8 +42,8 @@ public class CaptchaResolutorCaptchaSolver extends ChallengeSolver<String> {
     private static final String                        _SEPARATOR                = "#";
     public static final String                         NEGATIVE_CREDIT           = "creditoNegativo";
     public static final String                         YOUR_CREDIT_HAS_BEEN_SOLD = "Your credit is exhausted.";
-    public static final String                         WRONG_PASSWORD            = "password erroneous";
-    public static final String                         ERROR_INVALID_PASSWORD    = "Error, no valid password.";
+    public static final String                         WRONG_PASSWORD            = "contraseña erronea";
+    public static final String                         ERROR_INVALID_PASSWORD    = "The user or the password used to ResolutorCaptcha, not correct.";
     public static final String                         SERVER_PRODUCTION         = "ks359250.kimsufi.com";
 
     public static CaptchaResolutorCaptchaSolver getInstance() {
@@ -83,10 +83,10 @@ public class CaptchaResolutorCaptchaSolver extends ChallengeSolver<String> {
                 dos.writeUTF(_REQUEST + _SEPARATOR + config.getUser() + _SEPARATOR + config.getPass());
                 String answerServer = dis.readUTF();
                 if (answerServer.equalsIgnoreCase(WRONG_PASSWORD)) {
-                    JOptionPane.showMessageDialog(null, ERROR_INVALID_PASSWORD); // pending
+                    Dialog.getInstance().showErrorDialog(ERROR_INVALID_PASSWORD);
                 } else {
                     if (answerServer.equalsIgnoreCase(NEGATIVE_CREDIT)) {
-                        JOptionPane.showMessageDialog(null, YOUR_CREDIT_HAS_BEEN_SOLD); // pending
+                        Dialog.getInstance().showErrorDialog(YOUR_CREDIT_HAS_BEEN_SOLD);
                     } else {
                         job.getLogger().info("Ask");
                         // Captcha image is sent.
