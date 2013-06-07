@@ -45,7 +45,7 @@ public class AdfLy extends PluginForDecrypt {
         final String parameter = param.toString().replace("www.", "").replace("https://", "http://");
         br.setFollowRedirects(false);
         br.setReadTimeout(3 * 60 * 1000);
-        if (!parameter.matches("https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/\\d+")) {
+        if (parameter.matches("https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/\\d+/.+")) {
             String linkInsideLink = new Regex(parameter, "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/\\d+/(.+)").getMatch(2);
             linkInsideLink = "http://" + linkInsideLink;
             if (!linkInsideLink.matches("https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/.+")) {
