@@ -442,7 +442,10 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public FilePackageView getView() {
         if (fpInfo != null) return fpInfo;
         synchronized (this) {
-            if (fpInfo == null) fpInfo = new FilePackageView(this);
+            if (fpInfo == null) {
+                fpInfo = new FilePackageView(this);
+                fpInfo.update(this.getChildren());
+            }
         }
         return fpInfo;
     }

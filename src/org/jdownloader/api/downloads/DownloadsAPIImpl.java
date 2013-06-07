@@ -10,6 +10,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
 import jd.plugins.LinkStatus;
 
 import org.appwork.remoteapi.APIQuery;
@@ -50,6 +51,8 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
             for (int i = startWith; i < Math.min(startWith + maxResults, dlc.size()); i++) {
                 FilePackage fp = dlc.getPackages().get(i);
+                FilePackageView fpView = new FilePackageView(fp);
+                fpView.update(fp.getChildren());
                 FilePackageAPIStorable fps = new FilePackageAPIStorable(fp);
 
                 QueryResponseMap infomap = new QueryResponseMap();
@@ -81,10 +84,10 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                     infomap.put("speed", dwd.getDownloadSpeedbyFilePackage(fp));
                 }
                 if (queryParams._getQueryParam("finished", Boolean.class, false)) {
-                    infomap.put("finished", fp.getView().isFinished());
+                    infomap.put("finished", fpView.isFinished());
                 }
                 if (queryParams._getQueryParam("eta", Boolean.class, false)) {
-                    infomap.put("eta", fp.getView().getETA());
+                    infomap.put("eta", fpView.getETA());
                 }
                 if (queryParams._getQueryParam("done", Boolean.class, false)) {
                     Long done = 0l;

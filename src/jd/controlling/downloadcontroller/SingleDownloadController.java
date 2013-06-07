@@ -57,7 +57,6 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
@@ -573,8 +572,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         }
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
-         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss
+         * in ms. value==0 macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());
@@ -722,14 +721,19 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     LogController.GL.info("\r\nFinished- " + downloadLink.getName() + "->" + downloadLink.getFileOutput());
                     downloadLogger.clear();
                     FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { new File(downloadLink.getFileOutput()) }));
-                    if (CleanAfterDownloadAction.CLEANUP_IMMEDIATELY.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction())) {
+                    switch (org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
+
+                    case CLEANUP_IMMEDIATELY:
                         LogController.GL.info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately!");
                         java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
                         remove.add(downloadLink);
                         DownloadController.getInstance().removeChildren(remove);
-                    } else if (CleanAfterDownloadAction.CLEANUP_AFTER_PACKAGE_HAS_FINISHED.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction())) {
+                        break;
+
+                    case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
                         FilePackage fp = downloadLink.getFilePackage();
                         FilePackageView fpv = new FilePackageView(fp);
+                        fpv.update(fp.getChildren());
                         if (fpv.isFinished() && fpv.getDisabledCount() == 0) {
 
                             LogController.GL.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
@@ -737,7 +741,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                         } else if (fpv.isFinished()) {
                             LogController.GL.info("Did NOT remove Package " + fp.getName() + " because Finished and Disabled Links found!");
                         }
+                        break;
                     }
+
                 }
             }
         } finally {
