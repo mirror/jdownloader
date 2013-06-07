@@ -16,6 +16,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
+import jd.SecondLevelLaunch;
 import jd.controlling.IOEQ;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -64,7 +65,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     protected static final long      REFRESH_MAX      = 2000l;
     private static final Object      LOCK             = new Object();
 
-    public FilterTable(HeaderInterface hosterFilter, LinkGrabberTable table, BooleanKeyHandler visible) {
+    public FilterTable(HeaderInterface hosterFilter, LinkGrabberTable table, final BooleanKeyHandler visible) {
         super(new FilterTableModel());
         header = hosterFilter;
         this.visibleKeyHandler = visible;
@@ -133,8 +134,14 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
 
         visible.getEventSender().addListener(this);
         init();
-        onConfigValueModified(null, visible.getValue());
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this, true);
+        SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                onConfigValueModified(null, visible.getValue());
+            }
+        });
 
     }
 

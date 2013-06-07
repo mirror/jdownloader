@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 
 import javax.swing.ImageIcon;
 
+import jd.SecondLevelLaunch;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -41,13 +42,6 @@ public class QuickFilterExceptionsTable extends FilterTable {
 
     public QuickFilterExceptionsTable(CustomFilterHeader exceptions, LinkGrabberTable table) {
         super(exceptions, table, org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_EXCEPTIONS_QUICKFILTER_ENABLED);
-        LinkFilterController.getInstance().getEventSender().addListener(new ChangeListener() {
-
-            public void onChangeEvent(ChangeEvent event) {
-                updateFilters();
-                updateNow();
-            }
-        });
 
     }
 
@@ -62,7 +56,20 @@ public class QuickFilterExceptionsTable extends FilterTable {
     }
 
     protected void init() {
-        updateFilters();
+        SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                LinkFilterController.getInstance().getEventSender().addListener(new ChangeListener() {
+
+                    public void onChangeEvent(ChangeEvent event) {
+                        updateFilters();
+                        updateNow();
+                    }
+                });
+                updateFilters();
+            }
+        });
     }
 
     protected java.util.List<Filter> updateQuickFilerTableData() {

@@ -5,8 +5,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import jd.controlling.faviconcontroller.FavIcons;
 import jd.controlling.linkcollector.LinkCollector;
@@ -35,10 +33,6 @@ public class QuickFilterHosterTable extends FilterTable {
 
     @SuppressWarnings("unchecked")
     protected java.util.List<Filter> updateQuickFilerTableData() {
-
-        // synchronized (LOCK) {
-        /* reset existing filter counters */
-        Set<Entry<String, Filter>> es = filterMap.entrySet();
 
         HashSet<Filter> filtersInUse = new HashSet<Filter>();
         HashSet<CrawledLink> map = new HashSet<CrawledLink>();
