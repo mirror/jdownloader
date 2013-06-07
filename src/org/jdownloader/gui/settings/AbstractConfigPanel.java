@@ -169,7 +169,12 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     }
 
     protected void addHeader(String name, ImageIcon icon) {
-        add(new Header(name, icon), "spanx,newline,growx,pushx");
+        if (getComponentCount() == 0) {
+            // first header
+            add(new Header(name, icon), "spanx,growx,pushx");
+        } else {
+            add(new Header(name, icon), "spanx,newline,growx,pushx");
+        }
     }
 
 }

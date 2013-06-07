@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package org.jdownloader.extensions.jdtrayicon;
+package org.jdownloader.gui.jdtrayicon;
 
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -55,7 +55,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.extensions.jdtrayicon.translate.T;
+import org.jdownloader.gui.jdtrayicon.translate.T;
 import org.jdownloader.images.NewTheme;
 
 //final, because the constructor calls Thread.start(),

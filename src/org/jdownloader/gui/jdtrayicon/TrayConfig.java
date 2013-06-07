@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.jdtrayicon;
+package org.jdownloader.gui.jdtrayicon;
 
 import jd.plugins.ExtensionConfigInterface;
 
@@ -25,12 +25,6 @@ public interface TrayConfig extends ExtensionConfigInterface {
     public boolean isToolTipEnabled();
 
     public void setToolTipEnabled(boolean b);
-
-    @DefaultEnumValue("NEVER")
-    @AboutConfig
-    public LinkgrabberResultsOption getShowLinkgrabbingResultsOption();
-
-    public void setShowLinkgrabbingResultsOption(LinkgrabberResultsOption option);
 
     @AboutConfig
     @DefaultEnumValue("ASK")

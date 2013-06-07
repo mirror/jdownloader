@@ -2669,4 +2669,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Rename the currently selected Link or Package" })
     String RenameAction_RenameAction_tt();
 
+    @Default(lngs = { "en" }, values = { "User Interface" })
+    String GUISettings_getTitle();
+
+    @Default(lngs = { "en" }, values = { "Customize JDownloader -  Mofify the User Interface, Menus, Language, ... whatever" })
+    String GUISettings_GUISettings_description();
+
+    @Default(lngs = { "en" }, values = { "Accessibility" })
+    String GUISettings_GUISettings_object_accessability();
+
 }

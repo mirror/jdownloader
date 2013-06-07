@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.jdtrayicon.translate;
+package org.jdownloader.gui.jdtrayicon.translate;
 
 import org.appwork.txtresource.Default;
 import org.appwork.txtresource.Defaults;
@@ -123,5 +123,8 @@ public interface TrayiconTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Hide Tray if Window is visible" })
     String plugins_optional_JDLightTray_hideifframevisible();
+
+    @Default(lngs = { "en" }, values = { "Tray Icon" })
+    String getName();
 
 }

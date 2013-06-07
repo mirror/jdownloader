@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.DefaultListModel;
 
 import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.panels.GUISettings;
@@ -241,14 +242,8 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                         } catch (final Throwable e) {
                             /* plugin not loaded yet */
                         }
-                        LazyExtension tray = null;
-                        try {
-                            if (withExtensions) tray = ExtensionController.getInstance().getExtension("org.jdownloader.extensions.jdtrayicon.TrayExtension");
-                        } catch (final Throwable e) {
-                            /* plugin not loaded yet */
-                        }
+
                         final LazyExtension finalExtract = extract;
-                        final LazyExtension finalTray = tray;
                         getConfigPanelGeneral();
                         getReconnectSettings();
                         getProxyConfig();
@@ -277,7 +272,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                                 addElement(getLinkgrabber());
                                 addElement(getPackagizer());
                                 if (finalExtract != null) addElement(finalExtract);
-                                if (finalTray != null) addElement(finalTray);
+                                addElement(JDGui.getInstance().getTray());
                                 if (!Application.isJared(Application.class)) {
                                     addElement(getExtensionManager());
                                 }
@@ -290,6 +285,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                             if (pluginsOptional != null) {
                                 for (final LazyExtension plg : pluginsOptional) {
                                     if ("org.jdownloader.extensions.extraction.ExtractionExtension".equals(plg.getClassname())) continue;
+                                    // avoid that old TrayExtension Jars will get loaded
                                     if ("org.jdownloader.extensions.jdtrayicon.TrayExtension".equals(plg.getClassname())) continue;
                                     if (contains(plg)) continue;
                                     if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;

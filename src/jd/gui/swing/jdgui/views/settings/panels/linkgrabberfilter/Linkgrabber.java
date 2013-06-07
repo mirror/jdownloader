@@ -47,7 +47,7 @@ public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry 
     public Linkgrabber() {
         super();
 
-        add(new Header(getTitle(), NewTheme.I().getIcon("linkgrabber", 32), org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED), "spanx,newline,growx,pushx");
+        add(new Header(getTitle(), NewTheme.I().getIcon("linkgrabber", 32), org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED), "spanx,growx,pushx");
         this.addDescriptionPlain(_JDT._.gui_settings_linkgrabber_filter_description());
         filter = LinkgrabberFilter.getInstance();
 

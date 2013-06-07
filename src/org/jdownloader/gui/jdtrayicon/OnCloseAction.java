@@ -1,6 +1,6 @@
-package org.jdownloader.extensions.jdtrayicon;
+package org.jdownloader.gui.jdtrayicon;
 
-import org.jdownloader.extensions.jdtrayicon.translate.T;
+import org.jdownloader.gui.jdtrayicon.translate.T;
 
 public enum OnCloseAction {
     TO_TRAY(T._.OnCloseAction_totray()),

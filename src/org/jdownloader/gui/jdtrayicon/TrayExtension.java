@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package org.jdownloader.extensions.jdtrayicon;
+package org.jdownloader.gui.jdtrayicon;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -34,17 +34,16 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
 import java.awt.image.BufferedImage;
 
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.SecondLevelLaunch;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorHighlightListener;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.MainFrameClosingHandler;
+import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 import jd.plugins.AddonPanel;
 
 import org.appwork.shutdown.ShutdownController;
@@ -68,8 +67,8 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.jdtrayicon.translate.T;
-import org.jdownloader.extensions.jdtrayicon.translate.TrayiconTranslation;
+import org.jdownloader.gui.jdtrayicon.translate.T;
+import org.jdownloader.gui.jdtrayicon.translate.TrayiconTranslation;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -77,48 +76,52 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.RlyExitListener;
 
-public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, ShutdownVetoListener, MainFrameClosingHandler {
+public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, ShutdownVetoListener, MainFrameClosingHandler, CheckBoxedEntry {
 
-    private LinkCollectorHighlightListener highListener = new LinkCollectorHighlightListener() {
-
-                                                            @Override
-                                                            public void onHighLight(CrawledLink parameter) {
-                                                                if (guiFrame != null && !guiFrame.isVisible()) {
-                                                                    /*
-                                                                     * dont try to restore jd if password required
-                                                                     */
-                                                                    if (CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
-                                                                        /**
-                                                                         * do nothing , because a password is set
-                                                                         */
-                                                                        return;
-                                                                    }
-                                                                }
-                                                                miniIt(false);
-                                                                if (iconified) {
-                                                                    /*
-                                                                     * restore normale state,if windows was iconified
-                                                                     */
-                                                                    new EDTHelper<Object>() {
-                                                                        @Override
-                                                                        public Object edtRun() {
-                                                                            /*
-                                                                             * after this normal , its back to iconified
-                                                                             */
-                                                                            guiFrame.setState(JFrame.NORMAL);
-                                                                            return null;
-                                                                        }
-                                                                    }.start();
-                                                                }
-                                                            }
-
-                                                            @Override
-                                                            public boolean isThisListenerEnabled() {
-                                                                LinkgrabberResultsOption option = getSettings().getShowLinkgrabbingResultsOption();
-                                                                if ((guiFrame != null && !guiFrame.isVisible() && option == LinkgrabberResultsOption.ONLY_IF_MINIMIZED) || option == LinkgrabberResultsOption.ALWAYS) { return true; }
-                                                                return false;
-                                                            }
-                                                        };
+    // private LinkCollectorHighlightListener highListener = new LinkCollectorHighlightListener() {
+    //
+    // @Override
+    // public void onHighLight(CrawledLink parameter) {
+    // if (guiFrame != null && !guiFrame.isVisible()) {
+    // /*
+    // * dont try to restore jd if password required
+    // */
+    // if (CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
+    // /**
+    // * do nothing , because a password is set
+    // */
+    // return;
+    // }
+    // }
+    // miniIt(false);
+    // if (iconified) {
+    // /*
+    // * restore normale state,if windows was iconified
+    // */
+    // new EDTHelper<Object>() {
+    // @Override
+    // public Object edtRun() {
+    // /*
+    // * after this normal , its back to iconified
+    // */
+    // guiFrame.setState(JFrame.NORMAL);
+    // return null;
+    // }
+    // }.start();
+    // }
+    // }
+    //
+    // @Override
+    // public boolean isThisListenerEnabled() {
+    // return true;
+    // // LinkgrabberResultsOption option =
+    // // getSettings().getShowLinkgrabbingResultsOption();
+    // // if ((guiFrame != null && !guiFrame.isVisible() && option ==
+    // // LinkgrabberResultsOption.ONLY_IF_MINIMIZED) || option ==
+    // // LinkgrabberResultsOption.ALWAYS) { return true; }
+    // // return false;
+    // }
+    // };
 
     @Override
     protected void stop() throws StopException {
@@ -130,13 +133,17 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             guiFrame.setAlwaysOnTop(false);
             guiFrame = null;
         }
-        LinkCollector.getInstance().getEventsender().removeListener(highListener);
+        // LinkCollector.getInstance().getEventsender().removeListener(highListener);
         ShutdownController.getInstance().removeShutdownVetoListener(TrayExtension.this);
     }
 
     @Override
     public String getIconKey() {
-        return "settings";
+        return "minimize";
+    }
+
+    public String getName() {
+        return _.getName();
     }
 
     @Override
@@ -153,7 +160,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-                LinkCollector.getInstance().getEventsender().addListener(highListener);
+                // LinkCollector.getInstance().getEventsender().addListener(highListener);
                 ShutdownController.getInstance().addShutdownVetoListener(TrayExtension.this);
                 new EDTRunner() {
 
@@ -218,7 +225,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         return true;
     }
 
-    public TrayExtension() throws StartException {
+    public TrayExtension() {
         setTitle(T._.jd_plugins_optional_jdtrayicon_jdlighttray());
 
         disableAlwaysonTop = new Timer(2000, this);
@@ -782,6 +789,24 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     @Override
     public long getShutdownVetoPriority() {
         return 0;
+    }
+
+    @Override
+    public ImageIcon _getIcon(int size) {
+
+        return NewTheme.I().getIcon(getIconKey(), size);
+
+    }
+
+    @Override
+    public boolean _isEnabled() {
+        return isEnabled();
+    }
+
+    @Override
+    public void _setEnabled(boolean b) throws StartException, StopException {
+
+        setEnabled(b);
     }
 
 }

@@ -10,6 +10,7 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LookUpKeys;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.annotations.ValidatorFactory;
@@ -128,16 +129,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isLinkgrabberAutoTabSwitchEnabled();
 
     @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("If enabled, JDownloader GUI will come to top when new links are added")
-    boolean isLinkgrabberFrameToTopOnNewLinksEnabled();
-
-    @AboutConfig
     @DefaultBooleanValue(true)
+    @LookUpKeys({ "linkgrabberhighlighonnewlinksenabled" })
     @DescriptionForConfigEntry("If enabled, JDownloader GUI switch to Linkgrabber Tab when new links are added")
-    boolean isLinkgrabberHighlighOnNewLinksEnabled();
+    boolean isSwitchToLinkgrabberTabOnNewLinksAddedEnabled();
 
-    public void setLinkgrabberHighlighOnNewLinksEnabled(boolean b);
+    public void setSwitchToLinkgrabberTabOnNewLinksAddedEnabled(boolean b);
 
     @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Sidebar")
@@ -277,8 +274,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setLinkgrabberAutoTabSwitchEnabled(boolean b);
 
-    void setLinkgrabberFrameToTopOnNewLinksEnabled(boolean b);
-
     void setLinkgrabberSidebarEnabled(boolean b);
 
     void setLinkgrabberSidebarToggleButtonEnabled(boolean b);
@@ -386,5 +381,18 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     MacDockProgressDisplay getMacDockProgressDisplay();
 
     void setMacDockProgressDisplay(MacDockProgressDisplay value);
+
+    @DefaultEnumValue("REQUEST_FOCUS_IF_MAXIMIZED")
+    @DescriptionForConfigEntry("Action that will be performed when the Linkgrabber adds new links.")
+    @AboutConfig
+    LinkgrabberWindowAction getWindowFocusActionWhenNewLinksAreAdded();
+
+    void setWindowFocusActionWhenNewLinksAreAdded(LinkgrabberWindowAction action);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isTaskBarFlashEnabled();
+
+    void setTaskBarFlashEnabled(boolean b);
 
 }

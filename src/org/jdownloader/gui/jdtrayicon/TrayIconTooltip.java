@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package org.jdownloader.extensions.jdtrayicon;
+package org.jdownloader.gui.jdtrayicon;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -26,7 +26,7 @@ import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.nutils.Formatter;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdownloader.extensions.jdtrayicon.translate.T;
+import org.jdownloader.gui.jdtrayicon.translate.T;
 
 public class TrayIconTooltip extends JWindowTooltip {
 

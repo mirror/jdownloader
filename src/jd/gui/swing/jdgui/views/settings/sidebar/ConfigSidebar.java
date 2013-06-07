@@ -53,6 +53,8 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.LazyExtension;
+import org.jdownloader.extensions.StartException;
+import org.jdownloader.extensions.StopException;
 import org.jdownloader.translate._JDT;
 
 public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseListener, ConfigEventListener {
@@ -310,7 +312,19 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
                     CheckBoxedEntry object = ((CheckBoxedEntry) list.getModel().getElementAt(index));
                     boolean value = !((CheckBoxedEntry) list.getModel().getElementAt(index))._isEnabled();
                     if (value == object._isEnabled()) return;
-                    ExtensionController.getInstance().setEnabled((LazyExtension) object, value);
+                    // ugly...
+                    // we should refactor the CheckBoxedEntry pretty soon..
+                    if (object instanceof LazyExtension) {
+                        ExtensionController.getInstance().setEnabled((LazyExtension) object, value);
+                    } else {
+                        try {
+                            object._setEnabled(value);
+                        } catch (StartException e1) {
+                            e1.printStackTrace();
+                        } catch (StopException e1) {
+                            e1.printStackTrace();
+                        }
+                    }
                     /*
                      * we save enabled/disabled status here, plugin must be running when enabled
                      */
@@ -340,7 +354,16 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
     }
 
     public synchronized SwitchPanel getSelectedPanel() {
-        if (list.getSelectedValue() instanceof LazyExtension) {
+        if (list.getSelectedValue() instanceof AbstractExtension) {
+            AbstractExtension<?, ?> ext = ((AbstractExtension) list.getSelectedValue());
+            if (ext.hasConfigPanel()) {
+                return ext.getConfigPanel();
+
+            } else {
+                return new EmptyExtensionConfigPanel(ext);
+            }
+
+        } else if (list.getSelectedValue() instanceof LazyExtension) {
             AbstractExtension<?, ?> ext = ((LazyExtension) list.getSelectedValue())._getExtension();
             if (ext == null) {
                 try {

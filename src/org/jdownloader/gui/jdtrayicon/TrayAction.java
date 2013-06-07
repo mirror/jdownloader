@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.jdtrayicon;
+package org.jdownloader.gui.jdtrayicon;
 
 import java.awt.event.ActionEvent;
 

@@ -71,7 +71,7 @@ public class GUISettings extends AbstractConfigPanel {
     private SettingsButton    mainMenuManager;
 
     public String getTitle() {
-        return _JDT._.gui_settings__gui_title();
+        return _GUI._.GUISettings_getTitle();
     }
 
     public GUISettings() {
@@ -209,11 +209,9 @@ public class GUISettings extends AbstractConfigPanel {
             }
         });
         this.addHeader(getTitle(), NewTheme.I().getIcon("gui", 32));
-
+        this.addDescription(_GUI._.GUISettings_GUISettings_description());
         // this.addHeader(getTitle(),
         // NewTheme.I().getIcon("barrierfreesettings", 32));
-        this.addDescription(_JDT._.gui_settings_barrierfree_description());
-        this.addPair(_GUI._.gui_config_barrierfree_captchasize(), null, captchaSize);
         this.addPair(_GUI._.gui_config_language(), null, lng);
         this.addPair(_GUI._.gui_config_dialogs(), null, resetDialogs);
         this.addHeader(_GUI._.gui_config_menumanager_downloadlist(), NewTheme.I().getIcon("menu", 32));
@@ -223,6 +221,11 @@ public class GUISettings extends AbstractConfigPanel {
         this.addPair(_GUI._.gui_config_menumanager_linkgrabber(), null, contextMenuManagerLinkgrabber);
         this.addPair(_GUI._.gui_config_menumanager_toolbar(), null, toolbarManager);
         this.addPair(_GUI._.gui_config_menumanager_mainmenu(), null, mainMenuManager);
+
+        this.addHeader(_GUI._.GUISettings_GUISettings_object_accessability(), NewTheme.I().getIcon("barrierfreesettings", 32));
+        this.addDescription(_JDT._.gui_settings_barrierfree_description());
+        this.addPair(_GUI._.gui_config_barrierfree_captchasize(), null, captchaSize);
+
     }
 
     @Override

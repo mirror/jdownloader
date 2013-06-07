@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.jdtrayicon;
+package org.jdownloader.gui.jdtrayicon;
 
 import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
@@ -23,14 +23,12 @@ public class CFG_TRAY_CONFIG {
     public static final BooleanKeyHandler          TRAY_ONLY_VISIBLE_IF_WINDOW_IS_HIDDEN_ENABLED  = SH.getKeyHandler("TrayOnlyVisibleIfWindowIsHiddenEnabled", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler          GUI_ENABLED                                    = SH.getKeyHandler("GuiEnabled", BooleanKeyHandler.class);
-    // ALWAYS
-    public static final EnumKeyHandler             SHOW_LINKGRABBING_RESULTS_OPTION               = SH.getKeyHandler("ShowLinkgrabbingResultsOption", EnumKeyHandler.class);
     // false
     public static final BooleanKeyHandler          TOOGLE_WINDOW_STATUS_WITH_SINGLE_CLICK_ENABLED = SH.getKeyHandler("ToogleWindowStatusWithSingleClickEnabled", BooleanKeyHandler.class);
-    // TO_TASKBAR
-    public static final EnumKeyHandler             ON_MINIMIZE_ACTION                             = SH.getKeyHandler("OnMinimizeAction", EnumKeyHandler.class);
     // false
     public static final BooleanKeyHandler          GREY_ICON_ENABLED                              = SH.getKeyHandler("GreyIconEnabled", BooleanKeyHandler.class);
+    // TO_TASKBAR
+    public static final EnumKeyHandler             ON_MINIMIZE_ACTION                             = SH.getKeyHandler("OnMinimizeAction", EnumKeyHandler.class);
     // false
     public static final BooleanKeyHandler          ENABLED                                        = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
     // true

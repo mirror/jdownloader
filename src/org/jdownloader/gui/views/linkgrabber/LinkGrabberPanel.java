@@ -51,6 +51,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.RemoveOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ResetAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.LinkgrabberWindowAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
@@ -129,21 +130,50 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     @Override
                     protected void runInEDT() {
                         try {
-                            if (CFG_GUI.CFG.isLinkgrabberHighlighOnNewLinksEnabled()) JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
-                            if (CFG_GUI.CFG.isLinkgrabberFrameToTopOnNewLinksEnabled()) {
+                            if (CFG_GUI.CFG.isSwitchToLinkgrabberTabOnNewLinksAddedEnabled()) JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
+                            switch (CFG_GUI.CFG.getWindowFocusActionWhenNewLinksAreAdded()) {
+                            case NOTHING:
+
+                                JDGui.getInstance().flashTaskbar();
+
+                                break;
+                            case ALWAYS_REQUEST_FOCUS:
+                                JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
+
+                                break;
+
+                            case REQUEST_FOCUS_IF_MAXIMIZED:
+
                                 if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
                                     JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
+                                } else {
+                                    JDGui.getInstance().flashTaskbar();
                                 }
+
+                                break;
+
+                            case REQUEST_FOCUS_IF_MAXIMIZED_OR_ICONIFIED:
+                                if (JDGui.getInstance().getMainFrame().isVisible()) {
+                                    JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
+                                } else {
+                                    JDGui.getInstance().flashTaskbar();
+                                }
+                                break;
+
+                            // default:
+                            //
                             }
+
                         } catch (Throwable e) {
                         }
                     }
                 };
+
             }
 
             @Override
             public boolean isThisListenerEnabled() {
-                return org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberAutoTabSwitchEnabled();
+                return org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberAutoTabSwitchEnabled() || CFG_GUI.CFG.getWindowFocusActionWhenNewLinksAreAdded() != LinkgrabberWindowAction.NOTHING;
             }
 
             @Override

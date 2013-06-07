@@ -29,6 +29,8 @@ import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -79,7 +81,9 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.GuiUtils;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
+import org.jdownloader.gui.jdtrayicon.TrayExtension;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
@@ -132,6 +136,8 @@ public class JDGui extends SwingGui {
     private MainFrameClosingHandler closingHandler;
 
     private LogSource               logger;
+
+    private TrayExtension           tray;
 
     public MainFrameClosingHandler getClosingHandler() {
         return closingHandler;
@@ -187,9 +193,20 @@ public class JDGui extends SwingGui {
 
             public void windowActivated(WindowEvent e) {
                 Dialog.getInstance().setParentOwner(getMainFrame());
+                GuiUtils.flashWindow(mainFrame, false, false);
             }
         });
+        mainFrame.addFocusListener(new FocusListener() {
 
+            @Override
+            public void focusLost(FocusEvent e) {
+            }
+
+            @Override
+            public void focusGained(FocusEvent e) {
+                GuiUtils.flashWindow(mainFrame, false, false);
+            }
+        });
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
 
             public boolean postProcessKeyEvent(final KeyEvent e) {
@@ -238,6 +255,7 @@ public class JDGui extends SwingGui {
                         }.getReturnValue();
                     }
                 });
+
             }
 
         });
@@ -318,6 +336,16 @@ public class JDGui extends SwingGui {
 
             }
         });
+
+        // init tray
+
+        tray = new TrayExtension();
+        try {
+            tray.init();
+        } catch (Exception e1) {
+            logger.log(e1);
+        }
+
     }
 
     public static void main(String[] args) {
@@ -652,6 +680,7 @@ public class JDGui extends SwingGui {
         switch (id) {
         case UIConstants.WINDOW_STATUS_MAXIMIZED:
             this.mainFrame.setState(Frame.MAXIMIZED_BOTH);
+            this.mainFrame.setVisible(true);
             break;
         case UIConstants.WINDOW_STATUS_MINIMIZED:
             this.mainFrame.setState(Frame.ICONIFIED);
@@ -659,6 +688,7 @@ public class JDGui extends SwingGui {
         case UIConstants.WINDOW_STATUS_NORMAL:
             this.mainFrame.setState(Frame.NORMAL);
             this.mainFrame.setVisible(true);
+
             break;
         case UIConstants.WINDOW_STATUS_FOREGROUND:
             this.mainFrame.setState(Frame.NORMAL);
@@ -666,6 +696,9 @@ public class JDGui extends SwingGui {
             this.mainFrame.setVisible(true);
             this.mainFrame.toFront();
             this.mainFrame.setFocusableWindowState(true);
+            if (tray.isEnabled()) {
+                tray.miniIt(false);
+            }
             break;
         }
     }
@@ -824,6 +857,28 @@ public class JDGui extends SwingGui {
             return JDGui.this.linkgrabberView == mainTabbedPane.getSelectedComponent();
         }
         return false;
+    }
+
+    public TrayExtension getTray() {
+        return tray;
+    }
+
+    public void flashTaskbar() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                final int state = mainFrame.getExtendedState();
+                if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isTaskBarFlashEnabled()) {
+                    if (state == ExtendedState.ICONIFIED.getId()) {
+                        GuiUtils.flashWindow(mainFrame, true, true);
+                    } else {
+                        GuiUtils.flashWindow(mainFrame, true, true);
+                    }
+                }
+            }
+        };
+
     }
 
 }
