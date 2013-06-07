@@ -1,5 +1,6 @@
 package org.jdownloader.captcha.v2;
 
+import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -104,7 +105,7 @@ public abstract class ChallengeSolver<T> {
         threadPool.allowCoreThreadTimeOut(true);
     }
 
-    public abstract void solve(SolverJob<T> solverJob) throws InterruptedException, SolverException, SkipException;
+    public abstract void solve(SolverJob<T> solverJob) throws InterruptedException, SolverException, SkipException, IOException;
 
     public Class<T> getResultType() {
         return resultType;
