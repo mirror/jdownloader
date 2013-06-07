@@ -47,24 +47,23 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(vkontaktedecrypted\\.ru/(picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?|audiolink/\\d+|videolink/\\d+)|vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+)" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
-    private static final String DOMAIN                  = "http://vk.com";
-    private static Object       LOCK                    = new Object();
-    private String              FINALLINK               = null;
-    private static final String AUDIOLINK               = "http://vkontaktedecrypted\\.ru/audiolink/\\d+";
-    private static final String VIDEOLINK               = "http://vkontaktedecrypted\\.ru/videolink/\\d+";
-    private static final String DOCLINK                 = "http://vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+";
-    private int                 MAXCHUNKS               = 1;
+    private static final String DOMAIN               = "http://vk.com";
+    private static Object       LOCK                 = new Object();
+    private String              FINALLINK            = null;
+    private static final String AUDIOLINK            = "http://vkontaktedecrypted\\.ru/audiolink/\\d+";
+    private static final String VIDEOLINK            = "http://vkontaktedecrypted\\.ru/videolink/\\d+";
+    private static final String DOCLINK              = "http://vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+";
+    private int                 MAXCHUNKS            = 1;
     /** Settings stuff */
-    private final String        USECOOKIELOGIN          = "USECOOKIELOGIN";
-    private final String        FASTLINKCHECK           = "FASTLINKCHECK";
-    private final String        FASTPICTURELINKCHECK    = "FASTPICTURELINKCHECK";
-    private final String        SPEEDUPPICTUREDOWNLOADS = "SPEEDUPPICTUREDOWNLOADS";
-    private static final String ALLOW_BEST              = "ALLOW_BEST";
-    private static final String ALLOW_240P              = "ALLOW_240P";
-    private static final String ALLOW_360P              = "ALLOW_360P";
-    private static final String ALLOW_480P              = "ALLOW_480P";
-    private static final String ALLOW_720P              = "ALLOW_720P";
-    private static final String TEMPORARILYBLOCKED      = "You tried to load the same page more than once in one second|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
+    private final String        USECOOKIELOGIN       = "USECOOKIELOGIN";
+    private final String        FASTLINKCHECK        = "FASTLINKCHECK";
+    private final String        FASTPICTURELINKCHECK = "FASTPICTURELINKCHECK";
+    private static final String ALLOW_BEST           = "ALLOW_BEST";
+    private static final String ALLOW_240P           = "ALLOW_240P";
+    private static final String ALLOW_360P           = "ALLOW_360P";
+    private static final String ALLOW_480P           = "ALLOW_480P";
+    private static final String ALLOW_720P           = "ALLOW_720P";
+    private static final String TEMPORARILYBLOCKED   = "You tried to load the same page more than once in one second|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
@@ -139,18 +138,17 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (!linkOk(link, link.getFinalFileName())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
-                // TODO: Add better errorhandling so we can remove thos setting
-                final boolean speedUpPictureDownloads = this.getPluginConfig().getBooleanProperty(SPEEDUPPICTUREDOWNLOADS, false);
                 String albumID = link.getStringProperty("albumid");
-                if (albumID == null || !speedUpPictureDownloads) {
+                if (albumID == null) {
                     getPageSafe("http://vk.com/photo" + photoID, aa, link);
                     if (br.containsHTML("Unknown error|Unbekannter Fehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    if (albumID == null) albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
+                    albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
+                    if (albumID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (albumID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                 br.postPage("http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
+                if (br.containsHTML(">Unfortunately, this photo has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 final String correctedBR = br.toString().replace("\\", "");
                 /**
                  * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but
@@ -183,6 +181,11 @@ public class VKontakteRuHoster extends PluginForHost {
         br.getPage(page);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
             logger.info("Avoiding 'https://login.vk.com/?role=fast&_origin=' security check by re-logging in...");
+            // Force login
+            login(br, acc, true);
+            br.getPage(page);
+        } else if (br.toString().length() < 100 && br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+")) {
+            logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
             // Force login
             login(br, acc, true);
             br.getPage(page);
@@ -369,7 +372,6 @@ public class VKontakteRuHoster extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastLinkcheck", "Fast LinkCheck for video links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTPICTURELINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastPictureLinkcheck", "Fast LinkCheck for picture links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SPEEDUPPICTUREDOWNLOADS, JDL.L("plugins.hoster.vkontakteruhoster.speedUpPictureDownloads", "Speed up picture downloads (disadvantage: whenever a link is offline, JD will download a wrong picture!)")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.youtube.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
         getConfig().addEntry(hq);

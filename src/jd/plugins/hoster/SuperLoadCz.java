@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -166,6 +167,7 @@ public class SuperLoadCz extends PluginForHost {
             /* temp disabled the host */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
+            link.setProperty("superloadczdirectlink", dllink);
             /* contentdisposition, lets download it */
             dl.startDownload();
             try {
@@ -183,18 +185,41 @@ public class SuperLoadCz extends PluginForHost {
         String token = account.getStringProperty("token", null);
         String pass = downloadLink.getStringProperty("pass", null);
         if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        showMessage(downloadLink, "Task 1: Generating Link");
-        /* request Download */
-        if (pass != null) {
-            br.postPage(mAPI + "/download-url", "token=" + token + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&password=" + Encoding.urlEncode(pass));
-        } else {
-            br.postPage(mAPI + "/download-url", "token=" + token + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+        String dllink = checkDirectLink(downloadLink, "superloadczdirectlink");
+        if (dllink == null) {
+            showMessage(downloadLink, "Task 1: Generating Link");
+            /* request Download */
+            if (pass != null) {
+                br.postPage(mAPI + "/download-url", "token=" + token + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&password=" + Encoding.urlEncode(pass));
+            } else {
+                br.postPage(mAPI + "/download-url", "token=" + token + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+            }
+            dllink = getJson("link");
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = dllink.replaceAll("\\\\", "");
+            showMessage(downloadLink, "Task 2: Download begins!");
         }
-        String dllink = getJson("link");
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        showMessage(downloadLink, "Task 2: Download begins!");
         // might need a sleep here hoster seems to have troubles with new links.
-        handleDL(account, downloadLink, dllink.replaceAll("\\\\", ""));
+        handleDL(account, downloadLink, dllink);
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
     @Override
@@ -235,6 +260,17 @@ public class SuperLoadCz extends PluginForHost {
             String hostsSup = br.cloneBrowser().postPage(mAPI + "/get-supported-hosts", "token=" + token);
             String[] hosts = new Regex(hostsSup, "\"([^\", ]+\\.[^\", ]+)").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+            if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
+                if (!supportedHosts.contains("uploaded.net")) {
+                    supportedHosts.add("uploaded.net");
+                }
+                if (!supportedHosts.contains("ul.to")) {
+                    supportedHosts.add("ul.to");
+                }
+                if (!supportedHosts.contains("uploaded.to")) {
+                    supportedHosts.add("uploaded.to");
+                }
+            }
             ai.setProperty("multiHostSupport", supportedHosts);
         } catch (Throwable e) {
             account.setProperty("multiHostSupport", Property.NULL);
