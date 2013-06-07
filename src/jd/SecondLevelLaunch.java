@@ -79,6 +79,7 @@ import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.cnl2.ExternInterface;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solver.CBSolver;
+import org.jdownloader.captcha.v2.solver.CaptchaResolutorCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solver.Captcha9kwSolverClick;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
@@ -470,6 +471,7 @@ public class SecondLevelLaunch {
                             ChallengeResponseController.getInstance().addSolver(CBSolver.getInstance());
                             ChallengeResponseController.getInstance().addSolver(Captcha9kwSolver.getInstance());
                             ChallengeResponseController.getInstance().addSolver(Captcha9kwSolverClick.getInstance());
+                            ChallengeResponseController.getInstance().addSolver(CaptchaResolutorCaptchaSolver.getInstance());
 
                             if (!jared) {
                                 HostPluginController.getInstance().invalidateCache();
