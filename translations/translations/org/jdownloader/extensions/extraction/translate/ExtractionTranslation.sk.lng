@@ -1,5 +1,7 @@
 archivename=Názov archívu
+close=Zavrieť
 context_password_msg_multi=Nastaviť heslo
+contextmenu_autoextract=Povoliť automatické rozbalenie
 contextmenu_extract=Extrahovať teraz
 contextmenu_main=Archív(y)
 date=Dátum
@@ -18,6 +20,8 @@ plugins_optional_extraction_status_extractfailedpass=Rozbalovanie zlyhalo (heslo
 plugins_optional_extraction_status_extracting_filename=Rozbalovanie %s1
 plugins_optional_extraction_status_extractok=Rozbalenie OK
 plugins_optional_extraction_status_passfound=Bolo nájdené heslo
+set_autoextract_false=Automatické rozbalenie je teraz zakázané
+set_autoextract_true=Automatické rozbalenie je teraz povolené
 settings_cpupriority=Priorita CPU
 settings_cpupriority_high=Vysoká
 settings_cpupriority_low=Nízka

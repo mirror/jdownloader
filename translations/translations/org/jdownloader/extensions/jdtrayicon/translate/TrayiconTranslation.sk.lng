@@ -1,4 +1,5 @@
 JDGui_windowClosing_try_answer_tray=Skryť do lišty
+OnCloseAction_totaskbar=Minimalizovať do panelu úloh
 plugins_optional_JDLightTray_never=Nikdy
 plugins_optional_JDLightTray_startMinimized=Spustiť minimalizované
 plugins_optional_trayIcon_dl_finished=Dokončené:
