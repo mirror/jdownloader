@@ -140,14 +140,14 @@ public class VKontakteRuHoster extends PluginForHost {
                 final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
                 String albumID = link.getStringProperty("albumid");
                 if (albumID == null) {
-                    getPageSafe("http://vk.com/photo" + photoID, aa, link);
+                    getPageSafe(aa, link, "http://vk.com/photo" + photoID);
                     if (br.containsHTML("Unknown error|Unbekannter Fehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
                     if (albumID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                br.postPage("http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
+                postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
                 if (br.containsHTML(">Unfortunately, this photo has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 final String correctedBR = br.toString().replace("\\", "");
                 /**
@@ -177,7 +177,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     // Handly all kinds of stuff that disturbs the downloadflow
-    private void getPageSafe(final String page, final Account acc, final DownloadLink dl) throws Exception {
+    private void getPageSafe(final Account acc, final DownloadLink dl, final String page) throws Exception {
         br.getPage(page);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
             logger.info("Avoiding 'https://login.vk.com/?role=fast&_origin=' security check by re-logging in...");
@@ -189,9 +189,28 @@ public class VKontakteRuHoster extends PluginForHost {
             // Force login
             login(br, acc, true);
             br.getPage(page);
-        } else if (br.containsHTML(TEMPORARILYBLOCKED)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l); }
-        // else if (br.containsHTML("NOT_HANDLED_CORRECTLY_YET")) { throw new PluginException(LinkStatus.ERROR_FATAL,
-        // "This link is not downloadable"); }
+        }
+        generalErrorhandling();
+    }
+
+    private void postPageSafe(final Account acc, final DownloadLink dl, final String page, final String postData) throws Exception {
+        br.postPage(page, postData);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
+            logger.info("Avoiding 'https://login.vk.com/?role=fast&_origin=' security check by re-logging in...");
+            // Force login
+            login(br, acc, true);
+            br.postPage(page, postData);
+        } else if (br.toString().length() < 100 && br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+")) {
+            logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
+            // Force login
+            login(br, acc, true);
+            br.postPage(page, postData);
+        }
+        generalErrorhandling();
+    }
+
+    private void generalErrorhandling() throws PluginException {
+        if (br.containsHTML(TEMPORARILYBLOCKED)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l); }
     }
 
     private boolean linkOk(final DownloadLink downloadLink, final String finalfilename) throws IOException {
@@ -364,22 +383,22 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's Vk Plugin helps downloading Videoclips from vk.com. Vk provides different video formats and qualities.";
+        return "JDownloader's Vk Plugin helps downloading videoclips from vk.com. Vk provides different video formats and qualities.";
     }
 
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USECOOKIELOGIN, JDL.L("plugins.hoster.vkontakteruhoster.alwaysUseCookiesForLogin", "Always use cookies for login (this can cause out of date errors)")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastLinkcheck", "Fast LinkCheck for video links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastLinkcheck", "Fast linkcheck for video links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTPICTURELINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastPictureLinkcheck", "Fast LinkCheck for picture links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.youtube.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
+        final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.vkontakteruhoster.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
         getConfig().addEntry(hq);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240P, JDL.L("plugins.hoster.vkcom.checkSD", "Grab 240p MP4/FLV?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, JDL.L("plugins.hoster.vkcom.checkHQ", "Grab 360p MP4?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480P, JDL.L("plugins.hoster.vkcom.check720", "Grab 480p MP4?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720P, JDL.L("plugins.hoster.vkcom.check1080", "Grab 720p MP4?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240P, JDL.L("plugins.hoster.vkontakteruhoster.check240", "Grab 240p MP4/FLV?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, JDL.L("plugins.hoster.vkontakteruhoster.check360", "Grab 360p MP4?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480P, JDL.L("plugins.hoster.vkontakteruhoster.check480", "Grab 480p MP4?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720P, JDL.L("plugins.hoster.vkontakteruhoster.check720", "Grab 720p MP4?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
     }
 
     @Override

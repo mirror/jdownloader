@@ -16,14 +16,18 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.util.LinkedHashMap;
+
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,56 +35,54 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliphunter.com" }, urls = { "http://(www\\.)?cliphunter\\.com/w/\\d+/\\w+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliphunter.com" }, urls = { "http://cliphunterdecrypted\\.com/\\d+" }, flags = { 2 })
 public class ClipHunterCom extends PluginForHost {
 
     private String DLLINK = null;
 
     public ClipHunterCom(final PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
-    public String decryptUrl(final String fun, final String value) {
-        Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        final Invocable inv = (Invocable) engine;
-        try {
-            engine.eval(fun);
-            result = inv.invokeFunction("decrypt", value);
-        } catch (final Throwable e) {
-            return null;
-        }
-        return result != null ? result.toString() : null;
-    }
+    private static final String    ALLOW_BEST    = "ALLOW_BEST";
+    private static final String    ALLOW_360P    = "ALLOW_360P";
+    private static final String    ALLOW_360PFLV = "ALLOW_360PFLV";
+    private static final String    ALLOW_480P    = "ALLOW_480P";
+    private static final String    ALLOW_540P    = "ALLOW_540P";
+    private static final String    FASTLINKCHECK = "FASTLINKCHECK";
+    final public static String[][] qualities     = jd.plugins.decrypter.ClipHunterComDecrypt.qualities;
 
     @Override
     public String getAGBLink() {
         return "http://www.cliphunter.com/terms/";
     }
 
-    private String getHighestQuality(final String[] enc, final String dec) {
-        String tmpSr, tmpUrl, out = null;
-        int sr = -1;
-        for (final String s : enc) {
-            tmpUrl = decryptUrl(dec, s);
-            tmpSr = new Regex(tmpUrl, "sr=(\\d+)").getMatch(0);
-            if (tmpSr == null) {
-                continue;
-            }
-            if (sr > Integer.parseInt(tmpSr)) {
-                continue;
-            }
-            sr = Integer.parseInt(tmpSr);
-            out = tmpUrl;
-        }
-        return out;
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie("cliphunter.com", "qchange", "h");
+        if (downloadLink.getBooleanProperty("offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        DLLINK = downloadLink.getStringProperty("directlink");
+
+        if (!linkOk(downloadLink)) {
+            if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final LinkedHashMap<String, String> foundQualities = findAvailableVideoQualities();
+            if (foundQualities == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String selectedQuality = downloadLink.getStringProperty("selectedquality");
+            DLLINK = foundQualities.get(selectedQuality);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!linkOk(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -94,46 +96,89 @@ public class ClipHunterCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie("cliphunter.com", "qchange", "h");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<title>(.*?) -.*?</title>").getMatch(0);
-        final String jsUrl = br.getRegex("<script.*src=\"(http://s\\.gexo.*?player\\.js)\"").getMatch(0);
-        final String[] encryptedUrls = br.getRegex("var pl_fiji(_p|_i)? = '(.*?)'").getColumn(1);
-        if (filename == null) {
-            filename = br.getRegex("<h1 style=\"font-size: 2em;\">(.*?) </h1>").getMatch(0);
-        }
-        if (filename == null || jsUrl == null || encryptedUrls == null || encryptedUrls.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        // parse decryptalgo
-        final Browser br2 = br.cloneBrowser();
-        br2.getPage(jsUrl);
-        String decryptAlgo = new Regex(br2, "decrypt\\:\\s?function(.*?\\})(,|;)").getMatch(0);
-        if (decryptAlgo == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        decryptAlgo = "function decrypt" + decryptAlgo + ";";
-        DLLINK = getHighestQuality(encryptedUrls, decryptAlgo);
-        if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
+    private boolean linkOk(final DownloadLink dl) throws IOException {
+        boolean linkOk = false;
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br.openGetConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                dl.setDownloadSize(con.getLongContentLength());
+                linkOk = true;
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                br.getPage(dl.getStringProperty("originallink"));
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
-            } catch (final Throwable e) {
+            } catch (Throwable e) {
             }
         }
+        return linkOk;
+    }
+
+    public static String decryptUrl(final String fun, final String value) {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        final Invocable inv = (Invocable) engine;
+        try {
+            engine.eval(fun);
+            result = inv.invokeFunction("decrypt", value);
+        } catch (final Throwable e) {
+            return null;
+        }
+        return result != null ? result.toString() : null;
+    }
+
+    /**
+     * Same function in hoster and decrypterplugin, sync it!!
+     * 
+     * @throws IOException
+     */
+    private LinkedHashMap<String, String> findAvailableVideoQualities() throws IOException {
+        // parse decryptalgo
+        final String jsUrl = br.getRegex("<script.*src=\"(http://s\\.gexo.*?player\\.js)\"").getMatch(0);
+        final String[] encryptedUrls = br.getRegex("var pl_fiji(_p|_i)? = \\'(.*?)\\'").getColumn(1);
+        if (jsUrl == null || encryptedUrls == null || encryptedUrls.length == 0) return null;
+        final Browser br2 = br.cloneBrowser();
+        br2.getPage(jsUrl);
+        String decryptAlgo = new Regex(br2, "decrypt\\:\\s?function(.*?\\})(,|;)").getMatch(0);
+        if (decryptAlgo == null) return null;
+        // Find available links
+        final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
+        decryptAlgo = "function decrypt" + decryptAlgo + ";";
+        String currentSr, tmpUrl;
+        for (final String s : encryptedUrls) {
+            tmpUrl = decryptUrl(decryptAlgo, s);
+            currentSr = new Regex(tmpUrl, "sr=(\\d+)").getMatch(0);
+            if (currentSr == null) {
+                continue;
+            }
+            for (final String quality[] : qualities) {
+                if (tmpUrl.contains(quality[0])) {
+                    foundQualities.put(quality[0], tmpUrl);
+                    break;
+                }
+            }
+        }
+        return foundQualities;
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's Cliphunter Plugin helps downloading videoclips from cliphunter.com. Cliphunter provides different video formats and qualities.";
+    }
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.cliphuntercom.fastLinkcheck", "Fast linkcheck for video links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.cliphuntercom.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
+        getConfig().addEntry(hq);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, JDL.L("plugins.hoster.cliphuntercom.check360mp4", "Grab low (i) (360p MP4)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360PFLV, JDL.L("plugins.hoster.cliphuntercom.check360flv", "Grab medium (l) (360p FLV)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480P, JDL.L("plugins.hoster.cliphuntercom.check480mp4", "Grab medium (p) (480p MP4)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_540P, JDL.L("plugins.hoster.cliphuntercom.check540mp4", "Grab high (h) (540p FLV)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
     }
 
     @Override
