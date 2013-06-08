@@ -725,9 +725,21 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
+            if (br.containsHTML("id=\"shrinkfield\">")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            if (br.containsHTML("<title>Index of")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             finallink = br.getRegex("\"(/\\?click=[^<>\"/]*?)\"").getMatch(0);
             if (finallink != null) {
                 br.getPage("http://lnx.lu" + finallink);
+                if (br.containsHTML("No htmlCode read")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
                 finallink = br.getRedirectLocation();
             }
         } else if (parameter.contains("peeplink.in/")) {

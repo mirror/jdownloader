@@ -36,10 +36,15 @@ public class RpprsIn extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)?rappers\\.in/(news\\-|videos|topvideos|randomvideos|swfobject|register|login|gsearch|fpss).*?";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        if (parameter.matches("http://(www\\.)?rappers\\.in/.*?\\-beat\\-\\d+\\.html")) {
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        } else if (parameter.matches("http://(www\\.)?rappers\\.in/.*?\\-beat\\-\\d+\\.html")) {
             final String id = new Regex(parameter, "beat\\-(\\d+)\\.html").getMatch(0);
             br.getPage("http://www.rappers.in/playbeat-" + id + "-1808.xml?" + new Random().nextInt(10) + "s=undefined");
             String finallink = br.getRegex("<filename>(http.*?)</filename>").getMatch(0);

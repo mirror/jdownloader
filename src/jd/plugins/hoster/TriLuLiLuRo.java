@@ -73,12 +73,13 @@ public class TriLuLiLuRo extends PluginForHost {
         // Link offline
         if (br.getURL().equals("http://www.trilulilu.ro/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(COUNTRYBLOCK)) {
-            try {
-                localProxy(true);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
-            }
-            br.getPage(downloadLink.getDownloadURL());
+            // try {
+            // localProxy(true);
+            // } catch (final Throwable e) {
+            // /* does not exist in 09581 */
+            // }
+            downloadLink.getLinkStatus().setStatusText(COUNTRYBLOCKUSERTEXT);
+            return AvailableStatus.TRUE;
         }
         if (br.containsHTML("(Fişierul căutat nu există|Contul acestui utilizator a fost dezactivat)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Invalid link

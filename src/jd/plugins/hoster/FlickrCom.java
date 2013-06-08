@@ -171,7 +171,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    public void login(final Account account, final boolean force, Browser br) throws Exception {
+    public void login(final Account account, final boolean force, final Browser br) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -189,10 +189,9 @@ public class FlickrCom extends PluginForHost {
                             br.setCookie(MAINPAGE, key, value);
                         }
                         br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
-                        Browser brc = br.cloneBrowser();
-                        brc.getPage("http://www.flickr.com");
-                        String global_dbid = brc.getRegex("global_dbid = '(\\d+)'").getMatch(0);
-                        if (global_dbid != null && global_dbid.equals(cookies.get("cookie_accid"))) { return; }
+                        final Browser brc = br.cloneBrowser();
+                        brc.getPage("http://www.flickr.com/");
+                        if (brc.containsHTML("data\\-track=\"Account\\-flickrmail\\-menu\"")) return;
                     }
                 }
                 br.setFollowRedirects(true);

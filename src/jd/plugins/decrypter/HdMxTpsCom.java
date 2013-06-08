@@ -120,7 +120,7 @@ public class HdMxTpsCom extends PluginForDecrypt {
 
             }
         }
-        throw new DecrypterException("Login or/and password for " + DOMAIN + " is wrong!");
+        return false;
     }
 
     /* NO OVERRIDE!! */

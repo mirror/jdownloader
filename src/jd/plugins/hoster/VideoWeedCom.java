@@ -88,7 +88,14 @@ public class VideoWeedCom extends PluginForHost {
         br.getPage("http://www.videoweed.es/api/player.api.php?user=undefined&codes=1&file=" + new Regex(downloadLink.getDownloadURL(), "videoweed\\.es/file/(.+)").getMatch(0) + "&pass=undefined&key=" + Encoding.urlEncode(key));
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename.replace(filename.substring(filename.length() - 4, filename.length()), "") + ".flv");
+        final String ext = ".flv";
+        if (filename.contains(".")) {
+            String oldExt = filename.substring(filename.length() - 4, filename.length());
+            filename = filename.replace(oldExt, ext);
+        } else {
+            filename += ext;
+        }
+        downloadLink.setFinalFileName(filename);
         if (br.containsHTML("error_msg=The video is being transfered")) {
             downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
             return AvailableStatus.TRUE;

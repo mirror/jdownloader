@@ -89,7 +89,7 @@ public class VideoCnnturkCom extends PluginForHost {
             if ("/".equals(br.getRedirectLocation())) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         }
 
-        final String xmlUrl = br.getRegex("<param name=\"FlashVars\" value=\"config=(http.*?)\"").getMatch(0);
+        final String xmlUrl = br.getRegex("\"FlashPlayerConfigUrl\": \"(http://[^<>\"]*?)\"").getMatch(0);
         String filename = null, server = null, playPath = null;
         if (xmlUrl != null) {
             final XPath xPath = xmlParser(Encoding.htmlDecode(xmlUrl));

@@ -76,15 +76,15 @@ public class FlickrCom extends PluginForDecrypt {
         // Some stuff which is different from link to link
         String picCount = br.getRegex("\"total\":(\")?(\\d+)").getMatch(1);
         int maxEntriesPerPage = 72;
-        String fpName = br.getRegex("<title>Flickr: ([^<>\"/]+)</title>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"/]+)\"").getMatch(0);
+        String fpName = br.getRegex("<title>Flickr: ([^<>\"]*)</title>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"]*)\"").getMatch(0);
         if (parameter.matches(SETLINK)) {
             picCount = br.getRegex("class=\"Results\">\\((\\d+) in set\\)</div>").getMatch(0);
             if (picCount == null) picCount = br.getRegex("<div class=\"vsNumbers\">[\t\n\r ]+(\\d+) photos").getMatch(0);
             fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?) \\- a set on Flickr</title>").getMatch(0);
         } else if (parameter.matches(PHOTOLINK)) {
-            maxEntriesPerPage = 18;
+            maxEntriesPerPage = 100;
         } else if (parameter.matches(FAVORITELINK)) {
             fpName = br.getRegex("<title>([^<>\"]*?) \\| Flickr</title>").getMatch(0);
         } else {
@@ -149,7 +149,7 @@ public class FlickrCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
         if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
+            final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
