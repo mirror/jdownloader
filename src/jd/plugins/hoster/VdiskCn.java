@@ -73,7 +73,7 @@ public class VdiskCn extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.setCookie("http://vdisk.cn/", "lang", "en");
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-                if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1) {
+                if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1 || dl.getConnection().getResponseCode() == 403) {
                     downloadLink.setProperty("freelink", Property.NULL);
                     dllink = null;
                     try {

@@ -107,7 +107,7 @@ public class FrShrdFldr extends PluginForDecrypt {
             }
             if (filter != null && filter.length > 0) {
                 for (final String entry : filter) {
-                    final String dllink = new Regex(entry, "\"(.*?4shared.com/[^\"]+\\.html)").getMatch(0);
+                    final String dllink = new Regex(entry, "\"(.*?4shared(\\-china)?\\.com/[^\"]+\\.html)").getMatch(0);
                     if (dllink == null) {
                         logger.warning("Couldn't find dllink!");
                         continue;
