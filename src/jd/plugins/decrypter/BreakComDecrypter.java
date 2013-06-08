@@ -34,6 +34,7 @@ public class BreakComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         final String parameter = param.toString();
         br.getPage(parameter);
         final String externID = br.getRegex("\"(http://(www\\.)?youtube\\.com/embed/[A-Za-z0-9\\-_]+)\\?").getMatch(0);
