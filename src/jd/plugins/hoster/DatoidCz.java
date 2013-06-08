@@ -64,6 +64,10 @@ public class DatoidCz extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("<div class=\"bPopup free-popup file-on-page big-file\">")) {
+            logger.info("Only downloadable by Premium Account holders");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable by Premium Account holders");
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getPage(br.getURL().replace("datoid.cz/", "datoid.cz/f/") + "?request=1&_=" + System.currentTimeMillis());
