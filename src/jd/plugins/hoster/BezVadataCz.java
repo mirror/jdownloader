@@ -74,6 +74,7 @@ public class BezVadataCz extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>Soubor nenalezen<|<title>BezvaData \\| Soubor nenalezen</title>|Omlouváme se, soubor byl již odstraněn na žádost autora nebo z důvodů porušování autorských práv\\.|>Tento soubor byl na žádost uživatele nebo vlastníka)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://bezvadata.cz/stahnout/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = br.getRegex("<title>BezvaData\\.cz \\| St.hnout soubor (.*?)</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1 title=\"St.hnout soubor (.*?)\">").getMatch(0);

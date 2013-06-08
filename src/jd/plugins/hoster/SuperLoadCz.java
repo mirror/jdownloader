@@ -182,8 +182,8 @@ public class SuperLoadCz extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         prepBrowser();
-        String token = account.getStringProperty("token", null);
-        String pass = downloadLink.getStringProperty("pass", null);
+        final String token = account.getStringProperty("token", null);
+        final String pass = downloadLink.getStringProperty("pass", null);
         if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = checkDirectLink(downloadLink, "superloadczdirectlink");
         if (dllink == null) {
@@ -312,7 +312,7 @@ public class SuperLoadCz extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private String getJson(String key) {
+    private String getJson(final String key) {
         String result = br.getRegex("\"" + key + "\":\"([^\"]+)\"").getMatch(0);
         if (result == null) result = br.getRegex("\"" + key + "\":([^\"\\}\\,]+)").getMatch(0);
         return result;
