@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2012  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -59,7 +60,9 @@ public class TwoSharedCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String finallink = null;
-        String link = br.getRegex("(\'|\")(http://[0-9a-z]+\\.2shared\\.com/download/[0-9a-zA-Z]+/.*?\\?tsid=[\\w\\-]+)(\'|\")").getMatch(1);
+        br.setFollowRedirects(true);
+        String uid = new Regex(downloadLink.getDownloadURL(), "\\.com/file/([^/]+)").getMatch(0);
+        String link = br.getRegex("(\'|\")(http://[0-9a-z]+\\.2shared\\.com/download/" + uid + "/.*?\\?tsid=[\\w\\-]+)(\'|\")").getMatch(1);
         // special handling for picture-links
         if (br.containsHTML(">Loading image")) {
             br.getPage(MAINPAGE + link);
@@ -71,7 +74,10 @@ public class TwoSharedCom extends PluginForHost {
         if (finallink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         finallink = finallink.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
-        if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getURL().getQuery() == null) {
+        if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getURL().getQuery() == null || !dl.getConnection().isContentDisposition()) {
+            if (!dl.getConnection().isContentDisposition()) {
+                br.followConnection();
+            }
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
