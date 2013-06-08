@@ -73,7 +73,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         for (String link : links) {
             Browser br2 = br.cloneBrowser();
             br2.getPage(link);
-            String[] redirectLinks = br2.getRegex("(/[^/]+/" + uid + "/[a-z0-9]+)").getColumn(0);
+            String[] redirectLinks = br2.getRegex("(/[^/]+/" + uid + "/[^\"]+)").getColumn(0);
             if (redirectLinks == null || redirectLinks.length == 0) {
                 redirectLinks = br2.getRegex("><a href=(.*?)target=").getColumn(0);
                 if (redirectLinks == null || redirectLinks.length == 0) {
@@ -91,7 +91,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 br2 = br.cloneBrowser();
                 String dllink = null;
                 // Handling for links that need to be regexed or that need to be get by redirect
-                if (singlelink.matches("/[^/]+/" + uid + "/[a-z0-9]+")) {
+                if (singlelink.matches("/[^/]+/" + uid + "/.+")) {
                     br2.getPage(singlelink.trim());
                     dllink = br2.getRedirectLocation();
                     if (dllink == null) {
