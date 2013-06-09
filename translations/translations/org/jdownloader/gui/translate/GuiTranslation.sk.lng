@@ -144,6 +144,7 @@ action_help=Pomocník programu
 action_restart=Reštart
 action_restart_tooltip=Reštartovať JDownloader
 action_settings_menu=Nastavenia
+action_start_update_tooltip=Skontrolovať nové aktualizácie.
 added_date_column_title=Dátum pridania
 authtablemodel_column_password=Heslo
 authtablemodel_column_type_ftp=ftp://
