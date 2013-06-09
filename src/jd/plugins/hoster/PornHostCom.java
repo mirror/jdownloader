@@ -60,7 +60,7 @@ public class PornHostCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -69,6 +69,10 @@ public class PornHostCom extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (filename.equals("")) filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         downloadLink.setFinalFileName(filename.trim() + ".flv");
+        if (br.containsHTML(">The movie needs to be converted first")) {
+            downloadLink.getLinkStatus().setStatusText("The movie needs to be converted first");
+            return AvailableStatus.TRUE;
+        }
         if (!downloadLink.getDownloadURL().contains(".html")) {
             DDLINK = br.getRegex("\"(http://cdn\\d+\\.dl\\.pornhost\\.com/[^<>\"]*?)\"").getMatch(0);
             if (DDLINK == null) {

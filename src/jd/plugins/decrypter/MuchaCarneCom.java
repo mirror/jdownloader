@@ -151,6 +151,20 @@ public class MuchaCarneCom extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
             return decryptedLinks;
         }
+        if (br.containsHTML("share\\-image\\.com/gallery/")) {
+            final String[] galleryLinks = br.getRegex("\"(http://pics\\.share\\-image\\.com/pictures/thumb/[^<>\"]*?)\"").getColumn(0);
+            if (galleryLinks == null || galleryLinks.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String galLink : galleryLinks) {
+                decryptedLinks.add(createDownloadlink(galLink.replace("pics.share-image.com/", "pictures.share-image.com/").replace("/thumb/", "/big/")));
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(filename);
+            fp.addLinks(decryptedLinks);
+            return decryptedLinks;
+        }
         externID = br.getRegex("<iframe id=\"preview\" src=\"(http://gallys\\.nastydollars\\.com/[^<>\"]+)").getMatch(0);
         if (externID != null) {
             br.getPage(externID);

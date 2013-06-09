@@ -48,6 +48,10 @@ public class StolenVideosNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        if (br.containsHTML("stolenvideos\\.net/tube/videos/\" ><img src=\"\\.\\./\\.\\./stolen\\.png\"")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String filename = br.getRegex("<title>([^<>\"]*?)\\- Stolen XXX Videos - Daily Free XXX Porn Videos</title>").getMatch(0);
 
         tempID = br.getRegex("\"http://(www\\.)?pornyeah\\.com/videos/[a-z0-9\\-]+\\-(\\d+)\\.html\"").getMatch(1);

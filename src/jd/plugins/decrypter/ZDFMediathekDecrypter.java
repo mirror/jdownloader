@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -38,12 +39,13 @@ import org.appwork.utils.formatter.SizeFormatter;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zdfmediathek.de" }, urls = { "http://(www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+" }, flags = { 0 })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
-    private static final String Q_LOW      = "Q_LOW";
-    private static final String Q_HIGH     = "Q_HIGH";
-    private static final String Q_VERYHIGH = "Q_VERYHIGH";
-    private static final String Q_HD       = "Q_HD";
-    private static final String Q_BEST     = "Q_BEST";
-    private boolean             BEST       = false;
+    private static final String Q_SUBTITLES = "Q_SUBTITLES";
+    private static final String Q_BEST      = "Q_BEST";
+    private static final String Q_LOW       = "Q_LOW";
+    private static final String Q_HIGH      = "Q_HIGH";
+    private static final String Q_VERYHIGH  = "Q_VERYHIGH";
+    private static final String Q_HD        = "Q_HD";
+    private boolean             BEST        = false;
 
     public ZDFMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -63,7 +65,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        SubConfiguration cfg = SubConfiguration.getConfig("zdf.de");
+        final SubConfiguration cfg = SubConfiguration.getConfig("zdf.de");
         BEST = cfg.getBooleanProperty(Q_BEST, false);
         decryptedLinks.addAll(getDownloadLinks(parameter, cfg));
 
@@ -86,7 +88,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         return false;
     }
 
-    private ArrayList<DownloadLink> getDownloadLinks(String data, SubConfiguration cfg) {
+    private ArrayList<DownloadLink> getDownloadLinks(final String data, final SubConfiguration cfg) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
         try {
@@ -98,10 +100,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 String title = getTitle(br);
                 String extension = ".mp4";
                 if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) extension = ".mp3";
+                final Browser br2 = br.cloneBrowser();
 
                 ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
                 HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
-                for (String streams[] : br.getRegex("<formitaet basetype=\"([^\"]+)\" isDownload=\"[^\"]+\">(.*?)</formitaet>").getMatches()) {
+                for (String streams[] : br2.getRegex("<formitaet basetype=\"([^\"]+)\" isDownload=\"[^\"]+\">(.*?)</formitaet>").getMatches()) {
 
                     if (!(streams[0].contains("mp4_http") || streams[0].contains("mp4_rtmp_zdfmeta"))) continue;
 
@@ -111,8 +114,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         /* only http stream for the old stable */
                         if (streams[0].contains("mp4_rtmp_zdfmeta") && isStableEnviroment()) continue;
                         if (stream[1].endsWith(".meta") && stream[1].contains("streaming") && stream[1].startsWith("http")) {
-                            br.getPage(stream[1]);
-                            stream[1] = br.getRegex("<default\\-stream\\-url>(.*?)</default\\-stream\\-url>").getMatch(0);
+                            br2.getPage(stream[1]);
+                            stream[1] = br2.getRegex("<default\\-stream\\-url>(.*?)</default\\-stream\\-url>").getMatch(0);
                             if (stream[1] == null) continue;
                         }
 
@@ -122,25 +125,25 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         if (fmt != null) {
                             /* best selection is done at the end */
                             if ("low".equals(fmt)) {
-                                if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
+                                if ((cfg.getBooleanProperty(Q_LOW, false) || BEST) == false) {
                                     continue;
                                 } else {
                                     fmt = "low";
                                 }
                             } else if ("high".equals(fmt)) {
-                                if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
+                                if ((cfg.getBooleanProperty(Q_HIGH, false) || BEST) == false) {
                                     continue;
                                 } else {
                                     fmt = "high";
                                 }
                             } else if ("veryhigh".equals(fmt)) {
-                                if ((cfg.getBooleanProperty(Q_VERYHIGH, true) || BEST) == false) {
+                                if ((cfg.getBooleanProperty(Q_VERYHIGH, false) || BEST) == false) {
                                     continue;
                                 } else {
                                     fmt = "veryhigh";
                                 }
                             } else if ("hd".equals(fmt)) {
-                                if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {
+                                if ((cfg.getBooleanProperty(Q_HD, false) || BEST) == false) {
                                     continue;
                                 } else {
                                     if (streams[0].contains("mp4_rtmp")) {
@@ -191,13 +194,28 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                             newRet.add(keep);
                         }
                     }
-                    if (newRet.size() > 1) {
-                        FilePackage fp = FilePackage.getInstance();
-                        fp.setName(title);
-                        fp.addLinks(newRet);
-                    }
-                    ret = newRet;
                 }
+                final boolean dont = true;
+                if (cfg.getBooleanProperty(Q_HD, false) && !dont) {
+                    String subtitleUrl = br.getRegex("<caption>(.*?)</caption>").getMatch(0);
+                    if (subtitleUrl != null) subtitleUrl = new Regex(subtitleUrl, "<url>(http://utstreaming\\.zdf\\.de/tt/\\d{4}/[A-Za-z0-9_\\-]+\\.xml)</url>").getMatch(0);
+                    if (subtitleUrl != null) {
+                        final String name = title + "@" + "SUBTITLES.xml";
+                        final DownloadLink link = createDownloadlink("decrypted://zdf.de/subtitles/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+                        link.setAvailable(true);
+                        link.setFinalFileName(name);
+                        link.setProperty("directURL", subtitleUrl);
+                        link.setProperty("directName", name);
+                        link.setProperty("streamingType", "subtitles");
+                        newRet.add(link);
+                    }
+                }
+                if (newRet.size() > 1) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(title);
+                    fp.addLinks(newRet);
+                }
+                ret = newRet;
             } else {
                 /*
                  * no other qualities

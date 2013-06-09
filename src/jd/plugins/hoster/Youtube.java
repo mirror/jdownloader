@@ -79,6 +79,11 @@ public class Youtube extends PluginForHost {
     private static final String PROXY_ADDRESS           = "PROXY_ADDRESS";
     private static final String PROXY_PORT              = "PROXY_PORT";
 
+    @Override
+    public String getAGBLink() {
+        return "http://youtube.com/t/terms";
+    }
+
     public static String unescape(final String s) {
         if (s == null) return null;
         char ch;
@@ -161,16 +166,6 @@ public class Youtube extends PluginForHost {
         ai.setValidUntil(-1);
         account.setValid(true);
         return ai;
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://youtube.com/t/terms";
-    }
-
-    @Override
-    public String getDescription() {
-        return "JDownloader's YouTube Plugin helps downloading Videoclips from youtube.com. YouTube provides different video formats and qualities. JDownloader is able to extract audio after download, and save it as mp3 file. \r\n - Hear your favourite YouTube Clips on your MP3 Player.";
     }
 
     @Override
@@ -477,6 +472,11 @@ public class Youtube extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's YouTube Plugin helps downloading videoclips from youtube.com. YouTube provides different video formats and qualities. JDownloader is able to extract audio after download, and save it as mp3 file. \r\n - Hear your favourite YouTube Clips on your MP3 Player.";
     }
 
     private void setConfigElements() {

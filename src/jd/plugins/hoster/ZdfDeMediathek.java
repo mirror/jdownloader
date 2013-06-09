@@ -32,14 +32,15 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zdf.de" }, urls = { "decrypted://(www\\.)?zdf\\.de/ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zdf.de" }, urls = { "decrypted://(www\\.)?zdf\\.de/(ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+|subtitles/\\d+)" }, flags = { 0 })
 public class ZdfDeMediathek extends PluginForHost {
 
-    private static final String Q_LOW      = "Q_LOW";
-    private static final String Q_HIGH     = "Q_HIGH";
-    private static final String Q_VERYHIGH = "Q_VERYHIGH";
-    private static final String Q_HD       = "Q_HD";
-    private static final String Q_BEST     = "Q_BEST";
+    private static final String Q_SUBTITLES = "Q_SUBTITLES";
+    private static final String Q_BEST      = "Q_BEST";
+    private static final String Q_LOW       = "Q_LOW";
+    private static final String Q_HIGH      = "Q_HIGH";
+    private static final String Q_VERYHIGH  = "Q_VERYHIGH";
+    private static final String Q_HD        = "Q_HD";
 
     public ZdfDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,38 +55,6 @@ public class ZdfDeMediathek extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://zdf.de";
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        download(downloadLink);
-    }
-
-    private void setupRTMPConnection(String stream, DownloadInterface dl) {
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setUrl(stream);
-        rtmp.setResume(true);
-        rtmp.setRealTime();
-    }
-
-    private void download(final DownloadLink downloadLink) throws Exception {
-        String dllink = downloadLink.getStringProperty("directURL", null);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (dllink.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, dllink);
-            setupRTMPConnection(dllink, dl);
-            ((RTMPDownload) dl).startDownload();
-        } else {
-            br.setFollowRedirects(true);
-            if (dllink.contains("hinweis_fsk")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
-        }
     }
 
     @Override
@@ -107,6 +76,48 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        download(downloadLink);
+    }
+
+    private void setupRTMPConnection(String stream, DownloadInterface dl) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setUrl(stream);
+        rtmp.setResume(true);
+        rtmp.setRealTime();
+    }
+
+    private void download(final DownloadLink downloadLink) throws Exception {
+        final String dllink = downloadLink.getStringProperty("directURL", null);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink.startsWith("rtmp")) {
+            dl = new RTMPDownload(this, downloadLink, dllink);
+            setupRTMPConnection(dllink, dl);
+            ((RTMPDownload) dl).startDownload();
+        } else {
+            br.setFollowRedirects(true);
+            if (dllink.contains("hinweis_fsk")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (this.dl.startDownload()) {
+                this.postprocess(downloadLink);
+            }
+        }
+    }
+
+    private void postprocess(final DownloadLink downloadLink) {
+        if ("subtitles".equals(downloadLink.getStringProperty("streamingType", null))) {
+            // if (!convertSubtitles()) {
+            // logger.severe("Subtitle conversion failed!");
+            // }
+        }
+    }
+
+    @Override
     public void reset() {
     }
 
@@ -119,7 +130,15 @@ public class ZdfDeMediathek extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
+    public String getDescription() {
+        return "JDownloader's ZDF Plugin helps downloading videoclips from zdf.de. ZDF provides different video qualities.";
+    }
+
     private void setConfigElements() {
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST,
+        // JDL.L("plugins.hoster.zdf.subtitles", "Download subtitles whenever possible")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.zdf.best", "Load Best Version ONLY")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.zdf.loadlow", "Load Low Version")).setDefaultValue(true));

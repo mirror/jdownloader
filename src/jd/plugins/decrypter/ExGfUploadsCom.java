@@ -38,9 +38,9 @@ public class ExGfUploadsCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        String tempID = br.getRedirectLocation();
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
+        String externID = br.getRedirectLocation();
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -53,9 +53,9 @@ public class ExGfUploadsCom extends PluginForDecrypt {
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
-        tempID = br.getRegex("settings=(http://(www\\.)?.{3,20}/playerConfig\\.php\\?.*?)(\\&overlay|\")").getMatch(0);
-        if (tempID != null) {
-            br.getPage(tempID);
+        externID = br.getRegex("settings=(http://(www\\.)?.{3,20}/playerConfig\\.php\\?.*?)(\\&overlay|\")").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
             String finallink = br.getRegex("defaultVideo:(http://.*?);").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -66,14 +66,19 @@ public class ExGfUploadsCom extends PluginForDecrypt {
             dl.setFinalFileName(filename + finallink.substring(finallink.length() - 4, finallink.length()));
             return decryptedLinks;
         }
-        tempID = br.getRegex("flashvars=\"\\&file=(.*?)\\&link").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://http://flash.serious-cash.com/" + tempID + ".flv");
+        externID = br.getRegex("flashvars=\"\\&file=(.*?)\\&link").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("directhttp://http://flash.serious-cash.com/" + externID + ".flv");
             decryptedLinks.add(dl);
             dl.setFinalFileName(filename + ".flv");
             return decryptedLinks;
         }
-        if (tempID == null) {
+        externID = br.getRegex("(\"|\\')(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)(\"|\\')").getMatch(1);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID.replace("tube8.com/embed/", "tube8.com/")));
+            return decryptedLinks;
+        }
+        if (externID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

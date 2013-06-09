@@ -66,7 +66,12 @@ public class DatoidCz extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<div class=\"bPopup free-popup file-on-page big-file\">")) {
             logger.info("Only downloadable by Premium Account holders");
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable by Premium Account holders");
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
