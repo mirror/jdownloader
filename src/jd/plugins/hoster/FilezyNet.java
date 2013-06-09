@@ -352,9 +352,10 @@ public class FilezyNet extends PluginForHost {
                 /* Captcha END */
                 if (password) {
                     passCode = handlePassword(new Form(), downloadLink);
+                    postData += "&password=" + Encoding.urlEncode(passCode);
                 }
                 if (!skipWaittime) waitTime(timeBefore, downloadLink);
-                postPage(br.getURL(), "op=download2&id=" + fid + "&rand=" + rand + "&referer=" + Encoding.urlEncode(br.getURL()) + "&jdownloader_f=1&method_free=&method_premium=&down_direct=1");
+                postPage(br.getURL(), postData);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 getDllink();
