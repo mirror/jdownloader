@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "http://(www\\.)?datoid\\.cz/[A-Za-z0-9]+/.{1}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datoid.cz" }, urls = { "http://(www\\.)?datoid\\.(cz|sk)/[A-Za-z0-9]+/.{1}" }, flags = { 2 })
 public class DatoidCz extends PluginForHost {
 
     public DatoidCz(PluginWrapper wrapper) {
@@ -44,6 +44,10 @@ public class DatoidCz extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://datoid.cz/kontakty";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("datoid.sk/", "datoid.cz/"));
     }
 
     @Override

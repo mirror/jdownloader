@@ -232,7 +232,7 @@ public class FilezyNet extends PluginForHost {
     }
 
     @SuppressWarnings("unused")
-    private void doFree(final DownloadLink downloadLink, Account account) throws Exception, PluginException {
+    private void doFree(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         if (account != null) {
             logger.info(account.getUser() + " @ " + acctype + " -> Free Download");
         } else {
@@ -249,27 +249,22 @@ public class FilezyNet extends PluginForHost {
             brv.getPage("/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
             dllink = brv.getRedirectLocation();
         }
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        final String filename = Encoding.urlEncode(downloadLink.getFinalFileName());
         // Fourth, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false);
-            Form download1 = getFormByKey("op", "download1");
-            if (download1 != null) {
-                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
-                download1 = cleanForm(download1);
-                // end of backward compatibility
-                download1.remove("method_premium");
-                sendForm(download1);
-                checkErrors(downloadLink, false);
-                getDllink();
-            }
+            postPage(br.getURL(), "op=download1&usr_login=&id=" + fid + "&fname=" + filename + "&referer=&jdownloader_f=1&method_free_r=Free+Download");
+            checkErrors(downloadLink, false);
+            getDllink();
         }
         if (dllink == null) {
-            Form dlForm = getFormByKey("op", "download2");
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // how many forms deep do you want to try.
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
-                dlForm = cleanForm(dlForm);
+                final String rand = br.getRegex("name=\"rand\" value=\"([a-z0-9]+)\"").getMatch(0);
+                if (rand == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                String postData = "op=download2&id=" + fid + "&rand=" + rand + "&referer=" + Encoding.urlEncode(br.getURL()) + "&jdownloader_f=1&method_free=&method_premium=&down_direct=1";
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
                 boolean skipWaittime = false;
@@ -299,7 +294,7 @@ public class FilezyNet extends PluginForHost {
                     for (String value : capMap.values()) {
                         code.append(value);
                     }
-                    dlForm.put("code", code.toString());
+                    postData += "&code=" + code.toString();
                     logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
                 } else if (correctedBR.contains("/captchas/")) {
                     logger.info("Detected captcha method \"Standard captcha\"");
@@ -320,7 +315,7 @@ public class FilezyNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
-                    dlForm.put("code", code);
+                    postData += "&code=" + code.toString();
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
                 } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                     logger.info("Detected captcha method \"Re Captcha\"");
@@ -332,8 +327,8 @@ public class FilezyNet extends PluginForHost {
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode(cf, downloadLink);
-                    dlForm.put("recaptcha_challenge_field", rc.getChallenge());
-                    dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
+                    postData += "&recaptcha_challenge_field=" + rc.getChallenge();
+                    postData += "&recaptcha_response_field=" + Encoding.urlEncode(c);
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
@@ -344,20 +339,22 @@ public class FilezyNet extends PluginForHost {
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     final String code = getCaptchaCode(cf, downloadLink);
                     final String chid = sm.getChallenge(code);
-                    dlForm.put("adcopy_challenge", chid);
-                    dlForm.put("adcopy_response", "manual_challenge");
+                    postData += "&adcopy_challenge=" + chid;
+                    postData += "&adcopy_response=manual_challenge";
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
                     logger.info("Detected captcha method \"keycaptca\"");
                     PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
                     final String result = kc.showDialog(downloadLink.getDownloadURL());
                     if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
-                    dlForm.put("capcode", result);
+                    postData += "&capcode=" + result;
                 }
                 /* Captcha END */
-                if (password) passCode = handlePassword(dlForm, downloadLink);
+                if (password) {
+                    passCode = handlePassword(new Form(), downloadLink);
+                }
                 if (!skipWaittime) waitTime(timeBefore, downloadLink);
-                sendForm(dlForm);
+                postPage(br.getURL(), "op=download2&id=" + fid + "&rand=" + rand + "&referer=" + Encoding.urlEncode(br.getURL()) + "&jdownloader_f=1&method_free=&method_premium=&down_direct=1");
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 getDllink();
@@ -365,7 +362,6 @@ public class FilezyNet extends PluginForHost {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && getFormByKey("op", "download2") != null) {
-                    dlForm = getFormByKey("op", "download2");
                     continue;
                 } else {
                     break;
@@ -820,7 +816,7 @@ public class FilezyNet extends PluginForHost {
             }
             prepBr.getHeaders().put("User-Agent", agent.string);
         }
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        prepBr.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         prepBr.setCookie(COOKIE_HOST, "lang", "english");
         return prepBr;
     }
@@ -847,6 +843,11 @@ public class FilezyNet extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    private void postPage(final String page, final String postData) throws Exception {
+        br.postPage(page, postData);
+        correctBR();
     }
 
     private void getPage(String page) throws Exception {
