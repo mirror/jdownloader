@@ -166,6 +166,10 @@ public class NmLdsrg extends PluginForDecrypt {
                 logger.info("Captcha wrong, stopping...");
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
+            try {
+                validateLastChallengeResponse();
+            } catch (final Throwable e) {
+            }
             String dllink = ajax.getRegex("\"response\":\\[?\"([^<>\"]*?)\"").getMatch(0);
             // Links can fail for multiple reasons so let's skip them
             if (dllink == null) {

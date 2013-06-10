@@ -96,7 +96,7 @@ public class CrawledLinkStorable implements Storable {
 
     public void setArchiveInfo(ArchiveInfoStorable info) {
         if (info != null) {
-            boolean setArchiveInfo = BooleanStatus.UNSET != info.getAutoExtract() && info.getAutoExtract() != null;
+            boolean setArchiveInfo = !BooleanStatus.UNSET.equals(info.getAutoExtract());
             if (setArchiveInfo == false) setArchiveInfo = info.getExtractionPasswords() != null && info.getExtractionPasswords().size() > 0;
             if (setArchiveInfo) {
                 link.setArchiveInfo(info._getArchiveInfo());

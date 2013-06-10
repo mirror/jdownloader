@@ -112,7 +112,12 @@ public class MegaDebridEu extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        final String url = Encoding.urlEncode(link.getDownloadURL());
+        String url = null;
+        if ("ddlstorage.com".equals(link.getHost())) {
+            url = Encoding.urlEncode(link.getDownloadURL() + "/" + link.getName());
+        } else {
+            url = Encoding.urlEncode(link.getDownloadURL());
+        }
 
         showMessage(link, "Phase 1/2: Generate download link");
         br.setFollowRedirects(true);

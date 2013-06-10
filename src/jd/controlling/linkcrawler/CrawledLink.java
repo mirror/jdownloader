@@ -22,6 +22,7 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier {
 
@@ -433,7 +434,12 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public boolean hasArchiveInfo() {
-        return archiveInfo != null;
+        ArchiveInfo larchiveInfo = archiveInfo;
+        if (larchiveInfo != null) {
+            if (!BooleanStatus.UNSET.equals(larchiveInfo.getAutoExtract())) return true;
+            if (larchiveInfo.getExtractionPasswords() != null && larchiveInfo.getExtractionPasswords().size() > 0) return true;
+        }
+        return false;
     }
 
     public void setArchiveInfo(ArchiveInfo archiveInfo) {
