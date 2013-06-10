@@ -305,20 +305,24 @@ public class JDGui extends SwingGui {
 
         });
 
-        CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-            {
-                getMainFrame().setAutoRequestFocus(CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED.isEnabled());
-            }
+        if (Application.getJavaVersion() >= 17000000) {
+            CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+                {
+                    getMainFrame().setAutoRequestFocus(CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED.isEnabled());
+                }
 
-            @Override
-            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-            }
+                @Override
+                public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                }
 
-            @Override
-            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                getMainFrame().setAutoRequestFocus(CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED.isEnabled());
-            }
-        });
+                @Override
+                public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                    getMainFrame().setAutoRequestFocus(CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED.isEnabled());
+                }
+            });
+        } else {
+            logger.warning("  CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED not working for java <1.7");
+        }
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
