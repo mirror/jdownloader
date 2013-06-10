@@ -97,9 +97,9 @@ public class MegaConz extends PluginForHost {
         if (at == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileInfo = decrypt(at, keyString);
         String fileName = new Regex(fileInfo, "\"n\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
-        if (fileName == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else {
+        if (fileName == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        // sub jd2 requires this method of rename!
+        if (oldStyle()) {
             // we can not 'rename' filename once the download started, could be problematic!
             if (link.getDownloadCurrent() == 0 && useTMP()) {
                 link.setFinalFileName(fileName + ".tmp");
@@ -120,7 +120,10 @@ public class MegaConz extends PluginForHost {
                 }
                 link.getLinkStatus().setStatusText(null);
             }
+        } else {
+            link.setFinalFileName(fileName);
         }
+
         return AvailableStatus.TRUE;
     }
 
@@ -144,6 +147,25 @@ public class MegaConz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return ret;
+    }
+
+    /**
+     * JDownloader 2 method that replaces existing file extension on disk with a temporary file extension.
+     * 
+     * @since JD2
+     */
+    private void handleTMP(DownloadLink link) {
+        // we can not 'rename' filename once the download started, could be problematic!
+        if (link.getDownloadCurrent() == 0 && useTMP()) {
+            link.setFileNameOutput(link.getName() + ".tmp");
+            // String changed = link.getFileOutput();
+            link.setProperty("usedTMP", true);
+        } else if (link.getDownloadCurrent() != 0 && useTMP()) {
+            // leave the fk alone
+        } else {
+            link.setProperty("usedTMP", Property.NULL);
+        }
+
     }
 
     @Override
@@ -180,6 +202,7 @@ public class MegaConz extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (!oldStyle()) handleTMP(link);
         if (dl.startDownload()) {
             if (link.getLinkStatus().isFinished()) {
                 decrypt(link, keyString);
