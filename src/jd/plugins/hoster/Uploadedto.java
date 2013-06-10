@@ -1024,13 +1024,17 @@ public class Uploadedto extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         prepBrowser();
-        br.postPage("http://uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
+        br.getHeaders().put("X-Prototype-Version", "1.6.1");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()) + "&_=");
         if (br.containsHTML("User and password do not match")) {
             AccountInfo ai = account.getAccountInfo();
             if (ai != null) ai.setStatus("User and password do not match");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if (br.getCookie("http://uploaded.net", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getHeaders().put("X-Prototype-Version", null);
+        br.getHeaders().put("X-Requested-With", null);
     }
 
     @Override
