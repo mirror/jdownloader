@@ -1,16 +1,21 @@
 package org.jdownloader.captcha.v2.solver;
 
 import java.io.IOException;
-import java.net.URL;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import jd.controlling.captcha.CaptchaSettings;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.BasicHTTP.BasicHTTP;
+import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
@@ -18,10 +23,13 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
-public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
+public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> implements ChallengeResponseValidation {
     private Captcha9kwSettings                 config;
-    private static final Captcha9kwSolverClick INSTANCE = new Captcha9kwSolverClick();
+    private static final Captcha9kwSolverClick INSTANCE   = new Captcha9kwSolverClick();
+    private ThreadPoolExecutor                 threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
 
     public static Captcha9kwSolverClick getInstance() {
         return INSTANCE;
@@ -35,12 +43,21 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
     private Captcha9kwSolverClick() {
         super(1);
         config = JsonConfig.create(Captcha9kwSettings.class);
-        // AdvancedConfigManager.getInstance().register(config);
+        AdvancedConfigManager.getInstance().register(config);
+        threadPool.allowCoreThreadTimeOut(true);
     }
 
     @Override
     public boolean canHandle(Challenge<?> c) {
         return config.ismouse() && super.canHandle(c);
+    }
+
+    public String getAPIROOT() {
+        if (config.ishttps()) {
+            return "https://www.9kw.eu/";
+        } else {
+            return "http://www.9kw.eu/";
+        }
     }
 
     @Override
@@ -53,7 +70,6 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
             solverJob.waitFor(JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
             checkInterruption();
             ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
-            BasicHTTP http = new BasicHTTP();
 
             solverJob.getLogger().info("Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + " - getTypeID: " + captchaChallenge.getTypeID());
             if (config.getwhitelist() != null) {
@@ -77,20 +93,11 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
                 }
             }
 
-            String https9kw = "";
-            if (config.ishttps()) {
-                https9kw = "https";
-            } else {
-                https9kw = "http";
-            }
-
             try {
-                String url = https9kw + "://www.9kw.eu/index.cgi";
                 byte[] data = IO.readFile(captchaChallenge.getImageFile());
-                http.putRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-
-                String ret = new String(http.postPage(new URL(url), "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&mouse=1&prio=" + config.getprio() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=" + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + "&version=1.1&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false))));
-                solverJob.getLogger().info("Send Captcha to 9kw.eu. - " + https9kw + " Answer: " + ret);
+                Browser br = new Browser();
+                String ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&mouse=1&prio=" + config.getprio() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=" + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + "&version=1.1&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
+                solverJob.getLogger().info("Send Captcha to 9kw.eu. - " + getAPIROOT() + " Answer: " + ret);
                 if (!ret.startsWith("OK-")) throw new SolverException(ret);
                 // Error-No Credits
                 String captchaID = ret.substring(3);
@@ -100,9 +107,8 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
                 while (true) {
                     Thread.sleep(1000);
                     count9kw++;
-                    url = https9kw + "://www.9kw.eu/index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&mouse=1&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1";
                     solverJob.getLogger().info("9kw.eu Ask " + captchaID);
-                    ret = new String(http.getPage(new URL(url)));
+                    ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&mouse=1&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
                     solverJob.getLogger().info("9kw.eu Answer " + count9kw + "s: " + ret);
                     if (ret.startsWith("OK-answered-")) {
                         String antwort = ret.substring("OK-answered-".length());
@@ -125,5 +131,44 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> {
             solverJob.getLogger().info("Problem with Captcha9kwSolverClick.");
         }
 
+    }
+
+    @Override
+    public void setValid(final AbstractResponse<?> response) {
+        threadPool.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
+                    Browser br = new Browser();
+                    br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=1&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                } catch (final Throwable e) {
+                    LogController.CL(true).log(e);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void setUnused(AbstractResponse<?> response) {
+
+    }
+
+    @Override
+    public void setInvalid(final AbstractResponse<?> response) {
+        threadPool.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
+                    Browser br = new Browser();
+                    br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=2&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                } catch (final Throwable e) {
+                    LogController.CL(true).log(e);
+                }
+            }
+        });
     }
 }
