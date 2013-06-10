@@ -37,7 +37,6 @@ import java.awt.image.BufferedImage;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 
 import jd.SecondLevelLaunch;
 import jd.gui.swing.SwingGui;
@@ -129,7 +128,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         if (guiFrame != null) {
             JDGui.getInstance().setClosingHandler(null);
             guiFrame.removeWindowStateListener(this);
-            miniIt(false);
+            JDGui.getInstance().setWindowToTray(false);
             guiFrame.setAlwaysOnTop(false);
             guiFrame = null;
         }
@@ -208,7 +207,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     private boolean                             iconified       = false;
 
-    private Timer                               disableAlwaysonTop;
     private Thread                              trayIconChecker = null;
 
     private ExtensionConfigPanel<TrayExtension> configPanel;
@@ -228,19 +226,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     public TrayExtension() {
         setTitle(T._.jd_plugins_optional_jdtrayicon_jdlighttray());
 
-        disableAlwaysonTop = new Timer(2000, this);
-        disableAlwaysonTop.setInitialDelay(2000);
-        disableAlwaysonTop.setRepeats(false);
     }
 
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == disableAlwaysonTop) {
-            if (guiFrame != null) guiFrame.setAlwaysOnTop(false);
-        }
-        return;
-    }
-
-    private void initGUI(final boolean startup) {
+    public void initGUI(final boolean startup) {
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -343,7 +331,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                     guiFrame.removeWindowStateListener(TrayExtension.this);
                                     guiFrame.addWindowStateListener(TrayExtension.this);
                                     if (startup && getSettings().isStartMinimizedEnabled()) {
-                                        miniIt(true);
+                                        JDGui.getInstance().setWindowToTray(true);
                                     }
 
                                 }
@@ -394,7 +382,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         if (e.getSource() instanceof TrayIcon) {
             if (!CrossSystem.isMac()) {
                 if (e.getClickCount() >= (getSettings().isToogleWindowStatusWithSingleClickEnabled() ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
-                    miniIt(guiFrame.isVisible());
+                    JDGui.getInstance().setWindowToTray(guiFrame.isVisible());
                 } else {
                     if (trayIconPopup != null && trayIconPopup.isShowing()) {
                         trayIconPopup.dispose();
@@ -409,7 +397,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 }
             } else {
                 if (e.getClickCount() >= (getSettings().isToogleWindowStatusWithSingleClickEnabled() ? 1 : 2) && !SwingUtilities.isLeftMouseButton(e)) {
-                    miniIt(guiFrame.isVisible() & guiFrame.getState() != Frame.ICONIFIED);
+                    JDGui.getInstance().setWindowToTray(guiFrame.isVisible() & guiFrame.getState() != Frame.ICONIFIED);
                 } else if (SwingUtilities.isLeftMouseButton(e)) {
                     if (trayIconPopup != null && trayIconPopup.isShowing()) {
                         trayIconPopup.dispose();
@@ -496,82 +484,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         }.waitForEDT();
     }
 
-    public void miniIt(final boolean minimize) {
-        new EDTHelper<Object>() {
-            @Override
-            public Object edtRun() {
-                /* set visible state */
-                guiFrame.setVisible(!minimize);
-                if (minimize == false) {
-
-                    if (guiFrame.isVisible()) {
-                        /* workaround for : toFront() */
-                        new EDTHelper<Object>() {
-                            @Override
-                            public Object edtRun() {
-                                if (trayIconChecker != null) {
-                                    trayIconChecker.interrupt();
-                                    trayIconChecker = null;
-                                }
-
-                                guiFrame.setAlwaysOnTop(true);
-                                disableAlwaysonTop.restart();
-                                guiFrame.toFront();
-                                return null;
-                            }
-                        }.start();
-                    }
-                } else {
-                    new EDTHelper<Object>() {
-                        @Override
-                        public Object edtRun() {
-                            trayIconChecker = new Thread() {
-
-                                @Override
-                                public void run() {
-                                    boolean reInitNeeded = false;
-                                    while (Thread.currentThread() == trayIconChecker) {
-                                        boolean reInitTrayIcon = false;
-                                        try {
-                                            reInitTrayIcon = 0 == SystemTray.getSystemTray().getTrayIcons().length;
-                                        } catch (UnsupportedOperationException e) {
-                                            if (reInitNeeded == false) {
-                                                reInitNeeded = true;
-                                                LogController.CL(TrayExtension.class).severe("TrayIcon gone?! WTF? We will try to restore as soon as possible");
-                                            }
-                                        }
-                                        if (reInitTrayIcon) {
-
-                                            initGUI(false);
-                                            try {
-                                                if (SystemTray.getSystemTray().getTrayIcons().length > 0) {
-                                                    reInitNeeded = false;
-                                                    LogController.CL(TrayExtension.class).severe("TrayIcon restored!");
-                                                }
-                                            } catch (UnsupportedOperationException e) {
-                                            }
-                                        }
-                                        try {
-                                            Thread.sleep(15000);
-                                        } catch (InterruptedException e) {
-                                            break;
-                                        }
-                                    }
-                                }
-
-                            };
-                            trayIconChecker.setDaemon(true);
-                            trayIconChecker.setName("TrayIconRestore");
-                            trayIconChecker.start();
-                            return null;
-                        }
-                    }.start();
-                }
-                return null;
-            }
-        }.start();
-    }
-
     /**
      * gets called if mouse stays over the tray. Edit delay in {@link TrayMouseAdapter}
      */
@@ -621,7 +533,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             case TO_TRAY:
                 // let's hope that this does not flicker. works fine for win7
 
-                miniIt(true);
+                JDGui.getInstance().setWindowToTray(true);
                 JDGui.getInstance().getMainFrame().setExtendedState(JFrame.NORMAL);
 
             }
@@ -656,12 +568,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     @Override
     public void handleCommand(String command, String... parameters) {
-
-        if (command.equals("focus") || command.equals("f")) {
-            miniIt(false);
-        } else if (command.equals("minimize") || command.equals("m")) {
-            miniIt(true);
-        }
 
     }
 
@@ -741,7 +647,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         return;
                     case TO_TRAY:
                         if (SystemTray.isSupported()) {
-                            miniIt(true);
+                            JDGui.getInstance().setWindowToTray(true);
                             return;
 
                         }
@@ -756,7 +662,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                 case TO_TRAY:
                     if (SystemTray.isSupported()) {
-                        miniIt(true);
+                        JDGui.getInstance().setWindowToTray(true);
                         return;
 
                     }
@@ -807,6 +713,10 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     public void _setEnabled(boolean b) throws StartException, StopException {
 
         setEnabled(b);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
     }
 
 }

@@ -51,7 +51,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.RemoveOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ResetAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.LinkgrabberWindowAction;
+import org.jdownloader.settings.WindowState;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
@@ -130,19 +130,20 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     @Override
                     protected void runInEDT() {
                         try {
+                            System.out.println("Highlight");
                             if (CFG_GUI.CFG.isSwitchToLinkgrabberTabOnNewLinksAddedEnabled()) JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
-                            switch (CFG_GUI.CFG.getWindowFocusActionWhenNewLinksAreAdded()) {
-                            case NOTHING:
+                            switch (CFG_GUI.CFG.getMainframePopupTriggerWhenNewLinksWereAdded()) {
+                            case NEVER:
 
                                 JDGui.getInstance().flashTaskbar();
 
                                 break;
-                            case ALWAYS_REQUEST_FOCUS:
+                            case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY:
                                 JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
 
                                 break;
 
-                            case REQUEST_FOCUS_IF_MAXIMIZED:
+                            case MAINFRAME_IS_MAXIMIZED:
 
                                 if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
                                     JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
@@ -152,7 +153,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
                                 break;
 
-                            case REQUEST_FOCUS_IF_MAXIMIZED_OR_ICONIFIED:
+                            case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED:
                                 if (JDGui.getInstance().getMainFrame().isVisible()) {
                                     JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
                                 } else {
@@ -160,8 +161,8 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                                 }
                                 break;
 
-                            // default:
-                            //
+                            default:
+                                //
                             }
 
                         } catch (Throwable e) {
@@ -173,7 +174,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             @Override
             public boolean isThisListenerEnabled() {
-                return org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberAutoTabSwitchEnabled() || CFG_GUI.CFG.getWindowFocusActionWhenNewLinksAreAdded() != LinkgrabberWindowAction.NOTHING;
+                return org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberAutoTabSwitchEnabled() || CFG_GUI.CFG.getMainframePopupTriggerWhenNewLinksWereAdded() != WindowState.NEVER;
             }
 
             @Override

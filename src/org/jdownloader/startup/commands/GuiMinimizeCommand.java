@@ -3,10 +3,9 @@ package org.jdownloader.startup.commands;
 import jd.SecondLevelLaunch;
 import jd.gui.UIConstants;
 import jd.gui.UserIF;
+import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionController;
 
 public class GuiMinimizeCommand extends AbstractStartupCommand {
 
@@ -35,13 +34,13 @@ public class GuiMinimizeCommand extends AbstractStartupCommand {
 
             @Override
             public void run() {
-                for (AbstractExtension ae : ExtensionController.getInstance().getEnabledExtensions()) {
-                    try {
-                        ae.handleCommand(command, parameters);
-                    } catch (Throwable e) {
-                        logger.log(e);
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        JDGui.getInstance().setWindowToTray(true);
                     }
-                }
+                };
 
             }
         });

@@ -26,14 +26,16 @@ import java.awt.KeyEventPostProcessor;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.SystemTray;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
 import java.awt.event.WindowListener;
+import java.awt.event.WindowStateListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,6 +56,7 @@ import jd.SecondLevelLaunch;
 import jd.config.ConfigContainer;
 import jd.gui.UIConstants;
 import jd.gui.swing.SwingGui;
+import jd.gui.swing.dialog.AbstractCaptchaDialog;
 import jd.gui.swing.jdgui.components.StatusBarImpl;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.View;
@@ -81,6 +84,7 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.TimerDialog;
 import org.jdownloader.gui.GuiUtils;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.jdtrayicon.TrayExtension;
@@ -170,41 +174,82 @@ public class JDGui extends SwingGui {
         mainFrame.addWindowListener(new WindowListener() {
 
             public void windowOpened(WindowEvent e) {
+                System.out.println(e);
                 UpdateController.getInstance().setGuiToFront(mainFrame);
 
             }
 
             public void windowIconified(WindowEvent e) {
+                System.out.println(e);
             }
 
             public void windowDeiconified(WindowEvent e) {
+                System.out.println(e);
                 UpdateController.getInstance().setGuiToFront(mainFrame);
 
             }
 
             public void windowDeactivated(WindowEvent e) {
+                System.out.println(e);
             }
 
             public void windowClosing(WindowEvent e) {
+                System.out.println(e);
             }
 
             public void windowClosed(WindowEvent e) {
+                System.out.println(e);
             }
 
             public void windowActivated(WindowEvent e) {
+                System.out.println(e);
+                if (e.getOppositeWindow() == null) {
+                    // new activation
+                    // if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogsRequestFocusEnabled()) {
+
+                    for (final Window w : mainFrame.getOwnedWindows()) {
+                        if (w.isShowing()) {
+                            if (w instanceof TimerDialog.InternDialog) {
+                                TimerDialog dialogModel = ((TimerDialog.InternDialog) w).getDialogModel();
+                                if (dialogModel instanceof AbstractCaptchaDialog) {
+
+                                    w.toFront();
+                                    break;
+
+                                }
+                            }
+                        }
+                    }
+                    // }
+
+                } else {
+                    // from a different jd frame
+
+                }
                 Dialog.getInstance().setParentOwner(getMainFrame());
+
+                GuiUtils.flashWindow(mainFrame, false, false);
+
+            }
+        });
+        mainFrame.addWindowFocusListener(new WindowFocusListener() {
+
+            @Override
+            public void windowLostFocus(WindowEvent e) {
+                System.out.println(e);
+            }
+
+            @Override
+            public void windowGainedFocus(WindowEvent e) {
+                System.out.println(e);
                 GuiUtils.flashWindow(mainFrame, false, false);
             }
         });
-        mainFrame.addFocusListener(new FocusListener() {
+        mainFrame.addWindowStateListener(new WindowStateListener() {
 
             @Override
-            public void focusLost(FocusEvent e) {
-            }
-
-            @Override
-            public void focusGained(FocusEvent e) {
-                GuiUtils.flashWindow(mainFrame, false, false);
+            public void windowStateChanged(WindowEvent e) {
+                System.out.println(e);
             }
         });
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
@@ -260,6 +305,20 @@ public class JDGui extends SwingGui {
 
         });
 
+        CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+            {
+                getMainFrame().setAutoRequestFocus(CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED.isEnabled());
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                getMainFrame().setAutoRequestFocus(CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED.isEnabled());
+            }
+        });
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -677,30 +736,153 @@ public class JDGui extends SwingGui {
 
     @Override
     public void setFrameStatus(final int id) {
-        switch (id) {
-        case UIConstants.WINDOW_STATUS_MAXIMIZED:
-            this.mainFrame.setState(Frame.MAXIMIZED_BOTH);
-            this.mainFrame.setVisible(true);
-            break;
-        case UIConstants.WINDOW_STATUS_MINIMIZED:
-            this.mainFrame.setState(Frame.ICONIFIED);
-            break;
-        case UIConstants.WINDOW_STATUS_NORMAL:
-            this.mainFrame.setState(Frame.NORMAL);
-            this.mainFrame.setVisible(true);
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                switch (id) {
+                case UIConstants.WINDOW_STATUS_MAXIMIZED:
+                    mainFrame.setState(Frame.MAXIMIZED_BOTH);
+                    mainFrame.setVisible(true);
+                    break;
+                case UIConstants.WINDOW_STATUS_MINIMIZED:
+                    mainFrame.setState(Frame.ICONIFIED);
+                    break;
+                case UIConstants.WINDOW_STATUS_NORMAL:
+                    if (!GuiUtils.isActiveWindow(getMainFrame())) {
+                        mainFrame.setState(Frame.NORMAL);
+                        mainFrame.setVisible(true);
+                    }
+
+                    break;
+                case UIConstants.WINDOW_STATUS_FOREGROUND:
+                    if (!GuiUtils.isActiveWindow(getMainFrame())) {
+
+                        if (!requestCaptchaDialogFocus()) {
+                            TimerDialog captchaDialog = null;
+                            // if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogsRequestFocusEnabled()) {
+                            //
+                            // for (final Window w : mainFrame.getOwnedWindows()) {
+                            // if (w.isShowing()) {
+                            // if (w instanceof TimerDialog.InternDialog) {
+                            // TimerDialog dialogModel = ((TimerDialog.InternDialog) w).getDialogModel();
+                            // if (dialogModel instanceof AbstractCaptchaDialog) {
+                            //
+                            // captchaDialog = dialogModel;
+                            // break;
+                            //
+                            // }
+                            // }
+                            // }
+                            // }
+                            // }
+                            // final TimerDialog finalCaptchaDialog = captchaDialog;
+
+                            if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isWindowsRequestFocusOnActivationEnabled()) {
+                                mainFrame.setFocusableWindowState(false);
+                            }
+                            // if (finalCaptchaDialog != null) {
+                            // finalCaptchaDialog.getDialog().setFocusableWindowState(false);
+                            // }
+                            mainFrame.setState(Frame.NORMAL);
+
+                            mainFrame.setVisible(true);
+                            mainFrame.toFront();
+                            //
+                            if (tray.isEnabled()) {
+                                setWindowToTray(false);
+                            }
+                            // if (finalCaptchaDialog != null) {
+                            // // it seems that we need this workaround on some systems. if we set the state to true imediatielly, this
+                            // // would
+                            // // not
+                            // // work on some systems
+                            // // http://stackoverflow.com/questions/4788953/is-it-possible-to-bring-jframe-to-front-but-not-focus
+                            // Timer timer = new Timer(500, new ActionListener() {
+                            //
+                            // @Override
+                            // public void actionPerformed(ActionEvent e) {
+                            // finalCaptchaDialog.getDialog().setFocusableWindowState(true);
+                            // }
+                            // });
+                            //
+                            // timer.setRepeats(false);
+                            // timer.start();
+                            // }
+                            if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isWindowsRequestFocusOnActivationEnabled()) {
+                                // it seems that we need this workaround on some systems. if we set the state to true imediatielly, this
+                                // would
+                                // not
+                                // work on some systems
+                                // http://stackoverflow.com/questions/4788953/is-it-possible-to-bring-jframe-to-front-but-not-focus
+                                Timer timer = new Timer(500, new ActionListener() {
+
+                                    @Override
+                                    public void actionPerformed(ActionEvent e) {
+                                        mainFrame.setFocusableWindowState(true);
+                                    }
+                                });
+
+                                timer.setRepeats(false);
+                                timer.start();
+                            }
+                        }
+                    } else {
+
+                        logger.info("No To Top. We already have focus");
+                    }
+
+                    break;
+                }
+            }
+
+        };
+
+    }
+
+    public boolean requestCaptchaDialogFocus() {
+
+        switch (CFG_GUI.CFG.getFocusTriggerForCaptchaDialogs()) {
+        case NEVER:
 
             break;
-        case UIConstants.WINDOW_STATUS_FOREGROUND:
-            this.mainFrame.setState(Frame.NORMAL);
-            this.mainFrame.setFocusableWindowState(false);
-            this.mainFrame.setVisible(true);
-            this.mainFrame.toFront();
-            this.mainFrame.setFocusableWindowState(true);
-            if (tray.isEnabled()) {
-                tray.miniIt(false);
-            }
+        case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY:
+            return requestCaptchaDialogFocusInternal();
+
+        case MAINFRAME_IS_MAXIMIZED:
+
+            if (getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) { return requestCaptchaDialogFocusInternal(); }
+
             break;
+
+        case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED:
+            if (getMainFrame().isVisible()) { return requestCaptchaDialogFocusInternal(); }
+            break;
+
+        default:
+            //
         }
+
+        return false;
+    }
+
+    public boolean requestCaptchaDialogFocusInternal() {
+        for (final Window w : mainFrame.getOwnedWindows()) {
+            if (w.isShowing()) {
+                if (w instanceof TimerDialog.InternDialog) {
+                    TimerDialog dialogModel = ((TimerDialog.InternDialog) w).getDialogModel();
+                    if (dialogModel instanceof AbstractCaptchaDialog) {
+
+                        w.toFront();
+                        // w.requestFocus();
+                        logger.info("Request Focus: " + w);
+                        return true;
+
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -861,6 +1043,93 @@ public class JDGui extends SwingGui {
 
     public TrayExtension getTray() {
         return tray;
+    }
+
+    private Thread trayIconChecker;
+
+    /**
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
+     * avoid sideeffects when changing anything
+     * 
+     * @param minimize
+     */
+    public void setWindowToTray(final boolean minimize) {
+        new EDTHelper<Object>() {
+            @Override
+            public Object edtRun() {
+                /* set visible state */
+
+                if (!minimize) {
+                    getMainFrame().setVisible(true);
+
+                    /* workaround for : toFront() */
+                    new EDTHelper<Object>() {
+                        @Override
+                        public Object edtRun() {
+                            if (trayIconChecker != null) {
+                                trayIconChecker.interrupt();
+                                trayIconChecker = null;
+                            }
+
+                            getMainFrame().setAlwaysOnTop(true);
+                            Timer timer = new Timer(2000, new ActionListener() {
+
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    // if (getMainFrame().isAlwaysOnTop()) getMainFrame().setAlwaysOnTop(false);
+                                }
+                            });
+                            timer.setRepeats(false);
+                            timer.restart();
+                            getMainFrame().toFront();
+                            return null;
+                        }
+                    }.start();
+
+                } else {
+                    getMainFrame().setVisible(false);
+
+                    trayIconChecker = new Thread() {
+
+                        @Override
+                        public void run() {
+                            boolean reInitNeeded = false;
+                            while (Thread.currentThread() == trayIconChecker) {
+                                boolean reInitTrayIcon = false;
+                                try {
+                                    reInitTrayIcon = 0 == SystemTray.getSystemTray().getTrayIcons().length;
+                                } catch (UnsupportedOperationException e) {
+                                    if (reInitNeeded == false) {
+                                        reInitNeeded = true;
+                                        logger.severe("TrayIcon gone?! WTF? We will try to restore as soon as possible");
+                                    }
+                                }
+                                if (reInitTrayIcon) {
+                                    tray.initGUI(false);
+                                    try {
+                                        if (SystemTray.getSystemTray().getTrayIcons().length > 0) {
+                                            reInitNeeded = false;
+                                            logger.severe("TrayIcon restored!");
+                                        }
+                                    } catch (UnsupportedOperationException e) {
+                                    }
+                                }
+                                try {
+                                    Thread.sleep(15000);
+                                } catch (InterruptedException e) {
+                                    break;
+                                }
+                            }
+                        }
+
+                    };
+                    trayIconChecker.setDaemon(true);
+                    trayIconChecker.setName("TrayIconRestore");
+                    trayIconChecker.start();
+                }
+                return null;
+            }
+        }.start();
     }
 
     public void flashTaskbar() {

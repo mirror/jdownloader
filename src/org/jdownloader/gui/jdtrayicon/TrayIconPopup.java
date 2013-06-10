@@ -36,6 +36,7 @@ import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.toolbar.actions.AutoReconnectToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ClipBoardToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
@@ -99,7 +100,7 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                extension.miniIt(false);
+                JDGui.getInstance().setWindowToTray(false);
                 dispose();
             }
         });

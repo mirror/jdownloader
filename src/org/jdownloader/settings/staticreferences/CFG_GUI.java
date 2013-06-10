@@ -21,15 +21,20 @@ public class CFG_GUI {
     public static final StorageHandler<GraphicalUserInterfaceSettings> SH                                                   = (StorageHandler<GraphicalUserInterfaceSettings>) CFG.getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
+    // MAINFRAME_IS_MAXIMIZED
+    /**
+     * Action that will be performed when the Linkgrabber adds new links.
+     **/
+    public static final EnumKeyHandler                                 MAINFRAME_POPUP_TRIGGER_WHEN_NEW_LINKS_WERE_ADDED    = SH.getKeyHandler("MainframePopupTriggerWhenNewLinksWereAdded", EnumKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              DOWNLOAD_PANEL_OVERVIEW_SELECTED_INFO_VISIBLE        = SH.getKeyHandler("DownloadPanelOverviewSelectedInfoVisible", BooleanKeyHandler.class);
-    // true
-    public static final BooleanKeyHandler                              TASK_BAR_FLASH_ENABLED                               = SH.getKeyHandler("TaskBarFlashEnabled", BooleanKeyHandler.class);
     // false
     /**
      * Paint all labels/text with or without antialias. Default value is false.
      **/
     public static final BooleanKeyHandler                              SPEEDMETER_ANTI_ALIASING_ENABLED                     = SH.getKeyHandler("SpeedmeterAntiAliasingEnabled", BooleanKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler                              TASK_BAR_FLASH_ENABLED                               = SH.getKeyHandler("TaskBarFlashEnabled", BooleanKeyHandler.class);
     // 500
     /**
      * Refreshrate in ms for the DownloadView
@@ -37,14 +42,14 @@ public class CFG_GUI {
     public static final LongKeyHandler                                 DOWNLOAD_VIEW_REFRESH                                = SH.getKeyHandler("DownloadViewRefresh", LongKeyHandler.class);
     // false
     /**
-     * Enable/disable Enable/disable Clipboard monitoring
-     **/
-    public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                                  = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
-    // false
-    /**
      * If true, java will try to use D3D for graphics
      **/
     public static final BooleanKeyHandler                              USE_D3D                                              = SH.getKeyHandler("UseD3D", BooleanKeyHandler.class);
+    // false
+    /**
+     * Enable/disable Enable/disable Clipboard monitoring
+     **/
+    public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                                  = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
     // jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings
     public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                                  = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
     // null
@@ -70,23 +75,23 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              DOWNLOAD_PANEL_OVERVIEW_VISIBLE                      = SH.getKeyHandler("DownloadPanelOverviewVisible", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              BALLOON_NOTIFICATION_ENABLED                         = SH.getKeyHandler("BalloonNotificationEnabled", BooleanKeyHandler.class);
-    // null
-    public static final StringKeyHandler                               LOOK_AND_FEEL                                        = SH.getKeyHandler("LookAndFeel", StringKeyHandler.class);
     // false
     public static final BooleanKeyHandler                              CONFIG_VIEW_VISIBLE                                  = SH.getKeyHandler("ConfigViewVisible", BooleanKeyHandler.class);
-    // SKIP_FILE
-    public static final EnumKeyHandler                                 LAST_IF_FILE_EXISTS                                  = SH.getKeyHandler("LastIfFileExists", EnumKeyHandler.class);
+    // null
+    public static final StringKeyHandler                               LOOK_AND_FEEL                                        = SH.getKeyHandler("LookAndFeel", StringKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              DOWNLOAD_PANEL_OVERVIEW_TOTAL_INFO_VISIBLE           = SH.getKeyHandler("DownloadPanelOverviewTotalInfoVisible", BooleanKeyHandler.class);
+    // SKIP_FILE
+    public static final EnumKeyHandler                                 LAST_IF_FILE_EXISTS                                  = SH.getKeyHandler("LastIfFileExists", EnumKeyHandler.class);
     // 100
     /**
      * Captcha Dialog Image scale Faktor in %
      **/
     public static final IntegerKeyHandler                              CAPTCHA_SCALE_FACTOR                                 = SH.getKeyHandler("CaptchaScaleFactor", IntegerKeyHandler.class);
-    // false
-    public static final BooleanKeyHandler                              PASSWORD_PROTECTION_ENABLED                          = SH.getKeyHandler("PasswordProtectionEnabled", BooleanKeyHandler.class);
     // FILENAME
     public static final EnumKeyHandler                                 SELECTED_DOWNLOAD_SEARCH_CATEGORY                    = SH.getKeyHandler("SelectedDownloadSearchCategory", EnumKeyHandler.class);
+    // false
+    public static final BooleanKeyHandler                              PASSWORD_PROTECTION_ENABLED                          = SH.getKeyHandler("PasswordProtectionEnabled", BooleanKeyHandler.class);
     // false
     /**
      * Set to true of you want jd to remember the latest selected download view
@@ -121,6 +126,11 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_ENABLED                          = SH.getKeyHandler("LinkgrabberSidebarEnabled", BooleanKeyHandler.class);
     // 2000
     public static final IntegerKeyHandler                              TOOLTIP_DELAY                                        = SH.getKeyHandler("TooltipDelay", IntegerKeyHandler.class);
+    // MAINFRAME_IS_MAXIMIZED
+    /**
+     * Action that will be performed when the Linkgrabber adds new links.
+     **/
+    public static final EnumKeyHandler                                 FOCUS_TRIGGER_FOR_CAPTCHA_DIALOGS                    = SH.getKeyHandler("FocusTriggerForCaptchaDialogs", EnumKeyHandler.class);
     // false
     public static final BooleanKeyHandler                              SKIP_CLIPBOARD_MONITOR_FIRST_ROUND                   = SH.getKeyHandler("SkipClipboardMonitorFirstRound", BooleanKeyHandler.class);
     // true
@@ -144,6 +154,11 @@ public class CFG_GUI {
      * If true, ETAColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.
      **/
     public static final BooleanKeyHandler                              PREMIUM_ALERT_ETACOLUMN_ENABLED                      = SH.getKeyHandler("PremiumAlertETAColumnEnabled", BooleanKeyHandler.class);
+    // false
+    /**
+     * Set to true if you want JDownloader to steal focus when the window pops up
+     **/
+    public static final BooleanKeyHandler                              WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED          = SH.getKeyHandler("WindowsRequestFocusOnActivationEnabled", BooleanKeyHandler.class);
     // true
     /**
      * Highlight Column in Downloadview if table is not in downloadsortorder
@@ -173,11 +188,6 @@ public class CFG_GUI {
      * If true, hostcolumn will also show full hostname
      **/
     public static final BooleanKeyHandler                              SHOW_FULL_HOSTNAME                                   = SH.getKeyHandler("ShowFullHostname", BooleanKeyHandler.class);
-    // NOTHING
-    /**
-     * Action that will be performed when the Linkgrabber adds new links.
-     **/
-    public static final EnumKeyHandler                                 WINDOW_FOCUS_ACTION_WHEN_NEW_LINKS_ARE_ADDED         = SH.getKeyHandler("WindowFocusActionWhenNewLinksAreAdded", EnumKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_VISIBLE                          = SH.getKeyHandler("LinkgrabberSidebarVisible", BooleanKeyHandler.class);
     // true

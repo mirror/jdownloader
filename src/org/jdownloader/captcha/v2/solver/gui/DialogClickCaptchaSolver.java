@@ -27,6 +27,14 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
         return INSTANCE;
     }
 
+    public void enqueue(SolverJob<ClickedPoint> solverJob) {
+        if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
+            super.enqueue(solverJob);
+            org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver.captchaSound();
+        }
+
+    }
+
     @Override
     public void solve(SolverJob<ClickedPoint> solverJob) throws InterruptedException, SkipException {
         synchronized (DialogBasicCaptchaSolver.getInstance()) {

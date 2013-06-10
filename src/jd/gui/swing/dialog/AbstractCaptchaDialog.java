@@ -27,6 +27,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
@@ -34,6 +35,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.Timer;
 
 import jd.captcha.utils.GifDecoder;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Plugin;
@@ -68,6 +70,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import sun.swing.SwingUtilities2;
 
@@ -93,6 +96,65 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             }
         }
 
+    }
+
+    @Override
+    public void onSetVisible(boolean b) {
+        super.onSetVisible(b);
+        boolean focus = false;
+        switch (CFG_GUI.CFG.getFocusTriggerForCaptchaDialogs()) {
+        case NEVER:
+
+            break;
+        case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY:
+            focus = true;
+            break;
+
+        case MAINFRAME_IS_MAXIMIZED:
+
+            if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
+                focus = true;
+            }
+
+            break;
+
+        case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED:
+            if (JDGui.getInstance().getMainFrame().isVisible()) {
+
+                focus = true;
+
+            }
+            break;
+
+        default:
+            //
+        }
+
+        if (!focus) {
+            System.out.println("Disable focus");
+            getDialog().setFocusableWindowState(false);
+
+            getDialog().getOwner().setFocusableWindowState(false);
+            JDGui.getInstance().getMainFrame().setFocusableWindowState(false);
+            // JDGui.getInstance().getMainFrame().setFocusable(false);
+            Timer timer = new Timer(1000, new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                    getDialog().setFocusableWindowState(true);
+                    getDialog().getOwner().setFocusableWindowState(true);
+                    JDGui.getInstance().getMainFrame().setFocusableWindowState(true);
+                    System.out.println("Can Focus now");
+                }
+
+            });
+            timer.setRepeats(false);
+            timer.start();
+
+        }
+
+        // JDGui.getInstance().getMainFrame().requ
     }
 
     /**

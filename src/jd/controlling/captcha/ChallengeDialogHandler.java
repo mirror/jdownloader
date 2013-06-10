@@ -18,6 +18,8 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -64,7 +66,6 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
     }
 
     private void viaGUI() throws InterruptedException, SkipException {
-
         DialogType dialogType = null;
         try {
             int f = 0;
@@ -94,13 +95,39 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
 
             // }
 
-            ModalExclusionType orgEx = JDGui.getInstance().getMainFrame().getModalExclusionType();
-            try {
+            final ModalExclusionType orgEx = new EDTHelper<ModalExclusionType>() {
 
-                JDGui.getInstance().getMainFrame().setModalExclusionType(ModalExclusionType.TOOLKIT_EXCLUDE);
+                @Override
+                public ModalExclusionType edtRun() {
+                    return JDGui.getInstance().getMainFrame().getModalExclusionType();
+                }
+            }.getReturnValue();
+
+            try {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        JDGui.getInstance().getMainFrame().setModalExclusionType(ModalExclusionType.TOOLKIT_EXCLUDE);
+                        /**
+                         * This may have no effect. we have to set the frame invisble and visible again
+                         */
+                        JDGui.getInstance().getMainFrame().setVisible(!JDGui.getInstance().getMainFrame().isVisible());
+                        JDGui.getInstance().getMainFrame().setVisible(!JDGui.getInstance().getMainFrame().isVisible());
+
+                    }
+                }.waitForEDT();
+
                 showDialog(dialogType, f, images);
             } finally {
-                JDGui.getInstance().getMainFrame().setModalExclusionType(orgEx);
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        JDGui.getInstance().getMainFrame().setModalExclusionType(orgEx);
+                    }
+                }.waitForEDT();
+
             }
 
             return;

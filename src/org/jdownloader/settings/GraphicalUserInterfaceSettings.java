@@ -382,17 +382,31 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setMacDockProgressDisplay(MacDockProgressDisplay value);
 
-    @DefaultEnumValue("REQUEST_FOCUS_IF_MAXIMIZED")
+    @DefaultEnumValue("MAINFRAME_IS_MAXIMIZED")
     @DescriptionForConfigEntry("Action that will be performed when the Linkgrabber adds new links.")
     @AboutConfig
-    LinkgrabberWindowAction getWindowFocusActionWhenNewLinksAreAdded();
+    WindowState getMainframePopupTriggerWhenNewLinksWereAdded();
 
-    void setWindowFocusActionWhenNewLinksAreAdded(LinkgrabberWindowAction action);
+    void setMainframePopupTriggerWhenNewLinksWereAdded(WindowState action);
 
     @DefaultBooleanValue(true)
     @AboutConfig
     boolean isTaskBarFlashEnabled();
 
     void setTaskBarFlashEnabled(boolean b);
+
+    @DefaultEnumValue("MAINFRAME_IS_MAXIMIZED")
+    @DescriptionForConfigEntry("Action that will be performed when the Linkgrabber adds new links.")
+    @AboutConfig
+    WindowState getFocusTriggerForCaptchaDialogs();
+
+    void setFocusTriggerForCaptchaDialogs(WindowState action);
+
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Set to true if you want JDownloader to steal focus when the window pops up")
+    @AboutConfig
+    boolean isWindowsRequestFocusOnActivationEnabled();
+
+    void setWindowsRequestFocusOnActivationEnabled(boolean b);
 
 }
