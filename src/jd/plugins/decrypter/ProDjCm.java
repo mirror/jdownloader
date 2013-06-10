@@ -237,7 +237,7 @@ public class ProDjCm extends PluginForDecrypt {
             String fileName = null;
             String title = new Regex(result, "title: '(.+)',").getMatch(0);
             if (filter.add(bestImg[0]) == false) continue;
-            DownloadLink link = createDownloadlink("directhttp://" + bestImg[0]);
+            DownloadLink link = createDownloadlink("directhttp://" + bestImg[0].replace("/labeled/", "/"));
             if (title != null) fileName = fuid + " - " + title + bestImg[1];
             // not all fotos have a title/name
             if (title == null || title.equals("")) fileName = fuid + bestImg[1];
