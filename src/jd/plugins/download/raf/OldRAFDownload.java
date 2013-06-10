@@ -903,7 +903,7 @@ public class OldRAFDownload extends DownloadInterface {
                 }
 
                 /* save absolutepath as final location property */
-                downloadLink.setProperty(DownloadLink.PROPERTY_FINALLOCATION, outputCompleteFile.getAbsolutePath());
+                downloadLink.setFinalFileOutput(outputCompleteFile.getAbsolutePath());
                 Date last = TimeFormatter.parseDateString(connection.getHeaderField("Last-Modified"));
                 if (last != null && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                     /* set original lastModified timestamp */

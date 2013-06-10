@@ -810,7 +810,6 @@ public class Uploadedto extends PluginForHost {
         } else {
             String baseURL = "http://uploaded.net/";
             if (downloadLink.getDownloadURL().contains("https://")) baseURL.replace("http://", "https://");
-
             requestFileInformation(downloadLink);
             login(account);
             if (account.getBooleanProperty("free")) {
@@ -1024,17 +1023,20 @@ public class Uploadedto extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         prepBrowser();
-        br.getHeaders().put("X-Prototype-Version", "1.6.1");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()) + "&_=");
-        if (br.containsHTML("User and password do not match")) {
-            AccountInfo ai = account.getAccountInfo();
-            if (ai != null) ai.setStatus("User and password do not match");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        try {
+            br.getHeaders().put("X-Prototype-Version", "1.6.1");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("http://uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()) + "&_=");
+            if (br.containsHTML("User and password do not match")) {
+                AccountInfo ai = account.getAccountInfo();
+                if (ai != null) ai.setStatus("User and password do not match");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            if (br.getCookie("http://uploaded.net", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } finally {
+            br.getHeaders().put("X-Prototype-Version", null);
+            br.getHeaders().put("X-Requested-With", null);
         }
-        if (br.getCookie("http://uploaded.net", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getHeaders().put("X-Prototype-Version", null);
-        br.getHeaders().put("X-Requested-With", null);
     }
 
     @Override
@@ -1102,9 +1104,9 @@ public class Uploadedto extends PluginForHost {
         return !currentIP.equals(lastIP);
     }
 
-    private static final boolean default_ppda = true;
-    private static final boolean default_aaeh = false;
-    private static final boolean default_eh   = false;
+    private final boolean default_ppda = true;
+    private final boolean default_aaeh = false;
+    private final boolean default_eh   = false;
 
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ACTIVATEACCOUNTERRORHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalFreeAccountErrorhandling", "Activate experimental free account errorhandling: Switch between free accounts instead of reconnecting if a limit is reached.")).setDefaultValue(default_aaeh));
