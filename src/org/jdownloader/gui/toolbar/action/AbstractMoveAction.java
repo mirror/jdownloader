@@ -30,10 +30,8 @@ public abstract class AbstractMoveAction extends AppAction implements AppActionL
         }
         this.delegate = moveTopAction;
         if (delegate != null) {
-
             setTooltipText(delegate.getTooltipText());
             delegate.getEventSender().addListener(this, true);
-
             setEnabled(delegate.isEnabled());
         } else {
             setEnabled(false);
