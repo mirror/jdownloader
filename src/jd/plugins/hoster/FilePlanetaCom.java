@@ -69,6 +69,7 @@ public class FilePlanetaCom extends PluginForHost {
     // XfileSharingProBasic Version 2.5.2.2, added special download handling
     // (ajax) & special FNF handling
     // captchatype: keyCaptcha
+
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -141,7 +142,7 @@ public class FilePlanetaCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -5, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -409,7 +410,7 @@ public class FilePlanetaCom extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, true, -5, "freelink2");
+            doFree(link, true, 1, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
