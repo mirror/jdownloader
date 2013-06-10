@@ -499,7 +499,7 @@ public class Uploadedto extends PluginForHost {
             /**
              * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting if a limit is reached
              */
-            if (account != null && this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, false)) {
+            if (account != null && this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, default_aaeh)) {
                 final String lastdownloadString = account.getStringProperty("LASTDOWNLOAD2");
                 long lastdownload = 0;
                 if (lastdownloadString != null && lastdownloadString.length() > 0) {
@@ -510,7 +510,7 @@ public class Uploadedto extends PluginForHost {
                     logger.info("Limit must still exist on account, disabling it");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
-            } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false)) {
+            } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
                 /**
                  * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
                  */
@@ -803,7 +803,7 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        usePremiumDownloadAPI = this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, false);
+        usePremiumDownloadAPI = this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
         if (usePremiumAPI.get() && usePremiumDownloadAPI) {
             handlePremium_API(downloadLink, account);
             return;
@@ -1102,11 +1102,15 @@ public class Uploadedto extends PluginForHost {
         return !currentIP.equals(lastIP);
     }
 
+    private static final boolean default_ppda = true;
+    private static final boolean default_aaeh = false;
+    private static final boolean default_eh   = false;
+
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ACTIVATEACCOUNTERRORHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalFreeAccountErrorhandling", "Activate experimental free account errorhandling: Switch between free accounts instead of reconnecting if a limit is reached.")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalReconnectHandling", "Activate experimental reconnect handling for freeusers: Prevents having to enter captchas in between downloads.")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ACTIVATEACCOUNTERRORHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalFreeAccountErrorhandling", "Activate experimental free account errorhandling: Switch between free accounts instead of reconnecting if a limit is reached.")).setDefaultValue(default_aaeh));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalReconnectHandling", "Activate experimental reconnect handling for freeusers: Prevents having to enter captchas in between downloads.")).setDefaultValue(default_eh));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_PREMIUM_DOWNLOAD_API, JDL.L("plugins.hoster.uploadedto.preferAPIdownload", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_PREMIUM_DOWNLOAD_API, JDL.L("plugins.hoster.uploadedto.preferAPIdownload", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.")).setDefaultValue(default_ppda));
 
     }
 
