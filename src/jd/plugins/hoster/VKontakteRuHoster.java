@@ -142,6 +142,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (albumID == null) {
                     getPageSafe(aa, link, "http://vk.com/photo" + photoID);
                     if (br.containsHTML("Unknown error|Unbekannter Fehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    if (br.containsHTML("Access denied")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
                     if (albumID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
