@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import jd.crypt.JDCrypt;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 
 import org.appwork.storage.JSonStorage;
@@ -17,6 +18,16 @@ public class DownloadLinkStorable implements Storable {
     private static final byte[] KEY     = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
     private static final String CRYPTED = "CRYPTED:";
     private DownloadLink        link;
+
+    public AvailableStatus getAvailablestatus() {
+        return link.getAvailableStatus();
+    }
+
+    public void setAvailablestatus(AvailableStatus availablestatus) {
+        if (availablestatus != null) {
+            link.setAvailableStatus(availablestatus);
+        }
+    }
 
     @SuppressWarnings("unused")
     private DownloadLinkStorable(/* Storable */) {
