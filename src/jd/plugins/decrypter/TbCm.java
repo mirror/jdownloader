@@ -690,7 +690,7 @@ public class TbCm extends PluginForDecrypt {
 
                 // Use uploader name in filename
                 if (cfg.getBooleanProperty("USEUPLOADERINNAME", false)) {
-                    String uploadername = br.getRegex("feature=watch\" dir=\"ltr\">(.*?)</a><span class=\"yt\\-user\\-separator\">").getMatch(0);
+                    String uploadername = br.getRegex("feature=watch\"[^>]+dir=\"ltr\">(.*?)</a><span class=\"yt\\-user\\-separator\">").getMatch(0);
                     if (uploadername != null) YT_FILENAME = uploadername + " - " + YT_FILENAME;
                 }
 
