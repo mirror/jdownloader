@@ -1,6 +1,6 @@
 ChatExtensionGuiToggleAction_deselected=Sohbeti Aç
 ChatExtensionGuiToggleAction_deselected_tt=Sohbet Sekmesini Aç
-ChatExtensionGuiToggleAction_selected=Sohbeti Kapat
+ChatExtensionGuiToggleAction_selected=Sohbeti kapat
 ChatExtensionGuiToggleAction_selected_tt=Sohbet Sekmesini Kapat
 description=JDownloader Geliştiricileri ve Destekleyicileriyle temasa geçin
 gui_tab_title=%s1 Kanalı
