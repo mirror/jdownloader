@@ -137,34 +137,59 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
                 if (!linkOk(link, link.getFinalFileName())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
-                String albumID = link.getStringProperty("albumid");
-                if (albumID == null) {
-                    getPageSafe(aa, link, "http://vk.com/photo" + photoID);
-                    if (br.containsHTML("Unknown error|Unbekannter Fehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    if (br.containsHTML("Access denied")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
-                    if (albumID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
-                if (br.containsHTML(">Unfortunately, this photo has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                final String correctedBR = br.toString().replace("\\", "");
-                /**
-                 * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but
-                 * others are online
-                 */
                 final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
-                for (String q : qs) {
-                    /* large image */
-                    if (FINALLINK == null || (FINALLINK != null && !linkOk(link, null))) {
-                        String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
-                        if (base == null) base = "";
-                        String section = new Regex(correctedBR, "(\\{\"id\":\"" + photoID + "\",\"base\":\"" + base + ".*?)((,\\{)|$)").getMatch(0);
-                        if (base != null) FINALLINK = new Regex(section, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"" + q + "src\":\"(" + base + ".*?)\"").getMatch(0);
-                    } else {
-                        break;
+                // For photos which are actually offline but their directlinks still exist
+                String directLinks = link.getStringProperty("directlinks", null);
+                if (directLinks != null) {
+                    directLinks = Encoding.htmlDecode(directLinks).replace("\\", "");
+                    /**
+                     * Try to get best quality and test links till a working link is found as it can happen that the found link is offline
+                     * but others are online
+                     */
+                    final String base = new Regex(directLinks, "base:\"(http://[^<>\"]*?)\"").getMatch(0);
+                    if (base == null) {
+                        logger.warning("Base in handling for specialdownloadlinks is null");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    for (String q : qs) {
+                        /* large image */
+                        if (FINALLINK == null || (FINALLINK != null && !linkOk(link, null))) {
+                            final String linkPart = new Regex(directLinks, q + ":\\[\"([^<>\"]*?)\"").getMatch(0);
+                            if (linkPart != null) FINALLINK = base + linkPart + ".jpg";
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                if (FINALLINK == null) {
+                    final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
+                    String albumID = link.getStringProperty("albumid");
+                    if (albumID == null) {
+                        getPageSafe(aa, link, "http://vk.com/photo" + photoID);
+                        if (br.containsHTML("Unknown error|Unbekannter Fehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        if (br.containsHTML("Access denied")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
+                        if (albumID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                    postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
+                    if (br.containsHTML(">Unfortunately, this photo has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    final String correctedBR = br.toString().replace("\\", "");
+                    /**
+                     * Try to get best quality and test links till a working link is found as it can happen that the found link is offline
+                     * but others are online
+                     */
+                    for (String q : qs) {
+                        /* large image */
+                        if (FINALLINK == null || (FINALLINK != null && !linkOk(link, null))) {
+                            String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
+                            if (base == null) base = "";
+                            String section = new Regex(correctedBR, "(\\{\"id\":\"" + photoID + "\",\"base\":\"" + base + ".*?)((,\\{)|$)").getMatch(0);
+                            if (base != null) FINALLINK = new Regex(section, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"" + q + "src\":\"(" + base + ".*?)\"").getMatch(0);
+                        } else {
+                            break;
+                        }
                     }
                 }
                 if (FINALLINK == null) {

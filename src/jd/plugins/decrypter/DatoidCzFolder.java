@@ -51,6 +51,15 @@ public class DatoidCzFolder extends PluginForDecrypt {
         for (final String currentPage : allPages) {
             logger.info("Decrypting page " + currentPage + " / " + allPages.size());
             if (!currentPage.equals("1")) br.getPage(parameter + "?current-page=" + currentPage);
+
+            // br.getPage("http://api.datoid.cz/v1/getfilesoffolder?url=" + Encoding.urlEncode(parameter));
+            //
+            // final String[] links = br.getRegex("\"(http:[^<>\"]*?)\"").getColumn(0);
+            // if (links == null || links.length == 0) {
+            // logger.warning("Decrypter broken for link: " + parameter);
+            // return null;
+            // }
+
             final String[] links = br.getRegex("\"(/[^<>\"]*?)\">[\t\n\r ]+<div class=\"thumb file\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);

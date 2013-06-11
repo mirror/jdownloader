@@ -21,7 +21,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -29,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "issuu.com" }, urls = { "http://(www\\.)?issuu\\.com/[a-z0-9\\-_]+/docs/[a-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "issuu.com" }, urls = { "http://(www\\.)?issuu\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_]+" }, flags = { 0 })
 public class IssuuCom extends PluginForDecrypt {
 
     public IssuuCom(PluginWrapper wrapper) {
@@ -38,7 +37,7 @@ public class IssuuCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("http://www.", "http://");
         br.getPage(parameter);
         if (br.containsHTML(">We can\\'t find what you\\'re looking for")) {
             logger.info("Link offline: " + parameter);
@@ -56,7 +55,7 @@ public class IssuuCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final String fpName = new Regex(parameter, "issuu\\.com/[a-z0-9\\-_]+/docs/([a-z0-9\\-_]+)").getMatch(0);
+        final String fpName = new Regex(parameter, "issuu\\.com/[a-z0-9\\-_\\.]+/docs/([a-z0-9\\-_]+)").getMatch(0);
         int counter = 1;
         for (final String swfInfo : pageInfos) {
             final DownloadLink dl = createDownloadlink("http://page.issuu.com/" + documentID + "/swf/page_" + counter + ".swf");
@@ -67,8 +66,12 @@ public class IssuuCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             counter++;
         }
+        final DownloadLink mainDownloadlink = createDownloadlink(parameter.replace("issuu.com/", "issuudecrypted.com/"));
+        mainDownloadlink.setAvailable(true);
+        mainDownloadlink.setFinalFileName(fpName + ".pdf");
+        decryptedLinks.add(mainDownloadlink);
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        fp.setName(fpName);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

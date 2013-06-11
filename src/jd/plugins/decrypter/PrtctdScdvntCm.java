@@ -27,7 +27,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "http://(www\\.)?protected\\.socadvnet\\.com/\\?[a-z0-9-]+" }, flags = { 0 })
 public class PrtctdScdvntCm extends PluginForDecrypt {
@@ -52,7 +51,10 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         final String postvar = new Regex(parameter, "protected\\.socadvnet\\.com/\\?(.+)").getMatch(0);
         if (postvar == null) { return null; }
         br.getPage(parameter);
-        if ((MAINPAGE + "index.php").equals(br.getRedirectLocation())) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
+        if ((MAINPAGE + "index.php").equals(br.getRedirectLocation())) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.getRedirectLocation() != null) {
             br.getPage(br.getRedirectLocation());
         }

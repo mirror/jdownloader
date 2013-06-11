@@ -51,10 +51,11 @@ public class EroProfileCom extends PluginForHost {
         return "http://www.eroprofile.com/p/help/termsOfUse";
     }
 
-    private static final String VIDEOLINK = "http://(www\\.)?eroprofile\\.com/m/videos/view/[A-Za-z0-9\\-_]+";
-    private static Object       LOCK      = new Object();
-    private static final String MAINPAGE  = "http://eroprofile.com";
-    public static final String  NOACCESS  = "(>You do not have the required privileges to view this page|>No access<)";
+    private static final String VIDEOLINK   = "http://(www\\.)?eroprofile\\.com/m/videos/view/[A-Za-z0-9\\-_]+";
+    private static Object       LOCK        = new Object();
+    private static final String MAINPAGE    = "http://eroprofile.com";
+    public static final String  NOACCESS    = "(>You do not have the required privileges to view this page|>No access<)";
+    private static final String PREMIUMONLY = "The video could not be processed";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
@@ -69,6 +70,11 @@ public class EroProfileCom extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(VIDEOLINK)) {
             if (br.containsHTML("(>Video not found|>The video could not be found|<title>EroProfile</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = getFilename();
+            if (br.containsHTML(PREMIUMONLY)) {
+                downloadLink.setName(filename + ".m4v");
+                downloadLink.getLinkStatus().setStatusText("This file is only available to premium members");
+                return AvailableStatus.TRUE;
+            }
             DLLINK = br.getRegex("file:\\'(http://[^<>\"]*?)\\'").getMatch(0);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DLLINK = Encoding.htmlDecode(DLLINK);
@@ -113,7 +119,14 @@ public class EroProfileCom extends PluginForHost {
             } catch (final Throwable e) {
                 if (e instanceof PluginException) throw (PluginException) e;
             }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to registered Members");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to registered members");
+        } else if (br.containsHTML(PREMIUMONLY)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to premium members");
         }
         doFree(downloadLink);
     }

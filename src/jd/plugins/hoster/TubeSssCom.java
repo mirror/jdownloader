@@ -64,12 +64,13 @@ public class TubeSssCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.getURL().contains("tubesss.com") || br.containsHTML("<title> at Tubesss\\.com  - Free Videos Adult Sex Tube</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"header blue\">[\t\n\r ]+<div class=\"left\"><h2>(.*?)</div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) at Tubesss\\.com  \\- Free Videos Adult Sex Tube</title>").getMatch(0);
-        DLLINK = br.getRegex("\\.addVariable\\(\"file\",encodeURIComponent\\(\\'(http://.*?)\\'\\)\\)").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("file=(http://.*?);").getMatch(0);
+        if (!br.getURL().contains("tubesss.com") || br.containsHTML("<title> at Tubesss\\.com  - Free Videos Adult Sex Tube</title>") || br.getURL().equals("http://www.tubesss.com/404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>([^<>\"]*?) at TubeSSS</title>").getMatch(0);
+        DLLINK = br.getRegex("(http://(www\\.)?tubesss\\.com/playerConfig\\.php\\?[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null || DLLINK.equals("")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(Encoding.htmlDecode(DLLINK));
+        DLLINK = br.getRegex("flvMask:(https?://[^<>\"]*?);").getMatch(0);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = ".mp4";
