@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -76,14 +77,22 @@ public class MinUs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        /**
-         * Resume/Chunks depends on link and/or fileserver so to prevent errors we deactivate it
-         */
+        String uid = new Regex(downloadLink.getDownloadURL(), "\\.com/[a-z]([A-Za-z0-9\\-_]+)").getMatch(0);
+
         // Sometimes servers are pretty slow
         br.setReadTimeout(3 * 60);
-        String finallink = br.getRegex("class=\"btn\\-action btn\\-download no\\-counter\"[\t\n\r ]+target=\"_blank\"[\t\n\r ]+href=\"(http://i\\.minus\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("\"(http?://i\\.minus\\.com/\\d+/[^<>\"]+|https?://i\\d+\\.minus\\.com/[^<>\"]+)\"").getMatch(0);
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String finallink = br.getRegex("class=\"btn-action btn-view-original no-counter\" href=\"(https?://[^\"]+\\.minus\\.com/[^\"]+)").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("class=\"item-main is-image\"[^>]+href=\"(https?://[^\"]+\\.minus\\.com/[^\"]+)").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("(https?://i\\d+\\.minus\\.com/i" + uid + "[^<>\"]+)").getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex("(https?://i\\.minus\\.com/\\d+/[^<>\"]+)").getMatch(0);
+                    if (finallink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                }
+            }
+        }
+        // Resume/Chunks depends on link and/or fileserver so to prevent errors we deactivate it
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             /* linkrefresh is needed here */
