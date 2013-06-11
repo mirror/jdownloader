@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 /** Links always come rom a decrypter */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "cvj84ezu45gj0wojgHZiF238ß3üpj5uUNUSED_REGEX", "http://(www\\.)?minusdecrypted\\.com/[A-Za-z0-9\\-_]+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "cvj84ezu45gj0wojgHZiF238ß3üpj5uUNUSED_REGEX", "http://([a-zA-Z0-9]+\\.)?minusdecrypted\\.com/[A-Za-z0-9\\-_]+" }, flags = { 0, 0 })
 public class MinUs extends PluginForHost {
 
     public MinUs(final PluginWrapper wrapper) {
@@ -77,16 +77,23 @@ public class MinUs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+
+        // useful for generic regex failovers, to filter false postitives.
         String uid = new Regex(downloadLink.getDownloadURL(), "\\.com/[a-z]([A-Za-z0-9\\-_]+)").getMatch(0);
 
         // Sometimes servers are pretty slow
         br.setReadTimeout(3 * 60);
-        String finallink = br.getRegex("class=\"btn-action btn-view-original no-counter\" href=\"(https?://[^\"]+\\.minus\\.com/[^\"]+)").getMatch(0);
+
+        // generic for all download types, based on button!
+        String finallink = br.getRegex("class=\"btn-action[^>]+no-counter[^>]+href=\"(https?://[^\"]+\\.minus\\.com/[^\"]+)").getMatch(0);
         if (finallink == null) {
+            // secondary for images
             finallink = br.getRegex("class=\"item-main is-image\"[^>]+href=\"(https?://[^\"]+\\.minus\\.com/[^\"]+)").getMatch(0);
             if (finallink == null) {
+                // generic fail over for images! (largest)
                 finallink = br.getRegex("(https?://i\\d+\\.minus\\.com/i" + uid + "[^<>\"]+)").getMatch(0);
                 if (finallink == null) {
+                    // standard downloads fail over.
                     finallink = br.getRegex("(https?://i\\.minus\\.com/\\d+/[^<>\"]+)").getMatch(0);
                     if (finallink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 }
