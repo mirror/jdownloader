@@ -92,6 +92,9 @@ import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContex
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.osevents.OperatingSystemEventSender;
+import org.jdownloader.osevents.OperatingSystemListener;
+import org.jdownloader.osevents.ShutdownOperatingSystemVetoEvent;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.AutoDownloadStartOption;
@@ -102,6 +105,9 @@ import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.RestartController;
+
+import com.sun.jna.Callback;
+import com.sun.jna.Native;
 
 public class SecondLevelLaunch {
     static {
@@ -402,7 +408,15 @@ public class SecondLevelLaunch {
                 logger.close();
             }
         });
+        Native.setCallbackExceptionHandler(new Callback.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Callback arg0, Throwable arg1) {
+                LogSource logger = LogController.getInstance().getLogger("NativeExceptionHandler");
+                logger.log(arg1);
+                logger.close();
 
+            }
+        });
         /* these can be initiated without a gui */
         final Thread thread = new Thread() {
             @Override
@@ -605,6 +619,7 @@ public class SecondLevelLaunch {
                                     }
                                 });
                             }
+
                         } catch (Throwable e) {
                             SecondLevelLaunch.LOG.log(e);
                             Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
@@ -613,6 +628,27 @@ public class SecondLevelLaunch {
                         // parse Menu Data. This will result in a better direct feeling when using the contextmenu the first time
                         DownloadListContextMenuManager.getInstance().getMenuData();
                         LinkgrabberContextMenuManager.getInstance().getMenuData();
+
+                        OperatingSystemEventSender.getInstance().init();
+                        OperatingSystemEventSender.getInstance().addListener(new OperatingSystemListener() {
+
+                            @Override
+                            public void onOperatingSystemSessionEnd() {
+                                LOG.info("OS will shut down now.");
+                            }
+
+                            @Override
+                            public void onOperatingSystemShutdownVeto(ShutdownOperatingSystemVetoEvent event) {
+                                LOG.info("OS Shutdown Requested");
+                                event.setVeto(true);
+                            }
+
+                            @Override
+                            public void onOperatingSystemSignal(String name, int number) {
+                                LOG.info(name + " - " + number);
+
+                            }
+                        });
                     }
 
                 }.start();

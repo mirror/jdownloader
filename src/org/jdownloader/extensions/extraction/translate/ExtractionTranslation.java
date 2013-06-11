@@ -50,9 +50,6 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extract failed (password)" })
     String plugins_optional_extraction_status_extractfailedpass();
 
-    @Default(lngs = { "en" }, values = { "Extract Directory" })
-    String plugins_optional_extraction_filefilter_extractto();
-
     @Default(lngs = { "en" }, values = { "Opening archive" })
     String plugins_optional_extraction_status_openingarchive();
 
@@ -281,9 +278,6 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Auto remove Downloadlinks is now disabled" })
     String set_autoremovelinks_false();
 
-    @Default(lngs = { "en" }, values = { "%s1 (Loading ...)" })
-    String contextmenu_loading(String org);
-
     @Default(lngs = { "en" }, values = { "Extraction failed: %s1" })
     String failed(String message);
 
@@ -293,6 +287,4 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extracting... thus disabled" })
     String extracting();
 
-    @Default(lngs = { "en" }, values = { "Archive(s)" })
-    String linkname();
 }

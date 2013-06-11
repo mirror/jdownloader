@@ -33,9 +33,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "General", "Allgemein" })
     String gui_settings_general_title();
 
-    @Default(lngs = { "en", "de" }, values = { "Choose", "Auswählen" })
-    String basics_browser_folder();
-
     @Default(lngs = { "en", "de" }, values = { "Choose directory", "Ordner auswählen" })
     String gui_setting_folderchooser_title();
 
@@ -65,9 +62,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Outdated Javaversion found: %s1!" })
     String gui_javacheck_newerjavaavailable_title(Object s1);
-
-    @Default(lngs = { "en" }, values = { "Canceled Captcha Dialog" })
-    String captchacontroller_cancel_dialog_allorhost();
 
     @Default(lngs = { "en" }, values = { "File already exists." })
     String controller_status_fileexists_skip();
@@ -177,9 +171,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Wait %s1" })
     String gui_download_waittime_status2(Object s1);
 
-    @Default(lngs = { "en" }, values = { "You canceled a Captcha Dialog!\r\nHow do you want to continue?" })
-    String captchacontroller_cancel_dialog_allorhost_msg();
-
     @Default(lngs = { "en" }, values = { "Wrong captcha code" })
     String decrypter_wrongcaptcha();
 
@@ -188,9 +179,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Captcha recognition" })
     String gui_downloadview_statustext_jac();
-
-    @Default(lngs = { "en" }, values = { "Show all further pending Captchas" })
-    String captchacontroller_cancel_dialog_allorhost_next();
 
     @Default(lngs = { "en" }, values = { "Although JDownloader runs on your javaversion, we advise to install the latest java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download." })
     String gui_javacheck_newerjavaavailable_msg();
@@ -216,17 +204,11 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Not tested yet" })
     String gui_config_reconnect_showcase_message_none();
 
-    @Default(lngs = { "en" }, values = { "Do not show pending Captchas for %s1" })
-    String captchacontroller_cancel_dialog_allorhost_cancelhost(Object s1);
-
     @Default(lngs = { "en" }, values = { "Unknown error" })
     String decrypter_unknownerror();
 
     @Default(lngs = { "en" }, values = { "Temporarily unavailable" })
     String controller_status_tempunavailable();
-
-    @Default(lngs = { "en" }, values = { "Cancel all pending Captchas" })
-    String captchacontroller_cancel_dialog_allorhost_all();
 
     @Default(lngs = { "en" }, values = { "Download" })
     String download_connection_normal();
@@ -345,9 +327,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reconnect Method" })
     String gui_settings_reconnect_title_method();
 
-    @Default(lngs = { "en" }, values = { "Extension Modules" })
-    String gui_settings_extensions_description();
-
     @Default(lngs = { "en" }, values = { "Enabled/Disable this Extension" })
     String settings_sidebar_tooltip_enable_extension();
 
@@ -362,9 +341,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "All Settings found here are for Advanced Users only! Do not change anything here if you do not know 100% what you are doing." })
     String gui_settings_advanced_description();
-
-    @Default(lngs = { "en" }, values = { "Look And Feel" })
-    String gui_settings__gui_title();
 
     @Default(lngs = { "en" }, values = { "Offline" })
     String literally_offline();

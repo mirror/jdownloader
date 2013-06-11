@@ -46,18 +46,6 @@ public interface TrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Allows minimizing or closing JDownloader to the notification area, and other related features like password protection and more." })
     String jd_plugins_optional_jdtrayicon_jdlighttray_description();
 
-    @Default(lngs = { "en" }, values = { "Only when Mainframe is minimized" })
-    String plugins_optional_JDLightTray_minimized();
-
-    @Default(lngs = { "en" }, values = { "Always" })
-    String plugins_optional_JDLightTray_always();
-
-    @Default(lngs = { "en" }, values = { "Never" })
-    String plugins_optional_JDLightTray_never();
-
-    @Default(lngs = { "en" }, values = { "Bring Mainframe to top if new Links were grabbed " })
-    String plugins_optional_JDLightTray_linkgrabberresults();
-
     @Default(lngs = { "en" }, values = { "Pause Downloads" })
     String popup_pause();
 

@@ -100,9 +100,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extension Modules" })
     String extensionManager_title();
 
-    @Default(lngs = { "en" }, values = { "Enabled/Disabled" })
-    String extensiontablemodel_column_enabled();
-
     @Default(lngs = { "en" }, values = { "Browse" })
     String gui_btn_select();
 
@@ -117,9 +114,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Password" })
     String gui_column_pass();
-
-    @Default(lngs = { "en" }, values = { "Plugin" })
-    String gui_column_plugin();
 
     @Default(lngs = { "en" }, values = { "Port" })
     String gui_column_port();
@@ -136,23 +130,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Username" })
     String gui_column_user();
 
-    @Default(lngs = { "en" }, values = { "Version" })
-    String gui_column_version();
-
     @Default(lngs = { "en" }, values = { "Size of Captcha Dialogs" })
     String gui_config_barrierfree_captchasize();
-
-    @Default(lngs = { "en" }, values = { "Disable automatic CAPTCHA" })
-    String gui_config_captcha_jac_disable();
-
-    @Default(lngs = { "en" }, values = { "Captcha settings" })
-    String gui_config_captcha_settings();
-
-    @Default(lngs = { "en" }, values = { "Display Threshold" })
-    String gui_config_captcha_train_level();
-
-    @Default(lngs = { "en" }, values = { "Countdown for CAPTCHA window" })
-    String gui_config_captcha_train_show_timeout();
 
     @Default(lngs = { "en" }, values = { "SFV/CRC check when possible" })
     String gui_config_download_crc();
@@ -190,20 +169,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Message" })
     String gui_dialogs_message_title();
 
-    @Default(lngs = { "en" }, values = { "Delete selected links?" })
-    String gui_downloadlist_delete();
-
-    @Default(lngs = { "en" }, values = { "%s1 files" })
-    String gui_downloadlist_delete_files(Object s1);
-
-    @Default(lngs = { "en" }, values = { "%s1 links" })
-    String gui_downloadlist_delete_links(Object s1);
-
     @Default(lngs = { "en" }, values = { "%s1 links" })
     String gui_downloadlist_delete_size_packagev2(Object s1);
-
-    @Default(lngs = { "en" }, values = { "Delete links from downloadlist and disk?" })
-    String gui_downloadlist_delete2();
 
     @Default(lngs = { "en" }, values = { "Reset selected downloads?" })
     String gui_downloadlist_reset();
@@ -238,17 +205,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Delete from list" })
     String gui_table_contextmenu_deletelist2();
 
-    @Default(lngs = { "en" }, values = { "Delete from list and disk" })
-    String gui_table_contextmenu_deletelistdisk2();
-
     @Default(lngs = { "en" }, values = { "Create DLC" })
     String gui_table_contextmenu_dlc();
 
     @Default(lngs = { "en" }, values = { "Open Directory" })
     String gui_table_contextmenu_downloaddir();
-
-    @Default(lngs = { "en" }, values = { "Edit Directory" })
-    String gui_table_contextmenu_editdownloaddir();
 
     @Default(lngs = { "en" }, values = { "Change Package Name" })
     String gui_table_contextmenu_editpackagename();
@@ -265,9 +226,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Resume" })
     String gui_table_contextmenu_resume();
 
-    @Default(lngs = { "en" }, values = { "Sort" })
-    String gui_table_contextmenu_sort();
-
     @Default(lngs = { "en" }, values = { "Stop after this download" })
     String gui_table_contextmenu_stopmark_set();
 
@@ -276,9 +234,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Watch As you download" })
     String gui_table_contextmenu_watch_as_you_download();
-
-    @Default(lngs = { "en" }, values = { "Start Download" })
-    String gui_table_contextmenu_tryforcethisdownload();
 
     @Default(lngs = { "en" }, values = { "Plugin error" })
     String gui_treetable_error_plugin();
@@ -319,9 +274,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "About JDownloader" })
     String jd_gui_swing_components_AboutDialog_title();
 
-    @Default(lngs = { "en" }, values = { "Hoster:" })
-    String jd_gui_swing_components_AccountDialog_hoster();
-
     @Default(lngs = { "en" }, values = { "Name:" })
     String jd_gui_swing_components_AccountDialog_name();
 
@@ -330,9 +282,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Add new Account" })
     String jd_gui_swing_components_AccountDialog_title();
-
-    @Default(lngs = { "en" }, values = { "Change Columns" })
-    String jd_gui_swing_components_table_JDTable_columnControl();
 
     @Default(lngs = { "en" }, values = { "Host/Port:" })
     String jd_gui_swing_dialog_ProxyDialog_hostport();
@@ -369,9 +318,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Restart required!" })
     String jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title();
-
-    @Default(lngs = { "en" }, values = { "JAntiCaptcha" })
-    String jd_gui_swing_jdgui_settings_panels_ConfigPanelCaptcha_captcha_title();
 
     @Default(lngs = { "en" }, values = { "Settings" })
     String jd_gui_swing_jdgui_views_configurationview_tab_title();
@@ -633,9 +579,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Downloading with %s1 chunk(s)" })
     String ConnectionColumn_getStringValue_chunks(int currentChunks);
-
-    @Default(lngs = { "en" }, values = { "%s1 download(s) running (%s2 connections)" })
-    String BottomBar_actionPerformed_running_downloads(int activeDownloads, int incommingConnections);
 
     @Default(lngs = { "en" }, values = { "Sorted by '%s1'-Column" })
     String DownloadsTable_actionPerformed_sortwarner_title(String column);
@@ -1223,9 +1166,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Click here to get an Premium Account" })
     String OpenURLAction_OpenURLAction_();
 
-    @Default(lngs = { "en" }, values = { "Enter username..." })
-    String BuyAndAddPremiumAccount_layoutDialogContent_username(String name);
-
     @Default(lngs = { "en" }, values = { "Enter password..." })
     String BuyAndAddPremiumAccount_layoutDialogContent_pass();
 
@@ -1291,9 +1231,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Incomplete Split-Archives" })
     String RemoveIncompleteArchives_RemoveIncompleteArchives_object_();
-
-    @Default(lngs = { "en" }, values = { "Delete selected Links" })
-    String RemoveSelectionAction_RemoveSelectionAction_object();
 
     @Default(lngs = { "en" }, values = { "Keep only selected Links" })
     String RemoveNonSelectedAction_RemoveNonSelectedAction_object_();
@@ -1877,12 +1814,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Matches for any File or Link" })
     String BooleanFilter_toString_();
 
-    @Default(lngs = { "en" }, values = { "Corrupt Installation!" })
-    String JDUpdater_run_lasttryfailed_title_();
-
-    @Default(lngs = { "en" }, values = { "Your Installation of JDownloader is currupt, and cannot be fixed by updating it.\r\nPlease download the latest version at http://jdownloader.org/download and install it." })
-    String JDUpdater_run_lasttry_msg_();
-
     @Default(lngs = { "en" }, values = { "Enter a Password if the Download is Password protected" })
     String AddLinksDialog_layoutDialogContent_downloadpassword_tt();
 
@@ -1900,12 +1831,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Failed Links" })
     String DeleteFailedAction_DeleteFailedAction_object_();
-
-    @Default(lngs = { "en" }, values = { "... keep downloaded files" })
-    String DownloadTableContextMenuFactory_createDeleteFromList_object_();
-
-    @Default(lngs = { "en" }, values = { "... remove downloaded files" })
-    String DownloadTableContextMenuFactory_createDeleteFromListAndDisk_object_();
 
     @Default(lngs = { "en" }, values = { "Successful Links" })
     String DeleteSuccessFulAction_DeleteSuccessFulAction_object_();
@@ -1951,30 +1876,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "JDownloader couldn't find any links to download on this website.\r\nWould you like to perform a deep link analysis to show all the files that can be downloaded from it?" })
     String AddLinksAction_actionPerformed_deep_msg();
-
-    @Default(lngs = { "en" }, values = { "Updates available!" })
-    String JDUpdater_JDUpdater_updates_available_title_();
-
-    @Default(lngs = { "en" }, values = { "%s1 Update(s) are ready for installation." })
-    String JDUpdater_JDUpdater_updates_available_msg_(int totalTodoCount);
-
-    @Default(lngs = { "en" }, values = { "NEW !" })
-    String JDToolbarOffer_JDToolbarOffer_title_();
-
-    @Default(lngs = { "en" }, values = { "Install the Controlbar" })
-    String JDToolbarOffer_JDToolbarOffer_install_();
-
-    @Default(lngs = { "en" }, values = { "Cancel" })
-    String JDToolbarOffer_JDToolbarOffer_nothanks_();
-
-    @Default(lngs = { "en" }, values = { "JDownloader Browser Controlbar" })
-    String JDToolbarOffer_layoutDialogContent_toolbar_();
-
-    @Default(lngs = { "en" }, values = { "Did you ever get annoyed by switching between JDownloader and your browser?\r\nNow there is a solution. Try the official JDownloader Toolbar for Windows® Internet Explorer®, Firefox® and Google Chrome™ browsers." })
-    String JDToolbarOffer_layoutDialogContent_desc_();
-
-    @Default(lngs = { "en" }, values = { "It contains the most important features to control JDownloader without leaving your browser." })
-    String JDToolbarOffer_layoutDialogContent_desc2_();
 
     @Default(lngs = { "en" }, values = { "Download can be resumed" })
     String ConnectionColumn_DownloadIsResumeable();
@@ -2023,36 +1924,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Create a Log" })
     String LogAction_tooltip();
-
-    @Default(lngs = { "en" }, values = { "Send a Bugreport" })
-    String SendLogDialog_SendLogDialog_title_();
-
-    @Default(lngs = { "en" }, values = { "When did the Problem occure? Please check all entries that may be worth considering!" })
-    String SendLogDialog_layoutDialogContent_desc_();
-
-    @Default(lngs = { "en" }, values = { "Check" })
-    String LogModel_initColumns_x_();
-
-    @Default(lngs = { "en" }, values = { "Time" })
-    String LogModel_initColumns_time_();
-
-    @Default(lngs = { "en" }, values = { "Between %s1 and %s2" })
-    String LogModel_getStringValue_between_(String from, String to);
-
-    @Default(lngs = { "en" }, values = { "Select" })
-    String LogTable_onContextMenu_enable_();
-
-    @Default(lngs = { "en" }, values = { "Unselect" })
-    String LogTable_onContextMenu_disable_();
-
-    @Default(lngs = { "en" }, values = { "Creating Log Package" })
-    String LogAction_actionPerformed_zip_title_();
-
-    @Default(lngs = { "en" }, values = { "Please wait..." })
-    String LogAction_actionPerformed_wait_();
-
-    @Default(lngs = { "en" }, values = { "Uploading your logs" })
-    String LogAction_getString_uploading_();
 
     @Default(lngs = { "en" }, values = { "Please send this log ID to your supporter!" })
     String LogAction_actionPerformed_givelogid_();
@@ -2174,21 +2045,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you really want to reset the Linkgrabber? Please choose:" })
     String ResetLinkGrabberOptionDialog_layoutDialogContent_();
 
-    @Default(lngs = { "en" }, values = { "Internet Connection" })
-    String StatusBarImpl_initGUI_ip();
-
-    @Default(lngs = { "en" }, values = { "Offline - No Internet Connection or bad proxy setup!" })
-    String StatusBarImpl_onIPOffline_();
-
-    @Default(lngs = { "en" }, values = { "Online - External IP: %s1" })
-    String StatusBarImpl_onIPOnline_(String string);
-
-    @Default(lngs = { "en" }, values = { "Please wait..." })
-    String lit_please_wait();
-
-    @Default(lngs = { "en" }, values = { "No Internet Connection!\r\nYou need to be online to perform a reconnect test." })
-    String reconnect_test_offline();
-
     @Default(lngs = { "en" }, values = { "Cannot reconnect: You are offline!" })
     String ReconnectInvoker_validate_offline_();
 
@@ -2230,9 +2086,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Download Overview" })
     String OverViewHeader_OverViewHeader_();
-
-    @Default(lngs = { "en" }, values = { "Downloads Overview" })
-    String DownloadOverView_DownloadOverView_();
 
     @Default(lngs = { "en" }, values = { "Package(s):" })
     String DownloadOverview_DownloadOverview_packages();
@@ -2333,9 +2186,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "ETA:" })
     String DownloadOverview_DownloadOverview_eta();
 
-    @Default(lngs = { "en" }, values = { "Total | Filtered | Selected" })
-    String DownloadOverview_DownloadOverview_tooltip();
-
     @Default(lngs = { "en" }, values = { "Choose Information to display" })
     String OverViewHeader_OverViewHeader_settings_tooltip_();
 
@@ -2371,9 +2221,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Do you want to delete all visible files in your Downloadlist? Be wise -  Once confirmed, this cannot be undone!" })
     String ClearDownloadListAction_actionPerformed_();
-
-    @Default(lngs = { "en" }, values = { "Delete downloaded Files from Harddisk as well (%s1)" })
-    String ConfirmDeleteLinksDialog_layoutDialogContent_deletefiles_(String bytes);
 
     @Default(lngs = { "en" }, values = { "Do you want to delete all selected Downloadlinks? Be wise - Once confirmed, this cannot be undone!" })
     String RemoveSelectionAction_actionPerformed_();
@@ -2471,17 +2318,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Set/Remove Stopmark" })
     String gui_table_contextmenu_stopmark();
 
-    @Default(lngs = { "en" }, values = { "%s1" })
-    String Renderer_getTreeCellRendererComponent_submenu(String name);
-
     @Default(lngs = { "en" }, values = { "----------------------------" })
     String Renderer_getTreeCellRendererComponent_seperator();
-
-    @Default(lngs = { "en" }, values = { "%s1" })
-    String Renderer_getTreeCellRendererComponent_link(String name);
-
-    @Default(lngs = { "en" }, values = { ">>Extension Submenu" })
-    String AddonSubMenuLink_AddonSubMenuLink_();
 
     @Default(lngs = { "en" }, values = { "Edit Menu Structure (Use Drag&Drop)" })
     String ManagerFrame_layoutPanel_menustructure_();
@@ -2494,9 +2332,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Submenu" })
     String InfoPanel_update_submenu();
-
-    @Default(lngs = { "en" }, values = { "Seperator Line" })
-    String InfoPanel_update_seperator_line();
 
     @Default(lngs = { "en" }, values = { "Link" })
     String InfoPanel_update_link();
@@ -2540,9 +2375,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add Special Entry" })
     String ManagerFrame_layoutPanel_addspecials();
 
-    @Default(lngs = { "en" }, values = { "Custom Submenu" })
-    String ManagerFrame_actionPerformed_customfolder();
-
     @Default(lngs = { "en" }, values = { "Create a custom Submenu" })
     String NewSubMenuDialog_NewSubMenuDialog_title();
 
@@ -2551,9 +2383,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Open Menu Manager" })
     String MenuManagerAction_MenuManagerAction();
-
-    @Default(lngs = { "en" }, values = { "New Actions" })
-    String NewActionsContainer_NewActionsContainer();
 
     @Default(lngs = { "en" }, values = { "Predefined: \"%s1\"" })
     String AddSubMenuAction_getListCellRendererComponent(String name);
@@ -2584,9 +2413,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Custom Icon" })
     String InfoPanel_InfoPanel_icon();
-
-    @Default(lngs = { "en" }, values = { "Org. name: %s1" })
-    String Renderer_getTreeCellRendererComponent_orgname_(String name);
 
     @Default(lngs = { "en" }, values = { "Add %s1" })
     String AddGenericItem_AddGenericItem_(String name);

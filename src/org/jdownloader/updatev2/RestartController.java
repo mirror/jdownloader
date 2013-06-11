@@ -18,10 +18,12 @@ import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.restart.Restarter;
 
 public class RestartController implements ShutdownVetoListener {
@@ -49,6 +51,7 @@ public class RestartController implements ShutdownVetoListener {
     private ParameterParser startupParameters;
     private String[]        arguments;
     private File            root = Application.getResource("tmp").getParentFile();
+    private LogSource       logger;
 
     // public String updaterJar = "Updater.jar";
     //
@@ -68,11 +71,13 @@ public class RestartController implements ShutdownVetoListener {
     }
 
     /**
-     * Create a new instance of RestartController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of RestartController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     protected RestartController() {
 
         // ShutdownController.getInstance().addShutdownVetoListener(this);
+        logger = LogController.getInstance().getLogger(RestartController.class.getName());
 
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
@@ -85,7 +90,6 @@ public class RestartController implements ShutdownVetoListener {
                 finalHook();
             }
         });
-
         restarter = Restarter.getInstance(this);
 
     }

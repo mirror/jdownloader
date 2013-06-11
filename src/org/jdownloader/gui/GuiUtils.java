@@ -14,7 +14,7 @@ import com.sun.jna.platform.win32.WinDef.HWND;
 public class GuiUtils {
 
     public static void flashWindow(Window window, boolean flashTray, boolean flashWindow) {
-        if (CrossSystem.isWindows()) {
+        if (CrossSystem.isWindows() && false) {
             System.out.println("Flash: " + flashTray);
 
             User32 lib = null;

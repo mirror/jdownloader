@@ -60,6 +60,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.translator.gui.GuiToggleAction;
 import org.jdownloader.extensions.translator.gui.TranslatorGui;
+import org.jdownloader.gui.jdtrayicon.translate.TrayiconTranslation;
 import org.jdownloader.gui.mainmenu.MainMenuManager;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
@@ -400,7 +401,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 if (fontname == null) fontname = "Tahoma";
 
             }
-
+            load(tmp, locale, TrayiconTranslation.class);
             load(tmp, locale, JdownloaderTranslation.class);
             load(tmp, locale, LiveheaderTranslation.class);
             load(tmp, locale, UpdaterTranslation.class);
