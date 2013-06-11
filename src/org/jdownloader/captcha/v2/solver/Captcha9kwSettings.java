@@ -30,15 +30,22 @@ public interface Captcha9kwSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Confirm option for captchas")
+    @DescriptionForConfigEntry("Confirm option for captchas (Cost +6)")
     boolean isconfirm();
 
     void setconfirm(boolean b);
 
     @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Confirm option for mouse captchas (Cost +6)")
+    boolean ismouseconfirm();
+
+    void setmouseconfirm(boolean b);
+
+    @AboutConfig
     @DefaultIntValue(0)
     @SpinnerValidator(min = 0, max = 10)
-    @DescriptionForConfigEntry("More priority for captchas")
+    @DescriptionForConfigEntry("More priority for captchas (Cost +1-10)")
     int getprio();
 
     void setprio(int seconds);

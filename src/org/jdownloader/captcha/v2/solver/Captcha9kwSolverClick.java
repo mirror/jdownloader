@@ -24,7 +24,6 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> implements ChallengeResponseValidation {
     private Captcha9kwSettings                 config;
@@ -43,7 +42,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
     private Captcha9kwSolverClick() {
         super(1);
         config = JsonConfig.create(Captcha9kwSettings.class);
-        AdvancedConfigManager.getInstance().register(config);
+        // AdvancedConfigManager.getInstance().register(config);
         threadPool.allowCoreThreadTimeOut(true);
     }
 
@@ -96,7 +95,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
             try {
                 byte[] data = IO.readFile(captchaChallenge.getImageFile());
                 Browser br = new Browser();
-                String ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&mouse=1&prio=" + config.getprio() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=" + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + "&version=1.1&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
+                String ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&mouse=1&prio=" + config.getprio() + "&confirm=" + config.ismouseconfirm() + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=" + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + "&version=1.1&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
                 solverJob.getLogger().info("Send Captcha to 9kw.eu. - " + getAPIROOT() + " Answer: " + ret);
                 if (!ret.startsWith("OK-")) throw new SolverException(ret);
                 // Error-No Credits
