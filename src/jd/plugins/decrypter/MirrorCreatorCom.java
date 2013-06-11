@@ -91,7 +91,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 br2 = br.cloneBrowser();
                 String dllink = null;
                 // Handling for links that need to be regexed or that need to be get by redirect
-                if (singlelink.matches("/[^/]+/" + uid + "/.+")) {
+                if (singlelink.matches("/[^/]+/.*?" + uid + ".*?/.*?")) {
                     br2.getPage(singlelink.trim());
                     dllink = br2.getRedirectLocation();
                     if (dllink == null) {
