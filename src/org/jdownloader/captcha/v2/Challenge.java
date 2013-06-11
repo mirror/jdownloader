@@ -8,6 +8,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -73,15 +74,12 @@ public abstract class Challenge<T> {
     private ResponseList<T> result;
 
     public static String getHost(Challenge<?> challenge) {
-
-        if (challenge instanceof ImageCaptchaChallenge) { return ((ImageCaptchaChallenge) challenge).getPlugin().getHost();
-
-        }
+        if (challenge instanceof ImageCaptchaChallenge) { return ((ImageCaptchaChallenge) challenge).getPlugin().getHost(); }
+        if (challenge instanceof ClickCaptchaChallenge) { return ((ClickCaptchaChallenge) challenge).getPlugin().getHost(); }
         return null;
     }
 
     public static DownloadLink getDownloadLink(Challenge<?> challenge) {
-
         Plugin plugin = getPlugin(challenge);
         if (plugin == null) return null;
         if (plugin instanceof PluginForHost) { return ((PluginForHost) plugin).getDownloadLink(); }
@@ -89,10 +87,8 @@ public abstract class Challenge<T> {
     }
 
     private static Plugin getPlugin(Challenge<?> challenge) {
-
-        if (challenge instanceof ImageCaptchaChallenge) { return ((ImageCaptchaChallenge) challenge).getPlugin();
-
-        }
+        if (challenge instanceof ImageCaptchaChallenge) { return ((ImageCaptchaChallenge) challenge).getPlugin(); }
+        if (challenge instanceof ClickCaptchaChallenge) { return ((ClickCaptchaChallenge) challenge).getPlugin(); }
         return null;
     }
 }

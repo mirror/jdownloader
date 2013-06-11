@@ -157,6 +157,10 @@ public class ShrLnksBz extends PluginForDecrypt {
             final int max = 5;
             boolean failed = true;
             for (int i = 0; i <= max; i++) {
+                try {
+                    invalidateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
                 String Captchamap = br.getRegex("\"(/captcha\\.gif\\?d=\\d+.*?PHPSESSID=.*?)\"").getMatch(0);
                 if (Captchamap == null) {
                     logger.warning("Decrypter broken for link: " + parameter);

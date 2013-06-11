@@ -78,7 +78,7 @@ public class Uploadedto extends PluginForHost {
     private char[]                 FILENAMEREPLACES             = new char[] { '_' };
     private final String           ACTIVATEACCOUNTERRORHANDLING = "ACTIVATEACCOUNTERRORHANDLING";
     private final String           EXPERIMENTALHANDLING         = "EXPERIMENTALHANDLING";
-    private final String           PREFER_PREMIUM_DOWNLOAD_API  = "PREFER_PREMIUM_DOWNLOAD_API";
+    private final String           PREFER_PREMIUM_DOWNLOAD_API  = "PREFER_PREMIUM_DOWNLOAD_API_V2";
     private Pattern                IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static AtomicBoolean   hasDled                      = new AtomicBoolean(false);
     private static AtomicLong      timeBefore                   = new AtomicLong(0);
@@ -1033,6 +1033,10 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (br.getCookie("http://uploaded.net", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } catch (PluginException e) {
+            account.setProperty("token", null);
+            account.setProperty("tokenType", null);
+            throw e;
         } finally {
             br.getHeaders().put("X-Prototype-Version", null);
             br.getHeaders().put("X-Requested-With", null);

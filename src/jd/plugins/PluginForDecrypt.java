@@ -56,14 +56,14 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
  */
 public abstract class PluginForDecrypt extends Plugin {
 
-    private LinkCrawlerDistributer         distributer           = null;
+    private LinkCrawlerDistributer    distributer           = null;
 
-    private LazyCrawlerPlugin              lazyC                 = null;
-    private CrawledLink                    currentLink           = null;
-    private LinkCrawlerAbort               linkCrawlerAbort;
+    private LazyCrawlerPlugin         lazyC                 = null;
+    private CrawledLink               currentLink           = null;
+    private LinkCrawlerAbort          linkCrawlerAbort;
 
-    private LinkCrawler                    crawler;
-    private transient ResponseList<String> lastChallengeResponse = null;
+    private LinkCrawler               crawler;
+    private transient ResponseList<?> lastChallengeResponse = null;
 
     /**
      * @return the distributer
@@ -180,6 +180,23 @@ public abstract class PluginForDecrypt extends Plugin {
             /* now we let the decrypter do its magic */
             tmpLinks = decryptIt(cryptLink, progress);
             validateLastChallengeResponse();
+        } catch (RuntimeDecrypterException e) {
+            if (DecrypterException.CAPTCHA.equals(e.getMessage())) {
+                invalidateLastChallengeResponse();
+                showException = false;
+            } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
+                showException = false;
+            } else if (DecrypterException.ACCOUNT.equals(e.getMessage())) {
+                showException = false;
+            }
+            /*
+             * we got a decrypter exception, clear log and note that something went wrong
+             */
+            if (logger instanceof LogSource) {
+                /* make sure we use the right logger */
+                ((LogSource) logger).clear();
+            }
+            LogSource.exception(logger, e);
         } catch (DecrypterException e) {
             if (DecrypterException.CAPTCHA.equals(e.getMessage())) {
                 invalidateLastChallengeResponse();
@@ -315,7 +332,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     public void invalidateLastChallengeResponse() {
         try {
-            ResponseList<String> lLastChallengeResponse = lastChallengeResponse;
+            ResponseList<?> lLastChallengeResponse = lastChallengeResponse;
             if (lLastChallengeResponse != null) {
                 /* TODO: inform other solver that their response was not used */
                 AbstractResponse<?> response = lLastChallengeResponse.get(0);
@@ -333,9 +350,13 @@ public abstract class PluginForDecrypt extends Plugin {
         }
     }
 
+    public void setLastChallengeResponse(ResponseList<?> lastChallengeResponse) {
+        this.lastChallengeResponse = lastChallengeResponse;
+    }
+
     public void validateLastChallengeResponse() {
         try {
-            ResponseList<String> lLastChallengeResponse = lastChallengeResponse;
+            ResponseList<?> lLastChallengeResponse = lastChallengeResponse;
             if (lLastChallengeResponse != null) {
                 /* TODO: inform other solver that their response was not used */
                 AbstractResponse<?> response = lLastChallengeResponse.get(0);
@@ -386,10 +407,17 @@ public abstract class PluginForDecrypt extends Plugin {
             @Override
             public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
                 switch (skipRequest) {
+                case STOP_CURRENT_ACTION:
+                    /* user wants to stop current action (eg crawling) */
+                    return true;
                 case BLOCK_ALL_CAPTCHAS:
+                    /* user wants to block all captchas (current session) */
                     return true;
                 case BLOCK_HOSTER:
+                    /* user wants to block captchas from specific hoster */
                     return PluginForDecrypt.this.getHost().equals(Challenge.getHost(challenge));
+                case REFRESH:
+                case SINGLE:
                 default:
                     return false;
                 }
@@ -406,9 +434,6 @@ public abstract class PluginForDecrypt extends Plugin {
             logger.warning(Exceptions.getStackTrace(e));
             throw new DecrypterException(DecrypterException.CAPTCHA);
         } catch (SkipException e) {
-            Thread th = Thread.currentThread();
-            System.out.println(th);
-            System.out.println("Job: " + currentLink.getSourceJob() + " - crawler: " + crawler);
             switch (e.getSkipRequest()) {
             case BLOCK_ALL_CAPTCHAS:
                 CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(crawler));
@@ -419,10 +444,8 @@ public abstract class PluginForDecrypt extends Plugin {
             case TIMEOUT:
                 break;
             case REFRESH:
-
                 // refresh is not supported from the pluginsystem right now.
                 return "GiveMeANewCaptcha!";
-
             case STOP_CURRENT_ACTION:
                 LinkCollector.getInstance().abort();
                 // Just to be sure
@@ -432,7 +455,7 @@ public abstract class PluginForDecrypt extends Plugin {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         if (!c.isSolved()) throw new DecrypterException(DecrypterException.CAPTCHA);
-        lastChallengeResponse = c.getResult();
+        setLastChallengeResponse(c.getResult());
         return c.getResult().getValue();
 
     }

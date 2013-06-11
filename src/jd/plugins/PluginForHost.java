@@ -80,20 +80,24 @@ import org.jdownloader.translate._JDT;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
-    private static Pattern[]               PATTERNS              = new Pattern[] {
-                                                                 /**
-                                                                  * these patterns should split filename and fileextension (extension must include the point)
-                                                                  */
-                                                                 // multipart rar archives
+    private static Pattern[]            PATTERNS              = new Pattern[] {
+                                                              /**
+                                                               * these patterns should split filename and fileextension (extension must include the point)
+                                                               */
+                                                              // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
-    private LazyHostPlugin                 lazyP                 = null;
+    private LazyHostPlugin              lazyP                 = null;
     /**
      * Is true if the user has answerd a captcha challenge. does not say anything whether if the answer was correct or not
      */
-    private transient ResponseList<String> lastChallengeResponse = null;
+    protected transient ResponseList<?> lastChallengeResponse = null;
+
+    public void setLastChallengeResponse(ResponseList<?> lastChallengeResponse) {
+        this.lastChallengeResponse = lastChallengeResponse;
+    }
 
     public LazyHostPlugin getLazyP() {
         return lazyP;
@@ -175,7 +179,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void invalidateLastChallengeResponse() {
         try {
-            ResponseList<String> lLastChallengeResponse = lastChallengeResponse;
+            ResponseList<?> lLastChallengeResponse = lastChallengeResponse;
             if (lLastChallengeResponse != null) {
                 /* TODO: inform other solver that their response was not used */
                 AbstractResponse<?> response = lLastChallengeResponse.get(0);
@@ -195,7 +199,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void validateLastChallengeResponse() {
         try {
-            ResponseList<String> lLastChallengeResponse = lastChallengeResponse;
+            ResponseList<?> lLastChallengeResponse = lastChallengeResponse;
             if (lLastChallengeResponse != null) {
                 /* TODO: inform other solver that their response was not used */
                 AbstractResponse<?> response = lLastChallengeResponse.get(0);
@@ -241,17 +245,14 @@ public abstract class PluginForHost extends Plugin {
                 public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
                     boolean ret;
                     switch (skipRequest) {
-
                     case BLOCK_ALL_CAPTCHAS:
-
+                        /* user wants to block all captchas (current session) */
                         return true;
-
                     case BLOCK_HOSTER:
-
+                        /* user wants to block captchas from specific hoster */
                         return PluginForHost.this.getHost().equals(Challenge.getHost(challenge));
-
                     case BLOCK_PACKAGE:
-
+                        /* user wants to block captchas from current FilePackage */
                         ret = link.getFilePackage() == Challenge.getDownloadLink(challenge).getFilePackage();
                         ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
                         return ret;
@@ -259,10 +260,8 @@ public abstract class PluginForHost extends Plugin {
                     case SINGLE:
                     default:
                         return false;
-
                     }
                 }
-
             };
             invalidateLastChallengeResponse();
             if (CaptchaBlackList.getInstance().matches(c)) {
@@ -279,7 +278,7 @@ public abstract class PluginForHost extends Plugin {
             if (!c.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
-                lastChallengeResponse = c.getResult();
+                setLastChallengeResponse(c.getResult());
             }
             return c.getResult().getValue();
         } catch (InterruptedException e) {

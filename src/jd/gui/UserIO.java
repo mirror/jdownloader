@@ -26,11 +26,13 @@ import javax.swing.filechooser.FileFilter;
 
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
-import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.gui.swing.dialog.MultiSelectionDialog;
 import jd.nutils.JDFlags;
+import jd.plugins.DecrypterException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.RuntimeDecrypterException;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
@@ -43,6 +45,8 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
+import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.blacklist.CrawlerBlackListEntry;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
@@ -263,40 +267,72 @@ public class UserIO {
         }
     }
 
-    public Point requestClickPositionDialog(final File imagefile, final String title, final String explain) {
+    public Point requestClickPositionDialog(final File imagefile, final String titleTemplate, final String explain) {
         Thread currentThread = Thread.currentThread();
         if (currentThread instanceof LinkCrawlerThread) {
             /* Crawler */
-            PluginForDecrypt plugin = (PluginForDecrypt) ((LinkCrawlerThread) currentThread).getCurrentOwner();
-            LinkCrawler linkCrawler = ((LinkCrawlerThread) currentThread).getCurrentLinkCrawler();
-
-            String e = title;
-            if (e == null) {
-                e = explain;
+            final PluginForDecrypt plugin = (PluginForDecrypt) ((LinkCrawlerThread) currentThread).getCurrentOwner();
+            String title = titleTemplate;
+            if (title == null) {
+                title = explain;
             } else if (explain != null) {
-                e = e + " - " + explain;
+                title = title + " - " + explain;
             }
 
-            ClickCaptchaChallenge c = new ClickCaptchaChallenge(imagefile, e, plugin) {
+            ClickCaptchaChallenge c = new ClickCaptchaChallenge(imagefile, title, plugin) {
 
                 @Override
                 public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
-                    return false;
+                    switch (skipRequest) {
+                    case STOP_CURRENT_ACTION:
+                        /* user wants to stop current action (eg crawling) */
+                        return true;
+                    case BLOCK_ALL_CAPTCHAS:
+                        /* user wants to block all captchas (current session) */
+                        return true;
+                    case BLOCK_HOSTER:
+                        /* user wants to block captchas from specific hoster */
+                        return plugin.getHost().equals(Challenge.getHost(challenge));
+                    case REFRESH:
+                    case SINGLE:
+                    default:
+                        return false;
+                    }
                 }
 
             };
+            plugin.invalidateLastChallengeResponse();
+            if (CaptchaBlackList.getInstance().matches(c)) {
+                plugin.getLogger().warning("Cancel. Blacklist Matching");
+                return null;
+            }
             try {
                 ChallengeResponseController.getInstance().handle(c);
-            } catch (InterruptedException e1) {
+            } catch (InterruptedException ie) {
                 return null;
-            } catch (SkipException e1) {
-                Dialog.getInstance().showExceptionDialog("Error", "Not implemented yet", e1);
-                e1.printStackTrace();
+            } catch (SkipException e) {
+                switch (e.getSkipRequest()) {
+                case BLOCK_ALL_CAPTCHAS:
+                    CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(plugin.getCrawler()));
+                    break;
+                case BLOCK_HOSTER:
+                case BLOCK_PACKAGE:
+                case SINGLE:
+                case TIMEOUT:
+                    break;
+                case REFRESH:
+                    // refresh is not supported from the pluginsystem right now.
+                    return null;
+                case STOP_CURRENT_ACTION:
+                    LinkCollector.getInstance().abort();
+                    // Just to be sure
+                    CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(plugin.getCrawler()));
+                    throw new RuntimeDecrypterException(new DecrypterException(DecrypterException.CAPTCHA));
+                }
+                throw new RuntimeDecrypterException(new DecrypterException(DecrypterException.CAPTCHA));
             }
-            // CaptchaHandler captchaController = new CaptchaHandler(linkCrawler, null, captchaFiles, null, e, plugin);
-            // captchaController.setCaptchaType(CaptchaDialogInterface.CaptchaType.CLICK);
-            // CaptchaResult cc = captchaController.getCode(0);
             if (!c.isSolved()) return null;
+            plugin.setLastChallengeResponse(c.getResult());
             return new Point(c.getResult().getValue().getX(), c.getResult().getValue().getY());
         } else {
             Log.exception(new WTFException("DO NOT USE OUTSIDE DECRYPTER"));
