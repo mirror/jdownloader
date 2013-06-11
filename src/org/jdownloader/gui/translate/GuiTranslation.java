@@ -1079,6 +1079,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Package Name" })
     String PackagizerFilterRuleDialog_layoutDialogContent_packagename();
 
+    @Default(lngs = { "en" }, values = { "Enable Download" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_enable();
+
     @Default(lngs = { "en" }, values = { "Extract Archives" })
     String PackagizerFilterRuleDialog_layoutDialogContent_extract();
 

@@ -374,6 +374,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             dpiSet = true;
             dpi.setDestinationFolder(path);
         }
+        if (lgr.getRule().getLinkEnabled() != null) {
+            link.setEnabled(lgr.getRule().getLinkEnabled());
+        }
         if (!StringUtils.isEmpty(lgr.getRule().getPackageName())) {
             /* customize package name */
             String name = replaceVariables(lgr.getRule().getPackageName(), link, lgr);

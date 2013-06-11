@@ -24,6 +24,9 @@ public class PackagizerRule extends FilterRule implements Storable {
         ret.setHosterURLFilter(getHosterURLFilter());
         ret.setName(_JDT._.LinkgrabberFilterRule_duplicate(getName()));
         ret.setSourceURLFilter(getSourceURLFilter());
+        ret.setLinkEnabled(getLinkEnabled());
+        ret.setRename(getRename());
+        ret.setMoveto(getMoveto());
         ret.autoAddEnabled = autoAddEnabled;
         ret.autoExtractionEnabled = autoExtractionEnabled;
         ret.autoStartEnabled = autoStartEnabled;
@@ -96,6 +99,15 @@ public class PackagizerRule extends FilterRule implements Storable {
     private String  moveto = null;
     private Boolean autoExtractionEnabled;
     private Boolean autoAddEnabled;
+    private Boolean linkEnabled;
+
+    public Boolean getLinkEnabled() {
+        return linkEnabled;
+    }
+
+    public void setLinkEnabled(Boolean linkEnabled) {
+        this.linkEnabled = linkEnabled;
+    }
 
     public Boolean isAutoAddEnabled() {
         return autoAddEnabled;

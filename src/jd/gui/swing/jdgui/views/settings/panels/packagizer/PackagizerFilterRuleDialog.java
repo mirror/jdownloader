@@ -223,7 +223,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         }
         rule.setMoveto(cbMove.isSelected() ? fpMove.getPath() : null);
         rule.setRename(cbRename.isSelected() ? txtRename.getText() : null);
-
+        rule.setLinkEnabled(cbEnable.isSelected() ? cobEnable.getSelectedIndex() == 0 : null);
         rule.setChunks(cbChunks.isSelected() ? ((Number) spChunks.getValue()).intValue() : -1);
         rule.setPriority(cbPriority.isSelected() ? prio : null);
         rule.setPackageName(cbPackagename.isSelected() ? txtPackagename.getText() : null);
@@ -263,6 +263,8 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         fpMove.setPath(rule.getMoveto());
 
         cbExtract.setSelected(rule.isAutoExtractionEnabled() != null);
+        cbEnable.setSelected(rule.getLinkEnabled() != null);
+        cobEnable.setSelectedIndex((rule.getLinkEnabled() == null || rule.getLinkEnabled()) ? 0 : 1);
 
         if (rule.getChunks() > 0) {
             spChunks.setValue(rule.getChunks());
@@ -358,6 +360,10 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private JToggleButton cbAlways;
     private ExtCheckBox   cbMove;
 
+    private JLabel        lblEnable;
+    private ExtCheckBox   cbEnable;
+    private JComboBox     cobEnable;
+
     public void addConditionGui(final JComponent panel) {
         cbAlways = new ExtCheckBox();
         panel.add(cbAlways);
@@ -377,9 +383,11 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         lblAutostart = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_autostart());
         lblautoadd = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_autoadd());
         lblChunks = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_chunks());
+        lblEnable = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_enable());
         cobExtract = createEnabledBox();
         cobAutostart = createEnabledBox();
         cobAutoAdd = createEnabledBox();
+        cobEnable = createEnabledBox();
         fpDest = new PathChooser("PackagizerDest", true) {
 
             /**
@@ -497,7 +505,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         cbAdd = new ExtCheckBox(cobAutoAdd);
         cbChunks = new ExtCheckBox(spChunks);
         cbName = new ExtCheckBox(txtNewFilename);
-
+        cbEnable = new ExtCheckBox(cobEnable);
         ret.add(cbDest);
         ret.add(lblDest, "spanx 2");
         ret.add(fpDest, "spanx,pushx,growx");
@@ -540,6 +548,13 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         ret.add(cobAutostart, "spanx,growx,pushx");
 
         link(cbStart, lblAutostart, cobAutostart);
+
+        ret.add(cbEnable);
+        ret.add(lblEnable, "spanx 2");
+        ret.add(cobEnable, "spanx,growx,pushx");
+
+        link(cbEnable, lblEnable, cobEnable);
+
         /* THEN DO */
         ret.add(createHeader(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_do()), "gaptop 10, spanx,growx,pushx");
 
