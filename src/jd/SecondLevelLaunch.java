@@ -57,6 +57,7 @@ import jd.utils.JDUtilities;
 import org.appwork.app.gui.copycutpaste.CopyPasteSupport;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -79,9 +80,9 @@ import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.cnl2.ExternInterface;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solver.CBSolver;
-import org.jdownloader.captcha.v2.solver.CaptchaResolutorCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solver.Captcha9kwSolverClick;
+import org.jdownloader.captcha.v2.solver.CaptchaResolutorCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
@@ -311,6 +312,7 @@ public class SecondLevelLaunch {
         FILE = Application.getResource("tmp/exitcheck");
         try {
             if (FILE.exists()) {
+
                 String txt = "It seems that JDownloader did not exit properly on " + IO.readFileToString(FILE) + "\r\nThis might result in losing settings or your downloadlist!\r\n\r\nPlease make sure to close JDownloader using Menu->File->Exit or Window->Close [X]";
                 LOG.warning("BAD EXIT Detected!: " + txt);
                 Dialog.getInstance().showErrorDialog(Dialog.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY, "Warning - Bad Exit!", txt);
@@ -326,6 +328,19 @@ public class SecondLevelLaunch {
 
         }
         FILE.deleteOnExit();
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
+            public void setHookPriority(int priority) {
+                // try to call as last hook
+                super.setHookPriority(Integer.MIN_VALUE);
+            }
+
+            @Override
+            public void run() {
+                FILE.delete();
+            }
+        });
     }
 
     private static void start(final String args[]) {

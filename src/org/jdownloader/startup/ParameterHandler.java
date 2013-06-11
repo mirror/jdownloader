@@ -26,6 +26,7 @@ import org.jdownloader.startup.commands.HelpCommand;
 import org.jdownloader.startup.commands.JACShowCommand;
 import org.jdownloader.startup.commands.ReScanPluginsCommand;
 import org.jdownloader.startup.commands.ReconnectCommand;
+import org.jdownloader.startup.commands.SignalTestCommand;
 import org.jdownloader.updatev2.RestartController;
 
 public class ParameterHandler implements InstanceMessageListener, CommandSwitchListener {
@@ -49,6 +50,8 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
         addCommand(new FileCommand());
         addCommand(new BRDebugCommand());
         addCommand(new ReScanPluginsCommand());
+        addCommand(new SignalTestCommand());
+
         addCommand(new AbstractStartupCommand("n") {
 
             @Override

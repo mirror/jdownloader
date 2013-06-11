@@ -174,35 +174,35 @@ public class JDGui extends SwingGui {
         mainFrame.addWindowListener(new WindowListener() {
 
             public void windowOpened(WindowEvent e) {
-                System.out.println(e);
+
                 UpdateController.getInstance().setGuiToFront(mainFrame);
 
             }
 
             public void windowIconified(WindowEvent e) {
-                System.out.println(e);
+
             }
 
             public void windowDeiconified(WindowEvent e) {
-                System.out.println(e);
+
                 UpdateController.getInstance().setGuiToFront(mainFrame);
 
             }
 
             public void windowDeactivated(WindowEvent e) {
-                System.out.println(e);
+
             }
 
             public void windowClosing(WindowEvent e) {
-                System.out.println(e);
+
             }
 
             public void windowClosed(WindowEvent e) {
-                System.out.println(e);
+
             }
 
             public void windowActivated(WindowEvent e) {
-                System.out.println(e);
+
                 if (e.getOppositeWindow() == null) {
                     // new activation
                     // if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogsRequestFocusEnabled()) {
@@ -236,12 +236,12 @@ public class JDGui extends SwingGui {
 
             @Override
             public void windowLostFocus(WindowEvent e) {
-                System.out.println(e);
+
             }
 
             @Override
             public void windowGainedFocus(WindowEvent e) {
-                System.out.println(e);
+
                 GuiUtils.flashWindow(mainFrame, false, false);
             }
         });
@@ -249,7 +249,7 @@ public class JDGui extends SwingGui {
 
             @Override
             public void windowStateChanged(WindowEvent e) {
-                System.out.println(e);
+
             }
         });
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {

@@ -32,12 +32,14 @@ import org.appwork.controlling.StateEventListener;
 import org.appwork.controlling.StateMachine;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
@@ -47,8 +49,11 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.shutdown.actions.ShutdownToggleAction;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
 import org.jdownloader.extensions.shutdown.translate.T;
+import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.RestartController;
@@ -74,7 +79,17 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     private void closejd() {
         LogController.CL().info("close jd");
+
+        avoidRlyDialogs();
         RestartController.getInstance().exitAsynch();
+    }
+
+    private void avoidRlyDialogs() {
+        for (ShutdownVetoListener veto : ShutdownController.getInstance().getShutdownVetoListeners()) {
+            if (veto instanceof RestartController) {
+                ShutdownController.getInstance().removeShutdownVetoListener(veto);
+            }
+        }
     }
 
     private void shutdown() {
@@ -197,11 +212,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 logger.log(e);
             }
         }
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-        }
-        System.exit(0);
+        avoidRlyDialogs();
+        RestartController.getInstance().exitAsynch();
+
     }
 
     private void prepareHibernateOrStandby() {
@@ -437,12 +450,14 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     protected void stop() throws StopException {
         DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
         MainToolbarManager.getInstance().unregisterExtender(this);
+        MainMenuManager.getInstance().unregisterExtender(this);
 
     }
 
     @Override
     protected void start() throws StartException {
         MainToolbarManager.getInstance().registerExtender(this);
+        MainMenuManager.getInstance().registerExtender(this);
         if (!getSettings().isShutdownActiveByDefaultEnabled()) {
             CFG_SHUTDOWN.SHUTDOWN_ACTIVE.setValue(false);
         }
@@ -577,7 +592,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     @Override
     public boolean isQuickToggleEnabled() {
-        return true;
+        return false;
     }
 
     private static boolean isHibernateActivated() throws UnsupportedEncodingException, IOException, InterruptedException {
@@ -595,6 +610,33 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     @Override
     public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
+        if (manager instanceof MainMenuManager) {
+            ExtensionsMenuContainer container = new ExtensionsMenuContainer();
+            container.add(org.jdownloader.extensions.shutdown.actions.ShutdownToggleAction.class);
+            mr.add(container);
+        } else if (manager instanceof MainToolbarManager) {
+            // try to search a toggle action and queue it after it.
+            for (int i = mr.getItems().size() - 1; i >= 0; i--) {
+                MenuItemData mid = mr.getItems().get(i);
+                if (mid.getActionData() == null) continue;
+                boolean val = mid._isValidated();
+                try {
+                    mid._setValidated(true);
+                    if (mid.createAction(null).isToggle()) {
+
+                        mr.getItems().add(i + 1, new MenuItemData(new ActionData(ShutdownToggleAction.class)));
+                        return null;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    mid._setValidated(val);
+                }
+            }
+            // no toggle action found. append action at the end.
+            mr.add(ShutdownToggleAction.class);
+
+        }
         return null;
     }
 }

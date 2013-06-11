@@ -18,8 +18,6 @@ package jd.gui.swing;
 
 import java.awt.Toolkit;
 import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.event.WindowListener;
@@ -27,7 +25,6 @@ import java.awt.event.WindowStateListener;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.Timer;
 
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.interfaces.View;
@@ -93,15 +90,16 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
     }
 
     /**
-     * Invoked when the Window is set to be the focused Window, which means that the Window, or one of its subcomponents, will receive keyboard events.
+     * Invoked when the Window is set to be the focused Window, which means that the Window, or one of its subcomponents, will receive
+     * keyboard events.
      * 
      */
     public void windowGainedFocus(final WindowEvent e) {
     }
 
     /**
-     * Invoked when the Window is no longer the focused Window, which means that keyboard events will no longer be delivered to the Window or any of its
-     * subcomponents.
+     * Invoked when the Window is no longer the focused Window, which means that keyboard events will no longer be delivered to the Window
+     * or any of its subcomponents.
      * 
      */
     public void windowLostFocus(final WindowEvent e) {
@@ -125,16 +123,17 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
 
                 if (!isVisible()) return;
                 super.toFront();
-                setAlwaysOnTop(true);
-                Timer disableAlwaysonTop = new Timer(1000, new ActionListener() {
-
-                    public void actionPerformed(ActionEvent e) {
-                        setAlwaysOnTop(false);
-                    }
-                });
-                disableAlwaysonTop.setInitialDelay(1000);
-                disableAlwaysonTop.setRepeats(false);
-                disableAlwaysonTop.start();
+                // setAlwaysOnTop(true);
+                // Timer disableAlwaysonTop = new Timer(1000, new ActionListener() {
+                //
+                // public void actionPerformed(ActionEvent e) {
+                // setAlwaysOnTop(false);
+                // }
+                // });
+                // disableAlwaysonTop.setInitialDelay(1000);
+                // disableAlwaysonTop.setRepeats(false);
+                // disableAlwaysonTop.start();
+                repaint();
             }
 
             public void setVisible(boolean b) {
