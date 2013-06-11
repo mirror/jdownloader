@@ -24,3 +24,5 @@ jd_plugins_optional_jdshutdown=Zamykanie systemu
 jd_plugins_optional_jdshutdown_description=Automatycznie wyłącza, usypia, hibernuje twój komputer lub zamyka JDownloadera po zakończeniu wszystkich pobrań.
 lit_shutdownn=Zamknięcie Systemu
 show_admin=Prawa Administratora są wymagane, aby skonfigurować JDownloadera do używania Hibernacji lub Stanu Wstrzymania.
+shutdown_toggle_action_disabled=Włącz Zamykanie Systemu po zakończeniu Pobierania
+shutdown_toggle_action_enabled=Wyłącz Zamykanie Systemu po zakończeniu Pobierania
