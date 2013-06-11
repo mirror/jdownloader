@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ public class DizzCloudCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            if (br.containsHTML(">Only premium users can download this file")) {
+            if (br.containsHTML(">Only premium users can download this file|disabled the ability to free download a file larger than  \\d+ Mb\\.<")) {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
