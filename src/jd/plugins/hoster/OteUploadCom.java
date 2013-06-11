@@ -472,14 +472,14 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
-     * singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
-     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
-     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
-     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
-     * begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -714,7 +714,7 @@ public class OteUploadCom extends PluginForHost {
         if (correctedBR.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         /** Error handling for only-premium links */
         // parts of this are within html comments
-        if (new Regex(br, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>The file that you\\'re trying to download is larger than)").matches()) {
+        if (new Regex(br, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>The file that you\\'re trying to download is larger than|THIS FILE IS ONLY FOR PREMIUM USERS!)").matches()) {
             String filesizelimit = new Regex(br, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit == null) filesizelimit = new Regex(br, ">The file that you\\'re trying to download is larger than ([^<>\"]*?)\\.<").getMatch(0);
             if (filesizelimit != null) {
