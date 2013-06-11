@@ -9,16 +9,19 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
+import org.jdownloader.captcha.v2.solver.Captcha9kwSettings;
 import org.jdownloader.captcha.v2.solver.Captcha9kwSolverClick;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
 public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
-    private CaptchaSettings config;
+    private CaptchaSettings    config;
+    private Captcha9kwSettings config9kw;
 
     private DialogClickCaptchaSolver() {
         super(1);
         config = JsonConfig.create(CaptchaSettings.class);
+        config9kw = JsonConfig.create(Captcha9kwSettings.class);
     }
 
     private static final DialogClickCaptchaSolver INSTANCE = new DialogClickCaptchaSolver();
@@ -41,8 +44,8 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
             if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
                 solverJob.getLogger().info("Waiting for JAC (Click/Mouse)");
                 solverJob.waitFor(config.getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
-
-                if (config.getCaptchaDialog9kwTimeout() > 0) solverJob.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolverClick.getInstance());
+                // StringUtils.isEmpty(config.getApiKey())
+                if (config9kw.ismouse() && config.getCaptchaDialog9kwTimeout() > 0) solverJob.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolverClick.getInstance());
 
                 solverJob.getLogger().info("JAC (Click/Mouse) is done. Response so far: " + solverJob.getResponse());
                 checkInterruption();

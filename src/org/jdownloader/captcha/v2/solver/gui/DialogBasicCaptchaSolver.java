@@ -25,7 +25,10 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solver.CBSolver;
+import org.jdownloader.captcha.v2.solver.Captcha9kwSettings;
 import org.jdownloader.captcha.v2.solver.Captcha9kwSolver;
+import org.jdownloader.captcha.v2.solver.CaptchaBrotherHoodSettings;
+import org.jdownloader.captcha.v2.solver.CaptchaResolutorCaptchaSettings;
 import org.jdownloader.captcha.v2.solver.CaptchaResolutorCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
@@ -36,6 +39,9 @@ import org.jdownloader.settings.SoundSettings;
 
 public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     private CaptchaSettings                       config;
+    private Captcha9kwSettings                    config9kw;
+    private CaptchaBrotherHoodSettings            configcbh;
+    private CaptchaResolutorCaptchaSettings       configresolutor;
     private static final DialogBasicCaptchaSolver INSTANCE = new DialogBasicCaptchaSolver();
 
     public static DialogBasicCaptchaSolver getInstance() {
@@ -119,6 +125,9 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     private DialogBasicCaptchaSolver() {
         super(1);
         config = JsonConfig.create(CaptchaSettings.class);
+        config9kw = JsonConfig.create(Captcha9kwSettings.class);
+        configcbh = JsonConfig.create(CaptchaBrotherHoodSettings.class);
+        configresolutor = JsonConfig.create(CaptchaResolutorCaptchaSettings.class);
     }
 
     @Override
@@ -129,9 +138,9 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
                 job.getLogger().info("Waiting for JAC");
                 job.waitFor(config.getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
 
-                if (config.getCaptchaDialog9kwTimeout() > 0) job.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolver.getInstance());
-                if (config.getCaptchaDialogCaptchaBroptherhoodTimeout() > 0) job.waitFor(config.getCaptchaDialogCaptchaBroptherhoodTimeout(), CBSolver.getInstance());
-                if (config.getCaptchaDialogResolutorCaptchaTimeout() > 0) job.waitFor(config.getCaptchaDialogResolutorCaptchaTimeout(), CaptchaResolutorCaptchaSolver.getInstance());
+                if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) job.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolver.getInstance());
+                if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBroptherhoodTimeout() > 0) job.waitFor(config.getCaptchaDialogCaptchaBroptherhoodTimeout(), CBSolver.getInstance());
+                if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) job.waitFor(config.getCaptchaDialogResolutorCaptchaTimeout(), CaptchaResolutorCaptchaSolver.getInstance());
 
                 job.getLogger().info("JAC is done. Response so far: " + job.getResponse());
                 ChallengeSolverJobListener jacListener = null;
