@@ -1015,7 +1015,6 @@ public class JDGui extends SwingGui {
 
             RestartController.getInstance().exitAsynch();
         }
-
     }
 
     public static void help(final String title, final String msg, final ImageIcon icon) {

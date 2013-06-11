@@ -33,6 +33,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
 import java.awt.image.BufferedImage;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -45,8 +46,7 @@ import jd.gui.swing.jdgui.MainFrameClosingHandler;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 import jd.plugins.AddonPanel;
 
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoFilter;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
@@ -63,7 +63,6 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.gui.jdtrayicon.translate.T;
@@ -75,7 +74,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.RlyExitListener;
 
-public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, ShutdownVetoListener, MainFrameClosingHandler, CheckBoxedEntry {
+public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
 
     // private LinkCollectorHighlightListener highListener = new LinkCollectorHighlightListener() {
     //
@@ -132,8 +131,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             guiFrame.setAlwaysOnTop(false);
             guiFrame = null;
         }
-        // LinkCollector.getInstance().getEventsender().removeListener(highListener);
-        ShutdownController.getInstance().removeShutdownVetoListener(TrayExtension.this);
     }
 
     @Override
@@ -160,7 +157,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
             public void run() {
                 // LinkCollector.getInstance().getEventsender().addListener(highListener);
-                ShutdownController.getInstance().addShutdownVetoListener(TrayExtension.this);
                 new EDTRunner() {
 
                     @Override
@@ -343,8 +339,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                         } catch (Throwable e) {
                             /*
-                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
-                             * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
+                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here http://www.webupd8.org/2011/04/how-to-re-enable
+                             * -notification-area.html
                              * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
                              * 
@@ -550,23 +546,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     @Override
-    public void onShutdown(boolean silent) {
-    }
-
-    @Override
-    public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
-
-    }
-
-    @Override
-    public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
-    }
-
-    @Override
-    public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
-    }
-
-    @Override
     public void handleCommand(String command, String... parameters) {
 
     }
@@ -620,28 +599,20 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     @Override
     public void windowClosing(WindowEvent e) {
-
-        LazyExtension tray = null;
+        final AtomicBoolean asked = new AtomicBoolean(false);
         try {
             lastCloseRequest = System.currentTimeMillis();
             main: if (isEnabled()) {
-
                 switch (getSettings().getOnCloseAction()) {
                 case ASK:
+                    asked.set(true);
                     switch (windowClosedTray(e)) {
                     case ASK:
                         // cancel clicked
-
                         return;
                     case EXIT:
                         // exit clicked
-
-                        // set source to null in order to avoid further actions in - for example the Tray extension listsners
-
-                        if (!CrossSystem.isMac()) ShutdownController.getInstance().removeShutdownVetoListener(RlyExitListener.getInstance());
-
                         break main;
-
                     case TO_TASKBAR:
                         JDGui.getInstance().getMainFrame().setExtendedState(JFrame.ICONIFIED);
                         return;
@@ -649,27 +620,20 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         if (SystemTray.isSupported()) {
                             JDGui.getInstance().setWindowToTray(true);
                             return;
-
                         }
                     }
                 case EXIT:
-                    if (!CrossSystem.isMac()) ShutdownController.getInstance().removeShutdownVetoListener(RlyExitListener.getInstance());
-
                     break main;
                 case TO_TASKBAR:
                     JDGui.getInstance().getMainFrame().setExtendedState(JFrame.ICONIFIED);
                     return;
-
                 case TO_TRAY:
                     if (SystemTray.isSupported()) {
                         JDGui.getInstance().setWindowToTray(true);
                         return;
-
                     }
-
                 }
             }
-
         } catch (final Throwable e1) {
             /* plugin not loaded yet */
             Log.exception(e1);
@@ -688,13 +652,25 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             }.start();
             return;
         }
-        RestartController.getInstance().exitAsynch();
+        RestartController.getInstance().exitAsynch(new ShutdownVetoFilter() {
 
-    }
+            @Override
+            public void gotVetoFrom(ShutdownVetoListener listener) {
+            }
 
-    @Override
-    public long getShutdownVetoPriority() {
-        return 0;
+            @Override
+            public boolean askForVeto(ShutdownVetoListener listener) {
+                if (asked.get()) {
+                    if (listener instanceof RestartController) {
+                        /* try icon itself is also asking */
+                        return false;
+                    }
+                    if (listener instanceof RlyExitListener) { return false; }
+                }
+                return true;
+            }
+        });
+
     }
 
     @Override

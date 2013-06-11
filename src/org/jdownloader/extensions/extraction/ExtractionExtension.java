@@ -365,10 +365,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     @Override
     protected void stop() throws StopException {
+        ShutdownController.getInstance().removeShutdownVetoListener(listener);
         LinkCollector.getInstance().setArchiver(null);
         DownloadListContextMenuManager.getInstance().unregisterExtender(dlListContextMenuExtender);
         LinkgrabberContextMenuManager.getInstance().unregisterExtender(lgContextMenuExtender);
-        ShutdownController.getInstance().removeShutdownVetoListener(listener);
 
         FileCreationManager.getInstance().getEventSender().removeListener(this);
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {

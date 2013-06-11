@@ -778,8 +778,8 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     /**
-     * Is called if gui is visible now, and has not been visible before. For example, user starte the extension, opened the view, or
-     * switched form a different tab to this one
+     * Is called if gui is visible now, and has not been visible before. For example, user starte the extension, opened the view, or switched form a different
+     * tab to this one
      */
     @Override
     protected void onShow() {
@@ -833,14 +833,13 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     /**
-     * gets called of the extensiongui is not visible any more. for example because it has been closed or user switched to a different
-     * tab/view
+     * gets called of the extensiongui is not visible any more. for example because it has been closed or user switched to a different tab/view
      */
     @Override
     protected void onHide() {
         Log.L.finer("hidden " + getClass().getSimpleName());
-        ti.stop();
         ShutdownController.getInstance().removeShutdownVetoListener(this);
+        ti.stop();
     }
 
     public TLocale getLoaded() {

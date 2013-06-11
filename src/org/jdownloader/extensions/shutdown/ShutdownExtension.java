@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
@@ -32,6 +33,7 @@ import org.appwork.controlling.StateEventListener;
 import org.appwork.controlling.StateMachine;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoFilter;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -79,21 +81,24 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     private void closejd() {
         LogController.CL().info("close jd");
+        RestartController.getInstance().exitAsynch(new ShutdownVetoFilter() {
 
-        avoidRlyDialogs();
-        RestartController.getInstance().exitAsynch();
-    }
-
-    private void avoidRlyDialogs() {
-        for (ShutdownVetoListener veto : ShutdownController.getInstance().getShutdownVetoListeners()) {
-            if (veto instanceof RestartController) {
-                ShutdownController.getInstance().removeShutdownVetoListener(veto);
+            @Override
+            public void gotVetoFrom(ShutdownVetoListener listener) {
             }
-        }
+
+            @Override
+            public boolean askForVeto(ShutdownVetoListener listener) {
+                /* we dont want to ask user again, the extension already asks */
+                return false;
+            }
+        });
     }
 
     private void shutdown() {
         LogController.CL().info("shutdown");
+        DownloadWatchDog.getInstance().stopDownloads();
+        LinkCollector.getInstance().abort();
         int id = 0;
         switch (id = CrossSystem.getID()) {
         case CrossSystem.OS_WINDOWS_2003:
@@ -212,16 +217,15 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 logger.log(e);
             }
         }
-        avoidRlyDialogs();
-        RestartController.getInstance().exitAsynch();
+        closejd();
 
     }
 
     private void prepareHibernateOrStandby() {
-
         checkStandbyHibernateSettings(getSettings().getShutdownMode());
         LogController.CL().info("Stop all running downloads");
         DownloadWatchDog.getInstance().stopDownloads();
+        LinkCollector.getInstance().abort();
         // /* reset enabled flag */
         // menuAction.setSelected(false);
     }

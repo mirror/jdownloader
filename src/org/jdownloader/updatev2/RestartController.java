@@ -13,6 +13,7 @@ import org.appwork.resources.AWUTheme;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoFilter;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -146,12 +147,15 @@ public class RestartController implements ShutdownVetoListener {
     }
 
     public void exitAsynch() {
+        exitAsynch(null);
+    }
+
+    public void exitAsynch(final ShutdownVetoFilter filter) {
         new Thread("ExitAsynch") {
             public void run() {
-                ShutdownController.getInstance().requestShutdown();
+                ShutdownController.getInstance().requestShutdown(false, filter);
             }
         }.start();
-
     }
 
     public synchronized ParameterParser getParameterParser(String[] args) {
