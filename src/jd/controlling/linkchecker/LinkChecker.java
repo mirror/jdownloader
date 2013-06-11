@@ -110,6 +110,10 @@ public class LinkChecker<E extends CheckableLink> {
             }
             links2Check.clear();
         }
+        if (linksDone.get() == linksRequested.get()) {
+            CHECKER.decrementAndGet();
+            EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STOPPED));
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -117,9 +121,7 @@ public class LinkChecker<E extends CheckableLink> {
         if (link == null) return;
         boolean stopped = linksDone.incrementAndGet() == linksRequested.get();
         if (stopped) {
-            synchronized (CHECKER) {
-                CHECKER.decrementAndGet();
-            }
+            CHECKER.decrementAndGet();
             EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STOPPED));
         }
         LinkCheckerHandler<E> h = handler;
@@ -158,9 +160,7 @@ public class LinkChecker<E extends CheckableLink> {
             linksRequested.incrementAndGet();
         }
         if (started) {
-            synchronized (CHECKER) {
-                CHECKER.incrementAndGet();
-            }
+            CHECKER.incrementAndGet();
             EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STARTED));
         }
         synchronized (LOCK) {

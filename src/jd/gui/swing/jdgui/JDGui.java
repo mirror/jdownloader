@@ -401,14 +401,12 @@ public class JDGui extends SwingGui {
         });
 
         // init tray
-
         tray = new TrayExtension();
         try {
             tray.init();
         } catch (Exception e1) {
             logger.log(e1);
         }
-
     }
 
     public static void main(String[] args) {
@@ -1052,8 +1050,8 @@ public class JDGui extends SwingGui {
     private Thread trayIconChecker;
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
-     * avoid sideeffects when changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
+     * changing anything
      * 
      * @param minimize
      */

@@ -58,43 +58,51 @@ public class CrpttCm extends PluginForDecrypt {
         parameter = parameter.replace("/e/", "/d/");
         parameter = parameter.replace("ccf://", "http://");
 
-        URLConnectionAdapter con = br.openGetConnection(parameter);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(parameter);
 
-        if (con.getContentType().indexOf("text/html") >= 0) {
-            // +"" due to refaktor compatibilities. old <ref10000 returns
-            // String. else Request INstance
-            br.followConnection();
-            if (br.containsHTML("Down for maintenance")) {
-                logger.info("Down for maintenance: " + parameter);
-                return decryptedLinks;
-            }
-            if (br.containsHTML(PATTERN_PW)) {
-                String pass = getUserInput(null, param);
-                String postData = "a=pw&pw=" + Encoding.urlEncode(pass);
-                br.postPage(parameter, postData);
-                if (br.containsHTML(PATTERN_PW)) {
-                    logger.warning("Password wrong");
+            if (con.getContentType().indexOf("text/html") >= 0) {
+                // +"" due to refaktor compatibilities. old <ref10000 returns
+                // String. else Request INstance
+                br.followConnection();
+                if (br.containsHTML("Down for maintenance")) {
+                    logger.info("Down for maintenance: " + parameter);
                     return decryptedLinks;
                 }
+                if (br.containsHTML(PATTERN_PW)) {
+                    String pass = getUserInput(null, param);
+                    String postData = "a=pw&pw=" + Encoding.urlEncode(pass);
+                    br.postPage(parameter, postData);
+                    if (br.containsHTML(PATTERN_PW)) {
+                        logger.warning("Password wrong");
+                        return decryptedLinks;
+                    }
+                }
+                parameter = parameter.replace("/c/", "/d/");
+                con = br.openGetConnection(parameter);
             }
-            parameter = parameter.replace("/c/", "/d/");
-            con = br.openGetConnection(parameter);
+
+            String name = Plugin.getFileNameFromHeader(con);
+
+            if (name.equals("redir.ccf") || !name.contains(".ccf")) {
+                logger.severe("Container not found");
+                throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            }
+
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
+            br.downloadConnection(container, con);
+
+            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+            container.delete();
+
+            return decryptedLinks;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
         }
-
-        String name = Plugin.getFileNameFromHeader(con);
-
-        if (name.equals("redir.ccf") || !name.contains(".ccf")) {
-            logger.severe("Container not found");
-            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        }
-
-        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
-        br.downloadConnection(container, con);
-
-        decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-        container.delete();
-
-        return decryptedLinks;
     }
 
     private String decrypt(String ciphertext) {

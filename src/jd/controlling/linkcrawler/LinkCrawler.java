@@ -749,6 +749,8 @@ public class LinkCrawler {
                     decryptThis.getCryptedLink().setProperties(new HashMap<String, Object>(props));
                 }
                 decryptThis.getCryptedLink().setDecrypterPassword(possibleCryptedLink.getCryptedLink().getDecrypterPassword());
+            } else if (possibleCryptedLink.getDownloadLink() != null) {
+                decryptThis.getCryptedLink().setDecrypterPassword(possibleCryptedLink.getDownloadLink().getDownloadPassword());
             }
         }
         return chits;
@@ -861,10 +863,12 @@ public class LinkCrawler {
         dest.setDesiredPackageInfo(source.getDesiredPackageInfo());
 
         ArchiveInfo d = dest.getArchiveInfo();
-        if (d == null) {
-            if (source.getArchiveInfo() != null) dest.setArchiveInfo(new ArchiveInfo().migrate(source.getArchiveInfo()));
-        } else {
-            d.migrate(source.getArchiveInfo());
+        if (source.hasArchiveInfo()) {
+            if (d == null) {
+                dest.setArchiveInfo(new ArchiveInfo().migrate(source.getArchiveInfo()));
+            } else {
+                d.migrate(source.getArchiveInfo());
+            }
         }
         convertFilePackageInfos(dest);
         permanentOffline(dest);

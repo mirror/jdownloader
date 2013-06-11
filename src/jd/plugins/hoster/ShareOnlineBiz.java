@@ -85,7 +85,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(userProtocol() + "://www.share-online.biz/service.php?p=31353834353B4A44616363");
+        this.enablePremium("http://www.share-online.biz/service.php?p=31353834353B4A44616363");
         setConfigElements();
     }
 
@@ -542,11 +542,19 @@ public class ShareOnlineBiz extends PluginForHost {
         final String linkID = getID(parameter);
         String dlC = infos.get("dl");
         if (dlC != null && !"not_available".equalsIgnoreCase(dlC)) {
-            br.setCookie("http://www.share-online.biz", "dl", dlC);
+            if (userPrefersHttps()) {
+                br.setCookie("https://www.share-online.biz", "dl", dlC);
+            } else {
+                br.setCookie("http://www.share-online.biz", "dl", dlC);
+            }
         }
         String a = infos.get("a");
         if (a != null && !"not_available".equalsIgnoreCase(a)) {
-            br.setCookie("http://www.share-online.biz", "a", a);
+            if (userPrefersHttps()) {
+                br.setCookie("https://www.share-online.biz", "a", a);
+            } else {
+                br.setCookie("http://www.share-online.biz", "a", a);
+            }
         }
         br.setFollowRedirects(true);
         final String response = br.getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
@@ -567,13 +575,14 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         if (size != null) parameter.setDownloadSize(Long.parseLong(size));
         if (filename != null) parameter.setFinalFileName(filename);
-        final String dlURL = dlInfos.get("URL");
+        String dlURL = dlInfos.get("URL");
         // http://api.share-online.biz/api/account.php?act=fileError&fid=FILE_ID
         if (dlURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if ("server_under_maintenance".equals(dlURL)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server currently Offline", 2 * 60 * 60 * 1000l);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         /* api does allow resume, but only 1 chunk */
+        if (userPrefersHttps()) dlURL = dlURL.replace("http://", "https://");
         logger.info("used url: " + dlURL);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, maxChunksnew.get());

@@ -710,8 +710,8 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
-                 * return multiple results if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
+                 * if they are in the same quality rating
                  */
                 if (best) {
                     final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
@@ -921,8 +921,8 @@ public class TbCm extends PluginForDecrypt {
                         dlink.setProperty("name", name);
                         dlink.setProperty("subtitle", true);
 
-                        decryptedLinks.add(dlink);
                         filePackage.add(dlink);
+                        decryptedLinks.add(dlink);
                     }
                 }
 
