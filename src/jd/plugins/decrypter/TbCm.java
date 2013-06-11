@@ -710,8 +710,8 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
-                 * if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
+                 * return multiple results if they are in the same quality rating
                  */
                 if (best) {
                     final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
@@ -772,8 +772,8 @@ public class TbCm extends PluginForDecrypt {
                         if (LinksFound.containsKey(17) && ytVideo.containsKey(17)) bestFound.put(17, LinksFound.get(17));
                     }
                     if (bestFound.isEmpty()) {
-                        logger.warning("ERROR: in best code");
-                        return null;
+                        logger.warning("You do not have Resolution or Format selected within range! : " + currentVideoUrl);
+                        break;
                     } else {
                         LinksFound = bestFound;
                     }
