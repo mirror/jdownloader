@@ -24,3 +24,5 @@ jd_plugins_optional_jdshutdown=JD 關機
 jd_plugins_optional_jdshutdown_description=當下載完成時將會自動關機、暫停、休眠您的電腦或關閉 JDownloader。
 lit_shutdownn=關機
 show_admin=管理員權限才能設定 JDownloader 休眠或待機模式
+shutdown_toggle_action_disabled=啟用「下載後關機」
+shutdown_toggle_action_enabled=停用「下載後關機」
