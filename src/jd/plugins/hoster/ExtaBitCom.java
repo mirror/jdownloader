@@ -50,6 +50,8 @@ public class ExtaBitCom extends PluginForHost {
     private static final String NOMIRROR         = ">No download mirror<";
     private static final String PREMIUMONLY      = "(>Only premium users can download (this file|files of this size\\. <)|<h2>The file that you're trying to download is larger than \\d+ (Mb|Gb).*?Upgrade to premium</b>.*?<h2>)";
 
+    // extabit api specs http://code.google.com/p/extabit-api/wiki/APIDocumentation
+
     public ExtaBitCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://extabit.com/premium.jsp");
@@ -78,7 +80,8 @@ public class ExtaBitCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         /*
-         * They got a Mass-Linkchecker, but it's only available for registered users and doesn't show the filesize: http://extabit.com/linkchecker.jsp
+         * They got a Mass-Linkchecker, but it's only available for registered users and doesn't show the filesize:
+         * http://extabit.com/linkchecker.jsp
          */
         // To get the english version of the page
         br.setCookie("http://extabit.com", "language", "en");
@@ -303,11 +306,19 @@ public class ExtaBitCom extends PluginForHost {
             }
         }
         if (br.containsHTML("\"Entered digits are incorrect\\.\"") || !xmlbrowser.containsHTML("\"ok\":true")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String dllink = br.getRegex("Turn your download manager off and[ ]+<a href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://guest\\d+\\.extabit\\.com/[a-z0-9]+/.*?)\"").getMatch(0);
+        // Australia 20130613
+        String dllink = br.getRegex("href=\"(https?://guest\\d+\\.extabit\\.com/[a-z0-9]+/[^\"]+)\"[^>]+>Download file</a>").getMatch(0);
         if (dllink == null) {
-            if (br.getURL().endsWith("?af")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster error, please contact the extabit.com support!", 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // Russia 20130613
+            dllink = br.getRegex("&product_download_url=(https?://guest\\d+\\.extabit\\.com/[a-z0-9]+/.*?)';").getMatch(0);
+            if (dllink == null) {
+                // fail over 20130613
+                dllink = br.getRegex("(\"|')(https?://guest\\d+\\.extabit\\.com/[a-z0-9]+/.*?)(\"|')").getMatch(1);
+                if (dllink == null) {
+                    if (br.getURL().endsWith("?af")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster error, please contact the extabit.com support!", 60 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         dl.setFilenameFix(true);
