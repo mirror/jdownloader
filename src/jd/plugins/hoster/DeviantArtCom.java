@@ -22,6 +22,7 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -71,6 +72,15 @@ public class DeviantArtCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        boolean loggedIn = false;
+        final Account acc = AccountController.getInstance().getValidAccount(this);
+        if (acc != null) {
+            try {
+                login(acc, this.br, false);
+                loggedIn = true;
+            } catch (final Exception e) {
+            }
+        }
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("/error\\-title\\-oops\\.png\\)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Motionbooks are not supported (yet)
@@ -92,7 +102,7 @@ public class DeviantArtCom extends PluginForHost {
             // Maybe its a video
             if (filesize == null) filesize = br.getRegex("<label>File Size:</label>([^<>\"]*?)<br/>").getMatch(0);
 
-            if (br.containsHTML(MATURECONTENTFILTER)) {
+            if (br.containsHTML(MATURECONTENTFILTER) && !loggedIn) {
                 link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
                 link.setName(filename);
                 if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
@@ -102,7 +112,10 @@ public class DeviantArtCom extends PluginForHost {
             ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
             if (ext == null) {
                 try {
-                    ext = getDllink().substring(getDllink().lastIndexOf(".") + 1);
+                    String linkWithExt = getDllink();
+                    final String toRemove = new Regex(linkWithExt, "(\\?token=.+)").getMatch(0);
+                    if (toRemove != null) linkWithExt = linkWithExt.replace(toRemove, "");
+                    ext = linkWithExt.substring(linkWithExt.lastIndexOf(".") + 1);
                 } catch (final Exception e) {
                     // No dllink found, hopefully link is offline
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -177,6 +190,8 @@ public class DeviantArtCom extends PluginForHost {
         String dllink = null;
         // Check if it's a video
         dllink = br.getRegex("\"src\":\"(http:[^<>\"]*?mp4)\"").getMatch(0);
+        // First try to get downloadlink, if that doesn't exist, try to get the link to the picture which is displayed in browser
+        if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             if (br.containsHTML(">Mature Content</span>")) {
                 dllink = br.getRegex("class=\"thumb ismature\" href=\"" + br.getURL() + "\" title=\"[^<>\"/]+\" data\\-super\\-img=\"(http://[^<>\"]*?)\"").getMatch(0);
@@ -186,6 +201,7 @@ public class DeviantArtCom extends PluginForHost {
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replace("\\", "");
+        dllink = Encoding.htmlDecode(dllink);
         DLLINK = dllink;
         return dllink;
     }
@@ -210,7 +226,7 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    public void login(Account account, Browser br, final boolean force) throws Exception {
+    public void login(final Account account, final Browser br, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
