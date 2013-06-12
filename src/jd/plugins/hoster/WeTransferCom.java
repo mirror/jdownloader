@@ -136,6 +136,7 @@ public class WeTransferCom extends PluginForHost {
             }
 
             final StringBuffer sb = new StringBuffer();
+            /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
             for (final byte element : br.toString().getBytes()) {
                 if (element < 127) {
                     if (element > 31) {

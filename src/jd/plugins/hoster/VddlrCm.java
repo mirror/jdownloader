@@ -53,6 +53,7 @@ public class VddlrCm extends PluginForHost {
         byte bLen = 0x00;
         final byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x1b, 0x76, 0x69, 0x64, 0x64, 0x6c, 0x65, 0x72, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x67, 0x65, 0x74, 0x56, 0x69, 0x64, 0x65, 0x6f, 0x49, 0x6e, 0x66, 0x6f, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00 };
         final byte[] b1 = new byte[] { bLen, 0x0a, 0x00, 0x00, 0x00, 0x03, 0x02, 0x00, (byte) key.length() };
+        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         String postdata = new String(b1) + new String(key.getBytes()) + new String(new byte[] { 0x05, 0x05 });
         if (value != null) {
             final byte[] b2 = new byte[] { 0x02, 0x00, (byte) value.length() };
@@ -153,7 +154,7 @@ public class VddlrCm extends PluginForHost {
         final String url = "http://www.viddler.com/amfgateway.action";
         br.getHeaders().put("Content-Type", "application/x-amf");
         br.postPageRaw(url, postdata);
-
+        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         final byte[] raw = br.toString().getBytes();
         if (raw == null || raw.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         for (int i = 0; i < raw.length; i++) {
@@ -162,9 +163,9 @@ public class VddlrCm extends PluginForHost {
             }
         }
         if (filename == null) {
-            filename = new Regex(new String(raw), "title[#]+(.*?)[#]+").getMatch(0);
+            filename = new Regex(new String(raw, "UTF-8"), "title[#]+(.*?)[#]+").getMatch(0);
         }
-        final String path = new Regex(new String(raw), "path[#]+\\??(.*?)[#]+").getMatch(0);
+        final String path = new Regex(new String(raw, "UTF-8"), "path[#]+\\??(.*?)[#]+").getMatch(0);
         DLURL = getLink(path);
         if (DLURL == null || !br.containsHTML("onResult") || filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         downloadLink.setName(filename + ".flv");

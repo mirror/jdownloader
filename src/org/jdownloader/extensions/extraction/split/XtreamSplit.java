@@ -267,7 +267,7 @@ public class XtreamSplit extends IExtraction {
             in.read(buffer);
             in.skip(50 - buffer.length);
 
-            String filename = new String(buffer);
+            String filename = new String(buffer, "UTF-8");
 
             // Set filename. If no filename was set, take the archivename
             if (filename != null && filename.trim().length() != 0)

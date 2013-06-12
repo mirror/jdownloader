@@ -31,7 +31,7 @@ public class DelphiFormBinLoader {
 
         byte[] sftMagic = new byte[4];
         this.inputStream.read(sftMagic, 0, 4);
-        if (new String(sftMagic).equals(DFM_MAGIC_HEADER))
+        if (new String(sftMagic, "UTF-8").equals(DFM_MAGIC_HEADER))
             this.readObject(null);
         else
             throw new UnsupportedOperationException("unsupported dfm format");
@@ -44,6 +44,7 @@ public class DelphiFormBinLoader {
         if ((len == 0) || (this.inputStream.available() < len)) return null;
         byte[] rawstring = new byte[len];
         this.inputStream.read(rawstring);
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         return new String(rawstring);
     }
 
@@ -57,10 +58,10 @@ public class DelphiFormBinLoader {
 
         byte[] rawstring = new byte[len];
         this.inputStream.read(rawstring);
-
+        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         byte[] encstring = new String(rawstring, "UTF-8").getBytes();
 
-        return new String(encstring);
+        return new String(encstring, "UTF-8");
     }
 
     protected long readNumber(int size) throws IOException {

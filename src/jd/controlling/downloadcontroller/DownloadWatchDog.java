@@ -1301,10 +1301,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                         boolean readL = fp.getModifyLock().readLock();
                                         try {
                                             for (DownloadLink fpLink : fp.getChildren()) {
-                                                if (fpLink.isSkipped()) skippedLinksCounterTmp++;
+                                                if (fpLink.isSkipped()) {
+                                                    skippedLinksCounterTmp++;
+                                                    continue;
+                                                }
                                                 if (fpLink.getDefaultPlugin() == null) continue;
                                                 if (!fpLink.isEnabled()) continue;
-                                                if (fpLink.isSkipped()) continue;
                                                 if (fpLink.getAvailableStatus() == AvailableStatus.FALSE) continue;
                                                 if (fpLink.getLinkStatus().isPluginActive() == false) {
                                                     if (fpLink.getLinkStatus().isFinished()) continue;

@@ -236,14 +236,16 @@ public class SimpleFTP {
      * Disconnects from the FTP server.
      */
     public synchronized void disconnect() throws IOException {
+        Socket lsocket = socket;
         try {
+            /* avoid stackoverflow for io-exception during sendLine */
+            socket = null;
             sendLine("QUIT");
         } finally {
             try {
-                socket.close();
+                lsocket.close();
             } catch (final Throwable e) {
             }
-            socket = null;
         }
     }
 
@@ -354,14 +356,13 @@ public class SimpleFTP {
      * Sends a raw command to the FTP server.
      */
     private void sendLine(String line) throws IOException {
-        if (socket == null) { throw new IOException("SimpleFTP is not connected."); }
         try {
             writer.write(line + "\r\n");
             writer.flush();
             logger.info(host + " > " + line);
         } catch (IOException e) {
             LogSource.exception(logger, e);
-            disconnect();
+            if (socket != null) disconnect();
             throw e;
         }
     }

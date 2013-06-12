@@ -208,7 +208,7 @@ public class VeohCom extends PluginForHost {
             final String templateUrl = br.getRegex("url base=\'(.*?)\'").getMatch(0);
             hexTime = String.format("%08x", Long.parseLong(sTime));
             String baseUrl = templateUrl;
-
+            /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
             IV = fHash.substring(0, 16).getBytes();
             final String[][] content = br.getRegex("<piece eid=\'(.*?)\' a1=\'(.*?)\' a2=\'(.*?)\' a3=\'(.*?)\' />").getMatches();
             prepareBrowser("veoh-1.3.6 service (NT 6.1; IE 9.0.8112.16421; en-US Windows)");

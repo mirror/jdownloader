@@ -176,6 +176,7 @@ public class FlvFixer {
             /* FLV? */
             byte[] flvTagH = new byte[flvHeader.length];
             fis.read(flvTagH);
+            /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
             if (!"FLV".equals(new String(flvTagH).substring(0, 3))) {
                 logger.severe("Input file is not a valid FLV file");
                 return false;

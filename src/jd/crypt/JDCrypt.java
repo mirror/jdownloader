@@ -16,20 +16,15 @@
 
 package jd.crypt;
 
-import java.io.InputStream;
-import java.security.MessageDigest;
-
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.jdownloader.logging.LogController;
 
-import sun.security.pkcs.PKCS7;
-
 /**
- * JDCrypt class provides a few easy to use functions to encrypt or decrypt data. Use {@link jd.utils.JDHexUtils} to split Keys in Hex form
- * to byte arrays. ALog AES CBC Mode is used.
+ * JDCrypt class provides a few easy to use functions to encrypt or decrypt data. Use {@link jd.utils.JDHexUtils} to split Keys in Hex form to byte arrays. ALog
+ * AES CBC Mode is used.
  * 
  * @author unknown
  * 
@@ -40,29 +35,6 @@ public final class JDCrypt {
      * Don't let anyone instantiate this class.
      */
     private JDCrypt() {
-    }
-
-    /**
-     * Encrypt a string with the signature of jdownloader (128 bit)
-     * 
-     * @param string
-     *            String to encrypt
-     * @return
-     */
-    public static byte[] encrypt(final String string) {
-        return encrypt(string, sign());
-    }
-
-    /**
-     * Decrypt data with JDs signature (128 bit)
-     * 
-     * @param b
-     *            data tu decrypt
-     * @return
-     */
-    public static String decrypt(final byte[] b) {
-        return decrypt(b, sign());
-
     }
 
     /**
@@ -95,7 +67,7 @@ public final class JDCrypt {
             final IvParameterSpec ivSpec = new IvParameterSpec(iv);
             final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
             cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
-            return cipher.doFinal(string.getBytes());
+            return cipher.doFinal(string.getBytes("UTF-8"));
         } catch (Exception e) {
             LogController.CL().log(e);
         }
@@ -119,14 +91,14 @@ public final class JDCrypt {
             final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
             final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-            return new String(cipher.doFinal(b));
+            return new String(cipher.doFinal(b), "UTF-8");
         } catch (Exception e) {
             final IvParameterSpec ivSpec = new IvParameterSpec(iv);
             final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
             try {
                 final Cipher cipher = Cipher.getInstance("AES/CBC/nopadding");
                 cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-                return new String(cipher.doFinal(b));
+                return new String(cipher.doFinal(b), "UTF-8");
             } catch (Exception e1) {
                 LogController.CL().log(e);
             }
@@ -145,48 +117,6 @@ public final class JDCrypt {
      */
     public static String decrypt(final byte[] b, final byte[] key) {
         return decrypt(b, key, key);
-    }
-
-    /**
-     * Returns the hash of the JD signature (1287 bit/16 Byte)
-     * 
-     * @return
-     */
-    private static byte[] sign() {
-        final byte[] buf = new byte[12 * 1024];
-        byte[] buffer = new byte[0];
-        final ClassLoader cl = Thread.currentThread().getContextClassLoader();
-
-        final InputStream in = cl.getResourceAsStream(new String(new byte[] { 77, 69, 84, 65, 45, 73, 78, 70, 47, 74, 68, 79, 87, 78, 76, 79, 65, 46, 68, 83, 65 }));
-        if (in != null) {
-            try {
-                int total = 0;
-
-                while (true) {
-                    int numRead = in.read(buf, total, buf.length - total);
-                    if (numRead <= 0) {
-                        break;
-                    }
-                    total += numRead;
-                }
-                final byte[] tmp = new byte[total];
-                System.arraycopy(buffer, 0, tmp, 0, buffer.length);
-                System.arraycopy(buf, 0, tmp, buffer.length, total);
-                buffer = tmp;
-            } catch (final Exception e) {
-            } finally {
-                try {
-                    in.close();
-                } catch (Throwable e) {
-                }
-            }
-        }
-        try {
-            return MessageDigest.getInstance("MD5").digest((new PKCS7(buffer)).getCertificates()[0].getSignature());
-        } catch (Exception e) {
-            LogController.CL().log(e);
-        }
-        return new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
     }
 
 }

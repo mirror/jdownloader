@@ -140,6 +140,7 @@ public class R extends PluginsC {
 
     private String[] decrypt(String rsdf) throws IOException, IllegalAlphabetException {
         String links = "";
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         String input64 = new String(new Base16Decoder().decode(rsdf.toCharArray()));
         byte[] input, output;
 

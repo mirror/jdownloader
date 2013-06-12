@@ -154,7 +154,9 @@ public class MyVideo extends PluginForHost {
         String key = org.appwork.utils.Hash.getMD5(Encoding.Base64Decode(KEY) + org.appwork.utils.Hash.getMD5(id));
         byte[] ciphertext = JDHexUtils.getByteArray(cipher);
         jd.plugins.decrypter.LnkCrptWs.KeyCaptchaShowDialogTwo arkfour = new jd.plugins.decrypter.LnkCrptWs.KeyCaptchaShowDialogTwo();
+        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         byte[] plain = arkfour.D(key.getBytes(), ciphertext);
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         return Encoding.htmlDecode(new String(plain));
     }
 

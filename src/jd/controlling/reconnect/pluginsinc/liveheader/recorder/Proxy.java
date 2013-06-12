@@ -183,6 +183,7 @@ class ProxyThread extends Thread {
                                     post_len_toread = post_len_toread - post_len_read;
                                 }
                                 postdatabuffer = ByteBuffer.wrap(cbuf);
+                                /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
                                 postdata = new String(cbuf).trim();
                             }
 

@@ -207,6 +207,7 @@ public class DBankCom extends PluginForHost {
 
     private String decrypt(String enc, String key) {
         if (enc == null || key == null) return null;
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         enc = new String(jd.nutils.encoding.Base64.decode(enc));
         String ver = key.substring(0, 2);
         if ("eb".equals(ver)) { return decryptA(enc, decryptB(key)); }

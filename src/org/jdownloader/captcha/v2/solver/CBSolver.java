@@ -58,7 +58,7 @@ public class CBSolver extends ChallengeSolver<String> {
                 String url = "http://www.captchabrotherhood.com/sendNewCaptcha.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaSource=jdPlugin&captchaSite=999&timeout=80&version=1.1.7";
                 byte[] data = IO.readFile(challenge.getImageFile());
 
-                String ret = new String(http.postPage(new URL(url), data));
+                String ret = new String(http.postPage(new URL(url), data), "UTF-8");
                 job.getLogger().info("Send Captcha. Answer: " + ret);
                 if (!ret.startsWith("OK-")) throw new SolverException(ret);
                 // Error-No Credits

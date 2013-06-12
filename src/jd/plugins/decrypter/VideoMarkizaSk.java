@@ -59,6 +59,7 @@ public class VideoMarkizaSk extends PluginForDecrypt {
         String res = null;
         nBits = nBits / 8;
         final byte[] data = Base64.decode(cipherText.toCharArray());
+        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         final byte[] k = Arrays.copyOf(key.getBytes(), nBits);
         try {
             final Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
@@ -66,6 +67,7 @@ public class VideoMarkizaSk extends PluginForDecrypt {
             final byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits);
             final IvParameterSpec nonce = new IvParameterSpec(nonceBytes);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, nonce);
+            /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
             res = new String(cipher.doFinal(data, 8, data.length - 8));
         } catch (final Throwable e) {
         }

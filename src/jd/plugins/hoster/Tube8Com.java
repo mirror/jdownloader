@@ -280,6 +280,7 @@ public class Tube8Com extends PluginForHost {
         String res = null;
         nBits = nBits / 8;
         byte[] data = Base64.decode(cipherText.toCharArray());
+        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         byte[] k = Arrays.copyOf(key.getBytes(), nBits);
 
         Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
@@ -287,6 +288,7 @@ public class Tube8Com extends PluginForHost {
         byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits / 2);
         IvParameterSpec nonce = new IvParameterSpec(nonceBytes);
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, nonce);
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         res = new String(cipher.doFinal(data, 8, data.length - 8));
         return res;
     }
@@ -316,6 +318,7 @@ public class Tube8Com extends PluginForHost {
             byte[] decrypted;
             nBits = nBits / 8;
             byte[] data = Base64.decode(cipherText.toCharArray());
+            /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
             byte[] k = Arrays.copyOf(key.getBytes(), nBits);
             /* AES/CTR/NoPadding (SIC == CTR) */
             org.bouncycastle.crypto.BufferedBlockCipher cipher = new org.bouncycastle.crypto.BufferedBlockCipher(new org.bouncycastle.crypto.modes.SICBlockCipher(new org.bouncycastle.crypto.engines.AESEngine()));
@@ -328,6 +331,7 @@ public class Tube8Com extends PluginForHost {
             decrypted = new byte[cipher.getOutputSize(data.length - 8)];
             int decLength = cipher.processBytes(data, 8, data.length - 8, decrypted, 0);
             cipher.doFinal(decrypted, decLength);
+            /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
             return new String(decrypted);
         }
 

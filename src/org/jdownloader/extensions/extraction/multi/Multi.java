@@ -550,6 +550,7 @@ public class Multi extends IExtraction {
                 String lastTryFilename = controller.getExtractToFolder().getAbsoluteFile() + File.separator + path;
                 String filename = lastTryFilename;
                 try {
+                    /* getBytes wanted as we interact with native code and need native charset here */
                     filename = new String(filename.getBytes(), Charset.defaultCharset());
                 } catch (Exception e) {
                     logger.warning("Encoding " + Charset.defaultCharset().toString() + " not supported. Using default filename.");

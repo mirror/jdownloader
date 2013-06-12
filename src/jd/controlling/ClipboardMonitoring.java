@@ -57,7 +57,7 @@ public class ClipboardMonitoring {
             try {
                 try {
                     openClipboard.invoke(clipboard, new Object[] { null });
-                    String sstr = new String((byte[]) getClipboardData.invoke(clipboard, new Object[] { cf_html }));
+                    String sstr = new String((byte[]) getClipboardData.invoke(clipboard, new Object[] { cf_html }), "UTF-8");
                     return new Regex(sstr, "SourceURL:([^\r\n]*)").getMatch(0);
                 } finally {
                     closeClipboard.invoke(clipboard, new Object[] {});
@@ -362,7 +362,7 @@ public class ClipboardMonitoring {
                 if (charSet != null) {
                     return new String(htmlBytes, charSet);
                 } else {
-                    return new String(htmlBytes);
+                    return new String(htmlBytes, "UTF-8");
                 }
             }
         }
@@ -513,7 +513,7 @@ public class ClipboardMonitoring {
                     if (charSet != null) {
                         ret = new String(xmozurlprivBytes, charSet);
                     } else {
-                        ret = new String(xmozurlprivBytes);
+                        ret = new String(xmozurlprivBytes, "UTF-8");
                     }
                 }
             }

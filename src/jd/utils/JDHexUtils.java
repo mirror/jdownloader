@@ -38,6 +38,7 @@ public final class JDHexUtils {
 
     public static String toString(final String hexString) {
         if (hexString == null) return null;
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         return new String(JDHexUtils.getByteArray(hexString));
     }
 

@@ -117,6 +117,7 @@ public class XvideosCom extends PluginForHost {
 
     private static String decode(String encoded) {
         if (encoded == null) return null;
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         encoded = new String(jd.crypt.Base64.decode(encoded));
         String[] encodArr = encoded.split("-");
         String encodedUrl = "";

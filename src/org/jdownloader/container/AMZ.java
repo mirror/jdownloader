@@ -52,7 +52,7 @@ public class AMZ extends PluginsC {
             Cipher dcipher = Cipher.getInstance("DES/CBC/PKCS5Padding");
             dcipher.init(Cipher.DECRYPT_MODE, key, paramSpec);
             byte[] decryptedbyteAMZ = dcipher.doFinal(byteAMZ);
-            String decrytpedAMZ = new String(decryptedbyteAMZ);
+            String decrytpedAMZ = new String(decryptedbyteAMZ, "UTF-8");
             String[][] tracks = new Regex(decrytpedAMZ, "<location>(http://.*?)</.*?<album>(.*?)</album>.*?<title>(.*?)</title>.*?<trackNum>(\\d+)<.*?fileSize\">(\\d+)<.*?trackType\">(.*?)</met").getMatches();
             java.util.List<DownloadLink> links = new ArrayList<DownloadLink>();
             HashMap<String, FilePackage> fps = new HashMap<String, FilePackage>();

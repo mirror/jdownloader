@@ -53,6 +53,7 @@ public class DynByteBuffer {
     }
 
     public String toString() {
+        /* new String(byte) correct as we have seperate toString */
         return new String(this.getLast(buffer.position()));
     }
 

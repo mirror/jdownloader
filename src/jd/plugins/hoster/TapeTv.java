@@ -114,6 +114,7 @@ public class TapeTv extends PluginForHost {
             enc = enc.replaceAll("\n", "");
             if (key != null) {
                 byte t[] = getBlowFish(org.appwork.utils.encoding.Base64.decode(enc), JDHexUtils.getByteArray(JDHexUtils.getHexString(key)));
+                /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
                 return new String(t);
             }
             return null;

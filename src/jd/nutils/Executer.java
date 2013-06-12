@@ -145,6 +145,7 @@ public class Executer extends Thread implements Runnable {
                         line = new String(this.dynbuf.getLast(num), Executer.this.codepage).trim();
                     } catch (final UnsupportedEncodingException e) {
                         e.printStackTrace();
+                        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
                         line = new String(this.dynbuf.getLast(num)).trim();
                     }
                     if (line.length() > 0) {

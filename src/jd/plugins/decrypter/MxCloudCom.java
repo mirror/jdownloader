@@ -149,6 +149,7 @@ public class MxCloudCom extends PluginForDecrypt {
         System.arraycopy(enc, 0, iv, 0, 16);
         String result = null;
         try {
+            /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
             result = new String(AESdecrypt(enc, key, iv)).substring(16);
         } catch (final InvalidKeyException e) {
             if (e.getMessage().contains("Illegal key size")) {

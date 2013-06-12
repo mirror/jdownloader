@@ -35,6 +35,7 @@ public class sftContainerV4 extends sftContainer {
         RC4 rc4 = new RC4(sha512_callkey);
         eHeader = base64.decodeBuffer(sft_root.find(NODE_HEADER).getValue());
         rc4.encode(eHeader);
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         this.strHeader = new String(eHeader);
 
         // decode header information
@@ -78,7 +79,7 @@ public class sftContainerV4 extends sftContainer {
     public boolean setPassword(char[] cs) {
         try {
             byte[] checkHeader = DatatypeConverter.parseHexBinary(this.strHeader);
-            byte[] pass = ("callstackapi" + (cs == null ? "" : new String(cs))).getBytes();
+            byte[] pass = ("callstackapi" + (cs == null ? "" : new String(cs))).getBytes("UTF-8");
             byte[] sha512_pass = MessageDigest.getInstance(CRYPT_SHA512).digest(pass);
             sha512_pass = Arrays.copyOf(sha512_pass, sha512_pass.length / 2);
 
@@ -152,9 +153,9 @@ public class sftContainerV4 extends sftContainer {
                         rcx.decode(bFilename);
                         bFilename = Arrays.copyOfRange(bFilename, 12, bFilename.length);
                     }
-
+                    /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
                     String[] hosts = new String(bHost).split("::");
-                    String link = buildFTPLink(hosts[0].getBytes(), (short) (Integer.parseInt(hosts[1]) & 0xFFFF), bUsername, bPassword, bDirname, bFilename);
+                    String link = buildFTPLink(hosts[0].getBytes("UTF-8"), (short) (Integer.parseInt(hosts[1]) & 0xFFFF), bUsername, bPassword, bDirname, bFilename);
                     linkList.add(link);
                 }
 

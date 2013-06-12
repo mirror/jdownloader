@@ -70,6 +70,7 @@ public class sftContainerV8 extends sftContainer {
             }
 
             Pattern decryptPattern = Pattern.compile("^SFT#(\\d)#(\\d+)#SFT##$");
+            /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
             Matcher decryptMatcher = decryptPattern.matcher(new String(headerCheck));
 
             if (decryptMatcher.matches()) {
@@ -151,7 +152,7 @@ public class sftContainerV8 extends sftContainer {
                         if (Username != null) bUsername = DatatypeConverter.parseHexBinary(Username);
                         if (Password != null) bPassword = DatatypeConverter.parseHexBinary(Password);
                         if (Dirname != null) bDirname = DatatypeConverter.parseHexBinary(Dirname);
-                        if (Filename != null) bFilename = Filename.getBytes();
+                        if (Filename != null) bFilename = Filename.getBytes("UTF-8");
                     }
 
                     RCx rcx = new RCx(null);
@@ -220,6 +221,7 @@ public class sftContainerV8 extends sftContainer {
 
     private byte[] decodeCoreInformation(byte[] encrypted) throws NoSuchAlgorithmException, IOException, Exception {
         BASE64Decoder base64 = new BASE64Decoder();
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         byte[] sha256 = MessageDigest.getInstance(CRYPT_SHA256).digest(SENSITIVPASSWORD);
         byte[] data = base64.decodeBuffer(new String(encrypted));
 

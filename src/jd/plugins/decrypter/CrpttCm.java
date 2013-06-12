@@ -111,6 +111,7 @@ public class CrpttCm extends PluginForDecrypt {
         // (byte) 110, (byte) 116, (byte) 82, (byte) 89, (byte) 100, (byte) 111,
         // (byte) 110, (byte) 116, (byte) 115, (byte) 116, (byte) 101, (byte)
         // 97, (byte) 108, (byte) 112, (byte) (byte) 114 };
+        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         byte[] key = Encoding.Base64Decode("c281c3hOc1BLZk5TRERaSGF5cjMyNTIw").getBytes();
         byte[] cipher = new byte[ciphertext.length() / 2 + ciphertext.length() % 2];
 
@@ -138,6 +139,7 @@ public class CrpttCm extends PluginForDecrypt {
             }
             blocks++;
         }
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         return new String(cipher).trim();
     }
 
@@ -183,6 +185,7 @@ public class CrpttCm extends PluginForDecrypt {
             byte[] b2 = new byte[] { 0x02, 0x00 };
             br.getHeaders().put("Content-Type", "application/x-amf");
             br.setFollowRedirects(false);
+            /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
             String postdata = new String(b) + folder + new String(b2) + new String(new byte[] { (byte) pass.length() }) + pass;
             br.postPageRaw("http://crypt-it.com/engine/", postdata);
             String[] ciphers = br.getRegex(Pattern.compile("url(.*?)size", Pattern.CASE_INSENSITIVE)).getColumn(0);

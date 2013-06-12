@@ -90,7 +90,7 @@ public class CNL extends PluginForDecrypt {
             final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
             cipher = Cipher.getInstance("AES/CBC/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-            return new String(cipher.doFinal(b));
+            return new String(cipher.doFinal(b), "UTF-8");
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
         }

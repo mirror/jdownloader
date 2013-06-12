@@ -14,10 +14,12 @@ public class sftBinary {
 
     public static final int    MAX_SIZE    = 1024 * 1024 * 8;
     public static final int    HEADER_SIZE = 0x40;
+    /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
     public static final byte[] MAGIC       = "\0001F99569B3ZA94Q13A5DBKDKDTTISSSTFFBV5345HFUFHFGHKHKKGFJHHESASOOSIWOA5DB771GFGDFCTSDFF264RFFJKWJWR799CILDSL894DPOMCYWWR334343NG48DHRFQYL569POH11SUJR4334RFCTSDFF264RFFHS677HUZT567MNVX99CILDSLFCTSDFF264RFF894DPOMCYWWR3343OWBV4584JHHDGJFCCCSEWQ967HDHFGRKKFSDFJ".getBytes();
 
     public static sftContainer load(File file) throws Exception {
         byte[] rawFileData = IO.readFile(file, MAX_SIZE);
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         String sftMagic = new String(Arrays.copyOfRange(rawFileData, 3, 6));
         sftContainer container = null;
         if (sftMagic.equals("SFT")) {

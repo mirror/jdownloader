@@ -178,6 +178,7 @@ public class TurboBitNet extends PluginForHost {
     }
 
     private String escape(final String s) {
+        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         final byte[] org = s.getBytes();
         final StringBuilder sb = new StringBuilder();
         String code;

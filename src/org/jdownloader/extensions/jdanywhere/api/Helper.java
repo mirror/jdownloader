@@ -74,10 +74,10 @@ public class Helper {
     }
 
     public static byte[] compress(String str) throws IOException {
-        if (str == null || str.length() == 0) { return str.getBytes(); }
+        if (str == null || str.length() == 0) { return str.getBytes("UTF-8"); }
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         GZIPOutputStream gzip = new GZIPOutputStream(out);
-        gzip.write(str.getBytes());
+        gzip.write(str.getBytes("UTF-8"));
         gzip.close();
         return out.toByteArray();
     }

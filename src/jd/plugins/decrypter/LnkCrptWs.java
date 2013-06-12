@@ -1473,8 +1473,7 @@ public class LnkCrptWs extends PluginForDecrypt {
     }
 
     /**
-     * if packed js contain 'soft hyphen' encoding as \u00ad(unicode) or %C2%AD(uft-8) then result is broken in rhino
-     * decodeURIComponent('\u00ad') --> is empty.
+     * if packed js contain 'soft hyphen' encoding as \u00ad(unicode) or %C2%AD(uft-8) then result is broken in rhino decodeURIComponent('\u00ad') --> is empty.
      */
     public static class JavaScriptUnpacker {
 
@@ -1519,7 +1518,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     public static String IMAGEREGEX(final String b) {
         final KeyCaptchaShowDialogTwo v = new KeyCaptchaShowDialogTwo();
+        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         final byte[] o = JDHash.getMD5(Encoding.Base64Decode("Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==") + JDHash.getMD5("V2UgZG8gbm90IGVuZG9yc2UgdGhlIHVzZSBvZiBKRG93bmxvYWRlci4=")).getBytes();
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         if (b != null) { return new String(v.D(o, JDHexUtils.getByteArray(b))); }
         return new String(v.D(o, JDHexUtils.getByteArray("E3CEACB19040D08244C9E5C29D115AE220F83AB417")));
     }

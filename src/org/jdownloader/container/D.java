@@ -129,6 +129,7 @@ public class D extends PluginsC {
                 try {
                     String p;
                     if (k != null && k.length == 16) {
+                        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
                         p = new String(k);
                     } else {
                         x = cs(s2, a0);
@@ -175,7 +176,7 @@ public class D extends PluginsC {
                     dds1 = Encoding.filterString(dds1);
                     // Log.L.info("Decr " + decryptedDlcString);
                     pxs(dds1, d);
-
+                    /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
                     k = p.getBytes();
                     cs.setStatus(ContainerStatus.STATUS_FINISHED);
                     return cs;
@@ -327,6 +328,7 @@ public class D extends PluginsC {
             String rk = Hash.getMD5("" + c7).substring(0, 16);
             // randomKey = JDHash.getMD5("11").substring(0, 16);
             // Log.L.info("Key: " + randomKey);
+            /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
             byte[] k = rk.getBytes();
             // Log.L.info("ENcode " + base64);
             IvParameterSpec ivSpec = new IvParameterSpec(k);
@@ -418,6 +420,7 @@ public class D extends PluginsC {
         Cipher c = Cipher.getInstance("AES/ECB/NoPadding");
         c.init(Cipher.DECRYPT_MODE, skeySpec);
         byte[] o = c.doFinal(j);
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         return new String(Base64.decode(o)).substring(0, 16);
 
     }
@@ -428,7 +431,7 @@ public class D extends PluginsC {
             byte[] input;
             input = Base64.decode(ct);
 
-            byte[] k = k7l.getBytes();
+            byte[] k = k7l.getBytes("UTF-8");
             IvParameterSpec ivSpec = new IvParameterSpec(k);
             SecretKeySpec skeySpec = new SecretKeySpec(k, "AES");
 
@@ -446,7 +449,7 @@ public class D extends PluginsC {
                 pl.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
                 opl = pl.doFinal(input);
             }
-
+            /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
             String pln = new String(Base64.decode(opl));
             rte = pln;
         } catch (Exception e) {
@@ -458,6 +461,7 @@ public class D extends PluginsC {
             try {
                 byte[] ii;
                 ii = Base64.decode(ct);
+                /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
                 byte[] k = k7l.getBytes();
                 SecretKeySpec skeySpec = new SecretKeySpec(k, "AES");
                 Cipher cp;
@@ -877,6 +881,7 @@ public class D extends PluginsC {
 
         byte[] k = gk();
         @SuppressWarnings("unused")
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         String h = new String(k);
         // doit
 

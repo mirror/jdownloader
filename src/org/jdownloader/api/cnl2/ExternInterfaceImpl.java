@@ -143,7 +143,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
             cipher = Cipher.getInstance("AES/CBC/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-            return new String(cipher.doFinal(b));
+            return new String(cipher.doFinal(b), "UTF-8");
         } catch (Throwable e) {
             Log.exception(e);
         }

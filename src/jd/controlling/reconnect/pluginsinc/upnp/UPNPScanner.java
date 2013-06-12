@@ -44,8 +44,7 @@ public class UPNPScanner implements Runnable {
 
         foundDevices = new ArrayList<UpnpRouterDevice>();
         /*
-         * TODO (NOT IMPORTANT) To simplify will not make a request for every
-         * network interface, let java decide the network interface.
+         * TODO (NOT IMPORTANT) To simplify will not make a request for every network interface, let java decide the network interface.
          */
 
         Thread th = new Thread(this, "UPNPScanner");
@@ -76,7 +75,7 @@ public class UPNPScanner implements Runnable {
         try {
             socket = new MulticastSocket();
             socket.setSoTimeout(5000);
-            DatagramPacket packet = new DatagramPacket(MSG.getBytes(), MSG.length(), InetAddress.getByName("239.255.255.250"), 1900);
+            DatagramPacket packet = new DatagramPacket(MSG.getBytes("UTF-8"), MSG.length(), InetAddress.getByName("239.255.255.250"), 1900);
             socket.send(packet);
             // we need a bigger receive buffer.
             final byte[] buffer = new byte[500 * 1024];
@@ -87,7 +86,7 @@ public class UPNPScanner implements Runnable {
 
                 socket.receive(packet);
 
-                response = new String(packet.getData());
+                response = new String(packet.getData(), "UTF-8");
 
                 Log.L.fine(response);
                 URL url;

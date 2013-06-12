@@ -45,6 +45,7 @@ public class FreePornTo extends PluginForHost {
     }
 
     private void getDllink() {
+        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         final String postRawData = new String(JDHexUtils.getByteArray("0000000000010019")) + "freepornmedia.getMediaFor" + new String(JDHexUtils.getByteArray("00022F31000000510A00000002020018")) + "897AFBC8734234234A93487F" + new String(new byte[] { 0x02, 0x00, (byte) DLLINK.length() }) + DLLINK;
         br.getHeaders().put("Content-Type", "application/x-amf");
         br.setFollowRedirects(false);

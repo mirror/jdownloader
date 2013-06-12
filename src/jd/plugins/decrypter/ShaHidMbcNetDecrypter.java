@@ -212,6 +212,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                 // Decrypt -> http stream
                 /* TODO: change me after 0.9xx public --> jd.crypt.RC4 */
                 LnkCrptWs.KeyCaptchaShowDialogTwo arkfour = new LnkCrptWs.KeyCaptchaShowDialogTwo();
+                /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
                 byte[] compressedPlainData = arkfour.D(Encoding.Base64Decode(KEY).getBytes(), enc);
 
                 // Decompress -> decrypted http stream
@@ -252,9 +253,9 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                             quality = fixedHexValue(JDHexUtils.getHexString(fC.substring(0, 2)));
                             if (quality != null && qStr.containsKey(quality)) {
                                 /*
-                                 * Auf Anbieterseite wurden teilweise falsche Qualitätswerte eingepflegt. Funktioniert schon bei
-                                 * Einzellinks. Bei kompletten Staffeln und Qualitätsstufe HD wird auch die Mediumqualität als HD angegeben.
-                                 * Scheint ein Tippfehler zu sein ;-). Wird demnächst fixed
+                                 * Auf Anbieterseite wurden teilweise falsche Qualitätswerte eingepflegt. Funktioniert schon bei Einzellinks. Bei kompletten
+                                 * Staffeln und Qualitätsstufe HD wird auch die Mediumqualität als HD angegeben. Scheint ein Tippfehler zu sein ;-). Wird
+                                 * demnächst fixed
                                  */
                                 if (!completeSeason && links != null && links.containsValue(Quality.valueOf(qStr.get(quality)).getName()) && ("3f3f".equals(quality) || "3f20".equals(quality))) quality = "7d3f";
                                 links.put(new Regex(fC, "(rtmp[\\w:\\/\\.\\-]+)").getMatch(0), Quality.valueOf(qStr.get(quality)).getName());
@@ -302,6 +303,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(key);
             mac.reset();
+            /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
             mac.update(s.getBytes());
             return safeUrl(jd.crypt.Base64.encodeBytes(mac.doFinal()));
         } catch (Throwable e) {
