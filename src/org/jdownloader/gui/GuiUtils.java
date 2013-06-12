@@ -14,7 +14,7 @@ import com.sun.jna.platform.win32.WinDef.HWND;
 public class GuiUtils {
 
     public static void flashWindow(Window window, boolean flashTray, boolean flashWindow) {
-        if (CrossSystem.isWindows() && false) {
+        if (CrossSystem.isWindows()) {
             System.out.println("Flash: " + flashTray);
 
             User32 lib = null;
@@ -27,10 +27,12 @@ public class GuiUtils {
                 flash.uCount = 100;
                 flash.dwTimeout = 1000;
                 if (flashTray || flashWindow) {
-                    flash.dwFlags = (flashTray ? User32.FLASHW_TRAY : 0) | (flashWindow ? User32.FLASHW_CAPTION : 0);
+                    flash.dwFlags = User32.FLASHW_TIMERNOFG | User32.FLASHW_ALL;
                 } else {
                     flash.dwFlags = User32.FLASHW_STOP;
+                    return;
                 }
+
                 flash.cbSize = flash.size();
                 lib.FlashWindowEx(flash);
 
