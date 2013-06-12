@@ -53,10 +53,24 @@ public class AggregatedNumbers {
     }
 
     private long connections;
+    private long disabledTotalBytes;
+    private long disabledLoadedBytes;
+    private long failedTotalBytes;
+
+    public long getDisabledTotalBytes() {
+        return disabledTotalBytes;
+    }
+
+    public long getDisabledLoadedBytes() {
+        return disabledLoadedBytes;
+    }
 
     public AggregatedNumbers(SelectionInfo<FilePackage, DownloadLink> selection) {
 
         totalBytes = 0l;
+        disabledTotalBytes = 0l;
+        disabledLoadedBytes = 0l;
+        failedTotalBytes = 0l;
         loadedBytes = 0l;
         downloadSpeed = 0l;
         running = 0l;
@@ -64,8 +78,20 @@ public class AggregatedNumbers {
         packageCount = selection.getAllPackages().size();
         linkCount = selection.getChildren().size();
         for (DownloadLink dl : selection.getChildren()) {
-            totalBytes += dl.getDownloadSize();
-            loadedBytes += dl.getDownloadCurrent();
+            if (dl.getLinkStatus().isFailed()) {
+                failedTotalBytes += dl.getDownloadSize();
+            } else {
+                if (dl.isEnabled()) {
+
+                    totalBytes += dl.getDownloadSize();
+                    loadedBytes += dl.getDownloadCurrent();
+
+                } else {
+
+                    disabledTotalBytes += dl.getDownloadSize();
+                    disabledLoadedBytes += dl.getDownloadCurrent();
+                }
+            }
             downloadSpeed += dl.getDownloadSpeed();
             if (dl.getDownloadLinkController() != null) {
                 running++;
@@ -85,6 +111,10 @@ public class AggregatedNumbers {
 
         eta = downloadSpeed == 0 ? 0 : (totalBytes - loadedBytes) / downloadSpeed;
 
+    }
+
+    public long getFailedTotalBytes() {
+        return failedTotalBytes;
     }
 
     public long getTotalBytes() {
