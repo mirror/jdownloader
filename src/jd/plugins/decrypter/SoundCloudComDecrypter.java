@@ -19,14 +19,17 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -42,6 +45,16 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        // Login if possible, helps to get links which need the user to be logged in
+        final PluginForHost scPlugin = JDUtilities.getPluginForHost("soundcloud.com");
+        final Account aa = AccountController.getInstance().getValidAccount(scPlugin);
+        if (aa != null) {
+            try {
+                ((jd.plugins.hoster.SoundcloudCom) scPlugin).login(this.br, aa, false);
+            } catch (final PluginException e) {
+            }
+        }
+
         String parameter = param.toString().replace("http://", "https://").replaceAll("(/download|\\\\)", "").replaceFirst("://(www|m)\\.", "://");
         if (parameter.matches("http://(www\\.)?snd\\.sc/[A-Za-z09]+")) {
             br.setFollowRedirects(false);

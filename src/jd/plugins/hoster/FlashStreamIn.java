@@ -108,7 +108,18 @@ public class FlashStreamIn extends PluginForHost {
         this.setBrowserExclusive();
         prepBrowser();
         br.setFollowRedirects(false);
-        getPage(link.getDownloadURL());
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getDownloadURL());
+            if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.followConnection();
+            correctBR();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
@@ -116,6 +127,7 @@ public class FlashStreamIn extends PluginForHost {
         }
         String filename = new Regex(correctedBR, ">Download: <span style=\"color:#626262; font\\-size:20px;\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) filename = new Regex(correctedBR, ">Filename:</b></td><td nowrap>([^<]+)").getMatch(0);
+        if (filename == null) filename = new Regex(correctedBR, "name=\"fname\" value=\"([^<>\"]*?)\"").getMatch(0);
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
