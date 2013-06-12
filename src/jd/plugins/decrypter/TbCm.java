@@ -892,7 +892,7 @@ public class TbCm extends PluginForDecrypt {
                 final String VIDEOID = new Regex(currentVideoUrl, "watch\\?v=([\\w_\\-]+)").getMatch(0);
 
                 // Grab Subtitles
-                if (cfg.getBooleanProperty("ALLOW_SUBTITLES", true)) {
+                if (cfg.getBooleanProperty("ALLOW_SUBTITLES_V2", true)) {
                     br.getPage("http://video.google.com/timedtext?type=list&v=" + VIDEOID);
 
                     FilePackage filePackage = filepackages.get(NAME_SUBTITLES);
