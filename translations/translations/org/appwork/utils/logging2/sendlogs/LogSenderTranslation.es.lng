@@ -1,9 +1,6 @@
-LogAction=Crear un Registro
-LogAction_actionPerformed_givelogid_=Por favor envie esta Identificación de Registro a su suporte!
 LogAction_actionPerformed_wait_=Por favor espere...
 LogAction_actionPerformed_zip_title_=Creando Paquete de Registro
 LogAction_getString_uploading_=Preparando los Registros
-LogAction_tooltip=Crear un Registro
 LogModel_getStringValue_between_=Entre %s1 y %s2
 LogModel_initColumns_time_=Tiempo
 LogModel_initColumns_x_=Comprobar
