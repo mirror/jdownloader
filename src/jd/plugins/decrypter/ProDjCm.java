@@ -70,8 +70,7 @@ public class ProDjCm extends PluginForDecrypt {
         // this is needed! do not disable
         br.setFollowRedirects(true);
 
-        // these types here need to be done before first page grab!! as they could be files
-        // prelisten links are direct links!
+        // these types here need to be done before first page grab!! as they could be files prelisten links are direct links!
         if (parameter.matches(".+/prelisten/\\d+")) {
             handlePrelisten(decryptedLinks, filter, parameter);
         } else if (parameter.matches(".+/(download|source)/\\d+/.+")) {
@@ -101,7 +100,6 @@ public class ProDjCm extends PluginForDecrypt {
     }
 
     private void passItOn(ArrayList<DownloadLink> ret, HashSet<String> filter, String grabThis) throws IOException {
-
         String fpName = null;
         if (grabThis.matches("https?://pdj\\.cc/\\w+")) {
             // domain shorting services
@@ -181,32 +179,88 @@ public class ProDjCm extends PluginForDecrypt {
     }
 
     private void parseDownload(ArrayList<DownloadLink> ret, HashSet<String> filter, String grabThis) {
+        ArrayList<String[]> customHeaders = new ArrayList<String[]>();
+        ArrayList<String> linksFound = new ArrayList<String>();
+
         String dllink = br.getRegex("<a class=\"bigload1\" promenade=\"\\d+\" href=\"(https?://" + HOSTS + "/download/\\d+/[^\"<>]+)").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("<a id=\"download_flasher\" href=\"(https?://" + HOSTS + "/download/\\d+/[^\"<>]+)").getMatch(0);
-            if (dllink == null && grabThis.contains("/promos/")) {
-                String holder = br.getRegex("(\\{\"seekAny\".*\"\\}\\);)").getMatch(0);
-                if (holder != null) {
-                    if (holder.contains("\"downloadable\":true")) {
-                        dllink = new Regex(holder, "downloadURL\":\"(https?:\\\\/\\\\/" + HOSTS + "\\\\/download\\\\/\\d+\\\\/[^\"<>]+)").getMatch(0);
-                        if (dllink != null) {
-                            dllink = dllink.replaceAll("\\\\/", "/");
+        }
+        // give the ability to return multiple formats audio sections...
+        if (grabThis.matches(".*/(acapellas|mixes|podcasts|promos|radioshows|realtones|remixes|samples|tracks)/\\d+")) {
+            if (dllink != null) linksFound.add(dllink);
+            if (dllink == null || dllink.endsWith(".mp3")) {
+                // lets look for wav!
+                dllink = br.getRegex("href=\"(https?://" + HOSTS + "/(source|download)/[^\"]+\\.wav)\"").getMatch(0);
+                if (dllink != null) linksFound.add(dllink);
+            }
+        } else if (dllink == null && grabThis.contains("/videos/")) {
+            // this type seems to have advertised links escaped but not always /download/able! Need to switch to alternative method.
+            String holder = br.getRegex("swf.addVariable\\('jsonText', '(.*?)\\);").getMatch(0);
+            if (holder == null) {
+                logger.warning("parseDownload issue, with finding dllink. Please report this issue to JDownloader Development Team! " + grabThis);
+                return;
+            } else {
+                holder = Encoding.urlDecode(holder, false).replaceAll("\\\\/", "/");
+                dllink = new Regex(holder, "\"play\":\\{\"@url\":\"(https?://[^\"]+)").getMatch(0);
+                if (dllink != null) {
+                    // lets add current dllink to the HashSet because the finallink is actually dynamically created each time you request.
+                    if (filter.add(dllink) == true) {
+                        linksFound.add(dllink);
+                        try {
+                            // like apple trailers they have the final url inside so called video...
+                            Browser br2 = br.cloneBrowser();
+                            URLConnectionAdapter con = br2.openGetConnection(dllink);
+                            long test = con.getContentLength();
+                            if (con.getContentType().contains("video/") && test < 51200) {
+                                br2.followConnection();
+                                dllink = br2.getRegex("URL=(http[^\r\n\t ]+)").getMatch(0);
+                            }
+                            con.disconnect();
+                        } catch (Exception e) {
+                            dllink = null;
                         }
-                    } else {
-                        // lets return prelisten and amend _m3u
-                        String prelisten = new Regex(holder, "URL\":\"(https?[^\"]+)").getMatch(0);
-                        if (prelisten != null) {
-                            dllink = prelisten.replaceAll("\\\\/", "/").replace("/prelisten/", "/prelisten_m3u/");
-                        }
+
+                        // the following is not really needed.. though might be good to send it anyway.
+                        customHeaders.add(new String[] { "Referer", br.getURL() });
+                        customHeaders.add(new String[] { "Accept", "*/*" });
+                        customHeaders.add(new String[] { "Accept-Encoding", "gzip, deflate" });
+                        customHeaders.add(new String[] { "Accept-Charset", null });
+                        customHeaders.add(new String[] { "Cache-Control", null });
+                        customHeaders.add(new String[] { "Pragma", null });
                     }
-                } else {
-                    logger.warning("parseDownload issue, with finding dllink. Please report this issue to JDownloader Development Team! " + grabThis);
-                    return;
                 }
             }
+        } else if (dllink == null && grabThis.contains("/promos/")) {
+            String holder = br.getRegex("(\\{\"seekAny\".*\"\\}\\);)").getMatch(0);
+            if (holder != null) {
+                if (holder.contains("\"downloadable\":true")) {
+                    dllink = new Regex(holder, "downloadURL\":\"(https?:\\\\/\\\\/" + HOSTS + "\\\\/download\\\\/\\d+\\\\/[^\"<>]+)").getMatch(0);
+                    if (dllink != null) {
+                        dllink = dllink.replaceAll("\\\\/", "/");
+                    }
+                } else {
+                    // lets return prelisten and amend _m3u
+                    String prelisten = new Regex(holder, "URL\":\"(https?[^\"]+)").getMatch(0);
+                    if (prelisten != null) {
+                        dllink = prelisten.replaceAll("\\\\/", "/").replace("/prelisten/", "/prelisten_m3u/");
+                    }
+                }
+            } else {
+                logger.warning("parseDownload issue, with finding dllink. Please report this issue to JDownloader Development Team! " + grabThis);
+                return;
+            }
         }
-        if (filter.add(dllink) == false) return;
-        ret.add(createDownloadlink(dllink));
+        // easier doing this here once than multiple times.
+        if (linksFound.isEmpty()) linksFound.add(dllink);
+
+        for (String link : linksFound) {
+            if (filter.add(link) == true) {
+                DownloadLink dl = createDownloadlink(link);
+                if (customHeaders.size() != 0) dl.setProperty("customHeader", customHeaders);
+                ret.add(dl);
+            }
+        }
     }
 
     private void parseFoto(ArrayList<DownloadLink> ret, HashSet<String> filter, boolean album, String grabThis) throws IOException {
