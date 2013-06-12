@@ -101,8 +101,8 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
                 // Error-No Credits
                 String captchaID = ret.substring(3);
                 data = null;
-                int count9kw = 3;
-                Thread.sleep(3000);
+                int count9kw = 5;
+                Thread.sleep(5000);
                 while (true) {
                     count9kw++;
                     job.getLogger().info("9kw.eu Ask " + captchaID);
@@ -113,7 +113,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
                         return;
                     }
                     checkInterruption();
-                    Thread.sleep(1000);
+                    Thread.sleep(2000);
                 }
             } catch (IOException e) {
                 job.getLogger().log(e);
