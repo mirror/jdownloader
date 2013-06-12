@@ -2249,6 +2249,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Force Download Start" })
     String ForceDownloadAction_ForceDownloadAction();
 
+    @Default(lngs = { "en" }, values = { "Skip Download" })
+    String ForceDownloadAction_SkipDownloadAction();
+
+    @Default(lngs = { "en" }, values = { "Unskip Download" })
+    String ForceDownloadAction_UnskipDownloadAction();
+
     @Default(lngs = { "en" }, values = { "Move downloaded Files to Trash & remove Links from JDownloader" })
     String ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_2();
 

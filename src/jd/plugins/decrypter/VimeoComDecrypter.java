@@ -75,8 +75,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (br.containsHTML("This is a private video")) {
-            logger.info("vimeo.com: can't decrypt video because it's private: " + parameter);
-            return decryptedLinks;
+            if (!br.containsHTML("If so please provide the correct password")) {
+                logger.info("vimeo.com: can't decrypt video because it's private: " + parameter);
+                return decryptedLinks;
+            }
         }
 
         handlePW(param, br);

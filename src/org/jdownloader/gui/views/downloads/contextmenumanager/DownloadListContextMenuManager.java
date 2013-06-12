@@ -36,6 +36,7 @@ import org.jdownloader.gui.views.downloads.action.PackageNameAction;
 import org.jdownloader.gui.views.downloads.action.ResetAction;
 import org.jdownloader.gui.views.downloads.action.ResumeAction;
 import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
+import org.jdownloader.gui.views.downloads.action.SkipAction;
 import org.jdownloader.gui.views.downloads.action.StopsignAction;
 import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.MoreMenuContainer;
@@ -57,8 +58,7 @@ public class DownloadListContextMenuManager extends ContextMenuManager<FilePacka
     }
 
     /**
-     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
 
     private DownloadListContextMenuManager() {
@@ -79,6 +79,7 @@ public class DownloadListContextMenuManager extends ContextMenuManager<FilePacka
         mr.add(new MenuItemData(new ActionData(OpenDirectoryAction.class), MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED));
         mr.add(new MenuItemData(new ActionData(SortAction.class)));
         mr.add(new MenuItemData(new ActionData(EnabledAction.class)));
+        mr.add(new MenuItemData(new ActionData(SkipAction.class)));
         mr.add(new SeperatorData());
 
         mr.add(new MenuItemData(new ActionData(ForceDownloadAction.class)));
