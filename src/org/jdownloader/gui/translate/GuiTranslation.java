@@ -2288,10 +2288,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you want to delete all selected & successfully downloaded Downloadlinks?" })
     String DeleteSelectedFinishedLinksAction_actionPerformed();
 
-    @Default(lngs = { "en" }, values = { "Rightlick Menu: Download Table" })
+    @Default(lngs = { "en" }, values = { "Right Click Menu: Download Table" })
     String gui_config_menumanager_downloadlist();
 
-    @Default(lngs = { "en" }, values = { "Rightlick Menu: Linkgrabber Table" })
+    @Default(lngs = { "en" }, values = { "Right Click Menu: Linkgrabber Table" })
     String gui_config_menumanager_linkgrabber();
 
     @Default(lngs = { "en" }, values = { "You can customize many menus in JDownloader - Main Toolbar, Context menus,..." })
