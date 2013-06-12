@@ -1,9 +1,6 @@
-LogAction=Crea un registro eventi
-LogAction_actionPerformed_givelogid_=Invia questo ID registro eventi al supporto!
 LogAction_actionPerformed_wait_=Attendi...
 LogAction_actionPerformed_zip_title_=Crea pacchetto registro eventi
 LogAction_getString_uploading_=Preparazione del registro eventi
-LogAction_tooltip=Crea un registro eventi
 LogModel_getStringValue_between_=Tra %s1 e %s2
 LogModel_initColumns_time_=Ora
 LogModel_initColumns_x_=Verifica
