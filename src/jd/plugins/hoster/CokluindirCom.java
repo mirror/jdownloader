@@ -42,13 +42,13 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cokluindir.com" }, urls = { "http://\\w+\\.cokluindir\\.com/aio2\\.php/.+\\?id=[a-z0-9]{32}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "i-debrid.com", "cokluindir.com" }, urls = { "http://\\w+\\.(cokluindir|i-debrid)\\.com(:\\d+)?/aio2?\\.php/.+\\?id=[a-z0-9]{32}", "HAHAHAHAHAHAHA://thisisafakeregex" }, flags = { 2, 0 })
 public class CokluindirCom extends PluginForHost {
 
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
 
-    private static final String                            mName              = "cokluindir.com";
+    private static final String                            mName              = "i-debrid.com";
     private static final String                            mProt              = "http://";
     private static Object                                  LOCK               = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -162,7 +162,7 @@ public class CokluindirCom extends PluginForHost {
 
     private void handleDL(DownloadLink link, String dllink) throws Exception {
         /* we want to follow redirects in final stage */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
             dl.startDownload();
@@ -187,7 +187,7 @@ public class CokluindirCom extends PluginForHost {
             br.postPage(mProt + mName + "/indir10.php", "link=" + Encoding.urlEncode(link.getDownloadURL()) + "&password=");
         }
         handleErrors(acc, link);
-        String dllink = br.getRegex("(http[^\"]+)").getMatch(0);
+        String dllink = br.getRegex("href=\"(http[^\"]+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         showMessage(link, "Task 2: Download begins!");
         // might need a sleep here hoster seems to have troubles with new links.
