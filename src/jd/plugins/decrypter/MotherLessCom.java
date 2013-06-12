@@ -146,7 +146,7 @@ public class MotherLessCom extends PluginForDecrypt {
         progress.setRange(numberOfPages);
         logger.info("Found " + numberOfPages + " page(s), decrypting now...");
         for (int i = 1; i <= numberOfPages; i++) {
-            String[] picturelinks = br.getRegex("class=\"thumbnail\\-img\\-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a[\t\n\r ]+href=\"(/[A-Z0-9]+/[A-Z0-9]+)\"").getColumn(0);
+            String[] picturelinks = br.getRegex("<[^>]+data-mediatype=\"image\"[^>]+>[\r\n\t ]+<a href=\"(/[a-zA-Z0-9/]+){1,2}\" class=\"img-container\"").getColumn(0);
             // stupid site jumps URLS for NextPage depending on parameter
             String NextPage = br.getRegex("<a href=\"(/[A-Z0-9]{7,9}\\?page=\\d+)\"[^>]+>NEXT").getMatch(0);
             if (picturelinks != null && picturelinks.length != 0) {
@@ -157,11 +157,11 @@ public class MotherLessCom extends PluginForDecrypt {
                     if (fpName != null) dl.setProperty("package", fpName);
                     dl.setProperty("dltype", "image");
                     // fast add.
-                    if (numberOfPages >= 2) dl.setAvailable(true);
+                    if (picturelinks.length >= 10) dl.setAvailable(true);
                     ret.add(dl);
                 }
             }
-            String[] videolinks = br.getRegex("class=\"thumbnail mediatype_video\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img\\-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a([\t\n\r ]+)?href=\"((http://motherless\\.com/)?.*?)\"").getColumn(1);
+            String[] videolinks = br.getRegex("<[^>]+data-mediatype=\"video\"[^>]+>[\r\n\t ]+<a href=\"(/[a-zA-Z0-9/]+){1,2}\" class=\"img-container\"").getColumn(0);
             if (videolinks != null && videolinks.length != 0) {
                 for (String singlelink : videolinks) {
                     String linkID = new Regex(singlelink, "/g/.*?/([A-Z0-9]+$)").getMatch(0);
@@ -171,7 +171,7 @@ public class MotherLessCom extends PluginForDecrypt {
                     dl.setProperty("dltype", "video");
                     if (fpName != null) dl.setProperty("package", fpName);
                     // fast add.
-                    if (numberOfPages > 5) dl.setAvailable(true);
+                    if (videolinks.length >= 10) dl.setAvailable(true);
                     ret.add(dl);
                 }
             }
