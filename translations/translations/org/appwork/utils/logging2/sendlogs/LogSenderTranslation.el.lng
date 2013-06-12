@@ -1,9 +1,6 @@
-LogAction=Δημιουργία Αρχείου Καταγραφής
-LogAction_actionPerformed_givelogid_=Παρακαλούμε αποτείλετε αυτό το αναγνωριστικό του Αρχείου Καταγραφής στην Υποστήριξη!
 LogAction_actionPerformed_wait_=Παρακαλούμε περιμένετε...
 LogAction_actionPerformed_zip_title_=Δημιουργία Πακέτου Αρχείων Καταγραφής...
 LogAction_getString_uploading_=Προετοιμασία των Αρχείων Καταγραφής...
-LogAction_tooltip=Δημιουργία Αρχείου Καταγραφής
 LogModel_getStringValue_between_=Μεταξύ %s1 και %s2
 LogModel_initColumns_time_=Ώρα
 LogModel_initColumns_x_=Επιλογή

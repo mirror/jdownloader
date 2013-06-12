@@ -24,3 +24,5 @@ jd_plugins_optional_jdshutdown=Τερματισμός Λειτουργίας
 jd_plugins_optional_jdshutdown_description=Αυτόματος τερματισμός, αναμονή, αδρανοποίηση του υπολογιστή, ή κλείσιμο του JDownloader όταν ολοκληρωθούν οι Λήψεις.
 lit_shutdownn=Τερματισμός
 show_admin=Απαιτούνται δικαιώματα διαχειριστή για τη ρύθμιση του JDownloader για Αδρανοποίηση ή Αναμονή
+shutdown_toggle_action_disabled=Ενεργοποίηση Τερματισμού μετά τις Λήψεις
+shutdown_toggle_action_enabled=Απενεργοποίηση Τερματισμού μετά τις Λήψεις
