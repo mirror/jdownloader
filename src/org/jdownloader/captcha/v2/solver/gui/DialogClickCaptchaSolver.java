@@ -33,7 +33,6 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
     public void enqueue(SolverJob<ClickedPoint> solverJob) {
         if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
             super.enqueue(solverJob);
-            org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver.captchaSound();
         }
 
     }

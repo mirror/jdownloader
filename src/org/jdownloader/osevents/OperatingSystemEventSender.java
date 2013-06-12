@@ -4,6 +4,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoFilter;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.event.Eventsender;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.osevents.multios.SignalEventSource;
 
 public class OperatingSystemEventSender extends Eventsender<OperatingSystemListener, OperatingSystemEvent> implements OperatingSystemListener {
@@ -36,16 +37,20 @@ public class OperatingSystemEventSender extends Eventsender<OperatingSystemListe
     }
 
     public void init() {
-        new SignalEventSource() {
+        try {
+            new SignalEventSource() {
 
-            @Override
-            public void onSignal(String name, int number) {
-                if ("TERM".equals(name) || "INT".equals(name)) {
-                    fireEvent(new OperatingSystemEvent(OperatingSystemEvent.Type.SIGNAL_TERM, name, number));
-                    onOperatingSystemTerm();
+                @Override
+                public void onSignal(String name, int number) {
+                    if ("TERM".equals(name) || "INT".equals(name)) {
+                        fireEvent(new OperatingSystemEvent(OperatingSystemEvent.Type.SIGNAL_TERM, name, number));
+                        onOperatingSystemTerm();
+                    }
                 }
-            }
-        }.init();
+            }.init();
+        } catch (final Throwable e) {
+            LogController.GL.log(e);
+        }
     }
 
     @Override

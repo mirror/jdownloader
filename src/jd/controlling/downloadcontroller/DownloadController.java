@@ -440,18 +440,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             logger.log(e);
         }
         if (lpackages == null) lpackages = new LinkedList<FilePackage>();
-        try {
-            postInit(lpackages);
-            for (final FilePackage filePackage : lpackages) {
-                filePackage.setControlledBy(DownloadController.this);
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-            /* TODO: backup or show error message */
-            setSaveAllowed(false);
-            DOWNLOADLIST_LOADED.setReached();
-            broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
-            return;
+        postInit(lpackages);
+        for (final FilePackage filePackage : lpackages) {
+            filePackage.setControlledBy(DownloadController.this);
         }
         final LinkedList<FilePackage> lpackages2 = lpackages;
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {

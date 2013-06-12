@@ -905,12 +905,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public boolean isLoadAllowed() {
-        if (!JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled()) return false;
         return allowLoad;
     }
 
     public boolean isSaveAllowed() {
-        if (!JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled()) return false;
         return allowSave;
     }
 
@@ -1027,9 +1025,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
      */
     public synchronized void initLinkCollector() {
         if (isLoadAllowed() == false) {
-            if (!JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled()) {
-                CRAWLERLIST_LOADED.setReached();
-            }
             /* loading is not allowed */
             return;
         }
@@ -1051,22 +1046,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             restoreMap.clear();
             lpackages = new LinkedList<CrawledPackage>();
         }
-        try {
-            postInit(lpackages);
-        } catch (final Throwable e) {
-            logger.log(e);
-            /* TODO: backup or show error message */
-            setSaveAllowed(false);
-            CRAWLERLIST_LOADED.setReached();
-            eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE));
-            return;
-        }
+        postInit(lpackages);
         final LinkedList<CrawledPackage> lpackages2 = lpackages;
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
 
             @Override
             protected Void run() throws RuntimeException {
-                if (isLoadAllowed() == true) {
+                if (isLoadAllowed() == true && JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled()) {
                     /* add loaded Packages to this controller */
                     try {
                         writeLock();
@@ -1425,6 +1411,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
      */
     public void saveLinkCollectorLinks() {
         if (isSaveAllowed() == false) return;
+        if (JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled() == false) return;
         /* save as new Json ZipFile */
         try {
             save(getPackagesCopy(), null);

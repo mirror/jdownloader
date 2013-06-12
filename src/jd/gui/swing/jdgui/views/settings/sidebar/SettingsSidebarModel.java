@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.DefaultListModel;
+import javax.swing.JList;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
@@ -51,9 +52,11 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     private Object                 lock             = new Object();
 
     private SingleReachableState   TREE_COMPLETE    = new SingleReachableState("TREE_COMPLETE");
+    private final JList            list;
 
-    public SettingsSidebarModel() {
+    public SettingsSidebarModel(JList list) {
         super();
+        this.list = list;
         GenericConfigEventListener<Boolean> listener = new GenericConfigEventListener<Boolean>() {
 
             @Override
@@ -307,6 +310,13 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                         }
                     }
                 } finally {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            if (list != null) list.repaint();
+                        }
+                    };
                     TREE_COMPLETE.setReached();
                 }
             }

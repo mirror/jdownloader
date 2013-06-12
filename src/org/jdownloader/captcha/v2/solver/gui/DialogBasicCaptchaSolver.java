@@ -1,25 +1,11 @@
 package org.jdownloader.captcha.v2.solver.gui;
 
-import java.net.URL;
-
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.BooleanControl;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.FloatControl;
-import javax.sound.sampled.LineEvent;
-import javax.sound.sampled.LineEvent.Type;
-import javax.sound.sampled.LineListener;
-
 import jd.controlling.captcha.BasicCaptchaDialogHandler;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
@@ -34,8 +20,6 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.SoundSettings;
 
 public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     private CaptchaSettings                       config;
@@ -56,69 +40,6 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     public void enqueue(SolverJob<String> job) {
         if (job.getChallenge() instanceof BasicCaptchaChallenge) {
             super.enqueue(job);
-            captchaSound();
-        }
-    }
-
-    public static void captchaSound() {
-        final URL soundUrl = NewTheme.I().getURL("sounds/", "captcha", ".wav");
-
-        if (soundUrl != null && JsonConfig.create(SoundSettings.class).isCaptchaSoundEnabled()) {
-            new Thread("Captcha Sound") {
-                public void run() {
-                    AudioInputStream stream = null;
-                    try {
-
-                        AudioFormat format;
-                        DataLine.Info info;
-
-                        stream = AudioSystem.getAudioInputStream(soundUrl);
-                        format = stream.getFormat();
-                        info = new DataLine.Info(Clip.class, format);
-                        final Clip clip = (Clip) AudioSystem.getLine(info);
-                        clip.open(stream);
-                        try {
-                            FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-
-                            float db = (20f * (float) Math.log(JsonConfig.create(SoundSettings.class).getCaptchaSoundVolume() / 100f));
-
-                            gainControl.setValue(Math.max(-80f, db));
-                            BooleanControl muteControl = (BooleanControl) clip.getControl(BooleanControl.Type.MUTE);
-                            muteControl.setValue(true);
-
-                            muteControl.setValue(false);
-                        } catch (Exception e) {
-                            Log.exception(e);
-                        }
-                        clip.start();
-                        clip.addLineListener(new LineListener() {
-
-                            @Override
-                            public void update(LineEvent event) {
-                                if (event.getType() == Type.STOP) {
-                                    clip.close();
-                                }
-                            }
-                        });
-                        while (clip.isRunning()) {
-                            Thread.sleep(100);
-                        }
-                    } catch (Exception e) {
-                        Log.exception(e);
-                    } finally {
-                        try {
-                            stream.close();
-                        } catch (Throwable e) {
-
-                        }
-                        // try {
-                        // clip.close();
-                        // } catch (Throwable e) {
-                        //
-                        // }
-                    }
-                }
-            }.start();
         }
     }
 

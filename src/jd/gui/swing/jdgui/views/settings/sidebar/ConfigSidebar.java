@@ -139,7 +139,7 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
 
         list.addMouseMotionListener(this);
         list.addMouseListener(this);
-        list.setModel(treemodel = new SettingsSidebarModel());
+        list.setModel(treemodel = new SettingsSidebarModel(list));
         // treemodel.addListDataListener(new ListDataListener() {
         //
         // @Override
