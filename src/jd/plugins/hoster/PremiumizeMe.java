@@ -226,8 +226,9 @@ public class PremiumizeMe extends PluginForHost {
             // "fairuse_left":0.99994588120502,
             // ai.setTrafficLeft(AVERAGE(Integer.parseInt(fairUse.trim()) * 100));
         }
-        String trafficleft_bytes = br.getRegex("trafficleft_bytes\":([\\d\\.]+)").getMatch(0);
+        String trafficleft_bytes = br.getRegex("trafficleft_bytes\":(-?[\\d\\.]+)").getMatch(0);
         if (trafficleft_bytes != null) {
+            if (Integer.parseInt(trafficleft_bytes) <= 0) trafficleft_bytes = "0";
             ai.setTrafficLeft(trafficleft_bytes);
         } else {
             ai.setUnlimitedTraffic();
