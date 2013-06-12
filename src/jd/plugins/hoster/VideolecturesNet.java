@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -74,14 +75,26 @@ public class VideolecturesNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (!con.getContentType().contains("html") || con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+        if (br.containsHTML(">Page not found\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)\\s-.*?</title>").getMatch(0).trim();
         if (filename == null) {
             filename = br.getRegex("name=\"title\"\\scontent=\"(.*?)\"").getMatch(0);
         }
         clipUrl = br.getRegex("\\s+clip.url\\s=\\s\"(.*?)\"").getMatch(0);
         clipNetConnectionUrl = br.getRegex("clip.netConnectionUrl\\s=\\s\"(.*?)\"").getMatch(0);
-        if (filename == null || clipUrl == null || clipNetConnectionUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename == null || clipUrl == null || clipNetConnectionUrl == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(filename + ".flv");
         return AvailableStatus.TRUE;
     }

@@ -195,6 +195,10 @@ public class SuperLoadCz extends PluginForHost {
                 br.postPage(mAPI + "/download-url", "token=" + token + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
             }
             dllink = getJson("link");
+            if (br.containsHTML("\"error\":\"invalidLink\"")) {
+                logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
+                tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
+            }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dllink = dllink.replaceAll("\\\\", "");
             showMessage(downloadLink, "Task 2: Download begins!");

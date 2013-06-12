@@ -35,9 +35,11 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "http://(www\\.)?datpiff\\.com/([^<>\"% ]*?\\-download(\\-track)?\\.php\\?id=[a-z0-9]+|mixtapes\\-detail\\.php\\?id=\\d+|.*?\\-mixtape\\.\\d+\\.html)" }, flags = { 2 })
 public class DatPiffCom extends PluginForHost {
 
-    private static final String PREMIUMONLY            = ">you must be logged in to download mixtapes<";
-    private static final String ONLYREGISTEREDUSERTEXT = "Only downloadable for registered users";
-    private static final String MAINPAGE               = "http://www.datpiff.com/";
+    private static final String PREMIUMONLY              = ">you must be logged in to download mixtapes<";
+    private static final String ONLYREGISTEREDUSERTEXT   = "Only downloadable for registered users";
+    private static final String CURRENTLYUNAVAILABLE     = ">This is most likely because the uploader is currently making changes";
+    private static final String CURRENTLYUNAVAILABLETEXT = "Currently unavailable";
+    private static final String MAINPAGE                 = "http://www.datpiff.com/";
 
     public DatPiffCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,14 +68,22 @@ public class DatPiffCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         if (br.containsHTML("(>Download Unavailable<|>A zip file has not yet been generated<|>Mixtape Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = null;
+        if (br.containsHTML(CURRENTLYUNAVAILABLE)) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\- Mixtapes @ DatPiff\\.com</title>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setName(Encoding.htmlDecode(filename.trim()));
+            link.getLinkStatus().setStatusText(CURRENTLYUNAVAILABLETEXT);
+            return AvailableStatus.TRUE;
+        }
+        filename = br.getRegex("<title>Download Mixtape \\&quot;(.*?)\\&quot;</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<span>Download Mixtape<em>(.*?)</em></span>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (!link.getDownloadURL().contains(".php?id=")) {
             logger.warning("downID not found, link is broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String filename = br.getRegex("<title>Download Mixtape \\&quot;(.*?)\\&quot;</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<span>Download Mixtape<em>(.*?)</em></span>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
+        link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -90,6 +100,7 @@ public class DatPiffCom extends PluginForHost {
         if (downloadLink.getDownloadURL().matches("http://(www\\.)?datpiff\\.com/.*?\\-download\\-track\\.php\\?id=[a-z0-9]+")) {
             dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.datpiff\\.com/.*?)\"").getMatch(0);
         } else {
+            if (br.containsHTML(CURRENTLYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, CURRENTLYUNAVAILABLETEXT, 3 * 60 * 60 * 1000l);
             // whole mixtape
             final String fileID = new Regex(downloadLink.getDownloadURL(), "\\.php\\?id=(.+)").getMatch(0);
             if (fileID == null || !br.containsHTML("download\\-mixtape")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

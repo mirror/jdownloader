@@ -109,7 +109,7 @@ public class RTL2De extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title>RTL2 \\- Seite nicht gefunden \\(404\\)</title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("<title>RTL2 \\- Seite nicht gefunden \\(404\\)</title>") || br.getURL().equals("http://www.rtl2.de/video/")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String param = br.getRegex("(vico_id=\\d+\\&vivi_id=\\d+)").getMatch(0);
         if (param == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         final HashMap<String, String> ret = new HashMap<String, String>(jsonParser(param));

@@ -53,14 +53,17 @@ public class MyVideo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(false);
         br.setCustomCharset("utf8");
         br.getPage(downloadLink.getDownloadURL());
-        String redirect = br.getRedirectLocation();
-        if (redirect != null && "http://www.myvideo.de/".equals(redirect.trim())) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (redirect != null) br.getPage(redirect);
+        final String redirect = br.getRedirectLocation();
+        if (redirect != null) {
+            if (redirect.equals("http://www.myvideo.de/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (redirect.matches("http://(www\\.)?myvideo\\.de/channel/.+")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.getPage(redirect);
+        }
         br.setFollowRedirects(true);
 
         if (br.containsHTML("Dieser Film ist für Zuschauer unter \\d+ Jahren nicht geeignet")) {
@@ -160,7 +163,7 @@ public class MyVideo extends PluginForHost {
         return Encoding.htmlDecode(new String(plain));
     }
 
-    private void download(DownloadLink downloadLink) throws Exception {
+    private void download(final DownloadLink downloadLink) throws Exception {
         if (CLIPURL.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, CLIPURL);
             setupRTMPConnection(dl);
@@ -190,7 +193,7 @@ public class MyVideo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         download(downloadLink);
     }
@@ -207,7 +210,7 @@ public class MyVideo extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    private void setupRTMPConnection(DownloadInterface dl) {
+    private void setupRTMPConnection(final DownloadInterface dl) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         String app = CLIPURL.replaceAll("\\w+://[\\w\\.]+/", "");
         if (!CLIPURL.contains("token")) {

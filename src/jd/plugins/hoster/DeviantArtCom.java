@@ -88,11 +88,17 @@ public class DeviantArtCom extends PluginForHost {
             if (ext == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DLLINK = Encoding.htmlDecode(DLLINK.trim());
         } else {
+            filesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
+            // Maybe its a video
+            if (filesize == null) filesize = br.getRegex("<label>File Size:</label>([^<>\"]*?)<br/>").getMatch(0);
+
             if (br.containsHTML(MATURECONTENTFILTER)) {
                 link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
                 link.setName(filename);
+                if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
                 return AvailableStatus.TRUE;
             }
+
             ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
             if (ext == null) {
                 try {
@@ -102,9 +108,6 @@ public class DeviantArtCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
-            filesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
-            // Maybe its a video
-            if (filesize == null) filesize = br.getRegex("<label>File Size:</label>([^<>\"]*?)<br/>").getMatch(0);
             if (ext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (filesize != null) {

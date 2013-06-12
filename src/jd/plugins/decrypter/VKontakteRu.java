@@ -579,7 +579,7 @@ public class VKontakteRu extends PluginForDecrypt {
         int maxOffset = Integer.parseInt(endOffset);
         while (correntOffset < maxOffset) {
             correntOffset += 20;
-            logger.info("Decrypting offset " + correntOffset + " / " + maxOffset);
+            logger.info("Starting to decrypt offset " + correntOffset + " / " + maxOffset);
             if (correntOffset > 30) {
                 br.postPage(br.getURL(), "al=1&part=1&offset=" + correntOffset);
                 if (br.toString().length() < 100) {
@@ -590,22 +590,28 @@ public class VKontakteRu extends PluginForDecrypt {
 
             // First get all photo links
             final String[][] photoInfo = br.getRegex("showPhoto\\(\\'((\\-)?\\d+_\\d+)\\', \\'((wall|album)\\-\\d+_\\d+)\\', \\{temp:\\{(base:.*?\\]\\})").getMatches();
-            if (photoInfo != null && photoInfo.length != 0) {
-                for (final String[] singlePhotoInfo : photoInfo) {
-                    final String pictureID = singlePhotoInfo[0];
-                    final String other_id = singlePhotoInfo[2];
-                    final String directlinks = singlePhotoInfo[4];
-
-                    final DownloadLink dl = getSinglePhotoDownloadLink(pictureID);
-                    if (other_id.matches("album\\-\\d+_\\d+")) {
-                        dl.setProperty("albumid", other_id);
-                    } else {
-                        dl.setProperty("wall_id", other_id);
-                    }
-                    dl.setProperty("directlinks", directlinks);
-                    decryptedLinks.add(dl);
-                }
+            if (photoInfo == null || photoInfo.length == 0) {
+                logger.info("Current offset has no downloadable links, continuing...");
+                continue;
             }
+
+            for (final String[] singlePhotoInfo : photoInfo) {
+                final String pictureID = singlePhotoInfo[0];
+                final String other_id = singlePhotoInfo[2];
+                final String directlinks = singlePhotoInfo[4];
+
+                final DownloadLink dl = getSinglePhotoDownloadLink(pictureID);
+                if (other_id.matches("album\\-\\d+_\\d+")) {
+                    dl.setProperty("albumid", other_id);
+                } else {
+                    dl.setProperty("wall_id", other_id);
+                }
+                dl.setProperty("directlinks", directlinks);
+                decryptedLinks.add(dl);
+            }
+            logger.info("Decrypted offset " + correntOffset + " / " + maxOffset);
+            logger.info("Found " + photoInfo.length + " links in offset " + correntOffset);
+            logger.info("Found " + decryptedLinks.size() + " links so far");
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName("-" + userID);
