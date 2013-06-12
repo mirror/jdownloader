@@ -18,6 +18,8 @@ package jd.gui.swing;
 
 import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.event.WindowListener;
@@ -25,6 +27,7 @@ import java.awt.event.WindowStateListener;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.Timer;
 
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.interfaces.View;
@@ -123,16 +126,16 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
 
                 if (!isVisible()) return;
                 super.toFront();
-                // setAlwaysOnTop(true);
-                // Timer disableAlwaysonTop = new Timer(1000, new ActionListener() {
-                //
-                // public void actionPerformed(ActionEvent e) {
-                // setAlwaysOnTop(false);
-                // }
-                // });
-                // disableAlwaysonTop.setInitialDelay(1000);
-                // disableAlwaysonTop.setRepeats(false);
-                // disableAlwaysonTop.start();
+                setAlwaysOnTop(true);
+                Timer disableAlwaysonTop = new Timer(1000, new ActionListener() {
+
+                    public void actionPerformed(ActionEvent e) {
+                        setAlwaysOnTop(false);
+                    }
+                });
+                disableAlwaysonTop.setInitialDelay(1000);
+                disableAlwaysonTop.setRepeats(false);
+                disableAlwaysonTop.start();
                 repaint();
             }
 
