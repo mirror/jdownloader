@@ -389,20 +389,28 @@ public class ClipboardMonitoring {
     public static void processSupportedTransferData(final Transferable transferable) {
         try {
             String browserUrl = null;
-            String content = getListTransferData(transferable);
-            if (StringUtils.isEmpty(content)) {
-                /* no List flavor available, lets check for String flavor */
-                content = getStringTransferData(transferable);
-                if (!StringUtils.isEmpty(content)) {
-                    /* String flavor available */
-                    String htmlContent = getHTMLTransferData(transferable);
-                    if (!StringUtils.isEmpty(htmlContent)) {
-                        /* add available HTML flavor to String flavor */
-                        content = content + "\r\n" + htmlContent;
-                        browserUrl = getCurrentBrowserURL(transferable);
-                    }
-                }
+            String htmlContent = null;
+            String listContent = getListTransferData(transferable);
+            String stringContent = getStringTransferData(transferable);
+            if (StringUtils.isNotEmpty(stringContent)) htmlContent = getHTMLTransferData(transferable);
+            if (StringUtils.isNotEmpty(htmlContent)) browserUrl = getCurrentBrowserURL(transferable);
+            StringBuilder sb = new StringBuilder();
+            if (StringUtils.isNotEmpty(listContent)) {
+                sb.append("<");
+                sb.append(listContent);
+                sb.append(">\r\n\r\n");
             }
+            if (StringUtils.isNotEmpty(stringContent)) {
+                sb.append("<");
+                sb.append(stringContent);
+                sb.append(">\r\n\r\n");
+            }
+            if (StringUtils.isNotEmpty(htmlContent)) {
+                sb.append("<");
+                sb.append(htmlContent);
+                sb.append(">");
+            }
+            String content = sb.toString();
             if (!StringUtils.isEmpty(content)) {
                 LinkCollectingJob job = new LinkCollectingJob(content);
                 job.setCustomSourceUrl(browserUrl);
