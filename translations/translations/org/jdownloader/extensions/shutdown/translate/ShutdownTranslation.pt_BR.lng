@@ -24,3 +24,5 @@ jd_plugins_optional_jdshutdown=Desligamento
 jd_plugins_optional_jdshutdown_description=Automaticamente desliga, suspende, hiberna seu computador ou fecha o JDownloader assim que os downloads terminarem.
 lit_shutdownn=Desligar
 show_admin=Direitos de Administrador são necessários para configurar o JDownloader para o Modo de Hibernar/Suspender
+shutdown_toggle_action_disabled=Desligar ao finalizar Downloads
+shutdown_toggle_action_enabled=Desativar 'Desligar ao finalizar Downloads'
