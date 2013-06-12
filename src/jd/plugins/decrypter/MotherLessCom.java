@@ -146,7 +146,7 @@ public class MotherLessCom extends PluginForDecrypt {
         progress.setRange(numberOfPages);
         logger.info("Found " + numberOfPages + " page(s), decrypting now...");
         for (int i = 1; i <= numberOfPages; i++) {
-            String[] picturelinks = br.getRegex("<[^>]+data-mediatype=\"image\"[^>]+>[\r\n\t ]+<a href=\"(/[a-zA-Z0-9/]+){1,2}\" class=\"img-container\"").getColumn(0);
+            String[] picturelinks = br.getRegex("<[^>]+data-mediatype=\"image\"[^>]+>[\r\n\t ]+<a href=\"(/[a-zA-Z0-9]+){1,2}\" class=\"img-container\"").getColumn(0);
             // stupid site jumps URLS for NextPage depending on parameter
             String NextPage = br.getRegex("<a href=\"(/[A-Z0-9]{7,9}\\?page=\\d+)\"[^>]+>NEXT").getMatch(0);
             if (picturelinks != null && picturelinks.length != 0) {
@@ -161,7 +161,7 @@ public class MotherLessCom extends PluginForDecrypt {
                     ret.add(dl);
                 }
             }
-            String[] videolinks = br.getRegex("<[^>]+data-mediatype=\"video\"[^>]+>[\r\n\t ]+<a href=\"(/[a-zA-Z0-9/]+){1,2}\" class=\"img-container\"").getColumn(0);
+            String[] videolinks = br.getRegex("<[^>]+data-mediatype=\"video\"[^>]+>[\r\n\t ]+<a href=\"(/[a-zA-Z0-9]+){1,2}\" class=\"img-container\"").getColumn(0);
             if (videolinks != null && videolinks.length != 0) {
                 for (String singlelink : videolinks) {
                     String linkID = new Regex(singlelink, "/g/.*?/([A-Z0-9]+$)").getMatch(0);
