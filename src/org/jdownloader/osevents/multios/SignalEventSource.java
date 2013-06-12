@@ -6,34 +6,18 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 
 public abstract class SignalEventSource implements sun.misc.SignalHandler {
-    private LogSource logger;
+    private LogSource                               logger;
+
+    private HashMap<String, sun.misc.SignalHandler> oldHandlers = new HashMap<String, sun.misc.SignalHandler>();
 
     public SignalEventSource() {
         logger = LogController.getInstance().getLogger(SignalEventSource.class.getName());
     }
 
     public void init() {
-
-        // reg("SEGV");
-        // reg("ILL");
-        // reg("FPE");
-        // reg("BUS");
-        // reg("SYS");
-        // reg("CPU");
-        // reg("FSZ");
-        reg("ABRT");
         reg("INT");
         reg("TERM");
-        // reg("HUP");
-        // reg("USR1");
-        reg("QUIT");
-        reg("BREAK");
-        // reg("TRAP");
-        // reg("PIPE");
-
     }
-
-    private HashMap<String, sun.misc.SignalHandler> oldHandlers = new HashMap<String, sun.misc.SignalHandler>();
 
     private void reg(String signal) {
         try {
@@ -49,18 +33,13 @@ public abstract class SignalEventSource implements sun.misc.SignalHandler {
     public void handle(sun.misc.Signal signal) {
         logger.info("Signal handler called for signal " + signal);
         try {
-
             onSignal(signal.getName(), signal.getNumber());
-
             sun.misc.SignalHandler oldHandler = oldHandlers.get(signal.getName());
-
             // Chain back to previous handler, if one exists
             if (oldHandler != null && oldHandler != SIG_DFL && oldHandler != SIG_IGN) {
                 oldHandler.handle(signal);
             }
-
         } catch (Exception e) {
-
             logger.log(e);
         }
     }

@@ -17,11 +17,7 @@ import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.TransferHandler;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorEvent;
-import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -36,7 +32,6 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
-import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -87,7 +82,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
         ph.setString(_GUI._.DownloadsTable_DownloadsTable_init_plugins());
 
-        SecondLevelLaunch.CRAWLERLIST_COMPLETE.executeWhenReached(new Runnable() {
+        LinkCollector.CRAWLERLIST_LOADED.executeWhenReached(new Runnable() {
 
             @Override
             public void run() {
@@ -114,66 +109,13 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         setLayout(new MigLayout("ins 0", "[grow]", "[grow]"));
         removeAll();
         add(loaderPanel, "alignx center,aligny 20%");
-        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+        LinkCollector.CRAWLERLIST_LOADED.executeWhenReached(new Runnable() {
 
             @Override
-            protected Void run() throws RuntimeException {
-                if (LinkCollector.getInstance().isSaveAllowed()) {
-                    removeLoaderPanel(loaderPanel, orgLayout, rendererPane);
-                } else {
-                    LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorListener() {
-
-                        @Override
-                        public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
-                        }
-
-                        @Override
-                        public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
-                        }
-
-                        @Override
-                        public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
-                        }
-
-                        @Override
-                        public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
-                        }
-
-                        @Override
-                        public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
-                        }
-
-                        @Override
-                        public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
-                        }
-
-                        @Override
-                        public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
-                        }
-
-                        @Override
-                        public void onLinkCollectorContentModified(LinkCollectorEvent event) {
-                        }
-
-                        @Override
-                        public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
-                        }
-
-                        @Override
-                        public void onLinkCollectorAbort(LinkCollectorEvent event) {
-                        }
-
-                        @Override
-                        public void onLinkCollectorListLoaded() {
-                            LinkCollector.getInstance().getEventsender().removeListener(this);
-                            removeLoaderPanel(loaderPanel, orgLayout, rendererPane);
-                        }
-                    });
-                }
-                return null;
+            public void run() {
+                removeLoaderPanel(loaderPanel, orgLayout, rendererPane);
             }
         });
-
     }
 
     protected void removeLoaderPanel(final MigPanel loaderPanel, final LayoutManager orgLayout, final Component rendererPane) {

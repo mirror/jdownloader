@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import jd.SecondLevelLaunch;
 import jd.gui.UserIO;
 
+import org.appwork.controlling.SingleReachableState;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
@@ -47,6 +48,7 @@ import org.jdownloader.translate._JDT;
 
 public class ExtensionController implements MenuExtenderHandler {
     private static final String              TMP_INVALIDEXTENSIONS = "tmp/invalidextensions";
+    public static SingleReachableState       EXTENSIONS_COMPLETE   = new SingleReachableState("EXTENSIONS_COMPLETE");
 
     private static final ExtensionController INSTANCE              = new ExtensionController();
 
@@ -66,8 +68,7 @@ public class ExtensionController implements MenuExtenderHandler {
     private LogSource                      logger;
 
     /**
-     * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private ExtensionController() {
         eventSender = new ExtensionControllerEventSender();
@@ -162,6 +163,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
             });
         }
+        EXTENSIONS_COMPLETE.setReached();
         getEventSender().fireEvent(new ExtensionControllerEvent(this, ExtensionControllerEvent.Type.UPDATED));
     }
 

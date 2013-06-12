@@ -1,10 +1,12 @@
 package org.jdownloader.osevents;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownVetoFilter;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.event.Eventsender;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.osevents.multios.SignalEventSource;
 
-public class OperatingSystemEventSender extends Eventsender<OperatingSystemListener, OperatingSystemEvent> {
+public class OperatingSystemEventSender extends Eventsender<OperatingSystemListener, OperatingSystemEvent> implements OperatingSystemListener {
     private static final OperatingSystemEventSender INSTANCE = new OperatingSystemEventSender();
 
     /**
@@ -17,24 +19,16 @@ public class OperatingSystemEventSender extends Eventsender<OperatingSystemListe
     }
 
     /**
-     * Create a new instance of OperatingSystemEventSender. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of OperatingSystemEventSender. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private OperatingSystemEventSender() {
-
     }
 
     @Override
     protected void fireEvent(OperatingSystemListener listener, OperatingSystemEvent event) {
         switch (event.getType()) {
-        case SESSION_END:
-            listener.onOperatingSystemSessionEnd();
-            break;
-        case SHUTDOWN_VETO:
-            listener.onOperatingSystemShutdownVeto((ShutdownOperatingSystemVetoEvent) event);
-            break;
-        case SIGNAL:
-            listener.onOperatingSystemSignal((String) event.getParameter(0), (Integer) event.getParameter(1));
+        case SIGNAL_TERM:
+            listener.onOperatingSystemTerm();
             break;
         default:
             System.out.println("Unhandled Event: " + event);
@@ -42,35 +36,31 @@ public class OperatingSystemEventSender extends Eventsender<OperatingSystemListe
     }
 
     public void init() {
-
-        if (CrossSystem.isWindows()) {
-            // new WindowsEventSource() {
-            //
-            // @Override
-            // public boolean onQueryEndSession() {
-            // ShutdownOperatingSystemVetoEvent veto = new ShutdownOperatingSystemVetoEvent();
-            // fireEvent(veto);
-            // return !veto.isVeto();
-            // }
-            //
-            // @Override
-            // public void onEndSession() {
-            //
-            // fireEvent(new OperatingSystemEvent(OperatingSystemEvent.Type.SESSION_END));
-            // }
-            //
-            // }.init();
-
-        }
-
         new SignalEventSource() {
 
             @Override
             public void onSignal(String name, int number) {
-                fireEvent(new OperatingSystemEvent(OperatingSystemEvent.Type.SIGNAL, name, number));
+                if ("TERM".equals(name) || "INT".equals(name)) {
+                    fireEvent(new OperatingSystemEvent(OperatingSystemEvent.Type.SIGNAL_TERM, name, number));
+                    onOperatingSystemTerm();
+                }
+            }
+        }.init();
+    }
+
+    @Override
+    public void onOperatingSystemTerm() {
+        ShutdownController.getInstance().requestShutdown(true, new ShutdownVetoFilter() {
+
+            @Override
+            public void gotVetoFrom(ShutdownVetoListener listener) {
             }
 
-        }.init();
-
+            @Override
+            public boolean askForVeto(ShutdownVetoListener listener) {
+                return false;
+            }
+        });
     }
+
 }

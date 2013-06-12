@@ -7,7 +7,8 @@ public class OperatingSystemEvent extends SimpleEvent<Object, Object, OperatingS
     public static enum Type {
         SHUTDOWN_VETO,
         SESSION_END,
-        SIGNAL
+        SIGNAL,
+        SIGNAL_TERM
     }
 
     public OperatingSystemEvent(Type type, Object... parameters) {

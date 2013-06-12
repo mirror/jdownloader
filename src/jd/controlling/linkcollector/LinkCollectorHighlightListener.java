@@ -41,10 +41,6 @@ public abstract class LinkCollectorHighlightListener implements LinkCollectorLis
     }
 
     @Override
-    public void onLinkCollectorListLoaded() {
-    }
-
-    @Override
     public void onLinkCollectorContentModified(LinkCollectorEvent event) {
     }
 

@@ -47,6 +47,7 @@ import jd.plugins.LinkStatusProperty;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
@@ -84,24 +85,25 @@ import org.jdownloader.utils.JDFileUtils;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
 
-    private transient Eventsender<DownloadControllerListener, DownloadControllerEvent> broadcaster  = new Eventsender<DownloadControllerListener, DownloadControllerEvent>() {
+    private transient Eventsender<DownloadControllerListener, DownloadControllerEvent> broadcaster         = new Eventsender<DownloadControllerListener, DownloadControllerEvent>() {
 
-                                                                                                        @Override
-                                                                                                        protected void fireEvent(final DownloadControllerListener listener, final DownloadControllerEvent event) {
-                                                                                                            listener.onDownloadControllerEvent(event);
-                                                                                                        };
-                                                                                                    };
+                                                                                                               @Override
+                                                                                                               protected void fireEvent(final DownloadControllerListener listener, final DownloadControllerEvent event) {
+                                                                                                                   listener.onDownloadControllerEvent(event);
+                                                                                                               };
+                                                                                                           };
 
-    private DelayedRunnable                                                            asyncSaving  = null;
-    private boolean                                                                    allowSave    = false;
+    private DelayedRunnable                                                            asyncSaving         = null;
+    private boolean                                                                    allowSave           = false;
 
-    private boolean                                                                    allowLoad    = true;
+    private boolean                                                                    allowLoad           = true;
 
-    public final ScheduledThreadPoolExecutor                                           TIMINGQUEUE  = new ScheduledThreadPoolExecutor(1);
+    public final ScheduledThreadPoolExecutor                                           TIMINGQUEUE         = new ScheduledThreadPoolExecutor(1);
+    public static SingleReachableState                                                 DOWNLOADLIST_LOADED = new SingleReachableState("DOWNLOADLIST_COMPLETE");
 
-    private static DownloadController                                                  INSTANCE     = new DownloadController();
+    private static DownloadController                                                  INSTANCE            = new DownloadController();
 
-    private static Object                                                              SAVELOADLOCK = new Object();
+    private static Object                                                              SAVELOADLOCK        = new Object();
 
     /**
      * darf erst nachdem der JDController init wurde, aufgerufen werden
@@ -438,20 +440,28 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             logger.log(e);
         }
         if (lpackages == null) lpackages = new LinkedList<FilePackage>();
-        postInit(lpackages);
+        try {
+            postInit(lpackages);
+            for (final FilePackage filePackage : lpackages) {
+                filePackage.setControlledBy(DownloadController.this);
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            /* TODO: backup or show error message */
+            setSaveAllowed(false);
+            DOWNLOADLIST_LOADED.setReached();
+            broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
+            return;
+        }
         final LinkedList<FilePackage> lpackages2 = lpackages;
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
                 if (isLoadAllowed() == true) {
-                    writeLock();
                     /* add loaded Packages to this controller */
                     try {
-
-                        for (final FilePackage filePackage : lpackages2) {
-                            filePackage.setControlledBy(DownloadController.this);
-                        }
+                        writeLock();
                         packages.addAll(0, lpackages2);
                     } finally {
                         /* loaded, we no longer allow loading */
@@ -459,8 +469,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         /* now we allow saving */
                         setSaveAllowed(true);
                         writeUnlock();
+                        DOWNLOADLIST_LOADED.setReached();
                     }
-                    broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.DOWNLOADLINKS_LOADED));
                     broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
                 }
                 return null;

@@ -156,7 +156,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      */
     @Override
     protected void stop() throws StopException {
-
         MainMenuManager.getInstance().unregisterExtender(this);
         MainToolbarManager.getInstance().unregisterExtender(this);
         logger.finer("Stopped " + getClass().getSimpleName());

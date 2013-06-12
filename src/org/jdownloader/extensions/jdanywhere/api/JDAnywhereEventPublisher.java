@@ -628,10 +628,6 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
     }
 
     @Override
-    public void onLinkCollectorListLoaded() {
-    }
-
-    @Override
     public synchronized void register(EventsSender eventsAPI) {
         boolean wasEmpty = eventSenders.isEmpty();
         eventSenders.add(eventsAPI);

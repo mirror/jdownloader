@@ -38,6 +38,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
@@ -82,7 +83,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     private transient LinkCollectorEventSender           eventsender          = new LinkCollectorEventSender();
     public final ScheduledThreadPoolExecutor             TIMINGQUEUE          = new ScheduledThreadPoolExecutor(1);
-
+    public static SingleReachableState                   CRAWLERLIST_LOADED   = new SingleReachableState("CRAWLERLIST_COMPLETE");
     private static LinkCollector                         INSTANCE             = new LinkCollector();
 
     private volatile LinkChecker<CrawledLink>            linkChecker          = null;
@@ -215,9 +216,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             public void onLinkCollectorContentModified(LinkCollectorEvent event) {
             }
 
-            @Override
-            public void onLinkCollectorListLoaded() {
-            }
         });
     }
 
@@ -1029,6 +1027,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
      */
     public synchronized void initLinkCollector() {
         if (isLoadAllowed() == false) {
+            if (!JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled()) {
+                CRAWLERLIST_LOADED.setReached();
+            }
             /* loading is not allowed */
             return;
         }
@@ -1050,16 +1051,25 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             restoreMap.clear();
             lpackages = new LinkedList<CrawledPackage>();
         }
-        postInit(lpackages);
+        try {
+            postInit(lpackages);
+        } catch (final Throwable e) {
+            logger.log(e);
+            /* TODO: backup or show error message */
+            setSaveAllowed(false);
+            CRAWLERLIST_LOADED.setReached();
+            eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE));
+            return;
+        }
         final LinkedList<CrawledPackage> lpackages2 = lpackages;
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
 
             @Override
             protected Void run() throws RuntimeException {
                 if (isLoadAllowed() == true) {
-                    writeLock();
                     /* add loaded Packages to this controller */
                     try {
+                        writeLock();
                         for (final CrawledPackage filePackage : lpackages2) {
                             for (CrawledLink link : filePackage.getChildren()) {
                                 if (link.getDownloadLink() != null) {
@@ -1115,8 +1125,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         /* now we allow saving */
                         setSaveAllowed(true);
                         writeUnlock();
+                        CRAWLERLIST_LOADED.setReached();
                     }
-                    eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.LINKGRABBERLIST_LOADED));
                     eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE));
                 }
                 return null;

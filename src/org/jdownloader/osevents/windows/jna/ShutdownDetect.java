@@ -5,10 +5,6 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
-import org.jdownloader.osevents.OperatingSystemEventSender;
-import org.jdownloader.osevents.OperatingSystemListener;
-import org.jdownloader.osevents.ShutdownOperatingSystemVetoEvent;
-
 import com.sun.jna.Callback;
 import com.sun.jna.Native;
 import com.sun.jna.Structure;
@@ -50,8 +46,8 @@ public class ShutdownDetect {
          * @param nCode
          *            is an action parameter. anything less than zero indicates I should ignore this call.
          * @param wParam
-         *            Specifies whether the message was sent by the current thread. If the message was sent by the current thread, it is
-         *            nonzero; otherwise, it is zero
+         *            Specifies whether the message was sent by the current thread. If the message was sent by the current thread, it is nonzero; otherwise, it
+         *            is zero
          * @param hookProcStruct
          *            A pointer to a CWPSTRUCT structure that contains details about the message.
          * @return If nCode is less than zero, the hook procedure must return the value returned by CallNextHookEx.
@@ -126,21 +122,6 @@ public class ShutdownDetect {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
 
-        OperatingSystemEventSender.getInstance().addListener(new OperatingSystemListener() {
-
-            @Override
-            public void onOperatingSystemSignal(String name, int number) {
-            }
-
-            @Override
-            public void onOperatingSystemShutdownVeto(ShutdownOperatingSystemVetoEvent event) {
-                System.out.println("VETO");
-            }
-
-            @Override
-            public void onOperatingSystemSessionEnd() {
-            }
-        });
         // register(frame, new IShutdownListener() {
         // @Override
         // public void onShutdown() {

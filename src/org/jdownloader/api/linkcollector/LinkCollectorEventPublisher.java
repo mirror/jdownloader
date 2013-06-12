@@ -125,14 +125,6 @@ public class LinkCollectorEventPublisher implements EventPublisher, LinkCollecto
     }
 
     @Override
-    public void onLinkCollectorListLoaded() {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.LIST_LOADED.name(), null);
-        for (EventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
-    }
-
-    @Override
     public synchronized void register(EventsSender eventsAPI) {
         boolean wasEmpty = eventSenders.isEmpty();
         eventSenders.add(eventsAPI);

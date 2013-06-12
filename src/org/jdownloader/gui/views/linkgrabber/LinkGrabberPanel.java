@@ -177,10 +177,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 return org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberAutoTabSwitchEnabled() || CFG_GUI.CFG.getMainframePopupTriggerWhenNewLinksWereAdded() != WindowState.NEVER;
             }
 
-            @Override
-            public void onLinkCollectorListLoaded() {
-            }
-
         });
 
         autoConfirm = new AutoConfirmButton();
@@ -521,7 +517,4 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     public void onLinkCollectorContentModified(LinkCollectorEvent event) {
     }
 
-    @Override
-    public void onLinkCollectorListLoaded() {
-    }
 }

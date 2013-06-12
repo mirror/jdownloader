@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.DefaultListModel;
 
-import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
@@ -74,7 +73,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         };
         org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getEventSender().addListener(listener);
         org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.getEventSender().addListener(listener);
-        SecondLevelLaunch.EXTENSIONS_COMPLETE.executeWhenReached(new Runnable() {
+        ExtensionController.EXTENSIONS_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
             public void run() {
@@ -235,7 +234,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                 try {
                     synchronized (lock) {
                         boolean withExtensions = finalWithExtensions;
-                        if (SecondLevelLaunch.EXTENSIONS_COMPLETE.isReached()) withExtensions = true;
+                        if (ExtensionController.EXTENSIONS_COMPLETE.isReached()) withExtensions = true;
                         LazyExtension extract = null;
                         try {
                             if (withExtensions) extract = ExtensionController.getInstance().getExtension("org.jdownloader.extensions.extraction.ExtractionExtension");

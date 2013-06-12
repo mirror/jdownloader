@@ -93,8 +93,6 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuM
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.osevents.OperatingSystemEventSender;
-import org.jdownloader.osevents.OperatingSystemListener;
-import org.jdownloader.osevents.ShutdownOperatingSystemVetoEvent;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.AutoDownloadStartOption;
@@ -106,9 +104,6 @@ import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.RestartController;
 
-import com.sun.jna.Callback;
-import com.sun.jna.Native;
-
 public class SecondLevelLaunch {
     static {
         statics();
@@ -119,9 +114,6 @@ public class SecondLevelLaunch {
     public static SingleReachableState INIT_COMPLETE         = new SingleReachableState("INIT_COMPLETE");
     public static SingleReachableState GUI_COMPLETE          = new SingleReachableState("GUI_COMPLETE");
     public static SingleReachableState HOST_PLUGINS_COMPLETE = new SingleReachableState("HOST_PLG_COMPLETE");
-    public static SingleReachableState DOWNLOADLIST_COMPLETE = new SingleReachableState("DOWNLOADLIST_COMPLETE");
-    public static SingleReachableState CRAWLERLIST_COMPLETE  = new SingleReachableState("CRAWLERLIST_COMPLETE");
-    public static SingleReachableState EXTENSIONS_COMPLETE   = new SingleReachableState("EXTENSIONS_COMPLETE");
 
     private static File                FILE;
     public final static long           startup               = System.currentTimeMillis();
@@ -408,15 +400,18 @@ public class SecondLevelLaunch {
                 logger.close();
             }
         });
-        Native.setCallbackExceptionHandler(new Callback.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Callback arg0, Throwable arg1) {
-                LogSource logger = LogController.getInstance().getLogger("NativeExceptionHandler");
-                logger.log(arg1);
-                logger.close();
-
-            }
-        });
+        try {
+            com.sun.jna.Native.setCallbackExceptionHandler(new com.sun.jna.Callback.UncaughtExceptionHandler() {
+                @Override
+                public void uncaughtException(com.sun.jna.Callback arg0, Throwable arg1) {
+                    LogSource logger = LogController.getInstance().getLogger("NativeExceptionHandler");
+                    logger.log(arg1);
+                    logger.close();
+                }
+            });
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
         /* these can be initiated without a gui */
         final Thread thread = new Thread() {
             @Override
@@ -490,7 +485,6 @@ public class SecondLevelLaunch {
                     @Override
                     public void run() {
                         try {
-
                             boolean jared = Application.isJared(SecondLevelLaunch.class);
                             ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipDelay());
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
@@ -512,10 +506,8 @@ public class SecondLevelLaunch {
                             /* load links */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init DownloadLinks");
                             DownloadController.getInstance().initDownloadLinks();
-                            DOWNLOADLIST_COMPLETE.setReached();
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Linkgrabber");
                             LinkCollector.getInstance().initLinkCollector();
-                            CRAWLERLIST_COMPLETE.setReached();
                             /* start remote api */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init RemoteAPI");
                             RemoteAPIController.getInstance();
@@ -528,8 +520,6 @@ public class SecondLevelLaunch {
                                 ExtensionController.getInstance().invalidateCache();
                             }
                             ExtensionController.getInstance().init();
-
-                            EXTENSIONS_COMPLETE.setReached();
                             /* init clipboardMonitoring stuff */
                             if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSkipClipboardMonitorFirstRound()) {
                                 ClipboardMonitoring.getINSTANCE().setFirstRoundDone(false);
@@ -624,36 +614,15 @@ public class SecondLevelLaunch {
                             SecondLevelLaunch.LOG.log(e);
                             Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
                             // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
+                        } finally {
+                            OperatingSystemEventSender.getInstance().init();
                         }
                         // parse Menu Data. This will result in a better direct feeling when using the contextmenu the first time
                         DownloadListContextMenuManager.getInstance().getMenuData();
                         LinkgrabberContextMenuManager.getInstance().getMenuData();
-
-                        OperatingSystemEventSender.getInstance().init();
-                        OperatingSystemEventSender.getInstance().addListener(new OperatingSystemListener() {
-
-                            @Override
-                            public void onOperatingSystemSessionEnd() {
-                                LOG.info("OS will shut down now.");
-                            }
-
-                            @Override
-                            public void onOperatingSystemShutdownVeto(ShutdownOperatingSystemVetoEvent event) {
-                                LOG.info("OS Shutdown Requested");
-                                event.setVeto(true);
-                            }
-
-                            @Override
-                            public void onOperatingSystemSignal(String name, int number) {
-                                LOG.info(name + " - " + number);
-
-                            }
-                        });
                     }
-
                 }.start();
             }
-
         });
         new EDTHelper<Void>() {
             @Override
