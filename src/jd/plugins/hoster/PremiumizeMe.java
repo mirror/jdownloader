@@ -226,6 +226,12 @@ public class PremiumizeMe extends PluginForHost {
             // "fairuse_left":0.99994588120502,
             // ai.setTrafficLeft(AVERAGE(Integer.parseInt(fairUse.trim()) * 100));
         }
+        String trafficleft_bytes = br.getRegex("trafficleft_bytes\":([\\d\\.]+)").getMatch(0);
+        if (trafficleft_bytes != null) {
+            ai.setTrafficLeft(trafficleft_bytes);
+        } else {
+            ai.setUnlimitedTraffic();
+        }
         String hostsSup = br.getPage("https://api.premiumize.me/pm-api/v1.php?method=hosterlist&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()));
         handleAPIErrors(br, account, null);
         HashMap<String, Object> response = JSonStorage.restoreFromString(br.toString(), new HashMap<String, Object>().getClass());
