@@ -210,34 +210,15 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
     @Override
     protected boolean onDoubleClick(MouseEvent e, AbstractNode value) {
-        DomainInfo[] infos = null;
-        if (value instanceof AbstractPackageNode) {
-            infos = ((AbstractPackageNode<?, ?>) value).getView().getDomainInfos();
-        }
-        if (infos != null && infos.length > 0) {
-            int width = getTableColumn().getWidth();
-            int count = ((width - 6) / 19);
-            // this.setResizable(true);
-            // // workaround to REALLY bring this column to the desired width
-            // getTableColumn().setMinWidth(Math.min(icons.length, maxIcons) *
-            // 19 + 7);
-            // SwingUtilities.invokeLater(new Runnable() {
-            //
-            // public void run() {
-            // getTableColumn().setMinWidth(getMinWidth());
-            // }
-            // });
-            if (infos.length > maxIcons || infos.length > count) {
 
-                SwingUtilities.invokeLater(new Runnable() {
+        SwingUtilities.invokeLater(new Runnable() {
 
-                    public void run() {
-                        ToolTipController.getInstance().show(getModel().getTable().createExtTooltip(null));
-                    }
-                });
+            public void run() {
+                ToolTipController.getInstance().show(getModel().getTable().createExtTooltip(null));
             }
-        }
-        return false;
+        });
+
+        return true;
     }
 
     @Override
