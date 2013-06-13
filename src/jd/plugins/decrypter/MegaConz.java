@@ -7,6 +7,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.crypto.BadPaddingException;
@@ -22,6 +23,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -55,24 +57,41 @@ public class MegaConz extends PluginForDecrypt {
          * 
          * k = node key
          */
+        HashMap<String, FilePackage> filePackages = new HashMap<String, FilePackage>();
         for (String node : nodes) {
-            String nodeSize = getField("s", node);
-            if (nodeSize == null) continue;
+            String encryptedNodeKey = new Regex(getField("k", node), ":(.*?)$").getMatch(0);
+            if (encryptedNodeKey == null) {
+                continue;
+            }
             String nodeAttr = getField("a", node);
             String nodeID = getField("h", node);
-            String encryptedNodeKey = new Regex(getField("k", node), ":(.*?)$").getMatch(0);
             String nodeKey = decryptNodeKey(encryptedNodeKey, masterKey);
             nodeAttr = decrypt(nodeAttr, nodeKey);
             String nodeName = new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
-            String safeNodeKey = nodeKey.replace("+", "-").replace("/", "_");
-            DownloadLink link = createDownloadlink("http://mega.co.nz/#N!" + nodeID + "!" + safeNodeKey);
-            link.setFinalFileName(nodeName);
-            try {
-                link.setVerifiedFileSize(Long.parseLong(nodeSize));
-            } catch (final Throwable e) {
-                link.setDownloadSize(Long.parseLong(nodeSize));
+            String nodeType = getField("t", node);
+            if ("1".equals(nodeType)) {
+                /* folder */
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(nodeName);
+                filePackages.put(nodeID, fp);
+            } else if ("0".equals(nodeType)) {
+                /* file */
+                String nodeParentID = getField("p", node);
+                FilePackage fp = filePackages.get(nodeParentID);
+                String nodeSize = getField("s", node);
+                if (nodeSize == null) continue;
+                String safeNodeKey = nodeKey.replace("+", "-").replace("/", "_");
+                DownloadLink link = createDownloadlink("http://mega.co.nz/#N!" + nodeID + "!" + safeNodeKey);
+                link.setFinalFileName(nodeName);
+                link.setAvailable(true);
+                try {
+                    link.setVerifiedFileSize(Long.parseLong(nodeSize));
+                } catch (final Throwable e) {
+                    link.setDownloadSize(Long.parseLong(nodeSize));
+                }
+                if (fp != null) fp.add(link);
+                decryptedLinks.add(link);
             }
-            decryptedLinks.add(link);
         }
         return decryptedLinks;
     }
@@ -124,7 +143,14 @@ public class MegaConz extends PluginForDecrypt {
     private String decrypt(String input, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, PluginException {
         byte[] b64Dec = b64decode(keyString);
         int[] intKey = aByte_to_aInt(b64Dec);
-        byte[] key = aInt_to_aByte(intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7]);
+        byte[] key = null;
+        if (intKey.length == 4) {
+            /* folder key */
+            key = b64Dec;
+        } else {
+            /* file key */
+            key = aInt_to_aByte(intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7]);
+        }
         byte[] iv = aInt_to_aByte(0, 0, 0, 0);
         final IvParameterSpec ivSpec = new IvParameterSpec(iv);
         final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
