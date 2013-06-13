@@ -585,8 +585,17 @@ public class MediafireCom extends PluginForHost {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 }
                                 if (id != null) {
+                                    try {
+                                        invalidateLastChallengeResponse();
+                                    } catch (final Throwable e) {
+                                    }
                                     /* captcha wrong */
                                     continue;
+                                } else {
+                                    try {
+                                        validateLastChallengeResponse();
+                                    } catch (final Throwable e) {
+                                    }
                                 }
                             } catch (final PluginException e) {
                                 if (defect) throw e;

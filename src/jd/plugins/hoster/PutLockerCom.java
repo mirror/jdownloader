@@ -275,7 +275,18 @@ public class PutLockerCom extends PluginForHost {
                 login.put("remember", "1");
                 br.submitForm(login);
                 // no auth = not logged / invalid account.
-                if (br.getCookie(MAINPAGE, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha wrong!\r\nUngültiger Benutzername oder ungültiges Passwort oder ungültiges login Captcha!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "auth") == null) {
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha wrong!\r\nUngültiger Benutzername oder ungültiges Passwort oder ungültiges login Captcha!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
+                }
                 // finish off more code here
                 br.getPage("http://www.putlocker.com/profile.php?pro");
                 proActive = br.getRegex("Pro  ?Status</?[^>]+>[\r\n\t ]+<[^>]+>(Active)").getMatch(0);

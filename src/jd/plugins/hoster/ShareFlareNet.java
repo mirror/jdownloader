@@ -382,7 +382,16 @@ public class ShareFlareNet extends PluginForHost {
                 br2.postPage(ajaxPostpage, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&recaptcha_control_field=" + Encoding.urlEncode(rcControl));
                 if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
                     rc.reload();
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     continue;
+                } else {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                 }
                 break;
             }
@@ -394,7 +403,18 @@ public class ShareFlareNet extends PluginForHost {
                 final String code = getCaptchaCode(ajaxmainurl + "/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
                 sleep(2000, downloadLink);
                 br2.postPage(ajaxPostpage, "code=" + Encoding.urlEncode(code));
-                if (br2.toString().contains("error_wrong_captcha")) continue;
+                if (br2.toString().contains("error_wrong_captcha")) {
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
+                    continue;
+                } else {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
+                }
                 break;
             }
             if (br2.toString().contains("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);

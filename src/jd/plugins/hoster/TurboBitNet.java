@@ -383,7 +383,13 @@ public class TurboBitNet extends PluginForHost {
             final String c = getCaptchaCode("recaptcha", cf, downloadLink);
             rc.getForm().setAction(MAINPAGE + "/download/free/" + id + "#");
             rc.setCode(c);
-            if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML("Incorrect, try again")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+            if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML("Incorrect, try again")) {
+                try {
+                    invalidateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
         } else {
             logger.info("Handling normal captchas");
             final String captchaUrl = br.getRegex(CAPTCHAREGEX).getMatch(0);
@@ -404,7 +410,18 @@ public class TurboBitNet extends PluginForHost {
                     break;
                 }
             }
-            if (br.getRegex(CAPTCHAREGEX).getMatch(0) != null || br.containsHTML(RECAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+            if (br.getRegex(CAPTCHAREGEX).getMatch(0) != null || br.containsHTML(RECAPTCHATEXT)) {
+                try {
+                    invalidateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                try {
+                    validateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+            }
         }
         // Ticket Time
         String ttt = parseImageUrl(br.getRegex(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(null)).getMatch(0), true);

@@ -100,7 +100,18 @@ public class UltraMegaBitCom extends PluginForHost {
             if (br.containsHTML("<h3 id=\"download_delay\">Please wait\\.\\.\\.</h3>")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSum()); }
             if (br.containsHTML("guests are only able to download 1 file every")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
             if (br.containsHTML(">Account limitation notice")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                try {
+                    invalidateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                try {
+                    validateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));

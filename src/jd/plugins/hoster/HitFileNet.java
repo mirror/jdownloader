@@ -243,7 +243,16 @@ public class HitFileNet extends PluginForHost {
                 captchaForm.put("captcha_response", captchaCode);
                 br.submitForm(captchaForm);
                 if (!br.containsHTML(CAPTCHATEXT)) {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     break;
+                } else {
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
             if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }

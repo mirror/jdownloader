@@ -183,7 +183,16 @@ public class LuckyShareNet extends PluginForHost {
                 hash = getHash(ajax, dllink);
                 sleep(getWaitTime(ajax) * 1001l, downloadLink);
                 rc.reload();
+                try {
+                    invalidateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
                 continue;
+            } else {
+                try {
+                    validateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
             }
             break;
         }

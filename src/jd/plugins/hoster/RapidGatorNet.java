@@ -404,7 +404,18 @@ public class RapidGatorNet extends PluginForHost {
                 }
                 br.submitForm(captcha);
             }
-            if (br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)")) {
+                try {
+                    invalidateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                try {
+                    validateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+            }
 
             String dllink = br.getRegex("\\'(http://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\\'(http://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);

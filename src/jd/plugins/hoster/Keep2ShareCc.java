@@ -129,7 +129,18 @@ public class Keep2ShareCc extends PluginForHost {
                         if (captchaLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         final String code = getCaptchaCode("http://keep2share.cc" + captchaLink, downloadLink);
                         br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
-                        if (br.containsHTML(">The verification code is incorrect|/site/captcha.html")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        if (br.containsHTML(">The verification code is incorrect|/site/captcha.html")) {
+                            try {
+                                invalidateLastChallengeResponse();
+                            } catch (final Throwable e) {
+                            }
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        } else {
+                            try {
+                                validateLastChallengeResponse();
+                            } catch (final Throwable e) {
+                            }
+                        }
                     }
 
                     /** Skippable */
