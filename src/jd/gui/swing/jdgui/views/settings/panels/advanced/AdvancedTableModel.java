@@ -100,7 +100,12 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> {
 
             @Override
             public int getDefaultWidth() {
+
                 return 100;
+            }
+
+            public boolean isDefaultVisible() {
+                return false;
             }
 
             @Override

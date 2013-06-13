@@ -113,7 +113,6 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                 ret = defaultMenu;
 
             } else {
-                System.out.println(JSonStorage.toString(ret));
                 ret.validate();
 
                 List<MenuItemData> allItemsInMenu = ret.list();
@@ -253,8 +252,13 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     public void setMenuData(MenuContainerRoot root) {
-
-        if (JSonStorage.toString(root).equals(JSonStorage.toString(setupDefaultStructure()))) {
+        String rootString = JSonStorage.toString(root);
+        String orgDefString = JSonStorage.toString(setupDefaultStructure());
+        MenuContainerRoot def = JSonStorage.restoreFromString(orgDefString, new TypeRef<MenuContainerRoot>() {
+        });
+        def.validate();
+        String defaultString = JSonStorage.toString(def);
+        if (rootString.equals(defaultString)) {
             root = null;
         }
         if (root == null) {
@@ -262,6 +266,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
             config.setMenu(null);
             config.setUnusedItems(null);
             menuData = setupDefaultStructure();
+            menuData.validate();
 
         } else {
             menuData = root;

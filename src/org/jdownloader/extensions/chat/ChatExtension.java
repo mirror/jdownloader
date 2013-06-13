@@ -632,6 +632,10 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
         this.view.setContent(frame);
     }
 
+    public boolean isQuickToggleEnabled() {
+        return true;
+    }
+
     void initIRC() {
 
         this.NAMES.clear();

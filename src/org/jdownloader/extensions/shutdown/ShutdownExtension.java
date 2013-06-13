@@ -600,7 +600,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         if (manager instanceof MainMenuManager) {
             ExtensionsMenuContainer container = new ExtensionsMenuContainer();
             container.add(org.jdownloader.extensions.shutdown.actions.ShutdownToggleAction.class);
-            mr.add(container);
+            return container;
         } else if (manager instanceof MainToolbarManager) {
             // try to search a toggle action and queue it after it.
             for (int i = mr.getItems().size() - 1; i >= 0; i--) {
