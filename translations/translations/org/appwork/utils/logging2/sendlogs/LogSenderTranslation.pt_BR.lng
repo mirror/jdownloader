@@ -1,9 +1,6 @@
-LogAction=Criar Log
-LogAction_actionPerformed_givelogid_=Por favor, envie o ID deste log para nosso suporte!
 LogAction_actionPerformed_wait_=Aguarde...
 LogAction_actionPerformed_zip_title_=Criando Pacote de Log
 LogAction_getString_uploading_=Preparando seus logs...
-LogAction_tooltip=Cria um log
 LogModel_getStringValue_between_=Entre %s1 e %s2
 LogModel_initColumns_time_=Data
 LogModel_initColumns_x_=Marcar
