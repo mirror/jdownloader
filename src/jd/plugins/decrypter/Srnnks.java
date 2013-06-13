@@ -388,7 +388,16 @@ public class Srnnks extends PluginForDecrypt {
                             if (actions.size() == 0) {
                                 progress.setStatus(10);
                                 // progress.setStatusText("Captcha code falsch");
+                                try {
+                                    invalidateLastChallengeResponse();
+                                } catch (final Throwable e) {
+                                }
                                 continue;
+                            } else {
+                                try {
+                                    validateLastChallengeResponse();
+                                } catch (final Throwable e) {
+                                }
                             }
                             // we need the 300 ms gap between two requests..
                             progress.setRange(10 + actions.size());
