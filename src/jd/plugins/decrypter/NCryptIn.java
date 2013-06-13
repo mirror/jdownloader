@@ -109,7 +109,16 @@ public class NCryptIn extends PluginForDecrypt {
                         rc.setCode(c);
                         haveFun();
                         if (new Regex(aBrowser, RECAPTCHA).matches()) {
+                            try {
+                                invalidateLastChallengeResponse();
+                            } catch (final Throwable e) {
+                            }
                             continue;
+                        } else {
+                            try {
+                                validateLastChallengeResponse();
+                            } catch (final Throwable e) {
+                            }
                         }
                         break;
                     }
@@ -139,7 +148,16 @@ public class NCryptIn extends PluginForDecrypt {
                         br.submitForm(allForm);
                         haveFun();
                         if (new Regex(aBrowser, ANICAPTCHA).matches()) {
+                            try {
+                                invalidateLastChallengeResponse();
+                            } catch (final Throwable e) {
+                            }
                             continue;
+                        } else {
+                            try {
+                                validateLastChallengeResponse();
+                            } catch (final Throwable e) {
+                            }
                         }
                         break;
                     }
@@ -161,7 +179,16 @@ public class NCryptIn extends PluginForDecrypt {
                         br.submitForm(allForm);
                         haveFun();
                         if (new Regex(aBrowser, CIRCLECAPTCHA).matches()) {
+                            try {
+                                invalidateLastChallengeResponse();
+                            } catch (final Throwable e) {
+                            }
                             continue;
+                        } else {
+                            try {
+                                validateLastChallengeResponse();
+                            } catch (final Throwable e) {
+                            }
                         }
                         break;
                     }

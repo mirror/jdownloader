@@ -157,12 +157,12 @@ public class ShrLnksBz extends PluginForDecrypt {
             final int max = 5;
             boolean failed = true;
             for (int i = 0; i <= max; i++) {
-                try {
-                    invalidateLastChallengeResponse();
-                } catch (final Throwable e) {
-                }
                 String Captchamap = br.getRegex("\"(/captcha\\.gif\\?d=\\d+.*?PHPSESSID=.*?)\"").getMatch(0);
                 if (Captchamap == null) {
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
@@ -195,7 +195,16 @@ public class ShrLnksBz extends PluginForDecrypt {
                         i = 0;
                         auto = false;
                     }
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     continue;
+                } else {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                 }
                 failed = false;
                 break;
@@ -257,6 +266,10 @@ public class ShrLnksBz extends PluginForDecrypt {
             links.addAll(Arrays.asList(linki));
         }
         if (links.size() == 0) {
+            try {
+                invalidateLastChallengeResponse();
+            } catch (final Throwable e) {
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -293,8 +306,17 @@ public class ShrLnksBz extends PluginForDecrypt {
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            try {
+                invalidateLastChallengeResponse();
+            } catch (final Throwable e) {
+            }
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
+        } else {
+            try {
+                validateLastChallengeResponse();
+            } catch (final Throwable e) {
+            }
         }
         return decryptedLinks;
     }

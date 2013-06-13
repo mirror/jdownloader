@@ -254,9 +254,17 @@ public class Lnksvn extends PluginForDecrypt {
             form.put("code", captchaCode);
             br.submitForm(form);
             if (br.containsHTML("Falscher Code") || br.containsHTML("Captcha-code ist falsch") || br.containsHTML("Besucherpasswort ist falsch")) {
+                try {
+                    invalidateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
                 br.getPage(param.getCryptedUrl() + extras);
                 form = br.getFormbyProperty("name", "form");
             } else {
+                try {
+                    validateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
                 break;
             }
         }

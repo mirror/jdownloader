@@ -81,6 +81,10 @@ public class Rlnks extends PluginForDecrypt {
             /* Handle Captcha and/or password */
             handleCaptchaAndPassword(parameter, param);
             if (!br.getURL().contains("relink.us/")) {
+                try {
+                    invalidateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -130,7 +134,18 @@ public class Rlnks extends PluginForDecrypt {
                     decryptLinks(decryptedLinks, param);
                 }
             }
-            if (decryptedLinks.isEmpty() && br.containsHTML(cnlUrl)) throw new DecrypterException("CNL2 only, open this link in Browser");
+            if (decryptedLinks.isEmpty() && br.containsHTML(cnlUrl)) {
+                try {
+                    invalidateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+                throw new DecrypterException("CNL2 only, open this link in Browser");
+            } else {
+                try {
+                    validateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+            }
             return decryptedLinks;
         }
     }
@@ -145,6 +160,10 @@ public class Rlnks extends PluginForDecrypt {
                 Thread.sleep(2333);
                 handleCaptchaAndPassword("http://www.relink.us/frame.php?" + match, param);
                 if (ALLFORM != null && ALLFORM.getRegex("captcha").matches()) {
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     logger.warning("Falsche Captcheingabe, Link wird übersprungen!");
                     continue;
                 }
