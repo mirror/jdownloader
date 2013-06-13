@@ -337,8 +337,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                         } catch (Throwable e) {
                             /*
-                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here http://www.webupd8.org/2011/04/how-to-re-enable
-                             * -notification-area.html
+                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
+                             * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
                              * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
                              * 
@@ -674,6 +674,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     @Override
     public void actionPerformed(ActionEvent e) {
+    }
+
+    public boolean isActive() {
+
+        return trayIconPopup != null && trayIconPopup.hasBeenRecentlyActive();
     }
 
 }

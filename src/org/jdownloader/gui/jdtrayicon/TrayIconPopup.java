@@ -79,6 +79,21 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
 
     private TrayExtension                  extension;
 
+    private long                           visibleUntil      = -1;
+
+    public void setVisible(boolean b) {
+        if (isVisible() && !b) {
+            visibleUntil = System.currentTimeMillis();
+        }
+
+        super.setVisible(b);
+    }
+
+    public void dispose() {
+        visibleUntil = System.currentTimeMillis();
+        super.dispose();
+    }
+
     public TrayIconPopup(TrayExtension trayExtension) {
         super();
         this.extension = trayExtension;
@@ -290,6 +305,16 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
     }
 
     public void mouseReleased(MouseEvent e) {
+    }
+
+    /**
+     * When we perform a tray action, we need a away to ask in the silentmode controller (JDGui) is the action has been invoked from the
+     * tray
+     * 
+     * @return
+     */
+    public boolean hasBeenRecentlyActive() {
+        return isVisible() || System.currentTimeMillis() - visibleUntil < 10 * 1000;
     }
 
 }

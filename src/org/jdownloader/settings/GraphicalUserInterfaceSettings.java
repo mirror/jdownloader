@@ -409,4 +409,30 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setWindowsRequestFocusOnActivationEnabled(boolean b);
 
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Activate the Silent Mode")
+    @AboutConfig
+    boolean isManualSilentModeEnabled();
+
+    void setManualSilentModeEnabled(boolean b);
+
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("If enabled, JDownloader will try to avoid any captcha windows. e.g. No Downloads that use Captcha will start.")
+    @AboutConfig
+    boolean isSkipCaptchasInSilentModeEnabled();
+
+    void setSkipCaptchasInSilentModeEnabled(boolean b);
+
+    public static enum AutoSilentModeTrigger {
+        NEVER,
+        JD_IN_TRAY,
+        JD_IN_TASKBAR
+    }
+
+    @DefaultEnumValue("NEVER")
+    @DescriptionForConfigEntry("Activate Silent Mode Based on Frame Status")
+    @AboutConfig
+    AutoSilentModeTrigger getAutoSilentModeTrigger();
+
+    void setAutoSilentModeTrigger(AutoSilentModeTrigger action);
 }

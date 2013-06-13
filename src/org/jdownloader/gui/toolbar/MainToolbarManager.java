@@ -14,6 +14,7 @@ import jd.gui.swing.jdgui.components.toolbar.actions.OpenDefaultDownloadFolderAc
 import jd.gui.swing.jdgui.components.toolbar.actions.PauseDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ReconnectAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ShowSettingsAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.SilentModeToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StartDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
@@ -90,7 +91,8 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
     }
 
     /**
-     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
 
     private MainToolbarManager() {
@@ -135,6 +137,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         mr.add(ClipBoardToggleAction.class);
         mr.add(AutoReconnectToggleAction.class);
         mr.add(GlobalPremiumSwitchToggleAction.class);
+        mr.add(SilentModeToggleAction.class);
         mr.add(new SeperatorData());
 
         mr.add(ReconnectAction.class);

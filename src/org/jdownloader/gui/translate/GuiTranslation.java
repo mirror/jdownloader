@@ -2513,4 +2513,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Accessibility" })
     String GUISettings_GUISettings_object_accessability();
 
+    @Default(lngs = { "en" }, values = { "Enable & disable the Silent Mode - Avoid Popups" })
+    String action_silentmode_tooltip();
+
 }

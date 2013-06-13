@@ -3,6 +3,8 @@ package org.jdownloader.captcha.v2.solver.gui;
 import jd.controlling.captcha.BasicCaptchaDialogHandler;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
+import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
@@ -20,6 +22,7 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     private CaptchaSettings                       config;
@@ -65,6 +68,13 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
 
                 job.getLogger().info("JAC is done. Response so far: " + job.getResponse());
                 ChallengeSolverJobListener jacListener = null;
+                if (JDGui.getInstance().isSilentModeActive()) {
+                    if (CFG_GUI.SKIP_CAPTCHAS_IN_SILENT_MODE_ENABLED.isEnabled()) {
+                        throw new SkipException(SkipRequest.SINGLE);
+                    } else {
+                        // nothing.. the dialog hook will handle this
+                    }
+                }
                 checkInterruption();
                 BasicCaptchaChallenge captchaChallenge = (BasicCaptchaChallenge) job.getChallenge();
                 // we do not need another queue

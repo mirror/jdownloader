@@ -48,6 +48,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
@@ -74,16 +75,19 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.utils.Application;
+import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogHandler;
 import org.appwork.utils.swing.dialog.TimerDialog;
 import org.jdownloader.gui.GuiUtils;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
@@ -323,6 +327,58 @@ public class JDGui extends SwingGui {
         } else {
             logger.warning("  CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED not working for java <1.7");
         }
+        // Hook into dialog System
+
+        Dialog.getInstance().setHandler(new DialogHandler() {
+
+            @Override
+            public <T> T showDialog(AbstractDialog<T> dialog) throws DialogClosedException, DialogCanceledException {
+                // synchronized (this) {
+                try {
+                    // if this is the edt, we should not block it.. NEVER
+                    if (!SwingUtilities.isEventDispatchThread()) {
+                        // block dialog calls... the shall appear as soon as isSilentModeActive is false.
+                        long countdown = -1;
+                        dialog.forceDummyInit();
+                        if (dialog.evaluateDontShowAgainFlag()) {
+                            final int mask = dialog.getReturnmask();
+                            if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) { throw new DialogClosedException(mask); }
+                            if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) { throw new DialogCanceledException(mask); }
+                            return null;
+                        }
+                        if (dialog.isCountdownFlagEnabled()) {
+                            long countdownDif = dialog.getCountdown() * 1000;
+                            countdown = System.currentTimeMillis() + countdownDif;
+                        }
+                        flashTaskbar();
+                        while (isSilentModeActive()) {
+                            if (countdown > 0) {
+                                Thread.sleep(Math.min(Math.max(1, countdown - System.currentTimeMillis()), 250));
+                                if (System.currentTimeMillis() > countdown) {
+                                    dialog.onTimeout();
+
+                                    final int mask = dialog.getReturnmask();
+                                    if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) { throw new DialogClosedException(mask); }
+                                    if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) { throw new DialogCanceledException(mask); }
+                                    return null;
+                                }
+                            } else {
+                                Thread.sleep(250);
+                            }
+
+                        }
+
+                    }
+                } catch (InterruptedException e) {
+                    throw new DialogClosedException(Dialog.RETURN_INTERRUPT, e);
+
+                }
+                dialog.resetDummyInit();
+                return Dialog.getInstance().getDefaultHandler().showDialog(dialog);
+                // }
+
+            }
+        });
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -760,6 +816,10 @@ public class JDGui extends SwingGui {
                 case UIConstants.WINDOW_STATUS_FOREGROUND:
                     if (!GuiUtils.isActiveWindow(getMainFrame())) {
 
+                        if (isSilentModeActive()) {
+                            flashTaskbar();
+                            return;
+                        }
                         if (!requestCaptchaDialogFocus()) {
                             TimerDialog captchaDialog = null;
                             // if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogsRequestFocusEnabled()) {
@@ -840,6 +900,39 @@ public class JDGui extends SwingGui {
 
         };
 
+    }
+
+    public boolean isSilentModeActive() {
+
+        return new EDTHelper<Boolean>() {
+
+            @Override
+            public Boolean edtRun() {
+                // don't block anthing if the frame is active anyway
+                if (getMainFrame().hasFocus() || getMainFrame().isActive()) { return false; }
+                // don't block anything if the tray is active
+                if (tray.isEnabled() && tray.isActive()) return false;
+
+                if (CFG_GUI.MANUAL_SILENT_MODE_ENABLED.isEnabled()) {
+
+                return true; }
+
+                switch (CFG_GUI.CFG.getAutoSilentModeTrigger()) {
+                case JD_IN_TASKBAR:
+                    if (getMainFrame().getState() == JFrame.ICONIFIED && getMainFrame().isVisible()) return true;
+                    break;
+                case JD_IN_TRAY:
+                    if (!getMainFrame().isVisible()) return true;
+                    break;
+                default:
+                    return false;
+
+                }
+                return false;
+
+            }
+
+        }.getReturnValue();
     }
 
     public boolean requestCaptchaDialogFocus() {
@@ -1049,8 +1142,8 @@ public class JDGui extends SwingGui {
     private Thread trayIconChecker;
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
-     * changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
+     * avoid sideeffects when changing anything
      * 
      * @param minimize
      */

@@ -66,7 +66,8 @@ public class RestartController implements ShutdownVetoListener {
     }
 
     /**
-     * Create a new instance of RestartController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of RestartController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     protected RestartController() {
 
@@ -161,7 +162,7 @@ public class RestartController implements ShutdownVetoListener {
 
             // if you do not want to ask here, use
             // ShutdownController.getInstance().removeShutdownVetoListener(RestartController.getInstance());
-            ConfirmDialog cd = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmToExit_(), _UPDATE._.RestartController_confirmToExit_msg(), AWUTheme.I().getIcon("exit", 32), null, null) {
+            ConfirmDialog cd = new ConfirmDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmToExit_(), _UPDATE._.RestartController_confirmToExit_msg(), AWUTheme.I().getIcon("exit", 32), null, null) {
 
                 @Override
                 public String getDontShowAgainKey() {
