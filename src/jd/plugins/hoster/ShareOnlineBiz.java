@@ -527,8 +527,16 @@ public class ShareOnlineBiz extends PluginForHost {
         if (url == null || !url.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (dl.getConnection().isContentDisposition() || (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("octet-stream"))) {
+            try {
+                validateLastChallengeResponse();
+            } catch (final Throwable e) {
+            }
             dl.startDownload();
         } else {
+            try {
+                invalidateLastChallengeResponse();
+            } catch (final Throwable e) {
+            }
             br.followConnection();
             errorHandling(br, downloadLink, null, null);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
