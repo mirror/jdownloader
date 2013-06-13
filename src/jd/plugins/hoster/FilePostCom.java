@@ -320,7 +320,18 @@ public class FilePostCom extends PluginForHost {
             brc = br.cloneBrowser();
             brc.submitForm(form);
             if (brc.containsHTML("\"file_too_big_for_user\"")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium"));
-            if (brc.containsHTML("You entered a wrong CAPTCHA code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (brc.containsHTML("You entered a wrong CAPTCHA code")) {
+                try {
+                    invalidateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                try {
+                    validateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+            }
             String correctedBR = brc.toString().replace("\\", "");
             if (correctedBR.contains("Your download is not found or has expired")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 10 * 60 * 1000l);
             if (correctedBR.contains("Your IP address is already")) {
