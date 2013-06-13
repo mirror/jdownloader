@@ -432,8 +432,17 @@ public class CloudzerNet extends PluginForHost {
                 }
                 br.postPage("http://cloudzer.net/io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
                 if (br.containsHTML("\"err\":\"captcha\"")) {
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     rc.reload();
                     continue;
+                } else {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                 }
                 break;
             }
