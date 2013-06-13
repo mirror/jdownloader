@@ -8,6 +8,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.zip.GZIPOutputStream;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
@@ -61,6 +62,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     private byte[]       payloadEncryptionToken = null;
 
     private String       requestConnectToken;
+    private HTTPHeader   accept_encoding;
 
     @Override
     public List<HttpRequestHandler> getHandler() {
@@ -116,6 +118,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     protected HttpRequest buildRequest() throws IOException {
         HttpRequest ret = super.buildRequest();
         /* we do not allow gzip output */
+        accept_encoding = ret.getRequestHeaders().get("Accept-Encoding");
         ret.getRequestHeaders().remove(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING);
         return ret;
     }
@@ -192,44 +195,55 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                 // "application/aesjson-jd; charset=utf-8"));
                 /* set chunked transfer header */
                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING, HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED));
-                this.sendResponseHeaders();
-                this.os = new OutputStream() {
-                    private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(clientSocket.getOutputStream(), 16384));
-                    Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
-                                                              // public void close() throws IOException {
-                                                              // };
+                if (accept_encoding != null && accept_encoding.contains("gzip_aes")) {
+                    /* chunked->gzip->aes */
+                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING, "gzip_aes"));
+                    this.sendResponseHeaders();
+                    if (useDeChunkingOutputStream) {
+                        this.os = new DeChunkingOutputStream(new GZIPOutputStream(new CipherOutputStream(new ChunkedOutputStream(clientSocket.getOutputStream(), 16384), cipher)));
+                    } else {
+                        this.os = new GZIPOutputStream(new CipherOutputStream(new ChunkedOutputStream(clientSocket.getOutputStream(), 16384), cipher));
+                    }
+                } else {
+                    this.sendResponseHeaders();
+                    this.os = new OutputStream() {
+                        private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(clientSocket.getOutputStream(), 16384));
+                        Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
+                                                                  // public void close() throws IOException {
+                                                                  // };
 
-                                                          };
-                    OutputStream                outos     = new CipherOutputStream(b64os, cipher);
+                                                              };
+                        OutputStream                outos     = new CipherOutputStream(b64os, cipher);
 
-                    {
-                        if (useDeChunkingOutputStream) {
-                            outos = new DeChunkingOutputStream(outos);
+                        {
+                            if (useDeChunkingOutputStream) {
+                                outos = new DeChunkingOutputStream(outos);
+                            }
                         }
-                    }
 
-                    @Override
-                    public void close() throws IOException {
-                        outos.close();
-                        b64os.flush();
-                        chunkedOS.close();
-                    }
+                        @Override
+                        public void close() throws IOException {
+                            outos.close();
+                            b64os.flush();
+                            chunkedOS.close();
+                        }
 
-                    @Override
-                    public void flush() throws IOException {
-                    }
+                        @Override
+                        public void flush() throws IOException {
+                        }
 
-                    @Override
-                    public void write(int b) throws IOException {
-                        outos.write(b);
-                    }
+                        @Override
+                        public void write(int b) throws IOException {
+                            outos.write(b);
+                        }
 
-                    @Override
-                    public void write(byte[] b, int off, int len) throws IOException {
-                        outos.write(b, off, len);
+                        @Override
+                        public void write(byte[] b, int off, int len) throws IOException {
+                            outos.write(b, off, len);
+                        };
+
                     };
-
-                };
+                }
             } catch (final Throwable e) {
                 throw new IOException(e);
             }
@@ -241,5 +255,4 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         }
         return this.os;
     }
-
 }
