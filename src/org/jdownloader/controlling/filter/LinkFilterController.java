@@ -50,8 +50,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private boolean                                      testInstance = false;
 
     /**
-     * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     public LinkFilterController(boolean testInstance) {
         eventSender = new ChangeEventSender();
@@ -63,7 +62,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
             ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
                 @Override
-                public void run() {
+                public void onShutdown(final Object shutdownRequest) {
                     synchronized (LinkFilterController.this) {
                         if (config != null) config.setFilterList(filter);
                     }

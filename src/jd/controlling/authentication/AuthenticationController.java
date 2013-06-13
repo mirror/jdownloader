@@ -30,8 +30,7 @@ public class AuthenticationController {
     private ChangeEventSender                eventSender = new ChangeEventSender();
 
     /**
-     * Create a new instance of AuthenticationController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of AuthenticationController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private AuthenticationController() {
         config = JsonConfig.create(AuthenticationControllerSettings.class);
@@ -39,7 +38,7 @@ public class AuthenticationController {
         if (list == null) list = new ArrayList<AuthenticationInfo>();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             @Override
-            public void run() {
+            public void onShutdown(final Object shutdownRequest) {
                 config.setList(list);
             }
 

@@ -43,7 +43,7 @@ public class MediaArchiveController implements MediaListListener {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
-            public void run() {
+            public void onShutdown(final Object shutdownRequest) {
                 videoController.save();
                 audioController.save();
                 imageController.save();

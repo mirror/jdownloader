@@ -118,7 +118,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
-            public void run() {
+            public void onShutdown(final Object shutdownRequest) {
                 int retry = 10;
                 while (retry > 0) {
                     if (DownloadWatchDog.getInstance().getStateMachine().isFinal() || DownloadWatchDog.getInstance().getStateMachine().isStartState()) {

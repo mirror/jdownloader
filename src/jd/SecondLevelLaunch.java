@@ -335,7 +335,7 @@ public class SecondLevelLaunch {
             }
 
             @Override
-            public void run() {
+            public void onShutdown(final Object shutdownRequest) {
                 FILE.delete();
             }
         });

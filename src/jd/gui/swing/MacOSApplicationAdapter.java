@@ -250,7 +250,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
-            public void run() {
+            public void onShutdown(final Object shutdownRequest) {
                 new Thread() {
                     public void run() {
                         /*
@@ -265,7 +265,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
     public void handleQuitRequestWith(QuitEvent e, final QuitResponse response) {
         quitResponse = response;
-        RestartController.getInstance().exitAsynch();
+        RestartController.getInstance().exitAsynch(null);
     }
 
     public void handlePreferences(PreferencesEvent e) {

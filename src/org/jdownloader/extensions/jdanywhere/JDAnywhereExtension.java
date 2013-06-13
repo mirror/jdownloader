@@ -3,9 +3,6 @@ package org.jdownloader.extensions.jdanywhere;
 import jd.plugins.AddonPanel;
 
 import org.appwork.txtresource.TranslateInterface;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -20,8 +17,6 @@ import org.jdownloader.extensions.jdanywhere.api.FilePackageApi;
 import org.jdownloader.extensions.jdanywhere.api.JDAnywhereEventPublisher;
 import org.jdownloader.extensions.jdanywhere.api.LinkCrawlerApi;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.translate._JDT;
-import org.jdownloader.updatev2.RestartController;
 
 public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, TranslateInterface> {
 
@@ -62,16 +57,7 @@ public class JDAnywhereExtension extends AbstractExtension<JDAnywhereConfig, Tra
             LogController.CL().log(e);
             throw new StopException(e.getMessage());
         }
-        showRestartRequiredMessage();
-    }
 
-    protected void showRestartRequiredMessage() {
-        try {
-            Dialog.getInstance().showConfirmDialog(0, _JDT._.dialog_optional_showRestartRequiredMessage_title(), _JDT._.dialog_optional_showRestartRequiredMessage_msg(), null, _JDT._.basics_yes(), _JDT._.basics_no());
-            RestartController.getInstance().exitAsynch();
-        } catch (DialogClosedException e) {
-        } catch (DialogCanceledException e) {
-        }
     }
 
     @Override

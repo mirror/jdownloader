@@ -278,7 +278,7 @@ public class Ftp extends PluginForHost {
             String filePath = new Regex(downloadLink.getDownloadURL(), "://[^/]+/(.+?)(\\?|$)").getMatch(0);
             ftp.connect(url);
             String name = null;
-            if (oldStyle()) {
+            if (oldStyle() || true) {
                 if (!filePath.contains("/")) filePath = "/" + filePath;
                 String[] list = ftp.getFileInfo(Encoding.urlDecode(filePath, false));
                 if (list != null) {

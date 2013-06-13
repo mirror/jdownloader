@@ -131,7 +131,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
-            public void run() {
+            public void onShutdown(final Object shutdownRequest) {
                 LinkCollector.this.abort();
                 IOEQ.getQueue().addWait(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
 

@@ -33,8 +33,6 @@ import org.appwork.controlling.StateEventListener;
 import org.appwork.controlling.StateMachine;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
-import org.appwork.shutdown.ShutdownVetoFilter;
-import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -58,6 +56,8 @@ import org.jdownloader.gui.mainmenu.MainMenuManager;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.updatev2.AvoidRlyExistListener;
+import org.jdownloader.updatev2.ForcedShutdown;
 import org.jdownloader.updatev2.RestartController;
 
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener, MenuExtenderHandler {
@@ -77,22 +77,6 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     public ShutdownExtension() throws StartException {
         setTitle(_.jd_plugins_optional_jdshutdown());
 
-    }
-
-    private void closejd() {
-        LogController.CL().info("close jd");
-        RestartController.getInstance().exitAsynch(new ShutdownVetoFilter() {
-
-            @Override
-            public void gotVetoFrom(ShutdownVetoListener listener) {
-            }
-
-            @Override
-            public boolean askForVeto(ShutdownVetoListener listener) {
-                /* we dont want to ask user again, the extension already asks */
-                return false;
-            }
-        });
     }
 
     private void shutdown() {
@@ -217,8 +201,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 logger.log(e);
             }
         }
-        closejd();
-
+        RestartController.getInstance().exitAsynch(new ForcedShutdown());
     }
 
     private void prepareHibernateOrStandby() {
@@ -423,7 +406,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
                 }
                 if ((d.getReturnmask() & Dialog.RETURN_OK) == Dialog.RETURN_OK || (d.getReturnmask() & Dialog.RETURN_TIMEOUT) == Dialog.RETURN_TIMEOUT) {
-                    closejd();
+                    RestartController.getInstance().exitAsynch(new AvoidRlyExistListener(true));
                 }
                 break;
             default:

@@ -54,7 +54,6 @@ import org.appwork.utils.swing.dialog.InputDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.controlling.JDRestartController;
 import org.jdownloader.extensions.translator.TLocale;
 import org.jdownloader.extensions.translator.TranslateEntry;
 import org.jdownloader.extensions.translator.TranslatorExtension;
@@ -64,6 +63,8 @@ import org.jdownloader.extensions.translator.gui.actions.NewTranslationAction;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.updatev2.AvoidRlyExistListener;
+import org.jdownloader.updatev2.RestartController;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNCommitItem;
 import org.tmatesoft.svn.core.wc.SVNCommitPacket;
@@ -675,8 +676,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                JDRestartController.getInstance().directAsynchRestart("-translatortest", getExtension().getLoadedLocale().getId());
-
+                RestartController.getInstance().asyncRestart(new AvoidRlyExistListener(false), "-translatortest", getExtension().getLoadedLocale().getId());
             }
         }));
         menuPanel2.add(logout = new ExtButton(new AppAction() {

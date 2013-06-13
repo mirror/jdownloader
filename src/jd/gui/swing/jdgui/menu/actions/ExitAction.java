@@ -35,7 +35,7 @@ public class ExitAction extends AppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        RestartController.getInstance().exitAsynch();
+        RestartController.getInstance().exitAsynch(null);
     }
 
 }

@@ -104,7 +104,7 @@ public class MediaServer implements Runnable {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
-            public void run() {
+            public void onShutdown(final Object shutdownRequest) {
                 shutdown();
             }
         });
@@ -133,8 +133,8 @@ public class MediaServer implements Runnable {
                                     return isByeBye(incomingRequest) || isSupportedServiceAdvertisement(incomingRequest) ? new ExtReceivingNotification(getUpnpService(), incomingRequest) : null;
                                 case MSEARCH:
                                     /**
-                                     * IT seems like rpoot device searches must be answered by a OutgoingSearchResponseRootDevice -
-                                     * USNRootDeviceHeader header. . xbmc for example has discovery problems if jd has a bad formated answer
+                                     * IT seems like rpoot device searches must be answered by a OutgoingSearchResponseRootDevice - USNRootDeviceHeader header.
+                                     * . xbmc for example has discovery problems if jd has a bad formated answer
                                      */
                                     return new ReceivingSearch(getUpnpService(), incomingRequest) {
                                         @Override

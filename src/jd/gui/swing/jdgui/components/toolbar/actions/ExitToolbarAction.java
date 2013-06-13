@@ -23,7 +23,7 @@ public class ExitToolbarAction extends ToolBarAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        RestartController.getInstance().exitAsynch();
+        RestartController.getInstance().exitAsynch(null);
 
     }
 }

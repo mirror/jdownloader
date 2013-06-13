@@ -45,7 +45,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.controlling.JDRestartController;
 import org.jdownloader.gui.mainmenu.MainMenuManager;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
@@ -56,6 +55,8 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuM
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate.JdownloaderTranslation;
 import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.AvoidRlyExistListener;
+import org.jdownloader.updatev2.RestartController;
 
 public class GUISettings extends AbstractConfigPanel {
 
@@ -101,8 +102,7 @@ public class GUISettings extends AbstractConfigPanel {
 
                     try {
                         Dialog.getInstance().showConfirmDialog(0, _GUI._.GUISettings_save_language_changed_restart_required_title(), _GUI._.GUISettings_save_language_changed_restart_required_msg(), NewTheme.getInstance().getIcon("language", 32), null, null);
-
-                        JDRestartController.getInstance().directAsynchRestart();
+                        RestartController.getInstance().asyncRestart(new AvoidRlyExistListener(true));
                     } catch (DialogClosedException e2) {
 
                     } catch (DialogCanceledException e2) {

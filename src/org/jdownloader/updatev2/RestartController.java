@@ -18,12 +18,10 @@ import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.restart.Restarter;
 
 public class RestartController implements ShutdownVetoListener {
@@ -46,12 +44,9 @@ public class RestartController implements ShutdownVetoListener {
         return RestartController.INSTANCE;
     }
 
-    private Actions         toDo;
-    private Restarter       restarter;
     private ParameterParser startupParameters;
-    private String[]        arguments;
+
     private File            root = Application.getResource("tmp").getParentFile();
-    private LogSource       logger;
 
     // public String updaterJar = "Updater.jar";
     //
@@ -71,14 +66,11 @@ public class RestartController implements ShutdownVetoListener {
     }
 
     /**
-     * Create a new instance of RestartController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of RestartController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     protected RestartController() {
 
-        // ShutdownController.getInstance().addShutdownVetoListener(this);
-        logger = LogController.getInstance().getLogger(RestartController.class.getName());
-
+        final Restarter restarter = Restarter.getInstance(this);
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             {
@@ -86,29 +78,20 @@ public class RestartController implements ShutdownVetoListener {
             }
 
             @Override
-            public void run() {
-                finalHook();
+            public void onShutdown(final Object shutdownRequest) {
+                if (shutdownRequest instanceof RestartShutdownRequest) {
+                    restarter.restart(getRoot(), getFilteredRestartParameters(((RestartShutdownRequest) shutdownRequest).getArguments()));
+                }
             }
         });
-        restarter = Restarter.getInstance(this);
 
-    }
-
-    protected void finalHook() {
-
-        if (toDo == null) return;
-        switch (toDo) {
-        case RESTART:
-            restarter.restart(getRoot(), getFilteredRestartParameters());
-            break;
-        }
     }
 
     private File getRoot() {
         return root;
     }
 
-    public List<String> getFilteredRestartParameters() {
+    public List<String> getFilteredRestartParameters(String... arguments) {
         ArrayList<String> ret = new ArrayList<String>();
         if (startupParameters != null) {
             for (Entry<String, CommandSwitch> es : startupParameters.getMap().entrySet()) {
@@ -129,29 +112,19 @@ public class RestartController implements ShutdownVetoListener {
         return ret;
     }
 
-    private enum Actions {
-        RESTART;
-    }
-
-    public void directRestart(String... strings) {
-
-        toDo = Actions.RESTART;
-        arguments = strings;
+    public void directRestart(final ShutdownVetoFilter filter, String... strings) {
         Log.L.info("direct Restart");
-        // ShutdownController.getInstance().removeShutdownEvent(SilentUpdaterEvent.getInstance());
-        // ShutdownController.getInstance().removeShutdownEvent(RestartDirectEvent.getInstance());
-        // ShutdownController.getInstance().removeShutdownEvent(RestartViaUpdaterEvent.getInstance());
-
-        // RlyExitListener.getInstance().setText(_UPDATE._.rlyrestart());
-        // RlyExitListener.getInstance().setTitle(_UPDATE._.rlyrestart_restart());
-        //
-        // ShutdownController.getInstance().addShutdownEvent(RestartDirectEvent.getInstance());
-
-        ShutdownController.getInstance().requestShutdown(false);
+        ShutdownController.getInstance().requestShutdown(false, filter, new RestartShutdownRequest(strings));
     }
 
-    public void exitAsynch() {
-        exitAsynch(null);
+    public void asyncRestart(final ShutdownVetoFilter filter, final String... strings) {
+        new Thread("RestartAsynch") {
+            public void run() {
+                Log.L.info("asyn Restart");
+                ShutdownController.getInstance().requestShutdown(false, filter, new RestartShutdownRequest(strings));
+            }
+        }.start();
+
     }
 
     public void exitAsynch(final ShutdownVetoFilter filter) {
@@ -213,28 +186,5 @@ public class RestartController implements ShutdownVetoListener {
     public long getShutdownVetoPriority() {
         return 0;
     }
-
-    // public String getRestartCommandLine() {
-    // final StringBuilder sb = new StringBuilder();
-    // Log.L.info("Restart Parameters");
-    // for (final String s : this.getRestartParameters()) {
-    // if (sb.length() > 0) {
-    // sb.append(" ");
-    // }
-    //
-    // Log.L.info(s);
-    // if (s.contains(" ")) {
-    // sb.append("\"");
-    // sb.append(s);
-    // sb.append("\"");
-    // } else {
-    // sb.append(s);
-    // }
-    //
-    // }
-    //
-    // return sb.toString();
-    // }
-    //
 
 }

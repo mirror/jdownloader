@@ -94,7 +94,7 @@ public class AccountController implements AccountControllerListener {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
-            public void run() {
+            public void onShutdown(final Object shutdownRequest) {
                 save();
             }
 

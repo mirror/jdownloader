@@ -59,7 +59,7 @@ public class StatsManager implements GenericConfigEventListener<Object> {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
-            public void run() {
+            public void onShutdown(final Object shutdownRequest) {
                 logExit();
             }
         });

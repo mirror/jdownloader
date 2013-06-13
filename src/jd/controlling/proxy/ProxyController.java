@@ -79,7 +79,7 @@ public class ProxyController {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
-            public void run() {
+            public void onShutdown(final Object shutdownRequest) {
                 saveProxySettings();
             }
 

@@ -282,7 +282,7 @@ public class JDGui extends SwingGui {
                 ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
                     @Override
-                    public void run() {
+                    public void onShutdown(final Object shutdownRequest) {
                         new EDTHelper<Object>() {
 
                             @Override
@@ -1013,7 +1013,7 @@ public class JDGui extends SwingGui {
                 return;
             }
 
-            RestartController.getInstance().exitAsynch();
+            RestartController.getInstance().exitAsynch(null);
         }
     }
 

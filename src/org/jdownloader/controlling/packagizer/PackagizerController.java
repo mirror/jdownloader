@@ -86,7 +86,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
                 @Override
-                public void run() {
+                public void onShutdown(final Object shutdownRequest) {
                     synchronized (PackagizerController.this) {
                         if (config != null) config.setRuleList(list);
                     }

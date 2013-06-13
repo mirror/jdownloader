@@ -46,8 +46,6 @@ import jd.gui.swing.jdgui.MainFrameClosingHandler;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 import jd.plugins.AddonPanel;
 
-import org.appwork.shutdown.ShutdownVetoFilter;
-import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -71,8 +69,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.updatev2.AvoidRlyExistListener;
 import org.jdownloader.updatev2.RestartController;
-import org.jdownloader.updatev2.RlyExitListener;
 
 public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
 
@@ -652,24 +650,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             }.start();
             return;
         }
-        RestartController.getInstance().exitAsynch(new ShutdownVetoFilter() {
-
-            @Override
-            public void gotVetoFrom(ShutdownVetoListener listener) {
-            }
-
-            @Override
-            public boolean askForVeto(ShutdownVetoListener listener) {
-                if (asked.get()) {
-                    if (listener instanceof RestartController) {
-                        /* try icon itself is also asking */
-                        return false;
-                    }
-                    if (listener instanceof RlyExitListener) { return false; }
-                }
-                return true;
-            }
-        });
+        RestartController.getInstance().exitAsynch(new AvoidRlyExistListener(asked.get()));
 
     }
 

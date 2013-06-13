@@ -105,7 +105,7 @@ public class FavIcons {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
-            public void run() {
+            public void onShutdown(final Object shutdownRequest) {
                 CONFIG.setLastRefresh(System.currentTimeMillis());
                 CONFIG.setFailedHosts(FAILED_LIST);
             }

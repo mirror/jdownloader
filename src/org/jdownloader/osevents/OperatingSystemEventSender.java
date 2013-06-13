@@ -1,11 +1,10 @@
 package org.jdownloader.osevents;
 
 import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownVetoFilter;
-import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.event.Eventsender;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.osevents.multios.SignalEventSource;
+import org.jdownloader.updatev2.ForcedShutdown;
 
 public class OperatingSystemEventSender extends Eventsender<OperatingSystemListener, OperatingSystemEvent> implements OperatingSystemListener {
     private static final OperatingSystemEventSender INSTANCE = new OperatingSystemEventSender();
@@ -55,17 +54,7 @@ public class OperatingSystemEventSender extends Eventsender<OperatingSystemListe
 
     @Override
     public void onOperatingSystemTerm() {
-        ShutdownController.getInstance().requestShutdown(true, new ShutdownVetoFilter() {
-
-            @Override
-            public void gotVetoFrom(ShutdownVetoListener listener) {
-            }
-
-            @Override
-            public boolean askForVeto(ShutdownVetoListener listener) {
-                return false;
-            }
-        });
+        ShutdownController.getInstance().requestShutdown(true, new ForcedShutdown());
     }
 
 }

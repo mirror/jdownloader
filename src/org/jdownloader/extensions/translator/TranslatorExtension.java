@@ -121,7 +121,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             }
 
             @Override
-            public void run() {
+            public void onShutdown(final Object shutdownRequest) {
 
                 if (!getSettings().isRememberLoginsEnabled()) {
                     try {
