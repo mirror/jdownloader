@@ -16,7 +16,12 @@
 
 package jd.plugins.hoster;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Scanner;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -111,10 +116,127 @@ public class ZdfDeMediathek extends PluginForHost {
 
     private void postprocess(final DownloadLink downloadLink) {
         if ("subtitles".equals(downloadLink.getStringProperty("streamingType", null))) {
-            // if (!convertSubtitles()) {
-            // logger.severe("Subtitle conversion failed!");
-            // }
+            if (!convertSubtitle(downloadLink)) {
+                logger.severe("Subtitle conversion failed!");
+            }
         }
+    }
+
+    /**
+     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * 
+     * @param downloadlink
+     *            . The finished link to the Google CC subtitle file.
+     * @return The success of the conversion.
+     */
+    public static boolean convertSubtitle(final DownloadLink downloadlink) {
+        final File source = new File(downloadlink.getFileOutput());
+
+        BufferedWriter dest;
+        try {
+            dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
+        } catch (IOException e1) {
+            return false;
+        }
+
+        final StringBuilder xml = new StringBuilder();
+        int counter = 1;
+        final String lineseparator = System.getProperty("line.separator");
+
+        Scanner in = null;
+        try {
+            in = new Scanner(new FileReader(source));
+            while (in.hasNext()) {
+                xml.append(in.nextLine() + lineseparator);
+            }
+        } catch (Exception e) {
+            return false;
+        } finally {
+            in.close();
+        }
+
+        String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">(.*?)</p>").getMatches();
+
+        final int starttime = Integer.parseInt(downloadlink.getStringProperty("starttime", null));
+        try {
+            for (String[] match : matches) {
+                dest.write(counter++ + lineseparator);
+
+                Double start = Double.valueOf(match[0]) + starttime;
+                Double end = Double.valueOf(match[1]) + starttime;
+                dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
+
+                String text = match[2].trim();
+                text = text.replaceAll(lineseparator, " ");
+                text = text.replaceAll("&amp;", "&");
+                text = text.replaceAll("&quot;", "\"");
+                text = text.replaceAll("&#39;", "'");
+                text = text.replaceAll("<br />", "");
+                dest.write(text + lineseparator + lineseparator);
+            }
+        } catch (Exception e) {
+            return false;
+        } finally {
+            try {
+                dest.close();
+            } catch (IOException e) {
+            }
+        }
+
+        source.delete();
+
+        return true;
+    }
+
+    /**
+     * Converts the the time of the Google format to the SRT format.
+     * 
+     * @param time
+     *            . The time from the Google XML.
+     * @return The converted time as String.
+     */
+    private static String convertSubtitleTime(Double time) {
+        String hour = "00";
+        String minute = "00";
+        String second = "00";
+        String millisecond = "0";
+
+        Integer itime = Integer.valueOf(time.intValue());
+
+        // Hour
+        Integer timeHour = Integer.valueOf(itime.intValue() / 3600);
+        if (timeHour < 10) {
+            hour = "0" + timeHour.toString();
+        } else {
+            hour = timeHour.toString();
+        }
+
+        // Minute
+        Integer timeMinute = Integer.valueOf((itime.intValue() % 3600) / 60);
+        if (timeMinute < 10) {
+            minute = "0" + timeMinute.toString();
+        } else {
+            minute = timeMinute.toString();
+        }
+
+        // Second
+        Integer timeSecond = Integer.valueOf(itime.intValue() % 60);
+        if (timeSecond < 10) {
+            second = "0" + timeSecond.toString();
+        } else {
+            second = timeSecond.toString();
+        }
+
+        // Millisecond
+        millisecond = String.valueOf(time - itime).split("\\.")[1];
+        if (millisecond.length() == 1) millisecond = millisecond + "00";
+        if (millisecond.length() == 2) millisecond = millisecond + "0";
+        if (millisecond.length() > 2) millisecond = millisecond.substring(0, 3);
+
+        // Result
+        String result = hour + ":" + minute + ":" + second + "," + millisecond;
+
+        return result;
     }
 
     @Override
@@ -136,8 +258,7 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     private void setConfigElements() {
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST,
-        // JDL.L("plugins.hoster.zdf.subtitles", "Download subtitles whenever possible")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.zdf.subtitles", "Download subtitles whenever possible")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.zdf.best", "Load Best Version ONLY")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
