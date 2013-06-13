@@ -213,8 +213,17 @@ public class BitShareCom extends PluginForHost {
                 rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
                 br2.submitForm(rc.getForm());
                 if (br2.containsHTML("ERROR:incorrect\\-captcha")) {
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     br.getPage(downloadLink.getDownloadURL());
                     continue;
+                } else {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                 }
                 failed = false;
                 break;
