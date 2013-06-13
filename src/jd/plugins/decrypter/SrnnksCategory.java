@@ -33,6 +33,7 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.DiffMatchPatch;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -94,7 +95,9 @@ public class SrnnksCategory extends PluginForDecrypt {
         }
         Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
-        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("plugins.decrypter.srnkscategory.AddCategory", lng_addCategoryMessage)))) { return new ArrayList<DownloadLink>(); }
+        String what = new Regex(parameter, "https?://[^/]+(.+)").getMatch(0);
+        if (what.length() >= 121) what = what.substring(0, 117) + "...";
+        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("plugins.decrypter.srnkscategory.AddCategory", lng_addCategoryMessage + "\r\n" + what)))) { return new ArrayList<DownloadLink>(); }
         br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
         if (br.containsHTML("<FRAME SRC")) {
