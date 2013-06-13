@@ -1574,7 +1574,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
             @Override
             protected Void run() throws RuntimeException {
-                if (stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
+                if (stateMachine.isState(RUNNING_STATE, PAUSE_STATE)) {
                     config.setClosedWithRunningDownloads(true);
                 } else {
                     config.setClosedWithRunningDownloads(false);
@@ -1670,7 +1670,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             /*
              * we sync to make sure that no new downloads get started meanwhile
              */
-            if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
+            if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE)) {
                 synchronized (this.downloadControllers) {
                     for (final SingleDownloadController con : downloadControllers) {
                         DownloadLink link = con.getDownloadLink();
@@ -1701,7 +1701,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             /*
              * we sync on shutdownRequests to make sure that no new downloads get started meanwhile
              */
-            if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
+            if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE)) {
                 String dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_();
                 synchronized (this.downloadControllers) {
                     for (final SingleDownloadController con : downloadControllers) {
