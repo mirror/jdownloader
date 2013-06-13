@@ -156,9 +156,8 @@ public class ZdfDeMediathek extends PluginForHost {
         }
 
         String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">(.*?)</p>").getMatches();
-
-        final int starttime = Integer.parseInt(downloadlink.getStringProperty("starttime", null));
         try {
+            final int starttime = Integer.parseInt(downloadlink.getStringProperty("starttime", null));
             for (String[] match : matches) {
                 dest.write(counter++ + lineseparator);
 
@@ -189,10 +188,10 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     /**
-     * Converts the the time of the Google format to the SRT format.
+     * Converts the the time of the ZDF format to the SRT format.
      * 
      * @param time
-     *            . The time from the Google XML.
+     *            . The time from the ZDF XML.
      * @return The converted time as String.
      */
     private static String convertSubtitleTime(Double time) {

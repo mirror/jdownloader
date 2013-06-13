@@ -199,7 +199,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     String subtitleInfo = br.getRegex("<caption>(.*?)</caption>").getMatch(0);
                     if (subtitleInfo != null) {
                         String subtitleUrl = new Regex(subtitleInfo, "<url>(http://utstreaming\\.zdf\\.de/tt/\\d{4}/[A-Za-z0-9_\\-]+\\.xml)</url>").getMatch(0);
-                        final String startTime = new Regex(subtitleInfo, "<offset>\\-(\\d+)</offset>").getMatch(0);
+                        final String startTime = new Regex(subtitleInfo, "<offset>(\\-)?(\\d+)</offset>").getMatch(1);
                         final String name = title + "@" + "SUBTITLE.xml";
                         final DownloadLink link = createDownloadlink("decrypted://zdf.de/subtitles/" + System.currentTimeMillis() + new Random().nextInt(1000000));
                         link.setAvailable(true);

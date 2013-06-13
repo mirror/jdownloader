@@ -147,6 +147,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptCommunityVideoAlbum(decryptedLinks, parameter);
                 } else {
                     decryptWallLink(decryptedLinks, parameter);
+                    logger.info("Decrypted " + decryptedLinks.size() + " wall-links");
                 }
             } catch (BrowserException e) {
                 logger.warning("Browser exception thrown: " + e.getMessage());
@@ -558,7 +559,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptWallLink(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
-        /** Unfinished code!! */
+        br.setFollowRedirects(true);
         final String type = "walllink";
         String userID = new Regex(parameter, "vk\\.com/wall\\-(\\d+)").getMatch(0);
         if (userID == null) {
@@ -572,7 +573,7 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Invalid walllink: " + parameter);
             return decryptedLinks;
         }
-        String endOffset = br.getRegex("href=\"/wall\\-" + userID + "\\?offset=(\\d+)\" onclick=\"return nav\\.go\\(this, event\\)\"><div class=\"pg_in\">\\&raquo;</div>").getMatch(0);
+        String endOffset = br.getRegex("href=\"/wall\\-" + userID + "[^<>\"/]*?offset=(\\d+)\" onclick=\"return nav\\.go\\(this, event\\)\"><div class=\"pg_in\">\\&raquo;</div>").getMatch(0);
         if (endOffset == null) endOffset = "10";
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int correntOffset = 0;
