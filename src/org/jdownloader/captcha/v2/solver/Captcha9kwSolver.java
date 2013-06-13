@@ -95,7 +95,14 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
             try {
                 byte[] data = IO.readFile(challenge.getImageFile());
                 Browser br = new Browser();
-                String ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&prio=" + config.getprio() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=" + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + "&version=1.1&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
+                br.setAllowedResponseCodes(new int[] { 500 });
+                String ret = "";
+                for (int i = 0; i <= 5; i++) {
+                    ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&prio=" + config.getprio() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=" + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + "&version=1.1&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
+                    if (ret.startsWith("OK-")) {
+                        break;
+                    }
+                }
                 job.getLogger().info("Send Captcha to 9kw.eu. - Answer: " + ret);
                 if (!ret.startsWith("OK-")) throw new SolverException(ret);
                 // Error-No Credits
@@ -133,7 +140,14 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
                 try {
                     String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
                     Browser br = new Browser();
-                    br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=1&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                    String ret = "";
+                    br.setAllowedResponseCodes(new int[] { 500 });
+                    for (int i = 0; i <= 5; i++) {
+                        ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=1&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                        if (ret.startsWith("OK")) {
+                            break;
+                        }
+                    }
                 } catch (final Throwable e) {
                     LogController.CL(true).log(e);
                 }
@@ -154,7 +168,15 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
                 try {
                     String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
                     Browser br = new Browser();
-                    br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=2&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                    String ret = "";
+                    br.setAllowedResponseCodes(new int[] { 500 });
+                    for (int i = 0; i <= 5; i++) {
+                        ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=2&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                        if (ret.startsWith("OK")) {
+                            break;
+                        }
+                    }
+
                 } catch (final Throwable e) {
                     LogController.CL(true).log(e);
                 }
