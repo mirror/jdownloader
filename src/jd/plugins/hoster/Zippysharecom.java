@@ -198,8 +198,17 @@ public class Zippysharecom extends PluginForHost {
                 final String c = getCaptchaCode(cf, downloadLink);
                 br.postPage(server + "rest/captcha/test", "challenge=" + Encoding.urlEncode(rc.getChallenge()) + "&response=" + Encoding.urlEncode(c) + "&shortencode=" + shortenCode);
                 if (br.toString().trim().equals("false")) {
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     rc.reload();
                     continue;
+                } else {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                 }
                 break;
             }
