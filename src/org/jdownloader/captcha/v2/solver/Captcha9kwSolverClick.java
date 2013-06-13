@@ -104,7 +104,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
                 int count9kw = 5;
                 Thread.sleep(5000);
                 while (true) {
-                    count9kw++;
+                    count9kw += 2;
                     solverJob.getLogger().info("9kw.eu Ask " + captchaID);
                     ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&mouse=1&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
                     solverJob.getLogger().info("9kw.eu Answer " + count9kw + "s: " + ret);
