@@ -57,7 +57,18 @@ public class FilerCx extends PluginForHost {
         String captchaCode = getCaptchaCode(captchaUrl, link);
         form.put("captchacode", captchaCode);
         br.submitForm(form);
-        if (br.containsHTML("Captcha number error or expired")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (br.containsHTML("Captcha number error or expired")) {
+            try {
+                invalidateLastChallengeResponse();
+            } catch (final Throwable e) {
+            }
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else {
+            try {
+                validateLastChallengeResponse();
+            } catch (final Throwable e) {
+            }
+        }
         String dllink = null;
         dllink = br.getRegex("onclick=\"highlight\\('downloadurl'\\);\" ondblclick=\"ClipBoard\\('downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
