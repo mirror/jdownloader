@@ -47,7 +47,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -71,8 +70,7 @@ public class WooUploadCom extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
-    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
-    // fail. .:. use [1-20]
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
@@ -82,7 +80,7 @@ public class WooUploadCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.0
     // mods:
-    // non account: 20 * 20
+    // non account: 2 * 20
     // free account: untested, used same as FREE!
     // premium account: 20 * 20
     // protocol: no https
@@ -118,9 +116,17 @@ public class WooUploadCom extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
     }
 
     public void prepBrowser(final Browser br) {
@@ -134,7 +140,7 @@ public class WooUploadCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, "(No such file|>\\s+?File Not Found<|>The file was removed by|Reason for deletion:\n|removed due to copyright claim or is deleted by the uploader\\.<)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
@@ -198,7 +204,7 @@ public class WooUploadCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -221,8 +227,8 @@ public class WooUploadCom extends PluginForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                // stable is lame, issue finding input data fields correctly.
-                // eg. closes at ' quotation mark - remove when jd2 goes stable!
+                download1.put("method_free", "Free Download");
+                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -239,7 +245,7 @@ public class WooUploadCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
+            Form dlForm = getFormByKey("op", "download2");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // how many forms deep do you want to try.
             int repeat = 2;
@@ -329,11 +335,11 @@ public class WooUploadCom extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
-                if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
+                if (dllink == null && (getFormByKey("op", "download2") == null || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                    dlForm = br.getFormbyProperty("name", "F1");
+                } else if (dllink == null && getFormByKey("op", "download2") != null) {
+                    dlForm = getFormByKey("op", "download2");
                     continue;
                 } else {
                     break;
@@ -392,8 +398,7 @@ public class WooUploadCom extends PluginForHost {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
-        // remove custom rules first!!! As html can change because of generic
-        // cleanup rules.
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
@@ -507,8 +512,7 @@ public class WooUploadCom extends PluginForHost {
         }
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
-    // String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 
@@ -536,8 +540,7 @@ public class WooUploadCom extends PluginForHost {
         if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         String newExtension = null;
-        // some streaming sites do not provide proper file.extension within
-        // headers (Content-Disposition or the fail over getURL()).
+        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
         if (serverFilename.contains(".")) {
             newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
         } else {
@@ -575,8 +578,7 @@ public class WooUploadCom extends PluginForHost {
     public void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
-                // handle password has failed in the past, additional try
-                // catching / resetting values
+                // handle password has failed in the past, additional try catching / resetting values
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
@@ -765,7 +767,7 @@ public class WooUploadCom extends PluginForHost {
         login(account, false);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 0, "freelink2");
+            doFree(downloadLink, true, -2, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
@@ -816,16 +818,4 @@ public class WooUploadCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }

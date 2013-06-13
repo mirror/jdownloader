@@ -36,10 +36,15 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://(www\\.)?unibytes\\.com/(?!page)[a-zA-Z0-9\\-\\.\\_ ]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://(www\\.)?unibytes\\.com/([a-zA-Z0-9\\-\\.\\_]{11}B|[a-zA-Z0-9\\-\\.\\_]{11}Lqw-Us4P3UgBB)" }, flags = { 2 })
 public class UniBytesCom extends PluginForHost {
 
     // DEV NOTES
+    // UID are case sensitive.
+    // [a-zA-Z0-9\\-\\.\\_]{11}Lqw-Us4P3UgBB = recently uploaded links + folder links?
+    // [a-zA-Z0-9\\-\\.\\_]{11}B = short link??
+    // it doesn't seem possible exchanging 11char uid between the different url structures.
+
     // other: they blocked our default User Agent.
 
     private final String CAPTCHATEXT      = "captcha\\.jpg";
