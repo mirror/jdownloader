@@ -112,18 +112,27 @@ public class MegaDebridEu extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        String url = null;
-        if ("ddlstorage.com".equals(link.getHost())) {
-            url = Encoding.urlEncode(link.getDownloadURL() + "/" + link.getName());
-        } else {
-            url = Encoding.urlEncode(link.getDownloadURL());
+        String url = link.getDownloadURL();
+        // link corrections
+        if (link.getHost().matches("ddlstorage\\.com")) {
+            // needs full url!
+            url += "/" + link.getName();
+        } else if (link.getHost().matches("filefactory\\.com")) {
+            // http://www.filefactory.com/file/asd/n/ads.rar
+            if (!url.endsWith("/")) url += "/";
+            url += "/n/" + link.getName();
         }
+        url = Encoding.urlEncode(url);
 
         showMessage(link, "Phase 1/2: Generate download link");
         br.setFollowRedirects(true);
         br.postPage("http://www.mega-debrid.eu/api.php?action=getLink&token=" + account.getStringProperty("token", null), "link=" + url);
         if (br.containsHTML("Erreur : Probl\\\\u00e8me D\\\\u00e9brideur")) {
-            logger.info("Unknown error, disabling current host for 3 hours!");
+            logger.warning("Unknown error, disabling current host for 3 hours!");
+            tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
+        } else if (br.containsHTML("Erreur : Lien incorrect")) {
+            // link is in the wrong format, needs to be corrected as above.
+            logger.warning("Hi please inform JDownloader Development Team about this issue! Link correction needs to take place.");
             tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
         }
         String dllink = br.getRegex("\"debridLink\":\"(.*?)\"\\}").getMatch(0);
