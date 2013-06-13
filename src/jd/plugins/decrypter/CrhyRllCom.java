@@ -99,6 +99,8 @@ public class CrhyRllCom extends PluginForDecrypt {
                     }
                 }
             }
+            // set utf-8
+            this.br.setCustomCharset("utf-8");
             // Load the linked page
             this.br.setFollowRedirects(true);
             this.br.getPage(cryptedLink.getCryptedUrl());
@@ -195,7 +197,7 @@ public class CrhyRllCom extends PluginForDecrypt {
                 String subName = new Regex(subTitle, "\\[[0-9\\s]+\\]\\s*(.+)").getMatch(0);
 
                 subName = subName.replace(' ', SEPARATOR).toLowerCase();
-                subName = subName.replaceAll("[^\\w\\_\\-.]+", "");
+                subName = subName.replaceAll("[\\[\\]\\(\\)]+", "");
 
                 final String subFile = title + "." + subName;
                 final DownloadLink thisLink = this.createDownloadlink(subUrl);
