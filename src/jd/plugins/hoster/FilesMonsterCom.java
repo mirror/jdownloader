@@ -18,12 +18,18 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -260,24 +266,89 @@ public class FilesMonsterCom extends PluginForHost {
         return 1;
     }
 
-    public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setReadTimeout(3 * 60 * 1000);
-        br.postPage("http://filesmonster.com/login.php", "act=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=Login");
-        if (br.getRegex("Your membership type: <span class=\"[A-Za-z0-9 ]+\">(Premium)</span>").getMatch(0) == null || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(this.getHost(), key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setReadTimeout(3 * 60 * 1000);
+                br.setFollowRedirects(true);
+                // get login page first, that way we don't post twice in case captcha is already invoked!
+                br.getPage("http://filesmonster.com/login.php");
+                Form login = br.getFormbyProperty("name", "login");
+                if (login == null) {
+                    String lang = System.getProperty("user.language");
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    DownloadLink dummyLink = new DownloadLink(this, "Account", "http://filesmonster.com", "http://filesmonster.com", true);
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    rc.setId(id);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode(cf, dummyLink);
+                    login.put("recaptcha_challenge_field", rc.getChallenge());
+                    login.put("recaptcha_response_field", Encoding.urlEncode(c));
+                }
+                login.put("user", Encoding.urlEncode(account.getUser()));
+                login.put("pass", Encoding.urlEncode(account.getPass()));
+                br.submitForm(login);
+
+                if (br.getRegex("Your membership type: <span class=\"[A-Za-z0-9 ]+\">(Premium)</span>").getMatch(0) == null || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(this.getHost());
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+                account.setProperty("lastlogin", System.currentTimeMillis());
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                account.setProperty("lastlogin", Property.NULL);
+                throw e;
+            }
+        }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account);
-
-        } catch (PluginException e) {
+            // CAPTCHA is shown after 30 successful logins since beginning of the day or after 5 unsuccessful login attempts.
+            // Make sure account service updates do not login more than once every 4 hours? so we only use up to 6 logins a day?
+            if (account.getStringProperty("lastlogin") != null && (System.currentTimeMillis() - 14400000 <= Long.parseLong(account.getStringProperty("lastlogin"))))
+                login(account, false);
+            else
+                login(account, true);
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
+        // needed because of cached login and we need to have a browser containing html to regex against!
+        if (br.getURL() == null || !br.getURL().equalsIgnoreCase("http://filesmoster.com/")) br.getPage("http://filesmonster.com/");
         ai.setUnlimitedTraffic();
         String expires = br.getRegex("<span>Valid until: <span class=\\'green\\'>([^<>\"]*?)</span>").getMatch(0);
         long ms = 0;
@@ -303,7 +374,7 @@ public class FilesMonsterCom extends PluginForHost {
             logger.info(downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4freeusers", "This file is only available for freeusers"));
         }
-        login(account);
+        login(account, false);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"), 120 * 60 * 1000l);
