@@ -68,12 +68,12 @@ public class UploadBazCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.5-raz
     // mods:
-    // non account: 1 * 20
-    // free account: 1 * 20
-    // premium account: 10 * unlimited
+    // non account: 16 * 20
+    // free account: 16 * 20
+    // premium account: 16 * unlimited
     // protocol: no https
-    // captchatype: recaptcha
-    // other: no redirects, over 10 chunks for any user becomes unstable.
+    // captchatype: 4dig num
+    // other: no redirects,
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -92,7 +92,7 @@ public class UploadBazCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -159,7 +159,7 @@ public class UploadBazCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, "freelink");
+        doFree(downloadLink, true, 0, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -537,7 +537,7 @@ public class UploadBazCom extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, true, 1, "freelink2");
+            doFree(link, true, -16, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
@@ -558,7 +558,7 @@ public class UploadBazCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -16);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
