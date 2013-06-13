@@ -101,4 +101,8 @@ public interface UpdateSettings extends ConfigInterface {
 
     void setProxyDialogOnNoConnectionEnabled(boolean b);
 
+    @DefaultLongValue(0l)
+    void setLastSuccessfulConnection(long currentTimeMillis);
+
+    long getLastSuccessfulConnection();
 }
