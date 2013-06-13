@@ -90,6 +90,7 @@ public class CompiledFiletypeFilter {
     }
 
     public static enum VideoExtensions implements ExtensionsFilterInterface {
+        ThreeGP("3GP"),
         ASF,
         AVI,
         DIVX,
