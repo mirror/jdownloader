@@ -64,10 +64,10 @@ public interface SilentModeSettings extends ConfigInterface {
 
     }
 
-    void setonCaptchaDuringSilentModeAction(CaptchaDuringSilentModeAction action);
+    void setOnCaptchaDuringSilentModeAction(CaptchaDuringSilentModeAction action);
 
-    @DefaultEnumValue("WAIT_IN_BACKGROUND_UNTIL_WINDOW_GETS_FOCUS_OR_TIMEOUT")
+    @DefaultEnumValue("DISABLE_DIALOG_SOLVER")
     @AboutConfig
-    CaptchaDuringSilentModeAction getonCaptchaDuringSilentModeAction();
+    CaptchaDuringSilentModeAction getOnCaptchaDuringSilentModeAction();
 
 }

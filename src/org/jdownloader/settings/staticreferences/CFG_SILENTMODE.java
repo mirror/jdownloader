@@ -32,4 +32,6 @@ public class CFG_SILENTMODE {
      * Activate Silent Mode Based on Frame Status
      **/
     public static final EnumKeyHandler                     AUTO_TRIGGER                                = SH.getKeyHandler("AutoTrigger", EnumKeyHandler.class);
+    // DISABLE_DIALOG_SOLVER
+    public static final EnumKeyHandler                     ON_CAPTCHA_DURING_SILENT_MODE_ACTION        = SH.getKeyHandler("OnCaptchaDuringSilentModeAction", EnumKeyHandler.class);
 }

@@ -51,7 +51,7 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
 
                 solverJob.getLogger().info("JAC (Click/Mouse) is done. Response so far: " + solverJob.getResponse());
                 if (JDGui.getInstance().isSilentModeActive()) {
-                    switch (CFG_SILENTMODE.CFG.getonCaptchaDuringSilentModeAction()) {
+                    switch (CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction()) {
                     case DEFAULT_DIALOG_HANDLING:
                         break;
                     case DISABLE_DIALOG_SOLVER:

@@ -69,7 +69,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
                 job.getLogger().info("JAC is done. Response so far: " + job.getResponse());
                 ChallengeSolverJobListener jacListener = null;
                 if (JDGui.getInstance().isSilentModeActive()) {
-                    switch (CFG_SILENTMODE.CFG.getonCaptchaDuringSilentModeAction()) {
+                    switch (CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction()) {
                     case DEFAULT_DIALOG_HANDLING:
                         break;
                     case DISABLE_DIALOG_SOLVER:
