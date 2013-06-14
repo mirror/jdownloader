@@ -13,6 +13,7 @@ import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -311,6 +312,12 @@ public class MenuItemData implements Storable {
                 break;
             case HIDE_IF_OPENFILE_IS_UNSUPPORTED:
                 if (!CrossSystem.isOpenFileSupported()) return false;
+                break;
+            case HIDE_IF_DOWNLOADS_ARE_NOT_RUNNING:
+                if (!DownloadWatchDog.getInstance().isRunning()) { return false; }
+                break;
+            case HIDE_IF_DOWNLOADS_ARE_RUNNING:
+                if (DownloadWatchDog.getInstance().isRunning()) { return false; }
                 break;
             case HIDE_IF_OUTPUT_NOT_EXISTING:
                 if (selection == null) return false;

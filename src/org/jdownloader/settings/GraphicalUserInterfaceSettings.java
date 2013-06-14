@@ -10,6 +10,7 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.LookUpKeys;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
@@ -348,7 +349,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setSpeedmeterAntiAliasingEnabled(boolean b);
 
     public static enum ClearAction {
+        @EnumLabel("Clear List only")
         CLEAR_LIST,
+        @EnumLabel("Reset full Panel")
         RESET_PANEL
     }
 
@@ -360,8 +363,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setLinkgrabberDefaultClearAction(ClearAction action);
 
     public static enum DeleteLinksDialogOption {
+        @EnumLabel("Always hide Dialog and never delete Files from Harddisk")
         HIDE_ALWAYS_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK,
+        @EnumLabel("Hide Dialog if CTRL is pressed and never delete Files from Harddisk")
         HIDE_IF_CTRL_IS_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK,
+        @EnumLabel("Hide Dialog if CTRL is NOT pressed and never delete Files from Harddisk")
         HIDE_IF_CTRL_IS_NOT_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK;
     }
 
@@ -372,7 +378,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setShowDeleteLinksDialogOption(DeleteLinksDialogOption option);
 
     public static enum MacDockProgressDisplay {
+        @EnumLabel("Total Progress")
         TOTAL_PROGRESS,
+        @EnumLabel("Nothing")
         NOTHING;
     }
 
@@ -403,36 +411,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setFocusTriggerForCaptchaDialogs(WindowState action);
 
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Set to true if you want JDownloader to steal focus when the window pops up")
+    @DescriptionForConfigEntry("Requirment: Java 1.7 / Set to true if you want JDownloader to steal focus when the window pops up")
     @AboutConfig
     boolean isWindowsRequestFocusOnActivationEnabled();
 
     void setWindowsRequestFocusOnActivationEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Activate the Silent Mode")
-    @AboutConfig
-    boolean isManualSilentModeEnabled();
-
-    void setManualSilentModeEnabled(boolean b);
-
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("If enabled, JDownloader will try to avoid any captcha windows. e.g. No Downloads that use Captcha will start.")
-    @AboutConfig
-    boolean isSkipCaptchasInSilentModeEnabled();
-
-    void setSkipCaptchasInSilentModeEnabled(boolean b);
-
-    public static enum AutoSilentModeTrigger {
-        NEVER,
-        JD_IN_TRAY,
-        JD_IN_TASKBAR
-    }
-
-    @DefaultEnumValue("NEVER")
-    @DescriptionForConfigEntry("Activate Silent Mode Based on Frame Status")
-    @AboutConfig
-    AutoSilentModeTrigger getAutoSilentModeTrigger();
-
-    void setAutoSilentModeTrigger(AutoSilentModeTrigger action);
 }

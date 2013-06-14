@@ -2348,6 +2348,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Properties" })
     String InfoPanel_InfoPanel_properties_();
 
+    @Default(lngs = { "en" }, values = { "Hide if Downloads are running" })
+    String InfoPanel_InfoPanel_hideIfDownloadesRunning();
+
+    @Default(lngs = { "en" }, values = { "Hide if Downloads aren't running" })
+    String InfoPanel_InfoPanel_hideIfDownloadsNotRunning();
+
     @Default(lngs = { "en" }, values = { "Hide if Action is disabled" })
     String InfoPanel_InfoPanel_hideIfDisabled();
 
@@ -2512,6 +2518,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Accessibility" })
     String GUISettings_GUISettings_object_accessability();
+
+    @Default(lngs = { "en" }, values = { "Tray Menu" })
+    String gui_config_menumanager_traymenu();
 
     @Default(lngs = { "en" }, values = { "Enable & disable the Silent Mode - Avoid Popups" })
     String action_silentmode_tooltip();

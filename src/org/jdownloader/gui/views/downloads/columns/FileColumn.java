@@ -72,7 +72,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
     }
 
     @Override
-    protected boolean onDoubleClick(MouseEvent e, AbstractNode contextObject) {
+    public boolean onDoubleClick(MouseEvent e, AbstractNode contextObject) {
 
         if (e.getPoint().x - getBounds().x < 30) { return false; }
         if (contextObject instanceof DownloadLink) {
@@ -123,7 +123,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         return true;
     }
 
-    protected boolean onRenameClick(final MouseEvent e, final AbstractNode obj) {
+    public boolean onRenameClick(final MouseEvent e, final AbstractNode obj) {
         if (e.getPoint().x - getBounds().x < 30) { return false; }
         startEditing(obj);
         return true;

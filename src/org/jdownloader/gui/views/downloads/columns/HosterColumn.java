@@ -209,7 +209,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     }
 
     @Override
-    protected boolean onDoubleClick(MouseEvent e, AbstractNode value) {
+    public boolean onDoubleClick(MouseEvent e, AbstractNode value) {
 
         SwingUtilities.invokeLater(new Runnable() {
 

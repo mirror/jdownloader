@@ -326,7 +326,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
                             @Override
                             public void handle(DownloadLink link) {
-                                link.setSkipped(false);
+                                link.setSkipReason(null);
                             }
 
                             @Override

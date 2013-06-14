@@ -16,70 +16,78 @@
 
 package org.jdownloader.gui.jdtrayicon;
 
+import java.awt.AlphaComposite;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.PointerInfo;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.ArrayList;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
+import javax.swing.KeyStroke;
+import javax.swing.SwingConstants;
+import javax.swing.Timer;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.toolbar.actions.AutoReconnectToggleAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.ClipBoardToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.GlobalPremiumSwitchToggleAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.OpenDefaultDownloadFolderAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.PauseDownloadsAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.ReconnectAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.StartDownloadsAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsAction;
-import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
-import jd.gui.swing.jdgui.menu.ChunksEditor;
-import jd.gui.swing.jdgui.menu.ParalellDownloadsEditor;
-import jd.gui.swing.jdgui.menu.ParallelDownloadsPerHostEditor;
-import jd.gui.swing.jdgui.menu.SpeedlimitEditor;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.gui.jdtrayicon.translate.T;
+import org.jdownloader.controlling.contextmenu.MenuContainer;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.MenuLink;
+import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
+import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
+import org.jdownloader.extensions.ExtensionNotLoadedException;
+import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.images.NewTheme;
 
 //final, because the constructor calls Thread.start(),
 //see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
 public final class TrayIconPopup extends JFrame implements MouseListener {
 
-    private static final long              serialVersionUID  = 2623190748929934409L;
+    private static final long serialVersionUID  = 2623190748929934409L;
 
-    private JPanel                         entryPanel;
-    private JPanel                         quickConfigPanel;
-    private JPanel                         bottomPanel;
-    private boolean                        enteredPopup;
+    // private JPanel entryPanel;
+    // private JPanel quickConfigPanel;
+    // private JPanel bottomPanel;
+    private boolean           enteredPopup;
 
-    private boolean                        hideThreadrunning = false;
+    private boolean           hideThreadrunning = false;
 
-    private JPanel                         exitPanel;
-    private java.util.List<AbstractButton> resizecomps;
+    // private JPanel exitPanel;
+    // private java.util.List<AbstractButton> resizecomps;
 
-    private transient Thread               hideThread;
+    private transient Thread  hideThread;
 
-    private TrayExtension                  extension;
+    private TrayExtension     extension;
 
-    private long                           visibleUntil      = -1;
+    private static final int  ICON_SIZE         = 20;
+
+    private long              visibleUntil      = -1;
 
     public void setVisible(boolean b) {
         if (isVisible() && !b) {
@@ -97,16 +105,16 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
     public TrayIconPopup(TrayExtension trayExtension) {
         super();
         this.extension = trayExtension;
-        resizecomps = new ArrayList<AbstractButton>();
+        // resizecomps = new ArrayList<AbstractButton>();
         setVisible(false);
         setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         addMouseListener(this);
         this.setUndecorated(true);
-        initEntryPanel();
-        initQuickConfigPanel();
-        initBottomPanel();
-        initExitPanel();
-        JPanel content = new JPanel(new MigLayout("ins 5, wrap 1", "[]", "[]5[]5[]5[]5[]"));
+        // initEntryPanel();
+        // initQuickConfigPanel();
+        // initBottomPanel();
+        // initExitPanel();
+        JPanel content = new JPanel(new MigLayout("ins 5, wrap 1", "[fill]", "[]5[]"));
         add(content);
         JButton header;
         content.add(header = new JButton("<html><b>" + JDUtilities.getJDTitle(0) + "</b></html>"), "align center");
@@ -119,21 +127,207 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
                 dispose();
             }
         });
-        content.add(new JSeparator(), "growx, spanx");
-        content.add(entryPanel);
-        content.add(new JSeparator(), "growx, spanx");
-        content.add(quickConfigPanel);
-        content.add(new JSeparator(), "growx, spanx");
-        content.add(bottomPanel, "pushx,growx");
-        content.add(new JSeparator(), "growx, spanx");
-        content.add(exitPanel);
-        content.setBorder(BorderFactory.createLineBorder(content.getBackground().darker()));
-        Dimension size = new Dimension(getPreferredSize().width, resizecomps.get(0).getPreferredSize().height);
-        for (AbstractButton c : resizecomps) {
-            c.setPreferredSize(size);
-            c.setMinimumSize(size);
-            c.setMaximumSize(size);
+        AbstractButton ab;
+        // System.out.println(this.getColConstraints(list.length));
+        MenuItemData last = null;
+        for (final MenuItemData menudata : TrayIconMenuManager.getInstance().getMenuData().getItems()) {
+            AbstractButton bt = null;
+            AppAction action;
+            try {
+                if (!menudata.showItem(null)) continue;
+                if (menudata instanceof SeperatorData) {
+                    if (last != null && last instanceof SeperatorData) {
+                        // no seperator dupes
+                        continue;
+                    }
+                    content.add(new JSeparator(SwingConstants.HORIZONTAL), "growx,spanx");
+                    last = menudata;
+                    continue;
+                }
+                if (menudata._getValidateException() != null) continue;
+
+                if (menudata.getType() == org.jdownloader.controlling.contextmenu.MenuItemData.Type.CONTAINER) {
+
+                    bt = new JToggleButton() {
+
+                        protected void paintComponent(Graphics g) {
+
+                            super.paintComponent(g);
+
+                            Graphics2D g2 = (Graphics2D) g;
+                            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                            ((Graphics2D) g2).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
+                            g2.setColor(Color.BLACK);
+                            g2.fillPolygon(new int[] { getWidth() - 5, getWidth() - 5 - 6, getWidth() - 5 - 6 }, new int[] { getHeight() / 2, getHeight() / 2 - 4, getHeight() / 2 + 4 }, 3);
+                        }
+                    };
+
+                    bt.setText(menudata.getName());
+                    bt.setOpaque(false);
+                    bt.setContentAreaFilled(false);
+                    bt.setBorderPainted(false);
+                    bt.addActionListener(new ActionListener() {
+                        private ExtPopupMenu root = null;
+
+                        public void actionPerformed(ActionEvent e) {
+                            hideThreadrunning = false;
+                            if (root != null && root.isShowing()) return;
+                            root = new ExtPopupMenu();
+
+                            new MenuBuilder(MainToolbarManager.getInstance(), root, null, (MenuContainer) menudata) {
+                                protected void addAction(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+                                    final JComponent ret = inst.addTo(root, selection);
+                                    if (ret instanceof AbstractButton) {
+                                        ((AbstractButton) ret).addActionListener(new ActionListener() {
+                                            public void actionPerformed(ActionEvent evt) {
+                                                ((AbstractButton) ret).getAction().actionPerformed(evt);
+                                                TrayIconPopup.this.dispose();
+                                            }
+                                        });
+                                    }
+                                }
+
+                            }.run();
+                            Object src = e.getSource();
+                            if (e.getSource() instanceof Component) {
+                                Component button = (Component) e.getSource();
+                                Dimension prefSize = root.getPreferredSize();
+                                int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                                root.show(button, button.getWidth(), -insets[0]);
+                            }
+
+                        }
+                    });
+                    bt.setIcon(NewTheme.I().getIcon(menudata.getIconKey(), ICON_SIZE));
+                    bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                    bt.setFocusPainted(false);
+                    bt.setHorizontalAlignment(JButton.LEFT);
+                    bt.setIconTextGap(5);
+                    bt.addMouseListener(new HoverEffect(bt));
+                    final AbstractButton finalBt = bt;
+                    bt.addMouseListener(new MouseListener() {
+
+                        private Timer timer;
+
+                        @Override
+                        public void mouseReleased(MouseEvent e) {
+                            if (timer != null) {
+                                timer.stop();
+                                timer = null;
+                            }
+                        }
+
+                        @Override
+                        public void mousePressed(MouseEvent e) {
+                            if (timer != null) {
+                                timer.stop();
+                                timer = null;
+                            }
+                        }
+
+                        @Override
+                        public void mouseExited(MouseEvent e) {
+                            if (timer != null) {
+                                timer.stop();
+                                timer = null;
+                            }
+                        }
+
+                        @Override
+                        public void mouseEntered(MouseEvent e) {
+
+                            timer = new Timer(500, new ActionListener() {
+
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    finalBt.doClick();
+                                }
+                            });
+                            timer.setRepeats(false);
+                            timer.start();
+
+                        }
+
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            if (timer != null) {
+                                timer.stop();
+                                timer = null;
+                            }
+                        }
+                    });
+                    content.add(bt);
+                    // bt = new ExtButton(new AppAction() {
+                    // {
+                    // setTooltipText(menudata.getName());
+                    // setName(menudata.getName());
+                    // putValue(AbstractAction.LARGE_ICON_KEY, createDropdownImage(menudata.getIconKey()));
+                    // }
+                    //
+                    // @Override
+                    // public void actionPerformed(ActionEvent e) {
+                    // ExtPopupMenu root = new ExtPopupMenu();
+                    //
+                    // new MenuBuilder(MainToolbarManager.getInstance(), root, null, (MenuContainer) menudata).run();
+                    // Object src = e.getSource();
+                    // if (e.getSource() instanceof Component) {
+                    // Component button = (Component) e.getSource();
+                    // Dimension prefSize = root.getPreferredSize();
+                    // int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                    // root.show(button, -insets[1], button.getHeight() - insets[0]);
+                    //
+                    // }
+                    // }
+                    //
+                    // });
+                    //
+                    // last = menudata;
+                    // add(bt, "width 32!,height 32!");
+                    // bt.setHideActionText(true);
+                    continue;
+                } else if (menudata.getActionData() != null) {
+
+                    action = menudata.createAction(null);
+                    if (StringUtils.isNotEmpty(menudata._getShortcut())) {
+                        action.setAccelerator(KeyStroke.getKeyStroke(menudata._getShortcut()));
+                    }
+                    content.add(getMenuEntry(action));
+                    last = menudata;
+
+                } else if (menudata instanceof MenuLink) {
+                    final JComponent item = menudata.createItem(null);
+                    if (StringUtils.isNotEmpty(menudata.getIconKey())) {
+                        if (item instanceof AbstractButton) {
+                            ((AbstractButton) item).setIcon(NewTheme.I().getIcon(menudata.getIconKey(), ICON_SIZE));
+                        }
+                    }
+                    content.add(item, "");
+
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
+        // content.add(new JSeparator(), "growx, spanx");
+        // content.add(entryPanel);
+        // content.add(new JSeparator(), "growx, spanx");
+        // content.add(quickConfigPanel);
+        // content.add(new JSeparator(), "growx, spanx");
+        // content.add(bottomPanel, "pushx,growx");
+        // content.add(new JSeparator(), "growx, spanx");
+        // content.add(exitPanel);
+        //
+
+        content.setBorder(BorderFactory.createLineBorder(content.getBackground().darker()));
+        // Dimension size = new Dimension(getPreferredSize().width, resizecomps.get(0).getPreferredSize().height);
+        // for (AbstractButton c : resizecomps) {
+        // c.setPreferredSize(size);
+        // c.setMinimumSize(size);
+        // c.setMaximumSize(size);
+        // }
         setAlwaysOnTop(true);
         pack();
         hideThread = new Thread() {
@@ -189,51 +383,6 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
         }.start();
     }
 
-    private void initEntryPanel() {
-        entryPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]"));
-        if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
-            addMenuEntry(entryPanel, new TrayAction(new StopDownloadsAction(null)));
-            addMenuEntry(entryPanel, new TrayAction(new PauseDownloadsAction(null), T._.popup_pause()));
-        } else if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
-            addMenuEntry(entryPanel, new TrayAction(new StartDownloadsAction(null)));
-
-        }
-        // addMenuEntry(entryPanel, new TrayAction(PauseDownloadsAction.getInstance().init(), T._.popup_pause()));
-        // addMenuEntry(entryPanel, "action.addurl");
-        // addMenuEntry(entryPanel, "action.load");
-        addMenuEntry(entryPanel, new TrayAction(new UpdateAction(null), T._.popup_update()));
-        addMenuEntry(entryPanel, new TrayAction(new ReconnectAction(null), T._.popup_reconnect()));
-        addMenuEntry(entryPanel, new TrayAction(new OpenDefaultDownloadFolderAction(null), T._.popup_downloadfolder()));
-    }
-
-    private void initQuickConfigPanel() {
-        quickConfigPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]"));
-        addMenuEntry(quickConfigPanel, new TrayAction(new GlobalPremiumSwitchToggleAction(null), T._.popup_premiumtoggle()));
-        addMenuEntry(quickConfigPanel, new TrayAction(new ClipBoardToggleAction(null), T._.popup_clipboardtoggle()));
-        addMenuEntry(quickConfigPanel, new TrayAction(new AutoReconnectToggleAction(null), T._.popup_reconnecttoggle()));
-    }
-
-    private void initExitPanel() {
-        exitPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]"));
-        addMenuEntry(exitPanel, new TrayAction(new ExitToolbarAction(null), T._.popup_exit()));
-    }
-
-    private void initBottomPanel() {
-
-        bottomPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[]2[]2[]2[]"));
-        bottomPanel.add(new ChunksEditor());
-        bottomPanel.add(new ParalellDownloadsEditor());
-        bottomPanel.add(new ParallelDownloadsPerHostEditor());
-        bottomPanel.add(new SpeedlimitEditor());
-
-    }
-
-    private void addMenuEntry(JPanel panel, AppAction actionId) {
-        AbstractButton ret = getMenuEntry(actionId);
-        if (ret == null) return;
-        panel.add(ret, "growx, pushx");
-    }
-
     private AbstractButton getMenuEntry(AppAction action) {
 
         AbstractButton b = createButton(action);
@@ -245,7 +394,7 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
                 }
             });
         }
-        resizecomps.add(b);
+        // resizecomps.add(b);
         return b;
     }
 
@@ -262,8 +411,13 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
                     TrayIconPopup.this.dispose();
                 }
             });
-            bt.setIcon(NewTheme.I().getCheckBoxImage(action.getIconKey(), false, 24));
-            bt.setSelectedIcon(NewTheme.I().getCheckBoxImage(action.getIconKey(), true, 24));
+
+            ImageIcon icon;
+            bt.setIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), false, ICON_SIZE));
+            bt.setRolloverIcon(icon);
+            bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, ICON_SIZE));
+            bt.setRolloverSelectedIcon(icon);
+
             bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             bt.setFocusPainted(false);
             bt.setHorizontalAlignment(JButton.LEFT);
@@ -271,6 +425,7 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
             bt.addMouseListener(new HoverEffect(bt));
             return bt;
         } else {
+            // we use a JToggleButton here, because JToggle buttons seem to have a different left icon gap the jbuttons
             JToggleButton bt = new JToggleButton(action);
             bt.setOpaque(false);
             bt.setContentAreaFilled(false);
@@ -281,7 +436,7 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
                     TrayIconPopup.this.dispose();
                 }
             });
-
+            bt.setIcon(NewTheme.I().getIcon(action.getIconKey(), ICON_SIZE));
             bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             bt.setFocusPainted(false);
             bt.setHorizontalAlignment(JButton.LEFT);

@@ -45,12 +45,14 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.utils.JDFileUtils;
 
 /**
- * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle dargestellt
+ * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
+ * dargestellt
  * 
  * @author astaldo
  */
@@ -146,9 +148,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private transient UniqueAlltimeID          uniqueID                            = new UniqueAlltimeID();
     transient private AbstractNodeNotifier     propertyListener;
+
     transient DomainInfo                       domainInfo                          = null;
     transient Boolean                          resumeable                          = null;
-    private boolean                            skipped                             = false;
+    private SkipReason                         skipReason                          = SkipReason.NONE;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -452,7 +455,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Liefert den Datei Namen dieses Downloads zurueck. Wurde der Name mit setfinalFileName(String) festgelegt wird dieser Name zurueckgegeben
+     * Liefert den Datei Namen dieses Downloads zurueck. Wurde der Name mit setfinalFileName(String) festgelegt wird dieser Name
+     * zurueckgegeben
      * 
      * @return Name des Downloads
      */
@@ -500,7 +504,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch ermittelt.
+     * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch
+     * ermittelt.
      * 
      * @return Statischer Dateiname
      */
@@ -544,8 +549,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * this will abort an ongoing download of this DownloadLink, the abortDownload method of the SingleDownloadController will start a new Thread for
-     * terminating of the download, so you will have to check manually when the download finally has stopped
+     * this will abort an ongoing download of this DownloadLink, the abortDownload method of the SingleDownloadController will start a new
+     * Thread for terminating of the download, so you will have to check manually when the download finally has stopped
      */
     public void abort() {
         SingleDownloadController dlc = getDownloadLinkController();
@@ -556,8 +561,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob schon geprueft worden
-     * ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
+     * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
+     * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
      * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
@@ -608,7 +613,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         linkStatus.reset();
         addDownloadTime(-1);
         this.availableStatus = AvailableStatus.UNCHECKED;
-        setSkipped(false);
+        setSkipReason(SkipReason.NONE);
         this.setEnabled(true);
         deleteFile(null, true, true);
         setFinalFileName(null);
@@ -621,8 +626,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * deletes the final downloaded file if finalfile is true deletes the partfile if partfile is true deletes the downloadfolder if its emptry and NOT equal to
-     * default downloadfolder
+     * deletes the final downloaded file if finalfile is true deletes the partfile if partfile is true deletes the downloadfolder if its
+     * emptry and NOT equal to default downloadfolder
      * 
      * @param deleteTo
      *            TODO
@@ -762,25 +767,29 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @return wahr, falls dieser DownloadLink aktiviert ist
      */
     public boolean isSkipped() {
-        return skipped;
+        return skipReason != null && skipReason != SkipReason.NONE;
     }
 
     /*
      * changes the enabled status of this DownloadLink, aborts download if its currently running
      */
-    public void setSkipped(boolean isSkipped) {
-        if (isSkipped) {
-            getLinkStatus().setStatusText(_JDT._.DownloadLink_setSkipped_statusmessage());
-        } else if (getLinkStatus() != null && StringUtils.equals(getLinkStatus().getStatusText(), _JDT._.DownloadLink_setSkipped_statusmessage())) {
+    public void setSkipReason(SkipReason skipReason) {
+        if (skipReason == null) skipReason = SkipReason.NONE;
+        switch (skipReason) {
+        case NONE:
             getLinkStatus().setStatusText(null);
+            break;
+        default:
+            getLinkStatus().setStatusText(_JDT._.DownloadLink_setSkipped_statusmessage());
         }
-        boolean changed = this.skipped != isSkipped;
+
+        boolean changed = this.skipReason != skipReason;
         if (!changed) return;
-        this.skipped = isSkipped;
-        if (isSkipped == true) {
+        this.skipReason = skipReason;
+        if (isSkipped()) {
             abort();
         }
-        if (changed) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SKIPPED, isSkipped));
+        if (changed) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SKIPPED, skipReason));
     }
 
     public void setLinkType(int linktypeContainer) {
@@ -871,10 +880,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum Speichern der Datei verwendet. ist er == null, so wird der dateiName im Plugin
-     * automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist endgueltig. Diese Funktion sollte nach Moeglichkeit nicht von Plugins verwendet werden. Sie
-     * gibt der Gui die Moeglichkeit unabhaengig von den Plugins einen Downloadnamen festzulegen. Userinputs>Automatische Erkennung - Plugins sollten
-     * {@link #setName(String)} verwenden um den Speichernamen anzugeben.
+     * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum Speichern der Datei verwendet. ist er == null, so wird der
+     * dateiName im Plugin automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist endgueltig. Diese Funktion sollte nach Moeglichkeit
+     * nicht von Plugins verwendet werden. Sie gibt der Gui die Moeglichkeit unabhaengig von den Plugins einen Downloadnamen festzulegen.
+     * Userinputs>Automatische Erkennung - Plugins sollten {@link #setName(String)} verwenden um den Speichernamen anzugeben.
      */
     public void setFinalFileName(String newfinalFileName) {
         String oldName = null;
@@ -918,7 +927,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Diese Methhode fragt das eigene Plugin welche Informationen ueber die File bereit gestellt werden. Der String eignet Sich zur Darstellung in der UI
+     * Diese Methhode fragt das eigene Plugin welche Informationen ueber die File bereit gestellt werden. Der String eignet Sich zur
+     * Darstellung in der UI
      */
     @Override
     public String toString() {

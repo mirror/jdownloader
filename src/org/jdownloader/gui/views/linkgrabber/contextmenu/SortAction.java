@@ -105,6 +105,6 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
 
     @Override
     public boolean isEnabled() {
-        return !si.isEmpty();
+        return si != null && !si.isEmpty();
     }
 }

@@ -111,9 +111,12 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
                         JDGui.getInstance().getMainFrame().setModalExclusionType(ModalExclusionType.TOOLKIT_EXCLUDE);
                         /**
                          * This may have no effect. we have to set the frame invisble and visible again
+                         * 
                          */
-                        JDGui.getInstance().getMainFrame().setVisible(!JDGui.getInstance().getMainFrame().isVisible());
-                        JDGui.getInstance().getMainFrame().setVisible(!JDGui.getInstance().getMainFrame().isVisible());
+
+                        // this brings our frame to top..
+                        // JDGui.getInstance().getMainFrame().setVisible(!JDGui.getInstance().getMainFrame().isVisible());
+                        // JDGui.getInstance().getMainFrame().setVisible(!JDGui.getInstance().getMainFrame().isVisible());
 
                     }
                 }.waitForEDT();

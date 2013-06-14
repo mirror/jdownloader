@@ -20,6 +20,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -39,6 +40,7 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -184,6 +186,8 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                 if (menudata.getType() == org.jdownloader.controlling.contextmenu.MenuItemData.Type.CONTAINER) {
                     bt = new ExtButton(new AppAction() {
+                        private ExtPopupMenu root = null;
+
                         {
                             setTooltipText(menudata.getName());
                             setName(menudata.getName());
@@ -192,7 +196,8 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            ExtPopupMenu root = new ExtPopupMenu();
+                            if (root != null && root.isShowing()) return;
+                            root = new ExtPopupMenu();
 
                             new MenuBuilder(MainToolbarManager.getInstance(), root, null, (MenuContainer) menudata).run();
                             Object src = e.getSource();
@@ -208,6 +213,59 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                     });
 
                     last = menudata;
+                    final AbstractButton finalBt = bt;
+                    bt.addMouseListener(new MouseListener() {
+
+                        private Timer timer;
+
+                        @Override
+                        public void mouseReleased(MouseEvent e) {
+                            if (timer != null) {
+                                timer.stop();
+                                timer = null;
+                            }
+                        }
+
+                        @Override
+                        public void mousePressed(MouseEvent e) {
+                            if (timer != null) {
+                                timer.stop();
+                                timer = null;
+                            }
+                        }
+
+                        @Override
+                        public void mouseExited(MouseEvent e) {
+                            if (timer != null) {
+                                timer.stop();
+                                timer = null;
+                            }
+                        }
+
+                        @Override
+                        public void mouseEntered(MouseEvent e) {
+
+                            timer = new Timer(200, new ActionListener() {
+
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    finalBt.doClick();
+                                }
+                            });
+                            timer.setRepeats(false);
+                            timer.start();
+
+                        }
+
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            if (timer != null) {
+                                timer.stop();
+                                timer = null;
+                            }
+                        }
+                    });
+
                     add(bt, "width 32!,height 32!");
                     bt.setHideActionText(true);
                     continue;

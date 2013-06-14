@@ -95,7 +95,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     }
 
-    protected boolean onSingleClick(final MouseEvent e, final AbstractNode value) {
+    public boolean onSingleClick(final MouseEvent e, final AbstractNode value) {
         if (value instanceof DownloadLink) {
             DownloadLink dl = (DownloadLink) value;
             if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertTaskColumnEnabled()) {

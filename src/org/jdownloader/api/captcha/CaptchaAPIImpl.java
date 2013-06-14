@@ -27,6 +27,7 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.plugins.SkipReason;
 
 public class CaptchaAPIImpl implements CaptchaAPI {
 
@@ -154,7 +155,7 @@ public class CaptchaAPIImpl implements CaptchaAPI {
         // job.kill();
 
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        job.getChallenge().getDownloadLink(job.getChallenge()).setSkipped(true);
+        job.getChallenge().getDownloadLink(job.getChallenge()).setSkipReason(SkipReason.CAPTCHA);
 
         return true;
     }

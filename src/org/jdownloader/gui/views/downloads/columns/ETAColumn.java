@@ -118,7 +118,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
 
     }
 
-    protected boolean onSingleClick(final MouseEvent e, final AbstractNode value) {
+    public boolean onSingleClick(final MouseEvent e, final AbstractNode value) {
         if (value instanceof DownloadLink) {
             if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertETAColumnEnabled()) {
                 DownloadLink dlLink = (DownloadLink) value;

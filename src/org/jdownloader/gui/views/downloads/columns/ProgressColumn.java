@@ -54,7 +54,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
         return obj.isEnabled();
     }
 
-    protected boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
+    public boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
         SwingUtilities.invokeLater(new Runnable() {
 
             public void run() {

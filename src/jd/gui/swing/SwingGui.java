@@ -136,7 +136,8 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
                 disableAlwaysonTop.setInitialDelay(1000);
                 disableAlwaysonTop.setRepeats(false);
                 disableAlwaysonTop.start();
-                repaint();
+                // This repaint may cause a kind of flickering on some systems. we have reports from windows and linux users
+                // repaint();
             }
 
             public void setVisible(boolean b) {

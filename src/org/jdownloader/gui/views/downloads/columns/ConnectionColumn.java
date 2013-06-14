@@ -100,13 +100,13 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
     }
 
     @Override
-    protected boolean onSingleClick(MouseEvent e, AbstractNode obj) {
+    public boolean onSingleClick(MouseEvent e, AbstractNode obj) {
         return super.onSingleClick(e, obj);
 
     }
 
     @Override
-    protected boolean onDoubleClick(MouseEvent e, AbstractNode obj) {
+    public boolean onDoubleClick(MouseEvent e, AbstractNode obj) {
         if (obj instanceof DownloadLink) {
 
             ConnectionTooltip tt = new ConnectionTooltip((DownloadLink) obj) {

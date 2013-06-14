@@ -57,11 +57,23 @@ public class GuiUtils {
             public Boolean edtRun() {
                 // this methods does not work under windows if the jdownloader frame is flashing in task. in this case it is not really
                 // active, but mainFRame.isActive returns true
-                if (!mainFrame.isVisible()) return false;
-                if (mainFrame.isActive()) return true;
+                if (!mainFrame.isVisible()) {
+                    System.out.println("Mainframe is invisible");
+                    return false;
+                }
+                // frames can be active, but not visible... at least under win7 java 1.7
+                if (mainFrame.isActive() && mainFrame.isVisible()) {
+                    System.out.println("Mainframe is active");
+                    return true;
+                }
 
                 for (final Window w : mainFrame.getOwnedWindows()) {
-                    if (w.isActive()) { return true; }
+                    // frames can be active, but not visible... at least under win7 java 1.7
+                    if (w.isActive() && w.isVisible()) {
+
+                        System.out.println(w + " is active");
+                        return true;
+                    }
 
                 }
                 return false;

@@ -118,7 +118,7 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
-    protected boolean onDoubleClick(MouseEvent e, AbstractNode obj) {
+    public boolean onDoubleClick(MouseEvent e, AbstractNode obj) {
         return false;
     }
 

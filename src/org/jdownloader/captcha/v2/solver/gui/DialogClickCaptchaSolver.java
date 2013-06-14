@@ -15,7 +15,7 @@ import org.jdownloader.captcha.v2.solver.Captcha9kwSettings;
 import org.jdownloader.captcha.v2.solver.Captcha9kwSolverClick;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
 public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
     private CaptchaSettings    config;
@@ -51,10 +51,13 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
 
                 solverJob.getLogger().info("JAC (Click/Mouse) is done. Response so far: " + solverJob.getResponse());
                 if (JDGui.getInstance().isSilentModeActive()) {
-                    if (CFG_GUI.SKIP_CAPTCHAS_IN_SILENT_MODE_ENABLED.isEnabled()) {
+                    switch (CFG_SILENTMODE.CFG.getonCaptchaDuringSilentModeAction()) {
+                    case DEFAULT_DIALOG_HANDLING:
+                        break;
+                    case DISABLE_DIALOG_SOLVER:
+                        return;
+                    case SKIP_LINK:
                         throw new SkipException(SkipRequest.SINGLE);
-                    } else {
-                        // nothing.. the dialog hook will handle this
                     }
                 }
                 checkInterruption();

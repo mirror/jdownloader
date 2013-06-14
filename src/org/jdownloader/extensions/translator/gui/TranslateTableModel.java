@@ -132,7 +132,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             }
 
             @Override
-            protected boolean onSingleClick(MouseEvent e, TranslateEntry obj) {
+            public boolean onSingleClick(MouseEvent e, TranslateEntry obj) {
                 ToolTip tt = new ToolTip() {
                     public boolean isLastHiddenEnabled() {
                         return false;

@@ -47,7 +47,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
-    protected boolean onRenameClick(MouseEvent e, AbstractNode clicked) {
+    public boolean onRenameClick(MouseEvent e, AbstractNode clicked) {
         // JDGui.help(_GUI._.literall_usage_tipp(), _GUI._.DownloadFolderColumn_onSingleClick_object_(), NewTheme.I().getIcon("smart", 48));
 
         new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(clicked)).actionPerformed(null);
@@ -55,7 +55,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
-    protected boolean onDoubleClick(MouseEvent e, AbstractNode value) {
+    public boolean onDoubleClick(MouseEvent e, AbstractNode value) {
 
         File ret = LinkTreeUtils.getDownloadDirectory(value);
         if (ret != null && ret.exists() && ret.isDirectory()) {
@@ -68,7 +68,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
-    protected boolean onSingleClick(MouseEvent e, AbstractNode obj) {
+    public boolean onSingleClick(MouseEvent e, AbstractNode obj) {
 
         return false;
     }

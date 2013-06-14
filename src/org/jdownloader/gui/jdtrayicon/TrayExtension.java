@@ -63,7 +63,7 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.gui.jdtrayicon.translate.T;
+import org.jdownloader.gui.jdtrayicon.translate._TRAY;
 import org.jdownloader.gui.jdtrayicon.translate.TrayiconTranslation;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -176,7 +176,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     @Override
     public String getDescription() {
-        return T._.jd_plugins_optional_jdtrayicon_jdlighttray_description();
+        return _TRAY._.jd_plugins_optional_jdtrayicon_jdlighttray_description();
     }
 
     @Override
@@ -218,7 +218,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     public TrayExtension() {
-        setTitle(T._.jd_plugins_optional_jdtrayicon_jdlighttray());
+        setTitle(_TRAY._.jd_plugins_optional_jdtrayicon_jdlighttray());
 
     }
 

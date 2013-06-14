@@ -45,6 +45,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.jdtrayicon.TrayIconMenuManager;
 import org.jdownloader.gui.mainmenu.MainMenuManager;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
@@ -70,6 +71,7 @@ public class GUISettings extends AbstractConfigPanel {
     private SettingsButton    contextMenuManagerLinkgrabber;
     private SettingsButton    toolbarManager;
     private SettingsButton    mainMenuManager;
+    private SettingsButton    trayMenuManager;
 
     public String getTitle() {
         return _GUI._.GUISettings_getTitle();
@@ -208,6 +210,25 @@ public class GUISettings extends AbstractConfigPanel {
 
             }
         });
+
+        trayMenuManager = new SettingsButton(new AppAction() {
+            {
+                setName(_GUI._.lit_open());
+
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        TrayIconMenuManager.getInstance().openGui();
+                    }
+                };
+
+            }
+        });
         this.addHeader(getTitle(), NewTheme.I().getIcon("gui", 32));
         this.addDescription(_GUI._.GUISettings_GUISettings_description());
         // this.addHeader(getTitle(),
@@ -221,6 +242,7 @@ public class GUISettings extends AbstractConfigPanel {
         this.addPair(_GUI._.gui_config_menumanager_linkgrabber(), null, contextMenuManagerLinkgrabber);
         this.addPair(_GUI._.gui_config_menumanager_toolbar(), null, toolbarManager);
         this.addPair(_GUI._.gui_config_menumanager_mainmenu(), null, mainMenuManager);
+        this.addPair(_GUI._.gui_config_menumanager_traymenu(), null, trayMenuManager);
 
         this.addHeader(_GUI._.GUISettings_GUISettings_object_accessability(), NewTheme.I().getIcon("barrierfreesettings", 32));
         this.addDescription(_JDT._.gui_settings_barrierfree_description());

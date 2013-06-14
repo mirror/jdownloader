@@ -144,13 +144,14 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             //
         }
 
+        // this focus code is tested for windows 7 with java 1.7
         if (!focus) {
             System.out.println("Disable focus");
+            getDialog().toFront();
             getDialog().setFocusableWindowState(false);
-
             getDialog().getOwner().setFocusableWindowState(false);
             JDGui.getInstance().getMainFrame().setFocusableWindowState(false);
-            // JDGui.getInstance().getMainFrame().setFocusable(false);
+            JDGui.getInstance().getMainFrame().setFocusable(false);
             Timer timer = new Timer(1000, new ActionListener() {
 
                 @Override
@@ -159,12 +160,14 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
                     getDialog().setFocusableWindowState(true);
                     getDialog().getOwner().setFocusableWindowState(true);
                     JDGui.getInstance().getMainFrame().setFocusableWindowState(true);
+                    JDGui.getInstance().getMainFrame().setFocusable(true);
                     System.out.println("Can Focus now");
                 }
 
             });
             timer.setRepeats(false);
             timer.start();
+            JDGui.getInstance().flashTaskbar();
 
         }
 

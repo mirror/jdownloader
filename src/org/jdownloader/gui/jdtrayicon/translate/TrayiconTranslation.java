@@ -115,4 +115,7 @@ public interface TrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Tray Icon" })
     String getName();
 
+    @Default(lngs = { "en" }, values = { "Tray Icon Manager" })
+    String TrayMenuManager_getName();
+
 }

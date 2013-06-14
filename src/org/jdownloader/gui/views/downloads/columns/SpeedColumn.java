@@ -138,7 +138,7 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         return false;
     }
 
-    protected boolean onSingleClick(final MouseEvent e, final AbstractNode obj) {
+    public boolean onSingleClick(final MouseEvent e, final AbstractNode obj) {
         if (isSpeedWarning(obj)) {
 
             try {

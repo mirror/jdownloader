@@ -48,7 +48,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
-    protected boolean onRenameClick(MouseEvent e, AbstractNode obj) {
+    public boolean onRenameClick(MouseEvent e, AbstractNode obj) {
         new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj)).actionPerformed(null);
         return true;
     }
@@ -59,7 +59,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
-    protected boolean onDoubleClick(MouseEvent e, AbstractNode value) {
+    public boolean onDoubleClick(MouseEvent e, AbstractNode value) {
         if (CrossSystem.isOpenFileSupported() && value != null) {
 
             File ret = LinkTreeUtils.getDownloadDirectory(value);
@@ -70,7 +70,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
-    protected boolean onSingleClick(MouseEvent e, AbstractNode obj) {
+    public boolean onSingleClick(MouseEvent e, AbstractNode obj) {
         // JDGui.help(_GUI._.literall_usage_tipp(),
         // _GUI._.DownloadFolderColumn_onSingleClick_object_(),
         // NewTheme.I().getIcon("smart", 48));

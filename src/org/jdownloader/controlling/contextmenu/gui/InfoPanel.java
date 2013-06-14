@@ -45,7 +45,8 @@ import org.jdownloader.images.NewTheme;
 public class InfoPanel extends MigPanel implements ActionListener {
 
     private JLabel       label;
-
+    private JCheckBox    hideIfDownloadsRunning;
+    private JCheckBox    hideIfDownloadsNotRunning;
     private JCheckBox    hideIfDisabled;
     private JCheckBox    hideIfOpenFileIsUnsupported;
     private JCheckBox    hideIfOutputNotExists;
@@ -79,6 +80,10 @@ public class InfoPanel extends MigPanel implements ActionListener {
         // MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING;
         hideIfDisabled = new JCheckBox();
         hideIfDisabled.addActionListener(this);
+        hideIfDownloadsRunning = new JCheckBox();
+        hideIfDownloadsRunning.addActionListener(this);
+        hideIfDownloadsNotRunning = new JCheckBox();
+        hideIfDownloadsNotRunning.addActionListener(this);
         hideIfOpenFileIsUnsupported = new JCheckBox();
         hideIfOpenFileIsUnsupported.addActionListener(this);
         hideIfOutputNotExists = new JCheckBox();
@@ -209,6 +214,16 @@ public class InfoPanel extends MigPanel implements ActionListener {
 
             }), "width 22!,height 22!");
         }
+        if (managerFrame.getManager().supportsProperty(MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_RUNNING)) {
+            add(label(_GUI._.InfoPanel_InfoPanel_hideIfDownloadesRunning()));
+            add(hideIfDownloadsRunning, "spanx");
+        }
+
+        if (managerFrame.getManager().supportsProperty(MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_NOT_RUNNING)) {
+            add(label(_GUI._.InfoPanel_InfoPanel_hideIfDownloadsNotRunning()));
+            add(hideIfDownloadsNotRunning, "spanx");
+        }
+
         if (managerFrame.getManager().supportsProperty(MenuItemProperty.HIDE_IF_DISABLED)) {
             add(label(_GUI._.InfoPanel_InfoPanel_hideIfDisabled()));
             add(hideIfDisabled, "spanx");
@@ -279,6 +294,8 @@ public class InfoPanel extends MigPanel implements ActionListener {
         String n = mid.getName();
 
         name.setText(n);
+        link(mid, hideIfDownloadsRunning, MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_RUNNING);
+        link(mid, hideIfDownloadsNotRunning, MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_NOT_RUNNING);
         link(mid, hideIfDisabled, MenuItemProperty.HIDE_IF_DISABLED);
         link(mid, hideIfOpenFileIsUnsupported, MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED);
 
@@ -376,6 +393,8 @@ public class InfoPanel extends MigPanel implements ActionListener {
             @Override
             protected void runInEDT() {
                 HashSet<MenuItemProperty> newProperties = new HashSet<MenuItemProperty>();
+                if (hideIfDownloadsNotRunning.isSelected()) newProperties.add(MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_NOT_RUNNING);
+                if (hideIfDownloadsRunning.isSelected()) newProperties.add(MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_RUNNING);
                 if (hideIfDisabled.isSelected()) newProperties.add(MenuItemProperty.HIDE_IF_DISABLED);
                 if (hideIfOpenFileIsUnsupported.isSelected()) newProperties.add(MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED);
                 if (hideIfOutputNotExists.isSelected()) newProperties.add(MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING);

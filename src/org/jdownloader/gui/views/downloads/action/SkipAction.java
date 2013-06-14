@@ -14,6 +14,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.SkipReason;
 
 public class SkipAction extends AppAction {
 
@@ -72,7 +73,15 @@ public class SkipAction extends AppAction {
             public void run() {
                 boolean enable = state.equals(State.ALL_UNSKIPPED);
                 for (DownloadLink a : si.getChildren()) {
-                    a.setSkipped(enable);
+                    // keep skipreason if a reason is set
+                    if (enable) {
+                        if (!a.isSkipped()) {
+                            a.setSkipReason(SkipReason.MANUAL);
+                        }
+                    } else {
+                        a.setSkipReason(SkipReason.MANUAL);
+                    }
+
                 }
             }
         }, true);

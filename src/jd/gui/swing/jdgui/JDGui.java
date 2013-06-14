@@ -100,7 +100,9 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.FrameStatus;
 import org.jdownloader.settings.FrameStatus.ExtendedState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.SilentModeSettings.DialogDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.UpdateController;
@@ -335,6 +337,13 @@ public class JDGui extends SwingGui {
             public <T> T showDialog(AbstractDialog<T> dialog) throws DialogClosedException, DialogCanceledException {
                 // synchronized (this) {
                 try {
+
+                    if (CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.CANCEL_DIALOG) {
+                        // Cancel dialog
+                        throw new DialogClosedException(Dialog.RETURN_CLOSED);
+
+                    }
+
                     // if this is the edt, we should not block it.. NEVER
                     if (!SwingUtilities.isEventDispatchThread()) {
                         // block dialog calls... the shall appear as soon as isSilentModeActive is false.
@@ -349,6 +358,10 @@ public class JDGui extends SwingGui {
                         if (dialog.isCountdownFlagEnabled()) {
                             long countdownDif = dialog.getCountdown() * 1000;
                             countdown = System.currentTimeMillis() + countdownDif;
+                        }
+                        if (countdown < 0 && CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.WAIT_IN_BACKGROUND_UNTIL_WINDOW_GETS_FOCUS_OR_TIMEOUT) {
+                            countdown = System.currentTimeMillis() + CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION_TIMEOUT.getValue();
+
                         }
                         flashTaskbar();
                         while (isSilentModeActive()) {
@@ -909,15 +922,15 @@ public class JDGui extends SwingGui {
             @Override
             public Boolean edtRun() {
                 // don't block anthing if the frame is active anyway
-                if (getMainFrame().hasFocus() || getMainFrame().isActive()) { return false; }
+                if ((getMainFrame().hasFocus() || getMainFrame().isActive()) && getMainFrame().isVisible()) { return false; }
                 // don't block anything if the tray is active
                 if (tray.isEnabled() && tray.isActive()) return false;
 
-                if (CFG_GUI.MANUAL_SILENT_MODE_ENABLED.isEnabled()) {
+                if (CFG_SILENTMODE.MANUAL_ENABLED.isEnabled()) {
 
                 return true; }
 
-                switch (CFG_GUI.CFG.getAutoSilentModeTrigger()) {
+                switch (CFG_SILENTMODE.CFG.getAutoTrigger()) {
                 case JD_IN_TASKBAR:
                     if (getMainFrame().getState() == JFrame.ICONIFIED && getMainFrame().isVisible()) return true;
                     break;
@@ -1231,6 +1244,7 @@ public class JDGui extends SwingGui {
 
             @Override
             protected void runInEDT() {
+
                 final int state = mainFrame.getExtendedState();
                 if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isTaskBarFlashEnabled()) {
                     if (state == ExtendedState.ICONIFIED.getId()) {
