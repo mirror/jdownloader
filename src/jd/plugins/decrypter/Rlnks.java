@@ -81,10 +81,6 @@ public class Rlnks extends PluginForDecrypt {
             /* Handle Captcha and/or password */
             handleCaptchaAndPassword(parameter, param);
             if (!br.getURL().contains("relink.us/")) {
-                try {
-                    invalidateLastChallengeResponse();
-                } catch (final Throwable e) {
-                }
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -134,18 +130,7 @@ public class Rlnks extends PluginForDecrypt {
                     decryptLinks(decryptedLinks, param);
                 }
             }
-            if (decryptedLinks.isEmpty() && br.containsHTML(cnlUrl)) {
-                try {
-                    invalidateLastChallengeResponse();
-                } catch (final Throwable e) {
-                }
-                throw new DecrypterException("CNL2 only, open this link in Browser");
-            } else {
-                try {
-                    validateLastChallengeResponse();
-                } catch (final Throwable e) {
-                }
-            }
+            if (decryptedLinks.isEmpty() && br.containsHTML(cnlUrl)) { throw new DecrypterException("CNL2 only, open this link in Browser"); }
             return decryptedLinks;
         }
     }
@@ -166,6 +151,11 @@ public class Rlnks extends PluginForDecrypt {
                     }
                     logger.warning("Falsche Captcheingabe, Link wird übersprungen!");
                     continue;
+                } else {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                 }
                 brc = br.cloneBrowser();
                 if (brc != null && brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) {
