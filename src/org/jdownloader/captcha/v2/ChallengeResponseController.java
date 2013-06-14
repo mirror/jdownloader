@@ -98,7 +98,6 @@ public class ChallengeResponseController {
      */
     public <T> void setSkipRequest(SkipRequest skipRequest, ChallengeSolver<T> solver, Challenge<T> sourceChallenge) {
         synchronized (activeJobs) {
-
             for (SolverJob<?> job : activeJobs) {
                 if (job.getChallenge() == sourceChallenge) {
                     job.setSkipRequest(skipRequest);
@@ -130,7 +129,6 @@ public class ChallengeResponseController {
             idToJobMap.put(c.getId().getID(), job);
         }
         try {
-
             for (final ChallengeSolver<T> cs : solver) {
                 logger.info("Send to solver: " + cs + " " + job);
                 cs.enqueue(job);

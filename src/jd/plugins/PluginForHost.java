@@ -867,6 +867,10 @@ public abstract class PluginForHost extends Plugin {
         return false;
     }
 
+    public boolean rewriteHost(Account acc) {
+        return false;
+    }
+
     public String getCustomFavIconURL() {
         return getHost();
     }

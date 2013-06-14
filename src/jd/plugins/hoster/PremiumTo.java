@@ -51,6 +51,24 @@ public class PremiumTo extends PluginForHost {
     }
 
     @Override
+    public boolean rewriteHost(DownloadLink link) {
+        if ("premium4.me".equals(link.getHost())) {
+            link.setHost(getHost());
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean rewriteHost(Account acc) {
+        if ("premium4.me".equals(acc.getHoster())) {
+            acc.setHoster(getHost());
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);

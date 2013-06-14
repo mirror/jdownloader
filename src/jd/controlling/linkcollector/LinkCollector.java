@@ -1165,8 +1165,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         if (fixWith.containsKey(dlLink.getHost()) == false) {
                             for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
                                 try {
-                                    if (p.getPrototype(null).rewriteHost(dlLink)) {
-                                        pluginForHost = p.getPrototype(null);
+                                    PluginForHost protoType = p.getPrototype(null);
+                                    if (protoType.rewriteHost(dlLink)) {
+                                        pluginForHost = protoType;
                                         break;
                                     }
                                 } catch (final Throwable e) {
@@ -1176,8 +1177,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         } else {
                             PluginForHost rewriteWith = fixWith.get(dlLink.getHost());
                             if (rewriteWith != null) {
-                                rewriteWith.rewriteHost(dlLink);
-                                pluginForHost = rewriteWith;
+                                if (rewriteWith.rewriteHost(dlLink)) {
+                                    pluginForHost = rewriteWith;
+                                }
                             }
                         }
                         if (pluginForHost != null) {
