@@ -23,6 +23,7 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -42,6 +43,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "http://(www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" }, flags = { 2 })
 public class MountFileNet extends PluginForHost {
 
+    private final String  MAINPAGE = "http://mountfile.net";
+    private final boolean useRUA   = true;
+
     public MountFileNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://mountfile.net/premium/");
@@ -52,11 +56,26 @@ public class MountFileNet extends PluginForHost {
         return "http://mountfile.net/terms/";
     }
 
-    private final String MAINPAGE = "http://mountfile.net";
+    public boolean hasAutoCaptcha() {
+        return false;
+    }
+
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">File not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -109,6 +128,11 @@ public class MountFileNet extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
@@ -127,6 +151,7 @@ public class MountFileNet extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -197,21 +222,32 @@ public class MountFileNet extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void reset() {
+    private Browser prepBrowser(Browser prepBr) {
+        // define custom browser headers and language settings.
+        if (useRUA) {
+            if (agent.string == null) {
+                /* we first have to load the plugin, before we can reference it */
+                JDUtilities.getPluginForHost("mediafire.com");
+                agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            }
+            prepBr.getHeaders().put("User-Agent", agent.string);
+        }
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        return prepBr;
+    }
+
+    private static StringContainer agent = new StringContainer();
+
+    public static class StringContainer {
+        public String string = null;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public void reset() {
     }
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        return true;
-    }
 }
