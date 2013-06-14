@@ -145,17 +145,8 @@ public class Rlnks extends PluginForDecrypt {
                 Thread.sleep(2333);
                 handleCaptchaAndPassword("http://www.relink.us/frame.php?" + match, param);
                 if (ALLFORM != null && ALLFORM.getRegex("captcha").matches()) {
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
                     logger.warning("Falsche Captcheingabe, Link wird übersprungen!");
                     continue;
-                } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
                 }
                 brc = br.cloneBrowser();
                 if (brc != null && brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) {
@@ -210,6 +201,10 @@ public class Rlnks extends PluginForDecrypt {
                     ALLFORM.remove("button");
                     final String captchaLink = ALLFORM.getRegex("src=\"(.*?)\"").getMatch(0);
                     if (captchaLink == null) {
+                        try {
+                            validateLastChallengeResponse();
+                        } catch (final Throwable e) {
+                        }
                         break;
                     }
                     final File captchaFile = this.getLocalCaptchaFile();
@@ -222,12 +217,20 @@ public class Rlnks extends PluginForDecrypt {
                 br.submitForm(ALLFORM);
                 if (br.getURL().contains("error.php")) {
                     br.getPage(partLink);
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     continue;
                 }
                 ALLFORM = br.getFormbyProperty("name", "form");
                 ALLFORM = ALLFORM == null && b ? br.getForm(0) : ALLFORM;
                 if (ALLFORM != null && ALLFORM.getAction().startsWith("http://www.relink.us/container_password.php")) continue;
                 ALLFORM = null;
+                try {
+                    validateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
                 break;
             }
         }
