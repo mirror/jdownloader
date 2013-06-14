@@ -259,7 +259,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         txtTestUrl.setText(rule.getTestUrl());
         fpDest.setQuickSelectionList(DownloadPath.loadList(rule.getDownloadDestination()));
         fpDest.setPath(rule.getDownloadDestination());
-        fpDest.setQuickSelectionList(DownloadPath.loadList(rule.getMoveto()));
+        fpMove.setQuickSelectionList(DownloadPath.loadList(rule.getMoveto()));
         fpMove.setPath(rule.getMoveto());
 
         cbExtract.setSelected(rule.isAutoExtractionEnabled() != null);

@@ -101,9 +101,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     @Override
     public void onChanged() {
         delayedFilter.run();
-
         closeEnabled = StringUtils.isNotEmpty(getText());
-
     }
 
     protected void paintComponent(Graphics g) {
