@@ -93,10 +93,11 @@ public class MegaConz extends PluginForHost {
         String fileInfo = decrypt(at, keyString);
         String fileName = new Regex(fileInfo, "\"n\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
         if (fileName == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String previousFileName = link.getFinalFileName();
         link.setFinalFileName(fileName);
         try {
-            if (previousFileName == null || previousFileName.equals(fileName) && link.getCustomFileOutputFilename() == null) link.setCustomFileOutputFilename(fileName + encrypted);
+            if (link.getCustomFileOutputFilename() == null) {
+                link.setCustomFileOutputFilenameAppend(encrypted);
+            }
         } catch (final Throwable e) {
         }
         return AvailableStatus.TRUE;
@@ -288,6 +289,7 @@ public class MegaConz extends PluginForHost {
             link.getLinkStatus().setStatusText("Finished");
             try {
                 link.setFinalFileOutput(dst.getAbsolutePath());
+                link.setCustomFileOutputFilenameAppend(null);
                 link.setCustomFileOutputFilename(null);
             } catch (final Throwable e) {
             }
