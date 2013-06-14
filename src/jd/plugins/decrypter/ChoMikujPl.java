@@ -39,23 +39,23 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl//?[^<>\"]+|chomikujpagedecrypt\\.pl/.*?,\\d+$)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl//?[^<>\"]+|chomikujpagedecrypt\\.pl/result/.+)" }, flags = { 0 })
 public class ChoMikujPl extends PluginForDecrypt {
 
     public ChoMikujPl(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String PASSWORDTEXT             = "Ten folder jest (<b>)?zabezpieczony oddzielnym hasłem";
-    private String              FOLDERPASSWORD           = null;
-    private ArrayList<Integer>  REGEXSORT                = new ArrayList<Integer>();
-    private String              ERROR                    = "Decrypter broken for link: ";
-    private String              REQUESTVERIFICATIONTOKEN = null;
-    private static final String PAGEDECRYPTLINK          = "http://chomikujpagedecrypt\\.pl/.*?\\d+";
-    private static final String ENDINGS                  = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip)";
-    private static final String VIDEOENDINGS             = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
-    private static final String UNSUPPORTED              = "http://(www\\.)?chomikuj\\.pl//?(action/[^<>\"]+|(Media|Kontakt|PolitykaPrywatnosci|Empty|Abuse|Sugestia|LostPassword|Zmiany|Regulamin|Platforma)\\.aspx|favicon\\.ico)";
-    private static Object       LOCK                     = new Object();
+    private final String       PASSWORDTEXT             = "Ten folder jest (<b>)?zabezpieczony oddzielnym hasłem";
+    private String             FOLDERPASSWORD           = null;
+    private ArrayList<Integer> REGEXSORT                = new ArrayList<Integer>();
+    private String             ERROR                    = "Decrypter broken for link: ";
+    private String             REQUESTVERIFICATIONTOKEN = null;
+    private final String       PAGEDECRYPTLINK          = "https?://chomikujpagedecrypt\\.pl/.+";
+    private final String       ENDINGS                  = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip)";
+    private final String       VIDEOENDINGS             = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
+    private final String       UNSUPPORTED              = "http://(www\\.)?chomikuj\\.pl//?(action/[^<>\"]+|(Media|Kontakt|PolitykaPrywatnosci|Empty|Abuse|Sugestia|LostPassword|Zmiany|Regulamin|Platforma)\\.aspx|favicon\\.ico)";
+    private static Object      LOCK                     = new Object();
 
     public int getMaxConcurrentProcessingInstances() {
         return 4;
@@ -63,7 +63,13 @@ public class ChoMikujPl extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("chomikujpagedecrypt.pl/", "chomikuj.pl/").replace("chomikuj.pl//", "chomikuj.pl/");
+        String parameter = null;
+        if (param.toString().matches(PAGEDECRYPTLINK)) {
+            String base = new Regex(param.toString(), "\\.pl/result/(.+)").getMatch(0);
+            parameter = Encoding.Base64Decode(base);
+        } else {
+            parameter = param.toString().replace("chomikuj.pl//", "chomikuj.pl/");
+        }
         if (parameter.matches(UNSUPPORTED)) {
             logger.info("Unsupported/invalid link: " + parameter);
             return decryptedLinks;
@@ -270,9 +276,7 @@ public class ChoMikujPl extends PluginForDecrypt {
 
                     }
                     // you should exit if they enter blank password!
-                    if (FOLDERPASSWORD == null || FOLDERPASSWORD.length() == 0) {
-                        return decryptedLinks; 
-                    }
+                    if (FOLDERPASSWORD == null || FOLDERPASSWORD.length() == 0) { return decryptedLinks; }
                     pass.put("Password", FOLDERPASSWORD);
                     br.submitForm(pass);
                     if (br.containsHTML("\\{\"IsSuccess\":true")) {
@@ -308,7 +312,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         if (pageCount > 1 && !param.toString().matches(PAGEDECRYPTLINK)) {
             logger.info("Found " + pageCount + " pages. Adding those for the decryption now.");
             for (int i = 1; i <= pageCount; i++) {
-                final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujpagedecrypt.pl/") + "," + i);
+                final DownloadLink dl = createDownloadlink("http://chomikujpagedecrypt.pl/result/" + Encoding.Base64Decode(parameter + "," + i));
                 dl.setProperty("reallink", parameter);
                 fp.add(dl);
                 try {
