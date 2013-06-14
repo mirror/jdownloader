@@ -39,9 +39,12 @@ public class JACMethod implements Comparable<JACMethod> {
     public static JACMethod forServiceName(String service) {
         for (JACMethod method : getMethods()) {
             if (service.equalsIgnoreCase(method.getServiceName())) {
-                if (JsonConfig.create(Captcha9kwSettings.class).isEnabled() && method.getFileName().equals("captcha9kw")) { return null; }
-                LogController.CL().info("Found JAC method for the service " + service + " in directory " + method.getFileName());
-                return method;
+                if (JsonConfig.create(Captcha9kwSettings.class).isEnabled() && method.getFileName().equalsIgnoreCase("captcha9kw")) {
+                    LogController.CL().info("Inactive JAC method for the service " + service + " in directory " + method.getFileName());
+                } else {
+                    LogController.CL().info("Found JAC method for the service " + service + " in directory " + method.getFileName());
+                    return method;
+                }
             }
         }
         LogController.CL().info("There is no JAC method for the service " + service + "!");
