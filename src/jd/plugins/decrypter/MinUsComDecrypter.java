@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minus.com" }, urls = { "http://([a-zA-Z0-9]+\\.)?(minus\\.com|min\\.us)/(?!directory|search|explore|pref|https|smedia|recent|mobile)[A-Za-z0-9]{2,}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minus.com" }, urls = { "http://([a-zA-Z0-9]+\\.)?(minus\\.com|min\\.us)/[A-Za-z0-9]{2,}" }, flags = { 0 })
 public class MinUsComDecrypter extends PluginForDecrypt {
 
     public MinUsComDecrypter(PluginWrapper wrapper) {
@@ -41,9 +41,16 @@ public class MinUsComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
         // they have subdomains like userprofile.minus.com/
         String parameter = param.toString().replace("dev.min", "min").replace("min.us/", "minus.com/");
+
+        // ignore trash here... uses less memory allocations
+        if (parameter.matches("https?://([a-zA-Z0-9]+\\.)?(minus\\.com|min\\.us)/(directory|explore|httpsmobile|pref|recent|search|smedia|uploads)") || parameter.matches("https?://(blog\\.)?(minus\\.com|min\\.us)/.+")) {
+            // /uploads is not supported
+            return decryptedLinks;
+        }
+
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.containsHTML("(<h2>Not found\\.</h2>|<p>Our records indicate that the gallery/image you are referencing has been deleted or does not exist|The page you requested does not exist)") || br.containsHTML("\"items\": \\[\\]") || br.containsHTML("class=\"guesthomepage_cisi_h1\">Upload and share your files instantly") || br.containsHTML(">The folder you requested has been deleted or has expired") || br.containsHTML(">You\\'re invited to join Minus")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("minus.com/", "minusdecrypted.com/"));

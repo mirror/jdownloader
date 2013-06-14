@@ -48,7 +48,7 @@ public class DivxPlanetCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getURL().equals("http://divxplanet.com/404.html") || br.containsHTML("The page can not be found which you wanted to reach")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("colspan=\"2\" bgcolor=\"white\">[\t\n\r ]+<h1>([^<>\"]*?)</h1></td>").getMatch(0);
+        String filename = br.getRegex("<h1>([^<>\r\n]+)</h1></td>").getMatch(0);
         String filesize = br.getRegex("<td><b>Dosya</b></td>[\t\n\r ]+<td width=\"1\">:</td>[\t\n\r ]+<td>([^<>\"]*?)<br>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".rar");
@@ -61,8 +61,7 @@ public class DivxPlanetCom extends PluginForHost {
         requestFileInformation(downloadLink);
         final Form dlform = br.getFormbyProperty("name", "dlform");
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Resume and chunks disabled, not needed for such small files & can't
-        // test
+        // Resume and chunks disabled, not needed for such small files & can't test
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

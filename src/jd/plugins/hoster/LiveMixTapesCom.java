@@ -179,7 +179,7 @@ public class LiveMixTapesCom extends PluginForHost {
             filename = fileInfo.getMatch(0);
             filesize = fileInfo.getMatch(1);
         } else {
-            final Regex fileInfo = br.getRegex("<td height=\"35\">\\&nbsp;\\&nbsp;\\&nbsp;(.*?)</td>[\t\n\r ]+<td align=\"center\">(.*?)</td>");
+            final Regex fileInfo = br.getRegex("<td height=\"35\"><div[^>]+>(.*?)</div></td>[\t\n\r ]+<td align=\"center\">((\\d+(\\.\\d+)? ?(KB|MB|GB)))</td>");
             filename = fileInfo.getMatch(0);
             filesize = fileInfo.getMatch(1);
         }
