@@ -279,6 +279,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                             @Override
                             public void actionPerformed(ActionEvent e) {
                                 value.setValue(o);
+                                AdvancedValueColumn.this.getModel().getTable().repaint();
                             }
 
                         }));

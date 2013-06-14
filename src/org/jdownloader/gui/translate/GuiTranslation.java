@@ -2525,4 +2525,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable & disable the Silent Mode - Avoid Popups" })
     String action_silentmode_tooltip();
 
+    @Default(lngs = { "en" }, values = { "Restart required for %s1" })
+    String AdvancedConfigEntry_setValue_restart_warning_title(String key);
+
+    @Default(lngs = { "en" }, values = { "You changed the %s1-option. You have to restart JDownloader to reinitialize this option." })
+    String AdvancedConfigEntry_setValue_restart_warning(String key);
+
 }

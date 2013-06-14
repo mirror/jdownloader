@@ -5,10 +5,13 @@ import java.lang.reflect.Type;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.gui.translate._GUI;
 
-public class AdvancedConfigEntry  {
+public class AdvancedConfigEntry {
 
     private ConfigInterface configInterface;
     private KeyHandler<?>   keyHandler;
@@ -56,6 +59,9 @@ public class AdvancedConfigEntry  {
 
         try {
             keyHandler.getSetter().getMethod().invoke(configInterface, new Object[] { value });
+            if (keyHandler.getAnnotation(RequiresRestart.class) != null) {
+                Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AdvancedConfigEntry_setValue_restart_warning_title(keyHandler.getKey()), _GUI._.AdvancedConfigEntry_setValue_restart_warning(keyHandler.getKey()));
+            }
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
