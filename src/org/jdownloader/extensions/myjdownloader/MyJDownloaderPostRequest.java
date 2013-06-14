@@ -33,9 +33,7 @@ public class MyJDownloaderPostRequest extends PostRequest {
 
     public synchronized LinkedList<String[]> getPostParameter() throws IOException {
         if (postParameterParsed) { return postParameters; }
-
         JSonRequest jsonRequest = null;
-
         final byte[] jsonBytes = IO.readStream(-1, getInputStream());
         final String json = new String(jsonBytes, "UTF-8");
         jsonRequest = JSonStorage.restoreFromString(json, new TypeRef<JSonRequest>() {
@@ -64,13 +62,10 @@ public class MyJDownloaderPostRequest extends PostRequest {
 
     @Override
     public synchronized InputStream getInputStream() throws IOException {
-
         try {
-
             final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             final IvParameterSpec ivSpec = new IvParameterSpec(Arrays.copyOfRange(myJDConnection.getPayloadEncryptionToken(), 0, 16));
             final SecretKeySpec skeySpec = new SecretKeySpec(Arrays.copyOfRange(myJDConnection.getPayloadEncryptionToken(), 16, 32), "AES");
-
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
             return new CipherInputStream(new Base64InputStream(super.getInputStream()), cipher);
         } catch (final NoSuchPaddingException e) {

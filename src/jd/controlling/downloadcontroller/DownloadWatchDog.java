@@ -73,8 +73,13 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
+import org.jdownloader.settings.SilentModeSettings.CaptchaDuringSilentModeAction;
+import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.translate._JDT;
 
 public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener, FileCreationListener {
@@ -435,8 +440,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
-                     * link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -616,8 +620,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 /*
                                  * we tried last account and noone could handle this link, so temp ignore it this session
                                  */
-                                nextDownloadLink.getLinkStatus().addStatus(LinkStatus.TEMP_IGNORE);
-                                nextDownloadLink.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND);
+                                nextDownloadLink.setSkipReason(SkipReason.NO_ACCOUNT);
                             }
                             continue accLoop;
                         }
@@ -627,11 +630,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 /*
                                  * we tried last account and noone could handle this link, so temp ignore it this session
                                  */
-                                nextDownloadLink.getLinkStatus().addStatus(LinkStatus.TEMP_IGNORE);
-                                nextDownloadLink.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND);
+                                nextDownloadLink.setSkipReason(SkipReason.NO_ACCOUNT);
                             }
                             continue accLoop;
                         }
+
                         synchronized (downloadControlHistory) {
                             DownloadControlHistory history = downloadControlHistory.get(nextDownloadLink);
                             DownloadControlHistoryItem accountHistory = null;
@@ -1079,73 +1082,83 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         HashMap<String, PluginForHost> pluginCache = new HashMap<String, PluginForHost>();
         // java.util.List<DownloadLink> forcedLink = new ArrayList<DownloadLink>(1);
         startLoop: while (this.forcedLinksWaiting() || ((getActiveDownloads() < maxDownloads) && maxLoops >= 0)) {
-            if (!this.newDLStartAllowed(forcedLinksWaiting()) || this.isStopMarkReached()) {
-                break;
-            }
-            // forcedLink.clear();
-            // synchronized (forcedLinks) {
-            // if (forcedLinks.size() > 0) {
-            // /*
-            // * we remove the first one of forcedLinks list into local array which holds only 1 downloadLink
-            // */
-            // forcedLink.add(forcedLinks.removeFirst());
-            // }
-            // }
-            // System.out.println(forcedLink);
-            if (forcedLinks.size() > 0 || stopAfterForcedLinks) {
-                /* we try to force the link in forcedLink array */
+            try {
+                if (!this.newDLStartAllowed(forcedLinksWaiting()) || this.isStopMarkReached()) {
+                    break;
+                }
+                // forcedLink.clear();
+                // synchronized (forcedLinks) {
+                // if (forcedLinks.size() > 0) {
+                // /*
+                // * we remove the first one of forcedLinks list into local array which holds only 1 downloadLink
+                // */
+                // forcedLink.add(forcedLinks.removeFirst());
+                // }
+                // }
+                // System.out.println(forcedLink);
+                if (forcedLinks.size() > 0 || stopAfterForcedLinks) {
+                    /* we try to force the link in forcedLink array */
 
-                ArrayList<DownloadLink> cleanup = new ArrayList<DownloadLink>();
-                synchronized (forcedLinks) {
-                    // slow...maybe we should integrate this in getNextDownloadLink?
-                    for (DownloadLink dl : forcedLinks) {
-                        if (!dl.getLinkStatus().isStatus(LinkStatus.TODO)) {
-                            cleanup.add(dl);
+                    ArrayList<DownloadLink> cleanup = new ArrayList<DownloadLink>();
+                    synchronized (forcedLinks) {
+                        // slow...maybe we should integrate this in getNextDownloadLink?
+                        for (DownloadLink dl : forcedLinks) {
+                            if (!dl.getLinkStatus().isStatus(LinkStatus.TODO)) {
+                                cleanup.add(dl);
+                            }
+                        }
+                        forcedLinks.removeAll(cleanup);
+                        dci = this.getNextDownloadLink(forcedLinks, accountCache, pluginCache, true);
+
+                    }
+                    if (dci == null) {
+                        break;
+                    }
+                } else {
+                    /* we try to find next possible normal download */
+                    dci = this.getNextDownloadLink(possibleLinks, accountCache, pluginCache, false);
+                    if (dci == null) {
+                        /* no next possible download found */
+                        break;
+                    }
+                }
+                DownloadLink dlLink = dci.link;
+                if (CaptchaDuringSilentModeAction.SKIP_LINK == CFG_SILENTMODE.CFG.getonCaptchaDuringSilentModeAction()) {
+                    try {
+                        LazyHostPlugin lazy = HostPluginController.getInstance().get(dci.account.getHoster());
+                        if (lazy != null && lazy.getPrototype(null).hasCaptcha(dlLink, dci.account)) {
+                            dci.link.setSkipReason(SkipReason.CAPTCHA);
+                            continue;
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
+                }
+                String dlFolder = dlLink.getFilePackage().getDownloadDirectory();
+                DISKSPACECHECK check = this.checkFreeDiskSpace(new File(dlFolder), (dlLink.getDownloadSize() - dlLink.getDownloadCurrent()));
+                synchronized (shutdownLock) {
+                    if (!ShutdownController.getInstance().isShutDownRequested()) {
+                        switch (check) {
+                        case OK:
+                        case UNKNOWN:
+                            logger.info("Start " + dci);
+                            this.activateSingleDownloadController(dci);
+                            ret++;
+                            break;
+                        case FAILED:
+                            logger.info("Could not start " + dci + ": not enough diskspace free in " + dlFolder);
+                            dci.link.setSkipReason(SkipReason.DISK_FULL);
+                            break;
+                        case INVALIDFOLDER:
+                            logger.info("Could not start " + dci + ": invalid downloadfolder->" + dlFolder);
+                            dci.link.setSkipReason(SkipReason.INVALID_DESTINATION);
+                            break;
                         }
                     }
-                    forcedLinks.removeAll(cleanup);
-                    dci = this.getNextDownloadLink(forcedLinks, accountCache, pluginCache, true);
-
                 }
-                if (dci == null) {
-                    break;
-                }
-            } else {
-                /* we try to find next possible normal download */
-                dci = this.getNextDownloadLink(possibleLinks, accountCache, pluginCache, false);
-                if (dci == null) {
-                    /* no next possible download found */
-                    break;
-                }
+            } finally {
+                maxLoops--;
             }
-            DownloadLink dlLink = dci.link;
-            String dlFolder = dlLink.getFilePackage().getDownloadDirectory();
-            DISKSPACECHECK check = this.checkFreeDiskSpace(new File(dlFolder), (dlLink.getDownloadSize() - dlLink.getDownloadCurrent()));
-            synchronized (shutdownLock) {
-                if (!ShutdownController.getInstance().isShutDownRequested()) {
-                    switch (check) {
-                    case OK:
-                    case UNKNOWN:
-                        logger.info("Start " + dci);
-                        this.activateSingleDownloadController(dci);
-                        ret++;
-                        break;
-                    case FAILED:
-                        logger.info("Could not start " + dci + ": not enough diskspace free in " + dlFolder);
-                        dci.link.getLinkStatus().setStatus(LinkStatus.TEMP_IGNORE);
-                        dci.link.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_NOT_ENOUGH_HARDDISK_SPACE);
-                        break;
-                    case INVALIDFOLDER:
-                        logger.info("Could not start " + dci + ": invalid downloadfolder->" + dlFolder);
-                        dci.link.getLinkStatus().setStatus(LinkStatus.ERROR_FATAL);
-                        dci.link.getLinkStatus().setErrorMessage(_JDT._.downloadlink_status_error_invalid_dest());
-
-                        // dci.link.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION);
-                        break;
-                    }
-                }
-            }
-            maxLoops--;
         }
         return ret;
     }
@@ -1290,8 +1303,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     /*
                                      * create a map holding all possible links sorted by their position in list and their priority
                                      * 
-                                     * by doing this we don't have to walk through possible links multiple times to find next download link,
-                                     * as the list itself will already be correct sorted
+                                     * by doing this we don't have to walk through possible links multiple times to find next download link, as the list itself
+                                     * will already be correct sorted
                                      */
                                     HashMap<Long, java.util.List<DownloadLink>> optimizedList = new HashMap<Long, java.util.List<DownloadLink>>();
                                     /*
@@ -1382,9 +1395,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                          */
                                                         if (DownloadWatchDog.this.activeDownloadsbyHosts(link.getHost()) == 0) {
                                                             /*
-                                                             * do not reconnect if the request comes from host with active downloads, this
-                                                             * will prevent reconnect loops for plugins that allow resume and parallel
-                                                             * downloads
+                                                             * do not reconnect if the request comes from host with active downloads, this will prevent
+                                                             * reconnect loops for plugins that allow resume and parallel downloads
                                                              */
                                                             waitingNewIP = true;
                                                             IPController.getInstance().invalidate();
@@ -1401,8 +1413,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                      */
                                                     if (DownloadWatchDog.this.activeDownloadsbyHosts(link.getHost()) == 0) {
                                                         /*
-                                                         * do not reconnect if the request comes from host with active downloads, this will
-                                                         * prevent reconnect loops for plugins that allow resume and parallel downloads
+                                                         * do not reconnect if the request comes from host with active downloads, this will prevent reconnect
+                                                         * loops for plugins that allow resume and parallel downloads
                                                          */
                                                         waitingNewIP = true;
                                                         IPController.getInstance().invalidate();
@@ -1423,8 +1435,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                          */
                                         if (!hasTempDisabledLinks && !hasInProgressLinks && !waitingNewIP && DownloadWatchDog.this.getActiveDownloads() == 0) {
                                             /*
-                                             * no tempdisabled, no in progress, no reconnect and no next download waiting and no active
-                                             * downloads
+                                             * no tempdisabled, no in progress, no reconnect and no next download waiting and no active downloads
                                              */
                                             if (DownloadWatchDog.this.newDLStartAllowed(forcedLinksWaiting())) {
                                                 /*
