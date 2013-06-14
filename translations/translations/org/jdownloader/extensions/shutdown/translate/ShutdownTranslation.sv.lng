@@ -24,3 +24,5 @@ jd_plugins_optional_jdshutdown=JD Avstängning
 jd_plugins_optional_jdshutdown_description=Automatiskt stänga av, viloläge eller avsluta JDownloader när nerladdningar är klar.
 lit_shutdownn=Stäng av
 show_admin=Administrator rättigheter krävs för att konfigurera JDownloader fö Viloläge eller Standby Mode
+shutdown_toggle_action_disabled=Aktivera nerstängning efter nerladdningar
+shutdown_toggle_action_enabled=Avaktivera nerstängning efter nerladdningar

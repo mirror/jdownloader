@@ -1,9 +1,6 @@
-LogAction=Skapa en Logg
-LogAction_actionPerformed_givelogid_=Var god skica detta logg ID till supporten!
 LogAction_actionPerformed_wait_=Var god vänta...
 LogAction_actionPerformed_zip_title_=Skapa Loggpaket
 LogAction_getString_uploading_=Fördbereder dina loggar
-LogAction_tooltip=Skapa en Logg
 LogModel_getStringValue_between_=Mellan %s1 och %s2
 LogModel_initColumns_time_=Tid
 LogModel_initColumns_x_=Markera

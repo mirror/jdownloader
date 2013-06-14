@@ -10,6 +10,7 @@ controlURLTxt_help=Ange Control URL...
 interaction_UpnpReconnect_wanservice_ip=Internet Protokoll
 interaction_UpnpReconnect_wanservice_ppp=Point-to-Point Protokoll
 literally_choose_router=Välj Enhet
+literally_control_url=Kontroll URL
 literally_router=UPNP Router
 literally_service_type=Servicetyp
 malformedservicetype=Tjänsttyp är ogiltig. Försök med UPNP autokonfigurering

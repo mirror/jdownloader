@@ -53,6 +53,7 @@ gui_btn_help=Hjälp
 gui_btn_no=Nej
 gui_btn_start=Starta
 gui_btn_yes=Ja
+gui_config_jdrr_popup_title=JDRRPopup
 gui_config_jdrr_rawmode=RAW Mode?
 gui_config_jdrr_reconnectfaild=Återanslutning misslyckades
 gui_config_jdrr_savereconnect=Återanslutning lyckades. Spara nu?
