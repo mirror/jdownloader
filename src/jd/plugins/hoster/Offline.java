@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -82,6 +84,29 @@ public class Offline extends PluginForHost {
             }
         }
         return true;
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        ai.setStatus("Permanently Offline: Host provider no longer exists!");
+        account.setValid(false);
+        return ai;
+    }
+
+    @Override
+    public boolean rewriteHost(Account acc) {
+        /* please also update this for alternative hosts */
+        if ("filemade.com".equals(getHost())) {
+            if ("filemade.co".equals(acc.getHoster())) { return true; }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean rewriteHost(DownloadLink link) {
+        /* please also update this for alternative hosts */
+        return false;
     }
 
     @Override

@@ -54,6 +54,8 @@ import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
 
@@ -318,16 +320,34 @@ public class AccountController implements AccountControllerListener {
         for (Iterator<Entry<String, ArrayList<AccountData>>> it = dat.entrySet().iterator(); it.hasNext();) {
             Entry<String, ArrayList<AccountData>> next = it.next();
             if (next.getValue().size() > 0) {
+                String host = next.getKey();
+                LazyHostPlugin hPlugin = HostPluginController.getInstance().get(host);
                 java.util.List<Account> list = new ArrayList<Account>();
-                ret.put(next.getKey(), list);
                 for (AccountData ad : next.getValue()) {
-                    Account acc;
-                    list.add(acc = ad.toAccount());
+                    Account acc = ad.toAccount();
+                    list.add(acc);
                     /*
                      * make sure hostername is set and share same String instance
                      */
-                    acc.setHoster(next.getKey());
+                    acc.setHoster(host);
+                    if (hPlugin == null) {
+                        for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
+                            try {
+                                PluginForHost protoType = p.getPrototype(null);
+                                if (protoType.rewriteHost(acc)) {
+                                    hPlugin = protoType.getLazyP();
+                                    host = hPlugin.getHost();
+                                    break;
+                                }
+                            } catch (final Throwable e) {
+                                LogController.CL().log(e);
+                            }
+                        }
+                        if (hPlugin != null) acc.setHoster(host);
+                    }
+
                 }
+                ret.put(host, list);
             }
         }
         return ret;

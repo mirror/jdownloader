@@ -631,8 +631,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         if (fixWith.containsKey(localLink.getHost()) == false) {
                             for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
                                 try {
-                                    if (p.getPrototype(null).rewriteHost(localLink)) {
-                                        pluginForHost = p.getPrototype(null);
+                                    PluginForHost protoType = p.getPrototype(null);
+                                    if (protoType.rewriteHost(localLink)) {
+                                        pluginForHost = protoType;
                                         break;
                                     }
                                 } catch (final Throwable e) {
