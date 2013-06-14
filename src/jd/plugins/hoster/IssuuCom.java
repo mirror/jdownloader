@@ -25,7 +25,6 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -61,9 +60,7 @@ public class IssuuCom extends PluginForHost {
         if (br.containsHTML(">We can\\'t find what you\\'re looking for")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         DOCUMENTID = br.getRegex("\"documentId\":\"([^<>\"]*?)\"").getMatch(0);
         if (DOCUMENTID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String filename = new Regex(link.getDownloadURL(), "issuu\\.com/[a-z0-9\\-_\\.]+/docs/([a-z0-9\\-_]+)").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(new Regex(link.getDownloadURL(), "issuu\\.com/[a-z0-9\\-_\\.]+/docs/([a-z0-9\\-_]+)").getMatch(0) + ".pdf");
+        link.setFinalFileName(link.getStringProperty("finalname", null));
         return AvailableStatus.TRUE;
     }
 

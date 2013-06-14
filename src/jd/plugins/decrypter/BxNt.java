@@ -46,11 +46,6 @@ public class BxNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // /* NOTE: no override to keep compatible to old stable */
-    // public int getMaxConcurrentProcessingInstances() {
-    // return 1;
-    // }
-
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

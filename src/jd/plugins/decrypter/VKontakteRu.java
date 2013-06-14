@@ -118,9 +118,11 @@ public class VKontakteRu extends PluginForDecrypt {
                     if (parameter.matches(PATTERN_AUDIO_ALBUM)) {
                         /** Audio album */
                         decryptedLinks = decryptAudioAlbum(decryptedLinks, parameter);
+                        logger.info("Decrypted " + decryptedLinks.size() + " audio-links out of a audio-album-link");
                     } else {
                         /** Single playlists */
                         decryptedLinks = decryptAudioPlaylist(decryptedLinks, parameter);
+                        logger.info("Decrypted " + decryptedLinks.size() + " audio-links out of a audio-playlist-link");
                     }
                     // final String[] playlists =
                     // br.getRegex("</div><div id=\"album(\\d+)").getColumn(0);
@@ -132,22 +134,26 @@ public class VKontakteRu extends PluginForDecrypt {
                      * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
                      */
                     decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter);
+                    logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a single-photo-album-link");
                 } else if (parameter.matches(PATTERN_PHOTO_ALBUMS)) {
                     /**
                      * Photo albums lists/overviews Example: http://vk.com/albums46486585
                      */
                     decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter);
+                    logger.info("Decrypted " + decryptedLinks.size() + " photo-album-links out of a multiple-photo-albums-link");
                 } else if (parameter.matches(PATTERN_VIDEO_ALBUM)) {
                     /**
                      * Video-Albums Example: http://vk.com/videos575934598 Example2: http://vk.com/video?section=tagged&id=46468795637
                      */
                     decryptedLinks = decryptVideoAlbum(decryptedLinks, parameter);
+                    logger.info("Decrypted " + decryptedLinks.size() + " video-links out of a video album");
                 } else if (parameter.matches(PATTERN_VIDEO_COMMUNITY_ALBUM)) {
                     /** Community-Albums Exaple: http://vk.com/video?gid=41589556 */
                     decryptCommunityVideoAlbum(decryptedLinks, parameter);
+                    logger.info("Decrypted " + decryptedLinks.size() + " community-video-links out of a community-video-album");
                 } else {
                     decryptWallLink(decryptedLinks, parameter);
-                    logger.info("Decrypted " + decryptedLinks.size() + " wall-links");
+                    logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a wall-link");
                 }
             } catch (BrowserException e) {
                 logger.warning("Browser exception thrown: " + e.getMessage());

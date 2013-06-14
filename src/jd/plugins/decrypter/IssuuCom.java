@@ -21,14 +21,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "issuu.com" }, urls = { "http://(www\\.)?issuu\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "issuu.com" }, urls = { "http://(www\\.)?issuu\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_\\.]+" }, flags = { 0 })
 public class IssuuCom extends PluginForDecrypt {
 
     public IssuuCom(PluginWrapper wrapper) {
@@ -49,31 +49,39 @@ public class IssuuCom extends PluginForDecrypt {
             return null;
         }
         br.getPage("http://s3.amazonaws.com/document.issuu.com/" + documentID + "/document.xml");
+        final String username = br.getRegex("username=\"([^<>\"]*?)\"").getMatch(0);
+        final String rareTitle = br.getRegex("title=\"([^<>\"]*?)\"").getMatch(0);
+        String originalDocName = br.getRegex("orgDocName=\"([^<>\"]*?)\"").getMatch(0);
+        if (username == null || rareTitle == null || originalDocName == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        originalDocName = Encoding.htmlDecode(originalDocName.trim());
         final DecimalFormat df = new DecimalFormat("0000");
         final String[] pageInfos = br.getRegex("<page(.*?)</page>").getColumn(0);
         if (pageInfos == null || pageInfos.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final String fpName = new Regex(parameter, "issuu\\.com/[a-z0-9\\-_\\.]+/docs/([a-z0-9\\-_]+)").getMatch(0);
-        int counter = 1;
-        for (final String swfInfo : pageInfos) {
-            final DownloadLink dl = createDownloadlink("http://page.issuu.com/" + documentID + "/swf/page_" + counter + ".swf");
-            final String filesize = new Regex(swfInfo, "<swf size=\"(\\d+)\"").getMatch(0);
-            dl.setDownloadSize(Long.parseLong(filesize));
-            dl.setFinalFileName(fpName + "_page_" + df.format(counter) + ".swf");
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-            counter++;
+        final String general_naming = Encoding.htmlDecode(rareTitle.trim()) + " by " + Encoding.htmlDecode(username.trim()) + " [" + originalDocName + "] (" + pageInfos.length + " pages)";
+        if (br.containsHTML("downloadable=\"true\"")) {
+            final DownloadLink mainDownloadlink = createDownloadlink(parameter.replace("issuu.com/", "issuudecrypted.com/"));
+            mainDownloadlink.setAvailable(true);
+            final String pdfName = general_naming + ".pdf";
+            mainDownloadlink.setFinalFileName(pdfName);
+            mainDownloadlink.setProperty("finalname", pdfName);
+            decryptedLinks.add(mainDownloadlink);
+        } else {
+            for (int i = 1; i <= pageInfos.length; i++) {
+                final DownloadLink dl = createDownloadlink("http://image.issuu.com/" + documentID + "/jpg/page_" + i + ".jpg");
+                dl.setFinalFileName("page_" + df.format(i) + ".jpg");
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
         }
-        final DownloadLink mainDownloadlink = createDownloadlink(parameter.replace("issuu.com/", "issuudecrypted.com/"));
-        mainDownloadlink.setAvailable(true);
-        mainDownloadlink.setFinalFileName(fpName + ".pdf");
-        decryptedLinks.add(mainDownloadlink);
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName);
+        fp.setName(general_naming);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
-
 }
