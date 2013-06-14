@@ -19,7 +19,6 @@ import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
@@ -121,7 +120,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
                         String antwort = ret.substring("OK-answered-".length());
                         String[] splitResult = antwort.split("x");
 
-                        solverJob.addAnswer(new ClickCaptchaResponse(captchaChallenge, this, new ClickedPoint(Integer.parseInt(splitResult[0]), Integer.parseInt(splitResult[1])), 100));
+                        solverJob.addAnswer(new Captcha9kwClickResponse(captchaChallenge, this, new ClickedPoint(Integer.parseInt(splitResult[0]), Integer.parseInt(splitResult[1])), 100, captchaID));
                         return;
                     }
                     checkInterruption();
@@ -147,7 +146,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
             @Override
             public void run() {
                 try {
-                    String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
+                    String captchaID = ((Captcha9kwClickResponse) response).getCaptcha9kwID();
                     Browser br = new Browser();
                     br.setAllowedResponseCodes(new int[] { 500 });
                     String ret = "";
@@ -176,7 +175,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
             @Override
             public void run() {
                 try {
-                    String captchaID = ((Captcha9kwResponse) response).getCaptcha9kwID();
+                    String captchaID = ((Captcha9kwClickResponse) response).getCaptcha9kwID();
                     Browser br = new Browser();
                     br.setAllowedResponseCodes(new int[] { 500 });
                     String ret = "";
