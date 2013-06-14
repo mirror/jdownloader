@@ -24,7 +24,9 @@ import java.util.Collections;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.solver.Captcha9kwSettings;
 import org.jdownloader.logging.LogController;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -37,6 +39,7 @@ public class JACMethod implements Comparable<JACMethod> {
     public static JACMethod forServiceName(String service) {
         for (JACMethod method : getMethods()) {
             if (service.equalsIgnoreCase(method.getServiceName())) {
+                if (JsonConfig.create(Captcha9kwSettings.class).isEnabled() && method.getFileName().equals("captcha9kw")) { return null; }
                 LogController.CL().info("Found JAC method for the service " + service + " in directory " + method.getFileName());
                 return method;
             }
