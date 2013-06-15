@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -16,11 +16,12 @@
 
 package jd.plugins.hoster;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
-import jd.http.RandomUserAgent;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -28,17 +29,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://googlebooksdecrypter.[a-z]+/books\\?id=.*&pg=.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://googlebooksdecrypter(\\.[a-z]+){1,2}/books\\?id=.*&pg=.*" }, flags = { 0 })
 public class GoogleBooks extends PluginForHost {
 
     private static AtomicInteger counter = new AtomicInteger(0);
-
     private static Object        LOCK    = new Object();
+    private final boolean        useRUA  = true;
 
     public GoogleBooks(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -59,19 +60,19 @@ public class GoogleBooks extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setDebug(true);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        prepBrowser(br);
         br.getPage(link.getDownloadURL());
-        // logger.info(br.toString());
-        if (br.containsHTML("src=\"/googlebooks/restricted_logo.gif\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+        if (br.containsHTML("src=\"/googlebooks/restricted_logo.gif\"")) {
+            agent.string = null;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+        }
         if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // mpage moved + capcha - secure for automatic downloads
+        // page moved + capcha - secure for automatic downloads
         if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*")) {
             String url = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getRegex("<A HREF=\"(http://sorry.google.com/sorry/\\?continue=http://books.google.com/books.*?)\">").getMatch(0);
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
-            // TODO: can make redirect and capcha but this only for secure to
-            // continue connect not for download page
+            // TODO: can make redirect and capcha but this only for secure to continue connect not for download page
         }
         String dllink = br.getRegex(";preloadImg.src = \\'(.*?)\\';window").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -120,12 +121,32 @@ public class GoogleBooks extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return true;
+    }
+
+    private Browser prepBrowser(Browser prepBr) {
+        // define custom browser headers and language settings.
+        if (useRUA) {
+            if (agent.string == null) {
+                /* we first have to load the plugin, before we can reference it */
+                if (!loaded.getAndSet(true)) JDUtilities.getPluginForHost("mediafire.com");
+                agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            }
+            prepBr.getHeaders().put("User-Agent", agent.string);
+        }
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        return prepBr;
+    }
+
+    private static AtomicBoolean   loaded = new AtomicBoolean(false);
+
+    private static StringContainer agent  = new StringContainer();
+
+    public static class StringContainer {
+        public String string = null;
     }
 }
