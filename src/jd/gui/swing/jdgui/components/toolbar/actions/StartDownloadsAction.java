@@ -11,15 +11,24 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.UserIF.Panels;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.event.GUIEventSender;
+import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 
-public class StartDownloadsAction extends ToolBarAction implements DownloadWatchdogListener {
+public class StartDownloadsAction extends ToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum> {
 
     /**
      * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
@@ -30,16 +39,31 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
         setName(_JDT._.StartDownloadsAction_createTooltip_());
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
+        CFG_GUI.START_BUTTON_ACTION_IN_LINKGRABBER_CONTEXT.getEventSender().addListener(this, true);
+        GUIEventSender.getInstance().addListener(this, true);
+        onGuiMainTabSwitch(null, MainTabbedPane.getInstance().getSelectedView());
     }
 
     public void actionPerformed(ActionEvent e) {
         if (JDGui.getInstance().isCurrentPanel(Panels.LINKGRABBER)) {
             IOEQ.add(new Runnable() {
                 public void run() {
-                    java.util.List<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
-                    ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(packages).setShiftDown(true));
-                    ca.setAutostart(true);
-                    ca.actionPerformed(null);
+                    switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
+                    case ADD_ALL_LINKS_AND_START_DOWNLOADS:
+                        java.util.List<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
+                        ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(packages).setShiftDown(true));
+                        ca.setAutostart(true);
+                        ca.actionPerformed(null);
+                        break;
+
+                    case START_DOWNLOADS_ONLY:
+                        DownloadWatchDog.getInstance().startDownloads();
+                        break;
+
+                    case DISABLED:
+                        return;
+                    }
+
                 }
             }, true);
         } else {
@@ -98,4 +122,34 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
     public void onDownloadWatchdogStateIsStopping() {
     }
 
+    @Override
+    public void onGuiMainTabSwitch(View oldView, final View newView) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (newView instanceof LinkGrabberView) {
+                    switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
+                    case DISABLED:
+                        setEnabled(false);
+                        break;
+                    default:
+                        setEnabled(true);
+                    }
+                } else {
+                    setEnabled(true);
+                }
+            }
+        };
+
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
+        onGuiMainTabSwitch(null, MainTabbedPane.getInstance().getSelectedView());
+    }
 }

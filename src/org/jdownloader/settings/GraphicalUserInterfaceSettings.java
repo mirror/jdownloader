@@ -417,4 +417,20 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setWindowsRequestFocusOnActivationEnabled(boolean b);
 
+    public static enum StartButtonAction {
+        @EnumLabel("Add all Linkgrabber links and start Downloads.")
+        ADD_ALL_LINKS_AND_START_DOWNLOADS,
+        @EnumLabel("Start Downloads only")
+        START_DOWNLOADS_ONLY,
+        @EnumLabel("Do Nothing - Disable Action")
+        DISABLED
+    }
+
+    @DefaultEnumValue("ADD_ALL_LINKS_AND_START_DOWNLOADS")
+    @DescriptionForConfigEntry("Choose what should happen when you click on the [Start Downloads] Button when you are in the Linkgrabber Tab")
+    @AboutConfig
+    StartButtonAction getStartButtonActionInLinkgrabberContext();
+
+    void setStartButtonActionInLinkgrabberContext(StartButtonAction b);
+
 }
