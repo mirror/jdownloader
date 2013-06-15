@@ -9,6 +9,7 @@ OnCloseAction_totray=Απόκρυψη στην Περιοχή Ειδοποιήσ
 OnMinimizeAction_ask=Ερώτηση
 OnMinimizeAction_totaskbar=Ελαχιστοποίηση
 OnMinimizeAction_totray=Απόκρυψη στην Περιοχή Ειδοποίησεων
+TrayMenuManager_getName=Διαχείριση Μενού Εικονιδίου
 getName=Εικονίδιο
 jd_plugins_optional_jdtrayicon_jdlighttray=Εικονίδιο
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Επιτρέπει την Ελαχιστοποίηση ή την Απόκρυψη του JDownloader στην Περιοχή Ειδοποιήσεων και άλλα σχετικά χαρακτηριστικά, όπως προστασία με κωδικό και άλλα.

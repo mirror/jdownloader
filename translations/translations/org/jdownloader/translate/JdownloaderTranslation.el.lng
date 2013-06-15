@@ -1,5 +1,6 @@
 AddContainerAction_delete_container_msg=Θέλετε να διαγράψετε το %s1 αφού γίνει προσθήκη των συνδέσμων στον JDownloader;
 AddContainerAction_delete_container_title=Διαγραφή των Container;
+CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Πρόσβαση στις Ρυθμίσεις των Captchas
 DownloadLink_setSkipped_statusmessage=Έγινε παράλειψη
 DownloadWatchDog_onShutdownRequest_=Οι Λήψεις είναι σε εξέλιξη!
 DownloadWatchDog_onShutdownRequest_msg=Θέλετε να σταματήσετε τις τρέχουσες λήψεις για να τερματίσετε τον JDownloader;
