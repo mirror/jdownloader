@@ -9,6 +9,7 @@ OnCloseAction_totray=Stäng till Tray
 OnMinimizeAction_ask=Fråga mig
 OnMinimizeAction_totaskbar=Minimera till Taskbar
 OnMinimizeAction_totray=Stäng till Tray
+TrayMenuManager_getName=Tray Ikon Hanterare
 getName=Tray ikon
 jd_plugins_optional_jdtrayicon_jdlighttray=Light Tray
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Tillåt minimering eller stängning av JDownloader till notifieringsyta och andra relaterade funktioner som lösenordsskydd mm.

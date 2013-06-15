@@ -1,5 +1,6 @@
 AddContainerAction_delete_container_msg=Vil du ta bort %s1 efter att länkarna har lagts till i JDownloader?
 AddContainerAction_delete_container_title=Radera filer?
+CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Tillgång till Captcha Inställningar
 DownloadLink_setSkipped_statusmessage=Överhoppad
 DownloadWatchDog_onShutdownRequest_=Nerladdningar pågår!
 DownloadWatchDog_onShutdownRequest_msg=Vill du avsluta pågeående nerladdingar och stänga JDownloader?
