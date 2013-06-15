@@ -58,6 +58,7 @@ public class Wrdprss extends PluginForDecrypt {
         for (String pattern : listType2) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/blog\\.php\\?id=[\\d]+)");
         }
+        completePattern.append("|hi10anime\\.com/[\\w\\-]+/");
         completePattern.append(")");
         System.out.println(("Wrdprss: " + (10 + listType1.length + listType2.length) + " Pattern added!"));
         return new String[] { completePattern.toString() };
@@ -104,7 +105,10 @@ public class Wrdprss extends PluginForDecrypt {
                 break;
             }
         }
-
+        ArrayList<String[]> customHeaders = new ArrayList<String[]>();
+        if (parameter.matches(".+hi10anime\\.com.+")) {
+            customHeaders.add(new String[] { "Referer", br.getURL() });
+        }
         /* Passwort suchen */
         String password = br.getRegex(Pattern.compile("<.*?>Passwort[<|:].*?[>|:]\\s*(.*?)[\\||<]", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (password != null) link_passwds.add(password.trim());
@@ -115,6 +119,9 @@ public class Wrdprss extends PluginForDecrypt {
             if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
                 DownloadLink dLink = createDownloadlink(link);
                 if (link_passwds != null && link_passwds.size() > 0) dLink.setSourcePluginPasswordList(link_passwds);
+                if (!customHeaders.isEmpty()) {
+                    dLink.setProperty("customHeader", customHeaders);
+                }
                 decryptedLinks.add(dLink);
                 progress.increase(1);
             }
