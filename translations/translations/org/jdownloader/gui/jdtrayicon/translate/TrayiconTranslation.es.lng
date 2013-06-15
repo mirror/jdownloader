@@ -9,6 +9,7 @@ OnCloseAction_totray=Cerrar al Área de Notificación
 OnMinimizeAction_ask=Preguntar
 OnMinimizeAction_totaskbar=Minimizar a la Barra de Tareas
 OnMinimizeAction_totray=Cerrar al Área de Notificación
+TrayMenuManager_getName=Gestor del Menú del Área de Notificación
 getName=Área de Notificación
 jd_plugins_optional_jdtrayicon_jdlighttray=Área de Notificación
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Permite minimizar o cerrar JDownloader al Área de Notificación, y otras características como protección por contraseña.
