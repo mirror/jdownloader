@@ -155,7 +155,7 @@ public class SrnnksCategory extends PluginForDecrypt {
             if (selectedMirror < 0) return null;
             selectedMirrorsIndices = new int[] { selectedMirror };
         }
-        if (selectedMirrorsIndices == null) return null;
+        if (selectedMirrorsIndices == null || selectedMirrorsIndices.length == 0) return null;
 
         List<String> links = selectedFormat.getLinks(selectedMirrorsIndices);
         return links;
