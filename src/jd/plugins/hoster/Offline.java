@@ -94,7 +94,6 @@ public class Offline extends PluginForHost {
         return ai;
     }
 
-    @Override
     public boolean rewriteHost(Account acc) {
         /* please also update this for alternative hosts */
         if ("filemade.com".equals(getHost())) {

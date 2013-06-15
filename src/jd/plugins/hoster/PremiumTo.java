@@ -59,7 +59,6 @@ public class PremiumTo extends PluginForHost {
         return false;
     }
 
-    @Override
     public boolean rewriteHost(Account acc) {
         if ("premium4.me".equals(acc.getHoster())) {
             acc.setHoster(getHost());
