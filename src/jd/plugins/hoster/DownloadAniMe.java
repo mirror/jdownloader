@@ -76,7 +76,7 @@ public class DownloadAniMe extends PluginForHost {
     // free account: same as above
     // premium account:
     // protocol: no https
-    // captchatype: recaptcha
+    // captchatype: 4dignum
     // other: no redirects
 
     @Override
@@ -96,7 +96,7 @@ public class DownloadAniMe extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

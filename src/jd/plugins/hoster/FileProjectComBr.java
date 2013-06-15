@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileproject.com.br" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?fileproject\\.com\\.br/files/epis(odios)?/(SD|HD|LQs?|MQ|HQ)/[^<>\"/\\s]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileproject.com.br" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?fileproject\\.com\\.br/(pp/files|files/epis(odios)?)/(SD|HD|LQs?|MQ|HQ)/[^<>\"/\\s]+" }, flags = { 0 })
 public class FileProjectComBr extends PluginForHost {
 
     public FileProjectComBr(PluginWrapper wrapper) {
