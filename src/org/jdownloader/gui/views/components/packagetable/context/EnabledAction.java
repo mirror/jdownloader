@@ -5,10 +5,17 @@ import java.awt.event.ActionEvent;
 import javax.swing.ImageIcon;
 
 import jd.controlling.IOEQ;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.download.DownloadInterface;
 
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -73,6 +80,29 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
 
             public void run() {
                 boolean enable = state.equals(State.ALL_DISABLED);
+
+                if (!enable) {
+                    int count = 0;
+                    if (DownloadWatchDog.getInstance().isRunning()) {
+                        for (ChildrenType a : selection.getChildren()) {
+                            if (a instanceof DownloadLink) {
+                                DownloadLink link = (DownloadLink) a;
+                                if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                                    DownloadInterface dl = link.getDownloadInstance();
+                                    if (dl != null && !dl.isResumable()) {
+                                        count++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (count > 0) {
+                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes()), count), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+
+                        return; }
+                    }
+
+                }
                 for (ChildrenType a : selection.getChildren()) {
                     a.setEnabled(enable);
                 }
