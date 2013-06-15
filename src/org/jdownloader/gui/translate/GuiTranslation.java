@@ -2531,4 +2531,64 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You changed the %s1-option. You have to restart JDownloader to reinitialize this option." })
     String AdvancedConfigEntry_setValue_restart_warning(String key);
 
+    @Default(lngs = { "en" }, values = { "Enable/Disable all Captcha Exchange Services  (like 9kw, Captchabrotherhood, ...)" })
+    String CaptchaExchangeToogleAction_createTooltip_();
+
+    @Default(lngs = { "en" }, values = { "Enable/Disable JAC - the JDownloader Auto Captcha Solver" })
+    String JAntiCaptchaToogleAction_createTooltip_();
+
+    @Default(lngs = { "en" }, values = { "Enable/Disable Remote Anti Captcha (Like Mobile Apps, MyJDownloader,..." })
+    String RemoteCaptchaToogleAction_createTooltip_();
+
+    @Default(lngs = { "en" }, values = { "Enable/Disable Captcha Dialogs. (Check our SilentMode)" })
+    String CaptchaDialogsToogleAction_createTooltip_();
+
+    @Default(lngs = { "en" }, values = { "Enable Auto Reconnect" })
+    String AutoReconnectToggleAction_getNameWhenDisabled_();
+
+    @Default(lngs = { "en" }, values = { "Disable Auto Reconnect" })
+    String AutoReconnectToggleAction_getNameWhenEnabled_();
+
+    @Default(lngs = { "en" }, values = { "Enable Captcha Dialogs" })
+    String CaptchaDialogsToogleAction_getNameWhenDisabled_();
+
+    @Default(lngs = { "en" }, values = { "Disable Captcha Dialogs" })
+    String CaptchaDialogsToogleAction_getNameWhenEnabled_();
+
+    @Default(lngs = { "en" }, values = { "Enable Captcha Exchange Services" })
+    String CaptchaExchangeToogleAction_getNameWhenDisabled_();
+
+    @Default(lngs = { "en" }, values = { "Disable Captcha Exchange Services" })
+    String CaptchaExchangeToogleAction_getNameWhenEnabled_();
+
+    @Default(lngs = { "en" }, values = { "Enable Clipboard Monitoring" })
+    String ClipBoardToggleAction_getNameWhenDisabled_();
+
+    @Default(lngs = { "en" }, values = { "Disable Clipboard Monitoring" })
+    String ClipBoardToggleAction_getNameWhenEnabled_();
+
+    @Default(lngs = { "en" }, values = { "Enable Premium Downloads" })
+    String GlobalPremiumSwitchToggleAction_getNameWhenDisabled_();
+
+    @Default(lngs = { "en" }, values = { "Disable Premium Downloads" })
+    String GlobalPremiumSwitchToggleAction_getNameWhenEnabled_();
+
+    @Default(lngs = { "en" }, values = { "Enable Auto Captcha Recognition" })
+    String JAntiCaptchaToogleAction_getNameWhenDisabled_();
+
+    @Default(lngs = { "en" }, values = { "Disable Auto Captcha Recognition" })
+    String JAntiCaptchaToogleAction_getNameWhenEnabled_();
+
+    @Default(lngs = { "en" }, values = { "Enable Captchas via MyJDownloader" })
+    String RemoteCaptchaToogleAction_getNameWhenDisabled_();
+
+    @Default(lngs = { "en" }, values = { "Disable Captchas via MyJDownloader" })
+    String RemoteCaptchaToogleAction_getNameWhenEnabled_();
+
+    @Default(lngs = { "en" }, values = { "Activate Silent Mode" })
+    String SilentModeToggleAction_getNameWhenDisabled_();
+
+    @Default(lngs = { "en" }, values = { "Deactivate Silent Mode" })
+    String SilentModeToggleAction_getNameWhenEnabled_();
+
 }

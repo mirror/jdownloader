@@ -25,11 +25,16 @@ import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.mainmenu.action.AddLinksMenuAction;
 import org.jdownloader.gui.mainmenu.action.LogSendAction;
 import org.jdownloader.gui.mainmenu.container.AboutMenuContainer;
+import org.jdownloader.gui.mainmenu.container.CaptchaQuickSettingsContainer;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
 import org.jdownloader.gui.mainmenu.container.FileMenuContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.mainmenu.container.SettingsMenuContainer;
+import org.jdownloader.gui.toolbar.action.CaptchaDialogsToogleAction;
+import org.jdownloader.gui.toolbar.action.CaptchaExchangeToogleAction;
+import org.jdownloader.gui.toolbar.action.JAntiCaptchaToogleAction;
+import org.jdownloader.gui.toolbar.action.RemoteCaptchaToogleAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
@@ -122,6 +127,13 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
         mr.add(opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN));
 
         opt.add(RenameAction.class);
+
+        CaptchaQuickSettingsContainer ocr;
+        opt.add(ocr = new CaptchaQuickSettingsContainer());
+        ocr.add(CaptchaExchangeToogleAction.class);
+        ocr.add(JAntiCaptchaToogleAction.class);
+        ocr.add(RemoteCaptchaToogleAction.class);
+        ocr.add(CaptchaDialogsToogleAction.class);
         // // add(new EditMenu());
         // add(new SettingsMenu());
         // add(AddonsMenu.getInstance());

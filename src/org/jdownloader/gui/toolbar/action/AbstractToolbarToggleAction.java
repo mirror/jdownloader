@@ -18,6 +18,20 @@ public abstract class AbstractToolbarToggleAction extends ToolBarAction implemen
         keyHandler.getEventSender().addListener(this, true);
     }
 
+    public void setSelected(final boolean selected) {
+        super.setSelected(selected);
+        if (selected) {
+            setName(getNameWhenEnabled());
+        } else {
+            setName(getNameWhenDisabled());
+        }
+
+    }
+
+    abstract protected String getNameWhenDisabled();
+
+    abstract protected String getNameWhenEnabled();
+
     public void actionPerformed(ActionEvent e) {
         boolean sel = isSelected();
         keyHandler.setValue(sel);

@@ -13,9 +13,9 @@ import javax.imageio.ImageIO;
 
 import jd.controlling.captcha.CaptchaSettings;
 
-import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
@@ -24,6 +24,7 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class CaptchaResolutorCaptchaSolver extends ChallengeSolver<String> {
 
@@ -65,13 +66,13 @@ public class CaptchaResolutorCaptchaSolver extends ChallengeSolver<String> {
     @Override
     public boolean canHandle(Challenge<?> c) {
 
-        return config.isEnabled() && super.canHandle(c);
+        return CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isEnabled() && super.canHandle(c);
     }
 
     @Override
     public void solve(final SolverJob<String> job) throws InterruptedException, SolverException {
         if (StringUtils.isEmpty(config.getUser()) || StringUtils.isEmpty(config.getPass())) return;
-        if (job.getChallenge() instanceof BasicCaptchaChallenge) {
+        if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled()) {
             job.waitFor(JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
             checkInterruption();
             BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();

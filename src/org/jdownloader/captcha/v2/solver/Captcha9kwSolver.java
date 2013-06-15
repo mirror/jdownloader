@@ -23,6 +23,7 @@ import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class Captcha9kwSolver extends ChallengeSolver<String> implements ChallengeResponseValidation {
     private Captcha9kwSettings            config;
@@ -48,7 +49,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        return config.isEnabled() && super.canHandle(c);
+        return CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isEnabled() && super.canHandle(c);
     }
 
     public String getAPIROOT() {
@@ -65,7 +66,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
             job.getLogger().info("No ApiKey for 9kw.eu found.");
             return;
         }
-        if (job.getChallenge() instanceof BasicCaptchaChallenge) {
+        if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled()) {
             job.waitFor(JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
             checkInterruption();
             BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();

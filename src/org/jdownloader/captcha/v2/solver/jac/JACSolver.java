@@ -16,10 +16,12 @@ import jd.plugins.PluginForHost;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class JACSolver extends ChallengeSolver<String> {
     private CaptchaSettings                config;
@@ -47,13 +49,18 @@ public class JACSolver extends ChallengeSolver<String> {
 
     @Override
     public long getTimeout() {
+
         return 30000;
+    }
+
+    public boolean canHandle(Challenge<?> c) {
+        return CFG_CAPTCHA.JANTI_CAPTCHA_ENABLED.isEnabled() && super.canHandle(c);
     }
 
     @Override
     public void solve(SolverJob<String> job) throws InterruptedException, SolverException {
         try {
-            if (job.getChallenge() instanceof BasicCaptchaChallenge) {
+            if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.JANTI_CAPTCHA_ENABLED.isEnabled()) {
                 BasicCaptchaChallenge captchaChallenge = (BasicCaptchaChallenge) job.getChallenge();
                 String host = null;
                 if (captchaChallenge.getPlugin() instanceof PluginForHost) {

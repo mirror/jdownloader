@@ -49,13 +49,19 @@ public class AutoReconnectToggleAction extends AbstractToolbarToggleAction {
         }
     }
 
-    public static void main(String[] args) {
-
-    }
-
     @Override
     protected String createTooltip() {
         return _GUI._.action_reconnect_toggle_tooltip();
+    }
+
+    @Override
+    protected String getNameWhenDisabled() {
+        return _GUI._.AutoReconnectToggleAction_getNameWhenDisabled_();
+    }
+
+    @Override
+    protected String getNameWhenEnabled() {
+        return _GUI._.AutoReconnectToggleAction_getNameWhenEnabled_();
     }
 
 }

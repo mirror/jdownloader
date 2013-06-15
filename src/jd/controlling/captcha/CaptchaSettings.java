@@ -95,4 +95,31 @@ public interface CaptchaSettings extends ConfigInterface {
 
     void setCaptchaDialogResolutorCaptchaTimeout(int ms);
 
+    @AboutConfig
+    @DescriptionForConfigEntry("Disable Captcha Exchangeservices like 9kw or Captchabrotherhood")
+    @DefaultBooleanValue(true)
+    boolean isCaptchaExchangeServicesEnabled();
+
+    void setCaptchaExchangeServicesEnabled(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Disable JAntiCaptcha")
+    @DefaultBooleanValue(true)
+    boolean isJAntiCaptchaEnabled();
+
+    void setJAntiCaptchaEnabled(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Disable all Captcha Dialogs.@See SilentMode Settings")
+    @DefaultBooleanValue(true)
+    boolean isCaptchaDialogsEnabled();
+
+    void setCaptchaDialogsEnabled(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Disable all Remote Captchas. (Android App, IPhone App, Webinterface, ...)")
+    @DefaultBooleanValue(true)
+    boolean isRemoteCaptchaEnabled();
+
+    void setRemoteCaptchaEnabled(boolean b);
 }

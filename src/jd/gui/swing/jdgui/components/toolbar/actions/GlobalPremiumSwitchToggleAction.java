@@ -16,4 +16,14 @@ public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction
         return _GUI._.action_premium_toggle_tooltip();
     }
 
+    @Override
+    protected String getNameWhenDisabled() {
+        return _GUI._.GlobalPremiumSwitchToggleAction_getNameWhenDisabled_();
+    }
+
+    @Override
+    protected String getNameWhenEnabled() {
+        return _GUI._.GlobalPremiumSwitchToggleAction_getNameWhenEnabled_();
+    }
+
 }

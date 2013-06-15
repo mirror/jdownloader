@@ -18,6 +18,7 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class CBSolver extends ChallengeSolver<String> {
     private CaptchaBrotherHoodSettings config;
@@ -42,13 +43,13 @@ public class CBSolver extends ChallengeSolver<String> {
     @Override
     public boolean canHandle(Challenge<?> c) {
 
-        return config.isEnabled() && super.canHandle(c);
+        return CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isEnabled() && super.canHandle(c);
     }
 
     @Override
     public void solve(final SolverJob<String> job) throws InterruptedException, SolverException {
         if (StringUtils.isEmpty(config.getUser()) || StringUtils.isEmpty(config.getPass())) return;
-        if (job.getChallenge() instanceof BasicCaptchaChallenge) {
+        if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled()) {
             job.waitFor(JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
             checkInterruption();
             BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();

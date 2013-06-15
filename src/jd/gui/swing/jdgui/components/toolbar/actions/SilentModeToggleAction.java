@@ -17,4 +17,14 @@ public class SilentModeToggleAction extends AbstractToolbarToggleAction {
         return _GUI._.action_silentmode_tooltip();
     }
 
+    @Override
+    protected String getNameWhenDisabled() {
+        return _GUI._.SilentModeToggleAction_getNameWhenDisabled_();
+    }
+
+    @Override
+    protected String getNameWhenEnabled() {
+        return _GUI._.SilentModeToggleAction_getNameWhenEnabled_();
+    }
+
 }

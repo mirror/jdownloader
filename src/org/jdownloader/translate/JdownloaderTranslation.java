@@ -448,4 +448,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "More Actions..." })
     String OptionalContainer_OptionalContainer();
 
+    @Default(lngs = { "en" }, values = { "Access to Captcha Settings" })
+    String CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer();
+
 }

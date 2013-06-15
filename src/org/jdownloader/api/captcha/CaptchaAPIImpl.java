@@ -6,6 +6,9 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.plugins.DownloadLink;
+
+import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -28,6 +31,7 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class CaptchaAPIImpl implements CaptchaAPI {
 
@@ -38,6 +42,7 @@ public class CaptchaAPIImpl implements CaptchaAPI {
     public List<CaptchaJob> list() {
 
         java.util.List<CaptchaJob> ret = new ArrayList<CaptchaJob>();
+        if (!CFG_CAPTCHA.REMOTE_CAPTCHA_ENABLED.isEnabled()) return ret;
         for (SolverJob<?> entry : ChallengeResponseController.getInstance().listJobs()) {
             if (entry.isDone()) continue;
             if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
@@ -155,7 +160,12 @@ public class CaptchaAPIImpl implements CaptchaAPI {
         // job.kill();
 
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        job.getChallenge().getDownloadLink(job.getChallenge()).setSkipReason(SkipReason.CAPTCHA);
+        DownloadLink downloadLink = job.getChallenge().getDownloadLink(job.getChallenge());
+        if (downloadLink != null) {
+            downloadLink.setSkipReason(SkipReason.CAPTCHA);
+        } else {
+            throw new WTFException("Not Implemented");
+        }
 
         return true;
     }

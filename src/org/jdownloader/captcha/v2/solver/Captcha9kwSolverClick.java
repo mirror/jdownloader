@@ -23,6 +23,7 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> implements ChallengeResponseValidation {
     private Captcha9kwSettings                 config;
@@ -47,7 +48,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        return config.ismouse() && super.canHandle(c);
+        return CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isEnabled() && config.ismouse() && super.canHandle(c);
     }
 
     public String getAPIROOT() {
@@ -64,7 +65,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
             solverJob.getLogger().info("No ApiKey for 9kw.eu found.");
             return;
         }
-        if (solverJob.getChallenge() instanceof ClickCaptchaChallenge) {
+        if (solverJob.getChallenge() instanceof ClickCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled()) {
             solverJob.waitFor(JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
             checkInterruption();
             ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();

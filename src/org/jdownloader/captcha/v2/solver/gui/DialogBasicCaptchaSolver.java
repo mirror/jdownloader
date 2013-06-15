@@ -9,6 +9,7 @@ import jd.gui.swing.jdgui.JDGui;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.AbstractResponse;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
@@ -22,6 +23,7 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
 public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
@@ -46,6 +48,11 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
         }
     }
 
+    @Override
+    public boolean canHandle(Challenge<?> c) {
+        return CFG_CAPTCHA.CAPTCHA_DIALOGS_ENABLED.isEnabled() && super.canHandle(c);
+    }
+
     private DialogBasicCaptchaSolver() {
         super(1);
         config = JsonConfig.create(CaptchaSettings.class);
@@ -58,7 +65,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     public void solve(final SolverJob<String> job) throws InterruptedException, SkipException {
         synchronized (this) {
 
-            if (job.getChallenge() instanceof BasicCaptchaChallenge) {
+            if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_DIALOGS_ENABLED.isEnabled()) {
                 job.getLogger().info("Waiting for JAC");
                 job.waitFor(config.getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
 
