@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://(www\\.)?yourupload\\.com/(file|embed)/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://((www\\.)?yourupload\\.com/(file|embed|watch)/[a-z0-9]+|embed\\.yourupload\\.com/[a-z0-9]+)" }, flags = { 0 })
 public class YourUploadCom extends PluginForHost {
 
     public YourUploadCom(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class YourUploadCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("yourupload.com/embed", "yourupload.com/file"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("(yourupload\\.com/embed|embed\\.yourupload\\.com)/((file|embed)/)?", "yourupload.com/watch/"));
     }
 
     @Override
@@ -51,8 +51,8 @@ public class YourUploadCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>System Error<|>could not find file)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<label>Name</label>([^<>\"]*?)</div>").getMatch(0);
-        final String filesize = br.getRegex("<label>Size</label>([^<>\"]*?)</div>").getMatch(0);
+        final String filename = br.getRegex(">Name</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
+        final String filesize = br.getRegex(">Size</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -62,7 +62,7 @@ public class YourUploadCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = br.getRegex("\"(http://(www\\.)?yourupload\\.com/index\\.php\\?act=files\\&do=download\\&file_id=\\d+)\"").getMatch(0);
+        final String dllink = br.getRegex("(http://download\\.yourupload\\.com/[a-f0-9]{32}[^\"]+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

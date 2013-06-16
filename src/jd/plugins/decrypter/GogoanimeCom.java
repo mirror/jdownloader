@@ -69,8 +69,11 @@ public class GogoanimeCom extends PluginForDecrypt {
             return null;
         }
         for (final String singleLink : links) {
-            final DownloadLink dl = decryptLink(Encoding.htmlDecode(singleLink));
-            if (dl != null) decryptedLinks.add(dl);
+            // lets prevent returning of links which contain gogoanime...
+            if (!singleLink.contains(this.getHost())) {
+                final DownloadLink dl = decryptLink(Encoding.htmlDecode(singleLink));
+                if (dl != null) decryptedLinks.add(dl);
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0));
@@ -81,19 +84,24 @@ public class GogoanimeCom extends PluginForDecrypt {
     private DownloadLink decryptLink(final String parameter) throws IOException {
         final Browser br2 = br.cloneBrowser();
         String externID = parameter;
-        if (externID.contains("video44.net/")) {
+        if (externID.matches(".+(video44\\.net|videofun\\.me)/.+")) {
             br2.getPage(externID);
-            externID = br2.getRegex("file=(http.*?)\\&amp;plugins").getMatch(0);
+            if (externID.contains("video44.net)/")) {
+                externID = br2.getRegex("file=(http.*?)\\&amp;plugins").getMatch(0);
+                if (externID == null) {
+                    externID = br2.getRegex("file: \"(http[^\"]+)").getMatch(0);
+                }
+            } else if (externID.contains("videofun.me/")) {
+                externID = br2.getRegex("url:\\s+\"(https?://[^\"]+videofun\\.me%2Fvideos%2F[^\"]+)").getMatch(0);
+            }
             if (externID == null) {
                 logger.info("Found one broken link: " + parameter);
                 return null;
             }
-            return createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
+            externID = "directhttp://" + Encoding.htmlDecode(externID);
         }
-        if (externID != null)
-            return createDownloadlink(externID);
-        else
-            return createDownloadlink(parameter);
+        // all other results return back into their own plugins! novamov.com, yourupload.com
+        return createDownloadlink(externID);
     }
 
     /* NO OVERRIDE!! */
