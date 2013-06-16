@@ -23,6 +23,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -30,6 +31,7 @@ import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -38,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "decrypted://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+(\\?documentId=\\d+)?\\&quality=\\w+" }, flags = { 32 })
@@ -176,7 +179,7 @@ public class ARDMediathek extends PluginForHost {
      * 
      * @return The success of the conversion.
      */
-    public static boolean convertSubtitle(final DownloadLink downloadlink) {
+    public boolean convertSubtitle(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
 
         BufferedWriter dest;
@@ -212,21 +215,17 @@ public class ARDMediathek extends PluginForHost {
                 dest.write(start + " --> " + end + lineseparator);
 
                 String text = match[3].trim();
-                text = text.replace("&#x00C4;", "Ä");
-                text = text.replace("&#x00D6;", "Ö");
-                text = text.replace("&#x00DC;", "Ü");
-                text = text.replace("&#x00E4;", "ä");
-                text = text.replace("&#x00F6;", "ö");
-                text = text.replace("&#x00FC;", "ü");
-
                 text = text.replaceAll(lineseparator, " ");
-                text = text.replaceAll("&amp;", "&");
-                text = text.replaceAll("&quot;", "\"");
-                text = text.replaceAll("&#39;", "'");
-                text = text.replaceAll("&apos;", "'");
+                text = text.replaceAll("&apos;", "\\\\u0027");
+                text = unescape(text);
+                text = HTMLEntities.unhtmlentities(text);
+                text = HTMLEntities.unhtmlAmpersand(text);
+                text = HTMLEntities.unhtmlAngleBrackets(text);
+                text = HTMLEntities.unhtmlSingleQuotes(text);
+                text = HTMLEntities.unhtmlDoubleQuotes(text);
                 text = text.replaceAll("<br />", lineseparator);
-                text = text.replace("</p>", "");
-                text = text.replace("<span ", "").replace("</span>", "");
+                text = text.replaceAll("</?(p|span)>", "");
+
                 dest.write(text + lineseparator + lineseparator);
             }
         } catch (Exception e) {
@@ -292,6 +291,14 @@ public class ARDMediathek extends PluginForHost {
         String result = hour + ":" + minute + ":" + second + "," + millisecond;
 
         return result;
+    }
+
+    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
+
+    private String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (yt_loaded.getAndSet(true)) JDUtilities.getPluginForHost("youtube.com");
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     @Override

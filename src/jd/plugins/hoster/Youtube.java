@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -84,8 +85,27 @@ public class Youtube extends PluginForHost {
         return "http://youtube.com/t/terms";
     }
 
-    public static String unescape(final String s) {
+    public static String unescape(String s) {
         if (s == null) return null;
+        if (true) {
+            // convert any html based unicode as a pre correction
+            String test = s;
+            String regex = "(&#x([0-9a-f]{4});)";
+            String[] rmHtml = new Regex(s, regex).getColumn(0);
+            if (rmHtml != null && rmHtml.length != 0) {
+                // lets prevent wasteful cycles
+                HashSet<String> dupe = new HashSet<String>();
+                for (String htmlrm : rmHtml) {
+                    if (dupe.add(htmlrm) == true) {
+                        String[] rm = new Regex(htmlrm, regex).getRow(0);
+                        if (rm[1] != null) {
+                            test = test.replaceAll(rm[0], "\\\\u" + rm[1]);
+                        }
+                    }
+                }
+                s = test;
+            }
+        }
         char ch;
         char ch2;
         final StringBuilder sb = new StringBuilder();
