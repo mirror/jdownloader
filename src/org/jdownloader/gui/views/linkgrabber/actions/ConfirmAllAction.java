@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
+import javax.swing.KeyStroke;
 
 import jd.controlling.IOEQ;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -28,6 +29,7 @@ public class ConfirmAllAction extends AppAction {
 
     public ConfirmAllAction(boolean autostart) {
         setAutoStart(autostart);
+        setAccelerator(KeyStroke.getKeyStroke("ctrl pressed ENTER"));
 
     }
 
