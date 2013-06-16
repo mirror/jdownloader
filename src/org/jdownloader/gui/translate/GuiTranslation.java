@@ -2594,4 +2594,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Deactivate Silent Mode" })
     String SilentModeToggleAction_getNameWhenEnabled_();
 
+    @Default(lngs = { "en" }, values = { "More..." })
+    String premiumaccounttablemodel_column_info();
+
+    @Default(lngs = { "en" }, values = { "Show Details" })
+    String premiumaccounttablemodel_column_info_button();
+
 }

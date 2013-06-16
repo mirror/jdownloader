@@ -99,6 +99,7 @@ import org.jdownloader.settings.AutoDownloadStartOption;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
@@ -410,7 +411,7 @@ public class SecondLevelLaunch {
                 }
             });
         } catch (final Throwable e) {
-            e.printStackTrace();
+            LOG.log(e);
         }
         /* these can be initiated without a gui */
         final Thread thread = new Thread() {
@@ -478,6 +479,8 @@ public class SecondLevelLaunch {
         };
         lafInit.start();
         Locale.setDefault(TranslationFactory.getDesiredLocale());
+        // Disable silentmode on each session start
+        CFG_SILENTMODE.MANUAL_ENABLED.setValue(false);
         GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {

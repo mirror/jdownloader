@@ -754,6 +754,14 @@ public class Uploadedto extends PluginForHost {
 
     }
 
+    // Attention!! Do not use qOverride here for stable compatibility reasons
+    // @Override
+    public void showAccountDetailsDialog(Account account) {
+
+        jd.gui.UserIO.getInstance().requestMessageDialog("Uploaded.to Account", "Account type: Premium");
+
+    }
+
     private String api_getAccessToken(Account account, boolean liveToken) throws Exception {
         synchronized (account) {
             try {

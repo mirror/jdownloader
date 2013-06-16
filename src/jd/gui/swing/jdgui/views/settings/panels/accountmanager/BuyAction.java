@@ -15,7 +15,6 @@ import javax.swing.JComboBox;
 
 import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
-import jd.plugins.Account;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.uio.UIOManager;
@@ -77,12 +76,12 @@ public class BuyAction extends AbstractAction {
                 final LazyHostPlugin[] options = plugins.toArray(new LazyHostPlugin[plugins.size()]);
                 LazyHostPlugin plg = HostPluginController.getInstance().get(getPreselectedHoster());
                 if (table != null && plg == null) {
-                    java.util.List<Account> selection = table.getExtTableModel().getSelectedObjects();
+                    List<AccountEntry> selection = table.getExtTableModel().getSelectedObjects();
                     if (selection != null && selection.size() > 0) {
 
                         for (Iterator<?> iterator = plugins.iterator(); iterator.hasNext();) {
                             LazyHostPlugin hostPluginWrapper = (LazyHostPlugin) iterator.next();
-                            if (hostPluginWrapper.getDisplayName().equals(selection.get(0).getHoster())) {
+                            if (hostPluginWrapper.getDisplayName().equals(selection.get(0).getAccount().getHoster())) {
                                 plg = hostPluginWrapper;
                                 break;
                             }

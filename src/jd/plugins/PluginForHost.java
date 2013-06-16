@@ -109,6 +109,11 @@ public abstract class PluginForHost extends Plugin {
         this.lazyP = lazyP;
     }
 
+    // override to let the plugin show an account details dialog
+    public void showAccountDetailsDialog(Account account) {
+
+    }
+
     public void errLog(Throwable e, Browser br, DownloadLink link) {
         LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
         try {

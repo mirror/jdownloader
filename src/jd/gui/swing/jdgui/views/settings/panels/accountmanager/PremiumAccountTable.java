@@ -6,11 +6,10 @@ import java.awt.event.MouseEvent;
 import javax.swing.JPopupMenu;
 
 import jd.gui.swing.jdgui.BasicJDTable;
-import jd.plugins.Account;
 
 import org.appwork.swing.exttable.ExtColumn;
 
-public class PremiumAccountTable extends BasicJDTable<Account> {
+public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
 
     private static final long serialVersionUID = -2166408567306279016L;
 
@@ -25,7 +24,7 @@ public class PremiumAccountTable extends BasicJDTable<Account> {
      * @see org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.java.util.List , java.awt.event.KeyEvent, boolean)
      */
     @Override
-    protected boolean onShortcutDelete(java.util.List<Account> selectedObjects, KeyEvent evt, boolean direct) {
+    protected boolean onShortcutDelete(java.util.List<AccountEntry> selectedObjects, KeyEvent evt, boolean direct) {
         new RemoveAction(selectedObjects, direct).actionPerformed(null);
         return true;
     }
@@ -37,7 +36,7 @@ public class PremiumAccountTable extends BasicJDTable<Account> {
      * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, Account contextObject, java.util.List<Account> selection, ExtColumn<Account> column, MouseEvent ev) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, AccountEntry contextObject, java.util.List<AccountEntry> selection, ExtColumn<AccountEntry> column, MouseEvent ev) {
         if (popup != null) {
             if (selection == null) {
                 popup.add(new NewAction());

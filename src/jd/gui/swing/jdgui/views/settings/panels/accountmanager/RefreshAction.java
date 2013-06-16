@@ -17,9 +17,9 @@ public class RefreshAction extends AbstractAction {
     /**
      * 
      */
-    private static final long serialVersionUID = 1L;
-    private List<Account>     selection;
-    private boolean           ignoreSelection  = false;
+    private static final long  serialVersionUID = 1L;
+    private List<AccountEntry> selection;
+    private boolean            ignoreSelection  = false;
 
     public RefreshAction() {
         this(null);
@@ -27,7 +27,7 @@ public class RefreshAction extends AbstractAction {
         ignoreSelection = true;
     }
 
-    public RefreshAction(List<Account> selectedObjects) {
+    public RefreshAction(List<AccountEntry> selectedObjects) {
         selection = selectedObjects;
         this.putValue(NAME, _GUI._.settings_accountmanager_refresh());
         this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("refresh", 16));
@@ -37,10 +37,13 @@ public class RefreshAction extends AbstractAction {
         IOEQ.add(new Runnable() {
             public void run() {
                 if (selection == null) {
-                    selection = AccountController.getInstance().list();
+
+                    for (Account acc : AccountController.getInstance().list()) {
+                        AccountChecker.getInstance().check(acc, true);
+                    }
                 }
-                for (Account acc : selection) {
-                    AccountChecker.getInstance().check(acc, true);
+                for (AccountEntry acc : selection) {
+                    AccountChecker.getInstance().check(acc.getAccount(), true);
                 }
             }
         });
