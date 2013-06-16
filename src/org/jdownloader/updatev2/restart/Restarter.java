@@ -27,7 +27,11 @@ public abstract class Restarter {
 
     public void restart(File root, List<String> parameters) {
         try {
-
+            if (parameters.contains("-norestart")) {
+                //
+                logger.info("Do not restart due to -norestart parameter");
+                return;
+            }
             logger.info("RestartIt");
             List<String> lst = getApplicationStartCommands(root);
             logger.info("appcommands");
