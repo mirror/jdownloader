@@ -45,6 +45,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.jdtrayicon.CFG_TRAY_CONFIG;
 import org.jdownloader.gui.jdtrayicon.TrayIconMenuManager;
 import org.jdownloader.gui.mainmenu.MainMenuManager;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
@@ -124,6 +125,7 @@ public class GUISettings extends AbstractConfigPanel {
             public void actionPerformed(ActionEvent e) {
                 try {
                     AbstractDialog.resetDialogInformations();
+                    CFG_TRAY_CONFIG.ON_CLOSE_ACTION.setValue(CFG_TRAY_CONFIG.ON_CLOSE_ACTION.getDefaultValue());
                     Dialog.getInstance().showMessageDialog(_GUI._.GUISettings_actionPerformed_reset_done());
 
                 } catch (StorageException e1) {
