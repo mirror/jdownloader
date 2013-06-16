@@ -237,7 +237,7 @@ public class GUISettings extends AbstractConfigPanel {
         // NewTheme.I().getIcon("barrierfreesettings", 32));
         this.addPair(_GUI._.gui_config_language(), null, lng);
         this.addPair(_GUI._.gui_config_dialogs(), null, resetDialogs);
-        this.addHeader(_GUI._.gui_config_menumanager_downloadlist(), NewTheme.I().getIcon("menu", 32));
+        this.addHeader(_GUI._.gui_config_menumanager_header(), NewTheme.I().getIcon("menu", 32));
 
         this.addDescription(_GUI._.gui_config_menumanager_desc());
         this.addPair(_GUI._.gui_config_menumanager_downloadlist(), null, contextMenuManagerDownloadList);

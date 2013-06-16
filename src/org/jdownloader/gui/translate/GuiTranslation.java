@@ -2600,4 +2600,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Show Details" })
     String premiumaccounttablemodel_column_info_button();
 
+    @Default(lngs = { "en" }, values = { "Menus and Toolbars" })
+    String gui_config_menumanager_header();
+
 }
