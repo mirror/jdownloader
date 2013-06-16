@@ -162,7 +162,7 @@ public class ARDMediathek extends PluginForHost {
     }
 
     private void postprocess(final DownloadLink downloadLink) {
-        if ("subtitles".equals(downloadLink.getStringProperty("streamingType", null))) {
+        if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
             if (!convertSubtitle(downloadLink)) {
                 logger.severe("Subtitle conversion failed!");
             } else {
@@ -202,26 +202,23 @@ public class ARDMediathek extends PluginForHost {
             in.close();
         }
 
-        final String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">?(.*?)</p>").getMatches();
+        final String[][] matches = new Regex(xml.toString(), "<p id=\"subtitle\\d+\" begin=\"([^<>\"]*?)\" end=\"([^<>\"]*?)\" tts:textAlign=\"center\" style=\"(s\\d+)\">(.*?)</p>").getMatches();
         try {
-            final int starttime = Integer.parseInt(downloadlink.getStringProperty("starttime", null));
             for (String[] match : matches) {
                 dest.write(counter++ + lineseparator);
 
-                final Double start = Double.valueOf(match[0]) + starttime;
-                final Double end = Double.valueOf(match[1]) + starttime;
-                dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
+                final String start = match[0].replace(".", ",");
+                final String end = match[1].replace(".", ",");
+                dest.write(start + " --> " + end + lineseparator);
 
-                String text = match[2].trim();
-                final String[][] textReplaces = new Regex(text, "(tts:color=\"#([A-Z0-9]+)\">)").getMatches();
-                if (textReplaces != null && textReplaces.length != 0) {
-                    for (final String[] singleText : textReplaces) {
-                        final String completeOldText = singleText[0];
-                        final String color = singleText[1];
-                        final String completeNewText = "<c:#" + color + ">";
-                        text = text.replaceAll(completeOldText, completeNewText);
-                    }
-                }
+                String text = match[3].trim();
+                text = text.replace("&#x00C4;", "Ä");
+                text = text.replace("&#x00D6;", "Ö");
+                text = text.replace("&#x00DC;", "Ü");
+                text = text.replace("&#x00E4;", "ä");
+                text = text.replace("&#x00F6;", "ö");
+                text = text.replace("&#x00FC;", "ü");
+
                 text = text.replaceAll(lineseparator, " ");
                 text = text.replaceAll("&amp;", "&");
                 text = text.replaceAll("&quot;", "\"");
@@ -310,7 +307,7 @@ public class ARDMediathek extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.ardmediathek.subtitles", "Download subtitle whenever possible")).setDefaultValue(false).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.ardmediathek.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings: "));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
