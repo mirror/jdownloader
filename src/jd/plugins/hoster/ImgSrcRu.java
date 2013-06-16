@@ -203,6 +203,10 @@ public class ImgSrcRu extends PluginForHost {
                         password = downloadLink.getStringProperty("password");
                         if (password == null) {
                             password = getUserInput("Enter password for link:", downloadLink);
+                            if (password == null || password.equals("")) {
+                                logger.info("User abored/entered blank password");
+                                return false;
+                            }
                         }
                     }
                     pwForm.put("pwd", password);
@@ -217,11 +221,17 @@ public class ImgSrcRu extends PluginForHost {
                     downloadLink.setProperty("password", password);
                     break;
                 }
-                if (br.getURL().equals("http://imgsrc.ru/")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (br.getURL().equals("http://imgsrc.ru/")) {
+                    // link has been removed!
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 if (br.getURL().contains(url) || !failed) {
                     // because one page grab could have multiple steps, you can not break after each if statement
                     break;
                 }
+            } catch (PluginException e) {
+                failed = true;
+                throw e;
             } catch (Throwable e) {
                 failed = true;
                 continue;

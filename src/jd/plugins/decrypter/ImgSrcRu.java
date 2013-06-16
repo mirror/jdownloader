@@ -31,6 +31,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -249,6 +250,10 @@ public class ImgSrcRu extends PluginForDecrypt {
                         password = this.getPluginConfig().getStringProperty("lastusedpassword");
                         if (password == null) {
                             password = getUserInput("Enter password for link: " + param.getCryptedUrl(), param);
+                            if (password == null || password.equals("")) {
+                                logger.info("User abored/entered blank password");
+                                return false;
+                            }
                         }
                     }
                     pwForm.put("pwd", password);
@@ -279,6 +284,9 @@ public class ImgSrcRu extends PluginForDecrypt {
                     // because one page grab could have multiple steps, you can not break after each if statement
                     break;
                 }
+            } catch (PluginException e) {
+                failed = true;
+                throw e;
             } catch (Throwable e) {
                 failed = true;
                 continue;
