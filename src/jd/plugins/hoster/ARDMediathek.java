@@ -297,7 +297,7 @@ public class ARDMediathek extends PluginForHost {
 
     private String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
-        if (yt_loaded.getAndSet(true)) JDUtilities.getPluginForHost("youtube.com");
+        if (!yt_loaded.getAndSet(true)) JDUtilities.getPluginForHost("youtube.com");
         return jd.plugins.hoster.Youtube.unescape(s);
     }
 
