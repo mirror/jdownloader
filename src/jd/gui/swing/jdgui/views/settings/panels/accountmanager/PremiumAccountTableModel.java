@@ -1,7 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -9,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JTable;
@@ -36,11 +36,12 @@ import org.appwork.swing.exttable.columns.ExtProgressColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+
+import sun.swing.SwingUtilities2;
 
 public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implements AccountCheckerEventListener {
 
@@ -154,7 +155,61 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                 AccountController.getInstance().saveDelayedRequest();
             }
         });
+        this.addColumn(new ExtTextColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_hoster()) {
 
+            private static final long serialVersionUID = -3693931358975303164L;
+
+            @Override
+            public boolean isEnabled(AccountEntry obj) {
+                return obj.getAccount().isEnabled();
+            }
+
+            @Override
+            public boolean isHidable() {
+                return false;
+            }
+
+            @Override
+            protected Icon getIcon(AccountEntry value) {
+                return value.getAccount().getDomainInfo().getFavIcon();
+            }
+
+            @Override
+            public int getDefaultWidth() {
+                return 120;
+            }
+
+            @Override
+            public int getMinWidth() {
+                return 30;
+            }
+
+            @Override
+            protected String getTooltipText(AccountEntry obj) {
+                return obj.getAccount().getHoster();
+            }
+
+            @Override
+            public void configureRendererComponent(AccountEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
+                this.rendererIcon.setIcon(this.getIcon(value));
+                String str = null;
+                if (getWidth() > 60) str = this.getStringValue(value);
+                if (str == null) {
+                    str = "";
+                }
+                if (this.getTableColumn() != null) {
+                    this.rendererField.setText(SwingUtilities2.clipStringIfNecessary(this.rendererField, this.rendererField.getFontMetrics(this.rendererField.getFont()), str, this.getTableColumn().getWidth() - this.rendererIcon.getPreferredSize().width - 5));
+                } else {
+                    this.rendererField.setText(str);
+                }
+            }
+
+            @Override
+            public String getStringValue(AccountEntry value) {
+                return value.getAccount().getHoster();
+            }
+
+        });
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_user()) {
 
             private static final long serialVersionUID = -8070328156326837828L;
@@ -353,15 +408,13 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             {
                 button = new JButton(_GUI._.premiumaccounttablemodel_column_info_button());
-                Dimension pref = button.getPreferredSize();
 
-                button.setPreferredSize(pref);
-                panel = new RendererMigPanel("ins 2", "[]", "[18!]");
+                panel = new MigPanel("ins 2", "[]", "[18!]");
                 panel.add(button);
-                panel.setOpaque(false);
+                button.setOpaque(false);
 
                 rbutton = new JButton(_GUI._.premiumaccounttablemodel_column_info_button());
-                pref = rbutton.getPreferredSize();
+
                 rbutton.addActionListener(new ActionListener() {
 
                     @Override
@@ -371,10 +424,10 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                         }
                     }
                 });
-                rbutton.setPreferredSize(pref);
+
                 rpanel = new MigPanel("ins 2", "[]", "[18!]");
                 rpanel.add(rbutton);
-                rpanel.setOpaque(false);
+                rbutton.setOpaque(false);
             }
 
             @Override
@@ -421,7 +474,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             @Override
             public void configureEditorComponent(AccountEntry value, boolean isSelected, int row, int column) {
                 editing = value;
-                rbutton.setEnabled(isEnabled(value));
+                // rbutton.setEnabled(isEnabled(value));
             }
 
             @Override
@@ -432,11 +485,16 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public void resetEditor() {
+                rpanel.setBackground(null);
+                rpanel.setOpaque(false);
             }
 
             @Override
             public void resetRenderer() {
+                panel.setBackground(null);
+                panel.setOpaque(false);
             }
+
         });
 
     }
