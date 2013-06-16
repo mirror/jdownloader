@@ -1,4 +1,4 @@
-AutoDetectAction_run_failed=JDownloader nije mogao pronaći funkcionalnu LiveHeader Skriptu z aPonovno konektovanje. Molimo provjerite da li ste unijeli ispravne informacije i da li imate dinamičku IP konekciju.
+AutoDetectAction_run_failed=JDownloader nije mogao pronaći funkcionalnu LiveHeader Skriptu za Ponovno konektovanje. Molimo provjerite da li ste unijeli ispravne informacije i da li imate dinamičku IP konekciju.
 DataCompareDialog_DataCompareDialog_=Uporedi Informacije o Ruteru
 DataCompareDialog_layoutDialogContent__desc=Molimo provjerite sljedeće informacije i pokušajte popuniti prazna polja što možete tačnije.
 DataCompareDialog_layoutDialogContent_firmware=Firmware/Verzija

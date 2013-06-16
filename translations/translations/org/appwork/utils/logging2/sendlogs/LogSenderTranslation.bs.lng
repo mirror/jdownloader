@@ -1,9 +1,6 @@
-LogAction=Kreiraj Log
-LogAction_actionPerformed_givelogid_=Mlimo pošaljite ovaj log ID svojoj podršci!
 LogAction_actionPerformed_wait_=Molimo sačekajte...
 LogAction_actionPerformed_zip_title_=Kreiranje Log Paketa
 LogAction_getString_uploading_=Priprema vaših logova
-LogAction_tooltip=Kreiraj Log
 LogModel_getStringValue_between_=Između %s1 i %s2
 LogModel_initColumns_time_=Vrijeme
 LogModel_initColumns_x_=Provjeri
