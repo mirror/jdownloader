@@ -58,8 +58,9 @@ public class AdvancedConfigEntry {
     public void setValue(Object value) {
 
         try {
+            Object v = getValue();
             keyHandler.getSetter().getMethod().invoke(configInterface, new Object[] { value });
-            if (keyHandler.getAnnotation(RequiresRestart.class) != null) {
+            if (keyHandler.getAnnotation(RequiresRestart.class) != null && !equals(v, value)) {
                 Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AdvancedConfigEntry_setValue_restart_warning_title(keyHandler.getKey()), _GUI._.AdvancedConfigEntry_setValue_restart_warning(keyHandler.getKey()));
             }
         } catch (IllegalArgumentException e) {
@@ -69,6 +70,15 @@ public class AdvancedConfigEntry {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
+    }
+
+    private boolean equals(Object v, Object value) {
+        if (value == null && v == null) return true;
+        if (v == null && value != null) return false;
+        if (value == null && v != null) return false;
+
+        return v.equals(value);
+
     }
 
     public Object getDefault() {
