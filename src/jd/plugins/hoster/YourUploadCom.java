@@ -42,7 +42,7 @@ public class YourUploadCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("(yourupload\\.com/embed|embed\\.yourupload\\.com)/((file|embed)/)?", "yourupload.com/watch/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(yourupload\\.com/embed|embed\\.yourupload\\.com)/((file|embed)/)?", "yourupload.com/watch/"));
     }
 
     @Override
