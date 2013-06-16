@@ -98,10 +98,24 @@ public class IssuuCom extends PluginForHost {
                         return;
                     }
                 }
+                final String lang = System.getProperty("user.language");
+                if (isValidMailAdress(account.getUser())) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte den Benutzername und nicht die Mailadresse in das 'Benutzername' Feld eingeben!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInstead of using your mailadress, please enter your username in the 'username' field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 br.setFollowRedirects(false);
                 br.getHeaders().put("Accept", "*/*");
                 br.getPage("https://api.issuu.com/query?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&permission=f&loginExpiration=standard&action=issuu.user.login&format=json&jsonCallback=_jqjsp&_" + System.currentTimeMillis() + "=");
-                if (br.getCookie(MAINPAGE, "site.model.token") == null || br.containsHTML("\"message\":\"Login failed\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "site.model.token") == null || br.containsHTML("\"message\":\"Login failed\"")) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -116,6 +130,10 @@ public class IssuuCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private boolean isValidMailAdress(final String value) {
+        return value.matches(".+@.+");
     }
 
     @Override
@@ -136,9 +154,9 @@ public class IssuuCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        login(account, true);
         final String token = br.getCookie(MAINPAGE, "site.model.token");
-        br.getPage("http://api.issuu.com/query?documentId=" + this.DOCUMENTID + "&username=" + Encoding.urlEncode(account.getUser()) + "&token=" + Encoding.urlEncode(token) + "&action=issuu.document.download&format=json&jsonCallback=_jqjsp&_" + System.currentTimeMillis() + "=");
+        br.getPage("http://api.issuu.com/query?documentId=" + this.DOCUMENTID + "&username=" + "ultimaaaate" + "&token=" + Encoding.urlEncode(token) + "&action=issuu.document.download&format=json&jsonCallback=_jqjsp&_" + System.currentTimeMillis() + "=");
         if (br.containsHTML("\"message\":\"Document access denied\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "This document is not downloadable");
         String dllink = br.getRegex("\"url\":\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
