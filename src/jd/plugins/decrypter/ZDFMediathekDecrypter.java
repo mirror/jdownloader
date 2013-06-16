@@ -206,7 +206,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         link.setFinalFileName(name);
                         link.setProperty("directURL", subtitleUrl);
                         link.setProperty("directName", name);
-                        link.setProperty("streamingType", "subtitles");
+                        link.setProperty("streamingType", "subtitle");
                         link.setProperty("starttime", startTime);
                         newRet.add(link);
                     }

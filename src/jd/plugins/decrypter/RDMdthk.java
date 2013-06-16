@@ -44,6 +44,7 @@ public class RDMdthk extends PluginForDecrypt {
     private static final String Q_HD         = "Q_HD";
     private static final String Q_BEST       = "Q_BEST";
     private static final String AUDIO        = "AUDIO";
+    private static final String Q_SUBTITLES  = "Q_SUBTITLES";
     private boolean             BEST         = false;
     private int                 notForStable = 0;
 
@@ -142,13 +143,13 @@ public class RDMdthk extends PluginForDecrypt {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
         try {
+            String title = getTitle(br);
             if (s[1] != null) {
                 Browser br = new Browser();
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
                 br.getPage(s[0]);
                 if (br.containsHTML("(<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>|Die angeforderte Datei existiert leider nicht)")) return ret;
-                String title = getTitle(br);
                 String url = null, fmt = null;
                 int t = 0;
 
@@ -221,6 +222,20 @@ public class RDMdthk extends PluginForDecrypt {
                     newRet.add(link);
                 }
                 if (newRet.size() > 0) {
+                    if (cfg.getBooleanProperty(Q_SUBTITLES, false)) {
+                        final String filename = title + "@SUBTITLE.xml";
+                        String subtitleLink = br.getRegex("mediaCollection\\.setSubtitleUrl\\(\"(/static/avportal/untertitel_mediathek/\\d+\\.xml)\"").getMatch(0);
+                        if (subtitleLink != null) {
+                            final String finallink = "http://www.ardmediathek.de" + subtitleLink + "@";
+                            final DownloadLink dl = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=subtitle");
+                            dl.setAvailable(true);
+                            dl.setFinalFileName(filename);
+                            dl.setProperty("directURL", finallink);
+                            dl.setProperty("directName", filename);
+                            dl.setProperty("streamingType", "subtitle");
+                            newRet.add(dl);
+                        }
+                    }
                     if (BEST) {
                         /* only keep best quality */
                         DownloadLink keep = bestMap.get("hd");

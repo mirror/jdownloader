@@ -63,7 +63,7 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (link.getStringProperty("directURL", null) == null) {
             /* fetch fresh directURL */
             this.setBrowserExclusive();
@@ -76,6 +76,8 @@ public class ZdfDeMediathek extends PluginForHost {
             final String filename = br.getRegex("<h1 class=\"beitragHeadline\">([^<>\"]*?)</h1>").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()).replace("\"", "'").replace(":", " - ").replace("?", "") + ".mp4");
+        } else {
+            link.setFinalFileName(link.getStringProperty("directName", null));
         }
         return AvailableStatus.TRUE;
     }
@@ -115,18 +117,18 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     private void postprocess(final DownloadLink downloadLink) {
-        if ("subtitles".equals(downloadLink.getStringProperty("streamingType", null))) {
+        if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
             if (!convertSubtitle(downloadLink)) {
                 logger.severe("Subtitle conversion failed!");
+            } else {
+                downloadLink.setFinalFileName(downloadLink.getStringProperty("directName", null).replace(".xml", ".srt"));
             }
         }
     }
 
     /**
-     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * Converts the ZDF Closed Captions subtitles to SRT subtitles. It runs after the completed download.
      * 
-     * @param downloadlink
-     *            . The finished link to the Google CC subtitle file.
      * @return The success of the conversion.
      */
     public static boolean convertSubtitle(final DownloadLink downloadlink) {
@@ -155,24 +157,23 @@ public class ZdfDeMediathek extends PluginForHost {
             in.close();
         }
 
-        String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">(.*?)</p>").getMatches();
+        final String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">?(.*?)</p>").getMatches();
         try {
             final int starttime = Integer.parseInt(downloadlink.getStringProperty("starttime", null));
             for (String[] match : matches) {
                 dest.write(counter++ + lineseparator);
 
-                Double start = Double.valueOf(match[0]) + starttime;
-                Double end = Double.valueOf(match[1]) + starttime;
+                final Double start = Double.valueOf(match[0]) + starttime;
+                final Double end = Double.valueOf(match[1]) + starttime;
                 dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
 
                 String text = match[2].trim();
-                final String[][] textReplaces = new Regex(text, "(<span tts:color=\"#([A-Z0-9]+)\">(.*?)</span>)").getMatches();
+                final String[][] textReplaces = new Regex(text, "(tts:color=\"#([A-Z0-9]+)\">)").getMatches();
                 if (textReplaces != null && textReplaces.length != 0) {
                     for (final String[] singleText : textReplaces) {
                         final String completeOldText = singleText[0];
                         final String color = singleText[1];
-                        final String textOnly = singleText[2];
-                        final String completeNewText = "<c:#" + color + ">" + textOnly + "</c>";
+                        final String completeNewText = "<c:#" + color + ">";
                         text = text.replaceAll(completeOldText, completeNewText);
                     }
                 }
@@ -181,7 +182,9 @@ public class ZdfDeMediathek extends PluginForHost {
                 text = text.replaceAll("&quot;", "\"");
                 text = text.replaceAll("&#39;", "'");
                 text = text.replaceAll("&apos;", "'");
-                text = text.replaceAll("<br />", "");
+                text = text.replaceAll("<br />", lineseparator);
+                text = text.replace("</p>", "");
+                text = text.replace("<span ", "").replace("</span>", "");
                 dest.write(text + lineseparator + lineseparator);
             }
         } catch (Exception e) {
@@ -268,7 +271,7 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.zdf.subtitles", "Download subtitles whenever possible")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.zdf.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.zdf.best", "Load Best Version ONLY")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
