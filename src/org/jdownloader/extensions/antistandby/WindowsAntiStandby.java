@@ -21,19 +21,16 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 
-import com.sun.jna.Native;
-
 public class WindowsAntiStandby extends Thread implements Runnable {
 
-    private boolean                    run      = false;
-    private static final int           sleep    = 5000;
+    private boolean                    run   = false;
+    private static final int           sleep = 5000;
     private final AntiStandbyExtension jdAntiStandby;
-
-    private Kernel32                   kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
 
     public WindowsAntiStandby(AntiStandbyExtension jdAntiStandby) {
         super();
         this.jdAntiStandby = jdAntiStandby;
+
     }
 
     @Override
@@ -70,7 +67,7 @@ public class WindowsAntiStandby extends Thread implements Runnable {
                 }
                 sleep(sleep);
             }
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             logger.log(e);
         } finally {
             try {
@@ -84,8 +81,11 @@ public class WindowsAntiStandby extends Thread implements Runnable {
     }
 
     private void enableAntiStandby(boolean enabled) {
+
+        Kernel32 kernel32 = (Kernel32) com.sun.jna.Native.loadLibrary("kernel32", Kernel32.class);
         if (enabled) {
             if (jdAntiStandby.getSettings().isDisplayRequired()) {
+
                 kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED | Kernel32.ES_DISPLAY_REQUIRED);
             } else {
                 kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED);

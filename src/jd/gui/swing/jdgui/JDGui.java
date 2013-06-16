@@ -234,8 +234,6 @@ public class JDGui extends SwingGui {
                 }
                 Dialog.getInstance().setParentOwner(getMainFrame());
 
-                GuiUtils.flashWindow(mainFrame, false, false);
-
             }
         });
         mainFrame.addWindowFocusListener(new WindowFocusListener() {
@@ -248,7 +246,6 @@ public class JDGui extends SwingGui {
             @Override
             public void windowGainedFocus(WindowEvent e) {
 
-                GuiUtils.flashWindow(mainFrame, false, false);
             }
         });
         mainFrame.addWindowStateListener(new WindowStateListener() {
@@ -1247,10 +1244,14 @@ public class JDGui extends SwingGui {
 
                 final int state = mainFrame.getExtendedState();
                 if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isTaskBarFlashEnabled()) {
-                    if (state == ExtendedState.ICONIFIED.getId()) {
-                        GuiUtils.flashWindow(mainFrame, true, true);
-                    } else {
-                        GuiUtils.flashWindow(mainFrame, true, true);
+                    try {
+                        if (state == ExtendedState.ICONIFIED.getId()) {
+                            GuiUtils.flashWindow(mainFrame, true, true);
+                        } else {
+                            GuiUtils.flashWindow(mainFrame, true, true);
+                        }
+                    } catch (Exception e) {
+                        logger.log(e);
                     }
                 }
             }

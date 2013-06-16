@@ -18,27 +18,24 @@ public class GuiUtils {
             System.out.println("Flash: " + flashTray);
 
             User32 lib = null;
-            try {
-                lib = (User32) Native.loadLibrary("user32", User32.class);
-                User32.FLASHWINFO flash = new User32.FLASHWINFO();
-                HWND hwnd = new HWND();
-                hwnd.setPointer(Native.getComponentPointer(window));
-                flash.hWnd = hwnd;
-                flash.uCount = 100;
-                flash.dwTimeout = 1000;
-                if (flashTray || flashWindow) {
-                    flash.dwFlags = User32.FLASHW_TIMERNOFG | User32.FLASHW_ALL;
-                } else {
-                    flash.dwFlags = User32.FLASHW_STOP;
-                    return;
-                }
 
-                flash.cbSize = flash.size();
-                lib.FlashWindowEx(flash);
-
-            } catch (UnsatisfiedLinkError e) {
-                e.printStackTrace();
+            lib = (User32) Native.loadLibrary("user32", User32.class);
+            User32.FLASHWINFO flash = new User32.FLASHWINFO();
+            HWND hwnd = new HWND();
+            hwnd.setPointer(Native.getComponentPointer(window));
+            flash.hWnd = hwnd;
+            flash.uCount = 100;
+            flash.dwTimeout = 1000;
+            if (flashTray || flashWindow) {
+                flash.dwFlags = User32.FLASHW_TIMERNOFG | User32.FLASHW_ALL;
+            } else {
+                flash.dwFlags = User32.FLASHW_STOP;
+                return;
             }
+
+            flash.cbSize = flash.size();
+            lib.FlashWindowEx(flash);
+
         } else {
             System.err.println("Flashing not supported on your System");
         }
