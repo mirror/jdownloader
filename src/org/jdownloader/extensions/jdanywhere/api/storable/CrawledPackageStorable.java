@@ -66,6 +66,32 @@ public class CrawledPackageStorable implements Storable {
         return password;
     }
 
+    public int getEnabled() {
+        int enabled = -1;
+        synchronized (pkg) {
+            for (CrawledLink link : pkg.getChildren()) {
+                if (enabled != 2) {
+                    if (link.isEnabled()) {
+                        if (enabled == -1) {
+                            enabled = 1;
+                        } else if (enabled == 0) {
+                            enabled = 2;
+                            break;
+                        }
+                    } else {
+                        if (enabled == -1) {
+                            enabled = 0;
+                        } else if (enabled == 1) {
+                            enabled = 2;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return enabled;
+    }
+
     public void setLinks(List<CrawledLinkStoreable> links) {
         this.links = links;
     }
