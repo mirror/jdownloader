@@ -205,7 +205,7 @@ public class ImgSrcRu extends PluginForHost {
                             password = getUserInput("Enter password for link:", downloadLink);
                             if (password == null || password.equals("")) {
                                 logger.info("User abored/entered blank password");
-                                return false;
+                                throw new PluginException(LinkStatus.ERROR_FATAL);
                             }
                         }
                     }

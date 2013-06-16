@@ -146,13 +146,11 @@ public class D extends PluginsC {
 
                             continue;
                         }
-                        // JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_INTERACTION_CALL,
-                        // this);
+                        // JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_INTERACTION_CALL, this);
 
                         p = dsk(x);
 
-                        // String test =
-                        // dsk("8dEAMOh4EcaP8QgExlHZRNeCYL9EzB3cGJIdDG2prCE=");
+                        // String test = dsk("8dEAMOh4EcaP8QgExlHZRNeCYL9EzB3cGJIdDG2prCE=");
                         p = Encoding.filterString(p);
                         if (p.length() != 16) {
                             logger.severe("DLC Error2(key): " + s2);
