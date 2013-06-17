@@ -47,6 +47,6 @@ public interface StatisticsInterface extends RemoteCallInterface {
 
     HashMap<String, String> getInfo(String hoster, int minutes);
 
-    void onAdvancedOptionUpdate(String string);
+    void onAdvancedOptionUpdate(String key,String value);
 
 }
