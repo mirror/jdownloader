@@ -88,6 +88,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogHandler;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.TimerDialog;
 import org.jdownloader.gui.GuiUtils;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
@@ -350,6 +351,8 @@ public class JDGui extends SwingGui {
                                 if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) { throw new DialogCanceledException(mask); }
                                 return dialog.getReturnValue();
                             }
+                        } catch (DialogNoAnswerException e) {
+                            throw e;
                         } catch (Exception e) {
                             // Dialogs are not initialized.... nullpointers are very likly
                             // These nullpointers should be fixed
@@ -376,6 +379,7 @@ public class JDGui extends SwingGui {
                                     if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) { throw new DialogCanceledException(mask); }
                                     try {
                                         return dialog.getReturnValue();
+
                                     } catch (Exception e) {
                                         // dialogs have not been initialized. so the getReturnValue might fail.
                                         logger.log(e);
@@ -1162,8 +1166,8 @@ public class JDGui extends SwingGui {
     private Thread trayIconChecker;
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
-     * changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
+     * avoid sideeffects when changing anything
      * 
      * @param minimize
      */
