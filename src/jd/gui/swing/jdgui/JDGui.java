@@ -334,13 +334,10 @@ public class JDGui extends SwingGui {
             public <T> T showDialog(AbstractDialog<T> dialog) throws DialogClosedException, DialogCanceledException {
                 // synchronized (this) {
                 try {
-
                     if (CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.CANCEL_DIALOG) {
                         // Cancel dialog
                         throw new DialogClosedException(Dialog.RETURN_CLOSED);
-
                     }
-
                     // if this is the edt, we should not block it.. NEVER
                     if (!SwingUtilities.isEventDispatchThread()) {
                         // block dialog calls... the shall appear as soon as isSilentModeActive is false.
@@ -388,13 +385,14 @@ public class JDGui extends SwingGui {
                             } else {
                                 Thread.sleep(250);
                             }
-
                         }
-
                     }
                 } catch (InterruptedException e) {
                     throw new DialogClosedException(Dialog.RETURN_INTERRUPT, e);
-
+                } catch (DialogClosedException e) {
+                    throw e;
+                } catch (DialogCanceledException e) {
+                    throw e;
                 } catch (Exception e) {
                     logger.log(e);
                 }
@@ -938,10 +936,7 @@ public class JDGui extends SwingGui {
                 // don't block anything if the tray is active
                 if (tray.isEnabled() && tray.isActive()) return false;
 
-                if (CFG_SILENTMODE.MANUAL_ENABLED.isEnabled()) {
-
-                return true; }
-
+                if (CFG_SILENTMODE.MANUAL_ENABLED.isEnabled()) { return true; }
                 switch (CFG_SILENTMODE.CFG.getAutoTrigger()) {
                 case JD_IN_TASKBAR:
                     if (getMainFrame().getState() == JFrame.ICONIFIED && getMainFrame().isVisible()) return true;
@@ -1167,8 +1162,8 @@ public class JDGui extends SwingGui {
     private Thread trayIconChecker;
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
-     * avoid sideeffects when changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
+     * changing anything
      * 
      * @param minimize
      */
@@ -1252,13 +1247,12 @@ public class JDGui extends SwingGui {
     }
 
     public void flashTaskbar() {
-        new EDTRunner() {
+        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isTaskBarFlashEnabled() && CrossSystem.isWindows()) {
+            new EDTRunner() {
 
-            @Override
-            protected void runInEDT() {
-
-                final int state = mainFrame.getExtendedState();
-                if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isTaskBarFlashEnabled()) {
+                @Override
+                protected void runInEDT() {
+                    final int state = mainFrame.getExtendedState();
                     try {
                         if (state == ExtendedState.ICONIFIED.getId()) {
                             GuiUtils.flashWindow(mainFrame, true, true);
@@ -1269,9 +1263,7 @@ public class JDGui extends SwingGui {
                         logger.log(e);
                     }
                 }
-            }
-        };
-
+            };
+        }
     }
-
 }

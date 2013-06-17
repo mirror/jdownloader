@@ -230,7 +230,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
                 menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
-
                 return menu;
             }
 
@@ -304,12 +303,10 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
         }
         input = new ExtTextArea() {
-
             @Override
             public void onChanged() {
                 delayedValidate.run();
             }
-
         };
         // input.setLineWrap(true);
         input.setWrapStyleWord(true);
@@ -377,7 +374,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
         input.setEditable(false);
         this.getDialog().addWindowListener(listener = new WindowListener() {
-
             public void windowOpened(WindowEvent e) {
                 new Thread() {
 
@@ -396,7 +392,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                         input.setText(_GUI._.AddLinksDialog_ParsingClipboard());
                                     };
                                 };
-
                                 parse(newText);
                                 newText = (list(HTMLParser.getHttpLinks(newText)));
                             }
@@ -423,9 +418,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                 };
                             };
                         }
-
                     }
-
                 }.start();
                 if (listener != null) getDialog().removeWindowListener(listener);
             }
@@ -479,25 +472,20 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 errorLabel.setText("");
                 if (links.length == 0) {
                     errorLabel.setText(_GUI._.AddLinksDialog_validateForm_input_missing());
-
                     input.setToolTipText(_GUI._.AddLinksDialog_validateForm_input_missing());
                     okButton.setEnabled(false);
                     confirmOptions.setEnabled(false);
-
                 } else {
                     input.setToolTipText(null);
-
                 }
                 if (!validateFolder(destination.getFile().getAbsolutePath())) {
                     if (errorLabel.getText().length() == 0) errorLabel.setText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
-
                     okButton.setEnabled(false);
                     destination.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
                     confirmOptions.setEnabled(false);
                     destination.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getErrorForeground()));
                 } else {
                     destination.setToolTipText(null);
-
                     destination.setForeground(null);
                 }
                 if (okButton.isEnabled()) {
@@ -523,26 +511,20 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     e1.printStackTrace();
                 }
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         if (input.isShowing()) {
-
                             HelpDialog.show(Boolean.FALSE, Boolean.TRUE, new Point(input.getLocationOnScreen().x + input.getWidth() / 2, input.getLocationOnScreen().y + 10), null, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksDialog_AddLinksDialog_(), _GUI._.AddLinksDialog_layoutDialogContent_description(), NewTheme.I().getIcon("linkgrabber", 32));
-
                         }
                     }
                 };
-
             }
         }.start();
 
     }
 
     public void pack() {
-
         this.getDialog().pack();
-
     }
 
     @Override

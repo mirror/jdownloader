@@ -67,6 +67,7 @@ public class ResetAction extends AppAction {
 
             }, true);
         } catch (DialogNoAnswerException e1) {
+            e1.printStackTrace();
         }
     }
 

@@ -55,6 +55,8 @@ public class LinkCrawler {
     private AtomicInteger                           brokenLinksCounter          = new AtomicInteger(0);
     private java.util.List<CrawledLink>             unhandledLinks              = new ArrayList<CrawledLink>();
     private AtomicInteger                           unhandledLinksCounter       = new AtomicInteger(0);
+    private AtomicInteger                           processedLinksCounter       = new AtomicInteger(0);
+
     private AtomicInteger                           crawler                     = new AtomicInteger(0);
     private static AtomicInteger                    CRAWLER                     = new AtomicInteger(0);
     private HashSet<String>                         duplicateFinderContainer    = new HashSet<String>();
@@ -88,14 +90,12 @@ public class LinkCrawler {
      * customized comparator we use to prefer faster decrypter plugins over slower ones
      */
     private static Comparator<Runnable>   comparator  = new Comparator<Runnable>() {
-
                                                           public int compare(Runnable o1, Runnable o2) {
                                                               if (o1 == o2) return 0;
                                                               long l1 = ((LinkCrawlerRunnable) o1).getAverageRuntime();
                                                               long l2 = ((LinkCrawlerRunnable) o2).getAverageRuntime();
                                                               return (l1 < l2) ? -1 : ((l1 == l2) ? 0 : 1);
                                                           }
-
                                                       };
 
     static {
@@ -367,6 +367,7 @@ public class LinkCrawler {
                     /* link is filtered, stop here */
                     return;
                 }
+                processedLinksCounter.incrementAndGet();
                 br = new Browser();
                 String url = source.getURL();
                 br.openGetConnection(url);
@@ -998,6 +999,7 @@ public class LinkCrawler {
                 /* link is filtered, stop here */
                 return;
             }
+            processedLinksCounter.incrementAndGet();
             /* set new PluginClassLoaderChild because ContainerPlugin maybe uses Hoster/Crawler */
             Thread.currentThread().setContextClassLoader(PluginClassLoader.getInstance().getChild());
             PluginsC plg = null;
@@ -1090,6 +1092,7 @@ public class LinkCrawler {
                 /* link is filtered, stop here */
                 return;
             }
+            processedLinksCounter.incrementAndGet();
             if (lazyC == null || cryptedLink.getCryptedLink() == null) return;
             PluginForDecrypt wplg = null;
             /*
@@ -1227,6 +1230,7 @@ public class LinkCrawler {
                     /* in case we return normally, clear the logger */
                     logger.clear();
                 } finally {
+
                     /* close the logger */
                     logger.close();
                     wplg.setLinkCrawlerAbort(null);
@@ -1383,7 +1387,7 @@ public class LinkCrawler {
     }
 
     public int processedLinks() {
-        return crawledLinksCounter.get() + filteredLinksCounter.get() + brokenLinksCounter.get();
+        return crawledLinksCounter.get() + filteredLinksCounter.get() + brokenLinksCounter.get() + processedLinksCounter.get();
     }
 
     protected LinkCrawlerHandler defaulHandlerFactory() {

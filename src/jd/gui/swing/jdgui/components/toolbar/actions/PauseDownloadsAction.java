@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -13,36 +12,18 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.settings.GeneralSettings;
 
-public class PauseDownloadsAction extends ToolBarAction implements DownloadWatchdogListener {
+public class PauseDownloadsAction extends ToolBarAction implements DownloadWatchdogListener, GenericConfigEventListener<Integer> {
 
     public PauseDownloadsAction(SelectionInfo<?, ?> selection) {
         setIconKey("media-playback-pause");
         setSelected(false);
         setEnabled(false);
-        setTooltipText(_GUI._.gui_menu_action_break2_desc(JsonConfig.create(GeneralSettings.class).getPauseSpeed()));
+        setTooltipText(_GUI._.gui_menu_action_break2_desc(org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getValue() / 1024));
 
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
 
-        org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
-
-            public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
-            }
-
-            public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-
-                        setTooltipText(_GUI._.gui_menu_action_break2_desc(org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getValue()));
-
-                    }
-                };
-            }
-
-        }, true);
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
 
     }
@@ -54,7 +35,7 @@ public class PauseDownloadsAction extends ToolBarAction implements DownloadWatch
 
     @Override
     public String createTooltip() {
-        return _GUI._.action_pause_tooltip();
+        return _GUI._.gui_menu_action_break2_desc(org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getValue() / 1024);
     }
 
     @Override
@@ -116,6 +97,23 @@ public class PauseDownloadsAction extends ToolBarAction implements DownloadWatch
 
     @Override
     public void onDownloadWatchdogStateIsStopping() {
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+
+                setTooltipText(_GUI._.gui_menu_action_break2_desc(org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getValue() / 1024));
+
+            }
+        };
     }
 
 }

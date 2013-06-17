@@ -6,7 +6,6 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
 import org.appwork.swing.components.ExtCheckBox;
@@ -16,7 +15,6 @@ import org.appwork.utils.locale._AWU;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GeneralSettings;
 
 public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogListener {
 
@@ -40,11 +38,16 @@ public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogList
 
         lbl = getLbl(_GUI._.SpeedlimitEditor_SpeedlimitEditor_(), NewTheme.I().getIcon("speed", 18));
         spinner = new SizeSpinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT) {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = -8549816276073605186L;
+
             @Override
             public void setValue(Object value) {
                 if (DownloadWatchDog.getInstance().isPaused()) {
                     try {
-                        JsonConfig.create(GeneralSettings.class).setPauseSpeed(((Number) value).intValue());
+                        org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.setValue(((Number) value).intValue());
                     } catch (ValidationException e) {
                         java.awt.Toolkit.getDefaultToolkit().beep();
                     }

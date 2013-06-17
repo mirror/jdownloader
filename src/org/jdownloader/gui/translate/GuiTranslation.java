@@ -44,9 +44,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Open the default download destination" })
     String action_open_dlfolder_tooltip();
 
-    @Default(lngs = { "en" }, values = { "Pause Downloads. This sets global speed limit to 10 kb/s" })
-    String action_pause_tooltip();
-
     @Default(lngs = { "en" }, values = { "Enable or disable all Premium Accounts" })
     String action_premium_toggle_tooltip();
 
