@@ -403,7 +403,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setTaskBarFlashEnabled(boolean b);
 
-    @DefaultEnumValue("MAINFRAME_IS_MAXIMIZED")
+    @DefaultEnumValue("MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY")
     @DescriptionForConfigEntry("Action that will be performed when the Linkgrabber adds new links.")
     @AboutConfig
     WindowState getFocusTriggerForCaptchaDialogs();
