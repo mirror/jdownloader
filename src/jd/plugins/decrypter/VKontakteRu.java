@@ -473,7 +473,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("vkontakte.ru");
         boolean fastLinkcheck = cfg.getBooleanProperty("FASTLINKCHECK", false);
         if (cfg.getBooleanProperty("ALLOW_BEST", false)) {
-            ArrayList<String> list = new ArrayList<String>(foundQualities.keySet());
+            final ArrayList<String> list = new ArrayList<String>(foundQualities.keySet());
             final String highestAvailableQualityValue = list.get(0);
             selectedQualities.add(highestAvailableQualityValue);
         } else {
