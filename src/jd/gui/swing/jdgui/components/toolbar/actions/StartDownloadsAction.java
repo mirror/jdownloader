@@ -25,14 +25,14 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.StartButtonAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 
 public class StartDownloadsAction extends ToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum> {
 
     /**
-     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     public StartDownloadsAction(SelectionInfo<?, ?> selection) {
         setIconKey("media-playback-start");
@@ -124,24 +124,17 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
 
     @Override
     public void onGuiMainTabSwitch(View oldView, final View newView) {
-        new EDTRunner() {
+        if (newView instanceof LinkGrabberView && CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext() == StartButtonAction.DISABLED) {
+            new EDTRunner() {
 
-            @Override
-            protected void runInEDT() {
-                if (newView instanceof LinkGrabberView) {
-                    switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
-                    case DISABLED:
-                        setEnabled(false);
-                        break;
-                    default:
-                        setEnabled(true);
-                    }
-                } else {
-                    setEnabled(true);
+                @Override
+                protected void runInEDT() {
+                    setEnabled(false);
                 }
-            }
-        };
-
+            };
+        } else {
+            DownloadWatchDog.getInstance().notifyCurrentState(this);
+        }
     }
 
     @Override

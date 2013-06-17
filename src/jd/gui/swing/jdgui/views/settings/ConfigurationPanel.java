@@ -55,9 +55,13 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
 
     @Override
     protected void onShow() {
-        if (SecondLevelLaunch.GUI_COMPLETE.isReached() && sidebar.treeInitiated() == false) {
-            sidebar.updateAddons();
-        }
+        if (sidebar.treeInitiated() == false) SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                sidebar.updateAddons();
+            }
+        });
         new EDTRunner() {
             protected void runInEDT() {
                 if (sidebar.getSelectedPanel() == null) {

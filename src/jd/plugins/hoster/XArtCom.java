@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://x\\-art\\.com/members/(videos/.+)" }, flags = { 2 })
 public class XArtCom extends PluginForHost {
 
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     public XArtCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -84,23 +84,31 @@ public class XArtCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(true);
 
-        URLConnectionAdapter urlcon = br.openGetConnection(parameter.getDownloadURL());
-        if (urlcon.getContentType().contains("text/html")) {
-            br.followConnection();
-        }
+        URLConnectionAdapter urlcon = null;
+        try {
+            urlcon = br.openGetConnection(parameter.getDownloadURL());
+            if (urlcon.getContentType().contains("text/html")) {
+                br.followConnection();
+            }
 
-        int res_code = urlcon.getResponseCode();
-        long dlsize = urlcon.getCompleteContentLength();
+            int res_code = urlcon.getResponseCode();
+            long dlsize = urlcon.getCompleteContentLength();
 
-        if (res_code == 200) {
-            parameter.setDownloadSize(dlsize);
-            return AvailableStatus.TRUE;
-        } else if (res_code == 404) {
-            return AvailableStatus.FALSE;
-        } else if (res_code == 401) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM);
-        } else {
-            return AvailableStatus.UNCHECKABLE;
+            if (res_code == 200) {
+                parameter.setDownloadSize(dlsize);
+                return AvailableStatus.TRUE;
+            } else if (res_code == 404) {
+                return AvailableStatus.FALSE;
+            } else if (res_code == 401) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM);
+            } else {
+                return AvailableStatus.UNCHECKABLE;
+            }
+        } finally {
+            try {
+                urlcon.disconnect();
+            } catch (final Throwable e) {
+            }
         }
     }
 
