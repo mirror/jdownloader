@@ -112,7 +112,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     }
 
     protected File dialog(File path) throws DialogClosedException, DialogCanceledException {
-        return DownloadFolderChooserDialog.open(path, false, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(si.getContextPackage().getName()));
+        return DownloadFolderChooserDialog.open(path, true, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(si.getContextPackage().getName()));
     }
 
     abstract protected void move(PackageType pkg, List<ChildrenType> selectedLinksByPackage);
