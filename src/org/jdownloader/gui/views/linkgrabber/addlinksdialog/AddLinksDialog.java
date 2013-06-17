@@ -55,6 +55,7 @@ import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.utils.Application;
 import org.appwork.utils.Lists;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
@@ -102,7 +103,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private JComboBox                           priority;
 
-    private HashSet<String>                     autoPasswords = new HashSet<String>(); ;
+    private HashSet<String>                     autoPasswords = new HashSet<String>();
+
+    private ExtTextField                        comment;                               ;
 
     public boolean isDeepAnalyse() {
         return deepAnalyse;
@@ -169,7 +172,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         ret.setDeepAnalyse(isDeepAnalyse());
         ret.setPackageName(packagename.getText());
         ret.setAutoExtract(this.extractToggle.isSelected());
-
+        ret.setCustomComment(getComment());
         String passwordTxt = password.getText();
         if (!StringUtils.isEmpty(passwordTxt)) {
             /* avoid empty hashsets */
@@ -213,6 +216,16 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         config.setAddDialogHeight(getDialog().getHeight());
         config.setAddDialogWidth(getDialog().getWidth());
         super.actionPerformed(e);
+    }
+
+    public String getComment() {
+        return new EDTHelper<String>() {
+
+            @Override
+            public String edtRun() {
+                return comment.getText();
+            }
+        }.getReturnValue();
     }
 
     @Override
@@ -292,6 +305,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         packagename.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_packagename_help());
         packagename.setSelectedItem(null);
 
+        comment = new ExtTextField();
+        comment.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_comment_help());
+
         destination.setQuickSelectionList(DownloadPath.loadList(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
 
         String latest = config.getLatestDownloadDestinationFolder();
@@ -347,6 +363,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
         p.add(createIconLabel("package_open", _GUI._.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,width 32!");
         p.add(packagename, "spanx,height 24!");
+        p.add(createIconLabel("document", _GUI._.AddLinksDialog_layoutDialogContent_comment_tt()), "aligny center,width 32!");
+        p.add(comment, "spanx,height 24!");
 
         p.add(createIconLabel("archivepassword", _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height 24!,width 32!");
 

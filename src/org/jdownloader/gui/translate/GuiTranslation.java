@@ -2618,4 +2618,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reconnects can interrupt resumable downloads" })
     String ReconnectSettings_ReconnectSettings_interrupt_resumable_allowed();
 
+    @Default(lngs = { "en" }, values = { "Enter a comment or leave empty..." })
+    String AddLinksDialog_layoutDialogContent_comment_help();
+
+    @Default(lngs = { "en" }, values = { "Enter a comment. This comment will be stored in every package and downloadlink." })
+    String AddLinksDialog_layoutDialogContent_comment_tt();
+
 }

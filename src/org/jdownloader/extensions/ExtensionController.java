@@ -68,7 +68,8 @@ public class ExtensionController implements MenuExtenderHandler {
     private LogSource                      logger;
 
     /**
-     * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private ExtensionController() {
         eventSender = new ExtensionControllerEventSender();
@@ -92,6 +93,7 @@ public class ExtensionController implements MenuExtenderHandler {
     }
 
     public void invalidateCache() {
+
         this.cacheInvalidated = true;
     }
 
