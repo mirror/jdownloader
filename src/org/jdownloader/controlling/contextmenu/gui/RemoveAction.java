@@ -12,7 +12,7 @@ public class RemoveAction extends AppAction {
 
     public RemoveAction(ManagerFrame managerFrame) {
         this.managerFrame = managerFrame;
-        setName(_GUI._.literally_remove());
+        setTooltipText(_GUI._.literally_remove());
         setSmallIcon(NewTheme.I().getIcon("delete", 20));
     }
 

@@ -29,8 +29,8 @@ public class AddActionAction extends AppAction {
     private ManagerFrame managerFrame;
 
     {
-        setName(_GUI._.ManagerFrame_layoutPanel_add());
-
+        setTooltipText(_GUI._.ManagerFrame_layoutPanel_add());
+        setIconKey("add");
     }
 
     public AddActionAction(ManagerFrame managerFrame) {

@@ -31,8 +31,8 @@ public class AddSpecialAction extends AppAction {
     public AddSpecialAction(ManagerFrame managerFrame) {
         this.manager = managerFrame.getManager();
         this.managerFrame = managerFrame;
-        setName(_GUI._.ManagerFrame_layoutPanel_addspecials());
-
+        setTooltipText(_GUI._.ManagerFrame_layoutPanel_addspecials());
+        setIconKey("add_special");
     }
 
     @Override

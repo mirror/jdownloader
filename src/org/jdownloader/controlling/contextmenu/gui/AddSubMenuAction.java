@@ -16,8 +16,8 @@ public class AddSubMenuAction extends AppAction {
 
     public AddSubMenuAction(ManagerFrame managerFrame) {
         this.managerFrame = managerFrame;
-        setName(_GUI._.ManagerFrame_layoutPanel_addSubmenu());
-
+        setTooltipText(_GUI._.ManagerFrame_layoutPanel_addSubmenu());
+        setIconKey("menu");
     }
 
     @Override

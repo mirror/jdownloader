@@ -1,6 +1,7 @@
 package org.jdownloader.controlling.contextmenu.gui;
 
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
@@ -55,34 +56,38 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
 
     }
 
-    protected DefaultButtonPanel getDefaultButtonPanel() {
-        DefaultButtonPanel bottom = new DefaultButtonPanel("ins 0", "[][][][][][][][grow,fill][][]", "[]");
-        ExtButton save = new ExtButton(new AppAction() {
-            {
-                setName(_GUI._.lit_save());
-                setSmallIcon(NewTheme.I().getIcon("save", 20));
-            }
+    protected MigPanel createBottomPanel() {
+        // TODO Auto-generated method stub
+        MigPanel ret = new MigPanel("ins 0", "[]20[grow,fill][]", "[][]");
 
+        MigPanel topline = new MigPanel("ins 0", "[][][][grow,fill][][][][]", "[]");
+        // bottom.add(topline, "spanx,pushx,growx,wrap");
+        topline.setOpaque(false);
+
+        ExtButton add = new ExtButton(new AddActionAction(this)) {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                MenuContainerRoot data = (MenuContainerRoot) model.getRoot();
-
-                manager.setMenuData(data);
-                setReturnmask(true);
-
-                dispose();
+            public int getTooltipDelay(Point mousePositionOnScreen) {
+                return 500;
             }
+        };
 
-        });
-
-        ExtButton add = new ExtButton(new AddActionAction(this));
-
-        ExtButton addSubmenu = new ExtButton(new AddSubMenuAction(this));
+        ExtButton addSubmenu = new ExtButton(new AddSubMenuAction(this)) {
+            @Override
+            public int getTooltipDelay(Point mousePositionOnScreen) {
+                return 500;
+            }
+        };
+        ExtButton addSpecials = new ExtButton(new AddSpecialAction(this)) {
+            @Override
+            public int getTooltipDelay(Point mousePositionOnScreen) {
+                return 500;
+            }
+        };
 
         ExtButton export = new ExtButton(new AppAction() {
             {
                 setIconKey(IconKey.ICON_EXPORT);
-                setName(_GUI._.lit_export());
+                setTooltipText(_GUI._.lit_export());
             }
 
             @Override
@@ -128,12 +133,17 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
                 }
             }
 
-        });
+        }) {
+            @Override
+            public int getTooltipDelay(Point mousePositionOnScreen) {
+                return 500;
+            }
+        };
 
         ExtButton importButton = new ExtButton(new AppAction() {
             {
                 setIconKey(IconKey.ICON_IMPORT);
-                setName(_GUI._.lit_import());
+                setTooltipText(_GUI._.lit_import());
             }
 
             @Override
@@ -176,12 +186,18 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
                 }
             }
 
-        });
-        ExtButton addSpecials = new ExtButton(new AddSpecialAction(this));
+        }) {
+            @Override
+            public int getTooltipDelay(Point mousePositionOnScreen) {
+                return 500;
+            }
+        };
+
         ExtButton reset = new ExtButton(new AppAction() {
             {
-                setName(_GUI._.ManagerFrame_layoutPanel_resettodefault());
+                setTooltipText(_GUI._.ManagerFrame_layoutPanel_resettodefault());
                 setSmallIcon(NewTheme.I().getIcon("reset", 20));
+
             }
 
             @Override
@@ -190,8 +206,48 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
                 if (tree.getRowCount() > 0) tree.setSelectionRow(0);
             }
 
-        });
+        }) {
+            @Override
+            public int getTooltipDelay(Point mousePositionOnScreen) {
+                return 500;
+            }
+        };
         ExtButton remove = new ExtButton(new RemoveAction(this));
+        topline.add(add, "height 24!");
+        topline.add(addSubmenu, "height 24!");
+        topline.add(addSpecials, "height 24!");
+
+        topline.add(Box.createHorizontalBox());
+
+        topline.add(remove, "height 24!");
+        topline.add(reset, "height 24!");
+        topline.add(importButton, "height 24!");
+        topline.add(export, "height 24!");
+
+        ret.add(topline, "wrap,spanx");
+        return ret;
+    }
+
+    protected DefaultButtonPanel getDefaultButtonPanel() {
+        DefaultButtonPanel bottom = new DefaultButtonPanel("ins 0", "[grow,fill][][]", "[]");
+        ExtButton save = new ExtButton(new AppAction() {
+            {
+                setName(_GUI._.lit_save());
+                setSmallIcon(NewTheme.I().getIcon("save", 20));
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                MenuContainerRoot data = (MenuContainerRoot) model.getRoot();
+
+                manager.setMenuData(data);
+                setReturnmask(true);
+
+                dispose();
+            }
+
+        });
+
         ExtButton cancel = new ExtButton(new AppAction() {
             {
                 setName(_GUI._.lit_cancel());
@@ -207,15 +263,6 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
             }
 
         });
-
-        bottom.add(add, "height 24!");
-        bottom.add(addSubmenu, "height 24!");
-        bottom.add(addSpecials, "height 24!");
-        bottom.add(remove, "height 24!");
-        bottom.add(reset, "height 24!");
-        bottom.add(importButton, "height 24!");
-        bottom.add(export, "height 24!");
-        bottom.add(Box.createHorizontalBox());
 
         bottom.add(save, "tag ok,height 24!");
         bottom.add(cancel, "tag cancel,height 24!");
@@ -259,7 +306,10 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
 
             @Override
             public Dimension getPreferredSize() {
-                return tree.getPreferredSize();
+                Dimension pref = tree.getPreferredSize();
+
+                pref.width = 100;
+                return pref;
             }
 
         };
