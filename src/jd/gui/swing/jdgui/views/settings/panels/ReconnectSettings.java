@@ -18,10 +18,14 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.ImageIcon;
 
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectManager;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 import org.jdownloader.translate._JDT;
 
 public class ReconnectSettings extends AbstractConfigPanel {
@@ -39,10 +43,13 @@ public class ReconnectSettings extends AbstractConfigPanel {
         this.addHeader(_JDT._.gui_settings_reconnect_title_method(), NewTheme.I().getIcon("reconnect", 32));
 
         add(new ReconnectManager());
-        // this.addHeader(_JDT._.gui_settings_reconnect_title_test(),
-        // NewTheme.I().getIcon("test", 32));
+        this.addHeader(_GUI._.ReconnectSettings_ReconnectSettings_settings_(), NewTheme.I().getIcon("settings", 32));
+        this.addDescription(_GUI._.ReconnectSettings_ReconnectSettings_settings_desc());
 
-        // add(tester = new ReconnectTester());
+        addPair(_GUI._.ReconnectSettings_ReconnectSettings_enabled_(), null, new Checkbox(CFG_RECONNECT.AUTO_RECONNECT_ENABLED));
+
+        addPair(_GUI._.ReconnectSettings_ReconnectSettings_prefer_reconnect_desc(), null, new Checkbox(CFG_RECONNECT.DOWNLOAD_CONTROLLER_PREFERS_RECONNECT_ENABLED));
+        addPair(_GUI._.ReconnectSettings_ReconnectSettings_interrupt_resumable_allowed(), null, new Checkbox(CFG_RECONNECT.RECONNECT_ALLOWED_TO_INTERRUPT_RESUMABLE_DOWNLOADS));
 
     }
 
@@ -53,10 +60,18 @@ public class ReconnectSettings extends AbstractConfigPanel {
 
     @Override
     public void save() {
+
     }
 
     @Override
     public void updateContents() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+
+            }
+        };
         // new Thread() {
         // @Override
         // public void run() {

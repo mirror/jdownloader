@@ -2603,4 +2603,22 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Menus and Toolbars" })
     String gui_config_menumanager_header();
 
+    @Default(lngs = { "en" }, values = { "General Reconnect Options" })
+    String ReconnectSettings_ReconnectSettings_settings_();
+
+    @Default(lngs = { "en" }, values = { "General Reconnect related options can be found here." })
+    String ReconnectSettings_ReconnectSettings_settings_desc();
+
+    @Default(lngs = { "en" }, values = { "Auto Reconnect Enabled" })
+    String ReconnectSettings_ReconnectSettings_enabled_();
+
+    @Default(lngs = { "en" }, values = { "Do not start downloads if others wait for a Reconnect" })
+    String ReconnectSettings_ReconnectSettings_prefer_reconnect_desc();
+
+    @Default(lngs = { "en" }, values = { "Priorize Reconnect" })
+    String ReconnectSettings_ReconnectSettings_prefer_reconnect();
+
+    @Default(lngs = { "en" }, values = { "Reconnects can interrupt resumable downloads" })
+    String ReconnectSettings_ReconnectSettings_interrupt_resumable_allowed();
+
 }

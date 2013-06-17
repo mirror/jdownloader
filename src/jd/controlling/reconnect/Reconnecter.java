@@ -28,6 +28,7 @@ import org.appwork.controlling.StateMachineInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 import org.jdownloader.translate._JDT;
 
 public final class Reconnecter implements StateMachineInterface {
@@ -302,7 +303,7 @@ public final class Reconnecter implements StateMachineInterface {
      * @return
      */
     public boolean isReconnectAllowed() {
-        boolean ret = org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled();
+        boolean ret = CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled();
         if (ret == false) {
             /* auto reconnect is disabled */
             return false;
@@ -339,7 +340,7 @@ public final class Reconnecter implements StateMachineInterface {
                 /*
                  * more than 5 failed reconnects in row, disable autoreconnect and show message
                  */
-                org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.setValue(false);
+                CFG_RECONNECT.AUTO_RECONNECT_ENABLED.setValue(false);
                 UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.jd_controlling_reconnect_Reconnector_progress_failed2());
             }
         }

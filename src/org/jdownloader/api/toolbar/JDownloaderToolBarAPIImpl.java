@@ -39,6 +39,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.api.toolbar.LinkCheckResult.STATUS;
 import org.jdownloader.api.toolbar.specialurls.YouTubeSpecialUrlHandling;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
+import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 //Toolbar NameSpace
 //http://localhost:3128/toolbar/
@@ -180,7 +181,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         } else {
             ret.put("limitspeed", 0);
         }
-        ret.put("reconnect", org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled());
+        ret.put("reconnect", CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled());
         ret.put("clipboard", org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled());
         ret.put("stopafter", DownloadWatchDog.getInstance().isStopMarkSet());
         ret.put("premium", org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
@@ -242,8 +243,8 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
     }
 
     public boolean toggleAutomaticReconnect() {
-        org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.toggle();
-        return org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled();
+        CFG_RECONNECT.AUTO_RECONNECT_ENABLED.toggle();
+        return CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled();
     }
 
     public boolean toggleStopAfterCurrentDownload() {

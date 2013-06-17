@@ -40,6 +40,7 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.extensions.jdanywhere.api.storable.CaptchaJob;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdogListener, DownloadControllerListener, StateEventListener, LinkCollectorListener, ChallengeResponseListener {
 
@@ -182,7 +183,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                                                                                            HashMap<String, Object> data = new HashMap<String, Object>();
                                                                                            data.put("message", "Reconnect");
-                                                                                           data.put("data", CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled());
+                                                                                           data.put("data", CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "AUTO_RECONNECT_ENABLED");
                                                                                            for (EventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
@@ -643,7 +644,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
             CFG_GENERAL.MAX_CHUNKS_PER_FILE.getEventSender().addListener(maxChunksPerFileEventListener, false);
             CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getEventSender().addListener(maxSiumultaneDownloadsPerHostEventListener, false);
             CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.getEventSender().addListener(maxDownloadsPerHostEnbledEventListener, false);
-            CFG_GENERAL.AUTO_RECONNECT_ENABLED.getEventSender().addListener(autioReconnectEnabledEventListener, false);
+            CFG_RECONNECT.AUTO_RECONNECT_ENABLED.getEventSender().addListener(autioReconnectEnabledEventListener, false);
             CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(useAvailableAccountEventListener, false);
         }
     }
@@ -663,7 +664,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
             CFG_GENERAL.MAX_CHUNKS_PER_FILE.getEventSender().removeListener(maxChunksPerFileEventListener);
             CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getEventSender().removeListener(maxSiumultaneDownloadsPerHostEventListener);
             CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.getEventSender().removeListener(maxDownloadsPerHostEnbledEventListener);
-            CFG_GENERAL.AUTO_RECONNECT_ENABLED.getEventSender().removeListener(autioReconnectEnabledEventListener);
+            CFG_RECONNECT.AUTO_RECONNECT_ENABLED.getEventSender().removeListener(autioReconnectEnabledEventListener);
             CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().removeListener(useAvailableAccountEventListener);
         }
     }

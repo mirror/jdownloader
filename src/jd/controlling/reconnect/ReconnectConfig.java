@@ -111,4 +111,25 @@ public interface ReconnectConfig extends ConfigInterface {
 
     void setOptimizationRounds(int num);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("AutoReconnect enabled?")
+    boolean isAutoReconnectEnabled();
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Do not start further downloads if others are waiting for a reconnect/new ip")
+    @DefaultBooleanValue(true)
+    boolean isDownloadControllerPrefersReconnectEnabled();
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("If disabled, No Reconnects will be done while Resumable Downloads (Premium Downloads) are running")
+    boolean isReconnectAllowedToInterruptResumableDownloads();
+
+    void setAutoReconnectEnabled(boolean b);
+
+    void setReconnectAllowedToInterruptResumableDownloads(boolean b);
+
+    void setDownloadControllerPrefersReconnectEnabled(boolean b);
+
 }

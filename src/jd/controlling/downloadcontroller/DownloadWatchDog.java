@@ -79,6 +79,7 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.SilentModeSettings.CaptchaDuringSilentModeAction;
+import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.translate._JDT;
 
@@ -703,7 +704,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * @return
      */
     public int getForbiddenReconnectDownloadNum() {
-        final boolean allowinterrupt = config.isReconnectAllowedToInterruptResumableDownloads();
+        final boolean allowinterrupt = CFG_RECONNECT.CFG.isReconnectAllowedToInterruptResumableDownloads();
 
         int ret = 0;
         synchronized (this.downloadControllers) {
@@ -777,7 +778,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             /* reconnect in progress */
             return false;
         }
-        if (forcedLinksWaiting == false && org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled() && config.isDownloadControllerPrefersReconnectEnabled() && IPController.getInstance().isInvalidated()) {
+        if (forcedLinksWaiting == false && CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled() && CFG_RECONNECT.CFG.isDownloadControllerPrefersReconnectEnabled() && IPController.getInstance().isInvalidated()) {
             /*
              * auto reconnect is enabled and downloads are waiting for reconnect and user set to wait for reconnect
              */

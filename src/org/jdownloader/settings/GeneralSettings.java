@@ -202,21 +202,11 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("AutoReconnect enabled?")
-    boolean isAutoReconnectEnabled();
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
     boolean isCleanUpFilenames();
 
     boolean isClosedWithRunningDownloads();
 
     boolean isConvertRelativePathesJDRoot();
-
-    @AboutConfig
-    @DescriptionForConfigEntry("Do not start further downloads if others are waiting for a reconnect/new ip")
-    @DefaultBooleanValue(true)
-    boolean isDownloadControllerPrefersReconnectEnabled();
 
     @AboutConfig
     boolean isDownloadSpeedLimitEnabled();
@@ -228,11 +218,6 @@ public interface GeneralSettings extends ConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     boolean isHashCheckEnabled();
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("If disabled, No Reconnects will be done while Resumable Downloads (Premium Downloads) are running")
-    boolean isReconnectAllowedToInterruptResumableDownloads();
 
     @AboutConfig
     @DefaultBooleanValue(true)
@@ -267,8 +252,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setAutoOpenContainerAfterDownload(boolean b);
 
-    void setAutoReconnectEnabled(boolean b);
-
     void setAutoStartCountdownSeconds(int seconds);
 
     @AboutConfig
@@ -296,8 +279,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDefaultDownloadFolder(String ddl);
 
-    void setDownloadControllerPrefersReconnectEnabled(boolean b);
-
     void setDownloadFolderHistory(ArrayList<String[]> history);
 
     void setDownloadHashCheckFailedRetryWaittime(long ms);
@@ -321,8 +302,6 @@ public interface GeneralSettings extends ConfigInterface {
     void setHashCheckEnabled(boolean b);
 
     void setIfFileExistsAction(IfFileExistsAction action);
-
-    void setReconnectAllowedToInterruptResumableDownloads(boolean b);
 
     void setLinkcheckEnabled(boolean b);
 

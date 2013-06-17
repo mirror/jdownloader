@@ -34,6 +34,7 @@ import org.jdownloader.api.polling.PollingResultAPIStorable;
 import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
 import org.jdownloader.extensions.jdanywhere.api.interfaces.IDashboardApi;
 import org.jdownloader.extensions.jdanywhere.api.storable.RunningObjectStorable;
+import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 public class DashboardApi implements IDashboardApi {
     DownloadsAPIImpl          dlAPI = new DownloadsAPIImpl();
@@ -105,7 +106,7 @@ public class DashboardApi implements IDashboardApi {
         // } else {
         // ret.put("limitspeed", 0);
         // }
-        ret.put("reconnect", org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled());
+        ret.put("reconnect", CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled());
         ret.put("clipboard", org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled());
         ret.put("stopafter", DownloadWatchDog.getInstance().isStopMarkSet());
         ret.put("premium", org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
@@ -299,7 +300,7 @@ public class DashboardApi implements IDashboardApi {
     }
 
     public boolean activateReconnect(boolean value) {
-        org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.setValue(value);
+        CFG_RECONNECT.AUTO_RECONNECT_ENABLED.setValue(value);
         return true;
     }
 
