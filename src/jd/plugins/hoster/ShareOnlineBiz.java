@@ -231,6 +231,15 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         if (url.contains("failure/threads")) {
             /* already loading,too many threads */
+            if (acc != null) {
+                synchronized (LOCK) {
+                    HashMap<String, String> infos = ACCOUNTINFOS.get(acc);
+                    if (infos != null && usedPremiumInfos == infos) {
+                        logger.info("Force refresh of cookies");
+                        ACCOUNTINFOS.remove(acc);
+                    }
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
         }
         if (url.contains("failure/chunks")) {
