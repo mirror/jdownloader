@@ -10,6 +10,7 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.statistics.StatsManager;
 
 public class AdvancedConfigEntry {
 
@@ -60,8 +61,11 @@ public class AdvancedConfigEntry {
         try {
             Object v = getValue();
             keyHandler.getSetter().getMethod().invoke(configInterface, new Object[] { value });
-            if (keyHandler.getAnnotation(RequiresRestart.class) != null && !equals(v, value)) {
-                Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AdvancedConfigEntry_setValue_restart_warning_title(keyHandler.getKey()), _GUI._.AdvancedConfigEntry_setValue_restart_warning(keyHandler.getKey()));
+            if (!equals(v, value)) {
+                StatsManager.I().trackAdvancedOptionChange(keyHandler);
+                if (keyHandler.getAnnotation(RequiresRestart.class) != null) {
+                    Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AdvancedConfigEntry_setValue_restart_warning_title(keyHandler.getKey()), _GUI._.AdvancedConfigEntry_setValue_restart_warning(keyHandler.getKey()));
+                }
             }
         } catch (IllegalArgumentException e) {
             e.printStackTrace();

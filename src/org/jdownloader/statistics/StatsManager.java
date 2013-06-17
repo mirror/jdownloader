@@ -180,4 +180,18 @@ public class StatsManager implements GenericConfigEventListener<Object> {
         logEnabled();
     }
 
+    public void trackAdvancedOptionChange(final KeyHandler<?> keyHandler) {
+
+        queue.add(new AsynchLogger() {
+            @Override
+            public void doRemoteCall() {
+                if (!isEnabled()) return;
+
+                remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + "." + keyHandler.getKey());
+
+            }
+
+        });
+    }
+
 }
