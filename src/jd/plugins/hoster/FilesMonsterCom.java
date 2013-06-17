@@ -358,6 +358,10 @@ public class FilesMonsterCom extends PluginForHost {
                 ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", Locale.ENGLISH);
             }
             ai.setValidUntil(ms);
+            try {
+                trafficUpdate(ai, account);
+            } catch (IOException e) {
+            }
             account.setValid(true);
             ai.setStatus("Premium User");
             return ai;
@@ -381,7 +385,13 @@ public class FilesMonsterCom extends PluginForHost {
         String premlink = br.getRegex("\"(http://filesmonster\\.com/get/.*?)\"").getMatch(0);
         if (premlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(premlink);
-        if (br.containsHTML("but it has exceeded the daily download limit")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        if (br.containsHTML("<div id=\"error\">Today you have already downloaded")) {
+            try {
+                trafficUpdate(null, account);
+            } catch (IOException e) {
+            }
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         String ajaxurl = br.getRegex("get_link\\(\"(.*?)\"\\)").getMatch(0);
         Browser ajax = br.cloneBrowser();
         ajax.getPage(ajaxurl);
@@ -395,6 +405,33 @@ public class FilesMonsterCom extends PluginForHost {
             br.followConnection();
         }
         dl.startDownload();
+    }
+
+    private AccountInfo trafficUpdate(AccountInfo importedAi, Account account) throws IOException {
+        AccountInfo ai = new AccountInfo();
+        if (importedAi == null)
+            ai = account.getAccountInfo();
+        else
+            ai = importedAi;
+        // care of filesmonster
+        br.getPage("/today_downloads/");
+        String[] dailyQuota = br.getRegex("Today you have already downloaded <span[^>]+>(\\d+(\\.\\d+)? ?(KB|MB|GB)) </span>\\.[\r\n\t ]+Daily download limit <span[^>]+>(\\d+(\\.\\d+)? ?(KB|MB|GB))").getRow(0);
+        if (dailyQuota != null) {
+            long usedQuota = SizeFormatter.getSize(dailyQuota[0]);
+            long maxQuota = SizeFormatter.getSize(dailyQuota[3]);
+            long dataLeft = maxQuota - usedQuota;
+            if (dataLeft <= 0) dataLeft = 0;
+            ai.setTrafficLeft(dataLeft);
+            ai.setTrafficMax(maxQuota);
+        } else {
+            // br.containsHTML("Today you have not downloaded anything")
+            // resorted to setting static default
+            ai.setTrafficLeft(SizeFormatter.getSize("12 GiB"));
+            ai.setTrafficMax(SizeFormatter.getSize("12 GiB"));
+        }
+        // not sure if this is needed, but can't hurt either way.
+        if (importedAi == null) account.setAccountInfo(ai);
+        return ai;
     }
 
     private String[] getTempLinks() throws IOException {
