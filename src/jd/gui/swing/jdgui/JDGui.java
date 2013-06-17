@@ -346,11 +346,18 @@ public class JDGui extends SwingGui {
                         // block dialog calls... the shall appear as soon as isSilentModeActive is false.
                         long countdown = -1;
                         dialog.forceDummyInit();
-                        if (dialog.evaluateDontShowAgainFlag()) {
-                            final int mask = dialog.getReturnmask();
-                            if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) { throw new DialogClosedException(mask); }
-                            if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) { throw new DialogCanceledException(mask); }
-                            return null;
+                        try {
+                            if (dialog.evaluateDontShowAgainFlag()) {
+                                final int mask = dialog.getReturnmask();
+                                if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) { throw new DialogClosedException(mask); }
+                                if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) { throw new DialogCanceledException(mask); }
+                                return dialog.getReturnValue();
+                            }
+                        } catch (Exception e) {
+                            // Dialogs are not initialized.... nullpointers are very likly
+                            // These nullpointers should be fixed
+                            // in this case, we should continue normal
+                            logger.log(e);
                         }
                         if (dialog.isCountdownFlagEnabled()) {
                             long countdownDif = dialog.getCountdown() * 1000;
@@ -370,7 +377,13 @@ public class JDGui extends SwingGui {
                                     final int mask = dialog.getReturnmask();
                                     if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) { throw new DialogClosedException(mask); }
                                     if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) { throw new DialogCanceledException(mask); }
-                                    return null;
+                                    try {
+                                        return dialog.getReturnValue();
+                                    } catch (Exception e) {
+                                        // dialogs have not been initialized. so the getReturnValue might fail.
+                                        logger.log(e);
+                                        throw new DialogClosedException(Dialog.RETURN_CLOSED | Dialog.RETURN_TIMEOUT);
+                                    }
                                 }
                             } else {
                                 Thread.sleep(250);
@@ -382,6 +395,8 @@ public class JDGui extends SwingGui {
                 } catch (InterruptedException e) {
                     throw new DialogClosedException(Dialog.RETURN_INTERRUPT, e);
 
+                } catch (Exception e) {
+                    logger.log(e);
                 }
                 dialog.resetDummyInit();
                 return Dialog.getInstance().getDefaultHandler().showDialog(dialog);
