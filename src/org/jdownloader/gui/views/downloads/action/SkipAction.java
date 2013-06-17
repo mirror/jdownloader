@@ -79,7 +79,7 @@ public class SkipAction extends AppAction {
                             a.setSkipReason(SkipReason.MANUAL);
                         }
                     } else {
-                        a.setSkipReason(SkipReason.MANUAL);
+                        a.setSkipReason(SkipReason.NONE);
                     }
 
                 }

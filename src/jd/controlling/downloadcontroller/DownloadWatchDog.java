@@ -1126,7 +1126,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 DownloadLink dlLink = dci.link;
                 if (CaptchaDuringSilentModeAction.SKIP_LINK == CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction()) {
                     try {
-                        LazyHostPlugin lazy = HostPluginController.getInstance().get(dci.account.getHoster());
+                        String hoster = dlLink.getHost();
+                        if (dci.account != null) hoster = dci.account.getHoster();
+                        LazyHostPlugin lazy = HostPluginController.getInstance().get(hoster);
                         if (lazy != null && lazy.getPrototype(null).hasCaptcha(dlLink, dci.account)) {
                             dci.link.setSkipReason(SkipReason.CAPTCHA);
                             continue;
