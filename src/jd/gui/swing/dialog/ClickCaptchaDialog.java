@@ -88,7 +88,7 @@ public class ClickCaptchaDialog extends AbstractCaptchaDialog implements ClickCa
                 resultPoint.y -= getOffset().y;
                 resultPoint.x *= getScaleFaktor();
                 resultPoint.y *= getScaleFaktor();
-
+                setReturnmask(true);
                 dispose();
             }
 

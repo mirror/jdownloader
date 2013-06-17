@@ -16,6 +16,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.remotecall.RemoteClient;
@@ -186,8 +187,13 @@ public class StatsManager implements GenericConfigEventListener<Object> {
             @Override
             public void doRemoteCall() {
                 if (!isEnabled()) return;
-
-                remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + "." + keyHandler.getKey());
+                if (Clazz.isEnum(keyHandler.getRawType())) {
+                    remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + "." + keyHandler.getKey(), keyHandler.getValue() + "");
+                } else if (Clazz.isString(keyHandler.getRawType())) {
+                    remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + "." + keyHandler.getKey(), null);
+                } else if (Clazz.isPrimitive(keyHandler.getRawType()) || Clazz.isPrimitiveWrapper(keyHandler.getRawType())) {
+                    remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + "." + keyHandler.getKey(), keyHandler.getValue() + "");
+                }
 
             }
 
