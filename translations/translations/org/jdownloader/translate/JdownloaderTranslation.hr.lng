@@ -1,5 +1,6 @@
 AddContainerAction_delete_container_msg=Želite li obrisati %s1 nakon dodavanja linka(ova) u JDownloader?
 AddContainerAction_delete_container_title=Brisanje kontejner datoteka?
+CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Pristup postavkama prepoznavanja potvrdnih kôdova
 DownloadLink_setSkipped_statusmessage=Preskočeno
 DownloadWatchDog_onShutdownRequest_=Preuzimanja su u tijeku!
 DownloadWatchDog_onShutdownRequest_msg=Želite li zaustaviti preuzimanja koja su u tijeku za izlaz iz JDownloader-a?
@@ -135,7 +136,7 @@ plugins_errors_nointernetconn=Veza sa internetom nije uspostavljena?
 plugins_errors_pluginerror=Greška priključka. Obavijesti podršku
 plugins_errors_wrongpassword=Pogrešna lozinka
 reconnectmanager_wizard=Čarobnjak rekonekcije
-settings_sidebar_tooltip_enable_extension=Uključi/Isključi ovo proširenje
+settings_sidebar_tooltip_enable_extension=Omogući/onemogući ovo proširenje
 system_download_doCRC2=CRC-provjera u tijeku(%s1)
 system_download_doCRC2_failed=CRC-provjera NEUSPJELO(%s1)
 system_download_doCRC2_success=CRC-provjera je u redu(%s1)
