@@ -1,5 +1,6 @@
 AddContainerAction_delete_container_msg=Vuoi veramente eliminare %s1 dopo aver aggiunto i collegamenti a JDownloader?
 AddContainerAction_delete_container_title=Elimnare i file contenitore?
+CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Accesso alle impostazioni captcha
 DownloadLink_setSkipped_statusmessage=Saltati
 DownloadWatchDog_onShutdownRequest_=I download sono in corso!
 DownloadWatchDog_onShutdownRequest_msg=Fermare i download in esecuzione per uscire da JDownloader?
