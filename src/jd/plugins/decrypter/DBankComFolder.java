@@ -50,7 +50,7 @@ public class DBankComFolder extends PluginForDecrypt {
         br.setCustomCharset("utf-8");
         String parameter = param.toString().replace("dbank.com/", "vmall.com/");
         br.getPage(parameter);
-        if (br.getURL().contains("vmall.com/linknotexist.html") || br.containsHTML("(>抱歉，此外链不存在。|1、你输入的地址错误；<br/>|2、外链中含非法内容；<br />|3、创建外链的文件还没有上传到服务器，请稍后再试。<br /><br />)")) {
+        if (br.getURL().contains("vmall.com/linknotexist.html") || br.getURL().contains("vmall.com/netdisk/search.html") || br.containsHTML("(>抱歉，此外链不存在。|1、你输入的地址错误；<br/>|2、外链中含非法内容；<br />|3、创建外链的文件还没有上传到服务器，请稍后再试。<br /><br />)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

@@ -174,9 +174,9 @@ public class TedCom extends PluginForDecrypt {
         }
 
         /** Decrypt subtitles */
-        boolean notFinished = true;
-        if (subtitleText != null && tedID != null && !notFinished) {
-            final String[][] allSubtitleValues = { { "sq", "Albanian" }, { "ar", "Arabic" }, { "hy", "Armenian" }, { "az", "Azerbaijani" }, { "bn", "Bengali" }, { "bg", "Bulgarian" } };
+        if (subtitleText != null && tedID != null) {
+            final String[][] allSubtitleValues = { { "sq", "Albanian" }, { "ar", "Arabic" }, { "hy", "Armenian" }, { "az", "Azerbaijani" }, { "bn", "Bengali" }, { "bg", "Bulgarian" }, { "zh-cn", "Chinese, Simplified" }, { "zh-tw", "Chinese, Traditional" }, { "hr", "Croatian" }, { "cs", "Czech" }, { "da", "Danish" }, { "nl", "Dutch" }, { "en", "English" }, { "et", "Estonian" }, { "fi", "Finnish" }, { "fr", "French" }, { "ka", "Georgian" }, { "de", "German" }, { "el", "Greek" }, { "he", "Hebrew" }, { "hu", "Hungarian" }, { "id", "Indonesian" }, { "it", "Italian" }, { "ja", "Japanese" }, { "ko", "Korean" }, { "ku", "Kurdish" }, { "lt", "Lithuanian" }, { "mk", "Macedonian" }, { "ms", "Malay" }, { "nb", "Norwegian Bokmal" }, { "fa", "Persian" }, { "pl", "Polish" }, { "pt", "Portuguese" }, { "pt-br", "Portuguese, Brazilian" }, { "ro", "Romanian" }, { "ru", "Russian" }, { "sr", "Serbian" },
+                    { "sk", "Slovak" }, { "sl", "Slovenian" }, { "es", "Spanish" }, { "sv", "Swedish" }, { "th", "Thai" }, { "tr", "Turkish" }, { "uk", "Ukrainian" }, { "vi", "Vietnamese" } };
             final ArrayList<String[]> selectedSubtitles = new ArrayList<String[]>();
             final String[] availableSubtitles = new Regex(subtitleText, "value=\"([a-z\\-]{2,5})\">").getColumn(0);
             final LinkedHashMap<String, String> foundSubtitles = new LinkedHashMap();
@@ -194,6 +194,46 @@ public class TedCom extends PluginForDecrypt {
                 if (cfg.getBooleanProperty(GRAB_SUBTITLE_AZERBAIJANI, false)) selectedSubtitles.add(new String[] { "az", "Azerbaijani" });
                 if (cfg.getBooleanProperty(GRAB_SUBTITLE_BENGALI, false)) selectedSubtitles.add(new String[] { "bn", "Bengali" });
                 if (cfg.getBooleanProperty(GRAB_SUBTITLE_BULGARIAN, false)) selectedSubtitles.add(new String[] { "bg", "Bulgarian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_CHINESE_SIMPLIFIED, false)) selectedSubtitles.add(new String[] { "zh-cn", "Chinese, Simplified" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_CHINESE_TRADITIONAL, false)) selectedSubtitles.add(new String[] { "zh-tw", "Chinese, Traditional" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_CROATIAN, false)) selectedSubtitles.add(new String[] { "hr", "Croatian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_CZECH, false)) selectedSubtitles.add(new String[] { "cs", "Czech" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_DANISH, false)) selectedSubtitles.add(new String[] { "da", "Danish" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_DUTCH, false)) selectedSubtitles.add(new String[] { "nl", "Dutch" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_ENGLISH, false)) selectedSubtitles.add(new String[] { "en", "English" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_ESTONIAN, false)) selectedSubtitles.add(new String[] { "et", "Estonian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_FINNISH, false)) selectedSubtitles.add(new String[] { "fi", "Finnish" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_FRENCH, false)) selectedSubtitles.add(new String[] { "fr", "French" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_GEORGIAN, false)) selectedSubtitles.add(new String[] { "ka", "Georgian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_GERMAN, false)) selectedSubtitles.add(new String[] { "de", "German" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_GREEK, false)) selectedSubtitles.add(new String[] { "el", "Greek" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_HEBREW, false)) selectedSubtitles.add(new String[] { "he", "Hebrew" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_HUNGARIAN, false)) selectedSubtitles.add(new String[] { "hu", "Hungarian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_INDONESIAN, false)) selectedSubtitles.add(new String[] { "id", "Indonesian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_ITALIAN, false)) selectedSubtitles.add(new String[] { "it", "Italian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_JAPANESE, false)) selectedSubtitles.add(new String[] { "ja", "Japanese" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_KOREAN, false)) selectedSubtitles.add(new String[] { "ko", "Korean" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_KURDISH, false)) selectedSubtitles.add(new String[] { "ku", "Kurdish" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_LITHUANIAN, false)) selectedSubtitles.add(new String[] { "lt", "Lithuanian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_MACEDONIAN, false)) selectedSubtitles.add(new String[] { "mk", "Macedonian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_MALAY, false)) selectedSubtitles.add(new String[] { "ms", "Malay" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_NORWEGIAN_BOKMAL, false)) selectedSubtitles.add(new String[] { "nb", "Norwegian Bokmal" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_PERSIAN, false)) selectedSubtitles.add(new String[] { "fa", "Persian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_POLISH, false)) selectedSubtitles.add(new String[] { "pl", "Polish" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_PORTUGUESE, false)) selectedSubtitles.add(new String[] { "pt", "Portuguese" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_PORTUGUESE_BRAZILIAN, false)) selectedSubtitles.add(new String[] { "pt-br", "Portuguese, Brazilian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_ROMANIAN, false)) selectedSubtitles.add(new String[] { "ro", "Romanian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_RUSSIAN, false)) selectedSubtitles.add(new String[] { "ru", "Russian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_SERBIAN, false)) selectedSubtitles.add(new String[] { "sr", "Serbian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_SLOVAK, false)) selectedSubtitles.add(new String[] { "sk", "Slovak" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_SLOVENIAN, false)) selectedSubtitles.add(new String[] { "sl", "Slovenian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_SPANISH, false)) selectedSubtitles.add(new String[] { "es", "Spanish" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_SWEDISH, false)) selectedSubtitles.add(new String[] { "sv", "Swedish" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_THAI, false)) selectedSubtitles.add(new String[] { "th", "Thai" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_TURKISH, false)) selectedSubtitles.add(new String[] { "tr", "Turkish" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_UKRAINIAN, false)) selectedSubtitles.add(new String[] { "uk", "Ukrainian" });
+                if (cfg.getBooleanProperty(GRAB_SUBTITLE_VIETNAMESE, false)) selectedSubtitles.add(new String[] { "vi", "Vietnamese" });
+
             }
             // Find available qualities and add them to the decrypted links
             for (final String[] selectedSubtitle : selectedSubtitles) {

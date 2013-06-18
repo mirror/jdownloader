@@ -81,6 +81,7 @@ public class DatoidCz extends PluginForHost {
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getPage(br.getURL().replace("datoid.cz/", "datoid.cz/f/") + "?request=1&_=" + System.currentTimeMillis());
         if (br.containsHTML("\"error\":\"IP in use\"")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (br.containsHTML("\"No anonymous free slots\"")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
         // final int wait = Integer.parseInt(getJson("wait"));
         String dllink = getJson("download_link");
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -102,7 +102,7 @@ public class DataFileCom extends PluginForHost {
             if (tempSeconds != null) tmpsecs = Integer.parseInt(tempSeconds);
             final long wait = (tmphrs * 60 * 60 * 1000) + (tmpmin * 60 * 1000) + (tmpsecs * 1001);
             if (wait == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (wait > 120000) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
+            if (wait > 610000) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
             long timeBefore = System.currentTimeMillis();
             final String rcID = br.getRegex("api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
             if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

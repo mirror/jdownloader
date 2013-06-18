@@ -56,6 +56,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private int                 MAXCHUNKS            = 1;
     /** Settings stuff */
     private final String        USECOOKIELOGIN       = "USECOOKIELOGIN";
+    private final String        REPLACEIDLINKS       = "REPLACEIDLINKS";
     private final String        FASTLINKCHECK        = "FASTLINKCHECK";
     private final String        FASTPICTURELINKCHECK = "FASTPICTURELINKCHECK";
     private static final String ALLOW_BEST           = "ALLOW_BEST";
@@ -121,6 +122,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     link.setProperty("directlink", FINALLINK);
                 }
             } else if (link.getDownloadURL().matches(VIDEOLINK)) {
+                if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 MAXCHUNKS = 0;
                 br.setFollowRedirects(true);
                 FINALLINK = link.getStringProperty("directlink", null);
@@ -416,7 +418,10 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "General settings:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USECOOKIELOGIN, JDL.L("plugins.hoster.vkontakteruhoster.alwaysUseCookiesForLogin", "Always use cookies for login (this can cause out of date errors)")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), REPLACEIDLINKS, JDL.L("plugins.hoster.vkontakteruhoster.replaceIdlinks", "Change 'vk.com/id' links to 'vk.com/albums' links")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Linkcheck settings:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

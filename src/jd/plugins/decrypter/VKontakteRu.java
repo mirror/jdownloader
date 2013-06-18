@@ -63,9 +63,13 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String PATTERN_PHOTO_ALBUM           = ".*?(tag|album(\\-)?\\d+_|photos|id)\\d+";
     private static final String PATTERN_PHOTO_ALBUMS          = ".*?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)";
     private static final String PATTERN_WALL_LINK             = "https?://(www\\.)?vk\\.com/wall\\-\\d+";
+    private static final String PATTERN_ID_LINK               = "https?://(www\\.)?vk\\.com/id\\d+";
+
+    private SubConfiguration    cfg                           = null;
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        cfg = SubConfiguration.getConfig("vkontakte.ru");
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setReadTimeout(3 * 60 * 1000);
         String parameter = param.toString().replace("vkontakte.ru/", "vk.com/").replace("https://", "http://");
@@ -78,6 +82,8 @@ public class VKontakteRu extends PluginForDecrypt {
             final DownloadLink decryptedPhotolink = getSinglePhotoDownloadLink(new Regex(parameter, "((\\-)?\\d+_\\d+)").getMatch(0));
             decryptedLinks.add(decryptedPhotolink);
             return decryptedLinks;
+        } else if (parameter.matches(PATTERN_ID_LINK) && cfg.getBooleanProperty("REPLACEIDLINKS", false)) {
+            parameter = parameter.replace("vk.com/id", "vk.com/albums");
         }
         synchronized (LOCK) {
             try {
@@ -111,6 +117,12 @@ public class VKontakteRu extends PluginForDecrypt {
                         return decryptedLinks;
                     }
                     br.getPage(parameter);
+                }
+                if (br.containsHTML("Unknown error")) {
+                    final DownloadLink offline = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + new Regex(parameter, "(\\d+)$").getMatch(0));
+                    offline.setProperty("offline", true);
+                    decryptedLinks.add(offline);
+                    return decryptedLinks;
                 }
                 /** Decryption process START */
                 br.setFollowRedirects(false);
@@ -303,7 +315,6 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private DownloadLink getSinglePhotoDownloadLink(final String photoID) throws IOException {
-        final SubConfiguration cfg = SubConfiguration.getConfig("vkontakte.ru");
         final boolean fastLinkcheck = cfg.getBooleanProperty("FASTPICTURELINKCHECK", false);
         final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + photoID);
         if (fastLinkcheck) dl.setAvailable(true);
@@ -470,7 +481,6 @@ public class VKontakteRu extends PluginForDecrypt {
         fp.setName(filename);
         /** Decrypt qualities, selected by the user */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
-        final SubConfiguration cfg = SubConfiguration.getConfig("vkontakte.ru");
         boolean fastLinkcheck = cfg.getBooleanProperty("FASTLINKCHECK", false);
         if (cfg.getBooleanProperty("ALLOW_BEST", false)) {
             final ArrayList<String> list = new ArrayList<String>(foundQualities.keySet());

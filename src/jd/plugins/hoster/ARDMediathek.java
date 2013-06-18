@@ -94,7 +94,9 @@ public class ARDMediathek extends PluginForHost {
             // rtmp
             if ("0".equals(downloadLink.getStringProperty("streamingType", "1"))) downloadLink.setProperty("directURL", newUrl[1] + "@" + newUrl[2].split("\\?")[0]);
         }
-        if (downloadLink.getStringProperty("directName", null) == null) downloadLink.setFinalFileName(getTitle(br) + ".mp4");
+        String finalName = downloadLink.getStringProperty("directName", null);
+        if (finalName == null) finalName = getTitle(br) + ".mp4";
+        downloadLink.setFinalFileName(finalName);
         if (!downloadLink.getStringProperty("directURL").startsWith("http")) return AvailableStatus.TRUE;
         // get filesize
         final Browser br2 = br.cloneBrowser();
@@ -152,6 +154,10 @@ public class ARDMediathek extends PluginForHost {
             final String dllink = stream[0];
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (dllink.startsWith("mms")) throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (mms://) not supported!");
+            // Workaround to avoid DOWNLOAD INCOMPLETE errors
+            if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
+                downloadLink.setDownloadSize(0);
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
@@ -204,17 +210,18 @@ public class ARDMediathek extends PluginForHost {
         } finally {
             in.close();
         }
+        final String xmlContent = xml.toString();
 
-        final String[][] matches = new Regex(xml.toString(), "<p id=\"subtitle\\d+\" begin=\"([^<>\"]*?)\" end=\"([^<>\"]*?)\" tts:textAlign=\"center\" style=\"(s\\d+)\">(.*?)</p>").getMatches();
+        final String[][] matches = new Regex(xmlContent, "<p id=\"subtitle\\d+\" begin=\"10:([^<>\"]*?)\" end=\"10:([^<>\"]*?)\" tts:textAlign=\"(center|right|left)\" style=\"s(\\d+)\">(.*?)</p>").getMatches();
         try {
             for (String[] match : matches) {
                 dest.write(counter++ + lineseparator);
 
-                final String start = match[0].replace(".", ",");
-                final String end = match[1].replace(".", ",");
+                final String start = "00:" + match[0].replace(".", ",");
+                final String end = "00:" + match[1].replace(".", ",");
                 dest.write(start + " --> " + end + lineseparator);
 
-                String text = match[3].trim();
+                String text = match[4].trim();
                 text = text.replaceAll(lineseparator, " ");
                 text = text.replaceAll("&apos;", "\\\\u0027");
                 text = unescape(text);
@@ -225,6 +232,16 @@ public class ARDMediathek extends PluginForHost {
                 text = HTMLEntities.unhtmlDoubleQuotes(text);
                 text = text.replaceAll("<br />", lineseparator);
                 text = text.replaceAll("</?(p|span)>", "");
+                final String[][] colorTagssw = new Regex(text, "(<span tts:color=\"([a-z0-9]+)\">([^\t\n\r]+))").getMatches();
+                if (colorTagssw != null && colorTagssw.length != 0) {
+                    for (final String[] singleText : colorTagssw) {
+                        final String completeOldText = singleText[0];
+                        final String colorText = singleText[1];
+                        final String plainText = singleText[2];
+                        final String completeNewText = "<font color=#" + getColorCode(colorText) + ">" + plainText + "</font>";
+                        text = text.replaceAll(completeOldText, completeNewText);
+                    }
+                }
 
                 dest.write(text + lineseparator + lineseparator);
             }
@@ -240,6 +257,20 @@ public class ARDMediathek extends PluginForHost {
         source.delete();
 
         return true;
+    }
+
+    private static String getColorCode(final String colorName) {
+        String colorCode = "FFFFFF";
+        if (colorName.equals("blue")) {
+            colorCode = "0000FF";
+        } else if (colorName.equals("yellow")) {
+            colorCode = "FFFF00";
+        } else if (colorName.equals("aqua")) {
+            colorCode = "00FFFF";
+        } else if (colorName.equals("lime")) {
+            colorCode = "00FF00";
+        }
+        return colorCode;
     }
 
     /**

@@ -157,7 +157,7 @@ public class RDMdthk extends PluginForDecrypt {
                 if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) extension = ".mp3";
 
                 ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
-                HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
+                final HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
                 for (String quality[] : br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (\\d+), \"([^\"]+|)\", \"([^\"]+)\", \"([^\"]+)\"\\);").getMatches()) {
                     // get streamtype id
                     t = Integer.valueOf(quality[0]);

@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "egofiles.com" }, urls = { "https?://(www\\.)?egofiles\\.com/(?!checker|dmca|files|help|logout|policy|premium|remote|settings|style|tos|voucher)[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "egofiles.com" }, urls = { "https?://(www\\.)?egofiles\\.com/[A-Za-z0-9]+" }, flags = { 2 })
 public class EgoFilesCom extends PluginForHost {
 
     public EgoFilesCom(PluginWrapper wrapper) {
@@ -63,9 +63,11 @@ public class EgoFilesCom extends PluginForHost {
     private static Object       LOCK           = new Object();
     public static final String  USETHTTPSLOGIN = "USETHTTPSLOGIN";
     public static final String  USEALWAYSHTTP  = "USEALWAYSHTTP";
+    private static final String INVALIDLINKS   = "https?://(www\\.)?egofiles\\.com/(checker|dmca|files|help|logout|policy|premium|remote|settings|style|tos|voucher|register|password|cache)";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final boolean alwaysHttp = this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.EgoFilesCom.USEALWAYSHTTP, false);
         if (alwaysHttp) {
             link.setUrlDownload(link.getDownloadURL().replace("https", "http"));
@@ -74,7 +76,7 @@ public class EgoFilesCom extends PluginForHost {
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
         // (Invalid link | Link offline, this also means country block!)
-        if (br.containsHTML("(>404 \\- Not Found<|>404 File not found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>404 \\- Not Found<|>404 File not found<)") || br.containsHTML("Ten link jest niepoprawny, sprawdź czy nie ma jakiegoś błędu\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<div class=\"down\\-file\">([^<>\"]*?)<div").getMatch(0);
         final String filesize = br.getRegex("File size: ([^<>\"]*?) \\|").getMatch(0);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "filename or filesize not recognized"); }

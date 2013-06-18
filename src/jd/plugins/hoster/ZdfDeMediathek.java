@@ -168,12 +168,13 @@ public class ZdfDeMediathek extends PluginForHost {
                 dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
 
                 String text = match[2].trim();
-                final String[][] textReplaces = new Regex(text, "(tts:color=\"#([A-Z0-9]+)\">)").getMatches();
+                final String[][] textReplaces = new Regex(text, "(tts:color=\"#([A-Z0-9]+)\">(.+))").getMatches();
                 if (textReplaces != null && textReplaces.length != 0) {
                     for (final String[] singleText : textReplaces) {
                         final String completeOldText = singleText[0];
-                        final String color = singleText[1];
-                        final String completeNewText = "<c:#" + color + ">";
+                        final String colorCode = singleText[1];
+                        final String plainText = singleText[2];
+                        final String completeNewText = "<font color=#" + colorCode + ">" + plainText + "</font>";
                         text = text.replaceAll(completeOldText, completeNewText);
                     }
                 }
