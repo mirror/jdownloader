@@ -2,13 +2,10 @@ package org.jdownloader.plugins.controller.crawler;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Locale;
 
 import jd.nutils.Formatter;
 import jd.plugins.DecrypterPlugin;
@@ -71,7 +68,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         return ret;
     }
 
-    private LinkedHashMap<String, LazyCrawlerPlugin> list;
+    private List<LazyCrawlerPlugin> list;
 
     private String getCache() {
         return "tmp/crawler.ejson";
@@ -102,7 +99,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     try {
                         List<LazyCrawlerPlugin> cachedPlugins = null;
                         if (this.list != null) {
-                            cachedPlugins = new ArrayList<LazyCrawlerPlugin>(this.list.values());
+                            cachedPlugins = this.list;
                         } else {
                             cachedPlugins = loadFromCache();
                         }
@@ -160,13 +157,11 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             LogController.setRebirthLogger(null);
             Thread.currentThread().setContextClassLoader(oldClassLoader);
         }
-        LinkedHashMap<String, LazyCrawlerPlugin> newList = new LinkedHashMap<String, LazyCrawlerPlugin>(plugins.size());
         for (LazyCrawlerPlugin plugin : plugins) {
             plugin.setPluginClass(null);
             plugin.setClassLoader(null);
-            newList.put(plugin.getDisplayName().toLowerCase(Locale.ENGLISH), plugin);
         }
-        list = newList;
+        list = plugins;
         System.gc();
     }
 
@@ -317,10 +312,9 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         JSonStorage.saveTo(Application.getResource(getCache()), false, KEY, JSonStorage.serializeToJson(save));
     }
 
-    public Collection<LazyCrawlerPlugin> list() {
+    public List<LazyCrawlerPlugin> list() {
         lazyInit();
-        LinkedHashMap<String, LazyCrawlerPlugin> llist = list;
-        return llist.values();
+        return list;
     }
 
     /*
@@ -328,12 +322,12 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
      * 
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
-    public static Collection<LazyCrawlerPlugin> list(boolean ensureLoaded) {
+    public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {
         CrawlerPluginController ret = null;
         if (INSTANCE != null && (ret = INSTANCE.get()) != null) {
             /* Controller is initiated */
             if (ensureLoaded) ret.lazyInit();
-            return ret.list.values();
+            return ret.list;
         } else {
             /* Controller is not initiated */
             if (ensureLoaded) {
@@ -357,8 +351,11 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     public LazyCrawlerPlugin get(String displayName) {
         lazyInit();
-        LinkedHashMap<String, LazyCrawlerPlugin> llist = list;
-        return llist.get(displayName.toLowerCase(Locale.ENGLISH));
+        List<LazyCrawlerPlugin> llist = list;
+        for (LazyCrawlerPlugin plugin : llist) {
+            if (plugin.getDisplayName().equalsIgnoreCase(displayName)) return plugin;
+        }
+        return null;
     }
 
     public static void invalidateCacheIfRequired() {
