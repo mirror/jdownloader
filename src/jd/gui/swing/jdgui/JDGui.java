@@ -176,7 +176,7 @@ public class JDGui extends SwingGui {
 
                         AbstractDialog dialog = (AbstractDialog) ((InternDialog) frame).getDialogModel();
 
-                        String key = dialog.getDontShowAgainKey();
+                        String key = dialog.getTitle();
                         if (StringUtils.isEmpty(key)) {
                             key = dialog.toString();
                         }
@@ -958,7 +958,7 @@ public class JDGui extends SwingGui {
 
     public boolean isSilentModeActive() {
 
-        return new EDTHelper<Boolean>() {
+        Boolean ret = new EDTHelper<Boolean>() {
 
             @Override
             public Boolean edtRun() {
@@ -984,6 +984,15 @@ public class JDGui extends SwingGui {
             }
 
         }.getReturnValue();
+        // 75|Gui 18.06.13 16:32:43 - SEVERE [ Gui ] -> java.lang.NullPointerException
+        // at jd.gui.swing.jdgui.JDGui.isSilentModeActive(JDGui.java:986)
+        // at jd.gui.swing.jdgui.JDGui$9.showDialog(JDGui.java:398)
+        // at org.appwork.utils.swing.dialog.Dialog.showDialog(Dialog.java:561)
+        // at org.appwork.utils.logging2.sendlogs.AbstractLogAction.create(AbstractLogAction.java:132)
+        // at org.appwork.utils.logging2.sendlogs.AbstractLogAction$1.run(AbstractLogAction.java:68)
+        // at org.appwork.utils.swing.dialog.ProgressDialog$3.run(ProgressDialog.java:217)
+        if (ret == Boolean.TRUE) return true;
+        return false;
     }
 
     public boolean requestCaptchaDialogFocus() {
