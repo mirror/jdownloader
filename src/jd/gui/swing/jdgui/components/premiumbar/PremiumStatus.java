@@ -84,7 +84,8 @@ public class PremiumStatus extends JPanel implements MouseListener {
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         });
-        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+        SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
 
             public void run() {
                 new Thread() {
@@ -119,13 +120,10 @@ public class PremiumStatus extends JPanel implements MouseListener {
                             public void onAccountControllerEvent(AccountControllerEvent event) {
                                 if (org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled()) redrawTimer.run();
                             }
-
                         });
                     }
-
                 }.start();
             }
-
         });
     }
 

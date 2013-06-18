@@ -35,6 +35,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import jd.controlling.AccountController;
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -115,6 +116,7 @@ public class SecondLevelLaunch {
     public static SingleReachableState INIT_COMPLETE         = new SingleReachableState("INIT_COMPLETE");
     public static SingleReachableState GUI_COMPLETE          = new SingleReachableState("GUI_COMPLETE");
     public static SingleReachableState HOST_PLUGINS_COMPLETE = new SingleReachableState("HOST_PLG_COMPLETE");
+    public static SingleReachableState ACCOUNTLIST_LOADED    = new SingleReachableState("ACCOUNTLIST_LOADED");
 
     private static File                FILE;
     public final static long           startup               = System.currentTimeMillis();
@@ -505,7 +507,6 @@ public class SecondLevelLaunch {
                             }
                             HostPluginController.getInstance().ensureLoaded();
                             HOST_PLUGINS_COMPLETE.setReached();
-
                             /* load links */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init DownloadLinks");
                             DownloadController.getInstance().initDownloadLinks();
@@ -543,7 +544,9 @@ public class SecondLevelLaunch {
                                 public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                                 }
                             });
-
+                            Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Accounts");
+                            AccountController.getInstance();
+                            SecondLevelLaunch.ACCOUNTLIST_LOADED.setReached();
                             /* start downloadwatchdog */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init DownloadWatchdog");
                             DownloadWatchDog.getInstance();

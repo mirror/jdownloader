@@ -14,6 +14,7 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import jd.SecondLevelLaunch;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
@@ -75,26 +76,33 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             }
 
         };
-        AccountController.getInstance().getBroadcaster().addListener(new AccountControllerListener() {
+        SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
 
-            public void onAccountControllerEvent(AccountControllerEvent event) {
-                if (accountManagerSettings.isShown()) {
-                    switch (event.getType()) {
-                    case UPDATE:
-                        /* just repaint */
-                        delayedUpdate.run();
-                        break;
-                    default:
-                        /* structure changed */
-                        delayedFill.run();
+            @Override
+            public void run() {
+                AccountController.getInstance().getBroadcaster().addListener(new AccountControllerListener() {
+
+                    public void onAccountControllerEvent(AccountControllerEvent event) {
+                        if (accountManagerSettings.isShown()) {
+                            switch (event.getType()) {
+                            case UPDATE:
+                                /* just repaint */
+                                delayedUpdate.run();
+                                break;
+                            default:
+                                /* structure changed */
+                                delayedFill.run();
+                            }
+                        }
                     }
+                });
+                AccountChecker.getInstance().getEventSender().addListener(PremiumAccountTableModel.this);
+                if (AccountChecker.getInstance().isRunning()) {
+                    onCheckStarted();
                 }
+                _refill();
             }
         });
-        if (AccountChecker.getInstance().isRunning()) {
-            onCheckStarted();
-        }
-        AccountChecker.getInstance().getEventSender().addListener(this);
     }
 
     public void fill() {
