@@ -960,7 +960,6 @@ public class JDGui extends SwingGui {
     public boolean isSilentModeActive() {
 
         Boolean ret = new EDTHelper<Boolean>() {
-
             @Override
             public Boolean edtRun() {
                 // don't block anthing if the frame is active anyway
@@ -978,12 +977,9 @@ public class JDGui extends SwingGui {
                     break;
                 default:
                     return false;
-
                 }
                 return false;
-
             }
-
         }.getReturnValue();
         // 75|Gui 18.06.13 16:32:43 - SEVERE [ Gui ] -> java.lang.NullPointerException
         // at jd.gui.swing.jdgui.JDGui.isSilentModeActive(JDGui.java:986)
@@ -1203,8 +1199,8 @@ public class JDGui extends SwingGui {
     private Thread trayIconChecker;
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
-     * avoid sideeffects when changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
+     * changing anything
      * 
      * @param minimize
      */

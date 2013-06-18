@@ -259,7 +259,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
                 if (link.isSkipped()) {
-                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsSkipped(), skipped, JLabel.LEADING));
+                    panel.add(lbl = new JLabel(link.getSkipReason().getExplanation(), skipped, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }

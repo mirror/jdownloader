@@ -497,7 +497,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         /* no plugin available, lets skip the link */
                         continue linkLoop;
                     }
-                    if (!forceDownload && (!nextDownloadLink.isEnabled() || nextDownloadLink.isSkipped())) {
+                    if (!forceDownload && !nextDownloadLink.isEnabled()) {
                         /* ONLY when not forced */
                         /* link is disabled, lets skip it */
                         continue linkLoop;
@@ -1101,7 +1101,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     synchronized (forcedLinks) {
                         // slow...maybe we should integrate this in getNextDownloadLink?
                         for (DownloadLink dl : forcedLinks) {
-                            if (!dl.getLinkStatus().isStatus(LinkStatus.TODO)) {
+                            if (!dl.getLinkStatus().isStatus(LinkStatus.TODO) || dl.isSkipped()) {
                                 cleanup.add(dl);
                             }
                         }
@@ -1118,11 +1118,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         /* no next possible download found */
                         break;
                     }
-                }
-                if (false) {
-                    /* TODO: fixme, high priority, setSkipReason on forced link -> cpu loop bug */
-                    dci.link.setSkipReason(SkipReason.CAPTCHA);
-                    continue;
                 }
                 DownloadLink dlLink = dci.link;
                 if (CaptchaDuringSilentModeAction.SKIP_LINK == CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction()) {
