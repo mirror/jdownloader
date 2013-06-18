@@ -239,7 +239,7 @@ public class ARDMediathek extends PluginForHost {
                         final String colorText = singleText[1];
                         final String plainText = singleText[2];
                         final String completeNewText = "<font color=#" + getColorCode(colorText) + ">" + plainText + "</font>";
-                        text = text.replaceAll(completeOldText, completeNewText);
+                        text = text.replace(completeOldText, completeNewText);
                     }
                 }
 
@@ -271,57 +271,6 @@ public class ARDMediathek extends PluginForHost {
             colorCode = "00FF00";
         }
         return colorCode;
-    }
-
-    /**
-     * Converts the the time of the ZDF format to the SRT format.
-     * 
-     * @param time
-     *            . The time from the ZDF XML.
-     * @return The converted time as String.
-     */
-    private static String convertSubtitleTime(Double time) {
-        String hour = "00";
-        String minute = "00";
-        String second = "00";
-        String millisecond = "0";
-
-        Integer itime = Integer.valueOf(time.intValue());
-
-        // Hour
-        Integer timeHour = Integer.valueOf(itime.intValue() / 3600);
-        if (timeHour < 10) {
-            hour = "0" + timeHour.toString();
-        } else {
-            hour = timeHour.toString();
-        }
-
-        // Minute
-        Integer timeMinute = Integer.valueOf((itime.intValue() % 3600) / 60);
-        if (timeMinute < 10) {
-            minute = "0" + timeMinute.toString();
-        } else {
-            minute = timeMinute.toString();
-        }
-
-        // Second
-        Integer timeSecond = Integer.valueOf(itime.intValue() % 60);
-        if (timeSecond < 10) {
-            second = "0" + timeSecond.toString();
-        } else {
-            second = timeSecond.toString();
-        }
-
-        // Millisecond
-        millisecond = String.valueOf(time - itime).split("\\.")[1];
-        if (millisecond.length() == 1) millisecond = millisecond + "00";
-        if (millisecond.length() == 2) millisecond = millisecond + "0";
-        if (millisecond.length() > 2) millisecond = millisecond.substring(0, 3);
-
-        // Result
-        String result = hour + ":" + minute + ":" + second + "," + millisecond;
-
-        return result;
     }
 
     private static AtomicBoolean yt_loaded = new AtomicBoolean(false);

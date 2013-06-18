@@ -168,16 +168,6 @@ public class ZdfDeMediathek extends PluginForHost {
                 dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
 
                 String text = match[2].trim();
-                final String[][] textReplaces = new Regex(text, "(tts:color=\"#([A-Z0-9]+)\">(.+))").getMatches();
-                if (textReplaces != null && textReplaces.length != 0) {
-                    for (final String[] singleText : textReplaces) {
-                        final String completeOldText = singleText[0];
-                        final String colorCode = singleText[1];
-                        final String plainText = singleText[2];
-                        final String completeNewText = "<font color=#" + colorCode + ">" + plainText + "</font>";
-                        text = text.replaceAll(completeOldText, completeNewText);
-                    }
-                }
                 text = text.replaceAll(lineseparator, " ");
                 text = text.replaceAll("&amp;", "&");
                 text = text.replaceAll("&quot;", "\"");
@@ -186,6 +176,16 @@ public class ZdfDeMediathek extends PluginForHost {
                 text = text.replaceAll("<br />", lineseparator);
                 text = text.replace("</p>", "");
                 text = text.replace("<span ", "").replace("</span>", "");
+                final String[][] textReplaces = new Regex(text, "(tts:color=\"#([A-Z0-9]+)\">([^\t\n\r]+))").getMatches();
+                if (textReplaces != null && textReplaces.length != 0) {
+                    for (final String[] singleText : textReplaces) {
+                        final String completeOldText = singleText[0];
+                        final String colorCode = singleText[1];
+                        final String plainText = singleText[2];
+                        final String completeNewText = "<font color=#" + colorCode + ">" + plainText + "</font>";
+                        text = text.replace(completeOldText, completeNewText);
+                    }
+                }
                 dest.write(text + lineseparator + lineseparator);
             }
         } catch (Exception e) {
