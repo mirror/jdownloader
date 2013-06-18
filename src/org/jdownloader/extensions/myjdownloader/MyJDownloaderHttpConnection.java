@@ -17,6 +17,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.remoteapi.RemoteAPIRequest;
+import org.appwork.remoteapi.SessionRemoteAPIRequest;
 import org.appwork.remoteapi.exceptions.ApiInterfaceNotAvailable;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.remoteapi.exceptions.InternalApiException;
@@ -44,6 +46,14 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
 
     private LogSource                           logger;
 
+    public static MyJDownloaderHttpConnection getMyJDownloaderHttpConnection(RemoteAPIRequest request) {
+        if (request instanceof SessionRemoteAPIRequest<?>) {
+            Object session = ((SessionRemoteAPIRequest<?>) request).getSession();
+            if (session != null && session instanceof MyJDownloaderAPISession) { return ((MyJDownloaderAPISession) session).getConnection(); }
+        }
+        return null;
+    }
+
     public MyJDownloaderHttpConnection(Socket clientConnection, MyJDownloaderAPI api) throws IOException {
         super(null, clientConnection);
         requestHandler = new ArrayList<HttpRequestHandler>();
@@ -51,7 +61,6 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         requestHandler.add(RemoteAPIController.getInstance().getRequestHandler());
         this.api = api;
         logger = api.getLogger();
-
     }
 
     protected PostRequest buildPostRequest() {

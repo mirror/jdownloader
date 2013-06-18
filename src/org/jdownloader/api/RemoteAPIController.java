@@ -18,6 +18,7 @@ import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.jd.JDAPIImpl;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
 import org.jdownloader.api.linkcollector.LinkCollectorEventPublisher;
+import org.jdownloader.api.notification.NotificationAPIImpl;
 import org.jdownloader.api.polling.PollingAPIImpl;
 import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
 
@@ -61,6 +62,7 @@ public class RemoteAPIController {
         register(new LinkCollectorEventPublisher());
         register(new DownloadControllerEventPublisher());
         register(new ExtensionsAPIImpl());
+        register(new NotificationAPIImpl());
     }
 
     public HttpRequestHandler getRequestHandler() {

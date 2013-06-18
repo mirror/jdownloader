@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.utils.net.httpserver.session.HttpSessionController;
+import org.jdownloader.extensions.myjdownloader.MyJDownloaderAPISession;
 import org.jdownloader.extensions.myjdownloader.MyJDownloaderHttpConnection;
 
 public class RemoteAPISessionControllerImp extends HttpSessionController<RemoteAPISession> {
@@ -12,18 +13,7 @@ public class RemoteAPISessionControllerImp extends HttpSessionController<RemoteA
 
     @Override
     public RemoteAPISession getSession(final org.appwork.utils.net.httpserver.requests.HttpRequest request, final String id) {
-        if (request.getConnection() instanceof MyJDownloaderHttpConnection) { return new RemoteAPISession(this) {
-
-            @Override
-            public String getSessionID() {
-                return ((MyJDownloaderHttpConnection) (request.getConnection())).getRequestConnectToken();
-            }
-
-            @Override
-            public boolean isAlive() {
-                return true;
-            }
-        }; }
+        if (request.getConnection() instanceof MyJDownloaderHttpConnection) return new MyJDownloaderAPISession(this, ((MyJDownloaderHttpConnection) (request.getConnection())));
         synchronized (this.sessions) {
             return this.sessions.get(id);
         }

@@ -80,11 +80,9 @@ public class DownloadLinkAggregator {
         long bytesToDo = 0;
         int finished = 0;
         long speed = 0;
-
         HashMap<String, MirrorPackage> dupeSet = new HashMap<String, MirrorPackage>();
         MirrorPackage list;
         for (DownloadLink link : children) {
-
             if (mirrorHandlingEnabled) {
                 String mirrorID = createDupeID(link);
                 // TODO:Check if this can result in an endless loop
@@ -176,7 +174,6 @@ public class DownloadLinkAggregator {
     }
 
     private String createDupeID(DownloadLink link) {
-
         return link.getFileOutput();
     }
 
