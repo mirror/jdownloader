@@ -5,10 +5,10 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage;
 
-@ApiNamespace("notification")
+@ApiNamespace("notify")
 public interface NotificationAPI extends RemoteAPIInterface {
 
-    public boolean enablenotification(RemoteAPIRequest request, NotificationRequestMessage.REQUESTTYPE requesttype);
+    public boolean enable(RemoteAPIRequest request, NotificationRequestMessage.TYPE type);
 
-    public boolean disablenotification(RemoteAPIRequest request, NotificationRequestMessage.REQUESTTYPE requesttype);
+    public boolean disable(RemoteAPIRequest request, NotificationRequestMessage.TYPE type);
 }

@@ -2,12 +2,12 @@ package org.jdownloader.api.notification;
 
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.jdownloader.extensions.myjdownloader.MyJDownloaderHttpConnection;
-import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage.REQUESTTYPE;
+import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage.TYPE;
 
 public class NotificationAPIImpl implements NotificationAPI {
 
     @Override
-    public boolean enablenotification(RemoteAPIRequest request, REQUESTTYPE requesttype) {
+    public boolean enable(RemoteAPIRequest request, TYPE type) {
         MyJDownloaderHttpConnection connection = MyJDownloaderHttpConnection.getMyJDownloaderHttpConnection(request);
         if (connection != null) {
 
@@ -16,7 +16,7 @@ public class NotificationAPIImpl implements NotificationAPI {
     }
 
     @Override
-    public boolean disablenotification(RemoteAPIRequest request, REQUESTTYPE requesttype) {
+    public boolean disable(RemoteAPIRequest request, TYPE type) {
         return false;
     }
 
