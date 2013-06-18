@@ -77,6 +77,7 @@ import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.utils.Application;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -179,7 +180,7 @@ public class JDGui extends SwingGui {
                         if (StringUtils.isEmpty(key)) {
                             key = dialog.toString();
                         }
-                        return key;
+                        return Hash.getMD5(key);
                     }
                 } catch (Exception e) {
                     logger.log(e);
