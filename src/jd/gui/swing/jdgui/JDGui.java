@@ -400,7 +400,8 @@ public class JDGui extends SwingGui {
                                 Thread.sleep(Math.min(Math.max(1, countdown - System.currentTimeMillis()), 250));
                                 if (System.currentTimeMillis() > countdown) {
                                     dialog.onTimeout();
-
+                                    // clear interrupt
+                                    Thread.interrupted();
                                     final int mask = dialog.getReturnmask();
                                     if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) { throw new DialogClosedException(mask); }
                                     if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) { throw new DialogCanceledException(mask); }

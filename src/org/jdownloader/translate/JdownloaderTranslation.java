@@ -451,4 +451,13 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Access to Captcha Settings" })
     String CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer();
 
+    @Default(lngs = { "en" }, values = { "Skipped - Captcha is required" })
+    String DownloadLink_setSkipped_statusmessage_captcha();
+
+    @Default(lngs = { "en" }, values = { "Skipped - Disk is full" })
+    String DownloadLink_setSkipped_statusmessage_disk_full();
+
+    @Default(lngs = { "en" }, values = { "Skipped - Account is missing" })
+    String DownloadLink_setSkipped_statusmessage_account();
+
 }
