@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabidfiles.com" }, urls = { "http://(www\\.)?rabidfiles\\.com/(?!faq)[A-Za-z0-9]{3}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabidfiles.com" }, urls = { "^http://(www\\.)?rabidfiles\\.com/[A-Za-z0-9]{3}$" }, flags = { 2 })
 public class RabitFilesCom extends PluginForHost {
 
     // TODO: refactor (rename) plugin when jd2 becomes stable
@@ -66,8 +66,7 @@ public class RabitFilesCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("rabidfiles.com/index.html") || br.containsHTML(">File has been removed due to copyright issues.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("rabidfiles.com/index.html") || br.containsHTML("(>File has been removed due to copyright issues.<|No htmlCode read)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(MAINTENANCE)) {
             link.getLinkStatus().setStatusText("Hoster is unter maintenance...");
             return AvailableStatus.UNCHECKABLE;
