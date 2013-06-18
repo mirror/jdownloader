@@ -70,6 +70,11 @@ urls = { "https?://(www\\.)?vidpe\\.com/[a-z0-9]{12}", "https?://(www\\.)?idup\\
         "http://[\\w\\.]*?upload\\.ge/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)", "http://[\\w\\.]*?uploadmachine\\.com/(download\\.php\\?id=[0-9]+&type=[0-9]{1}|file/[0-9]+/)", "http://[\\w\\.]*?uploady\\.to/dl/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)", "http://(www\\.)?uploadstore\\.net/[a-z0-9]{12}", "http://[\\w\\.]*?vspace\\.cc/file/[A-Z0-9]+\\.html", "http://[\\w\\.]*?web-share\\.net/download/file/item/.*?_[0-9]+", "http://(www\\.)?yvh\\.cc/video\\.php\\?file=[a-z0-9_]+", "http://[\\w\\.]*?x-files\\.kz/[a-z0-9]+" }, flags = { 0 })
 public class Offline extends PluginForHost {
 
+    /**
+     * fullbuild help comment
+     * 
+     * @param wrapper
+     */
     public Offline(PluginWrapper wrapper) {
         super(wrapper);
     }
