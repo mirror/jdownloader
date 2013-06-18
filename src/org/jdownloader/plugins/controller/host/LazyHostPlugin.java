@@ -36,6 +36,8 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
             ap.setPremium(isPremium());
             ap.setPremiumUrl(getPremiumUrl());
         }
+        ap.setHasAccountRewrite(isHasAccountRewrite());
+        ap.setHasLinkRewrite(isHasLinkRewrite());
         ap.setPattern(getPattern().pattern());
         ap.setVersion(getVersion());
         ap.setHasConfig(isHasConfig());
@@ -87,6 +89,8 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     }
 
     private boolean premium;
+    private boolean hasAccountRewrite;
+    private boolean hasLinkRewrite;
 
     public LazyHostPlugin(AbstractHostPlugin ap, Class<PluginForHost> class1, PluginClassLoaderChild classLoaderChild) {
         super(ap.getPattern(), JD_PLUGINS_HOSTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion(), class1, classLoaderChild);
@@ -97,6 +101,24 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         mainClassLastModified = ap.getMainClassLastModified();
         mainClassSHA256 = ap.getMainClassSHA256();
         interfaceVersion = ap.getInterfaceVersion();
+        hasAccountRewrite = ap.isHasAccountRewrite();
+        hasLinkRewrite = ap.isHasLinkRewrite();
+    }
+
+    public boolean isHasAccountRewrite() {
+        return hasAccountRewrite;
+    }
+
+    public void setHasAccountRewrite(boolean hasAccountRewrite) {
+        this.hasAccountRewrite = hasAccountRewrite;
+    }
+
+    public boolean isHasLinkRewrite() {
+        return hasLinkRewrite;
+    }
+
+    public void setHasLinkRewrite(boolean hasLinkRewrite) {
+        this.hasLinkRewrite = hasLinkRewrite;
     }
 
     public ImageIcon getIcon() {

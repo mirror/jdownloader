@@ -51,16 +51,16 @@ public class PremiumTo extends PluginForHost {
     }
 
     @Override
-    public boolean rewriteHost(DownloadLink link) {
-        if ("premium4.me".equals(link.getHost())) {
+    public Boolean rewriteHost(DownloadLink link) {
+        if (link != null && "premium4.me".equals(link.getHost())) {
             link.setHost(getHost());
             return true;
         }
         return false;
     }
 
-    public boolean rewriteHost(Account acc) {
-        if ("premium4.me".equals(acc.getHoster())) {
+    public Boolean rewriteHost(Account acc) {
+        if (acc != null && "premium4.me".equals(acc.getHoster())) {
             acc.setHoster(getHost());
             return true;
         }

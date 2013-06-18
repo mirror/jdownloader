@@ -94,18 +94,16 @@ public class Offline extends PluginForHost {
         return ai;
     }
 
-    public boolean rewriteHost(Account acc) {
+    public Boolean rewriteHost(Account acc) {
         /* please also update this for alternative hosts */
         if ("filemade.com".equals(getHost())) {
-            if ("filemade.co".equals(acc.getHoster())) { return true; }
+            if (acc != null && "filemade.co".equals(acc.getHoster())) {
+                acc.setHoster("filemade.co");
+                return true;
+            }
+            return false;
         }
-        return false;
-    }
-
-    @Override
-    public boolean rewriteHost(DownloadLink link) {
-        /* please also update this for alternative hosts */
-        return false;
+        return null;
     }
 
     @Override

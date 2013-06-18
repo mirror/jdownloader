@@ -2,12 +2,17 @@ package org.jdownloader.plugins.controller.host;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 
 import jd.nutils.Formatter;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
 
@@ -37,7 +42,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return HostPluginController.INSTANCE;
     }
 
-    private List<LazyHostPlugin> list;
+    private LinkedHashMap<String, LazyHostPlugin> list;
 
     private String getCache() {
         return "tmp/hosts.json";
@@ -67,7 +72,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                     try {
                         List<LazyHostPlugin> cachedPlugins = null;
                         if (this.list != null) {
-                            cachedPlugins = this.list;
+                            cachedPlugins = new ArrayList<LazyHostPlugin>(this.list.values());
                         } else {
                             cachedPlugins = loadFromCache();
                         }
@@ -136,11 +141,13 @@ public class HostPluginController extends PluginController<PluginForHost> {
             LogController.setRebirthLogger(null);
             Thread.currentThread().setContextClassLoader(oldClassLoader);
         }
+        LinkedHashMap<String, LazyHostPlugin> newList = new LinkedHashMap<String, LazyHostPlugin>(plugins.size());
         for (LazyHostPlugin plugin : plugins) {
             plugin.setPluginClass(null);
             plugin.setClassLoader(null);
+            newList.put(plugin.getDisplayName().toLowerCase(Locale.ENGLISH), plugin);
         }
-        list = plugins;
+        list = newList;
         System.gc();
     }
 
@@ -244,14 +251,42 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                 classLoader.setPluginClass(c.getClazz().getName());
                                 classLoader.setCheckStableCompatibility(a.interfaceVersion() == 2);
                                 PluginForHost plg = l.newInstance(classLoader);
+
+                                /* set premium */
                                 ap.setPremium(plg.isPremiumEnabled());
+                                l.setPremium(plg.isPremiumEnabled());
+
+                                /* set premiumUrl */
                                 String purl = plg.getBuyPremiumUrl();
                                 if (purl != null) purl = new String(purl);
+                                l.setPremiumUrl(purl);
                                 ap.setPremiumUrl(purl);
+
+                                /* set hasConfig */
                                 ap.setHasConfig(plg.hasConfig());
                                 l.setHasConfig(plg.hasConfig());
-                                l.setPremium(ap.isPremium());
-                                l.setPremiumUrl(purl);
+
+                                /* set hasAccountRewrite */
+                                boolean hasAccountRewrite = false;
+                                try {
+                                    if (plg.rewriteHost((Account) null) != null) {
+                                        hasAccountRewrite = true;
+                                    }
+                                } catch (Throwable e) {
+                                }
+                                ap.setHasAccountRewrite(hasAccountRewrite);
+                                l.setHasAccountRewrite(hasAccountRewrite);
+
+                                /* set hasLinkRewrite */
+                                boolean hasLinkRewrite = false;
+                                try {
+                                    if (plg.rewriteHost((DownloadLink) null) != null) {
+                                        hasLinkRewrite = true;
+                                    }
+                                } catch (Throwable e) {
+                                }
+                                ap.setHasLinkRewrite(hasLinkRewrite);
+                                l.setHasLinkRewrite(hasLinkRewrite);
                             } catch (Throwable e) {
                                 if (e instanceof UpdateRequiredClassNotFoundException) {
                                     logger.finest("@HostPlugin incomplete:" + simpleName + " " + new String(names[i]) + " " + e.getMessage() + " " + revision);
@@ -322,24 +357,9 @@ public class HostPluginController extends PluginController<PluginForHost> {
         JSonStorage.saveTo(Application.getResource(getCache()), save);
     }
 
-    public List<LazyHostPlugin> list() {
+    public Collection<LazyHostPlugin> list() {
         ensureLoaded();
-        return list;
-    }
-
-    public void setList(List<LazyHostPlugin> list) {
-        if (list == null) return;
-        try {
-            Collections.sort(list, new Comparator<LazyHostPlugin>() {
-
-                public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
-                    return o1.getDisplayName().compareTo(o2.getDisplayName());
-                }
-            });
-        } catch (final Throwable e) {
-            LogController.CL().log(e);
-        }
-        this.list = list;
+        return list.values();
     }
 
     public void ensureLoaded() {
@@ -352,11 +372,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
     public LazyHostPlugin get(String displayName) {
         ensureLoaded();
-        List<LazyHostPlugin> llist = list;
-        for (LazyHostPlugin p : llist) {
-            if (p.getDisplayName().equalsIgnoreCase(displayName)) return p;
-        }
-        return null;
+        LinkedHashMap<String, LazyHostPlugin> llist = list;
+        return llist.get(displayName.toLowerCase(Locale.ENGLISH));
     }
 
     public void invalidateCacheIfRequired() {

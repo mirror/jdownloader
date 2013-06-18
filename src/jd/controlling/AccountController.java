@@ -54,8 +54,7 @@ import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
 
@@ -316,38 +315,29 @@ public class AccountController implements AccountControllerListener {
         if (dat == null) {
             dat = new HashMap<String, ArrayList<AccountData>>();
         }
+        PluginFinder pluginFinder = new PluginFinder();
         HashMap<String, java.util.List<Account>> ret = new HashMap<String, java.util.List<Account>>();
         for (Iterator<Entry<String, ArrayList<AccountData>>> it = dat.entrySet().iterator(); it.hasNext();) {
             Entry<String, ArrayList<AccountData>> next = it.next();
             if (next.getValue().size() > 0) {
-                String host = next.getKey();
-                LazyHostPlugin hPlugin = HostPluginController.getInstance().get(host);
-                java.util.List<Account> list = new ArrayList<Account>();
                 for (AccountData ad : next.getValue()) {
+                    String host = next.getKey();
                     Account acc = ad.toAccount();
-                    list.add(acc);
-                    /*
-                     * make sure hostername is set and share same String instance
-                     */
                     acc.setHoster(host);
-                    if (hPlugin == null) {
-                        for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
-                            try {
-                                PluginForHost protoType = p.getPrototype(null);
-                                if (protoType.rewriteHost(acc)) {
-                                    hPlugin = protoType.getLazyP();
-                                    host = hPlugin.getHost();
-                                    break;
-                                }
-                            } catch (final Throwable e) {
-                                LogController.CL().log(e);
-                            }
-                        }
-                        if (hPlugin != null) acc.setHoster(host);
+                    PluginForHost plugin = pluginFinder.assignPlugin(acc, true, null);
+                    if (plugin != null) {
+                        host = plugin.getHost();
+                        acc.setPlugin(plugin);
+                    } else {
+                        acc.setPlugin(null);
                     }
-
+                    List<Account> accs = ret.get(host);
+                    if (accs == null) {
+                        accs = new ArrayList<Account>();
+                        ret.put(host, accs);
+                    }
+                    accs.add(acc);
                 }
-                ret.put(host, list);
             }
         }
         return ret;

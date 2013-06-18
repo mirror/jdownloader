@@ -23,6 +23,7 @@ import jd.controlling.accountchecker.AccountCheckerEventListener;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
@@ -38,8 +39,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 import sun.swing.SwingUtilities2;
 
@@ -523,19 +522,16 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
         if (accountManagerSettings.isShown()) {
             final java.util.List<AccountEntry> newtableData = new ArrayList<AccountEntry>(this.getRowCount());
             boolean hasDetailsButton = false;
-            for (LazyHostPlugin plugin : HostPluginController.getInstance().list()) {
-                List<Account> accs = AccountController.getInstance().list(plugin.getDisplayName());
-                if (accs != null) {
-
-                    for (Account acc : accs) {
-                        AccountEntry ae;
-                        newtableData.add(ae = new AccountEntry(acc, plugin));
-                        acc.setHoster(plugin.getDisplayName());
-                        if (ae.isDetailsDialogSupported()) {
-                            hasDetailsButton = true;
-                        }
+            List<Account> accs = AccountController.getInstance().list(null);
+            if (accs != null) {
+                for (Account acc : accs) {
+                    PluginForHost plugin = acc.getPlugin();
+                    if (plugin == null) continue;
+                    AccountEntry ae;
+                    newtableData.add(ae = new AccountEntry(acc));
+                    if (ae.isDetailsDialogSupported()) {
+                        hasDetailsButton = true;
                     }
-
                 }
             }
             setColumnVisible(details, hasDetailsButton);

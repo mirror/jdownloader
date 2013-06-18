@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -67,7 +68,7 @@ public class BuyAction extends AbstractAction {
     public void actionPerformed(ActionEvent e) {
         IOEQ.add(new Runnable() {
             public void run() {
-                final List<LazyHostPlugin> pluginsAll = HostPluginController.getInstance().list();
+                final Collection<LazyHostPlugin> pluginsAll = HostPluginController.getInstance().list();
                 final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
                 /* only show plugins with account support */
                 for (LazyHostPlugin lhp : pluginsAll) {

@@ -6,15 +6,34 @@ public class AbstractHostPlugin implements Storable {
     public AbstractHostPlugin(/* STorable */) {
     }
 
-    public static final int CACHEVERSION          = 2;
+    public static final int CACHEVERSION   = 3;
     private boolean         premium;
     private boolean         hasConfig;
-    private long            version;
-    private int             interfaceVersion      = 0;
-    private long            mainClassLastModified = -1;
-    private String          mainClassSHA256       = null;
-    private String          mainClassFilename     = null;
-    private int             cacheVersion          = -1;
+    private boolean         hasLinkRewrite = false;
+
+    public boolean isHasLinkRewrite() {
+        return hasLinkRewrite;
+    }
+
+    public void setHasLinkRewrite(boolean hasLinkRewrite) {
+        this.hasLinkRewrite = hasLinkRewrite;
+    }
+
+    public boolean isHasAccountRewrite() {
+        return hasAccountRewrite;
+    }
+
+    public void setHasAccountRewrite(boolean hasAccountRewrite) {
+        this.hasAccountRewrite = hasAccountRewrite;
+    }
+
+    private boolean hasAccountRewrite     = false;
+    private long    version;
+    private int     interfaceVersion      = 0;
+    private long    mainClassLastModified = -1;
+    private String  mainClassSHA256       = null;
+    private String  mainClassFilename     = null;
+    private int     cacheVersion          = -1;
 
     public int getCacheVersion() {
         return cacheVersion;

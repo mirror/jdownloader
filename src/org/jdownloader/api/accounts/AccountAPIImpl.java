@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -71,7 +72,7 @@ public class AccountAPIImpl implements AccountAPI {
 
     public List<String> listPremiumHoster() {
 
-        final List<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
+        final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
         final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
 
@@ -88,7 +89,7 @@ public class AccountAPIImpl implements AccountAPI {
     @Override
     public QueryResponseMap listPremiumHosterUrls() {
 
-        final List<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
+        final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
         final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
 

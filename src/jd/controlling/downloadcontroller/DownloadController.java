@@ -44,7 +44,6 @@ import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.LinkStatusProperty;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.controlling.SingleReachableState;
@@ -76,8 +75,7 @@ import org.jdownloader.gui.views.downloads.action.ConfirmDeleteLinksDialog;
 import org.jdownloader.gui.views.downloads.action.ConfirmDeleteLinksDialogInterface;
 import org.jdownloader.gui.views.downloads.overviewpanel.AggregatedNumbers;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -596,75 +594,33 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         if (fps == null || fps.size() == 0) return;
         final Iterator<FilePackage> iterator = fps.iterator();
         DownloadLink localLink;
-        PluginForHost pluginForHost = null;
         Iterator<DownloadLink> it;
         FilePackage fp;
-        HashMap<String, PluginForHost> fixWith = new HashMap<String, PluginForHost>();
+        PluginFinder pluginFinder = new PluginFinder();
+        boolean cleanupStartup = CleanAfterDownloadAction.CLEANUP_ONCE_AT_STARTUP.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction());
         while (iterator.hasNext()) {
             fp = iterator.next();
-            java.util.List<DownloadLink> removeList = new ArrayList<DownloadLink>();
-            it = fp.getChildren().iterator();
-            while (it.hasNext()) {
-                localLink = it.next();
-                if (CleanAfterDownloadAction.CLEANUP_ONCE_AT_STARTUP.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) && localLink.getLinkStatus().isFinished()) {
-                    logger.info("Remove " + localLink.getName() + " because Finished and CleanupOnStartup!");
-                    removeList.add(localLink);
-                    continue;
-                }
-                /*
-                 * reset not if already exist, offline or finished. plugin errors will be reset here because plugin can be fixed again
-                 */
-                localLink.getLinkStatus().resetStatus(LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED, LinkStatus.ERROR_FATAL);
-
-                /* assign defaultPlugin matching the hostname */
-                try {
-                    pluginForHost = null;
-                    LazyHostPlugin hPlugin = HostPluginController.getInstance().get(localLink.getHost());
-                    if (hPlugin != null) {
-                        pluginForHost = hPlugin.getPrototype(null);
+            if (fp.getChildren() != null) {
+                java.util.List<DownloadLink> removeList = new ArrayList<DownloadLink>();
+                it = fp.getChildren().iterator();
+                while (it.hasNext()) {
+                    localLink = it.next();
+                    if (cleanupStartup && localLink.getLinkStatus().isFinished()) {
+                        logger.info("Remove " + localLink.getName() + " because Finished and CleanupOnStartup!");
+                        removeList.add(localLink);
+                        continue;
                     }
-                } catch (final Throwable e) {
-                    logger.log(e);
+                    /*
+                     * reset not if already exist, offline or finished. plugin errors will be reset here because plugin can be fixed again
+                     */
+                    localLink.getLinkStatus().resetStatus(LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED, LinkStatus.ERROR_FATAL);
+                    pluginFinder.assignPlugin(localLink, true, logger);
                 }
-                if (pluginForHost == null) {
-                    try {
-                        if (fixWith.containsKey(localLink.getHost()) == false) {
-                            for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
-                                try {
-                                    PluginForHost protoType = p.getPrototype(null);
-                                    if (protoType.rewriteHost(localLink)) {
-                                        pluginForHost = protoType;
-                                        break;
-                                    }
-                                } catch (final Throwable e) {
-                                    logger.log(e);
-                                }
-                            }
-                        } else {
-                            PluginForHost rewriteWith = fixWith.get(localLink.getHost());
-                            if (rewriteWith != null) {
-                                rewriteWith.rewriteHost(localLink);
-                                pluginForHost = rewriteWith;
-                            }
-                        }
-                        if (pluginForHost != null) {
-                            logger.info("Plugin " + pluginForHost.getHost() + " now handles " + localLink.getName());
-                        }
-                    } catch (final Throwable e) {
-                        logger.log(e);
-                    }
-                    fixWith.put(localLink.getHost(), pluginForHost);
-                }
-                if (pluginForHost != null) {
-                    localLink.setDefaultPlugin(pluginForHost);
-                } else {
-                    logger.severe("Could not find plugin: " + localLink.getHost() + " for " + localLink.getName());
+                if (removeList.size() > 0) {
+                    fp.getChildren().removeAll(removeList);
                 }
             }
-            if (removeList.size() > 0) {
-                fp.getChildren().removeAll(removeList);
-            }
-            if (fp.getChildren().size() == 0) {
+            if (fp.getChildren() == null || fp.getChildren().size() == 0) {
                 /* remove empty packages */
                 iterator.remove();
                 continue;

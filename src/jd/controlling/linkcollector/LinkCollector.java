@@ -71,6 +71,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
@@ -1129,75 +1130,29 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         final Iterator<CrawledPackage> iterator = fps.iterator();
         DownloadLink dlLink = null;
         CrawledLink localLink = null;
-        PluginForHost pluginForHost = null;
         Iterator<CrawledLink> it;
         CrawledPackage fp;
-        HashMap<String, PluginForHost> fixWith = new HashMap<String, PluginForHost>();
+        PluginFinder pluginFinder = new PluginFinder();
         while (iterator.hasNext()) {
             fp = iterator.next();
-            if (fp.getChildren().size() == 0) {
+            if (fp.getChildren() != null) {
+                it = fp.getChildren().iterator();
+                while (it.hasNext()) {
+                    localLink = it.next();
+                    dlLink = localLink.getDownloadLink();
+                    if (dlLink == null) {
+                        /* remove crawledLinks without DownloadLink */
+                        it.remove();
+                        continue;
+                    }
+                    /* assign defaultPlugin matching the hostname */
+                    pluginFinder.assignPlugin(dlLink, true, logger);
+                }
+            }
+            if (fp.getChildren() == null || fp.getChildren().size() == 0) {
                 /* remove empty packages */
                 iterator.remove();
                 continue;
-            }
-            it = fp.getChildren().iterator();
-            while (it.hasNext()) {
-                localLink = it.next();
-                dlLink = localLink.getDownloadLink();
-                if (dlLink == null) {
-                    /* remove crawledLinks without DownloadLink */
-                    it.remove();
-                    continue;
-                }
-                /* assign defaultPlugin matching the hostname */
-                try {
-                    pluginForHost = null;
-                    LazyHostPlugin hPlugin = HostPluginController.getInstance().get(dlLink.getHost());
-                    if (hPlugin != null) {
-                        if (hPlugin.getClassname().endsWith(".Offline")) {
-                            /* permanent offline are offline */
-                            dlLink.setAvailable(false);
-                        }
-                        pluginForHost = hPlugin.getPrototype(null);
-                    }
-                } catch (final Throwable e) {
-                    logger.log(e);
-                }
-                if (pluginForHost == null) {
-                    try {
-                        if (fixWith.containsKey(dlLink.getHost()) == false) {
-                            for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
-                                try {
-                                    PluginForHost protoType = p.getPrototype(null);
-                                    if (protoType.rewriteHost(dlLink)) {
-                                        pluginForHost = protoType;
-                                        break;
-                                    }
-                                } catch (final Throwable e) {
-                                    logger.log(e);
-                                }
-                            }
-                        } else {
-                            PluginForHost rewriteWith = fixWith.get(dlLink.getHost());
-                            if (rewriteWith != null) {
-                                if (rewriteWith.rewriteHost(dlLink)) {
-                                    pluginForHost = rewriteWith;
-                                }
-                            }
-                        }
-                        if (pluginForHost != null) {
-                            logger.info("Plugin " + pluginForHost.getHost() + " now handles " + localLink.getName());
-                        }
-                    } catch (final Throwable e) {
-                        logger.log(e);
-                    }
-                    fixWith.put(dlLink.getHost(), pluginForHost);
-                }
-                if (pluginForHost != null) {
-                    dlLink.setDefaultPlugin(pluginForHost);
-                } else {
-                    logger.severe("Could not find plugin " + localLink.getHost() + " for " + localLink.getName());
-                }
             }
         }
     }

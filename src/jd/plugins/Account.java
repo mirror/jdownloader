@@ -66,6 +66,15 @@ public class Account extends Property {
     private int                         maxDownloads = 0;
 
     private transient AccountController ac           = null;
+    private transient PluginForHost     plugin       = null;
+
+    public PluginForHost getPlugin() {
+        return plugin;
+    }
+
+    public void setPlugin(PluginForHost plugin) {
+        this.plugin = plugin;
+    }
 
     /**
      * 
@@ -78,10 +87,6 @@ public class Account extends Property {
 
     public void setAccountController(AccountController ac) {
         this.ac = ac;
-    }
-
-    public AccountController getAccountController() {
-        return ac;
     }
 
     /**

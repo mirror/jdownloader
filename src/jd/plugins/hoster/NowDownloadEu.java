@@ -49,9 +49,17 @@ public class NowDownloadEu extends PluginForHost {
         this.enablePremium(MAINPAGE.string + "/premium.php");
     }
 
-    public boolean rewriteHost(DownloadLink link) {
-        if ("nowdownload.co".equals(link.getHost()) || "nowdownload.ch".equals(link.getHost())) {
+    public Boolean rewriteHost(DownloadLink link) {
+        if (link != null && ("nowdownload.co".equals(link.getHost()) || "nowdownload.ch".equals(link.getHost()))) {
             link.setHost("nowdownload.eu");
+            return true;
+        }
+        return false;
+    }
+
+    public Boolean rewriteHost(Account acc) {
+        if (acc != null && ("nowdownload.co".equals(acc.getHoster()) || "nowdownload.ch".equals(acc.getHoster()))) {
+            acc.setHoster("nowdownload.eu");
             return true;
         }
         return false;

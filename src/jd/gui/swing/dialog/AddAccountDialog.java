@@ -20,7 +20,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
+import java.util.Collection;
+import java.util.Iterator;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -175,7 +176,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     @Override
     public JComponent layoutDialogContent() {
-        final List<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
+        final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
         final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
 
@@ -282,7 +283,8 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
             if (plg == null) {
                 LazyHostPlugin p = HostPluginController.getInstance().get(getPreselectedHoster());
                 if (p == null) {
-                    p = HostPluginController.getInstance().list().get(0);
+                    Iterator<LazyHostPlugin> it = HostPluginController.getInstance().list().iterator();
+                    if (it.hasNext()) p = it.next();
                 }
                 hoster.setSelectedItem(p);
                 plg = p.newInstance(PluginClassLoader.getInstance().getChild());

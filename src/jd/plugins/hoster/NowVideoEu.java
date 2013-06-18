@@ -63,12 +63,26 @@ public class NowVideoEu extends PluginForHost {
         }
     }
 
-    public boolean rewriteHost(DownloadLink link) {
-        if ("nowvideo.ch".equals(link.getHost())) {
-            link.setHost("nowvideo.co");
-            return true;
+    public Boolean rewriteHost(DownloadLink link) {
+        if ("nowvideo.eu".equals(getHost())) {
+            if (link != null && ("nowvideo.ch".equals(link.getHost()) || "nowvideo.co".equals(link.getHost()))) {
+                link.setHost("nowvideo.eu");
+                return true;
+            }
+            return false;
         }
-        return false;
+        return null;
+    }
+
+    public Boolean rewriteHost(Account acc) {
+        if ("nowvideo.eu".equals(getHost())) {
+            if (acc != null && ("nowvideo.ch".equals(acc.getHoster()) || "nowvideo.co".equals(acc.getHoster()))) {
+                acc.setHoster("nowvideo.eu");
+                return true;
+            }
+            return false;
+        }
+        return null;
     }
 
     public void correctDownloadLink(DownloadLink link) {
