@@ -78,6 +78,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
@@ -90,6 +91,8 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogHandler;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.TimerDialog;
+import org.appwork.utils.swing.dialog.TimerDialog.InternDialog;
+import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.gui.GuiUtils;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.jdtrayicon.TrayExtension;
@@ -162,6 +165,29 @@ public class JDGui extends SwingGui {
         super("JDownloader");
         // Important for unittests
         this.mainFrame.setName("MAINFRAME");
+        // set a default locator to remmber dialogs position
+        AbstractDialog.setDefaultLocator(new RememberRelativeDialogLocator(null, mainFrame) {
+
+            @Override
+            protected String getID(Window frame) {
+                try {
+                    if (frame instanceof InternDialog) {
+
+                        AbstractDialog dialog = (AbstractDialog) ((InternDialog) frame).getDialogModel();
+
+                        String key = dialog.getDontShowAgainKey();
+                        if (StringUtils.isEmpty(key)) {
+                            key = dialog.toString();
+                        }
+                        return key;
+                    }
+                } catch (Exception e) {
+                    logger.log(e);
+                }
+                return super.getID(frame);
+            }
+
+        });
         logger = LogController.getInstance().getLogger("Gui");
         this.setWindowTitle("JDownloader");
         this.initDefaults();

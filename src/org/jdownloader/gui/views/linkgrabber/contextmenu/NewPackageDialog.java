@@ -1,7 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
-import java.awt.MouseInfo;
-import java.awt.Point;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.io.File;
 
 import javax.swing.JComponent;
@@ -15,7 +15,6 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.AbstractDialog;
-import org.appwork.utils.swing.dialog.locator.DialogLocator;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
@@ -29,21 +28,6 @@ public class NewPackageDialog extends AbstractDialog<Object> {
     public NewPackageDialog(SelectionInfo<CrawledPackage, CrawledLink> selection) {
         super(0, _GUI._.NewPackageDialog_NewPackageDialog_(), null, null, null);
         this.selection = selection;
-        this.setLocator(new DialogLocator() {
-
-            @Override
-            public Point getLocationOnScreen(AbstractDialog<?> abstractDialog) {
-                Point loc = MouseInfo.getPointerInfo().getLocation();
-                loc.y -= getDialog().getPreferredSize().height - 24;
-                loc.x -= getDialog().getPreferredSize().width / 2;
-                return loc;
-            }
-
-            @Override
-            public void onClose(AbstractDialog<?> abstractDialog) {
-            }
-
-        });
 
     }
 
@@ -74,6 +58,7 @@ public class NewPackageDialog extends AbstractDialog<Object> {
 
         p.add(new JLabel(_GUI._.NewPackageDialog_layoutDialogContent_newname_()));
         tf = new ExtTextField();
+
         tf.setText(getNewName());
         p.add(tf);
 
@@ -85,6 +70,24 @@ public class NewPackageDialog extends AbstractDialog<Object> {
 
         p.add(fc);
         return p;
+    }
+
+    @Override
+    protected void packed() {
+        tf.addFocusListener(new FocusListener() {
+
+            @Override
+            public void focusLost(FocusEvent e) {
+            }
+
+            @Override
+            public void focusGained(FocusEvent e) {
+                tf.selectAll();
+            }
+        });
+
+        this.tf.requestFocusInWindow();
+        this.tf.selectAll();
     }
 
     public String getName() {
