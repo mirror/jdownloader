@@ -10,11 +10,11 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
 import jd.plugins.LinkStatus;
 
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
+import org.jdownloader.controlling.DownloadLinkAggregator;
 
 public class DownloadsAPIImpl implements DownloadsAPI {
 
@@ -49,8 +49,8 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             FilePackage fp = packages.get(i);
             boolean readL = fp.getModifyLock().readLock();
             try {
-                FilePackageView fpView = new FilePackageView(fp);
-                fpView.update();
+
+                DownloadLinkAggregator aggregate = new DownloadLinkAggregator(fp, true);
                 FilePackageAPIStorable fps = new FilePackageAPIStorable(fp);
 
                 QueryResponseMap infomap = new QueryResponseMap();
@@ -82,10 +82,10 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                     infomap.put("speed", dwd.getDownloadSpeedbyFilePackage(fp));
                 }
                 if (queryParams._getQueryParam("finished", Boolean.class, false)) {
-                    infomap.put("finished", fpView.isFinished());
+                    infomap.put("finished", aggregate.isFinished());
                 }
                 if (queryParams._getQueryParam("eta", Boolean.class, false)) {
-                    infomap.put("eta", fpView.getETA());
+                    infomap.put("eta", aggregate.getEta());
                 }
                 if (queryParams._getQueryParam("done", Boolean.class, false)) {
                     Long done = 0l;

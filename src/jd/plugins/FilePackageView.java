@@ -38,7 +38,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         return enabledCount > 0;
     }
 
-    public FilePackageView(FilePackage fp) {
+    /**
+     * This constructor is protected. do not use this class outside the FilePackage
+     * 
+     * @param fp
+     */
+    protected FilePackageView(FilePackage fp) {
         this.fp = fp;
     }
 
@@ -77,7 +82,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     @Override
-    public void update() {
+    public void aggregate() {
         long lupdatesRequired = updatesRequired.get();
         lastUpdateTimestamp = System.currentTimeMillis();
         synchronized (this) {
@@ -96,6 +101,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             HashMap<String, Long> downloadSizes = new HashMap<String, Long>();
             HashMap<String, Long> downloadDone = new HashMap<String, Long>();
             HashSet<String> eta = new HashSet<String>();
+
             boolean allFinished = true;
             boolean readL = fp.getModifyLock().readLock();
             try {
@@ -221,7 +227,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     @Override
-    public void update(List<DownloadLink> updatedItems) {
+    public void setItems(List<DownloadLink> updatedItems) {
         long lupdatesRequired = updatesRequired.get();
         lastUpdateTimestamp = System.currentTimeMillis();
         synchronized (this) {

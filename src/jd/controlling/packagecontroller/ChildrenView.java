@@ -6,9 +6,9 @@ import org.jdownloader.DomainInfo;
 
 public abstract class ChildrenView<T> {
 
-    abstract public void update(List<T> items);
+    abstract public void setItems(List<T> items);
 
-    abstract public void update();
+    abstract public void aggregate();
 
     abstract public void requestUpdate();
 

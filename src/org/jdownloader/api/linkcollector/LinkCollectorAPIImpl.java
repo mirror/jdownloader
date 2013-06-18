@@ -40,7 +40,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             try {
                 CrawledPackageAPIStorable cps = new CrawledPackageAPIStorable(pkg);
                 CrawledPackageView view = new CrawledPackageView();
-                view.update(pkg.getChildren());
+                view.setItems(pkg.getChildren());
                 QueryResponseMap infomap = new QueryResponseMap();
                 if (queryParams._getQueryParam("saveTo", Boolean.class, false)) {
                     infomap.put("saveTo", pkg.getRawDownloadFolder());

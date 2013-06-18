@@ -80,7 +80,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 java.util.List<PackageType> packages = getAllPackageNodes();
                 for (PackageType pkg : packages) {
                     if (pkg.getView() != null && pkg.getView().updateRequired()) {
-                        pkg.getView().update();
+                        pkg.getView().aggregate();
                     }
                 }
                 new EDTRunner() {
@@ -320,7 +320,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                     /* no visible children, skip PackageNode */
                     continue;
                 } else {
-                    node.getView().update(files);
+                    node.getView().setItems(files);
                 }
             }
             if (files.size() == 1 && hideSingleChildPackages) {

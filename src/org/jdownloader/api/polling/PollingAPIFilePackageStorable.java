@@ -4,16 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.controlling.DownloadLinkAggregator;
 
 public class PollingAPIFilePackageStorable implements Storable {
 
     private FilePackage                          fp;
     private Long                                 speed;
     private List<PollingAPIDownloadLinkStorable> downloadLinks = new ArrayList<PollingAPIDownloadLinkStorable>();
-    private FilePackageView                      packageView;
+    private DownloadLinkAggregator               numbers;
 
     public PollingAPIFilePackageStorable(/* Storable */) {
         this.fp = null;
@@ -21,8 +21,8 @@ public class PollingAPIFilePackageStorable implements Storable {
 
     public PollingAPIFilePackageStorable(FilePackage link) {
         this.fp = link;
-        packageView = new FilePackageView(fp);
-        packageView.update();
+        numbers = new DownloadLinkAggregator(fp, true);
+
     }
 
     public Long getUUID() {
@@ -30,15 +30,15 @@ public class PollingAPIFilePackageStorable implements Storable {
     }
 
     public Long getDone() {
-        return packageView.getDone();
+        return (long) numbers.getFinishedCount();
     }
 
     public Boolean getFinished() {
-        return packageView.isFinished();
+        return numbers.isFinished();
     }
 
     public Long getSize() {
-        return packageView.getSize();
+        return numbers.getTotalBytes();
     }
 
     public void setSpeed(Long speed) {
@@ -50,7 +50,7 @@ public class PollingAPIFilePackageStorable implements Storable {
     }
 
     public Long getETA() {
-        return packageView.getETA();
+        return numbers.getEta();
     }
 
     public List<PollingAPIDownloadLinkStorable> getLinks() {

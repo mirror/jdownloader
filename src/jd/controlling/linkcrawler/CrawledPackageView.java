@@ -28,7 +28,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     }
 
     @Override
-    public void update() {
+    public void aggregate() {
         long lupdatesRequired = updatesRequired.get();
         synchronized (this) {
             /* this is called for repaint, so only update values that could have changed for existing items */
@@ -68,7 +68,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         }
     }
 
-    public void update(List<CrawledLink> updatedItems) {
+    public void setItems(List<CrawledLink> updatedItems) {
         long lupdatesRequired = updatesRequired.get();
         synchronized (this) {
             /* this is called for tablechanged, so update everything for given items */

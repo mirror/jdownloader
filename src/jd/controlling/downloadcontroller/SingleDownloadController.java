@@ -34,7 +34,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -49,6 +48,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition.CloseReason;
+import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
@@ -572,8 +572,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         }
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
-         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss
+         * in ms. value==0 macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());
@@ -731,15 +731,13 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                         break;
 
                     case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
+
                         FilePackage fp = downloadLink.getFilePackage();
-                        FilePackageView fpv = new FilePackageView(fp);
-                        fpv.update();
-                        if (fpv.isFinished() && fpv.getDisabledCount() == 0) {
+
+                        if (new DownloadLinkAggregator(fp, true).isFinished()) {
 
                             LogController.GL.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
                             DownloadController.getInstance().removePackage(fp);
-                        } else if (fpv.isFinished()) {
-                            LogController.GL.info("Did NOT remove Package " + fp.getName() + " because Finished and Disabled Links found!");
                         }
                         break;
                     }
