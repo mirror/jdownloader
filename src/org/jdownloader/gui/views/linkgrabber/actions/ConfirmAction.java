@@ -56,23 +56,26 @@ public class ConfirmAction extends AppAction {
         return autostart;
     }
 
-    public void setAutostart(boolean autostart) {
+    public ConfirmAction setAutostart(boolean autostart) {
         this.autostart = autostart;
-    }
-
-    public ConfirmAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
-        if (autostart != org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue()) {
+        if (autostart) {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
             Image add = NewTheme.I().getImage("media-playback-start", 20);
             Image play = NewTheme.I().getImage("add", 14);
             setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, -2, 0, 8, 10)));
-            this.autostart = true;
         } else {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add());
             setIconKey(IconKey.ICON_GO_NEXT);
-            this.autostart = false;
         }
+        return this;
+    }
+
+    public ConfirmAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
+
+        setAutostart(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue());
+
         this.si = selectionInfo;
+
     }
 
     public void actionPerformed(ActionEvent e) {

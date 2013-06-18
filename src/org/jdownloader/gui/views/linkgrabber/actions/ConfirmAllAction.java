@@ -2,6 +2,8 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
@@ -29,8 +31,7 @@ public class ConfirmAllAction extends AppAction {
 
     public ConfirmAllAction(boolean autostart) {
         setAutoStart(autostart);
-        setAccelerator(KeyStroke.getKeyStroke("ctrl pressed ENTER"));
-
+        setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK));
     }
 
     public void setAutoStart(boolean b) {
@@ -40,11 +41,17 @@ public class ConfirmAllAction extends AppAction {
             Image play = NewTheme.I().getImage("add", 12);
             setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, 0, 0, 9, 10)));
             this.autostart = b;
+
         } else {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add());
             setSmallIcon(NewTheme.I().getIcon("go-next", 20));
             this.autostart = b;
+
         }
+    }
+
+    public Object getValue(String key) {
+        return super.getValue(key);
     }
 
     public ConfirmAllAction() {
@@ -59,7 +66,7 @@ public class ConfirmAllAction extends AppAction {
 
                 java.util.List<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
 
-                ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(packages).setShiftDown(autostart));
+                ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(packages));
                 ca.setAutostart(autostart);
                 ca.actionPerformed(null);
             }

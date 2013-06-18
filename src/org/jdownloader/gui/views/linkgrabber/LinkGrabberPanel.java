@@ -197,6 +197,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     }
                 }, false);
                 setAutoStart(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.isEnabled());
+
             }
 
         });

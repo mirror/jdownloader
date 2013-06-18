@@ -43,11 +43,13 @@ public class ConfirmOptionsAction extends AbstractAction {
         JMenu selected = new JMenu(_GUI._.ConfirmOptionsAction_actionPerformed_selected());
         all.setIcon(NewTheme.I().getIcon("confirmAll", 16));
         selected.setIcon(NewTheme.I().getIcon("confirmSelectedLinks", 16));
-        all.add(new JMenuItem(new ConfirmAllAction()));
-        all.add(new JMenuItem(new ConfirmAllAction(true)));
+        all.add(new JMenuItem(new ConfirmAllAction(false).setAccelerator(null)));
+        all.add(new JMenuItem(new ConfirmAllAction(true).setAccelerator(null)));
         SelectionInfo<CrawledPackage, CrawledLink> selection = new SelectionInfo<CrawledPackage, CrawledLink>(table.getExtTableModel().getSelectedObjects());
-        selected.add(new JMenuItem(new ConfirmAction(selection)));
-        selected.add(new JMenuItem(new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(table.getExtTableModel().getSelectedObjects()).setShiftDown(true))));
+        selected.add(new JMenuItem(new ConfirmAction(selection).setAutostart(false).setAccelerator(null)));
+        ConfirmAction action = new ConfirmAction(selection);
+        action.setAutostart(true);
+        selected.add(new JMenuItem(action.setAccelerator(null)));
         int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
         popup.add(all);
         popup.add(selected);

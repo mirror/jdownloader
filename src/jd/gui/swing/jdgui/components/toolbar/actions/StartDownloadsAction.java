@@ -32,7 +32,8 @@ import org.jdownloader.translate._JDT;
 public class StartDownloadsAction extends ToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum> {
 
     /**
-     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     public StartDownloadsAction(SelectionInfo<?, ?> selection) {
         setIconKey("media-playback-start");
@@ -51,7 +52,7 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
                     switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
                     case ADD_ALL_LINKS_AND_START_DOWNLOADS:
                         java.util.List<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
-                        ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(packages).setShiftDown(true));
+                        ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(packages));
                         ca.setAutostart(true);
                         ca.actionPerformed(null);
                         break;
