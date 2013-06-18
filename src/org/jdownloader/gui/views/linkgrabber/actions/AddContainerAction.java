@@ -18,17 +18,17 @@ import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
 public class AddContainerAction extends AppAction {
     /**
-     * @param selection TODO
+     * @param selection
+     *            TODO
      * 
      */
     public AddContainerAction(SelectionInfo<CrawledPackage, CrawledLink> selection) {
-        putValue(SMALL_ICON, NewTheme.I().getIcon("addContainer", 16));
-        putValue(NAME, _GUI._.AddContainerAction());
+        setIconKey("addContainer");
+        setName(_GUI._.AddContainerAction());
     }
 
     private static final long serialVersionUID = -1758454550263991986L;
