@@ -212,16 +212,24 @@ public class ARDMediathek extends PluginForHost {
         }
         final String xmlContent = xml.toString();
 
-        final String[][] matches = new Regex(xmlContent, "<p id=\"subtitle\\d+\" begin=\"10:([^<>\"]*?)\" end=\"10:([^<>\"]*?)\" tts:textAlign=\"(center|right|left)\" style=\"s(\\d+)\">(.*?)</p>").getMatches();
+        final String[] matches = new Regex(xmlContent, "(<p id=\"subtitle\\d+\".*?</p>)").getColumn(0);
         try {
-            for (String[] match : matches) {
+            for (final String info : matches) {
                 dest.write(counter++ + lineseparator);
-
-                final String start = "00:" + match[0].replace(".", ",");
-                final String end = "00:" + match[1].replace(".", ",");
+                if (counter == 352) {
+                    logger.info("");
+                }
+                final String start = new Regex(info, "begin=\"10:([^<>\"]*?)\"").getMatch(0).replace(".", ",");
+                final String end = new Regex(info, "end=\"10:([^<>\"]*?)\"").getMatch(0).replace(".", ",");
                 dest.write(start + " --> " + end + lineseparator);
 
-                String text = match[4].trim();
+                String text = new Regex(info, "style=\"s\\d+\">?(.*?)</p>").getMatch(0);
+                final String[] toRemove = new Regex(info, "(tts:backgroundColor=\"[a-z]+\")").getColumn(0);
+                if (toRemove != null && toRemove.length != 0) {
+                    for (final String remove : toRemove) {
+                        text = text.replace(remove, "");
+                    }
+                }
                 text = text.replaceAll(lineseparator, " ");
                 text = text.replaceAll("&apos;", "\\\\u0027");
                 text = unescape(text);
@@ -231,10 +239,11 @@ public class ARDMediathek extends PluginForHost {
                 text = HTMLEntities.unhtmlSingleQuotes(text);
                 text = HTMLEntities.unhtmlDoubleQuotes(text);
                 text = text.replaceAll("<br />", lineseparator);
-                text = text.replaceAll("</?(p|span)>", "");
-                final String[][] colorTagssw = new Regex(text, "(<span tts:color=\"([a-z0-9]+)\">([^\t\n\r]+))").getMatches();
-                if (colorTagssw != null && colorTagssw.length != 0) {
-                    for (final String[] singleText : colorTagssw) {
+                text = text.replaceAll("</?(p|span)>?", "");
+                text = text.trim();
+                final String[][] colorTags = new Regex(text, "(tts:color=\"([a-z0-9]+)\">([^<>]+))").getMatches();
+                if (colorTags != null && colorTags.length != 0) {
+                    for (final String[] singleText : colorTags) {
                         final String completeOldText = singleText[0];
                         final String colorText = singleText[1];
                         final String plainText = singleText[2];

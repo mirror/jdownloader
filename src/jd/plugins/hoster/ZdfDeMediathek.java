@@ -176,7 +176,7 @@ public class ZdfDeMediathek extends PluginForHost {
                 text = text.replaceAll("<br />", lineseparator);
                 text = text.replace("</p>", "");
                 text = text.replace("<span ", "").replace("</span>", "");
-                final String[][] textReplaces = new Regex(text, "(tts:color=\"#([A-Z0-9]+)\">([^\t\n\r]+))").getMatches();
+                final String[][] textReplaces = new Regex(text, "(tts:color=\"#([A-Z0-9]+)\">(.+))").getMatches();
                 if (textReplaces != null && textReplaces.length != 0) {
                     for (final String[] singleText : textReplaces) {
                         final String completeOldText = singleText[0];
