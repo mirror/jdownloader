@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -16,8 +16,9 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
+import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,77 +29,122 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "picasaweb.google.com" }, urls = { "https?://(www\\.)?picasaweb\\.google\\.com/(?!accounts|lh/(explore|view)).*?/.*?(\\?feat=(featured#[0-9]+|featured#)|#[0-9]+|#|\\?authkey=[A-Za-z0-9\\-]+)" }, flags = { 0 })
+import org.appwork.storage.simplejson.ParserException;
+import org.codehaus.jackson.JsonProcessingException;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "picasaweb.google.com" }, urls = { "https?://(www\\.)?picasaweb\\.google\\.com/(?!accounts|lh/(explore|view)).*?/.*?(\\?feat=(featured#[0-9]+|featured#)|#[0-9]+|#|\\?authkey=[A-Za-z0-9\\-]+|photo/[A-Za-z0-9\\-_]+)" }, flags = { 0 })
 public class PcsaGgleCom extends PluginForDecrypt {
 
     public PcsaGgleCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final Pattern singlelink = Pattern.compile(".*?#[0-9]+");
+    private String      fpName = null;
+    private String      auid   = null;
+    private FilePackage fp     = FilePackage.getInstance();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("https://", "http://");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("(Hier gibt es nichts zu sehen|Entweder haben Sie keinen Zugriff auf diese Fotos oder es gibt unter dieser Adresse keine)")) {
+        if (br.containsHTML("(Hier gibt es nichts zu sehen|Entweder haben Sie keinen Zugriff auf diese Fotos oder es gibt unter dieser Adresse keine|>404 NOT_FOUND</)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (Regex.matches(parameter, singlelink)) {
-            String picid = new Regex(parameter, ".*?#(\\d+)").getMatch(0);
-            String directLinkRegex = "\"" + picid + "\",\"albumId\":\".*?\",\"access\":\"public\",.*?media\":\\{\"content\":\\[\\{\"url\":\"(http.*?)\"";
-            String finallink = br.getRegex(directLinkRegex).getMatch(0);
-            if (finallink == null) return null;
-            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-            decryptedLinks.add(dl);
+
+        // set fp variables here
+        fp.setProperty("ALLOW_MERGE", true);
+
+        if (parameter.matches(".+(/lh/photo/[A-Za-z0-9\\-_]+|#[0-9]+)")) {
+            parsePhoto(decryptedLinks, parameter, false);
         } else {
-            String fpname = br.getRegex("title\" content=\"(.*?)\"").getMatch(0);
-            if (fpname == null) {
-                fpname = br.getRegex("title:\\'(.*?)\\'").getMatch(0);
-                if (fpname == null) {
-                    fpname = br.getRegex("album\\.title_wb = \"(.*?)\"").getMatch(0);
-                }
-            }
-            // Make the regex to find alle the pic ids
-            String galleryName = new Regex(parameter, "picasaweb\\.google\\.com/(.*?/.*?)(\\?feat|#)").getMatch(0);
-            if (galleryName == null) galleryName = new Regex(parameter, "picasaweb\\.google\\.com/.*?\\?authkey=(.+)").getMatch(0);
-            if (galleryName == null) return null;
-            String theFinalRegex = "(" + galleryName + "#[0-9]+)\"";
-            // Use the regex
-            String[] picLinks = br.getRegex(theFinalRegex).getColumn(0);
-            if (picLinks == null || picLinks.length == 0) return null;
-            progress.setRange(picLinks.length);
-            int i = 1;
-            for (String piclink : picLinks) {
-                String pictureoverview = null;
-                if (parameter.contains("?authkey=")) {
-                    pictureoverview = "http://picasaweb.google.com/" + new Regex(parameter, "picasaweb\\.google\\.com/(.*?\\?authkey=)").getMatch(0) + piclink;
-                } else {
-                    pictureoverview = "http://picasaweb.google.com/" + piclink;
-                }
-                br.getPage(pictureoverview);
-                String picid = new Regex(piclink, "#(\\d+)").getMatch(0);
-                String finallink = br.getRegex("\":\"" + picid + "\",\"albumId\":\"(\\d+)\",\"access\":\"(private|public)\",\"width\":\"\\d+\",\"height\":\"\\d+\",\"size\":\"\\d+\",\"commentingEnabled\":\"(true|false)\",\"allowNameTags\":\"(false|true)\",\"media\":\\{\"content\":\\[\\{\"url\":\"(http://.*?)\"").getMatch(4);
-                DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-                String ending = new Regex(finallink, "\\.com/.*?/.{1,}(\\..{3,4})").getMatch(0);
-                if (fpname != null && ending != null) {
-                    String finalName = fpname.trim() + "_" + i + ending;
-                    dl.setFinalFileName(finalName);
-                }
-                decryptedLinks.add(dl);
-                progress.increase(1);
-                i = i + 1;
-            }
-            if (fpname != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpname.trim());
-                fp.addLinks(decryptedLinks);
-            }
+            parsePhoto(decryptedLinks, parameter, true);
+        }
+        if (fpName != null) {
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
         }
 
         return decryptedLinks;
+    }
+
+    private void parsePhoto(ArrayList<DownloadLink> decryptedLinks, String item, boolean album) throws ParserException, JsonProcessingException, IOException {
+        ArrayList<String> array = new ArrayList<String>();
+
+        if (!album) {
+            String url_uid = null;
+            url_uid = new Regex(item, "/lh/photo/([A-Za-z0-9\\-_]+)").getMatch(0);
+            if (url_uid == null) {
+                url_uid = new Regex(item, "#(\\d+)$").getMatch(0);
+            }
+            auid = br.getRegex("'(\\d+)',[\r\n\t ]+\\{feedUrl").getMatch(0);
+            array.add(getUIDarray(url_uid));
+        } else {
+            String[] test = br.getRegex("(\\$kind\".*?\\}(,\\{\"gd|\\]\\}))").getColumn(0);
+            if (test != null && test.length != 0) {
+                array.addAll(Arrays.asList(test));
+            }
+        }
+
+        for (String heeray : array) {
+
+            // this is in array, you would think that this isn't the largest image been within thumbnail..
+            // might cause issues... /d/ link for download? also has "allowDownloads":"true" variable
+            String dllink = getImage(heeray);
+
+            String puid = getJson(heeray, "gphoto\\$id");
+            // single images can belong to album!
+            if (fpName == null) {
+                fpName = getJson(heeray, "albumInfo\":\\[\\{\"id\":\"\\d+\",\"title");
+                if (fpName == null) {
+                    fpName = getJson(heeray, "title");
+                }
+            }
+            // do this here, so we can still get album name
+            if (heeray.contains("$kind\":\"photos#album\"")) continue;
+
+            String filename = getJson(heeray, "title");
+
+            if (dllink != null) {
+                String name = puid;
+                name += "-" + filename;
+                DownloadLink dl = createDownloadlink("directhttp://" + dllink);
+                if (!name.equals("") && !name.endsWith(dllink.substring(dllink.lastIndexOf(".")))) {
+                    name = name + dllink.substring(dllink.lastIndexOf("."));
+                }
+                dl.setFinalFileName(name);
+                if (album) dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            } else
+                logger.warning("Possible Plugin Defect, contintuing....");
+        }
+    }
+
+    private String getUIDarray(String uid) {
+        String array = br.getRegex("('" + uid + "',[^\\{]+\\{'preload':.+\\}\\})").getMatch(0);
+        if (array == null && auid != null) {
+            array = br.getRegex("(\\{\"gd\\$kind\":\"photos.*?/albumid/" + auid + "/photoid/" + uid + ".*?)").getMatch(0);
+        }
+        return array;
+    }
+
+    private String getJson(String source, String key) {
+        String result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
+        if (result == null) {
+            result = new Regex(source, key + ":'([^']+)").getMatch(0);
+        }
+        return result;
+    }
+
+    private String getImage(String source) {
+        String result = new Regex(source, "(https?://\\w+\\.(googleusercontent|ggpht)\\.com/[a-zA-Z0-9_\\-/]+/d/[^\"'/]+)").getMatch(0);
+        if (result == null) {
+            String[] grabimage = new Regex(source, "(https?://\\w+\\.(googleusercontent|ggpht)\\.com/([a-zA-Z0-9_\\-]+/){4,5})([^\"']+)").getRow(0);
+            result = grabimage[0].replaceFirst("/s\\d+[^/]+/$", "") + "/d/" + grabimage[3];
+        }
+        return result;
     }
 
     /* NO OVERRIDE!! */
