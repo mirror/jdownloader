@@ -142,7 +142,7 @@ public class PcsaGgleCom extends PluginForDecrypt {
         String result = new Regex(source, "(https?://\\w+\\.(googleusercontent|ggpht)\\.com/[a-zA-Z0-9_\\-/]+/d/[^\"'/]+)").getMatch(0);
         if (result == null) {
             String[] grabimage = new Regex(source, "(https?://\\w+\\.(googleusercontent|ggpht)\\.com/([a-zA-Z0-9_\\-]+/){4,5})([^\"']+)").getRow(0);
-            result = grabimage[0].replaceFirst("/s\\d+[^/]+/$", "") + "/d/" + grabimage[3];
+            result = grabimage[0].replaceFirst("/s\\d+[^/]+/$", "/") + "d/" + grabimage[3];
         }
         return result;
     }
