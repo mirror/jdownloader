@@ -38,17 +38,21 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
         if (suggest != null) dialog.suggest(suggest);
 
         result = UIOManager.I().show(CaptchaDialogInterface.class, d).getResult();
+        try {
+            if (d.getCloseReason() != CloseReason.OK) {
 
-        if (d.getCloseReason() != CloseReason.OK) {
+                if (d.isHideCaptchasForHost()) throw new HideCaptchasByHostException();
+                if (d.isHideCaptchasForPackage()) throw new HideCaptchasByPackageException();
+                if (d.isStopDownloads()) throw new StopCurrentActionException();
+                if (d.isHideAllCaptchas()) throw new HideAllCaptchasException();
+                if (d.isStopCrawling()) throw new StopCurrentActionException();
+                if (d.isStopShowingCrawlerCaptchas()) throw new HideAllCaptchasException();
+                if (d.isRefresh()) throw new RefreshException();
+                d.checkCloseReason();
+            }
+        } catch (IllegalStateException e) {
+            // Captcha has been solved externally
 
-            if (d.isHideCaptchasForHost()) throw new HideCaptchasByHostException();
-            if (d.isHideCaptchasForPackage()) throw new HideCaptchasByPackageException();
-            if (d.isStopDownloads()) throw new StopCurrentActionException();
-            if (d.isHideAllCaptchas()) throw new HideAllCaptchasException();
-            if (d.isStopCrawling()) throw new StopCurrentActionException();
-            if (d.isStopShowingCrawlerCaptchas()) throw new HideAllCaptchasException();
-            if (d.isRefresh()) throw new RefreshException();
-            d.checkCloseReason();
         }
 
     }

@@ -35,16 +35,21 @@ public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptc
         d.setCountdownTime(CaptchaSettings.CFG.getCountdown());
         dialog = d;
         result = UIOManager.I().show(ClickCaptchaDialog.class, d).getResult();
-        if (d.getCloseReason() != CloseReason.OK) {
+        try {
+            if (d.getCloseReason() != CloseReason.OK) {
 
-            if (d.isHideCaptchasForHost()) throw new HideCaptchasByHostException();
-            if (d.isHideCaptchasForPackage()) throw new HideCaptchasByPackageException();
-            if (d.isStopDownloads()) throw new StopCurrentActionException();
-            if (d.isHideAllCaptchas()) throw new HideAllCaptchasException();
-            if (d.isStopCrawling()) throw new StopCurrentActionException();
-            if (d.isStopShowingCrawlerCaptchas()) throw new HideAllCaptchasException();
-            if (d.isRefresh()) throw new RefreshException();
-            d.checkCloseReason();
+                if (d.isHideCaptchasForHost()) throw new HideCaptchasByHostException();
+                if (d.isHideCaptchasForPackage()) throw new HideCaptchasByPackageException();
+                if (d.isStopDownloads()) throw new StopCurrentActionException();
+                if (d.isHideAllCaptchas()) throw new HideAllCaptchasException();
+                if (d.isStopCrawling()) throw new StopCurrentActionException();
+                if (d.isStopShowingCrawlerCaptchas()) throw new HideAllCaptchasException();
+                if (d.isRefresh()) throw new RefreshException();
+                d.checkCloseReason();
+            }
+        } catch (IllegalStateException e) {
+            // Captcha has been solved externally
+
         }
 
     }

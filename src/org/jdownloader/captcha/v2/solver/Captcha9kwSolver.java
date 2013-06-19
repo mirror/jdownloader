@@ -125,6 +125,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
                     checkInterruption();
                     Thread.sleep(2000);
                 }
+
             } catch (IOException e) {
                 job.getLogger().log(e);
             }

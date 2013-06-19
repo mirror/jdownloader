@@ -172,6 +172,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
+            if (((DownloadLink) value).isSkipped()) { return ((DownloadLink) value).getSkipReason().getExplanation(); }
             DownloadLink dl = (DownloadLink) value;
             if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
                 if (!dl.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && !dl.getLinkStatus().isFinished()) {
