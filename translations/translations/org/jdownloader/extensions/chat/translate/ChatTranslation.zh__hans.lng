@@ -1,3 +1,5 @@
+ChatExtensionGuiToggleAction_selected=关闭聊天
+ChatExtensionGuiToggleAction_selected_tt=关闭聊天面板
 description=联系 JDownloader 开发人员和技术支持人员
 gui_tab_title=%s1 频道
 jd_plugins_optional_jdchat_JDChatView_title=JD 技术支持聊天

@@ -1,7 +1,5 @@
-LogAction=创建日志
 LogAction_actionPerformed_wait_=请稍等....
 LogAction_actionPerformed_zip_title_=正在创建日志包
-LogAction_tooltip=创建日志
 LogModel_getStringValue_between_=介于 %s1 和 %s2 之间\r\n
 LogModel_initColumns_time_=时间
 LogModel_initColumns_x_=检查

@@ -1,0 +1,8 @@
+JDGui_windowClosing_try_title_=关闭到托盘
+OnCloseAction_totray=关闭到托盘
+OnMinimizeAction_ask=问我
+OnMinimizeAction_totray=关闭到托盘
+plugins_optional_JDLightTray_closetotray2=点击'关闭<X>'动作
+plugins_optional_JDLightTray_minimizetotray=点击'最小化<_>'动作
+popup_reconnecttoggle=自动重连已启用
+popup_update=检查更新
