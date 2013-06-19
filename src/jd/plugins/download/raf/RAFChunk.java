@@ -303,22 +303,26 @@ public class RAFChunk extends Thread {
                         }
                     }
                 } catch (NullPointerException e) {
-                    LogSource.exception(logger, e);
                     if (inputStream == null) {
                         /* connection is closed and steam is null */
-                        if (!isExternalyAborted() && !connectionclosed) throw e;
+                        if (!isExternalyAborted() && !connectionclosed) {
+                            LogSource.exception(logger, e);
+                            throw e;
+                        }
                         towrite = -1;
                         break;
                     }
                     throw e;
                 } catch (SocketException e2) {
-                    LogSource.exception(logger, e2);
-                    if (!isExternalyAborted()) throw e2;
+                    if (!isExternalyAborted()) {
+                        LogSource.exception(logger, e2);
+                        throw e2;
+                    }
                     towrite = -1;
                     break;
                 } catch (ClosedByInterruptException e) {
-                    LogSource.exception(logger, e);
                     if (!isExternalyAborted()) {
+                        LogSource.exception(logger, e);
                         logger.severe("Timeout detected");
                         dl.error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
                     }

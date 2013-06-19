@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,6 +45,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.real\\-debrid\\.com/dl/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
@@ -172,12 +174,19 @@ public class RealDebridCom extends PluginForHost {
                     break;
                 } else {
                     /* download is not content disposition. */
-                    br.followConnection();
+                    br2.followConnection();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } catch (Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+                sleep(3000, link);
+                LogSource.exception(logger, e);
                 continue;
             } finally {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
                 if (RUNNING_DOWNLOADS.decrementAndGet() == 0) {
                     MAX_DOWNLOADS.set(Integer.MAX_VALUE);
                 }
@@ -202,10 +211,18 @@ public class RealDebridCom extends PluginForHost {
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
         String dllink = link.getDownloadURL();
-        if (link.getStringProperty("pass", null) != null) {
-            br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
-        } else {
-            br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink));
+        for (int retry = 0; retry < 3; retry++) {
+            try {
+                if (link.getStringProperty("pass", null) != null) {
+                    br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
+                } else {
+                    br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink));
+                }
+                break;
+            } catch (SocketException e) {
+                if (retry == 2) throw e;
+                sleep(3000l, link);
+            }
         }
         if (br.containsHTML("\"error\":4,")) {
             if (dllink.contains("https://")) {
@@ -214,10 +231,18 @@ public class RealDebridCom extends PluginForHost {
                 // not likely but lets try anyway.
                 dllink = dllink.replace("http://", "https://");
             }
-            if (link.getStringProperty("pass", null) != null) {
-                br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
-            } else {
-                br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink));
+            for (int retry = 0; retry < 3; retry++) {
+                try {
+                    if (link.getStringProperty("pass", null) != null) {
+                        br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
+                    } else {
+                        br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink));
+                    }
+                    break;
+                } catch (SocketException e) {
+                    if (retry == 2) throw e;
+                    sleep(3000l, link);
+                }
             }
             if (br.containsHTML("\"error\":4,")) {
                 logger.warning("Problemo in the old corral");
@@ -318,7 +343,15 @@ public class RealDebridCom extends PluginForHost {
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
-        br.getPage(mProt + mName + "/api/account.php");
+        for (int retry = 0; retry < 3; retry++) {
+            try {
+                br.getPage(mProt + mName + "/api/account.php");
+                break;
+            } catch (SocketException e) {
+                if (retry == 2) throw e;
+                Thread.sleep(1000);
+            }
+        }
         String expire = br.getRegex("<expiration\\-txt>([^<]+)").getMatch(0);
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
@@ -338,7 +371,16 @@ public class RealDebridCom extends PluginForHost {
             ai.setStatus("Free User");
         }
         try {
-            String hostsSup = br.cloneBrowser().getPage(mProt + mName + "/api/hosters.php");
+            String hostsSup = null;
+            for (int retry = 0; retry < 3; retry++) {
+                try {
+                    hostsSup = br.cloneBrowser().getPage(mProt + mName + "/api/hosters.php");
+                    break;
+                } catch (SocketException e) {
+                    if (retry == 2) throw e;
+                    Thread.sleep(1000);
+                }
+            }
             String[] hosts = new Regex(hostsSup, "\"([^\"]+)\"").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             // remove youtube support from this multihoster. Our youtube plugin works from cdn/cached final links and this does not work
@@ -391,7 +433,15 @@ public class RealDebridCom extends PluginForHost {
                         return;
                     }
                 }
-                br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Hash.getMD5(account.getPass()) + "&captcha_challenge=&captcha_answer=&time=" + System.currentTimeMillis());
+                for (int retry = 0; retry < 3; retry++) {
+                    try {
+                        br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Hash.getMD5(account.getPass()) + "&captcha_challenge=&captcha_answer=&time=" + System.currentTimeMillis());
+                        break;
+                    } catch (SocketException e) {
+                        if (retry == 2) throw e;
+                        Thread.sleep(1000);
+                    }
+                }
                 if (br.getCookie(mProt + mName, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();

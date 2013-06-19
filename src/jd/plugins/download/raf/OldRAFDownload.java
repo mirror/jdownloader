@@ -251,7 +251,7 @@ public class OldRAFDownload extends DownloadInterface {
         if (downloadLink.getVerifiedFileSize() < 0) {
             /* only set DownloadSize if we do not have a verified FileSize yet */
             String contentType = connection.getContentType();
-            boolean trustFileSize = contentType == null || (!contentType.contains("html") && contentType.contains("text"));
+            boolean trustFileSize = contentType == null || (!contentType.contains("html") && !contentType.contains("text"));
             logger.info("Trust FileSize: " + trustFileSize + " " + contentType);
             if (connection.getRange() != null && trustFileSize) {
                 /* we have a range response, let's use it */
@@ -375,6 +375,10 @@ public class OldRAFDownload extends DownloadInterface {
                 /* response range is bigger than requested range */
                 if (verifiedSize && range[1] == part) {
                     logger.severe("Workaround for buggy http server: rangeEND=contentEND, it must be rangeEND-1=contentEND as 0 is first byte!");
+                    return;
+                }
+                if (rangeRequested == false && verifiedSize && fileSize == range[2]) {
+                    logger.severe("Workaround for buggy http server: no range requested, but got content-range response with 200 header");
                     return;
                 }
                 throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
