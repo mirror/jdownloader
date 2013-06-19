@@ -68,6 +68,7 @@ downloadlink_status_error_file_exists=Datoteka postoji
 downloadlink_status_error_file_not_found=Datoteka nije pronađena
 downloadlink_status_error_hoster_temp_unavailable=Preuzimanje sa ovog hosta trenutno nije moguće
 downloadlink_status_error_invalid_dest=Pogrešna mapa za preuzimanje
+downloadlink_status_error_invalid_disk_full=Preskočeno - Datoteka već postoji
 downloadlink_status_error_no_connection=Veza nije uspostavljena
 downloadlink_status_error_post_process=Greška u obradi
 downloadlink_status_error_premium=Premium greška
