@@ -1,0 +1,10 @@
+LogAction_actionPerformed_wait_=Моля, изчакайте...
+LogAction_actionPerformed_zip_title_=Създаване на журнал на пакета
+LogAction_getString_uploading_=Подготвяне на вашите журнали
+LogModel_getStringValue_between_=Между %s1 и %s2
+LogModel_initColumns_time_=Време
+LogModel_initColumns_x_=Провери
+LogTable_onContextMenu_disable_=Размаркирай
+LogTable_onContextMenu_enable_=Избери
+SendLogDialog_SendLogDialog_title_=Изпрати доклад за бъгове
+SendLogDialog_layoutDialogContent_desc_=Кога възникна проблема? Моля, проверете всички записи, които може да са заслужават да бъдат разгледани!

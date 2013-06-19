@@ -1,6 +1,7 @@
 action_tooltip=Позволи изключване на системата след завършване на изтеглянията
 addons_jdshutdown_statusmessage_disabled=Системата НЯМА да бъде изключена от JDownloader.
 addons_jdshutdown_statusmessage_enabled=Jdownloader ще изключи вашата система след като завършат изтеглянията
+config_active_by_default=Запази изключването разрешено
 config_toolbarbutton=Бутона с лентата с инструменти е видим
 gui_config_jdshutdown_close=Затвори JD
 gui_config_jdshutdown_forceshutdown=Форсирано изключване (Не за всички ОС)
@@ -23,3 +24,5 @@ jd_plugins_optional_jdshutdown=Изключване на JD
 jd_plugins_optional_jdshutdown_description=Автоматично изключи, спри, заспи вашето PC или затвори JDownloader когато изтеглянията завършат.
 lit_shutdownn=Изключване
 show_admin=Изискват се администраторски права за настройката на JDownloader за заспиване или режим на готовност
+shutdown_toggle_action_disabled=Разреши изключването след изтеглянията
+shutdown_toggle_action_enabled=Забрани изключването след изтеглянията

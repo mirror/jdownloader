@@ -1,2 +1,6 @@
 Translator=Преводач
+TranslatorExtensionGuiToggleAction_deselected=Отвори преводача
+TranslatorExtensionGuiToggleAction_deselected_tt=Отвори разделът на преводача
+TranslatorExtensionGuiToggleAction_selected=Затвори преводача
+TranslatorExtensionGuiToggleAction_selected_tt=Затвори раздела на преводача
 description=Това разширение може да се използва за редактиране на преводите на JDownloader. Имате нужда от профил на разработчик за да използвате това разширение
