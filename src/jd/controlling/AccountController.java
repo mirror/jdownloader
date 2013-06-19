@@ -514,6 +514,15 @@ public class AccountController implements AccountControllerListener {
 
     public void addAccount(final Account account) {
         if (account == null) return;
+        if (account.getPlugin() == null) {
+            PluginForHost plugin = new PluginFinder().assignPlugin(account, true, null);
+            if (plugin != null) {
+                account.setPlugin(plugin);
+            } else {
+                account.setPlugin(null);
+            }
+        }
+
         synchronized (HOSTER_ACCOUNTS) {
             java.util.List<Account> accs = HOSTER_ACCOUNTS.get(account.getHoster());
             if (accs == null) {

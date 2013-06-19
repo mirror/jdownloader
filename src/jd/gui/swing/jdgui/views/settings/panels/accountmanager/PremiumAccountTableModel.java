@@ -38,6 +38,7 @@ import org.appwork.swing.exttable.columns.ExtProgressColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -416,7 +417,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             {
                 button = new JButton(_GUI._.premiumaccounttablemodel_column_info_button());
 
-                panel = new MigPanel("ins 2", "[]", "[18!]");
+                panel = new RendererMigPanel("ins 2", "[]", "[18!]");
                 panel.add(button);
                 button.setOpaque(false);
 
