@@ -1,4 +1,5 @@
 RestartController_confirmToExit_=确定退出？
+RestartController_confirmToExit_msg=您是否真的想退出JDownloader?
 confirmdialog_new_update_available_answer_later=稍后
 confirmdialog_new_update_available_answer_later_install=稍后
 confirmdialog_new_update_available_answer_now=现在下载
@@ -18,6 +19,7 @@ installframe_statusmsg_findupdates=检查更新
 installframe_statusmsg_interrupted=更新被打断
 installframe_statusmsg_prepare=正在准备安装...
 installframe_statusmsg_preparing=准备更新包...
+installframe_statusmsg_preparing_eta=估计剩余等待时间: %s1
 installframe_statusmsg_selfupdate_validating=正在验证安装过程。\n大概需要5分钟...
 lit_cancel_install=跳过安装
 literally_cancel=取消

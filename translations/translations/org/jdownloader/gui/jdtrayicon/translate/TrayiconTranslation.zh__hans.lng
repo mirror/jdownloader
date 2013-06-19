@@ -8,6 +8,7 @@ plugins_optional_JDLightTray_closetotray2=点击'关闭<X>'动作
 plugins_optional_JDLightTray_minimizetotray=点击'最小化<_>'动作
 plugins_optional_trayIcon_dl_running=正在运行：
 plugins_optional_trayIcon_dl_total=总计：
+plugins_optional_trayIcon_eta=估计:
 plugins_optional_trayIcon_speed=速度：
 popup_reconnecttoggle=自动重连已启用
 popup_update=检查更新

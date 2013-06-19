@@ -71,6 +71,7 @@ PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD=新密码:
 PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD_REPEAT=确认密码:
 PASSWORDDIALOG_PASSWORDCHANGE_OLDPASSWORD=旧密码:
 ProxyDialog_direct=直接连接
+ProxyDialog_hostport=主机:端口
 ProxyDialog_hostport_help=输入域名或者 IP 地址
 ProxyDialog_password=密码:
 ProxyDialog_password_help=输入密码...
