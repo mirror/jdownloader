@@ -275,8 +275,10 @@ public class RDMdthk extends PluginForDecrypt {
     private String getTitle(Browser br) {
         String title = br.getRegex("<(div|span) class=\"(MainBoxHeadline|BoxHeadline)\">([^<]+)</").getMatch(2);
         String titleUT = br.getRegex("<span class=\"(BoxHeadlineUT|boxSubHeadline)\">([^<]+)</").getMatch(1);
+        if (titleUT == null) titleUT = br.getRegex("<h3 class=\"mt\\-title\"><a>([^<>\"]*?)</a></h3>").getMatch(0);
         if (title == null) title = br.getRegex("<title>ard\\.online \\- Mediathek: ([^<]+)</title>").getMatch(0);
         if (title == null) title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
+        if (title == null) title = br.getRegex("class=\"mt\\-icon mt\\-icon\\-toggle_arrows\"></span>([^<>\"]*?)</a>").getMatch(0);
         if (title != null) title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
         if (title == null) title = "UnknownTitle_" + System.currentTimeMillis();
         return title;

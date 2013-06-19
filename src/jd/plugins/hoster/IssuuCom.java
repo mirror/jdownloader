@@ -156,7 +156,7 @@ public class IssuuCom extends PluginForHost {
         requestFileInformation(link);
         login(account, true);
         final String token = br.getCookie(MAINPAGE, "site.model.token");
-        br.getPage("http://api.issuu.com/query?documentId=" + this.DOCUMENTID + "&username=" + "ultimaaaate" + "&token=" + Encoding.urlEncode(token) + "&action=issuu.document.download&format=json&jsonCallback=_jqjsp&_" + System.currentTimeMillis() + "=");
+        br.getPage("http://api.issuu.com/query?documentId=" + this.DOCUMENTID + "&username=" + Encoding.urlEncode(account.getUser()) + "&token=" + Encoding.urlEncode(token) + "&action=issuu.document.download&format=json&jsonCallback=_jqjsp&_" + System.currentTimeMillis() + "=");
         if (br.containsHTML("\"message\":\"Document access denied\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "This document is not downloadable");
         String dllink = br.getRegex("\"url\":\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {

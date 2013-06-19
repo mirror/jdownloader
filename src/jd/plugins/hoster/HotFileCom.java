@@ -65,6 +65,8 @@ public class HotFileCom extends PluginForHost {
 
     private static final String TRY_IWL_BYPASS  = "TRY_IWL_BYPASS";
     private static final String CAPTCHARETRIES  = "CAPTCHARETRIES";
+    private static final String SSL_CONNECTION  = "SSL_CONNECTION";
+    private boolean             PREFERSSL       = false;
 
     private boolean             directDownload  = false;
 
@@ -72,6 +74,71 @@ public class HotFileCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://hotfile.com/register.html?reff=274657");
         setConfigElements();
+    }
+
+    private void checkSsl() {
+        PREFERSSL = getPluginConfig().getBooleanProperty(SSL_CONNECTION, false);
+        if (oldStyle() == true) PREFERSSL = false;
+    }
+
+    private String fixLinkSSL(String link) {
+        checkSsl();
+        if (PREFERSSL) link = link.replace("http://", "https://");
+        return link;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
+        setBrowserExclusive();
+        br.setDebug(true);
+        /* workaround as server does not send correct encoding information */
+        br.setCustomCharset("UTF-8");
+        final String lastDl = parameter.getDownloadURL().replaceFirst("http://.*?/", "/");
+        br.setCookie("http://hotfile.com", "lastdl", Encoding.urlEncode(lastDl));
+        prepareBrowser(br);
+        br.setFollowRedirects(true);
+        // Differ between normal- and directlinks
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(fixLinkSSL(parameter.getDownloadURL()));
+            if (!con.getContentType().contains("html")) {
+                directDownload = true;
+                parameter.setDownloadSize(con.getLongContentLength());
+                parameter.setFinalFileName(getFileNameFromHeader(con));
+                return AvailableStatus.TRUE;
+            } else {
+                br.followConnection();
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+        br.setFollowRedirects(false);
+        final Browser cl = new Browser();
+        cl.setDebug(true);
+        cl.setCookie("http://hotfile.com", "lastdl", br.getCookie("http://hotfile.com", "lastdl"));
+        prepareBrowser(cl);
+        cl.getHeaders().put("Referer", "http://hotfile.com/styles/structure.css");
+        Browser.download(this.getLocalCaptchaFile(), cl.openGetConnection("http://hotfile.com/i/blank.gif"));
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
+        String filename = br.getRegex("Downloading <b>(.+?)</b>").getMatch(0);
+        if (filename == null) {
+            /* polish users get this */
+            filename = br.getRegex("Downloading:</strong>(.*?)<").getMatch(0);
+        }
+        String filesize = br.getRegex("<span class=\"size\">(.*?)</span>").getMatch(0);
+        if (filesize == null) {
+            /* polish users get this */
+            filesize = br.getRegex("Downloading:</strong>.*?span.*?strong>(.*?)<").getMatch(0);
+        }
+        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        parameter.setName(filename.trim());
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        return AvailableStatus.TRUE;
     }
 
     private HashMap<String, String> callAPI(final Browser brr, final String action, final Account account, final HashMap<String, String> addParams) throws Exception {
@@ -95,7 +162,7 @@ public class HotFileCom extends PluginForHost {
         if (addParams != null) {
             post.putAll(addParams);
         }
-        tbr.postPage("http://api.hotfile.com", post);
+        tbr.postPage(fixLinkSSL("http://api.hotfile.com"), post);
         final HashMap<String, String> ret = new HashMap<String, String>();
         ret.put("httpresponse", tbr.toString());
         final String vars[][] = tbr.getRegex("([^\r\n]*?)=([^\r\n]*?)(&|$)").getMatches();
@@ -275,7 +342,7 @@ public class HotFileCom extends PluginForHost {
             br.setFollowRedirects(true);
             try {
                 /* first retry with resume allowed */
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, getPluginConfig().getBooleanProperty(HotFileCom.UNLIMITEDMAXCON, false) == true ? 0 : -5);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, fixLinkSSL(link.getDownloadURL()), true, getPluginConfig().getBooleanProperty(HotFileCom.UNLIMITEDMAXCON, false) == true ? 0 : -5);
             } catch (final Throwable e) {
                 try {
                     dl.getConnection().disconnect();
@@ -284,7 +351,7 @@ public class HotFileCom extends PluginForHost {
                 /* then try with resume disallowed */
                 /* reset chunks */
                 link.setChunksProgress(null);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), false, 1);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, fixLinkSSL(link.getDownloadURL()), false, 1);
             }
         } else {
             /* fetch link from website */
@@ -338,7 +405,7 @@ public class HotFileCom extends PluginForHost {
 
                 break;
             }
-            String dl_url = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
+            String dl_url = br.getRegex("<h3 style=\\'margin\\-top: 20px\\'><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
             if (dl_url == null) {
                 dl_url = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
             }
@@ -471,14 +538,14 @@ public class HotFileCom extends PluginForHost {
             }
         }
         br.setFollowRedirects(true);
-        if ("http://hotfile.com/".equals(br.getURL())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().matches("https?://hotfile.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (finalUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         // Set the meximum connections per file
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, getPluginConfig().getBooleanProperty(HotFileCom.UNLIMITEDMAXCON, false) == true ? 0 : -5);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML(">There is a temporary problem with accessing this file\\. Our technical team is resolving the problem right now\\.<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000);
-            finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
+            finalUrl = br.getRegex("<h3 style=\\'margin\\-top: 20px\\'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
             if (finalUrl == null) {
                 finalUrl = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
             }
@@ -525,7 +592,7 @@ public class HotFileCom extends PluginForHost {
                     br.setCookie("http://hotfile.com/", key, value);
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://hotfile.com/");
+                br.getPage(fixLinkSSL("http://hotfile.com/"));
                 br.setFollowRedirects(false);
                 String isPremium = br.getRegex("Account:.*?label.*?centerSide[^/]*?>(Premium)<").getMatch(0);
                 if (isPremium == null) isPremium = br.getRegex("centerSide\"><p><span>(Premium)</span>").getMatch(0);
@@ -536,8 +603,8 @@ public class HotFileCom extends PluginForHost {
             } else {
                 /* normal login */
                 br.setFollowRedirects(true);
-                br.getPage("http://hotfile.com/");
-                br.postPage("http://hotfile.com/login.php", "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                br.getPage(fixLinkSSL("http://hotfile.com/"));
+                br.postPage(fixLinkSSL("http://hotfile.com/login.php"), "returnto=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 final Form form = br.getForm(0);
                 if (form != null && form.containsHTML("<td>Username:")) {
                     account.setProperty("cookies", null);
@@ -575,60 +642,6 @@ public class HotFileCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
-        setBrowserExclusive();
-        br.setDebug(true);
-        /* workaround as server does not send correct encoding information */
-        br.setCustomCharset("UTF-8");
-        final String lastDl = parameter.getDownloadURL().replaceFirst("http://.*?/", "/");
-        br.setCookie("http://hotfile.com", "lastdl", Encoding.urlEncode(lastDl));
-        prepareBrowser(br);
-        br.setFollowRedirects(true);
-        // Differ between normal- and directlinks
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(parameter.getDownloadURL());
-            if (!con.getContentType().contains("html")) {
-                directDownload = true;
-                parameter.setDownloadSize(con.getLongContentLength());
-                parameter.setFinalFileName(getFileNameFromHeader(con));
-                return AvailableStatus.TRUE;
-            } else {
-                br.followConnection();
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
-        br.setFollowRedirects(false);
-        final Browser cl = new Browser();
-        cl.setDebug(true);
-        cl.setCookie("http://hotfile.com", "lastdl", br.getCookie("http://hotfile.com", "lastdl"));
-        prepareBrowser(cl);
-        cl.getHeaders().put("Referer", "http://hotfile.com/styles/structure.css");
-        Browser.download(this.getLocalCaptchaFile(), cl.openGetConnection("http://hotfile.com/i/blank.gif"));
-        if (br.getRedirectLocation() != null) {
-            br.getPage(br.getRedirectLocation());
-        }
-        String filename = br.getRegex("Downloading <b>(.+?)</b>").getMatch(0);
-        if (filename == null) {
-            /* polish users get this */
-            filename = br.getRegex("Downloading:</strong>(.*?)<").getMatch(0);
-        }
-        String filesize = br.getRegex("<span class=\"size\">(.*?)</span>").getMatch(0);
-        if (filesize == null) {
-            /* polish users get this */
-            filesize = br.getRegex("Downloading:</strong>.*?span.*?strong>(.*?)<").getMatch(0);
-        }
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        parameter.setName(filename.trim());
-        parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
     public void reset() {
     }
 
@@ -644,6 +657,7 @@ public class HotFileCom extends PluginForHost {
 
         cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HotFileCom.UNLIMITEDMAXCON, JDL.L("plugins.hoster.HotFileCom.SetUnlimitedConnectionsForPremium", "Allow more than 5 connections per file for premium (default maximum = 5). Enabling this can cause errors!!")).setDefaultValue(false);
         getConfig().addEntry(cond);
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.HotFileCom.com.preferSSL", "Use Secure Communication over SSL")).setDefaultValue(false));
     }
 
     private String getIP() {
@@ -667,6 +681,20 @@ public class HotFileCom extends PluginForHost {
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         br.submitForm(form);
+    }
+
+    private boolean oldStyle() {
+        String style = System.getProperty("ftpStyle", null);
+        if ("new".equalsIgnoreCase(style)) return false;
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        int rev = Integer.parseInt(prev);
+        if (rev < 10000) return true;
+        return false;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

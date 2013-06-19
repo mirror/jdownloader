@@ -65,6 +65,7 @@ public class ZdfDeMediathek extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (link.getStringProperty("directURL", null) == null) {
+            if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             /* fetch fresh directURL */
             this.setBrowserExclusive();
             br.setFollowRedirects(true);

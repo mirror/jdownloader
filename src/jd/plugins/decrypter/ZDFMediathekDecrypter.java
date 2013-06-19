@@ -60,8 +60,12 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        // Check...if offline, add to llinkgrabber so user can see it
         if (br.containsHTML("Der Beitrag konnte nicht gefunden werden")) {
-            logger.info("This link might be offline: " + parameter);
+            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=high");
+            link.setAvailable(false);
+            link.setProperty("offline", true);
+            decryptedLinks.add(link);
             return decryptedLinks;
         }
 
