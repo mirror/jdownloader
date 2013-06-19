@@ -1,6 +1,5 @@
 package jd.gui.swing.jdgui.views.settings.panels.pluginsettings;
 
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,16 +9,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import javax.swing.DefaultListModel;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.ListCellRenderer;
-import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
@@ -29,7 +22,10 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
+import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.SwingUtils;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.extensions.Header;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -44,13 +40,15 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     /**
      * 
      */
-    private static final long   serialVersionUID = 1L;
-    private JList               selector;
-    private ImageIcon           decryterIcon;
-    private MigPanel            card;
-    protected PluginConfigPanel configPanel;
-    protected List<Pattern>     filter;
-    private Header              rightHeader;
+    private static final long             serialVersionUID = 1L;
+
+    private ImageIcon                     decryterIcon;
+    private MigPanel                      card;
+    protected PluginConfigPanel           configPanel;
+    protected List<Pattern>               filter;
+    private Header                        header;
+
+    private SearchComboBox<LazyPlugin<?>> searchCombobox;
 
     public void addStateUpdateListener(StateUpdateListener listener) {
         throw new IllegalStateException("Not implemented");
@@ -62,92 +60,40 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     }
 
     public PluginSettingsPanel() {
-        super(new MigLayout("ins 0,wrap 2", "[150!]10[grow,fill]", "[grow,fill][26!,grow,fill]"));
+        super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill]"));
         decryterIcon = NewTheme.I().getIcon("linkgrabber", 16);
+        searchCombobox = new SearchComboBox<LazyPlugin<?>>(null) {
 
-        selector = new JList() {
-            private Dimension dim;
-            {
-                dim = new Dimension(150, 20000);
+            @Override
+            protected Icon getIconForValue(LazyPlugin<?> value) {
+                if (value == null) return null;
+                return DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
             }
 
-            public Dimension getPreferredScrollableViewportSize() {
+            @Override
+            public void onChanged() {
+                super.onChanged();
 
-                return dim;
             }
 
+            @Override
+            protected String getTextForValue(LazyPlugin<?> value) {
+                if (value == null) return "";
+                return value.getDisplayName();
+            }
         };
-
-        // selector.setLayoutOrientation(JList.HORIZONTAL_WRAP);
-        final ListCellRenderer org = selector.getCellRenderer();
-        selector.setCellRenderer(new ListCellRenderer() {
-
-            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                LazyPlugin<?> plg = (LazyPlugin<?>) value;
-
-                if (plg instanceof LazyHostPlugin) {
-                    JLabel ret = (JLabel) org.getListCellRendererComponent(list, plg.getDisplayName(), index, isSelected, cellHasFocus);
-                    ImageIcon ic = ((LazyHostPlugin) plg).getIcon();
-                    ret.setIcon(ic);
-                    return ret;
-                } else {
-                    JLabel ret = (JLabel) org.getListCellRendererComponent(list, _GUI._.PluginSettingsPanel_getListCellRendererComponent_crawler_(plg.getDisplayName()), index, isSelected, cellHasFocus);
-                    ret.setIcon(decryterIcon);
-                    return ret;
-                }
-
-            }
-        });
-        selector.setFixedCellHeight(24);
-
-        selector.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        searchCombobox.setActualMaximumRowCount(20);
+        searchCombobox.addActionListener(this);
         setOpaque(false);
-
-        final MigPanel left = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill]");
-        left.setOpaque(false);
-        left.setBackground(null);
-        JScrollPane sp;
-        left.add(sp = new JScrollPane(selector), "pushy,growy");
-        final SearchField search = new SearchField() {
-
-            protected void updaterFilter() {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        filter = getFilterPatterns();
-                        System.out.println(getFilterPatterns());
-                        fill();
-                        if (selector.getModel().getSize() > 0) {
-                            selector.setSelectedIndex(0);
-
-                        }
-                    }
-                };
-
-            }
-        };
 
         // left.setBorder(new JTextField().getBorder());
         // selector.setPreferredSize(new Dimension(200, 20000));
         // sp.setBorder(null);
 
-        final MigPanel right = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]");
-        right.setOpaque(false);
-        right.setBackground(null);
-        this.card = new MigPanel("ins 0", "[grow,fill]", "[grow,fill]");
-        right.add(rightHeader = new Header("", null));
-
-        right.add(card, "gapleft 26");
+        this.card = new MigPanel("ins 3", "[grow,fill]", "[grow,fill]");
+        header = new Header("", null);
 
         card.setOpaque(false);
-        selector.addListSelectionListener(new ListSelectionListener() {
-
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                actionPerformed(null);
-            }
-        });
 
         if (CrawlerPluginController.list(false) == null) {
             MigPanel loaderPanel = new MigPanel("ins 0,wrap 1", "[grow]", "50[][]");
@@ -182,23 +128,24 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     @Override
                     protected void runInEDT() {
                         removeAll();
-                        add(left);
-                        add(right, "growx,pushx");
-                        add(search, "spanx,pushx,growx");
+                        add(SwingUtils.toBold(new JLabel(_GUI._.PluginSettingsPanel_runInEDT_choose_())), "split 2,shrinkx");
+                        add(searchCombobox, "pushx,growx");
+                        add(header, "growx,pushx,gaptop 10");
+                        add(card, "spanx,pushx,growx");
 
-                        if (selector.getModel().getSize() > 0) {
+                        if (searchCombobox.getModel().getSize() > 0) {
                             String active = JsonConfig.create(GraphicalUserInterfaceSettings.class).getActivePluginConfigPanel();
                             int selectIndex = 0;
                             if (active != null) {
-                                for (int i = 0; i < selector.getModel().getSize(); i++) {
-                                    if (((LazyPlugin<?>) selector.getModel().getElementAt(i)).getClassname().equals(active)) {
+                                for (int i = 0; i < searchCombobox.getModel().getSize(); i++) {
+                                    if (((LazyPlugin<?>) searchCombobox.getModel().getElementAt(i)).getClassname().equals(active)) {
                                         selectIndex = i;
                                         break;
                                     }
                                 }
 
                             }
-                            selector.setSelectedIndex(selectIndex);
+                            searchCombobox.setSelectedIndex(selectIndex);
                             // show((LazyPlugin<?>) selector.getModel().getElementAt(selectIndex));
                         }
                     }
@@ -210,60 +157,27 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     }
 
     private void fill() {
-        // java.util.List<LazyPlugin<?>> list = new ArrayList<LazyPlugin<?>>();
-        DefaultListModel<LazyPlugin<?>> list = new DefaultListModel<LazyPlugin<?>>();
 
-        fillModel(list, true);
-        if (list.size() == 0) {
-            fillModel(list, false);
-        }
-        selector.setModel(list);
+        searchCombobox.setList(fillModel());
 
     }
 
-    public boolean fillModel(DefaultListModel<LazyPlugin<?>> list, boolean doFilter) {
-        boolean unfiltered = true;
+    public List<LazyPlugin<?>> fillModel() {
+
         ArrayList<LazyPlugin<?>> lst = new ArrayList<LazyPlugin<?>>();
+
         for (LazyHostPlugin plg : HostPluginController.getInstance().list()) {
             if (plg.isHasConfig()) {
-                boolean match = false;
-                if (filter != null && doFilter) {
 
-                    for (Pattern p : filter) {
-                        if (p.matcher(plg.getDisplayName()).find()) {
-                            match = true;
-                            break;
-                        }
-                    }
-                } else {
-                    match = true;
-                }
-                if (match) {
-                    lst.add(plg);
-                } else {
-                    unfiltered = false;
-                }
+                lst.add(plg);
+
             }
         }
         for (LazyCrawlerPlugin plg : CrawlerPluginController.getInstance().list()) {
             if (plg.isHasConfig()) {
-                boolean match = false;
-                if (filter != null && doFilter) {
 
-                    for (Pattern p : filter) {
-                        if (p.matcher(plg.getDisplayName()).find()) {
-                            match = true;
-                            break;
-                        }
-                    }
-                } else {
-                    match = true;
-                }
-                if (match) {
-                    lst.add(plg);
-                } else {
-                    unfiltered = false;
-                }
+                lst.add(plg);
+
             }
         }
         Collections.sort(lst, new Comparator<LazyPlugin<?>>() {
@@ -273,9 +187,8 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                 return o1.getDisplayName().compareToIgnoreCase(o2.getDisplayName());
             }
         });
-        for (LazyPlugin<?> lp : lst)
-            list.addElement(lp);
-        return unfiltered;
+
+        return lst;
     }
 
     public String getConstraints() {
@@ -287,7 +200,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     }
 
     public void actionPerformed(ActionEvent e) {
-        LazyPlugin<?> selected = (LazyPlugin<?>) selector.getSelectedValue();
+        LazyPlugin<?> selected = (LazyPlugin<?>) searchCombobox.getSelectedItem();
 
         if (selected != null) {
             JsonConfig.create(GraphicalUserInterfaceSettings.class).setActivePluginConfigPanel(selected.getClassname());
@@ -313,15 +226,15 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     if (selectedItem != null) {
 
                         if (selectedItem instanceof LazyHostPlugin) {
-                            rightHeader.setText(_GUI._.PluginSettingsPanel_runInEDT_plugin_header_text_host(selectedItem.getDisplayName()));
-                            rightHeader.setIcon(((LazyHostPlugin) selectedItem).getIcon());
+                            header.setText(_GUI._.PluginSettingsPanel_runInEDT_plugin_header_text_host(selectedItem.getDisplayName()));
+                            header.setIcon(((LazyHostPlugin) selectedItem).getIcon());
                         } else {
-                            rightHeader.setText(_GUI._.PluginSettingsPanel_runInEDT_plugin_header_text_decrypt(selectedItem.getDisplayName()));
-                            rightHeader.setIcon(decryterIcon);
+                            header.setText(_GUI._.PluginSettingsPanel_runInEDT_plugin_header_text_decrypt(selectedItem.getDisplayName()));
+                            header.setIcon(decryterIcon);
                         }
-                        rightHeader.setVisible(true);
+                        header.setVisible(true);
                     } else {
-                        rightHeader.setVisible(false);
+                        header.setVisible(false);
                     }
                 }
                 revalidate();

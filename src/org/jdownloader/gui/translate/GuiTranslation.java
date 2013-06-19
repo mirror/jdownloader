@@ -2624,4 +2624,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter a comment. This comment will be stored in every package and downloadlink." })
     String AddLinksDialog_layoutDialogContent_comment_tt();
 
+    @Default(lngs = { "en" }, values = { "Please choose a plugin: " })
+    String PluginSettingsPanel_runInEDT_choose_();
+
 }
