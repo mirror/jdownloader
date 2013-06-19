@@ -460,4 +460,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Skipped - Account is missing" })
     String DownloadLink_setSkipped_statusmessage_account();
 
+    @Default(lngs = { "en" }, values = { "Skipped - File already exists" })
+    String downloadlink_status_error_invalid_disk_full();
+
 }

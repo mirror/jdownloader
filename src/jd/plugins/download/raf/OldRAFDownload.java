@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -56,8 +57,10 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
@@ -394,8 +397,8 @@ public class OldRAFDownload extends DownloadInterface {
         if (doFilesizeCheck() && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != getFileSize() && getFileSize() > 0)) {
             if (totalLinkBytesLoaded > getFileSize()) {
                 /*
-                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in most cases the file
-                 * is okay! WONTFIX because new downloadsystem is on its way
+                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
+                 * most cases the file is okay! WONTFIX because new downloadsystem is on its way
                  */
                 logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
                 if (!linkStatus.isFailed()) {
@@ -457,7 +460,8 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des links an
+     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des
+     * links an
      */
     protected void onChunkFinished() {
         synchronized (this) {
@@ -561,6 +565,42 @@ public class OldRAFDownload extends DownloadInterface {
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
+            File fileOutput = new File(downloadLink.getFileOutput());
+            synchronized (DownloadWatchDog.getInstance()) {
+                // workaround: check if there are already downloads running
+                boolean fileConflict = false;
+                for (DownloadLink dl : DownloadWatchDog.getInstance().getRunningDownloadLinks()) {
+                    System.out.println("Running: " + dl.getUniqueID() + " " + dl.getFileOutput());
+                    if (dl != downloadLink) {
+                        if (CrossSystem.isWindows()) {
+                            if (dl.getFileOutput().toLowerCase(Locale.ENGLISH).equals(fileOutput.getAbsolutePath().toLowerCase(Locale.ENGLISH))) {
+                                fileConflict = true;
+                            }
+                        } else {
+                            if (dl.getFileOutput().equals(fileOutput.getAbsolutePath())) {
+                                fileConflict = true;
+                            }
+                        }
+                    }
+
+                }
+                if (fileConflict) { throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, _JDT._.downloadlink_status_error_file_exists()); }
+            }
+
+            // more or less a workaround to avoid that files get overwritten
+            if (fileOutput.exists()) {
+                // TODO: handle all options!?
+                if (JsonConfig.create(GeneralSettings.class).getIfFileExistsAction() == IfFileExistsAction.OVERWRITE_FILE) {
+                    if (!new File(downloadLink.getFileOutput()).delete()) { throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.system_download_errors_couldnotoverwrite());
+
+                    }
+                } else {
+
+                    throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, _JDT._.downloadlink_status_error_file_exists());
+
+                }
+            }
+
             if (connection.getHeaderField("Location") != null) {
                 error(LinkStatus.ERROR_PLUGIN_DEFECT, "Sent a redirect to Downloadinterface");
                 return false;
@@ -582,7 +622,11 @@ public class OldRAFDownload extends DownloadInterface {
             waitForChunks();
             onChunksReady();
             return handleErrors();
+        } catch (PluginException e) {
+            error(e.getLinkStatus(), e.getErrorMessage());
+            return false;
         } catch (Exception e) {
+
             if (e instanceof FileNotFoundException) {
                 this.error(LinkStatus.ERROR_LOCAL_IO, _JDT._.download_error_message_localio(e.getMessage()));
             } else {
@@ -758,7 +802,8 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
+     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl
+     * schlaegt.,
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;

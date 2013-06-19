@@ -12,7 +12,6 @@ import javax.swing.JSeparator;
 import jd.SecondLevelLaunch;
 import jd.gui.swing.laf.LookAndFeelController;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.utils.Application;
@@ -22,6 +21,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.IfFileExistsAction;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
 public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> implements IfFileExistsDialogInterface {
@@ -44,27 +44,28 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     private String       packageID;
 
     public IfFileExistsDialog(String filepath, String packagename, String packageID) {
-        super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
+        super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_COUNTDOWN, _JDT._.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
         //
         this.packagename = packagename;
         this.packageID = packageID;
         this.path = filepath;
+        setCountdownTime(60);
+
     }
 
     @Override
     public String getDontShowAgainKey() {
-        return "IfFileExistsDialog_" + packageID;
+        // returning null causes the dialog to show a checkbox, but the dialog itself does not handle the results
+        return null;
     }
 
     @Override
     protected IfFileExistsAction createReturnValue() {
-        boolean t = this.isHiddenByDontShowAgain();
-        if (t) {
-            result = JSonStorage.getPlainStorage("IfFileExistsOptions").get(getDontShowAgainKey(), IfFileExistsAction.SKIP_FILE);
-        } else if (result != null) {
-            org.jdownloader.settings.staticreferences.CFG_GUI.CFG.setLastIfFileExists(result);
-            JSonStorage.getPlainStorage("IfFileExistsOptions").put(getDontShowAgainKey(), result);
+        if (isDontShowAgainSelected()) {
+            if (result != null) CFG_GENERAL.IF_FILE_EXISTS_ACTION.setValue(result);
         }
+
+        if (result != null) org.jdownloader.settings.staticreferences.CFG_GUI.CFG.setLastIfFileExists(result);
         return result;
     }
 

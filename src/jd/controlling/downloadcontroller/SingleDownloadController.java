@@ -52,6 +52,7 @@ import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
@@ -452,19 +453,23 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     private void onErrorFileExists() {
-        IfFileExistsAction doAction = JsonConfig.create(GeneralSettings.class).getIfFileExistsAction();
-        switch (doAction) {
-        case ASK_FOR_EACH_FILE:
-            IfFileExistsDialog d = new IfFileExistsDialog(downloadLink.getFileOutput(), downloadLink.getFilePackage().getName(), downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated());
-            doAction = UIOManager.I().show(IfFileExistsDialogInterface.class, d).getAction();
-
-            if (d.getCloseReason() != CloseReason.OK) {
-                doAction = IfFileExistsAction.SKIP_FILE;
-            }
-            break;
-        }
+        /* we synchronize here to avoid ugly concurrency issues */
         synchronized (DUPELOCK) {
-            /* we synchronize here to avoid ugly concurrency issues */
+            IfFileExistsAction doAction = JsonConfig.create(GeneralSettings.class).getIfFileExistsAction();
+            switch (doAction) {
+            case ASK_FOR_EACH_FILE:
+                IfFileExistsDialog d = new IfFileExistsDialog(downloadLink.getFileOutput(), downloadLink.getFilePackage().getName(), downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated());
+                doAction = UIOManager.I().show(IfFileExistsDialogInterface.class, d).getAction();
+                if (d.getCloseReason() == CloseReason.TIMEOUT) {
+                    downloadLink.setSkipReason(SkipReason.FILE_EXISTS);
+                    return;
+                }
+                if (d.getCloseReason() != CloseReason.OK) {
+                    doAction = IfFileExistsAction.SKIP_FILE;
+                }
+                break;
+            }
+
             switch (doAction) {
             case SKIP_FILE:
                 linkStatus.setErrorMessage(_JDT._.controller_status_fileexists_skip());
