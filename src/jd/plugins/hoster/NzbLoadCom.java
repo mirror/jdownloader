@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -57,6 +57,25 @@ public class NzbLoadCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("nzbloaddecrypted.com/", "nzbload.com/"));
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            // Free Accounts not currently supported within this plugin.
+            return true;
+        }
+        return false;
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return false;
+    }
+
     private static final String MAINPAGE = "http://nzbload.com";
     private static Object       LOCK     = new Object();
 
@@ -94,31 +113,32 @@ public class NzbLoadCom extends PluginForHost {
 
         sleep(Long.parseLong(sleep) * 1000 + 500, downloadLink);
 
-        String sessionSecret = areYouAHuman();
-        String rcID = br.getRegex("challenge\\?k=([^\"]+)\"").getMatch(0);
-        if (rcID == null) rcID = br.getRegex("Recaptcha\\.create\\(\"([^\"]+)\"").getMatch(0);
-        if (rcID == null || sessionSecret == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        rc.setId(rcID);
-        rc.load();
         for (int i = 0; i <= 5; i++) {
+            String sessionSecret = areYouAHuman();
+            String rcID = br.getRegex("challenge\\?k=([^\"]+)\"").getMatch(0);
+            if (rcID == null) rcID = br.getRegex("Recaptcha\\.create\\(\"([^\"]+)\"").getMatch(0);
+            if (rcID == null || sessionSecret == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
             br.postPage("https://ws.areyouahuman.com/ayahwebservices/index.php/ayahwebservice/recordAccessibilityString", "session_secret=" + sessionSecret + "&challenge=" + rc.getChallenge() + "&response=" + c + "&ordinal=" + (c.length() - 1));
             br.postPage("http://www.nzbload.com/action/download.json?act=verify_captcha&t=" + System.currentTimeMillis(), "session_secret=" + sessionSecret);
-            if (br.containsHTML("\"success\":true")) { // ob true oder false, in jedem Falle gehts hier trotzdem weiter :-) 20130408
-                rc.reload();
+            if (!br.containsHTML("\"captcha_ok\":true")) { // 20130619
+                // seems after one failure you can not guess again with the same areyouhuman session!
+                // rc.reload();
                 continue;
             }
             break;
         }
-        if (br.containsHTML("\"success\":true")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (!br.containsHTML("\"captcha_ok\":true")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.getPage("http://www.nzbload.com/data/download.json?overwrite=get_url&t=" + System.currentTimeMillis() + "&sub=" + params.getMatch(1) + "&params[0]=" + params.getMatch(2) + "&params[1]=" + hash + "&params[2]=" + expiry + "&params[3]=" + downloadLink.getName());
         if (br.containsHTML("Free users can download 1 file at the same time")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
         if (br.containsHTML("\"Free users can download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         if (br.containsHTML("\"Your session is invalid: retry again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (server says 'invalid session')", 60 * 60 * 1000l);
+        if (br.containsHTML("All free-user download slots are currently in use")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free user download slots available.", 10 * 60 * 1000l);
         String dllink = get("url");
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replace("\\", "");
@@ -248,19 +268,6 @@ public class NzbLoadCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
     }
 
 }

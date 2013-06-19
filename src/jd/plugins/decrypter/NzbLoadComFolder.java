@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -60,6 +61,10 @@ public class NzbLoadComFolder extends PluginForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
+        FilePackage fp = FilePackage.getInstance();
+        fp.setName(fid);
+        fp.addLinks(decryptedLinks);
+
         return decryptedLinks;
     }
 
