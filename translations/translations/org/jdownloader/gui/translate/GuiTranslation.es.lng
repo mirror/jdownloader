@@ -459,6 +459,7 @@ ParalellDownloadsEditor_ParallelDownloadsPerHostEditor_=Máximas descargas simul
 Permanently_Offline_Package=Fuera de línea permanentemente
 PluginSettingsPanel_PluginSettingsPanel_waittext_=Por favor espere. Cargando los plugins...
 PluginSettingsPanel_getListCellRendererComponent_crawler_=%s1 Buscado
+PluginSettingsPanel_runInEDT_choose_=Por favor seleccione un plugin:
 PluginSettingsPanel_runInEDT_plugin_header_text_decrypt=Plugin Buscador: %s1
 PluginSettingsPanel_runInEDT_plugin_header_text_host=Plugin del servidor: %s1
 PremiumAccountTableModel_getDateFormatString_=dd.MM.aa
