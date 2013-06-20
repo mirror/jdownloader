@@ -22,6 +22,7 @@ import java.awt.Frame;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.KeyEventPostProcessor;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
@@ -93,7 +94,9 @@ import org.appwork.utils.swing.dialog.DialogHandler;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.TimerDialog;
 import org.appwork.utils.swing.dialog.TimerDialog.InternDialog;
+import org.appwork.utils.swing.dialog.locator.DialogLocator;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
+import org.appwork.utils.swing.locator.AbstractLocator;
 import org.jdownloader.gui.GuiUtils;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.jdtrayicon.TrayExtension;
@@ -166,8 +169,9 @@ public class JDGui extends SwingGui {
         super("JDownloader");
         // Important for unittests
         this.mainFrame.setName("MAINFRAME");
+        RememberRelativeDialogLocator locator;
         // set a default locator to remmber dialogs position
-        AbstractDialog.setDefaultLocator(new RememberRelativeDialogLocator(null, mainFrame) {
+        AbstractDialog.setDefaultLocator(locator = new RememberRelativeDialogLocator(null, mainFrame) {
 
             @Override
             protected String getID(Window frame) {
@@ -189,6 +193,29 @@ public class JDGui extends SwingGui {
             }
 
         });
+        locator.setFallbackLocator(new DialogLocator() {
+
+            @Override
+            public Point getLocationOnScreen(AbstractDialog<?> abstractDialog) {
+
+                GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+                Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.getDefaultConfiguration());
+                final Rectangle bounds = gd.getDefaultConfiguration().getBounds();
+                bounds.y += insets.top;
+                bounds.x += insets.left;
+                bounds.width -= insets.left + insets.right;
+                bounds.height -= insets.top + insets.bottom;
+
+                Point ret = AbstractLocator.validate(new Point(bounds.width - abstractDialog.getDialog().getSize().width, bounds.height - abstractDialog.getDialog().getSize().height), abstractDialog.getDialog());
+                return ret;
+            }
+
+            @Override
+            public void onClose(AbstractDialog<?> abstractDialog) {
+            }
+
+        });
+
         logger = LogController.getInstance().getLogger("Gui");
         this.setWindowTitle("JDownloader");
         this.initDefaults();
@@ -1199,8 +1226,8 @@ public class JDGui extends SwingGui {
     private Thread trayIconChecker;
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
-     * changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
+     * avoid sideeffects when changing anything
      * 
      * @param minimize
      */

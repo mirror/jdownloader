@@ -196,7 +196,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
         ExtButton reset = new ExtButton(new AppAction() {
             {
                 setTooltipText(_GUI._.ManagerFrame_layoutPanel_resettodefault());
-                setSmallIcon(NewTheme.I().getIcon("reset", 20));
+                setSmallIcon(NewTheme.I().getIcon("undo", 20));
 
             }
 

@@ -141,7 +141,7 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
 
     @Override
     public String getResult() {
-        return textField.getText();
+        return textField == null ? null : textField.getText();
     }
 
     @Override

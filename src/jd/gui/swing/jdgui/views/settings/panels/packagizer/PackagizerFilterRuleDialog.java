@@ -556,7 +556,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         link(cbEnable, lblEnable, cobEnable);
 
         /* THEN DO */
-        ret.add(createHeader(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_do()), "gaptop 10, spanx,growx,pushx");
+        ret.add(createHeader(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_do2()), "gaptop 10, spanx,growx,pushx");
 
         lblMove = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_move());
         fpMove = new PathChooser("PackagizerMove", true) {

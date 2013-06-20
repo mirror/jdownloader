@@ -1031,8 +1031,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "... then set (before downloading)" })
     String PackagizerFilterRuleDialog_layoutDialogContent_then();
 
-    @Default(lngs = { "en" }, values = { "... then do (after extraction/merging)" })
-    String PackagizerFilterRuleDialog_layoutDialogContent_do();
+    @Default(lngs = { "en" }, values = { "... then do ( these actions only apply to extracted files" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_do2();
 
     @Default(lngs = { "en" }, values = { "Date or Time" })
     String PackagizerFilterRuleDialog_createVariablesMenu_date();

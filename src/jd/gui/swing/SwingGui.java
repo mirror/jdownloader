@@ -150,6 +150,7 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
                             if (!internPw.equals(password)) {
 
                                 Dialog.getInstance().showMessageDialog(_GUI._.SwingGui_setVisible_password_wrong());
+
                                 return;
                             }
                         } catch (DialogNoAnswerException e) {
