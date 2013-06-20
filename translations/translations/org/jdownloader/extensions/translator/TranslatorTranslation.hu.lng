@@ -1,0 +1,6 @@
+Translator=Fordító
+TranslatorExtensionGuiToggleAction_deselected=Fordító megnyitása
+TranslatorExtensionGuiToggleAction_deselected_tt=Fordító fül megnyitása
+TranslatorExtensionGuiToggleAction_selected=Fordító bezárása
+TranslatorExtensionGuiToggleAction_selected_tt=A fordító fül bezárása
+description=Ezzel a kiterjesztéssel lehet szerkeszteni JDownloader fordításokat. Használatához szükség van egy fejlesztői kódra.

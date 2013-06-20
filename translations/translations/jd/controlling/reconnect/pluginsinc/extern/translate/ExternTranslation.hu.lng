@@ -1,3 +1,4 @@
 interaction_externreconnect_command=Parancs (abszolút útvonal használata)
 interaction_externreconnect_dummybat=A Windowshoz speciális futtatási lehetőséget használjon
 interaction_externreconnect_parameter=Paraméter (1 paraméter soronként)
+jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Külső eszköz újracsatlakozása

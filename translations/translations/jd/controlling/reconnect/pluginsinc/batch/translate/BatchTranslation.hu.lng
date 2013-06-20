@@ -1,3 +1,4 @@
 interaction_batchreconnect_batch=Adat újracsatlakozás
 interaction_batchreconnect_executein=Indítás (program mappája)
 interaction_batchreconnect_terminal=Tolmács
+jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName=Külső csomópont újracsatlakozása

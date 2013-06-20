@@ -24,3 +24,5 @@ jd_plugins_optional_jdshutdown=JD Leállító
 jd_plugins_optional_jdshutdown_description=Automatikusan lekapcsolhatja, felfüggesztheti, hibernálhatja a számítógépet, vagy bezárhatja  a JDownloadert, ha a letöltések elkészültek.
 lit_shutdownn=Leállítás
 show_admin=Adminisztrátor jogosultság szükséges ahhoz, hogy a JDownloader a hibernált vagy készenléti üzemmódba tudja kapcsolni a számítógépet.
+shutdown_toggle_action_disabled=Leállítás engedélyezése a letöltések befejezése után
+shutdown_toggle_action_enabled=Leállítás tiltása a letöltések befejezése után

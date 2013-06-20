@@ -1,0 +1,4 @@
+jd_plugins_optional_interfaces_jdflashgot_security_btn_allow=Nem megengedett!
+jd_plugins_optional_interfaces_jdflashgot_security_btn_deny=Hozzáférés megtagadva!
+jd_plugins_optional_interfaces_jdflashgot_security_message=Egy külső alkalmazás megpróbál linkeket hozzáadni
+jd_plugins_optional_interfaces_jdflashgot_security_title=Külső kérésre %s1!

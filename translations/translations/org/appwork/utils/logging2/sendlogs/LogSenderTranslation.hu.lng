@@ -1,0 +1,10 @@
+LogAction_actionPerformed_wait_=Kérem várjon...
+LogAction_actionPerformed_zip_title_=Bejelentkezési csomag létrehozása
+LogAction_getString_uploading_=Naplók előkészítése
+LogModel_getStringValue_between_=Közben %s1 és %s2
+LogModel_initColumns_time_=Idő
+LogModel_initColumns_x_=Ellenőrzés
+LogTable_onContextMenu_disable_=Kijelölés megszüntetése
+LogTable_onContextMenu_enable_=Kijelöl
+SendLogDialog_SendLogDialog_title_=Hibajelentés küldése
+SendLogDialog_layoutDialogContent_desc_=Mit tegyen probléma esetén? Kérjük ellenőrizze a beírt adatokat. Lehet, hogy érdemes!
