@@ -256,10 +256,8 @@ public class MegaConz extends PluginForHost {
             String path2 = path.substring(0, path.length() - encrypted.length());
             if (useTMP()) {
                 tmp = new File(path2 + ".decrypted");
-                dst = new File(path2);
-            } else {
-                dst = new File(path2);
             }
+            dst = new File(path2);
         } else {
             src = new File(path);
             tmp = new File(path + ".decrypted");
