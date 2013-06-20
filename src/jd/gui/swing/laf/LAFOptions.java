@@ -42,11 +42,16 @@ public class LAFOptions implements Storable {
         this.popupBorderInsets = popupBorderInsets;
     }
 
-    private int[] popupBorderInsets      = new int[] { 0, 0, 0, 0 };
-    private int   errorForeground        = 16711680;
-    private int   tooltipForegroundColor = 0xcccccc;
-    private int   highlightColor1        = Color.ORANGE.getRGB();
-    private int   highlightColor2        = Color.GREEN.getRGB();
+    private int[]  popupBorderInsets          = new int[] { 0, 0, 0, 0 };
+    private int    errorForeground            = 16711680;
+    private int    tooltipForegroundColor     = 0xcccccc;
+    private int    highlightColor1            = Color.ORANGE.getRGB();
+    private int    highlightColor2            = Color.GREEN.getRGB();
+    private String menuBackgroundPainterClass = "de.javasoft.plaf.synthetica.simple2D.MenuPainter";
+
+    public void setMenuBackgroundPainterClass(String menuBackgroundPainterClass) {
+        this.menuBackgroundPainterClass = menuBackgroundPainterClass;
+    }
 
     public int getHighlightColor2() {
         return highlightColor2;
@@ -136,5 +141,9 @@ public class LAFOptions implements Storable {
             lbl.setForeground(new Color(c));
 
         }
+    }
+
+    public String getMenuBackgroundPainterClass() {
+        return menuBackgroundPainterClass;
     }
 }

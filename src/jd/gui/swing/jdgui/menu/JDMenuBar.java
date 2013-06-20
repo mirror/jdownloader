@@ -1,22 +1,21 @@
 package jd.gui.swing.jdgui.menu;
 
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.AbstractButton;
-import javax.swing.JCheckBoxMenuItem;
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 
 import jd.SecondLevelLaunch;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
@@ -26,6 +25,7 @@ import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.mainmenu.MainMenuManager;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 
 public class JDMenuBar extends JMenuBar implements MouseListener {
     private static final JDMenuBar INSTANCE = new JDMenuBar();
@@ -40,6 +40,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
     }
 
     private static final long serialVersionUID = 6758718947311901334L;
+    private LogSource         logger;
 
     /**
      * Create a new instance of JDMenuBar. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
@@ -68,6 +69,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
         });
 
         this.addMouseListener(this);
+        logger = LogController.getInstance().getLogger(JDMenuBar.class.getName());
 
     }
 
@@ -105,6 +107,10 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                         applyMnemonic(root, (AbstractButton) comp);
                     }
                 } else {
+
+                    // WAHHHHHH this is an ugly gui hack!
+                    // this peace of code loads the synthetica MenuPainter given in the LAFOptions and paints a JMenu Mouseover Background
+                    // to a JButton or a jToggleBUtton
                     AppAction action = inst.createAction(selection);
 
                     if (StringUtils.isNotEmpty(inst.getShortcut())) {
@@ -115,21 +121,51 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                      * JMenuBar uses Boxlayout. BoxLayout always tries to strech the components to their Maximum Width. Fixes
                      * http://svn.jdownloader.org/issues/8509
                      */
-                    JMenuItem ret = action.isToggle() ? new JCheckBoxMenuItem(action) {
-                        public Dimension getMaximumSize() {
-                            Dimension ret = super.getMaximumSize();
-                            ret.width = super.getPreferredSize().width + getIcon().getIconWidth() + getIconTextGap();
-                            return ret;
-                        }
+                    if (StringUtils.isNotEmpty(inst._getShortcut())) {
+                        action.setAccelerator(KeyStroke.getKeyStroke(inst._getShortcut()));
+                    }
+                    AbstractButton ret;
+                    if (action.isToggle()) {
+                        ret = new MenuJToggleButton(action);
+                        ImageIcon icon;
 
-                    } : new JMenuItem(action) {
-                        public Dimension getMaximumSize() {
-                            Dimension ret = super.getMaximumSize();
-                            ret.width = super.getPreferredSize().width + getIcon().getIconWidth() + getIconTextGap();
-                            return ret;
-                        }
+                        ret.setIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), false, 18));
+                        ret.setRolloverIcon(icon);
+                        ret.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, 18));
+                        ret.setRolloverSelectedIcon(icon);
 
-                    };
+                    } else {
+                        ret = new ExtMenuButton(action);
+
+                        ret.setIcon(NewTheme.I().getIcon(action.getIconKey(), 18));
+
+                    }
+                    // JMenuItem
+                    // ret.setBorderPainted(false);
+                    final AbstractButton bt = ret;
+
+                    bt.setBorderPainted(false);
+                    bt.setOpaque(false);
+
+                    // final Object value = action.getValue(Action.ACCELERATOR_KEY);
+                    // if (value == null) {
+                    // continue;
+                    // }
+                    // final KeyStroke ks = (KeyStroke) value;
+                    //
+                    // this.rootpane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, action);
+                    // this.rootpane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
+                    // this.rootpane.getActionMap().put(action, action);
+                    //
+                    // final String shortCut = action.getShortCutString();
+                    // if (bt != null) {
+                    // if (StringUtils.isEmpty(action.getTooltipText())) {
+                    // ret.setToolTipText(shortCut != null ? " [" + shortCut + "]" : null);
+                    // } else {
+                    // ret.setToolTipText(action.getTooltipText() + (shortCut != null ? " [" + shortCut + "]" : ""));
+                    // }
+                    //
+                    // }
 
                     ret.getAccessibleContext().setAccessibleName(action.getName());
                     ret.getAccessibleContext().setAccessibleDescription(action.getTooltipText());
@@ -171,7 +207,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
             }.run();
         }
         ;
-        // MenuContainerRoot dat = MainMenuManager.getInstance().getMenuData();
+        // MenuContainerRoot dret.nMenuManager.getInstance().getMenuData();
         // for(MenuItemData mid:dat.getItems()){
         // if(!mid.showItem(null)) continue;
         repaint();
