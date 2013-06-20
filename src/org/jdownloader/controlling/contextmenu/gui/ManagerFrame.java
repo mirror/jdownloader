@@ -285,6 +285,16 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
         return true;
     }
 
+    @Override
+    protected int getPreferredHeight() {
+        return 600;
+    }
+
+    @Override
+    protected int getPreferredWidth() {
+        return 800;
+    }
+
     // @Override
     @Override
     public JComponent layoutDialogContent() {

@@ -171,7 +171,7 @@ public class JDGui extends SwingGui {
         this.mainFrame.setName("MAINFRAME");
         RememberRelativeDialogLocator locator;
         // set a default locator to remmber dialogs position
-        AbstractDialog.setDefaultLocator(locator = new RememberRelativeDialogLocator(null, mainFrame) {
+        AbstractDialog.setDefaultLocator(locator = new RememberRelativeDialogLocator("", mainFrame) {
 
             @Override
             public void onClose(AbstractDialog<?> abstractDialog) {

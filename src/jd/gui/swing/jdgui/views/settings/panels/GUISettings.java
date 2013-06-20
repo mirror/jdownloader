@@ -182,7 +182,7 @@ public class GUISettings extends AbstractConfigPanel {
         });
         contextMenuManagerDownloadList = new SettingsButton(new AppAction() {
             {
-                setName(_GUI._.lit_open());
+                setName(_GUI._.gui_config_menumanager_downloadlist());
 
             }
 
@@ -203,7 +203,7 @@ public class GUISettings extends AbstractConfigPanel {
 
         contextMenuManagerLinkgrabber = new SettingsButton(new AppAction() {
             {
-                setName(_GUI._.lit_open());
+                setName(_GUI._.gui_config_menumanager_linkgrabber());
 
             }
 
@@ -223,7 +223,7 @@ public class GUISettings extends AbstractConfigPanel {
         });
         toolbarManager = new SettingsButton(new AppAction() {
             {
-                setName(_GUI._.lit_open());
+                setName(_GUI._.gui_config_menumanager_toolbar());
 
             }
 
@@ -243,7 +243,7 @@ public class GUISettings extends AbstractConfigPanel {
 
         mainMenuManager = new SettingsButton(new AppAction() {
             {
-                setName(_GUI._.lit_open());
+                setName(_GUI._.gui_config_menumanager_mainmenu());
 
             }
 
@@ -262,7 +262,7 @@ public class GUISettings extends AbstractConfigPanel {
 
         trayMenuManager = new SettingsButton(new AppAction() {
             {
-                setName(_GUI._.lit_open());
+                setName(_GUI._.gui_config_menumanager_traymenu());
 
             }
 
@@ -288,11 +288,11 @@ public class GUISettings extends AbstractConfigPanel {
         this.addHeader(_GUI._.gui_config_menumanager_header(), NewTheme.I().getIcon("menu", 32));
 
         this.addDescription(_GUI._.gui_config_menumanager_desc());
-        this.addPair(_GUI._.gui_config_menumanager_downloadlist(), null, contextMenuManagerDownloadList);
-        this.addPair(_GUI._.gui_config_menumanager_linkgrabber(), null, contextMenuManagerLinkgrabber);
-        this.addPair(_GUI._.gui_config_menumanager_toolbar(), null, toolbarManager);
-        this.addPair(_GUI._.gui_config_menumanager_mainmenu(), null, mainMenuManager);
-        this.addPair(_GUI._.gui_config_menumanager_traymenu(), null, trayMenuManager);
+        this.addPair("", null, contextMenuManagerDownloadList);
+        this.addPair("", null, contextMenuManagerLinkgrabber);
+        this.addPair("", null, toolbarManager);
+        this.addPair("", null, mainMenuManager);
+        this.addPair("", null, trayMenuManager);
 
         this.addHeader(_GUI._.GUISettings_GUISettings_object_accessability(), NewTheme.I().getIcon("barrierfreesettings", 32));
         this.addDescription(_JDT._.gui_settings_barrierfree_description());
