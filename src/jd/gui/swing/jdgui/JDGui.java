@@ -203,7 +203,7 @@ public class JDGui extends SwingGui {
 
             @Override
             public Point getLocationOnScreen(AbstractDialog<?> abstractDialog) {
-
+                if (abstractDialog.getDialog().getParent() != null && abstractDialog.getDialog().getParent().isShowing()) { return AbstractDialog.LOCATE_CENTER_OF_SCREEN.getLocationOnScreen(abstractDialog); }
                 GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
                 Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.getDefaultConfiguration());
                 final Rectangle bounds = gd.getDefaultConfiguration().getBounds();

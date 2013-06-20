@@ -19,6 +19,8 @@ package jd.gui.swing.jdgui.views.settings.panels;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileFilter;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -137,11 +139,44 @@ public class GUISettings extends AbstractConfigPanel {
         resetDialogPosition = new SettingsButton(new AppAction() {
             {
                 setName(_GUI._.GUISettings_GUISettings_resetdialog_positions_());
-                setEnabled(false);
+                // setEnabled(false);
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
+
+                if (Application.getResource("cfg/").listFiles(new FileFilter() {
+
+                    @Override
+                    public boolean accept(File pathname) {
+                        if (pathname.getName().startsWith("org.appwork.utils.swing.locator.")) {
+                            pathname.deleteOnExit();
+                            return true;
+
+                        }
+                        if (pathname.getName().startsWith("org.appwork.utils.swing.dimensor.")) {
+                            pathname.deleteOnExit();
+                            return true;
+
+                        }
+                        if (pathname.getName().startsWith("CaptchaDialogDimensions")) {
+                            pathname.deleteOnExit();
+                            return true;
+
+                        }
+
+                        return false;
+                    }
+                }).length > 0) {
+                    try {
+                        Dialog.getInstance().showConfirmDialog(0, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title(), _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion(), NewTheme.getInstance().getIcon("desktop", 32), null, null);
+                        RestartController.getInstance().asyncRestart(new AvoidRlyExistListener(true));
+                    } catch (DialogClosedException e2) {
+
+                    } catch (DialogCanceledException e2) {
+
+                    }
+                }
 
             }
         });
@@ -249,7 +284,7 @@ public class GUISettings extends AbstractConfigPanel {
         // NewTheme.I().getIcon("barrierfreesettings", 32));
         this.addPair(_GUI._.gui_config_language(), null, lng);
         this.addPair(_GUI._.gui_config_dialogs(), null, resetDialogs);
-        this.addPair(_GUI._.gui_config_dialogs(), null, resetDialogPosition);
+        this.addPair("", null, resetDialogPosition);
         this.addHeader(_GUI._.gui_config_menumanager_header(), NewTheme.I().getIcon("menu", 32));
 
         this.addDescription(_GUI._.gui_config_menumanager_desc());
