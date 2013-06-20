@@ -459,6 +459,7 @@ ParalellDownloadsEditor_ParallelDownloadsPerHostEditor_=Download simultanei mass
 Permanently_Offline_Package=Permanentemente offline
 PluginSettingsPanel_PluginSettingsPanel_waittext_=Caricamento di tutti i plugin...
 PluginSettingsPanel_getListCellRendererComponent_crawler_=Crawler %s1
+PluginSettingsPanel_runInEDT_choose_=Scegli un plugin:
 PluginSettingsPanel_runInEDT_plugin_header_text_decrypt=Plugin crawler: %s1
 PluginSettingsPanel_runInEDT_plugin_header_text_host=Plugin host: %s1
 PremiumAccountTableModel_getDateFormatString_=dd.MM.yy
