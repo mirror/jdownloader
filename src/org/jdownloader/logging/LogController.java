@@ -1,6 +1,6 @@
 package org.jdownloader.logging;
 
-import java.util.HashMap;
+import java.util.WeakHashMap;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
@@ -19,27 +19,27 @@ import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionQueue;
 
 public class LogController extends LogSourceProvider {
-    private static final LogController        INSTANCE = new LogController();
+    private static final LogController            INSTANCE = new LogController();
 
     /**
      * GL = Generic Logger, returns a shared Logger for name JDownloader
      */
-    public static LogSource                   GL       = getInstance().getLogger("JDownloader");
-    public static LogSource                   TRASH    = new LogSource("Trash") {
+    public static LogSource                       GL       = getInstance().getLogger("JDownloader");
+    public static LogSource                       TRASH    = new LogSource("Trash") {
 
-                                                           @Override
-                                                           public synchronized void log(LogRecord record) {
-                                                               /* trash */
-                                                           }
+                                                               @Override
+                                                               public synchronized void log(LogRecord record) {
+                                                                   /* trash */
+                                                               }
 
-                                                           @Override
-                                                           public String toString() {
-                                                               return "Log > /dev/null!";
-                                                           }
+                                                               @Override
+                                                               public String toString() {
+                                                                   return "Log > /dev/null!";
+                                                               }
 
-                                                       };
+                                                           };
 
-    private static HashMap<Thread, LogSource> map      = new HashMap<Thread, LogSource>();
+    private static WeakHashMap<Thread, LogSource> map      = new WeakHashMap<Thread, LogSource>();
 
     /**
      * get the only existing instance of LogController. This is a singleton
@@ -116,7 +116,7 @@ public class LogController extends LogSourceProvider {
 
     public static synchronized void setRebirthLogger(LogSource logger) {
         Thread currentThread = Thread.currentThread();
-        HashMap<Thread, LogSource> newMap = new HashMap<Thread, LogSource>(map);
+        WeakHashMap<Thread, LogSource> newMap = new WeakHashMap<Thread, LogSource>(map);
         if (logger == null) {
             newMap.remove(currentThread);
         } else {
@@ -125,8 +125,17 @@ public class LogController extends LogSourceProvider {
         map = newMap;
     }
 
+    @Override
+    public LogSource getLogger(String name) {
+        LogSource ret = super.getLogger(name);
+        ret.setMaxSizeInMemory(512 * 1024);
+        return ret;
+    }
+
     public LogSource getLogger(Plugin loggerForPlugin) {
-        return getInstance().getLogger(loggerForPlugin.getHost());
+        LogSource ret = getInstance().getLogger(loggerForPlugin.getHost());
+        ret.setMaxSizeInMemory(256 * 1024);
+        return ret;
     }
 
 }
