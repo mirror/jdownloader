@@ -126,6 +126,11 @@ public class DreamAmateursCom extends PluginForDecrypt {
             return decryptedLinks;
 
         }
+        externID = br.getRegex("\"(http://(www\\.)?xrabbit\\.com/video/embed/[A-Za-z0-9=]+/?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         if (br.containsHTML("\\&file=http://embed\\.kickassratios\\.com/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

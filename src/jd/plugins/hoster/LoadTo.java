@@ -33,12 +33,12 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load.to" }, urls = { "http://(\\w*\\.)?load\\.to/[\\?d=]?[\\w]+.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load.to" }, urls = { "http://(www\\.)?load\\.to/[A-Za-z0-9]+/" }, flags = { 0 })
 public class LoadTo extends PluginForHost {
 
     public LoadTo(PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(10000l);
+        this.setStartIntervall(10 * 1001l);
     }
 
     @Override
@@ -48,12 +48,27 @@ public class LoadTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+        return 5;
     }
 
     @Override
     public int getTimegapBetweenConnections() {
         return 2000;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        workAroundTimeOut(br);
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">Can\\'t find file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = Encoding.htmlDecode(br.getRegex("<title>([^<>\"]*?) // Load\\.to</title>").getMatch(0));
+        final String filesize = br.getRegex("Size: (\\d+ Bytes)").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -83,21 +98,6 @@ public class LoadTo extends PluginForHost {
     @Override
     public void init() {
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        workAroundTimeOut(br);
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Can\\'t find file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<head><title>(.*?) // Load.to Uploadservice</title>").getMatch(0));
-        String filesize = br.getRegex("Size:</div>.*?download_table_right\">(.*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override
