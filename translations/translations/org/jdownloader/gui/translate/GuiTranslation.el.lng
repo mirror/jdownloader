@@ -459,6 +459,7 @@ ParalellDownloadsEditor_ParallelDownloadsPerHostEditor_=Μέγ. Λήψεις / �
 Permanently_Offline_Package=Μόνιμα μη διαθέσιμο
 PluginSettingsPanel_PluginSettingsPanel_waittext_=Παρακαλούμε περιμένετε. Γίνεται φόρτωση όλων των προσθέτων...
 PluginSettingsPanel_getListCellRendererComponent_crawler_=Ανιχνευτής %s1
+PluginSettingsPanel_runInEDT_choose_=Παρακαλούμε επιλέξτε ένα πρόσθετο:
 PluginSettingsPanel_runInEDT_plugin_header_text_decrypt=Πρόσθετο Ανίχνευσης: %s1
 PluginSettingsPanel_runInEDT_plugin_header_text_host=Πρόσθετο Παρόχου: %s1
 PremiumAccountTableModel_getDateFormatString_=dd.MM.yy
