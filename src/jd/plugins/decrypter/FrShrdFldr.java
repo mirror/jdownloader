@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2012  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -56,28 +57,35 @@ public class FrShrdFldr extends PluginForDecrypt {
             br.setCookie(this.getHost(), "4langcookie", "en");
         } catch (final Throwable e) {
         }
-        String pass = "";
+        String pass = null;
 
         // check the folder/ page for password stuff and validity of url
         br.getPage(parameter);
 
-        // **needs checking**, all new html most likely needs fixing
         if (br.containsHTML("The file link that you requested is not valid")) return decryptedLinks;
 
         if (br.containsHTML("enter a password to access")) {
             final Form form = br.getFormbyProperty("name", "theForm");
             if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            pass = param.getDecrypterPassword();
+
+            pass = this.getPluginConfig().getStringProperty("lastusedpassword");
 
             for (int retry = 5; retry > 0; retry--) {
                 if (pass == null) {
                     pass = Plugin.getUserInput(null, param);
+                    if (pass == null || pass.equals("")) {
+                        logger.info("User abored/entered blank password");
+                        return decryptedLinks;
+                    }
                 }
                 form.put("userPass2", pass);
                 br.submitForm(form);
                 if (!br.containsHTML("enter a password to access")) {
+                    this.getPluginConfig().setProperty("lastusedpassword", pass);
+                    this.getPluginConfig().save();
                     break;
                 } else {
+                    this.getPluginConfig().setProperty("lastusedpassword", Property.NULL);
                     pass = null;
                     if (retry == 1) {
                         logger.severe("Wrong Password!");
@@ -98,6 +106,7 @@ public class FrShrdFldr extends PluginForDecrypt {
         do {
             // get minifolder page, contains all files and subfolders in one page
             br.getPage(parameter.replace(".com/folder", ".com/minifolder") + "?firstFileToShow=" + currentFirstLink);
+
             filter = br.getRegex("<tr valign=\"top\">[\r\n\t ]+<td width=\"\\d+\"(.*?)</td>[\r\n\t ]+</tr>").getColumn(0);
             if (filter == null) {
                 logger.warning("Couldn't filter /minifolder/ page!");
@@ -112,42 +121,38 @@ public class FrShrdFldr extends PluginForDecrypt {
             }
             if (filter != null && filter.length > 0) {
                 for (final String entry : filter) {
-                    final String dllink = new Regex(entry, "\"(.*?4shared(\\-china)?\\.com/[^\"]+\\.html)").getMatch(0);
-                    if (dllink == null) {
-                        logger.warning("Couldn't find dllink!");
-                        continue;
-                    }
-                    final DownloadLink dlink = createDownloadlink(dllink.replace("https", "http"));
-                    if (pass.length() != 0) {
-                        dlink.setProperty("pass", pass);
-                    }
-                    String fileName = new Regex(entry, "[^\\,]+, [\\d,]+ [^\"]+\">([^\"']+)</a>").getMatch(0);
-                    final String fileSize = new Regex(entry, "[^\\,]+, ([\\d,]+ [^\"]+)").getMatch(0);
-
-                    if (fileName != null) {
-                        fileName = fileName.replace("<wbr>", "");
-                        dlink.setName(Encoding.htmlDecode(fileName));
-                    }
-                    if (fileSize != null) dlink.setDownloadSize(SizeFormatter.getSize(fileSize.replace(",", "")));
-                    dlink.setAvailable(true);
-                    fp.add(dlink);
-                    decryptedLinks.add(dlink);
-                }
-            }
-
-            // lets just add them back into the decrypter...
-            if (filter != null && filter.length > 0) {
-                for (String entry : filter) {
                     // sync folders share same uid but have ?sID=UID at the end, but this is done by JS from the main /folder/uid page...
-                    String subDir = new Regex(entry, "\"(https?://(www\\.)?4shared(\\-china)?\\.com/(dir|folder)/[^\"' ]+/[^\"' ]+(\\?sID=[a-zA-z0-9]{16}))\"").getMatch(0);
+                    String subDir = new Regex(entry, "\"(https?://(www\\.)?4shared(\\-china)?\\.com/(dir|folder)/[^\"' ]+/[^\"' ]+(\\?sID=[a-zA-z0-9]{16})?)\"").getMatch(0);
                     // prevent the UID from showing up in another url format structure
                     if (subDir != null) {
                         if (subDir.contains("?sID=") || !new Regex(subDir, "\\.com/(folder|dir)/([^/]+)").getMatch(1).equals(uid)) {
                             decryptedLinks.add(createDownloadlink(subDir));
                         }
+                    } else {
+                        final String dllink = new Regex(entry, "\"(.*?4shared(\\-china)?\\.com/(?!folder/|dir/)[^\"]+\\.html)").getMatch(0);
+                        if (dllink == null) {
+                            // logger.warning("Couldn't find dllink!");
+                            continue;
+                        }
+                        final DownloadLink dlink = createDownloadlink(dllink.replace("https", "http"));
+                        if (pass.length() != 0) {
+                            dlink.setProperty("pass", pass);
+                        }
+                        String fileName = new Regex(entry, "[^\\,]+, [\\d,]+ [^\"]+\">([^\"']+)</a>").getMatch(0);
+                        final String fileSize = new Regex(entry, "[^\\,]+, ([\\d,]+ [^\"]+)").getMatch(0);
+
+                        if (fileName != null) {
+                            fileName = fileName.replace("<wbr>", "");
+                            dlink.setName(Encoding.htmlDecode(fileName));
+                        }
+                        if (fileSize != null) dlink.setDownloadSize(SizeFormatter.getSize(fileSize.replace(",", "")));
+                        dlink.setAvailable(true);
+                        fp.add(dlink);
+                        decryptedLinks.add(dlink);
                     }
                 }
             }
+
             if (currentFirstLink >= 10000) {
                 logger.info("Fail safe triggered, quitting...");
                 break;
