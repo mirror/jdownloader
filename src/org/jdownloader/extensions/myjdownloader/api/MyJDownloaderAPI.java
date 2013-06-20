@@ -14,6 +14,7 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64InputStream;
@@ -110,8 +111,14 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
     private MyJDownloaderExtension              extension;
     private HashMap<String, RIDArray>           rids;
 
+    private static int getRevision() {
+        String revision = new Regex("$Revision$", "Revision:\\s*?(\\d+)").getMatch(0);
+        if (revision == null) return 0;
+        return Integer.parseInt(revision);
+    }
+
     public MyJDownloaderAPI(MyJDownloaderExtension myJDownloaderExtension) {
-        super("JD_$Revision$");
+        super("JD_" + getRevision());
         extension = myJDownloaderExtension;
 
         this.config = extension.getSettings();
