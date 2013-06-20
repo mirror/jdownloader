@@ -174,6 +174,12 @@ public class JDGui extends SwingGui {
         AbstractDialog.setDefaultLocator(locator = new RememberRelativeDialogLocator(null, mainFrame) {
 
             @Override
+            public void onClose(AbstractDialog<?> abstractDialog) {
+                if (!abstractDialog.hasBeenMoved()) return;
+                super.onClose(abstractDialog);
+            }
+
+            @Override
             protected String getID(Window frame) {
                 try {
                     if (frame instanceof InternDialog) {

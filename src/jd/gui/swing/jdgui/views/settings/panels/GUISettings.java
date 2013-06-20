@@ -73,6 +73,7 @@ public class GUISettings extends AbstractConfigPanel {
     private SettingsButton    toolbarManager;
     private SettingsButton    mainMenuManager;
     private SettingsButton    trayMenuManager;
+    private SettingsButton    resetDialogPosition;
 
     public String getTitle() {
         return _GUI._.GUISettings_getTitle();
@@ -131,6 +132,17 @@ public class GUISettings extends AbstractConfigPanel {
                 } catch (StorageException e1) {
                     e1.printStackTrace();
                 }
+            }
+        });
+        resetDialogPosition = new SettingsButton(new AppAction() {
+            {
+                setName(_GUI._.GUISettings_GUISettings_resetdialog_positions_());
+                setEnabled(false);
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
             }
         });
         contextMenuManagerDownloadList = new SettingsButton(new AppAction() {
@@ -237,6 +249,7 @@ public class GUISettings extends AbstractConfigPanel {
         // NewTheme.I().getIcon("barrierfreesettings", 32));
         this.addPair(_GUI._.gui_config_language(), null, lng);
         this.addPair(_GUI._.gui_config_dialogs(), null, resetDialogs);
+        this.addPair(_GUI._.gui_config_dialogs(), null, resetDialogPosition);
         this.addHeader(_GUI._.gui_config_menumanager_header(), NewTheme.I().getIcon("menu", 32));
 
         this.addDescription(_GUI._.gui_config_menumanager_desc());

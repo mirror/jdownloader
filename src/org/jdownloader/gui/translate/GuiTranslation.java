@@ -2627,4 +2627,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please choose a plugin: " })
     String PluginSettingsPanel_runInEDT_choose_();
 
+    @Default(lngs = { "en" }, values = { "Reset Window Positions and Dimensions" })
+    String GUISettings_GUISettings_resetdialog_positions_();
+
 }
