@@ -111,7 +111,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
     private HashMap<String, RIDArray>           rids;
 
     public MyJDownloaderAPI(MyJDownloaderExtension myJDownloaderExtension) {
-        super("JD_V1");
+        super("JD_$Revision$");
         extension = myJDownloaderExtension;
 
         this.config = extension.getSettings();
