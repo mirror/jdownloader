@@ -40,6 +40,7 @@ import jd.utils.locale.JDL;
 public class MegaConz extends PluginForHost {
     private static AtomicLong CS        = new AtomicLong(System.currentTimeMillis());
     private final String      USE_SSL   = "USE_SSL_V2";
+    private final String      USE_TMP   = "USE_TMP_V2";
     private final String      encrypted = ".encrypted";
 
     public MegaConz(PluginWrapper wrapper) {
@@ -57,6 +58,14 @@ public class MegaConz extends PluginForHost {
             return "1";
         } else {
             return "0";
+        }
+    }
+
+    private boolean useTMP() {
+        if (getPluginConfig().getBooleanProperty(USE_TMP, false)) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -226,6 +235,7 @@ public class MegaConz extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megaconz.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
     }
 
     private void decrypt(DownloadLink link, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IOException {
@@ -243,10 +253,16 @@ public class MegaConz extends PluginForHost {
         String path = link.getFileOutput();
         if (path.endsWith(encrypted)) {
             src = new File(path);
-            dst = new File(path.substring(0, path.length() - encrypted.length()));
+            String path2 = path.substring(0, path.length() - encrypted.length());
+            if (useTMP()) {
+                tmp = new File(path2 + ".decrypted");
+                dst = new File(path2);
+            } else {
+                dst = new File(path2);
+            }
         } else {
             src = new File(path);
-            tmp = new File(path + ".tmp");
+            tmp = new File(path + ".decrypted");
             dst = new File(path);
         }
         if (tmp != null) {
