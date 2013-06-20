@@ -1,0 +1,15 @@
+JDGui_windowClosing_try_asnwer_close=離開 JDownloader
+OnCloseAction_exit=離開應用程式
+OnCloseAction_totaskbar=最小化到工作列
+OnMinimizeAction_ask=詢問我
+plugins_optional_JDLightTray_tooltip=顯示工具提示
+plugins_optional_trayIcon_dl_finished=已完成：
+plugins_optional_trayIcon_dl_total=總計：
+plugins_optional_trayIcon_downloads=下載：
+plugins_optional_trayIcon_speed=速度：
+popup_downloadfolder=開啟下載資料夾
+popup_exit=離開 JDownloader
+popup_pause=暫停下載
+popup_premiumtoggle=已啟用付費模式
+popup_reconnect=立刻重新連線
+popup_update=檢查更新
