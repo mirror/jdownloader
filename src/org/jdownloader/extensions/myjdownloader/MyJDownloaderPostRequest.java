@@ -54,7 +54,6 @@ public class MyJDownloaderPostRequest extends PostRequest {
                 final String jsonParameter = parameter + "";
                 postParameters.add(new String[] { jsonParameter, null });
             }
-
         }
         postParameterParsed = true;
         return postParameters;
