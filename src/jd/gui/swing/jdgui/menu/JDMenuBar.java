@@ -1,23 +1,31 @@
 package jd.gui.swing.jdgui.menu;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.AbstractButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.KeyStroke;
 
 import jd.SecondLevelLaunch;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.images.NewTheme;
 
 public class JDMenuBar extends JMenuBar implements MouseListener {
     private static final JDMenuBar INSTANCE = new JDMenuBar();
@@ -91,9 +99,54 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
             @Override
             protected void addAction(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                JComponent comp = inst.addTo(root, selection);
-                if (comp instanceof AbstractButton) {
-                    applyMnemonic(root, (AbstractButton) comp);
+                if (root instanceof JMenu) {
+                    JComponent comp = inst.addTo(root, selection);
+                    if (comp instanceof AbstractButton) {
+                        applyMnemonic(root, (AbstractButton) comp);
+                    }
+                } else {
+                    AppAction action = inst.createAction(selection);
+
+                    if (StringUtils.isNotEmpty(inst.getShortcut())) {
+                        action.setAccelerator(KeyStroke.getKeyStroke(inst.getShortcut()));
+                    }
+
+                    /*
+                     * JMenuBar uses Boxlayout. BoxLayout always tries to strech the components to their Maximum Width. Fixes
+                     * http://svn.jdownloader.org/issues/8509
+                     */
+                    JMenuItem ret = action.isToggle() ? new JCheckBoxMenuItem(action) {
+                        public Dimension getMaximumSize() {
+                            Dimension ret = super.getMaximumSize();
+                            ret.width = super.getPreferredSize().width + getIcon().getIconWidth() + getIconTextGap();
+                            return ret;
+                        }
+
+                    } : new JMenuItem(action) {
+                        public Dimension getMaximumSize() {
+                            Dimension ret = super.getMaximumSize();
+                            ret.width = super.getPreferredSize().width + getIcon().getIconWidth() + getIconTextGap();
+                            return ret;
+                        }
+
+                    };
+
+                    ret.getAccessibleContext().setAccessibleName(action.getName());
+                    ret.getAccessibleContext().setAccessibleDescription(action.getTooltipText());
+                    if (StringUtils.isNotEmpty(inst.getName())) {
+                        ret.setText(inst.getName());
+                    }
+                    if (StringUtils.isNotEmpty(inst.getIconKey())) {
+                        ret.setIcon(NewTheme.I().getIcon(inst.getIconKey(), 20));
+                    }
+
+                    if (ret instanceof AbstractButton) {
+                        applyMnemonic(root, (AbstractButton) ret);
+                    }
+
+                    if (!ret.isEnabled() && inst.mergeProperties().contains(MenuItemProperty.HIDE_IF_DISABLED)) return;
+
+                    root.add(ret);
                 }
             }
 
