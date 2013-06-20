@@ -97,7 +97,18 @@ public class X7FilesCom extends PluginForHost {
             final File cf = downloadCaptcha(getLocalCaptchaFile(), COOKIE_HOST + "/captcha.php");
             final String code = getCaptchaCode("mhfstandard", cf, downloadLink);
             ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1&captchacode=" + code);
-            if (ajaxBR.containsHTML("Captcha number error or expired")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (ajaxBR.containsHTML("Captcha number error or expired")) {
+                try {
+                    invalidateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                try {
+                    validateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+            }
         } else {
             ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1");
         }
