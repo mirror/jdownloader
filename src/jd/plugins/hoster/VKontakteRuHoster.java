@@ -56,7 +56,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private int                 MAXCHUNKS            = 1;
     /** Settings stuff */
     private final String        USECOOKIELOGIN       = "USECOOKIELOGIN";
-    private final String        REPLACEIDLINKS       = "REPLACEIDLINKS";
+    private final String        REPLACEUSERLINKS     = "REPLACEUSERLINKS";
     private final String        FASTLINKCHECK        = "FASTLINKCHECK";
     private final String        FASTPICTURELINKCHECK = "FASTPICTURELINKCHECK";
     private static final String ALLOW_BEST           = "ALLOW_BEST";
@@ -421,7 +421,7 @@ public class VKontakteRuHoster extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "General settings:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USECOOKIELOGIN, JDL.L("plugins.hoster.vkontakteruhoster.alwaysUseCookiesForLogin", "Always use cookies for login (this can cause out of date errors)")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), REPLACEIDLINKS, JDL.L("plugins.hoster.vkontakteruhoster.replaceIdlinks", "Change 'vk.com/id' links to 'vk.com/albums' links")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), REPLACEUSERLINKS, JDL.L("plugins.hoster.vkontakteruhoster.replaceIdlinks", "Change 'vk.com/username' links to 'vk.com/albums' links")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Linkcheck settings:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

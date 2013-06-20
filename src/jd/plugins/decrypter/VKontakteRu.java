@@ -41,7 +41,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?vk\\.com/(?!doc\\d+)(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=\\d+\\&id=\\d+|video\\?gid=\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|id\\d+(\\?z=albums\\d+)?|wall\\-\\d+|[A-Za-z0-9\\-_]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?vk\\.com/(?!doc\\d+)(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=\\d+\\&id=\\d+|video\\?gid=\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|wall\\-\\d+|[A-Za-z0-9\\-_]+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -60,10 +60,9 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String PATTERN_VIDEO_ALBUM           = ".*?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos\\d+)";
     private static final String PATTERN_VIDEO_COMMUNITY_ALBUM = ".*?vk\\.com/video\\?gid=\\d+";
     private static final String PATTERN_PHOTO_SINGLE          = ".*?vk\\.com/photo(\\-)?\\d+_\\d+";
-    private static final String PATTERN_PHOTO_ALBUM           = ".*?(tag|album(\\-)?\\d+_|photos|id)\\d+";
+    private static final String PATTERN_PHOTO_ALBUM           = ".*?(tag|album(\\-)?\\d+_|photos)\\d+";
     private static final String PATTERN_PHOTO_ALBUMS          = ".*?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)";
     private static final String PATTERN_WALL_LINK             = "https?://(www\\.)?vk\\.com/wall\\-\\d+";
-    private static final String PATTERN_ID_LINK               = "https?://(www\\.)?vk\\.com/id\\d+";
 
     private SubConfiguration    cfg                           = null;
 
@@ -82,8 +81,6 @@ public class VKontakteRu extends PluginForDecrypt {
             final DownloadLink decryptedPhotolink = getSinglePhotoDownloadLink(new Regex(parameter, "((\\-)?\\d+_\\d+)").getMatch(0));
             decryptedLinks.add(decryptedPhotolink);
             return decryptedLinks;
-        } else if (parameter.matches(PATTERN_ID_LINK) && cfg.getBooleanProperty("REPLACEIDLINKS", false)) {
-            parameter = parameter.replace("vk.com/id", "vk.com/albums");
         }
         synchronized (LOCK) {
             try {
@@ -141,18 +138,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 } else if (parameter.matches(PATTERN_VIDEO_SINGLE)) {
                     /** Single video */
                     decryptedLinks = decryptSingleVideo(decryptedLinks, parameter);
-                } else if (parameter.matches(PATTERN_PHOTO_ALBUM)) {
-                    /**
-                     * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
-                     */
-                    decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter);
-                    logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a single-photo-album-link");
-                } else if (parameter.matches(PATTERN_PHOTO_ALBUMS)) {
-                    /**
-                     * Photo albums lists/overviews Example: http://vk.com/albums46486585
-                     */
-                    decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter);
-                    logger.info("Decrypted " + decryptedLinks.size() + " photo-album-links out of a multiple-photo-albums-link");
                 } else if (parameter.matches(PATTERN_VIDEO_ALBUM)) {
                     /**
                      * Video-Albums Example: http://vk.com/videos575934598 Example2: http://vk.com/video?section=tagged&id=46468795637
@@ -163,6 +148,31 @@ public class VKontakteRu extends PluginForDecrypt {
                     /** Community-Albums Exaple: http://vk.com/video?gid=41589556 */
                     decryptCommunityVideoAlbum(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " community-video-links out of a community-video-album");
+                } else if (parameter.matches(PATTERN_PHOTO_ALBUM)) {
+                    /**
+                     * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
+                     */
+                    decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter);
+                    logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a single-photo-album-link");
+                } else if (parameter.matches(PATTERN_PHOTO_ALBUMS) || (!parameter.matches(PATTERN_WALL_LINK) && cfg.getBooleanProperty("REPLACEUSERLINKS", false))) {
+                    /**
+                     * Photo albums lists/overviews Example: http://vk.com/albums46486585
+                     */
+                    if (!parameter.matches(PATTERN_PHOTO_ALBUMS)) {
+                        if (br.containsHTML(">404 Not Found<")) {
+                            logger.info("Link offline: " + parameter);
+                            return decryptedLinks;
+                        }
+                        final String profileAlbumsID = br.getRegex("\"(/albums\\d+)\\?profile=1\"").getMatch(0);
+                        if (profileAlbumsID == null) {
+                            logger.warning("Failed to find profileAlbumsID for user-link: " + parameter);
+                            return null;
+                        }
+                        parameter = "http://vk.com" + profileAlbumsID;
+                        br.getPage(parameter);
+                    }
+                    decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter);
+                    logger.info("Decrypted " + decryptedLinks.size() + " photo-album-links out of a multiple-photo-albums-link");
                 } else {
                     decryptWallLink(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a wall-link");

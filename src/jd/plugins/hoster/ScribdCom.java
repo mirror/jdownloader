@@ -86,7 +86,7 @@ public class ScribdCom extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        downloadLink.setName(filename);
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -196,7 +196,7 @@ public class ScribdCom extends PluginForHost {
         String[] dlinfo = new String[2];
         br.setFollowRedirects(false);
         dlinfo[1] = getConfiguredServer();
-        final String fileId = new Regex(parameter.getDownloadURL(), "scribd\\.com/doc/(\\d+)/").getMatch(0);
+        final String fileId = new Regex(parameter.getDownloadURL(), "scribd\\.com/doc/(\\d+)").getMatch(0);
         if (fileId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser xmlbrowser = br.cloneBrowser();
         xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -210,6 +210,14 @@ public class ScribdCom extends PluginForHost {
         dlinfo[0] = "http://www.scribd.com/document_downloads/" + fileId + "?secret_password=&extension=" + dlinfo[1];
         br.getPage(dlinfo[0]);
         if (br.containsHTML("Sorry, downloading this document in the requested format has been disallowed")) throw new PluginException(LinkStatus.ERROR_FATAL, dlinfo[1] + " format is not available for this file!");
+        if (br.containsHTML("You do not have access to download this document") || br.containsHTML("Invalid document format")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
         dlinfo[0] = br.getRedirectLocation();
         if (dlinfo[0] == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return dlinfo;
