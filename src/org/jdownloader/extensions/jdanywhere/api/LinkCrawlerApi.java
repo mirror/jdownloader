@@ -1,15 +1,19 @@
 package org.jdownloader.extensions.jdanywhere.api;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.FilePackage;
+import jd.utils.JDUtilities;
 
+import org.appwork.utils.IO;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.jdanywhere.api.interfaces.ILinkCrawlerApi;
@@ -106,6 +110,21 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
 
     public boolean addCrawledLinkToDownloads(List<Long> linkIds) {
         return lcAPI.startDownloads(linkIds);
+    }
+
+    public boolean addDLC(String dlcContent) {
+        try {
+            if (dlcContent == null) throw new IllegalArgumentException("no DLC Content available");
+            String dlc = dlcContent.trim().replace(" ", "+");
+            File tmp = JDUtilities.getResourceFile("tmp/jd_" + System.currentTimeMillis() + ".dlc", true);
+            IO.writeToFile(tmp, dlc.getBytes("UTF-8"));
+            String url = "file://" + tmp.getAbsolutePath();
+            LinkCollectingJob job = new LinkCollectingJob(url);
+            LinkCollector.getInstance().addCrawlerJob(job);
+        } catch (Throwable e) {
+
+        }
+        return true;
     }
 
     public boolean removeCrawledLink(List<Long> linkIds) {
