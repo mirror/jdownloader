@@ -499,6 +499,8 @@ public class DirectHTTP extends PluginForHost {
                     downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
+            } else if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+                return;
             } else {
                 /* unknown error, we disable multiple chunks */
                 if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) == false) {

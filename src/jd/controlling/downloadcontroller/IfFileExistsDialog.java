@@ -21,7 +21,6 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.IfFileExistsAction;
-import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
 public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> implements IfFileExistsDialogInterface {
@@ -61,9 +60,6 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
 
     @Override
     protected IfFileExistsAction createReturnValue() {
-        if (isDontShowAgainSelected()) {
-            if (result != null) CFG_GENERAL.IF_FILE_EXISTS_ACTION.setValue(result);
-        }
 
         if (result != null) org.jdownloader.settings.staticreferences.CFG_GUI.CFG.setLastIfFileExists(result);
         return result;

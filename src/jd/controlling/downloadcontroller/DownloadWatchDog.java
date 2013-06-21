@@ -173,6 +173,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         logger = LogController.CL();
         config = JsonConfig.create(GeneralSettings.class);
         eventSender = new DownloadWatchdogEventSender();
+        session = new DownloadSession(null);
         this.dsm = new DownloadSpeedManager();
         this.dsm.setLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
@@ -813,10 +814,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * 
      * @param value
      */
-    private Integer speedLimitBeforePause   = null;
-    private Boolean speedLimitedBeforePause = null;
-    private Object  shutdownLock            = new Object();
-    protected int   skippedLinksCounter;
+    private Integer           speedLimitBeforePause   = null;
+    private Boolean           speedLimitedBeforePause = null;
+    private Object            shutdownLock            = new Object();
+    protected int             skippedLinksCounter;
+    protected DownloadSession session;
 
     public void pauseDownloadWatchDog(final boolean value) {
         IOEQ.add(new Runnable() {
@@ -1212,7 +1214,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     /* only allow to start when in FinalState(NOT_RUNNING) */
                     return;
                 }
+                /*
+                 * setNewSession
+                 */
 
+                session = new DownloadSession(session);
                 /* set state to running */
                 stateMachine.setStatus(RUNNING_STATE);
                 /* remove stopsign if it is reached */
@@ -1230,6 +1236,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 startWatchDogThread();
             }
         }, true);
+    }
+
+    public DownloadSession getSession() {
+        return session;
     }
 
     /**

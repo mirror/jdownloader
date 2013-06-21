@@ -458,14 +458,22 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             IfFileExistsAction doAction = JsonConfig.create(GeneralSettings.class).getIfFileExistsAction();
             switch (doAction) {
             case ASK_FOR_EACH_FILE:
-                IfFileExistsDialog d = new IfFileExistsDialog(downloadLink.getFileOutput(), downloadLink.getFilePackage().getName(), downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated());
-                doAction = UIOManager.I().show(IfFileExistsDialogInterface.class, d).getAction();
-                if (d.getCloseReason() == CloseReason.TIMEOUT) {
-                    downloadLink.setSkipReason(SkipReason.FILE_EXISTS);
-                    return;
-                }
-                if (d.getCloseReason() != CloseReason.OK) {
-                    doAction = IfFileExistsAction.SKIP_FILE;
+                doAction = DownloadWatchDog.getInstance().getSession().getOnFileExistsAction(downloadLink.getFilePackage());
+                if (doAction == null || doAction == IfFileExistsAction.ASK_FOR_EACH_FILE) {
+                    IfFileExistsDialog d = new IfFileExistsDialog(downloadLink.getFileOutput(), downloadLink.getFilePackage().getName(), downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated());
+                    doAction = UIOManager.I().show(IfFileExistsDialogInterface.class, d).getAction();
+                    if (d.isDontShowAgainSelected()) {
+                        DownloadWatchDog.getInstance().getSession().setOnFileExistsAction(downloadLink.getFilePackage(), doAction);
+                    } else {
+                        DownloadWatchDog.getInstance().getSession().setOnFileExistsAction(downloadLink.getFilePackage(), null);
+                    }
+                    if (d.getCloseReason() == CloseReason.TIMEOUT) {
+                        downloadLink.setSkipReason(SkipReason.FILE_EXISTS);
+                        return;
+                    }
+                    if (d.getCloseReason() != CloseReason.OK) {
+                        doAction = IfFileExistsAction.SKIP_FILE;
+                    }
                 }
                 break;
             }
