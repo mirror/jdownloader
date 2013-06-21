@@ -135,7 +135,7 @@ public class FrShrdFldr extends PluginForDecrypt {
                             continue;
                         }
                         final DownloadLink dlink = createDownloadlink(dllink.replace("https", "http"));
-                        if (pass.length() != 0) {
+                        if (pass != null && pass.length() != 0) {
                             dlink.setProperty("pass", pass);
                         }
                         String fileName = new Regex(entry, "[^\\,]+, [\\d,]+ [^\"]+\">([^\"']+)</a>").getMatch(0);
