@@ -164,6 +164,10 @@ public class ZdfDeMediathek extends PluginForHost {
             for (String[] match : matches) {
                 dest.write(counter++ + lineseparator);
 
+                if (counter == 13) {
+                    System.out.println("Debugline for Jiaz ;)");
+                }
+
                 final Double start = Double.valueOf(match[0]) + starttime;
                 final Double end = Double.valueOf(match[1]) + starttime;
                 dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
@@ -177,6 +181,7 @@ public class ZdfDeMediathek extends PluginForHost {
                 text = text.replaceAll("<br />", lineseparator);
                 text = text.replace("</p>", "");
                 text = text.replace("<span ", "").replace("</span>", "");
+
                 final String[][] textReplaces = new Regex(text, "(tts:color=\"#([A-Z0-9]+)\">(.+))").getMatches();
                 if (textReplaces != null && textReplaces.length != 0) {
                     for (final String[] singleText : textReplaces) {

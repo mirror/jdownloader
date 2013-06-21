@@ -216,11 +216,8 @@ public class ARDMediathek extends PluginForHost {
         try {
             for (final String info : matches) {
                 dest.write(counter++ + lineseparator);
-                if (counter == 352) {
-                    logger.info("");
-                }
-                final String start = new Regex(info, "begin=\"10:([^<>\"]*?)\"").getMatch(0).replace(".", ",");
-                final String end = new Regex(info, "end=\"10:([^<>\"]*?)\"").getMatch(0).replace(".", ",");
+                final String start = "00:" + new Regex(info, "begin=\"10:([^<>\"]*?)\"").getMatch(0).replace(".", ",");
+                final String end = "00:" + new Regex(info, "end=\"10:([^<>\"]*?)\"").getMatch(0).replace(".", ",");
                 dest.write(start + " --> " + end + lineseparator);
 
                 String text = new Regex(info, "style=\"s\\d+\">?(.*?)</p>").getMatch(0);

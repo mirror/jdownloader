@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://((www\\.)?yourupload\\.com/(file|embed|watch)/[a-z0-9]+|embed\\.yourupload\\.com/[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://((www\\.)?yourupload\\.com/(file|embed|watch)/[a-z0-9]+|embed\\.yourupload\\.com/[A-Za-z0-9]+)" }, flags = { 0 })
 public class YourUploadCom extends PluginForHost {
 
     public YourUploadCom(PluginWrapper wrapper) {
@@ -42,18 +43,30 @@ public class YourUploadCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(yourupload\\.com/embed|embed\\.yourupload\\.com)/((file|embed)/)?", "yourupload.com/watch/"));
+        link.setUrlDownload("http://yourupload.com/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        // Correct old links
+        correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>System Error<|>could not find file)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex(">Name</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
+        String filename = br.getRegex(">Name</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
         final String filesize = br.getRegex(">Size</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
+        String ext = null;
+        if (filename.contains(".")) ext = filename.substring(filename.lastIndexOf("."));
+        if (ext != null && ext.length() > 5) ext = null;
+        if (br.containsHTML("<td>video/mp4</td>") && ext == null) ext = ".mp4";
+        if (ext != null) {
+            link.setFinalFileName(filename + ext);
+        } else {
+            link.setName(filename);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;

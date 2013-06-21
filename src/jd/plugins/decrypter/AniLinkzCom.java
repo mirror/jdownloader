@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(www\\.)?anilinkz\\.com/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(youtube\\.com|veoh\\.com|nowvideo\\.eu|videobam\\.com|mp4upload\\.com|gorillavid\\.in|putlocker\\.com)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(youtube\\.com|veoh\\.com|nowvideo\\.eu|videobam\\.com|mp4upload\\.com|gorillavid\\.in|putlocker\\.com|veevr\\.com|yourupload\\.com)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_UNSUPPORTED_HOSTER       = Pattern.compile("(facebook\\.com|google\\.com)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_SUPPORTED_FILE_EXTENSION = Pattern.compile("(\\.mp4|\\.flv|\\.fll)", Pattern.CASE_INSENSITIVE);
     private static final String  INVALIDLINKS                     = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|series|forums|files|category|\\?page=|faqs|.*?\\-list|.*?\\-info|\\?random).*?";
@@ -78,6 +78,7 @@ public class AniLinkzCom extends PluginForDecrypt {
                 break;
             }
         }
+        boolean foundOffline = false;
         final List<String> unescape = new ArrayList<String>();
         String[] dllinks;
         String mirror = null;
@@ -91,18 +92,15 @@ public class AniLinkzCom extends PluginForDecrypt {
                 return null;
             }
             unescape.add(Encoding.htmlDecode(escapeAll));
-            dllinks = new Regex(unescape.get(i), "<iframe src=\"(http://[^<>\"]*?)\"").getColumn(0);
             // we should change this to an array as these can pick up false positives like javascript:void
-            if (dllinks == null || dllinks.length == 0) {
-                // this is for daily motion embeded links
-                dllinks = new Regex(unescape.get(i), "src=\"(http[^\"]+dailymotion\\.com/swf/[^\"]+)").getColumn(0);
-                if (dllinks == null || dllinks.length == 0) {
-                    dllinks = new Regex(unescape.get(i), "(href|url|file)=\"?(.*?)\"").getColumn(1);
-                    if (dllinks == null || dllinks.length == 0) {
-                        dllinks = new Regex(unescape.get(i), "src=\"(.*?)\"").getColumn(0);
-                    }
-                }
-            }
+            dllinks = new Regex(unescape.get(i), "<iframe src=\"(http://[^<>\"]*?)\"").getColumn(0);
+            // this is for dailymotion.com embeded links
+            if (dllinks == null || dllinks.length == 0) dllinks = new Regex(unescape.get(i), "src=\"(http[^\"]+dailymotion\\.com/swf/[^\"]+)").getColumn(0);
+            // for youtube.com links
+            if (dllinks == null || dllinks.length == 0) dllinks = new Regex(unescape.get(i), "src=\"(http://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"").getColumn(0);
+            if (dllinks == null || dllinks.length == 0) dllinks = new Regex(unescape.get(i), "(href|url|file)=\"?(.*?)\"").getColumn(1);
+            if (dllinks == null || dllinks.length == 0) dllinks = new Regex(unescape.get(i), "src=\"(.*?)\"").getColumn(0);
+
             if (dllinks.length > 0) {
                 for (String dllink : dllinks) {
                     try {
@@ -161,6 +159,10 @@ public class AniLinkzCom extends PluginForDecrypt {
                             dllink = dllink.replace("videobam.com/widget/", "videobam.com/");
                         } else if (dllink.contains("gorillavid.in/")) {
                             dllink = "http://gorillavid.in/" + new Regex(dllink, "gorillavid\\.in/embed\\-([a-z0-9]{12})").getMatch(0);
+                        } else if (dllink.contains("http://www./media")) {
+                            logger.info("Found offline link: " + dllink);
+                            foundOffline = true;
+                            continue;
                         }
                     } catch (final Exception e) {
                         logger.log(Level.SEVERE, e.getMessage(), e);
@@ -194,6 +196,10 @@ public class AniLinkzCom extends PluginForDecrypt {
             }
         }
         if (decryptedLinks.size() == 0) {
+            if (foundOffline) {
+                logger.info("Found no downloadable content in link: " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
