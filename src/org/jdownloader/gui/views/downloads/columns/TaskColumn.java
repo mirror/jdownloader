@@ -100,7 +100,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             DownloadLink dl = (DownloadLink) value;
             if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertTaskColumnEnabled()) {
                 if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
-                    if (!dl.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && !dl.getLinkStatus().isFinished()) {
+                    if (!dl.isSkipped() && !dl.getLinkStatus().isFinished()) {
                         PluginForHost plugin = dl.getDefaultPlugin();
                         if (plugin == null || !plugin.isPremiumEnabled()) {
                             /* no account support yet for this plugin */
@@ -145,12 +145,12 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                 return icon;
             } else if (ls.isFinished()) {
                 return trueIcon;
-            } else if (ls.hasStatus(LinkStatus.TEMP_IGNORE)) {
+            } else if (dl.isSkipped()) {
                 return infoIcon;
             } else if (ls.isFailed() || dl.getAvailableStatus() == AvailableStatus.FALSE) { return falseIcon; }
 
             if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
-                if (!dl.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && !dl.getLinkStatus().isFinished()) {
+                if (!dl.isSkipped() && !dl.getLinkStatus().isFinished()) {
                     /* enabled links that are not running */
                     ProxyBlock timeout = null;
                     if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
@@ -175,7 +175,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             if (((DownloadLink) value).isSkipped()) { return ((DownloadLink) value).getSkipReason().getExplanation(); }
             DownloadLink dl = (DownloadLink) value;
             if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
-                if (!dl.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && !dl.getLinkStatus().isFinished()) {
+                if (!dl.isSkipped() && !dl.getLinkStatus().isFinished()) {
                     /* enabled links that are not running */
                     ProxyBlock timeout = null;
                     String message = null;

@@ -122,7 +122,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
         if (value instanceof DownloadLink) {
             if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertETAColumnEnabled()) {
                 DownloadLink dlLink = (DownloadLink) value;
-                if (!dlLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && !dlLink.getLinkStatus().isFinished()) {
+                if (!dlLink.isSkipped() && !dlLink.getLinkStatus().isFinished()) {
                     PluginForHost plugin = dlLink.getDefaultPlugin();
                     if (plugin == null || !plugin.isPremiumEnabled()) {
                         /* no account support yet for this plugin */
@@ -156,7 +156,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
                 icon2Use = wait;
                 return time;
             }
-            if (!dlLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && !dlLink.getLinkStatus().isFinished()) {
+            if (!dlLink.isSkipped() && !dlLink.getLinkStatus().isFinished()) {
                 ProxyBlock timeout = null;
                 if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dlLink.getHost())) != null && timeout.getLink() == dlLink) {
                     icon2Use = ipwait;

@@ -146,24 +146,17 @@ public class LinkStatus implements Serializable {
         this.inProgress = false;
     }
 
-    /* temporarily ignore this link, use value to signal why */
-    public static final int    TEMP_IGNORE                                     = 1 << 31;
-
-    public static final int    TEMP_IGNORE_REASON_NOT_ENOUGH_HARDDISK_SPACE    = 1;
-    public static final int    TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND    = 2;
-    public static final int    TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION = 3;
-
-    private static final long  serialVersionUID                                = 3885661829491436448L;
+    private static final long  serialVersionUID = 3885661829491436448L;
 
     private final DownloadLink downloadLink;
 
     private String             errorMessage;
-    private int                lastestStatus                                   = TODO;
-    private int                status                                          = TODO;
-    private String             statusText                                      = null;
-    private long               value                                           = 0;
-    private long               waitUntil                                       = 0;
-    private int                retryCount                                      = 0;
+    private int                lastestStatus    = TODO;
+    private int                status           = TODO;
+    private String             statusText       = null;
+    private long               value            = 0;
+    private long               waitUntil        = 0;
+    private int                retryCount       = 0;
 
     private ImageIcon          statusIcon;
 
@@ -241,13 +234,6 @@ public class LinkStatus implements Serializable {
             return _JDT._.downloadlink_status_error_fatal();
         case LinkStatus.WAITING_USERIO:
             return _JDT._.downloadlink_status_waitinguserio();
-        case LinkStatus.TEMP_IGNORE:
-            if (TEMP_IGNORE_REASON_NOT_ENOUGH_HARDDISK_SPACE == value) {
-                return _JDT._.downloadlink_status_error();
-            } else if (TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND == value) {
-                return _JDT._.downloadlink_status_error_premium_noacc();
-            } else if (TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION == value) { return _JDT._.downloadlink_status_error_invalid_dest(); }
-            return null;
         }
         if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) return _JDT._.gui_download_onlinecheckfailed();
         return null;
@@ -286,7 +272,7 @@ public class LinkStatus implements Serializable {
     }
 
     public boolean isFailed() {
-        return !isActive && !inProgress && !hasOnlyStatus(FINISHED | ERROR_ALREADYEXISTS | ERROR_IP_BLOCKED | TODO | DOWNLOADINTERFACE_IN_PROGRESS | WAITING_USERIO | TEMP_IGNORE);
+        return !isActive && !inProgress && !hasOnlyStatus(FINISHED | ERROR_ALREADYEXISTS | ERROR_IP_BLOCKED | TODO | DOWNLOADINTERFACE_IN_PROGRESS | WAITING_USERIO);
     }
 
     public boolean isPluginActive() {

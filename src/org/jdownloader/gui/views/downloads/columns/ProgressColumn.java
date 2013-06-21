@@ -20,7 +20,6 @@ import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 
@@ -217,7 +216,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return (progress.getTotal());
             } else if (dLink.getLinkStatus().isFinished()) {
                 return 100;
-            } else if (block != null && !dLink.getLinkStatus().isPluginActive() && !dLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && dLink.isEnabled()) {
+            } else if (block != null && !dLink.getLinkStatus().isPluginActive() && !dLink.isSkipped() && dLink.isEnabled()) {
                 return block.getBlockedUntil();
             } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadSize());
 
@@ -256,7 +255,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return (progress.getCurrent());
             } else if (dLink.getLinkStatus().isFinished()) {
                 return 100;
-            } else if (block != null && !dLink.getLinkStatus().isPluginActive() && !dLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && dLink.isEnabled()) {
+            } else if (block != null && !dLink.getLinkStatus().isPluginActive() && !dLink.isSkipped() && dLink.isEnabled()) {
                 return block.getBlockedTimeout();
             } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadCurrent()); }
         }

@@ -15,8 +15,17 @@ public class FileAccessManager {
         return locks.remove(file);
     }
 
-    public synchronized void setLock(File file, Object newLockHolder) throws FileIsLockedException {
+    public synchronized boolean unlock(File file, Object lockHolder) {
+        Object currentHolder = getLockHolder(file);
+        if (currentHolder != null && lockHolder == currentHolder) {
+            locks.remove(file);
+            return true;
+        } else {
+            return false;
+        }
+    }
 
+    public synchronized void setLock(File file, Object newLockHolder) throws FileIsLockedException {
         Object currentHolder = getLockHolder(file);
         if (currentHolder != null) throw new FileIsLockedException(currentHolder);
         locks.put(file, newLockHolder);

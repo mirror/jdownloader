@@ -64,7 +64,7 @@ import org.jdownloader.translate._JDT;
 
 public class SingleDownloadController extends BrowserSettingsThread implements StateMachineInterface {
 
-    private static final Object             DUPELOCK          = new Object();
+    public static final Object              DUPELOCK          = new Object();
 
     private boolean                         aborted           = false;
     private boolean                         handling          = false;
@@ -146,6 +146,18 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         super.setLogger(downloadLogger);
     }
 
+    public boolean preDownloadCheck(Runnable runOkay, Runnable runFailed) throws Exception {
+        synchronized (DUPELOCK) {
+            if (DownloadWatchDog.preDownloadCheck(downloadLink)) {
+                if (runOkay != null) runOkay.run();
+                return true;
+            } else {
+                if (runFailed != null) runFailed.run();
+                return false;
+            }
+        }
+    }
+
     @Override
     public boolean isDebug() {
         return true;
@@ -201,6 +213,15 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     private void handlePlugin() {
         try {
             startTimestamp = System.currentTimeMillis();
+            /* check ob Datei existiert oder bereits geladen wird */
+            if (!preDownloadCheck(new Runnable() {
+
+                @Override
+                public void run() {
+                    linkStatus.setInProgress(true);
+                }
+            }, null)) return;
+
             linkStatus.setStatusText(_JDT._.gui_download_create_connection());
             if ((downloadLink.getLinkStatus().getRetryCount()) <= livePlugin.getMaxRetries(downloadLink, getAccount())) {
                 final long sizeBefore = Math.max(0, downloadLink.getDownloadCurrent());
@@ -305,9 +326,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 if (handler.handleDownloadLink(downloadLink, account)) return;
             }
             switch (linkStatus.getLatestStatus()) {
-            case LinkStatus.TEMP_IGNORE:
-                onTempIgnore();
-                break;
             case LinkStatus.ERROR_LOCAL_IO:
                 onErrorLocalIO();
                 break;
@@ -359,9 +377,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             downloadLogger.log(e);
             downloadLogger.severe("Error in Plugin Version: " + downloadLink.getLivePlugin().getVersion());
         }
-    }
-
-    private void onTempIgnore() {
     }
 
     protected void onErrorCaptcha() {
@@ -553,8 +568,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     protected void onErrorPremium() {
         if (linkStatus.getValue() == PluginException.VALUE_ID_PREMIUM_ONLY) {
-            linkStatus.addStatus(LinkStatus.TEMP_IGNORE);
-            linkStatus.setValue(LinkStatus.TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND);
+            downloadLink.setSkipReason(SkipReason.NO_ACCOUNT);
             return;
         } else if (linkStatus.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
             downloadLogger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
@@ -585,8 +599,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         }
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss
-         * in ms. value==0 macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
+         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());
@@ -709,21 +723,16 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     downloadLink.setEnabled(false);
                     return;
                 }
-                /* check ob Datei existiert oder bereits geladen wird */
-                synchronized (DUPELOCK) {
-                    /*
-                     * dieser sync block dient dazu das immer nur ein link gestartet wird und dann der dupe check durchgeführt werden kann
-                     */
-                    if (DownloadWatchDog.preDownloadCheckFailed(downloadLink)) {
-                        if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) onErrorFileExists();
-                        return;
-                    }
-                    /*
-                     * setinprogress innerhalb des sync damit keine 2 downloads gleichzeitig in progress übergehen können
-                     */
-                    linkStatus.setInProgress(true);
-                }
+
                 handlePlugin();
+                try {
+                    if (originalPlugin != livePlugin) {
+                        originalPlugin.validateLastChallengeResponse();
+                    }
+                    livePlugin.validateLastChallengeResponse();
+                } catch (final Throwable e) {
+                    downloadLogger.log(e);
+                }
                 if (isAborted() && !linkStatus.isFinished()) {
                     /* download aborted */
                     LogController.GL.info("\r\nDownload stopped- " + downloadLink.getName());

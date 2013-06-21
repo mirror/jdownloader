@@ -204,10 +204,10 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
 
             }
         });
+        IPController.getInstance().getEventSender().addListener(this);
         updateTimer.setRepeats(true);
         updateTimer.start();
         recThread.start();
-        IPController.getInstance().getEventSender().addListener(this);
         return p;
     }
 

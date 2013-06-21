@@ -5,19 +5,14 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
 import org.appwork.utils.Exceptions;
-import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.awfc.AWFCUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.myjdownloader.api.MyJDownloaderAPI;
@@ -25,18 +20,22 @@ import org.jdownloader.myjdownloader.client.exceptions.AuthException;
 import org.jdownloader.myjdownloader.client.exceptions.EmailInvalidException;
 import org.jdownloader.myjdownloader.client.exceptions.EmailNotValidatedException;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
+import org.jdownloader.myjdownloader.client.json.DeviceConnectionStatus;
 import org.jdownloader.myjdownloader.client.json.DeviceData;
+import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage.TYPE;
 
 public class MyJDownloaderConnectThread extends Thread {
 
-    private final AtomicLong            THREADCOUNTER  = new AtomicLong(0);
-    private MyJDownloaderExtension      myJDownloaderExtension;
-    private MyDownloaderExtensionConfig config;
-    private Socket                      connectionSocket;
-    private final MyJDownloaderAPI      api;
-    private LogSource                   logger;
-    private int                         backoffCounter = 0;
-    private boolean                     sessionValid   = false;
+    private final AtomicLong                 THREADCOUNTER  = new AtomicLong(0);
+    private MyJDownloaderExtension           myJDownloaderExtension;
+    private MyDownloaderExtensionConfig      config;
+    private Socket                           connectionSocket;
+    private MyJDownloaderAPI                 api;
+    private LogSource                        logger;
+    private int                              backoffCounter = 0;
+    private boolean                          sessionValid   = false;
+    private AtomicLong                       syncMark       = new AtomicLong(-1);
+    public final ScheduledThreadPoolExecutor THREADQUEUE    = new ScheduledThreadPoolExecutor(1);
 
     public MyJDownloaderConnectThread(MyJDownloaderExtension myJDownloaderExtension) {
         setName("MyJDownloaderConnectThread");
@@ -45,6 +44,8 @@ public class MyJDownloaderConnectThread extends Thread {
         config = myJDownloaderExtension.getSettings();
         api = new MyJDownloaderAPI(myJDownloaderExtension);
         logger = myJDownloaderExtension.getLogger();
+        THREADQUEUE.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
+        THREADQUEUE.allowCoreThreadTimeOut(true);
     }
 
     private void backoff() throws InterruptedException {
@@ -62,7 +63,7 @@ public class MyJDownloaderConnectThread extends Thread {
     @Override
     public void run() {
         try {
-            mainLoop: while (myJDownloaderExtension.getConnectThread() == this) {
+            while (myJDownloaderExtension.getConnectThread() == this && api != null) {
                 try {
                     boolean closeSocket = true;
                     try {
@@ -75,38 +76,43 @@ public class MyJDownloaderConnectThread extends Thread {
                         connectionSocket.connect(ia, 30000);
                         connectionSocket.getOutputStream().write(("DEVICE" + api.getSessionInfo().getSessionToken()).getBytes("ISO-8859-1"));
                         int validToken = connectionSocket.getInputStream().read();
-                        if (validToken == 4 || validToken == 0 || validToken == 1) {
+                        DeviceConnectionStatus connectionStatus = DeviceConnectionStatus.parse(validToken);
+                        if (connectionStatus != null) {
+                            long syncMark = 0;
                             backoffCounter = 0;
-                            if (validToken == 4) {
-                                logger.info("KeepAlive");
-                                closeSocket = true;
-                            } else if (validToken == 0) {
+                            switch (connectionStatus) {
+                            case UNBOUND:
+                                logger.info("Unbound");
+                                sessionValid = false;
+                                continue;
+                            case KEEPALIVE:
+                                try {
+                                    syncMark = new AWFCUtils(connectionSocket.getInputStream()).readLongOptimized();
+                                    sync(syncMark);
+                                } catch (final IOException e) {
+                                }
+                                logger.info("KeepAlive " + syncMark);
+                                continue;
+                            case TOKEN:
                                 logger.info("Invalid sessionToken");
                                 sessionValid = false;
-                                closeSocket = true;
-                            } else if (validToken == 1) {
-                                logger.info("valid connection");
+                                continue;
+                            case OK:
+                                logger.info("valid connection(old Ok)");
                                 closeSocket = false;
-                                final Socket clientSocket = connectionSocket;
-                                Thread connectionThread = new Thread("MyJDownloaderConnection:" + THREADCOUNTER.incrementAndGet()) {
-                                    @Override
-                                    public void run() {
-                                        try {
-                                            MyJDownloaderHttpConnection httpConnection = new MyJDownloaderHttpConnection(clientSocket, api);
-                                            httpConnection.run();
-                                        } catch (final Throwable e) {
-                                            logger.log(e);
-                                        }
-                                    }
-                                };
-                                connectionThread.setDaemon(true);
-                                connectionThread.start();
-                                continue mainLoop;
+                                handleConnection(connectionSocket);
+                                continue;
+                            case OK_SYNC:
+                                syncMark = new AWFCUtils(connectionSocket.getInputStream()).readLongOptimized();
+                                logger.info("valid connection (Ok: " + syncMark + ")");
+                                closeSocket = false;
+                                handleConnection(connectionSocket);
+                                sync(syncMark);
+                                continue;
                             }
-                        } else {
-                            logger.info("Something else!?!?! WTF!" + validToken);
-                            backoff();
                         }
+                        logger.info("Something else!?!?! WTF!" + validToken);
+                        backoff();
                     } catch (final MyJDownloaderException e) {
                         if (e instanceof EmailInvalidException) {
                             logger.info("Invalid email!");
@@ -135,6 +141,7 @@ public class MyJDownloaderConnectThread extends Thread {
                         backoff();
                     } catch (SocketTimeoutException e) {
                         logger.info("ReadTimeout on server connect!");
+                        backoff();
                     } catch (final Throwable e) {
                         logger.log(e);
                         backoff();
@@ -153,7 +160,48 @@ public class MyJDownloaderConnectThread extends Thread {
         }
     }
 
+    private void sync(final long nextSyncMark) {
+        final long lastSyncMark = this.syncMark.get();
+        if (lastSyncMark != nextSyncMark) {
+            THREADQUEUE.execute(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        MyJDownloaderAPI lapi = api;
+                        if (MyJDownloaderConnectThread.this.syncMark.get() != lastSyncMark) return;
+                        if (lapi != null) {
+                            TYPE[] types = lapi.listrequesteddevicesnotifications();
+                            int jj = 1;
+                            MyJDownloaderConnectThread.this.syncMark.compareAndSet(lastSyncMark, nextSyncMark);
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
+                }
+            });
+        }
+    }
+
+    private void handleConnection(final Socket clientSocket) {
+        Thread connectionThread = new Thread("MyJDownloaderConnection:" + THREADCOUNTER.incrementAndGet()) {
+            @Override
+            public void run() {
+                try {
+                    MyJDownloaderHttpConnection httpConnection = new MyJDownloaderHttpConnection(clientSocket, api);
+                    httpConnection.run();
+                } catch (final Throwable e) {
+                    logger.log(e);
+                }
+            }
+        };
+        connectionThread.setDaemon(true);
+        connectionThread.start();
+    }
+
     public void disconnect() {
+        MyJDownloaderAPI lapi = api;
+        api = null;
         try {
             connectionSocket.close();
         } catch (final Throwable e) {
@@ -163,58 +211,40 @@ public class MyJDownloaderConnectThread extends Thread {
         } catch (final Throwable e) {
         }
         try {
-            api.disconnect();
+            lapi.disconnect();
         } catch (final Throwable e) {
         }
     }
 
     protected void ensureValidSession() throws MyJDownloaderException {
-        if (sessionValid && api.getSessionInfo() != null) return;
+        MyJDownloaderAPI lapi = api;
+        if (sessionValid && lapi.getSessionInfo() != null) return;
         /* fetch new jdToken if needed */
-        if (api.getSessionInfo() != null) {
+        if (lapi.getSessionInfo() != null) {
             try {
-                api.reconnect();
+                lapi.reconnect();
             } catch (MyJDownloaderException e) {
                 sessionValid = false;
-                api.setSessionInfo(null);
+                lapi.setSessionInfo(null);
                 ensureValidSession();
             }
         } else {
-            api.connect(config.getEmail(), config.getPassword());
+            lapi.connect(config.getEmail(), config.getPassword());
             boolean deviceBound = false;
             try {
-                DeviceData device = api.bindDevice(new DeviceData(config.getUniqueDeviceID(), "jd", config.getDeviceName()));
+                DeviceData device = lapi.bindDevice(new DeviceData(config.getUniqueDeviceID(), "jd", config.getDeviceName()));
                 if (StringUtils.isNotEmpty(device.getId())) {
                     deviceBound = true;
                     config.setUniqueDeviceID(device.getId());
                 }
             } finally {
                 if (deviceBound == false) {
-                    api.disconnect();
+                    lapi.disconnect();
                 }
             }
         }
         //
         sessionValid = true;
-    }
-
-    protected HashMap<String, Object> getJDToken() throws IOException {
-        Browser br = new Browser();
-        return JSonStorage.restoreFromString(br.getPage("http://" + config.getAPIServerURL() + ":" + config.getAPIServerPort() + "/myjdownloader/getJDToken?" + Encoding.urlEncode(config.getEmail()) + "&" + Hash.getSHA256(config.getPassword())), new TypeRef<HashMap<String, Object>>() {
-        });
-    }
-
-    protected String parseJDTokenResponse(HashMap<String, Object> apiResponse, String field) {
-        String ret = null;
-        if (apiResponse != null) {
-            Object data = apiResponse.get("data");
-            if (data != null && data instanceof Map) {
-                Map<String, Object> dataMap = (Map<String, Object>) data;
-                return (String) dataMap.get(field);
-            }
-        }
-        return ret;
-
     }
 
 }

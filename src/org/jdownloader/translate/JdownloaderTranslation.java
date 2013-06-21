@@ -249,9 +249,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Not enough harddiskspace" })
     String downloadlink_status_error();
 
-    @Default(lngs = { "en" }, values = { "Invalid download directory" })
-    String downloadlink_status_error_invalid_dest();
-
     @Default(lngs = { "en" }, values = { "Temp. unavailable" })
     String downloadlink_status_error_temp_unavailable();
 
@@ -457,10 +454,13 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Skipped - Disk is full" })
     String DownloadLink_setSkipped_statusmessage_disk_full();
 
+    @Default(lngs = { "en" }, values = { "Invalid download directory" })
+    String DownloadLink_setSkipped_statusmessage_invalid_path();
+
     @Default(lngs = { "en" }, values = { "Skipped - Account is missing" })
     String DownloadLink_setSkipped_statusmessage_account();
 
     @Default(lngs = { "en" }, values = { "Skipped - File already exists" })
-    String downloadlink_status_error_invalid_disk_full();
+    String DownloadLink_setSkipped_statusmessage_file_exists();
 
 }

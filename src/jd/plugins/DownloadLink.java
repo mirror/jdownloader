@@ -774,7 +774,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (skipReason == null) skipReason = SkipReason.NONE;
         switch (skipReason) {
         case INVALID_DESTINATION:
-            getLinkStatus().setStatusText(_JDT._.downloadlink_status_error_invalid_dest());
+            getLinkStatus().setStatusText(_JDT._.DownloadLink_setSkipped_statusmessage_invalid_path());
             break;
         case CAPTCHA:
             getLinkStatus().setStatusText(_JDT._.DownloadLink_setSkipped_statusmessage_captcha());
