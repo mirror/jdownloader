@@ -11,7 +11,7 @@ public class FileAccessManager {
         locks = new HashMap<File, Object>();
     }
 
-    public Object unlock(File file) {
+    public synchronized Object unlock(File file) {
         return locks.remove(file);
     }
 
@@ -22,7 +22,7 @@ public class FileAccessManager {
         locks.put(file, newLockHolder);
     }
 
-    public Object getLockHolder(File file) {
+    public synchronized Object getLockHolder(File file) {
         return locks.get(file);
     }
 
