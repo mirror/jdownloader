@@ -118,6 +118,7 @@ FilterRule_toString_source=Zdrojová URL %s1
 FilterRule_toString_type=Súbor %s1
 FilterRule_toString_type2=\n%s1-Súbor %s2
 FinishedDateColumn_FinishedDateColumn=Dátum dokončenia
+GUISettings_getTitle=Užívateľské rozhranie
 GUISettings_save_language_changed_restart_required_title=Vyžadovaný reštart!
 IfFileExistsDialog_layoutDialogContent_overwrite_=Prepísať existujúci súbor?
 IfFileExistsDialog_layoutDialogContent_rename_=Premenovať súbor
