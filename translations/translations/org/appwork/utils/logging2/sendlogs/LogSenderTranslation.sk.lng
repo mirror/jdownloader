@@ -1,6 +1,4 @@
-LogAction=Vytvoriť log
 LogAction_actionPerformed_wait_=Čakajte prosím...
-LogAction_tooltip=Vytvoriť log
 LogModel_initColumns_time_=Čas
 SendLogDialog_SendLogDialog_title_=Poslať hlásenie o chybe
 SendLogDialog_layoutDialogContent_desc_=Kedy sa vyskytol problém? Prosím, skontrolujte všetky položky, ktoré môžu stáť za zváženie!
