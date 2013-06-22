@@ -34,7 +34,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -228,8 +227,10 @@ public class DivxDenCom extends PluginForHost {
                 }
             }
             if (freeform != null) {
+                boolean captcha = false;
                 freeform.remove("method_premium");
                 if (brbefore.contains("solvemedia.com/papi/")) {
+                    captcha = true;
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
@@ -241,7 +242,18 @@ public class DivxDenCom extends PluginForHost {
                 }
                 br.submitForm(freeform);
                 doSomething();
-                if (brbefore.contains("solvemedia.com/papi/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (brbefore.contains("solvemedia.com/papi/")) {
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else if (captcha) {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
+                }
             }
             checkErrors(downloadLink, false);
             String md5hash = new Regex(brbefore, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);

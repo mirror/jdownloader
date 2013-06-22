@@ -62,7 +62,8 @@ public class FileGoOrg extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setCookie(COOKIE_HOST, "Fg_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML(">The file did not exist or has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML(">The file did not exist or has been deleted") || br.containsHTML("innerHTML=\"The file did not exist or has been deleted\\.\\.\\.") || br.getURL().equals("http://filego.org/fileno.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("The file was not uploaded correctly, try again and follow instruction")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = getData("Filename:");
         if (filename == null) {
             // embeded
@@ -153,7 +154,18 @@ public class FileGoOrg extends PluginForHost {
             final String c = getCaptchaCode(cf, downloadLink);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1&recaptcha_response_field=" + c + "&recaptcha_challenge_field=" + rc.getChallenge());
-            if (br.containsHTML("incorrect\\-captcha\\-sol")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("incorrect\\-captcha\\-sol")) {
+                try {
+                    invalidateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                try {
+                    validateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
+            }
             finalLink = findLink();
             int wait = 100;
             final String waittime = br.getRegex("countdown\\((\\d+)\\);").getMatch(0);

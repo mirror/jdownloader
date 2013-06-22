@@ -236,14 +236,23 @@ public class ClickToViewOrg extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, passCode);
                 dllink = getDllink();
-                if (dllink == null && br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                    dlForm = br.getFormbyProperty("name", "F1");
-                    continue;
-                } else if (dllink == null && !br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                if (dllink == null && !br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else
+                } else if (dllink == null && br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                    dlForm = br.getFormbyProperty("name", "F1");
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
+                    continue;
+                } else {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     break;
+                }
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");

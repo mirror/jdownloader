@@ -83,7 +83,10 @@ public class HotFileCom extends PluginForHost {
 
     private String fixLinkSSL(String link) {
         checkSsl();
-        if (PREFERSSL) link = link.replace("http://", "https://");
+        if (PREFERSSL)
+            link = link.replace("http://", "https://");
+        else
+            link = link.replace("https://", "http://");
         return link;
     }
 
@@ -657,7 +660,7 @@ public class HotFileCom extends PluginForHost {
 
         cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HotFileCom.UNLIMITEDMAXCON, JDL.L("plugins.hoster.HotFileCom.SetUnlimitedConnectionsForPremium", "Allow more than 5 connections per file for premium (default maximum = 5). Enabling this can cause errors!!")).setDefaultValue(false);
         getConfig().addEntry(cond);
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.HotFileCom.com.preferSSL", "Use Secure Communication over SSL")).setDefaultValue(false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.HotFileCom.com.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
     private String getIP() {

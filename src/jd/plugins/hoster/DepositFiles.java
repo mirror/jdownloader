@@ -33,6 +33,8 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
@@ -87,8 +89,12 @@ public class DepositFiles extends PluginForHost {
     private static AtomicInteger  simultanpremium          = new AtomicInteger(1);
     private static AtomicBoolean  useWebLogin              = new AtomicBoolean(false);
 
+    private static final String   SSL_CONNECTION           = "SSL_CONNECTION";
+    private boolean               PREFERSSL                = false;
+
     public DepositFiles(final PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
         this.enablePremium("http://depositfiles.com/signup.php?ref=down1");
     }
 
@@ -97,7 +103,7 @@ public class DepositFiles extends PluginForHost {
             try {
                 Browser testBr = new Browser();
                 testBr.setFollowRedirects(true);
-                testBr.getPage("http://depositfiles.com");
+                testBr.getPage(fixLinkSSL("http://depositfiles.com"));
                 String baseURL = new Regex(testBr.getURL(), "(https?://[^/]+)").getMatch(0);
                 StringContainer main = new StringContainer();
                 main.string = baseURL;
@@ -108,7 +114,7 @@ public class DepositFiles extends PluginForHost {
                 try {
                     System.out.println("despostfiles setter failed, setting failover");
                     StringContainer main = new StringContainer();
-                    main.string = "http://depositfiles.com";
+                    main.string = fixLinkSSL("http://depositfiles.com");
                     MAINPAGE = main;
                     System.out.println("depositfiles setter MAINPAGE = " + MAINPAGE.string);
                 } catch (final Throwable e2) {
@@ -121,10 +127,8 @@ public class DepositFiles extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         setMainpage();
-        if (!link.getDownloadURL().contains(MAINPAGE.string.replaceAll("https?://(www\\.)?", ""))) {
-            // currently respects users protocol choice on link import
-            link.setUrlDownload(link.getDownloadURL().replaceAll(DOMAINS + "(/.*?)?/files", MAINPAGE.string.replaceAll("https?://(www\\.)?", "") + "/de/files"));
-        }
+        final String newLink = link.getDownloadURL().replaceAll(DOMAINS + "(/.*?)?/files", MAINPAGE.string.replaceAll("https?://(www\\.)?", "") + "/de/files");
+        link.setUrlDownload(fixLinkSSL(newLink));
     }
 
     private static void showFreeDialog(final String domain) {
@@ -343,8 +347,7 @@ public class DepositFiles extends PluginForHost {
         br.forceDebug(true);
         requestFileInformation(downloadLink);
         if (finallink == null) {
-            String link = downloadLink.getDownloadURL();
-            // br.getPage(link);
+            String link = fixLinkSSL(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() != null) {
                 link = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
                 br.getPage(link);
@@ -497,7 +500,7 @@ public class DepositFiles extends PluginForHost {
         }
 
         String link = downloadLink.getDownloadURL();
-        br.getPage(link);
+        br.getPage(fixLinkSSL(link));
         if (br.getRedirectLocation() != null) {
             link = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
             br.getPage(link);
@@ -724,9 +727,7 @@ public class DepositFiles extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setMainpage();
-        if (!new Regex(downloadLink.getDownloadURL(), MAINPAGE.string.replaceAll("https?://(www\\.)?", "")).matches()) {
-            correctDownloadLink(downloadLink);
-        }
+        correctDownloadLink(downloadLink);
         setBrowserExclusive();
         br.getHeaders().put("User-Agent", UA);
         final String link = downloadLink.getDownloadURL();
@@ -734,7 +735,7 @@ public class DepositFiles extends PluginForHost {
         /* needed so the download gets counted,any referer should work */
         // br.getHeaders().put("Referer", "http://www.google.de");
         br.setFollowRedirects(false);
-        br.getPage(link);
+        br.getPage(fixLinkSSL(link));
 
         // Datei geloescht?
         if (br.containsHTML(FILE_NOT_FOUND)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -783,6 +784,39 @@ public class DepositFiles extends PluginForHost {
             }
         }
         return finallink;
+    }
+
+    private void checkSsl() {
+        PREFERSSL = getPluginConfig().getBooleanProperty(SSL_CONNECTION, false);
+        if (oldStyle() == true) PREFERSSL = false;
+    }
+
+    private String fixLinkSSL(String link) {
+        checkSsl();
+        if (PREFERSSL)
+            link = link.replace("http://", "https://");
+        else
+            link = link.replace("https://", "http://");
+        return link;
+    }
+
+    private boolean oldStyle() {
+        String style = System.getProperty("ftpStyle", null);
+        if ("new".equalsIgnoreCase(style)) return false;
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        int rev = Integer.parseInt(prev);
+        if (rev < 10000) return true;
+        return false;
+    }
+
+    @SuppressWarnings("deprecation")
+    private void setConfigElements() {
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.HotFileCom.com.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
     @Override

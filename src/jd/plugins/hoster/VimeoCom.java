@@ -79,8 +79,6 @@ public class VimeoCom extends PluginForHost {
         if (br.containsHTML("iconify_down_b")) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("http://vimeo.com/" + ID + "?action=download");
-            // <a href="http://vimeo.com/7931601/download?t=1371911965&v=12535169&s=11b08cddf42e5010b70971d93308b6f1"
-            // download="markenkommunikation_&amp;_videowerbung_auf_clipfish.de_640x360.mp4"
             qualities = br.getRegex("href=\"((http://vimeo\\.com)?/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
         } else {
             /* withoutDlBtn */
