@@ -67,7 +67,7 @@ public class AppleTrailer extends PluginForDecrypt {
         dupe = new HashSet<String>();
 
         // cleanup required
-        parameter = param.toString().replaceAll("://(www\\.)?apple", "://trailers.apple");
+        parameter = param.toString().replaceAll("://(\\w+\\.)?apple", "://trailers.apple");
 
         // prevent agent detection, mainly due to the fail over method to the poster retry method..
         if (!loaded) {
@@ -109,6 +109,7 @@ public class AppleTrailer extends PluginForDecrypt {
             poster = true;
 
             title = br1.getRegex("<title>Apple - Trailers - (.*?)( - In Theaters.*)?</title>").getMatch(0);
+            if (title == null) title = br1.getRegex("<meta name=\"Keywords\" content=\"(.*?) Trailer").getMatch(0);
 
             String[] results = br1.getRegex("<a href=\"(\\w+\\.html|([^\"]+)?hd/)\"([^>]+)?><img[^>]+").getColumn(0);
 
@@ -122,11 +123,12 @@ public class AppleTrailer extends PluginForDecrypt {
                     if (result.endsWith("hd/") && br2.containsHTML("- iTunes</title>")) {
                         processItunes();
                     } else {
-                        String url = br2.getRegex("(https?://[^/]+apple\\.com/[^\"']+\\d+\\.mov)").getMatch(0);
+                        String url = br2.getRegex("href','(https?://[^/]+apple\\.com/[^\"']+\\d+\\.mov)").getMatch(0);
+                        if (url == null) url = br2.getRegex("(https?://[^/]+apple\\.com/[^\"']+\\d+\\.mov)").getMatch(0);
                         if (url != null) {
                             if (dupe.add(url) == false) continue;
                             String name = br2.getRegex("<title>Apple - Trailers - .*? - (.*?)( - (low|medium|high|small|medium|large))?</title>").getMatch(0);
-                            if (name.matches("(?i-)(low|medium|high|small|medium|large)")) name = "Trailer";
+                            if (name != null && name.matches("(?i-)(low|medium|high|small|medium|large)") || name == null) name = "Trailer";
                             String psize = new Regex(url, "(\\d+)\\.mov$").getMatch(0);
                             if (name != null) name = title + " - " + name + " (" + psize + "p_SD).mov";
                             url = url.replace("/trailers.apple.com/", "/trailers.appledecrypted.com/");
@@ -258,13 +260,14 @@ public class AppleTrailer extends PluginForDecrypt {
                         String url = match[0];
                         String video_name = filename + " (" + match[1].replaceFirst("<span>", "_").replaceFirst("</span>", "") + ")";
                         br2 = br1.cloneBrowser();
-                        url = url.replace("includes/", "includes/" + hitname.toLowerCase().replace(" ", "") + "/");
+                        url = url.replace("includes/", "includes/" + hitname.toLowerCase().replace(" ", "").replaceAll("[^a-zA-Z0-9]", "") + "/");
                         if (dupe.add(url) == false) continue;
                         br2.getPage(url);
                         url = br2.getRegex("href=\"([^\\?\"]+).*?\">Click to Play</a>").getMatch(0);
                         if (url == null) {
                             logger.warning("Plugin defect, could not find 'url' on page : " + br2.getURL() + " from parameter : " + parameter);
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            continue;
                         }
                         if (dupe.add(url) == false) continue;
                         url = url.replace("/trailers.apple.com/", "/trailers.appledecrypted.com/");
@@ -286,7 +289,12 @@ public class AppleTrailer extends PluginForDecrypt {
 
         String[] names = br2.getRegex("<span class=\"text\">(.*?)</span></li>").getColumn(0);
         // from when it comes from a poster
-        if ((names == null || names.length == 0) && poster) names = new String[] { title + "Trailer" };
+        if ((names == null || names.length == 0) && poster) {
+            names = new String[] { title + "Trailer" };
+        } else if (names == null || names.length == 0) {
+            // single entries can contain a <h3> value like processNormal
+            names = br2.getRegex("<h3>(.*?)</h3>").getColumn(0);
+        }
         String[] hits = br2.getRegex("(<div class=\"section.+?</ul></div>)").getColumn(0);
 
         if ((hits == null || hits.length == 0) || (names == null || names.length == 0)) {
