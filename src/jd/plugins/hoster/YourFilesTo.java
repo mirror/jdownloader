@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -51,12 +52,14 @@ public class YourFilesTo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://yourfiles.to/", "yab_mylang", "en");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(downloadLink.getDownloadURL());
+        String getLink = downloadLink.getStringProperty("redirecterrorworkaround", null);
+        if (getLink == null) getLink = downloadLink.getDownloadURL();
+        br.getPage(getLink);
         if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Filename:</b></font></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
         if (filename == null) {
@@ -73,7 +76,7 @@ public class YourFilesTo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
         String link = br.getRegex("var bla = \\'http://http:/(.*?)\\';").getMatch(0);
@@ -84,8 +87,14 @@ public class YourFilesTo extends PluginForHost {
         dl = BrowserAdapter.openDownload(brc, downloadLink, link);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            logger.warning("yourfiles DL failed!");
+            logger.warning("Current location: " + br.getURL());
             // Falls das nicht geht müssen Downloads bei diesem Fall so geladen werden: http://yourfiles.to/download.php?id=7777777&type=2
-            if (br.getURL().contains("error=1&code=DL_CaptchaInvalid")) throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (br.getURL().contains("error=1&code=DL_CaptchaInvalid")) {
+                if (downloadLink.getStringProperty("redirecterrorworkaround", null) != null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Redirect error workaround failed..."); }
+                downloadLink.setProperty("redirecterrorworkaround", "http://yourfiles.to/download.php?id=" + new Regex(downloadLink.getDownloadURL(), "\\?d=([\\w]+)$").getMatch(0) + "&type=2");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Workaround für fehlerhaften Filename Header */

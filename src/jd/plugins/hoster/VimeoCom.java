@@ -79,7 +79,9 @@ public class VimeoCom extends PluginForHost {
         if (br.containsHTML("iconify_down_b")) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("http://vimeo.com/" + ID + "?action=download");
-            qualities = br.getRegex("href=\"(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
+            // <a href="http://vimeo.com/7931601/download?t=1371911965&v=12535169&s=11b08cddf42e5010b70971d93308b6f1"
+            // download="markenkommunikation_&amp;_videowerbung_auf_clipfish.de_640x360.mp4"
+            qualities = br.getRegex("href=\"((http://vimeo\\.com)?/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
         } else {
             /* withoutDlBtn */
             String sig = br.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);
@@ -99,9 +101,9 @@ public class VimeoCom extends PluginForHost {
                 // Nothing found so SD should be available at least...
                 qualities = new String[1][4];
                 qualities[0][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=sd&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=&seek=0";
-                qualities[0][1] = title;
-                qualities[0][2] = "sd";
-                qualities[0][3] = null;
+                qualities[0][2] = title;
+                qualities[0][3] = "sd";
+                qualities[0][4] = null;
             }
         }
         return qualities;
@@ -357,7 +359,7 @@ public class VimeoCom extends PluginForHost {
         String qualities[][] = getQualities(br, ID, name);
         for (String quality[] : qualities) {
             String url = quality[0];
-            if (name.equals(Encoding.htmlDecode(quality[1]))) {
+            if (name.equals(Encoding.htmlDecode(quality[2]))) {
                 if (!url.startsWith("http://")) url = "http://vimeo.com" + url;
                 newURL = url;
                 break;

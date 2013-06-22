@@ -93,8 +93,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         int format = 0;
         for (String quality[] : qualities) {
             String url = quality[0];
-            String name = Encoding.htmlDecode(quality[1]);
-            String fmt = quality[2];
+            String name = Encoding.htmlDecode(quality[2]);
+            String fmt = quality[3];
             name += "_" + fmt + ".mp4";
             if (fmt != null) fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
             if (fmt != null) {
@@ -139,7 +139,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             link.setProperty("LINKDUPEID", "vimeo" + ID + name + fmt);
             link.setProperty("pass", password);
             if (quality[3] != null) {
-                link.setDownloadSize(SizeFormatter.getSize(quality[3].trim()));
+                link.setDownloadSize(SizeFormatter.getSize(quality[4].trim()));
                 link.setAvailable(true);
             }
             DownloadLink best = bestMap.get(fmt);
@@ -184,7 +184,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         if (br.containsHTML("iconify_down_b")) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("http://vimeo.com/" + ID + "?action=download");
-            qualities = br.getRegex("href=\"(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
+            // <a href="http://vimeo.com/7931601/download?t=1371911965&v=12535169&s=11b08cddf42e5010b70971d93308b6f1"
+            // download="markenkommunikation_&amp;_videowerbung_auf_clipfish.de_640x360.mp4"
+            qualities = br.getRegex("href=\"((http://vimeo\\.com)?/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
         } else {
             /* withoutDlBtn */
             String sig = br.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);
@@ -204,9 +206,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 // Nothing found so SD should be available at least...
                 qualities = new String[1][4];
                 qualities[0][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=sd&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=&seek=0";
-                qualities[0][1] = title;
-                qualities[0][2] = "sd";
-                qualities[0][3] = null;
+                qualities[0][2] = title;
+                qualities[0][3] = "sd";
+                qualities[0][4] = null;
             }
         }
         return qualities;
