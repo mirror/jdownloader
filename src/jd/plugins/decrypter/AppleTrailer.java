@@ -154,10 +154,10 @@ public class AppleTrailer extends PluginForDecrypt {
                 String[] mirrors = new String[] { "High Definition", "Standard Definition" };
                 int[] selectedMirrorsIndices = null;
                 try {
-                    selectedMirrorsIndices = UserIO.getInstance().requestMultiSelectionDialog(0, JDL.L("plugins.decrypter.appletraider.SelectHostersHeadline", "Please select the Definition format you desire"), JDL.L("plugins.decrypter.appletrailer.SelectHosters", "Please select which Defintation Quality you prefer"), mirrors, null, null, null, null);
+                    selectedMirrorsIndices = UserIO.getInstance().requestMultiSelectionDialog(0, JDL.L("plugins.decrypter.appletraider.SelectHostersHeadline", "Please select the definition format you desire"), JDL.L("plugins.decrypter.appletrailer.SelectHosters", "Please select the definition formats you prefer\r\n" + parameter), mirrors, null, null, null, null);
                 } catch (Throwable e) {
                     // remove when jd2 goes stable
-                    int selectedMirror = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.appletraider.SelectHostersHeadline", "Please select the Definition format you desire"), JDL.L("plugins.decrypter.appletrailer.SelectHosters", "Please select which Defintation Quality you prefer"), mirrors, 0, null, null, null, null);
+                    int selectedMirror = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.appletraider.SelectHostersHeadline", "Please select the definition format you desire"), JDL.L("plugins.decrypter.appletrailer.SelectHosters", "Please select the definition format you prefer\r\n" + parameter), mirrors, 0, null, null, null, null);
                     if (selectedMirror < 0) return null;
                     selectedMirrorsIndices = new int[] { selectedMirror };
                 }
