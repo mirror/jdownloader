@@ -78,13 +78,20 @@ public class TrailersAppleCom extends PluginForHost {
         String dllink = downloadLink.getDownloadURL();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         long test = dl.getConnection().getLongContentLength();
-        if (test < 512000) {
+        if (test < 51200) {
             br.followConnection();
-            dllink = br.getRegex("(https?://[^\r\n\\s]+\\.mov)").getMatch(0);
-            if (dllink != null) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            String dllink2 = br.getRegex("(https?://[^\r\n\\s]+\\.mov)").getMatch(0);
+            // required for poster 'SD' movies aka non p results
+            if (dllink2 == null) {
+                String tmp = br.getRegex("!(.*\\.mov)").getMatch(0);
+                if (tmp != null) {
+                    dllink2 = dllink.replaceFirst("/[^/]+$", "/" + tmp);
+                }
+            }
+            if (dllink2 != null) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink2, true, 0);
                 test = dl.getConnection().getLongContentLength();
-                if (dl.getConnection().getContentType().contains("video/quicktime") && test < 512000) {
+                if (dl.getConnection().getContentType().contains("video/quicktime") && test < 51200) {
                     br.followConnection();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
