@@ -1892,7 +1892,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Build Date:" })
     String jd_gui_swing_components_AboutDialog_builddate();
 
-    @Default(lngs = { "en" }, values = { "Source Revisions:" })
+    @Default(lngs = { "en" }, values = { "Source Revisions" })
     String jd_gui_swing_components_AboutDialog_sourcerevisions();
 
     @Default(lngs = { "en" }, values = { "Core:" })
@@ -2048,7 +2048,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reconnect Failed" })
     String ReconnectDialog_failed();
 
-    @Default(lngs = { "en" }, values = { "Launcher" })
+    @Default(lngs = { "en" }, values = { "Launcher:" })
     String jd_gui_swing_components_AboutDialog_launcher();
 
     @Default(lngs = { "en" }, values = { "Could not create Folder %s1" })
