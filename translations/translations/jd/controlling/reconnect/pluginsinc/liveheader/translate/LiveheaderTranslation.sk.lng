@@ -1,3 +1,4 @@
+DataCompareDialog_DataCompareDialog_=Porovnať informácie o routeri
 DataCompareDialog_layoutDialogContent_firmware=Firmware/verzia
 DataCompareDialog_layoutDialogContent_firmware_help=Zadajte verziu firmvéru... ponechajte prázdne, ak nie je známa
 DataCompareDialog_layoutDialogContent_ip=IP alebo meno hostiteľa
@@ -13,8 +14,15 @@ DataCompareDialog_layoutDialogContent_user=Meno užívateľa
 DataCompareDialog_layoutDialogContent_user_help=Zadajte meno užívateľa webového rozhrania...
 DataCompareDialog_layoutDialogContent_webinterface=Webové rozhranie routera
 DataCompareDialog_open_webinterface=Otvoriť webové rozhranie
+EditScriptAction_EditScriptAction_=Upraviť skript
+GetIPAction_GetIPAction_=Získať IP routera
+GetIPAction_actionPerformed_d_title=Hľadať IP routera
+GetIPAction_getString_progress=Skenujem sieť...
+GetIPAction_getTooltipText_tt_2=Současná IP routeru: %s1. Klikněte sem pro skenování Vaší sítě a ověření této IP adresy.
+LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Služba nie je dostupná
 LiveHeaderReconnect_getGUI_help_password=Zadajte heslo webového rozhrania...
 LiveHeaderReconnect_getGUI_help_user=Zadajte meno užívateľa webového rozhrania...
+ReconnectRecorderAction_ReconnectRecorderAction_=Vytvoriť nový skript
 gui_btn_abort=Prerušiť
 gui_btn_cancel=Zrušiť
 gui_btn_help=Pomocník
@@ -37,5 +45,6 @@ jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Zakázali ste Kontrolu IP. Týmto dramaticky zvýšite množstvo znovupripojení!\n\n\n\nNiekoľko modulov ako Záznam Znovupripojení bolo zakázaných.
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=Kontrola IP zakázaná!
 literally_password=Heslo
+literally_router_ip=IP routera
 literally_router_model=Model routera
 literally_username=Meno užívateľa

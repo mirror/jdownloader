@@ -1,1 +1,10 @@
+UPNPRouterPlugin_run_wizard_title=UPnP sprievodca routera
+auto=UPnP automatické nastavenie
+controlURLTxt_help=Zadejte kontrolné URL...
 interaction_UpnpReconnect_wanservice_ip=Internetový protokol
+literally_choose_router=Vybrať zariadenie
+literally_control_url=Kontrolné URL
+literally_router=UPnP router
+literally_service_type=Typ služby
+malformedservicetype=Typ služby je neplatný, skúste automatické nastavenie UPnP.
+malformedurl=Kontrolné URL je neplatné. Skúste UPnP autonastavenie.
