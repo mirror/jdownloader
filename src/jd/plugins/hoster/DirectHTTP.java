@@ -493,7 +493,7 @@ public class DirectHTTP extends PluginForHost {
                 if (dl.externalDownloadStop()) return;
             } catch (final Throwable e) {
             }
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+            if ((downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) || (dl.getConnection().getResponseCode() == 400 && br.getRequest().getHttpConnection().getHeaderField("server").matches("HFS.+"))) {
                 if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
                     downloadLink.setChunksProgress(null);
                     downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));

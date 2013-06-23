@@ -67,8 +67,7 @@ public class OteUploadCom extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = true;
-    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
-    // fail. .:. use [1-20]
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
@@ -113,9 +112,17 @@ public class OteUploadCom extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
     }
 
     public void prepBrowser(final Browser br) {
@@ -169,8 +176,7 @@ public class OteUploadCom extends PluginForHost {
         String[] fileInfo = new String[3];
         // scan the first page
         scanInfo(fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission
-        // critical
+        // scan the second page. filesize[1] and md5hash[2] are not mission critical
         if (fileInfo[0] == null) {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
@@ -320,8 +326,7 @@ public class OteUploadCom extends PluginForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                // stable is lame, issue finding input data fields correctly.
-                // eg. closes at ' quotation mark - remove when jd2 goes stable!
+                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -495,8 +500,7 @@ public class OteUploadCom extends PluginForHost {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
-        // remove custom rules first!!! As html can change because of generic
-        // cleanup rules.
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
@@ -618,8 +622,7 @@ public class OteUploadCom extends PluginForHost {
         }
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
-    // String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 
@@ -647,8 +650,7 @@ public class OteUploadCom extends PluginForHost {
         if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         String newExtension = null;
-        // some streaming sites do not provide proper file.extension within
-        // headers (Content-Disposition or the fail over getURL()).
+        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
         if (serverFilename.contains(".")) {
             newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
         } else {
@@ -746,7 +748,7 @@ public class OteUploadCom extends PluginForHost {
         String premium = br.getRegex("\"premium\"\\s*?:\\s*?\"(\\d)\"").getMatch(0);
         String data = br.getRegex("\"data\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
         String expired = br.getRegex("\"expired\"\\s*?:\\s*?\"(\\d+)\"").getMatch(0);
-        String trafficLeft = br.getRegex("\"trafficLeft\"\\s*?:\\s*?\"(\\d+)\"").getMatch(0);
+        String trafficLeft = br.getRegex("\"trafficLeft\"\\s*?:\\s*?\"(\\-?\\d+)\"").getMatch(0);
         if (data != null && data.contains("does not") || expired == null) {
             ai.setStatus("Username/Password wrong?");
             account.setValid(false);
@@ -758,7 +760,10 @@ public class OteUploadCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expired) * 1000));
-        ai.setTrafficLeft(Long.parseLong(trafficLeft));
+        if (trafficLeft != null)
+            ai.setTrafficLeft(Long.parseLong(trafficLeft));
+        else
+            logger.warning("Could not find 'trafficLeft'");
         try {
             account.setMaxSimultanDownloads(20);
             account.setConcurrentUsePossible(true);
@@ -816,16 +821,4 @@ public class OteUploadCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }

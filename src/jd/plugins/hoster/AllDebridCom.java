@@ -84,6 +84,8 @@ public class AllDebridCom extends PluginForHost {
                     for (String host : hoster) {
                         if (hosts == null || host.length() == 0) continue;
                         host = host.trim();
+                        // hosts that returned decrypted finallinks bound to users ip session. Can not use multihosters..
+                        if (host.matches("youtube\\.com")) continue;
                         try {
                             if (host.equals("rapidshare.com") && accDetails.get("limite_rs") != null && Integer.parseInt(accDetails.get("limite_rs")) == 0) continue;
                         } catch (final Throwable e) {

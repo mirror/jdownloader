@@ -42,13 +42,13 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "i-debrid.com", "cokluindir.com" }, urls = { "http://\\w+\\.(cokluindir|i-debrid)\\.com(:\\d+)?/aio2?\\.php/.+\\?id=[a-z0-9]{32}", "HAHAHAHAHAHAHA://thisisafakeregex" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cokluindir.com", "i-debrid.com" }, urls = { "http://\\w+\\.(cokluindir|i-debrid)\\.com(:\\d+)?/aio2?\\.php/.+\\?id=[a-z0-9]{32}", "HAHAHAHAHAHAHA://thisisafakeregex" }, flags = { 2, 0 })
 public class CokluindirCom extends PluginForHost {
 
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
 
-    private static final String                            mName              = "i-debrid.com";
+    private static final String                            mName              = "cokluindir.com";
     private static final String                            mProt              = "http://";
     private static Object                                  LOCK               = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
