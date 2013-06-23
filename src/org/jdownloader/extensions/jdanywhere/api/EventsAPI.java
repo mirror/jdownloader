@@ -20,7 +20,7 @@ public class EventsAPI implements IEventsApi {
 
     }
 
-    Map<String, Long> captchaPushList = new HashMap<String, Long>();
+    static Map<String, Long> captchaPushList = new HashMap<String, Long>();
 
     public boolean RegisterCaptchaPush(String host, String path, String query) {
         URI uri = null;
@@ -48,7 +48,7 @@ public class EventsAPI implements IEventsApi {
                     }
                 }
                 for (Map.Entry<String, Long> entry : captchaPushList.entrySet()) {
-                    if (startTime - entry.getValue() > 10 * 60 * 1000) {
+                    if (startTime - entry.getValue() > 5 * 60 * 1000) {
                         try {
                             String request = entry.getKey();
                             ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
