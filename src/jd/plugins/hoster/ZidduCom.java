@@ -91,7 +91,15 @@ public class ZidduCom extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("FILEOFFLINE")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!");
+            try {
+                invalidateLastChallengeResponse();
+            } catch (final Throwable e) {
+            }
             throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+        }
+        try {
+            validateLastChallengeResponse();
+        } catch (final Throwable e) {
         }
         dl.startDownload();
     }

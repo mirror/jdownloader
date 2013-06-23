@@ -254,7 +254,7 @@ public class FilezyNet extends PluginForHost {
         // Fourth, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false);
-            postPage(br.getURL(), "op=download1&usr_login=&id=" + fid + "&fname=" + filename + "&referer=&jdownloader_f=1&method_free_r=Free+Download");
+            postPage(br.getURL(), "op=download1&usr_login=&id=" + fid + "&fname=" + filename + "&referer=&jdownloader_f=1&method_free_r_j=Free+Download");
             checkErrors(downloadLink, false);
             getDllink();
         }

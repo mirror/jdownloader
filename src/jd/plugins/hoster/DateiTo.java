@@ -173,10 +173,21 @@ public class DateiTo extends PluginForHost {
             final String c = getCaptchaCode(cf, downloadLink);
             br.postPage(APIPAGE, "op=free&step=3&id=" + id + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
             if (!br.containsHTML("(wrong|no input)") && br.containsHTML("ok")) {
+                try {
+                    validateLastChallengeResponse();
+                } catch (final Throwable e) {
+                }
                 break;
             }
+            try {
+                invalidateLastChallengeResponse();
+            } catch (final Throwable e) {
+            }
         }
-        if (br.containsHTML("(wrong|no input)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("(wrong|no input)")) {
+            // Dont invalidate last captcha challenge as it's already invalidated!
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
 
         br.postPage(APIPAGE, "op=free&step=4&id=" + id);
         generalFreeAPIErrorhandling();
