@@ -25,14 +25,15 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -59,23 +60,24 @@ public class FilezyNet extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private static final String        COOKIE_HOST                  = "http://filezy.net";
+    private final String               COOKIE_HOST                  = "http://filezy.net";
     // domain names used within download links.
-    private static final String        DOMAINS                      = "(filezy\\.net)";
-    private static final String        PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private static final String        MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final boolean       videoHoster                  = false;
-    private static final boolean       supportsHTTPS                = true;
-    private static final boolean       useRUA                       = false;
-    private static final boolean       useAlternativeExpire         = false;
+    private final String               DOMAINS                      = "(filezy\\.net)";
+    private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private final String               MAINTENANCE                  = ">This server is in maintenance mode";
+    private final boolean              videoHoster                  = false;
+    private final boolean              supportsHTTPS                = true;
+    private final boolean              enforcesHTTPS                = false;
+    private final boolean              useRUA                       = true;
+    private final boolean              useAlternativeExpire         = false;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.3.0
-    // last XfileSharingProBasic compare :: 20887
+    // XfileShare Version 3.0.4.0
+    // last XfileSharingProBasic compare :: 2.6.2.1
     // mods:
     // protocol: has https
     // captchatype: solvemedia
@@ -145,11 +147,12 @@ public class FilezyNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        fuid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         prepBrowser(br);
         br.setFollowRedirects(false);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
+        if (correctedBR.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (correctedBR.containsHTML(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
         }
@@ -171,7 +174,7 @@ public class FilezyNet extends PluginForHost {
             }
         }
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
-            if (correctedBR.contains("You have reached the download(\\-| )limit")) {
+            if (correctedBR.containsHTML("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
@@ -188,22 +191,22 @@ public class FilezyNet extends PluginForHost {
     private String[] scanInfo(String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
+            fileInfo[0] = correctedBR.getRegex("You have requested.*?https?://(www\\.)?" + this.getHost() + "/" + fuid + "/(.*?)</font>").getMatch(1);
             if (fileInfo[0] == null) {
-                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                fileInfo[0] = correctedBR.getRegex("fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (fileInfo[0] == null) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                    fileInfo[0] = correctedBR.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
                     if (fileInfo[0] == null) {
                         // can cause new line finds, so check if it matches.
-                        // fileInfo[0] = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        // fileInfo[0] = correctedBR.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                         // traits from download1 page below.
                         if (fileInfo[0] == null) {
-                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                            fileInfo[0] = correctedBR.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                             // next two are details from sharing box
                             if (fileInfo[0] == null) {
-                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
+                                fileInfo[0] = correctedBR.getRegex("copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
                                 if (fileInfo[0] == null) {
-                                    fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    fileInfo[0] = correctedBR.getRegex("copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
                                 }
                             }
                         }
@@ -212,15 +215,15 @@ public class FilezyNet extends PluginForHost {
             }
         }
         if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+            fileInfo[1] = correctedBR.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = correctedBR.getRegex("</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
                 if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    fileInfo[1] = correctedBR.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                 }
             }
         }
-        if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        if (fileInfo[2] == null) fileInfo[2] = correctedBR.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         return fileInfo;
     }
 
@@ -232,7 +235,7 @@ public class FilezyNet extends PluginForHost {
     }
 
     @SuppressWarnings("unused")
-    private void doFree(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
+    private void doFree(final DownloadLink downloadLink, Account account) throws Exception, PluginException {
         if (account != null) {
             logger.info(account.getUser() + " @ " + acctype + " -> Free Download");
         } else {
@@ -246,39 +249,44 @@ public class FilezyNet extends PluginForHost {
         // Third, do they provide video hosting?
         if (dllink == null && videoHoster) {
             final Browser brv = br.cloneBrowser();
-            brv.getPage("/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            brv.getPage("/vidembed-" + fuid);
             dllink = brv.getRedirectLocation();
         }
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        final String filename = Encoding.urlEncode(downloadLink.getFinalFileName());
         // Fourth, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false);
-            postPage(br.getURL(), "op=download1&usr_login=&id=" + fid + "&fname=" + filename + "&referer=&jdownloader_f=1&method_free_r_j=Free+Download");
-            checkErrors(downloadLink, false);
-            getDllink();
+            Form download1 = getFormByKey("op", "download1");
+            if (download1 != null) {
+                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                download1 = cleanForm(download1);
+                // end of backward compatibility
+                download1.remove("method_premium");
+                sendForm(download1);
+                checkErrors(downloadLink, false);
+                getDllink();
+            }
         }
         if (dllink == null) {
+            Form dlForm = getFormByKey("op", "download2");
+            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // how many forms deep do you want to try.
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
-                final String rand = br.getRegex("name=\"rand\" value=\"([a-z0-9]+)\"").getMatch(0);
-                if (rand == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                String postData = "op=download2&id=" + fid + "&rand=" + rand + "&referer=" + Encoding.urlEncode(br.getURL()) + "&jdownloader_f=1&method_free=&method_premium=&down_direct=1";
+                dlForm = cleanForm(dlForm);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
                 boolean skipWaittime = false;
-                if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                if (correctedBR.containsHTML(PASSWORDTEXT)) {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
                 }
                 // md5 can be on the subsequent pages
                 if (downloadLink.getMD5Hash() == null) {
-                    String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+                    String md5hash = correctedBR.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
                     if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
                 }
                 /* Captcha START */
-                if (correctedBR.contains(";background:#ccc;text-align")) {
+                if (correctedBR.containsHTML(";background:#ccc;text-align")) {
                     logger.info("Detected captcha method \"plaintext captcha\"");
                     /** Captcha method by ManiacMansion */
                     final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
@@ -294,9 +302,9 @@ public class FilezyNet extends PluginForHost {
                     for (String value : capMap.values()) {
                         code.append(value);
                     }
-                    postData += "&code=" + code.toString();
+                    dlForm.put("code", code.toString());
                     logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-                } else if (correctedBR.contains("/captchas/")) {
+                } else if (correctedBR.containsHTML("/captchas/")) {
                     logger.info("Detected captcha method \"Standard captcha\"");
                     final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
                     String captchaurl = null;
@@ -315,20 +323,20 @@ public class FilezyNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
-                    postData += "&code=" + code.toString();
+                    dlForm.put("code", code);
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-                } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
+                } else if (correctedBR.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     logger.info("Detected captcha method \"Re Captcha\"");
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    final String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    final String id = correctedBR.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                     if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     rc.setId(id);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode(cf, downloadLink);
-                    postData += "&recaptcha_challenge_field=" + rc.getChallenge();
-                    postData += "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                    dlForm.put("recaptcha_challenge_field", rc.getChallenge());
+                    dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
@@ -339,30 +347,31 @@ public class FilezyNet extends PluginForHost {
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     final String code = getCaptchaCode(cf, downloadLink);
                     final String chid = sm.getChallenge(code);
-                    postData += "&adcopy_challenge=" + chid;
-                    postData += "&adcopy_response=manual_challenge";
+                    dlForm.put("adcopy_challenge", chid);
+                    dlForm.put("adcopy_response", "manual_challenge");
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
                     logger.info("Detected captcha method \"keycaptca\"");
-                    PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
+                    final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
                     final String result = kc.showDialog(downloadLink.getDownloadURL());
                     if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
-                    postData += "&capcode=" + result;
+                    dlForm.put("capcode", result);
                 }
                 /* Captcha END */
-                if (password) {
-                    passCode = handlePassword(new Form(), downloadLink);
-                    postData += "&password=" + Encoding.urlEncode(passCode);
-                }
+                if (password) passCode = handlePassword(dlForm, downloadLink);
                 if (!skipWaittime) waitTime(timeBefore, downloadLink);
-                postPage(br.getURL(), postData);
+                sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 getDllink();
                 if (dllink == null && (getFormByKey("op", "download2") == null || i == repeat)) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    if (i == repeat)
+                        logger.warning("Exausted repeat count, after dllink ==null");
+                    else
+                        logger.warning("Couldn't find 'download2' and 'dllink == null'");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && getFormByKey("op", "download2") != null) {
+                    dlForm = getFormByKey("op", "download2");
                     continue;
                 } else {
                     break;
@@ -385,7 +394,10 @@ public class FilezyNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
-            fixFilename(downloadLink);
+            // we can not 'rename' filename once the download started, could be problematic!
+            if (downloadLink.getDownloadCurrent() == 0) {
+                fixFilename(downloadLink);
+            }
             try {
                 // add a download slot
                 controlSlot(+1, account);
@@ -402,24 +414,35 @@ public class FilezyNet extends PluginForHost {
 
     /** Remove HTML code which could break the plugin */
     public void correctBR() throws NumberFormatException, PluginException {
-        correctedBR = br.toString();
+        correctedBR = br.cloneBrowser();
+        String dirty = correctedBR.toString();
+
         ArrayList<String> regexStuff = new ArrayList<String>();
 
         // remove custom rules first!!! As html can change because of generic cleanup rules.
 
         // generic cleanup
+        // this removes fake or empty forms
+        for (final Form f : br.getForms()) {
+            if (!f.containsHTML("<input[^>]+type=\"submit\"[^>]+>")) {
+                regexStuff.add("(" + f.getHtmlCode() + ")");
+            }
+        }
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
         for (String aRegex : regexStuff) {
-            String results[] = new Regex(correctedBR, aRegex).getColumn(0);
+            String results[] = new Regex(dirty, aRegex).getColumn(0);
             if (results != null) {
                 for (String result : results) {
-                    correctedBR = correctedBR.replace(result, "");
+                    dirty = dirty.replace(result, "");
                 }
             }
         }
+        Request req = correctedBR.getRequest();
+        req.setHtmlCode(dirty);
+        correctedBR.setRequest(req);
     }
 
     private String regexDllink(String source) {
@@ -429,9 +452,9 @@ public class FilezyNet extends PluginForHost {
     private void getDllink() {
         dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = regexDllink(correctedBR);
+            dllink = regexDllink(correctedBR.toString());
             if (dllink == null) {
-                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                final String cryptedScripts[] = correctedBR.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
                         decodeDownloadLink(crypted);
@@ -470,8 +493,8 @@ public class FilezyNet extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
-        if (ttt == null) ttt = new Regex(correctedBR, "id=\"countdown_str\"[^>]+>[\r\n\t ]+<!>[^>]+>(\\d+)\\s?+</span>").getMatch(0);
+        String ttt = correctedBR.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        if (ttt == null) ttt = correctedBR.getRegex("id=\"countdown_str\"[^>]+>[\r\n\t ]+<!>[^>]+>(\\d+)\\s?+</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
@@ -482,21 +505,21 @@ public class FilezyNet extends PluginForHost {
 
     private void checkErrors(DownloadLink theLink, boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
-            if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
+            if (correctedBR.containsHTML("Wrong password|" + PASSWORDTEXT)) {
                 // handle password has failed in the past, additional try catching / resetting values
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
-            if (correctedBR.contains("Wrong captcha")) {
+            if (correctedBR.containsHTML("Wrong captcha")) {
                 logger.warning("Wrong captcha or wrong password!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            if (correctedBR.containsHTML("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         // monitor this
-        if (new Regex(correctedBR, "(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)").matches()) {
+        if (correctedBR.containsHTML("(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
             /*
              * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
              * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
@@ -505,13 +528,13 @@ public class FilezyNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have to wait)").matches()) {
+        if (correctedBR.containsHTML("You have to wait")) {
             // adjust this Regex to catch the wait time string for COOKIE_HOST
-            String WAIT = new Regex(correctedBR, "((You have to wait)[^<>]+)").getMatch(0);
+            String WAIT = correctedBR.getRegex("((You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (tmphrs == null) tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+            if (tmphrs == null) tmphrs = correctedBR.getRegex("You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
             String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (tmpmin == null) tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            if (tmpmin == null) tmpmin = correctedBR.getRegex("You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
             String tmpsec = new Regex(WAIT, "\\s+(\\d+)\\s+seconds?").getMatch(0);
             String tmpdays = new Regex(WAIT, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
@@ -533,11 +556,11 @@ public class FilezyNet extends PluginForHost {
                 }
             }
         }
-        if (correctedBR.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
-        if (correctedBR.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        if (correctedBR.containsHTML("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
+        if (correctedBR.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only\\.<)").matches()) {
-            String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
+        if (correctedBR.containsHTML("( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only\\.<)")) {
+            String filesizelimit = correctedBR.getRegex("You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.warning("As free user you can download files up to " + filesizelimit + " only");
@@ -547,12 +570,12 @@ public class FilezyNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
         }
-        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (correctedBR.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
 
     private void checkServerErrors() throws NumberFormatException, PluginException {
-        if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (correctedBR.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        if (correctedBR.containsHTML("(File Not Found|<h1>404 Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
     }
 
     @Override
@@ -566,16 +589,16 @@ public class FilezyNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String space[][] = new Regex(correctedBR, "<p>Storage Space:</p>[\r\n\t ]+<h1>([0-9\\.]+)(KB|MB|GB|TB)?<").getMatches();
-        if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
+        final String space[] = correctedBR.getRegex("<p>Storage Space:</p>[\r\n\t ]+<h1>([0-9\\.]+)(KB|MB|GB|TB)?<").getRow(0);
+        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             // free users it's provided by default
-            ai.setUsedSpace(space[0][0] + " " + space[0][1]);
-        } else if (space != null && space.length != 0) {
+            ai.setUsedSpace(space[0] + " " + space[1]);
+        } else if ((space != null && space.length != 0) && space[0] != null) {
             // premium users the Mb value isn't provided for some reason...
-            ai.setUsedSpace(space[0][0] + "Mb");
+            ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        final String availabletraffic = correctedBR.getRegex("Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
@@ -591,32 +614,37 @@ public class FilezyNet extends PluginForHost {
             ai.setStatus("Registered (free) User");
             totalMaxSimultanPremDownload.set(20);
         } else {
-            long expire = 0;
-            final String expireDay = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+            long expire = 0, expireD = 0, expireS = 0;
+            final String expireDay = correctedBR.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
             if (expireDay != null) {
-                expire = TimeFormatter.getMilliSeconds(expireDay, "dd MMMM yyyy", Locale.ENGLISH);
+                expireD = TimeFormatter.getMilliSeconds(expireDay, "dd MMMM yyyy", Locale.ENGLISH);
             }
             if (expireDay == null || useAlternativeExpire) {
                 // A more accurate expire time, down to the second. Usually shown on 'extend premium account' page.
                 getPage("/?op=payments");
-                String expires = new Regex(correctedBR, "Premium(\\-| )Account expires?:([^\n\r]+)").getMatch(1);
-                if (expires != null) {
-                    String tmpdays = new Regex(expires, "(\\d+)\\s+days?").getMatch(0);
-                    String tmphrs = new Regex(expires, "(\\d+)\\s+hours?").getMatch(0);
-                    String tmpmin = new Regex(expires, "(\\d+)\\s+minutes?").getMatch(0);
-                    String tmpsec = new Regex(expires, "(\\d+)\\s+seconds?").getMatch(0);
+                String expireSecond = correctedBR.getRegex("Premium(\\-| )Account expires?:([^\n\r]+)").getMatch(1);
+                if (expireSecond != null) {
+                    String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
+                    String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
+                    String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
+                    String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
                     long days = 0, hours = 0, minutes = 0, seconds = 0;
                     if (tmpdays != null) days = Integer.parseInt(tmpdays);
                     if (tmphrs != null) hours = Integer.parseInt(tmphrs);
                     if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
                     if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                    expire = ((days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
+                    expireS = ((days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
                 }
-                if (expires == null || expire == 0) {
+                if (expireD == 0 && expireS == 0) {
                     ai.setExpired(true);
                     account.setValid(false);
                     return ai;
                 }
+            }
+            if (expireS != 0) {
+                expire = expireS;
+            } else {
+                expire = expireD;
             }
             totalMaxSimultanPremDownload.set(20);
             ai.setValidUntil(expire);
@@ -671,7 +699,7 @@ public class FilezyNet extends PluginForHost {
                 if (!br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
+                if (!correctedBR.containsHTML("(Premium(\\-| )Account expire|>Renew premium<)")) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);
@@ -711,7 +739,7 @@ public class FilezyNet extends PluginForHost {
                 if (dllink == null) {
                     checkErrors(downloadLink, true);
                     Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(dlform, downloadLink);
+                    if (dlform != null && correctedBR.containsHTML(PASSWORDTEXT)) passCode = handlePassword(dlform, downloadLink);
                     checkErrors(downloadLink, true);
                     if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     sendForm(dlform);
@@ -739,7 +767,10 @@ public class FilezyNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
-                fixFilename(downloadLink);
+                // we can not 'rename' filename once the download started, could be problematic!
+                if (downloadLink.getDownloadCurrent() == 0) {
+                    fixFilename(downloadLink);
+                }
                 try {
                     // add a download slot
                     controlSlot(+1, account);
@@ -758,21 +789,23 @@ public class FilezyNet extends PluginForHost {
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
 
-    private String                                            correctedBR                  = "";
-    private String                                            passCode                     = null;
+    private Browser                                           correctedBR                  = null;
+
+    private String                                            acctype                      = null;
     private String                                            directlinkproperty           = null;
     private String                                            dllink                       = null;
+    private String                                            fuid                         = null;
+    private String                                            passCode                     = null;
     private String                                            usedHost                     = null;
-    private String                                            acctype                      = null;
 
     private int                                               chunks                       = 1;
 
     private boolean                                           resumes                      = false;
 
-    private static final String                               MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private static final String                               ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String                               PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String                               PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private final String                                      MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private final String                                      ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private final String                                      PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private final String                                      PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
 
     private static AtomicInteger                              totalMaxSimultanPremDownload = new AtomicInteger(1);
     private static AtomicInteger                              maxFree                      = new AtomicInteger(1);
@@ -794,9 +827,13 @@ public class FilezyNet extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        // link cleanup, but respect users protocol choosing.
-        if (!supportsHTTPS) {
+        if (enforcesHTTPS) {
+            // does the site enforce the use of https?
+            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
+        } else if (!supportsHTTPS) {
+            // link cleanup, but respect users protocol choosing.
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+            // else we respect the users importation preference
         }
         // strip video hosting url's to reduce possible duped links.
         link.setUrlDownload(link.getDownloadURL().replace("/vidembed-", "/"));
@@ -822,6 +859,17 @@ public class FilezyNet extends PluginForHost {
         return prepBr;
     }
 
+    public void showAccountDetailsDialog(Account account) {
+        setConstants(account);
+        AccountInfo ai = account.getAccountInfo();
+        String message = "";
+        message += "Account type: " + acctype + "\r\n";
+        if (ai.getUsedSpace() != -1) message += "  Used Space: " + Formatter.formatReadable(ai.getUsedSpace()) + "\r\n";
+        if (ai.getPremiumPoints() != -1) message += "Premium Points: " + ai.getPremiumPoints() + "\r\n";
+
+        jd.gui.UserIO.getInstance().requestMessageDialog(this.getHost() + " Account", message);
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return maxFree.get();
@@ -844,11 +892,6 @@ public class FilezyNet extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    private void postPage(final String page, final String postData) throws Exception {
-        br.postPage(page, postData);
-        correctBR();
     }
 
     private void getPage(String page) throws Exception {
@@ -1197,7 +1240,7 @@ public class FilezyNet extends PluginForHost {
      * @return
      * */
     private Form getFormByKey(final String key, final String value) {
-        Form[] workaround = br.getForms();
+        Form[] workaround = correctedBR.getForms();
         if (workaround != null) {
             for (Form f : workaround) {
                 for (InputField field : f.getInputFields()) {
