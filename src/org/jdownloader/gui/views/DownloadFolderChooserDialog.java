@@ -3,7 +3,6 @@ package org.jdownloader.gui.views;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
-import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -22,14 +21,11 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
-import org.appwork.utils.swing.dialog.ExtFileSystemView;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
-import org.appwork.utils.swing.dialog.HomeFolder;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
@@ -57,36 +53,6 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
             setPreSelection(this.path);
         }
         setView(JsonConfig.create(GraphicalUserInterfaceSettings.class).getFileChooserView());
-    }
-
-    protected Icon getDirectoryIcon(Icon ret, File f) {
-        if (f.getName().equals("Desktop")) {
-            return NewTheme.I().getIcon("desktop", 18);
-        } else if ((f.getPath().equals(ExtFileSystemView.VIRTUAL_NETWORKFOLDER_XP) || f.getPath().equals(ExtFileSystemView.VIRTUAL_NETWORKFOLDER)) || (f.getPath().startsWith("\\") && f.getPath().indexOf("\\", 2) < 0)) {
-            //
-            return NewTheme.I().getIcon("network-idle", 18);
-        } else if (f.getPath().length() == 3 && f.getPath().charAt(1) == ':' && (f.getPath().charAt(0) + "").matches("[a-zA-Z]{1}")) {
-            //
-            return NewTheme.I().getIcon("harddisk", 16);
-        } else if (f instanceof HomeFolder) {
-
-            if (((HomeFolder) f).getName().equals(HomeFolder.DOWNLOADS)) {
-                return NewTheme.I().getIcon("download", 18);
-            } else if (((HomeFolder) f).getName().equals(HomeFolder.MUSIC)) {
-                return NewTheme.I().getIcon("audio", 18);
-            } else if (((HomeFolder) f).getName().equals(HomeFolder.PICTURES)) {
-                return NewTheme.I().getIcon("image", 18);
-            } else if (((HomeFolder) f).getName().equals(HomeFolder.DOCUMENTS)) {
-                return NewTheme.I().getIcon("document", 18);
-            } else if (((HomeFolder) f).getName().equals(HomeFolder.VIDEOS)) {
-                //
-                return NewTheme.I().getIcon("video", 18);
-
-            }
-
-        }
-
-        return NewTheme.I().getIcon("folder", 18);
     }
 
     @Override
@@ -172,7 +138,8 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must exist
+     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
+     * exist
      * 
      * @param file
      * @return

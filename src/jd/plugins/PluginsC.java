@@ -28,6 +28,8 @@ import jd.nutils.encoding.Encoding;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -163,8 +165,8 @@ public abstract class PluginsC {
                     case ASK_FOR_DELETE:
 
                         ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.AddContainerAction_delete_container_title(), _JDT._.AddContainerAction_delete_container_msg(file.toString()), NewTheme.I().getIcon("help", 32), _GUI._.lit_yes(), _GUI._.lit_no()) {
-                            protected void writeDontShowAgainFlag() {
-
+                            public String getDontShowAgainKey() {
+                                return null;
                             }
                         };
 
@@ -205,6 +207,13 @@ public abstract class PluginsC {
             if (file != null && new File(file).exists()) {
                 CrawledLink origin = source.getSourceLink();
                 if (origin != null && !file.equalsIgnoreCase(new Regex(origin.getURL(), "file://(.+)").getMatch(0))) {
+                    logger.fine("Do not ask - just delete: " + origin.getURL());
+                    askFileDeletion = false;
+                }
+                String tmp = Application.getResource("tmp/").getAbsolutePath();
+                String rel = Files.getRelativePath(tmp, file);
+                if (askFileDeletion && rel != null) {
+                    logger.fine("Do not ask - just delete: " + origin.getURL());
                     askFileDeletion = false;
                 }
                 initContainer(file, null);
