@@ -22,6 +22,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -60,6 +61,7 @@ public class FlashxTv extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>Requested page not found|>404 Error<|>Video not found, deleted or abused, sorry\\!<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"video_title\">([^<>\"]*?)</div>").getMatch(0);
@@ -91,7 +93,7 @@ public class FlashxTv extends PluginForHost {
         if (thirdLink == null) thirdLink = getPlainData(regex);
         if (thirdLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(thirdLink);
-        if (br.containsHTML("<config>wrong user/ip")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 1000l);
+        if (br.containsHTML("wrong user/ip")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 1000l);
 
         dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
