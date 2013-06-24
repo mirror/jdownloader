@@ -52,7 +52,7 @@ public class XdDiskCom extends PluginForDecrypt {
         id = new Regex(param.toString(), "/(space\\.php\\?user=|space_)(\\d+)").getMatch(1);
 
         if (id == null) {
-            logger.info("Erorr, please report to JDownloader Development Team : " + param.toString());
+            logger.info("Error, please report to JDownloader Development Team : " + param.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 

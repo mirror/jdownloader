@@ -252,20 +252,28 @@ public class RealDebridCom extends PluginForHost {
         String generatedLinks = br.getRegex("\"generated_links\":\\[\\[(.*?)\\]\\]").getMatch(0);
         String genLnks[] = new Regex(generatedLinks, "\"([^\"]*?)\"").getColumn(0);
         if (genLnks == null || genLnks.length == 0) {
-            if (br.containsHTML("\"error\":3,")) {
+            if (br.containsHTML("\"error\":1,")) {
+                // from rd
+                // 1: Happy hours activated BUT the concerned hoster is not included => Upgrade to Premium to use it
+                logger.info("This Hoster isn't supported in Happy Hour!");
+                removeHostFromMultiHost(link, acc);
+            } else if (br.containsHTML("\"error\":2,")) {
+                // from rd
+                // 2: Free account, come back at happy hours
+                logger.info("It's not happy hour, free account, you need premium!.");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else if (br.containsHTML("\"error\":3,")) {
                 // {"error":3,"message":"Ein dedicated Server wurde erkannt, es ist dir nicht erlaubt Links zu generieren"}
                 // dedicated server is detected, it does not allow you to generate links
                 logger.info("Dedicated server detected, account disabled");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            if (br.containsHTML("\"error\":5,")) {
+            } else if (br.containsHTML("\"error\":5,")) {
                 /* no happy hour */
+                logger.info("It's not happy hour, free account, you need premium!.");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            if (br.containsHTML("error\":6,")) {
+            } else if (br.containsHTML("error\":6,")) {
                 // {"error":6,"message":"Daily limit exceeded."}
                 logger.info("You have run out of download quota for this hoster");
-
             } else if (br.containsHTML("error\":10,")) {
                 logger.info("File's hoster is in maintenance. Try again later");
                 removeHostFromMultiHost(link, acc);
@@ -483,4 +491,6 @@ public class RealDebridCom extends PluginForHost {
         }
         return false;
     }
+
+
 }

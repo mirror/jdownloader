@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -35,7 +35,15 @@ public class DdlStorageComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.setCookie(this.getHost(), "lang", "english");
         br.getPage(parameter);
+
+        if (br.getRegex("(Access from [^ ]+ is not allowed|DDLStorage temporarily unavailable from your region)").matches()) {
+            logger.warning("Country/IP Block issued by " + this.getHost());
+            return decryptedLinks;
+        }
+
         final String[] links = br.getRegex("\"(http://(www\\.)?ddlstorage\\.com/[a-z0-9]{12})").getColumn(0);
         if ((links == null || links.length == 0) && !br.containsHTML("ddlstorage\\.com/pictures/file\\.gif\"")) {
             logger.info("Folder is empty: " + parameter);

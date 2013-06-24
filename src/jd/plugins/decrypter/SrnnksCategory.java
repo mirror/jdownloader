@@ -48,17 +48,17 @@ public class SrnnksCategory extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static String  lng_selectHostTitle            = null;
-    private static String  lng_selectHostMessage          = null;
-    private static String  lng_overLoadedMessage          = null;
-    private static String  lng_addCategoryMessage         = null;
-    private static String  lng_removeUnwantedLinksMessage = null;
-    private static String  lng_decryptLinksMessage        = null;
-    private static String  lng_selectFormatTitle          = null;
-    private static String  lng_selectFormatMessage        = null;
-    private static String  lng_selectSeasonTitle          = null;
-    private static String  lng_selectSeasonMessage        = null;
-    private static boolean lng_loaded                     = false;
+    private String  lng_selectHostTitle            = null;
+    private String  lng_selectHostMessage          = null;
+    private String  lng_overLoadedMessage          = null;
+    private String  lng_addCategoryMessage         = null;
+    private String  lng_removeUnwantedLinksMessage = null;
+    private String  lng_decryptLinksMessage        = null;
+    private String  lng_selectFormatTitle          = null;
+    private String  lng_selectFormatMessage        = null;
+    private String  lng_selectSeasonTitle          = null;
+    private String  lng_selectSeasonMessage        = null;
+    private boolean lng_loaded                     = false;
 
     public void setLanguageConstants() {
         String lng = System.getProperty("user.language");

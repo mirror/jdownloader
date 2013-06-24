@@ -83,9 +83,6 @@ public class QueenShareCom extends PluginForHost {
     // http://www.queenshare.com/n70-hot-summer-with-queensharecom-your-profit-is-double-every-day-and-min-payout-is-10.html
     // other: no redirects
 
-    // TODO: feature to factor in current download IP. NOTE: this current mod might not work well with JD2 multi-proxing, until thats
-    // implemented.
-
     private void setConstants(Account account) {
         if (account != null && account.getBooleanProperty("nopremium")) {
             // free account
@@ -421,6 +418,7 @@ public class QueenShareCom extends PluginForHost {
 
         // remove custom rules first!!! As html can change because of generic cleanup rules.
         regexStuff.add("(<font[^>]+>.+?</font>)");
+        regexStuff.add("(<div id='news_last'>.+?</div>)");
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
