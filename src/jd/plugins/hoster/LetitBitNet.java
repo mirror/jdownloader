@@ -340,7 +340,6 @@ public class LetitBitNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         checkShowFreeDialog();
         if (PLUGIN_BROKEN) {
-            showFreeBrokenDialog("letitbit.net");
             checkShowFreeBrokenDialog();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
