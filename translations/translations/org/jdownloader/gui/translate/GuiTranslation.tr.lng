@@ -568,6 +568,7 @@ SettingsMenu_SettingsMenu_=Ayarlar
 SilentModeToggleAction_getNameWhenDisabled_=Sessiz Kipi Etkinleştir
 SilentModeToggleAction_getNameWhenEnabled_=Sessiz Kipi Devre Dışı Bırak
 SizeColumn_SizeColumn=Boyut
+SkipAction_run_msg_=Yürütülen indirmeleri durdurmak ve atlamak istiyor musunuz?\n%s2 devam edilemez İndirmeden dolayı %s1 kaybedeceksiniz!
 SortAction_SortAction_object_=Paket(leri)i '%s1' sütununa göre Sırala
 SortAction_SortAction_object_empty=Paketi Sütunu göre sırala
 SpeedColumn_SpeedColumn=Hız
