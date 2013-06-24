@@ -65,9 +65,13 @@ public class NewPackageDialog extends AbstractDialog<Object> {
         p.add(new JLabel(_GUI._.NewPackageDialog_layoutDialogContent_saveto()));
         fc = new FolderChooser();
 
-        File path = LinkTreeUtils.getRawDownloadDirectory(selection.getContextPackage());
-        fc.setText(path.getAbsolutePath());
-
+        if (selection.isLinkContext() || selection.isPackageContext()) {
+            File path = LinkTreeUtils.getRawDownloadDirectory(selection.getContextPackage());
+            fc.setText(path.getAbsolutePath());
+        } else {
+            File path = LinkTreeUtils.getRawDownloadDirectory(selection.getFirstPackage());
+            fc.setText(path.getAbsolutePath());
+        }
         p.add(fc);
         return p;
     }
