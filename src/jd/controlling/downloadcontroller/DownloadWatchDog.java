@@ -1644,15 +1644,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     public static boolean preDownloadCheck(DownloadLink link) throws Exception {
-        if (!link.isAvailabilityStatusChecked() && link.getForcedFileName() == null) {
-            /*
-             * dont proceed if no linkcheck has done yet, maybe we dont know filename yet
-             */
-            return true;
+        if (!link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+            if (!link.isAvailabilityStatusChecked() && link.getForcedFileName() == null) {
+                /*
+                 * dont proceed if no linkcheck has done yet, maybe we dont know filename yet
+                 */
+                return true;
+            }
         }
         DownloadLink downloadLink = link;
         DownloadLink block = DownloadController.getInstance().getFirstLinkThatBlocks(downloadLink);
-        LinkStatus linkstatus = link.getLinkStatus();
         if (block != null) {
             if (block.getDefaultPlugin() != null) throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, _JDT._.system_download_errors_linkisBlocked(block.getHost()));
             throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, _JDT._.downloadlink_status_error_file_exists());
