@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?avaxhome\\.(ws|bz)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?(avaxhome\\.(ws|bz)|avaxho\\.me)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+" }, flags = { 0 })
 public class AvxHmeW extends PluginForDecrypt {
 
     public AvxHmeW(PluginWrapper wrapper) {
@@ -42,7 +42,8 @@ public class AvxHmeW extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.clearCookies(getHost());
-        final String parameter = cryptedLink.getCryptedUrl().replaceAll("avaxhome.ws", "avaxhome.bz");
+        String parameter = cryptedLink.getCryptedUrl().replaceAll("avaxhome.ws", "avaxhome.bz");
+        parameter = parameter.replaceFirst("avaxho.me/", "avaxhome.bz/");
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
