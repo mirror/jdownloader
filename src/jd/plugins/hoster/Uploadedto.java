@@ -89,12 +89,22 @@ public class Uploadedto extends PluginForHost {
     private static final long      RECONNECTWAIT                = 10800000;
     private static final String    NOCHUNKS                     = "NOCHUNKS";
     private static final String    NORESUME                     = "NORESUME";
+    private static final String    SSL_CONNECTION               = "SSL_CONNECTION";
+    private boolean                PREFERSSL                    = false;
+
+    private String getProtocol() {
+        if (getPluginConfig().getBooleanProperty(SSL_CONNECTION, PREFERSSL)) {
+            return "https://";
+        } else {
+            return "http://";
+        }
+    }
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        String protcol = new Regex(link.getDownloadURL(), "(https?)://").getMatch(0);
+        String protocol = new Regex(link.getDownloadURL(), "(https?)://").getMatch(0);
         String id = getID(link);
-        link.setUrlDownload(protcol + "://uploaded.net/file/" + id);
+        link.setUrlDownload(protocol + "://uploaded.net/file/" + id);
     }
 
     @Override
@@ -104,7 +114,7 @@ public class Uploadedto extends PluginForHost {
         boolean red = br.isFollowingRedirects();
         br.setFollowRedirects(false);
         try {
-            br.getPage("http://uploaded.net/file/" + id + "/status");
+            br.getPage(getProtocol() + "uploaded.net/file/" + id + "/status");
             String ret = br.getRedirectLocation();
             if (ret != null && ret.contains("/404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (ret != null && ret.contains("/410")) throw new PluginException(LinkStatus.ERROR_FATAL, "The requested file isn't available anymore!");
@@ -262,9 +272,14 @@ public class Uploadedto extends PluginForHost {
                      * workaround for api issues, retry 5 times when content length is only 20 bytes
                      */
                     if (retry == 5) return false;
-                    br.postPage("http://uploaded.net/api/filemultiple", sb.toString());
+                    br.postPage(getProtocol() + "uploaded.net/api/filemultiple", sb.toString());
                     if (br.getHttpConnection().getLongContentLength() != 20) {
                         break;
+                    } else {
+                        try {
+                            br.getHttpConnection().disconnect();
+                        } catch (final Throwable e) {
+                        }
                     }
                     Thread.sleep(500);
                     retry++;
@@ -305,6 +320,11 @@ public class Uploadedto extends PluginForHost {
             }
         } catch (Exception e) {
             return false;
+        } finally {
+            try {
+                br.getHttpConnection().disconnect();
+            } catch (final Throwable e) {
+            }
         }
         return true;
     }
@@ -375,7 +395,7 @@ public class Uploadedto extends PluginForHost {
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         prepBrowser();
-        br.postPage("http://uploaded.net/status", "uid=" + Encoding.urlEncode(account.getUser()) + "&upw=" + Encoding.urlEncode(account.getPass()));
+        br.postPage(getProtocol() + "uploaded.net/status", "uid=" + Encoding.urlEncode(account.getUser()) + "&upw=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("blocked")) {
             ai.setStatus("Too many failed logins! Wait 15 mins");
             account.setTempDisabled(true);
@@ -466,8 +486,7 @@ public class Uploadedto extends PluginForHost {
             // good to know account been used.
             logger.info("Free account, WEB download method in use!");
         }
-        String baseURL = "http://uploaded.net/";
-        if (downloadLink.getDownloadURL().contains("https://")) baseURL = baseURL.replace("http://", "https://");
+        String baseURL = getProtocol() + "uploaded.net/";
         String currentIP = getIP();
         try {
             SubConfiguration config = null;
@@ -545,7 +564,7 @@ public class Uploadedto extends PluginForHost {
                 }
                 // free account might not have captcha...
                 if (dllink == null) {
-                    dllink = br.getRegex("(\"|\\')(http://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)(\"|\\')").getMatch(1);
+                    dllink = br.getRegex("(\"|\\')(https?://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)(\"|\\')").getMatch(1);
                 }
                 final Browser brc = br.cloneBrowser();
                 brc.getPage(baseURL + "js/download.js");
@@ -591,7 +610,7 @@ public class Uploadedto extends PluginForHost {
                 if (dllink == null) {
                     dllink = br.getRegex("url:\\'(dl/.*?)\\'").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("(\"|\\')(http://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)(\"|\\')").getMatch(1);
+                        dllink = br.getRegex("(\"|\\')(https?://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)(\"|\\')").getMatch(1);
                         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                     }
                 }
@@ -771,7 +790,7 @@ public class Uploadedto extends PluginForHost {
                 if (token != null && liveToken == false) return token;
                 /** URLDecoder can make the password invalid or throw an IllegalArgumentException */
                 // JDHash.getSHA1(URLDecoder.decode(account.getPass(), "UTF-8").toLowerCase(Locale.ENGLISH))
-                br.postPage("http://api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getSHA1(account.getPass().toLowerCase(Locale.ENGLISH)) + "&ishash=1&app=JDownloader");
+                br.postPage(getProtocol() + "api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getSHA1(account.getPass().toLowerCase(Locale.ENGLISH)) + "&ishash=1&app=JDownloader");
                 token = br.getRegex("access_token\":\"(.*?)\"").getMatch(0);
                 if (token == null) handleErrorCode(br, account, token, true);
                 account.setProperty("token", token);
@@ -789,7 +808,7 @@ public class Uploadedto extends PluginForHost {
             try {
                 String tokenType = account.getStringProperty("tokenType", null);
                 if (tokenType != null && liveToken == false) return tokenType;
-                br.getPage("http://api.uploaded.net/api/user/jdownloader?access_token=" + token);
+                br.getPage(getProtocol() + "api.uploaded.net/api/user/jdownloader?access_token=" + token);
                 tokenType = br.getRegex("account_type\":\\s*?\"(premium|free)").getMatch(0);
                 if (tokenType == null) handleErrorCode(br, account, token, true);
                 account.setProperty("tokenType", tokenType);
@@ -825,8 +844,7 @@ public class Uploadedto extends PluginForHost {
             handlePremium_API(downloadLink, account);
             return;
         } else {
-            String baseURL = "http://uploaded.net/";
-            if (downloadLink.getDownloadURL().contains("https://")) baseURL.replace("http://", "https://");
+            String baseURL = getProtocol() + "uploaded.net/";
             requestFileInformation(downloadLink);
             login(account);
             if (account.getBooleanProperty("free")) {
@@ -945,7 +963,7 @@ public class Uploadedto extends PluginForHost {
         }
         logger.info("Premium Account, API download method in use!");
         String id = getID(downloadLink);
-        br.postPage("http://api.uploaded.net/api/download/jdownloader", "access_token=" + token + "&auth=" + id);
+        br.postPage(getProtocol() + "api.uploaded.net/api/download/jdownloader", "access_token=" + token + "&auth=" + id);
         String url = br.getRegex("link\":\\s*?\"(http.*?)\"").getMatch(0);
         String sha1 = br.getRegex("sha1\":\\s*?\"([0-9a-fA-F]+)\"").getMatch(0);
         String name = br.getRegex("name\":\\s*?\"(.*?)\"").getMatch(0);
@@ -1043,13 +1061,13 @@ public class Uploadedto extends PluginForHost {
         try {
             br.getHeaders().put("X-Prototype-Version", "1.6.1");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()) + "&_=");
+            br.postPage(getProtocol() + "uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()) + "&_=");
             if (br.containsHTML("User and password do not match")) {
                 AccountInfo ai = account.getAccountInfo();
                 if (ai != null) ai.setStatus("User and password do not match");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            if (br.getCookie("http://uploaded.net", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (br.getCookie("http://uploaded.net", "auth") == null && br.getCookie("https://uploaded.net", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } catch (PluginException e) {
             account.setProperty("token", null);
             account.setProperty("tokenType", null);
@@ -1070,7 +1088,8 @@ public class Uploadedto extends PluginForHost {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setCookie("http://uploaded.net", "lang", "en");
-        br.getPage("http://uploaded.net/language/en");
+        br.setCookie("https://uploaded.net", "lang", "en");
+        br.getPage(getProtocol() + "uploaded.net/language/en");
     }
 
     private String getIP() throws PluginException {
@@ -1134,6 +1153,7 @@ public class Uploadedto extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalReconnectHandling", "Activate experimental reconnect handling for freeusers: Prevents having to enter captchas in between downloads.")).setDefaultValue(default_eh));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_PREMIUM_DOWNLOAD_API, JDL.L("plugins.hoster.uploadedto.preferAPIdownload", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.")).setDefaultValue(default_ppda));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.uploadedto.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(PREFERSSL));
 
     }
 
