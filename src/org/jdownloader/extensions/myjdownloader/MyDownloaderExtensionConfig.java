@@ -3,6 +3,7 @@ package org.jdownloader.extensions.myjdownloader;
 import jd.plugins.ExtensionConfigInterface;
 
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultIntArrayValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 
@@ -10,15 +11,21 @@ public interface MyDownloaderExtensionConfig extends ExtensionConfigInterface {
 
     @DefaultStringValue("api.jdownloader.org")
     @AboutConfig
-    public String getAPIServerURL();
+    public String getConnectIP();
 
-    public void setAPIServerURL(String url);
+    public void setConnectIP(String url);
+
+    @DefaultIntArrayValue({ 80, 10101 })
+    @AboutConfig
+    public int[] getDeviceConnectPorts();
+
+    public void setDeviceConnectPorts(int port[]);
 
     @DefaultIntValue(80)
     @AboutConfig
-    public int getAPIServerPort();
+    public int getClientConnectPort();
 
-    public void setAPIServerPort(int port);
+    public void setClientConnectPort(int port);
 
     public String getEmail();
 

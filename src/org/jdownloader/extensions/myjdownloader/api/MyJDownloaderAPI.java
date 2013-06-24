@@ -122,7 +122,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         extension = myJDownloaderExtension;
 
         this.config = extension.getSettings();
-        setServerRoot("http://" + config.getAPIServerURL() + ":" + config.getAPIServerPort());
+        setServerRoot("http://" + config.getConnectIP() + ":" + config.getClientConnectPort());
         logger = extension.getLogger();
         br = new BasicHTTP();
         br.setAllowedResponseCodes(200, 503, 401, 407, 403, 500, 429);

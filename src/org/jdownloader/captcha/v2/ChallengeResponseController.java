@@ -60,7 +60,12 @@ public class ChallengeResponseController {
     public List<SolverJob<?>> listJobs() {
         synchronized (activeJobs) {
             return new ArrayList<SolverJob<?>>(activeJobs);
+        }
+    }
 
+    public boolean hasPendingJobs() {
+        synchronized (activeJobs) {
+            return activeJobs.size() > 0;
         }
     }
 
