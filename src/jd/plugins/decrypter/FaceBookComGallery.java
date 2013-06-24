@@ -18,7 +18,11 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
@@ -46,6 +50,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String FACEBOOKMAINPAGE = "http://www.facebook.com";
     private static final String FBSHORTLINK      = "http(s)?://(www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
     private static final String SINGLEPHOTO      = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
+    private int                 DIALOGRETURN     = -1;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         synchronized (LOCK) {
@@ -80,36 +85,67 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
             } else {
                 br.setCookie(FACEBOOKMAINPAGE, "locale", "en_GB");
+                /** Login stuff begin */
                 final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");
                 Account aa = AccountController.getInstance().getValidAccount(facebookPlugin);
                 boolean addAcc = false;
                 if (aa == null) {
-                    String username = UserIO.getInstance().requestInputDialog("Enter Loginname for facebook.com :");
-                    if (username == null) {
-                        logger.info("FacebookDecrypter: No username entered while decrypting link: " + parameter);
+                    SubConfiguration config = null;
+                    try {
+                        config = this.getPluginConfig();
+                        if (config.getBooleanProperty("infoShown", Boolean.FALSE) == false) {
+                            if (config.getProperty("infoShown2") == null) {
+                                showFreeDialog();
+                            } else {
+                                config = null;
+                            }
+                        } else {
+                            config = null;
+                        }
+                    } catch (final Throwable e) {
+                    } finally {
+                        if (config != null) {
+                            config.setProperty("infoShown", Boolean.TRUE);
+                            config.setProperty("infoShown2", "shown");
+                            config.save();
+                        }
+                    }
+                    // User wants to use the account
+                    if (this.DIALOGRETURN == 0) {
+                        String username = UserIO.getInstance().requestInputDialog("Enter Loginname for facebook.com :");
+                        if (username == null) {
+                            logger.info("FacebookDecrypter: No username entered while decrypting link: " + parameter);
+                            return decryptedLinks;
+                        }
+                        String password = UserIO.getInstance().requestInputDialog("Enter password for facebook.com :");
+                        if (password == null) {
+                            logger.info("FacebookDecrypter: No password entered while decrypting link: " + parameter);
+                            return decryptedLinks;
+                        }
+                        aa = new Account(username, password);
+                        addAcc = true;
+                    }
+                }
+                if (aa != null) {
+                    try {
+                        ((jd.plugins.hoster.FaceBookComVideos) facebookPlugin).login(aa, false, this.br);
+                    } catch (final PluginException e) {
+                        aa.setEnabled(false);
+                        aa.setValid(false);
+                        logger.info("Account seems to be invalid, returnung empty linklist!");
                         return decryptedLinks;
                     }
-                    String password = UserIO.getInstance().requestInputDialog("Enter password for facebook.com :");
-                    if (password == null) {
-                        logger.info("FacebookDecrypter: No password entered while decrypting link: " + parameter);
-                        return decryptedLinks;
-                    }
-                    aa = new Account(username, password);
-                    addAcc = true;
+                    // New account is valid, let's add it to the premium overview
+                    if (addAcc) AccountController.getInstance().addAccount(facebookPlugin, aa);
                 }
-                try {
-                    ((jd.plugins.hoster.FaceBookComVideos) facebookPlugin).login(aa, false, this.br);
-                } catch (final PluginException e) {
-                    aa.setEnabled(false);
-                    aa.setValid(false);
-                    logger.info("Account seems to be invalid, returnung empty linklist!");
-                    return decryptedLinks;
-                }
-                // Account is valid, let's add it to the premium overview
-                if (addAcc) AccountController.getInstance().addAccount(facebookPlugin, aa);
+                /** Login stuff end */
                 // Redirects from "http" to "https" can happen
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
+                if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</")) {
+                    logger.info("The link is either offline or an account is needed to grab it: " + parameter);
+                    return decryptedLinks;
+                }
                 String mainpage = "http://www.facebook.com";
                 if (br.getURL().contains("https://")) {
                     mainpage = "https://www.facebook.com";
@@ -177,6 +213,40 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
             return decryptedLinks;
+        }
+    }
+
+    private void showFreeDialog() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        final String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = "Facebook.com Gallerie/Photo Download";
+                            message = "Du versucht gerade, eine Facebook Gallerie/Photo zu laden.\r\n";
+                            message += "Für die meisten dieser Links wird ein gültiger Facebook Account benötigt!\r\n";
+                            message += "Deinen Account kannst du in den Einstellungen als Premiumaccount hinzufügen.\r\n";
+                            message += "Solltest du dies nicht tun, kann JDownloader nur Facebook Links laden, die keinen Account benötigen!\r\n";
+                            message += "Willst du deinen Facebook Account jetzt hinzufügen?\r\n";
+                        } else {
+                            title = "Facebook.com gallery/photo download";
+                            message = "You're trying to download a Facebook gallery/photo.\r\n";
+                            message += "For most of these links, a valid Facebook account is needed!\r\n";
+                            message += "You can add your account as a premium account in the settings.\r\n";
+                            message += "Note that if you don't do that, JDownloader will only be able to download Facebook links which do not need a login.\r\n";
+                            message += "Do you want to enter your Facebook account now?\r\n";
+                        }
+                        DIALOGRETURN = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
         }
     }
 

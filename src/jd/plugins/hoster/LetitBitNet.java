@@ -75,6 +75,7 @@ public class LetitBitNet extends PluginForHost {
     public final String          APIPAGE                           = "http://api.letitbit.net/";
     private final String         TEMPDISABLED                      = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
     private String               agent                             = null;
+    private static final boolean PLUGIN_BROKEN                     = true;
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -150,8 +151,69 @@ public class LetitBitNet extends PluginForHost {
         }
     }
 
+    private static void showFreeBrokenDialog(final String domain) {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        final String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = domain + " Free Download ist zurzeit defekt";
+                            message = "Du versuchst gerade im kostenlosen Modus von " + domain + " zu laden.\r\n";
+                            message += "Leider ist dieses Feature zurzeit und evtl. auch auf längere Sicht defekt!\r\n";
+                            message += "Der premium Modus sollte allerdings weiterhin problemlos funktionieren.\r\n";
+                            message += "Den aktuellen Status zu diesem Problem findest du in unserem Supportforum.\r\n";
+                            message += "Willst du den dazugehörigen Forenthread anschauen?\r\n";
+                        } else {
+                            title = domain + " Free Download is broken at the moment";
+                            message = "You're trying to use the  " + domain + " free fode.\r\n";
+                            message += "Unfortunately, this feature is broken at the moment and probably won't be fixed in the near future!\r\n";
+                            message += "However, the premium mode should work fine.\r\n";
+                            message += "You can find the current status of this issue in our support forum.\r\n";
+                            message += "Do you want to view the forum thread about this issue?\r\n";
+                        }
+                        if (CrossSystem.isOpenBrowserSupported()) {
+                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE, null);
+                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=47255"));
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
+
+    private void checkShowFreeBrokenDialog() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("freeBrokenShown", Boolean.FALSE) == false) {
+                if (config.getProperty("freeBrokenShown2") == null) {
+                    showFreeBrokenDialog("letitbit.net");
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("freeBrokenShown", Boolean.TRUE);
+                config.setProperty("freeBrokenShown2", "shown");
+                config.save();
+            }
+        }
+    }
+
     /**
-     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per minute
+     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per
+     * minute
      * */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -277,6 +339,11 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         checkShowFreeDialog();
+        if (PLUGIN_BROKEN) {
+            showFreeBrokenDialog("letitbit.net");
+            checkShowFreeBrokenDialog();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         try {
             br.setVerbose(true);
         } catch (Throwable e) {

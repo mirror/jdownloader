@@ -57,7 +57,7 @@ public class VideoOneCom extends PluginForDecrypt {
             return null;
         }
 
-        br.getPage("http://video-one.com/iframe/" + filename + "?t=" + t + "&h=" + h + "&p=video-one.com/eval/seq/2");
+        br.getPage("http://video-one.com/newvid/" + filename + "?t=" + t + "&h=" + h + "&p=video-one.com/eval/seq/2");
         if (br.containsHTML(">Video Content Not Available<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -71,6 +71,7 @@ public class VideoOneCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
+        if (externID == null) externID = br.getRegex("\\.html\\?video(\\d+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;

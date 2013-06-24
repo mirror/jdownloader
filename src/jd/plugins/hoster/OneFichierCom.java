@@ -46,13 +46,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9\\-]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
 
-    private static AtomicInteger maxPrem        = new AtomicInteger(1);
-    private static final String  PASSWORDTEXT   = "(Accessing this file is protected by password|Please put it on the box bellow|Veuillez le saisir dans la case ci-dessous)";
-    private static final String  IPBLOCKEDTEXTS = "(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading (some|a) file|>You can download only one file at a time|>Please wait a few seconds before downloading new ones|>You must wait for another download|Without premium status, you can download only one file at a time)";
-    private static final String  FREELINK       = "freeLink";
-    private static final String  PREMLINK       = "premLink";
-    private static final String  SSL_CONNECTION = "SSL_CONNECTION";
-    private boolean              pwProtected    = false;
+    private static AtomicInteger maxPrem          = new AtomicInteger(1);
+    private static final String  PASSWORDTEXT     = "(Accessing this file is protected by password|Please put it on the box bellow|Veuillez le saisir dans la case ci-dessous)";
+    private static final String  IPBLOCKEDTEXTS   = "(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading (some|a) file|>You can download only one file at a time|>Please wait a few seconds before downloading new ones|>You must wait for another download|Without premium status, you can download only one file at a time)";
+    private static final String  FREELINK         = "freeLink";
+    private static final String  PREMLINK         = "premLink";
+    private static final String  SSL_CONNECTION   = "SSL_CONNECTION";
+    private static final String  PREFER_RECONNECT = "PREFER_RECONNECT";
+    private boolean              pwProtected      = false;
 
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -220,9 +221,17 @@ public class OneFichierCom extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL() + "/en/index.html");
             if (br.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             if (br.containsHTML(IPBLOCKEDTEXTS)) {
+                final boolean preferReconnect = this.getPluginConfig().getBooleanProperty("PREFER_RECONNECT", false);
                 final String waittime = br.getRegex("you can download only one file at a time and you must wait at least (\\d+) minutes between each downloads").getMatch(0);
-                if (waittime != null) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", Integer.parseInt(waittime) * 60 * 1001l);
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", 90 * 1000l);
+                if (waittime != null && preferReconnect) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
+                } else if (preferReconnect) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+                } else if (waittime != null) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", Integer.parseInt(waittime) * 60 * 1001l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", 90 * 1000l);
+                }
             }
             if (br.containsHTML(PASSWORDTEXT) || pwProtected) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
@@ -464,6 +473,7 @@ public class OneFichierCom extends PluginForHost {
 
     private void setConfigElements() {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.onefichiercom.com.ssl2", "Use Secure Communication over SSL")).setDefaultValue(true));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_RECONNECT, JDL.L("plugins.hoster.onefichiercom.com.preferreconnect", "Reconnect, even if the wait time is only short (1-6 minutes)")).setDefaultValue(false));
     }
 
     private void prepareBrowser(final Browser br) {
