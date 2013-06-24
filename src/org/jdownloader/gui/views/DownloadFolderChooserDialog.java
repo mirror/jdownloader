@@ -22,6 +22,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
+import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.translate._GUI;
@@ -45,6 +46,22 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     public DownloadFolderChooserDialog(File path, String title, String okOption, String cancelOption) {
         super(0, title, okOption, cancelOption);
         this.path = path;
+        StackTraceElement[] st = new Exception().getStackTrace();
+        int i = 1;
+        String id = "DownloadFolderChooserDialog-";
+        try {
+            while (i < st.length) {
+                StackTraceElement ste = new Exception().getStackTrace()[i];
+                if (!ste.getClassName().contains(DownloadFolderChooserDialog.class.getName())) {
+                    id += ste.getClassName();
+                    break;
+                }
+                i++;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        setDimensor(new RememberLastDialogDimension(id));
         if (path != null) {
             if (path.getAbsolutePath().endsWith(PACKAGETAG)) {
                 subfolder = true;
@@ -94,7 +111,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     @Override
     public JComponent layoutDialogContent() {
 
-        MigPanel ret = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[]");
+        MigPanel ret = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[][][][grow,fill]");
         ExtTextField lbl = new ExtTextField();
         if (path != null) {
             lbl.setText(_GUI._.OpenDownloadFolderAction_layoutDialogContent_current_(path.getAbsolutePath()));

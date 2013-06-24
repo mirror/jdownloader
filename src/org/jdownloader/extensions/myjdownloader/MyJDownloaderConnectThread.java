@@ -138,9 +138,11 @@ public class MyJDownloaderConnectThread extends Thread {
                         }
                     } catch (ConnectException e) {
                         logger.info("Could not connect! Server down?");
+                        logger.log(e);
                         backoff();
                     } catch (SocketTimeoutException e) {
                         logger.info("ReadTimeout on server connect!");
+                        logger.log(e);
                         backoff();
                     } catch (final Throwable e) {
                         logger.log(e);
