@@ -541,9 +541,9 @@ public class ExtensionController implements MenuExtenderHandler {
 
                     container.add(m);
                 } else {
-                    MenuItemData m = new MenuItemData(new ActionData(ExtensionQuickToggleAction.class, wrapper.getClassname()));
-
-                    opt.add(m);
+                    // MenuItemData m = new MenuItemData(new ActionData(ExtensionQuickToggleAction.class, wrapper.getClassname()));
+                    //
+                    // opt.add(m);
                 }
             } catch (Exception e) {
                 logger.log(e);
@@ -562,10 +562,10 @@ public class ExtensionController implements MenuExtenderHandler {
         opt.add(container);
         for (final LazyExtension wrapper : pluginsOptional) {
             try {
-
-                MenuItemData m = new MenuItemData(new ActionData(ExtensionQuickToggleAction.class, wrapper.getClassname()));
-                container.add(m);
-
+                if (wrapper.isQuickToggle()) {
+                    MenuItemData m = new MenuItemData(new ActionData(ExtensionQuickToggleAction.class, wrapper.getClassname()));
+                    container.add(m);
+                }
             } catch (Exception e) {
                 logger.log(e);
             }

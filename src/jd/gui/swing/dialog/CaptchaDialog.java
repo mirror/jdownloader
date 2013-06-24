@@ -139,6 +139,10 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
         return textField;
     }
 
+    protected void initFocus(final JComponent focus) {
+
+    }
+
     @Override
     public String getResult() {
         return textField == null ? null : textField.getText();
