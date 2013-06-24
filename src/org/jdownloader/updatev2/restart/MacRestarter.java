@@ -21,7 +21,6 @@ public class MacRestarter extends LinuxRestarter {
         ArrayList<String> lst = new ArrayList<String>();
         File app = getApp(root);
         if (app.exists()) {
-
             lst.add("open");
             lst.add("-n");
             lst.add(app.getAbsolutePath());

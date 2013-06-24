@@ -38,37 +38,12 @@ public class WindowsRestarter extends Restarter {
 
         final List<String> lst = ManagementFactory.getRuntimeMXBean().getInputArguments();
 
-        boolean xmsset = false;
-        boolean useconc = false;
-        boolean minheap = false;
-        boolean maxheap = false;
-
         for (final String h : lst) {
-            if (h.contains("Xmx")) {
-                if (Runtime.getRuntime().maxMemory() < 533000000) {
-                    jvmParameter.add("-Xmx512m");
-                    continue;
-                }
-            } else if (h.contains("xms")) {
-                xmsset = true;
-                jvmParameter.add(h);
-            } else if (h.contains("XX:+useconc")) {
-                useconc = true;
-                jvmParameter.add(h);
-            } else if (h.contains("minheapfree")) {
-                minheap = true;
-                jvmParameter.add(h);
-            } else if (h.contains("maxheapfree")) {
-                maxheap = true;
-                jvmParameter.add(h);
-            } else if (h.startsWith("-agentlib:")) {
+            if (h.startsWith("-agentlib:")) {
                 continue;
+            } else {
+                jvmParameter.add(h);
             }
-
-        }
-        if (!xmsset) {
-
-            jvmParameter.add("-Xms64m");
         }
         jvmParameter.add("-jar");
         jvmParameter.add(Application.getJarName(RestartController.class));
