@@ -135,74 +135,72 @@ public class ZdfDeMediathek extends PluginForHost {
     public static boolean convertSubtitle(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
 
-        BufferedWriter dest;
+        BufferedWriter dest = null;
         try {
-            dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
-        } catch (IOException e1) {
-            return false;
-        }
-
-        final StringBuilder xml = new StringBuilder();
-        int counter = 1;
-        final String lineseparator = System.getProperty("line.separator");
-
-        Scanner in = null;
-        try {
-            in = new Scanner(new FileReader(source));
-            while (in.hasNext()) {
-                xml.append(in.nextLine() + lineseparator);
+            File output = new File(source.getAbsolutePath().replace(".xml", ".srt"));
+            try {
+                if (output.exists() && output.delete() == false) return false;
+                dest = new BufferedWriter(new FileWriter(output));
+            } catch (IOException e1) {
+                return false;
             }
-        } catch (Exception e) {
-            return false;
-        } finally {
-            in.close();
-        }
 
-        final String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">?(.*?)</p>").getMatches();
-        try {
-            final int starttime = Integer.parseInt(downloadlink.getStringProperty("starttime", null));
-            for (String[] match : matches) {
-                dest.write(counter++ + lineseparator);
+            final StringBuilder xml = new StringBuilder();
+            int counter = 1;
+            final String lineseparator = System.getProperty("line.separator");
 
-                if (counter == 13) {
-                    System.out.println("Debugline for Jiaz ;)");
+            Scanner in = null;
+            try {
+                in = new Scanner(new FileReader(source));
+                while (in.hasNext()) {
+                    xml.append(in.nextLine() + lineseparator);
                 }
+            } catch (Exception e) {
+                return false;
+            } finally {
+                in.close();
+            }
 
-                final Double start = Double.valueOf(match[0]) + starttime;
-                final Double end = Double.valueOf(match[1]) + starttime;
-                dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
+            final String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">?(.*?)</p>").getMatches();
+            try {
+                final int starttime = Integer.parseInt(downloadlink.getStringProperty("starttime", null));
+                for (String[] match : matches) {
+                    dest.write(counter++ + lineseparator);
 
-                String text = match[2].trim();
-                text = text.replaceAll(lineseparator, " ");
-                text = text.replaceAll("&amp;", "&");
-                text = text.replaceAll("&quot;", "\"");
-                text = text.replaceAll("&#39;", "'");
-                text = text.replaceAll("&apos;", "'");
-                text = text.replaceAll("<br />", lineseparator);
-                text = text.replace("</p>", "");
-                text = text.replace("<span ", "").replace("</span>", "");
+                    final Double start = Double.valueOf(match[0]) + starttime;
+                    final Double end = Double.valueOf(match[1]) + starttime;
+                    dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
 
-                final String[][] textReplaces = new Regex(text, "(tts:color=\"#([A-Z0-9]+)\">(.+))").getMatches();
-                if (textReplaces != null && textReplaces.length != 0) {
-                    for (final String[] singleText : textReplaces) {
-                        final String completeOldText = singleText[0];
-                        final String colorCode = singleText[1];
-                        final String plainText = singleText[2];
-                        final String completeNewText = "<font color=#" + colorCode + ">" + plainText + "</font>";
-                        text = text.replace(completeOldText, completeNewText);
+                    String text = match[2].trim();
+                    text = text.replaceAll(lineseparator, " ");
+                    text = text.replaceAll("&amp;", "&");
+                    text = text.replaceAll("&quot;", "\"");
+                    text = text.replaceAll("&#39;", "'");
+                    text = text.replaceAll("&apos;", "'");
+                    text = text.replaceAll("<br />", lineseparator);
+                    text = text.replace("</p>", "");
+                    text = text.replace("<span ", "").replace("</span>", "");
+
+                    final String[][] textReplaces = new Regex(text, "color=\"#([A-Z0-9]+)\">(.*?)($|tts:)").getMatches();
+                    if (textReplaces != null && textReplaces.length != 0) {
+                        for (final String[] singleText : textReplaces) {
+                            final String colorCode = singleText[0].trim();
+                            final String plainText = singleText[1].trim();
+                            final String completeNewText = "<font color=#" + colorCode + ">" + plainText + "</font>";
+                            dest.write(completeNewText + lineseparator + lineseparator);
+                        }
                     }
+
                 }
-                dest.write(text + lineseparator + lineseparator);
+            } catch (Exception e) {
+                return false;
             }
-        } catch (Exception e) {
-            return false;
         } finally {
             try {
                 dest.close();
             } catch (IOException e) {
             }
         }
-
         source.delete();
 
         return true;
