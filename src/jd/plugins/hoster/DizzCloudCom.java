@@ -62,8 +62,10 @@ public class DizzCloudCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">File not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<span>File: </span>([^<>\"]*?)</div>").getMatch(0);
-        final String filesize = br.getRegex("id=\"file\\-size\"><span>Size: </span>([^<>\"]*?)</div>").getMatch(0);
+        String filename = br.getRegex("<span>File: </span>([^<>\"]*?)</div>").getMatch(0);
+        if (filename == null) filename = br.getRegex("file-name\">([^<>\"]*?)\\[").getMatch(0);
+        String filesize = br.getRegex("id=\"file\\-size\"><span>Size: </span>([^<>\"]*?)</div>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("file-name\">[^<>\"]*?\\[([^<>\"]*?)\\]").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
