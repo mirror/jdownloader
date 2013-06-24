@@ -2075,6 +2075,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you want to disable and stop running downloads?\r\nYou would loose %s1 due to %s2 non resumable Download/s!" })
     String EnableAction_run_msg_(String bytes, int i);
 
+    @Default(lngs = { "en" }, values = { "Do you want to skip and stop running  downloads?\r\nYou would loose %s1 due to %s2 non resumable Download/s!" })
+    String SkipAction_run_msg_(String bytes, int i);
+
     @Default(lngs = { "en" }, values = { "No" })
     String lit_no();
 
