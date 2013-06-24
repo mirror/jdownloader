@@ -149,7 +149,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.ManagerFrame_actionPerformed_export_title(), null, null);
+                    ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.ManagerFrame_actionPerformed_import_title(), null, null);
                     d.setFileFilter(new FileFilter() {
 
                         @Override
