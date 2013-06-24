@@ -37,7 +37,9 @@ public class JobRunnable<T> implements Runnable {
             synchronized (this) {
                 if (canceled) return;
 
+                getJob().getLogger().info(solver + " RUN!");
                 thread = Thread.currentThread();
+                thread.setName(solver + "-Thread");
             }
             job.fireBeforeSolveEvent(solver);
 
@@ -91,9 +93,11 @@ public class JobRunnable<T> implements Runnable {
             this.canceled = true;
             Thread locThread = thread;
             if (locThread != null && locThread != Thread.currentThread()) {
+                getJob().getLogger().warning("Interrupt: " + solver + " : " + locThread);
                 locThread.interrupt();
+            } else if (locThread != Thread.currentThread()) {
+                getJob().getLogger().warning("Could Not Interrupt: " + solver + " : " + locThread);
             }
         }
     }
-
 }

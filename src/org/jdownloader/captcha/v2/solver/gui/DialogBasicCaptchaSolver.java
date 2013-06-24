@@ -66,14 +66,13 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
         synchronized (this) {
 
             if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_DIALOGS_ENABLED.isEnabled()) {
-                job.getLogger().info("Waiting for JAC");
+                job.getLogger().info("Waiting for Other Solvers");
                 job.waitFor(config.getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
-
                 if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) job.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolver.getInstance());
                 if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBroptherhoodTimeout() > 0) job.waitFor(config.getCaptchaDialogCaptchaBroptherhoodTimeout(), CBSolver.getInstance());
                 if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) job.waitFor(config.getCaptchaDialogResolutorCaptchaTimeout(), CaptchaResolutorCaptchaSolver.getInstance());
-
-                job.getLogger().info("JAC is done. Response so far: " + job.getResponse());
+                checkInterruption();
+                job.getLogger().info("Waits are done. Response so far: " + job.getResponse());
                 ChallengeSolverJobListener jacListener = null;
                 if (JDGui.getInstance().isSilentModeActive()) {
                     switch (CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction()) {
