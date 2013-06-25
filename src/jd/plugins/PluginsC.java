@@ -206,15 +206,20 @@ public abstract class PluginsC {
             file = Encoding.urlDecode(file, false);
             if (file != null && new File(file).exists()) {
                 CrawledLink origin = source.getSourceLink();
-                if (origin != null && !file.equalsIgnoreCase(new Regex(origin.getURL(), "file://(.+)").getMatch(0))) {
-                    logger.fine("Do not ask - just delete: " + origin.getURL());
-                    askFileDeletion = false;
+                if (origin != null) {
+                    String originFile = Encoding.urlDecode(new Regex(origin.getURL(), "file://(.+)").getMatch(0), false);
+                    if (originFile != null && !file.equalsIgnoreCase(originFile)) {
+                        logger.fine("Do not ask - just delete: " + origin.getURL());
+                        askFileDeletion = false;
+                    }
                 }
-                String tmp = Application.getResource("tmp/").getAbsolutePath();
-                String rel = Files.getRelativePath(tmp, file);
-                if (askFileDeletion && rel != null) {
-                    logger.fine("Do not ask - just delete: " + origin.getURL());
-                    askFileDeletion = false;
+                if (askFileDeletion) {
+                    String tmp = Application.getResource("tmp/").getAbsolutePath();
+                    String rel = Files.getRelativePath(tmp, file);
+                    if (rel != null) {
+                        logger.fine("Do not ask - just delete: " + origin.getURL());
+                        askFileDeletion = false;
+                    }
                 }
                 initContainer(file, null);
                 retLinks = getContainedDownloadlinks();
@@ -236,5 +241,4 @@ public abstract class PluginsC {
         }
         return retLinks;
     }
-
 }
