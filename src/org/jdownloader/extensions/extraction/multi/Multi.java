@@ -46,7 +46,6 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.ReusableByteArrayOutputStream;
-import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.StringFormatter;
 import org.appwork.utils.os.CrossSystem;
@@ -738,7 +737,7 @@ public class Multi extends IExtraction {
         crack++;
         ReusableByteArrayOutputStream buffer = null;
         try {
-            buffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(64 * 1024, false);
+            buffer = new ReusableByteArrayOutputStream(64 * 1024);
             try {
                 stream.close();
             } catch (final Throwable e) {
@@ -755,7 +754,6 @@ public class Multi extends IExtraction {
                 raropener.close();
             } catch (Throwable e) {
             }
-
             if (archive.getType() == ArchiveType.SINGLE_FILE) {
                 /* close on inArchive also closes the underlying RandomAccessFileInStream, so we have to open new one */
                 stream = new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstArchiveFile().getFilePath(), "r"));
@@ -842,13 +840,6 @@ public class Multi extends IExtraction {
             throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
         } catch (Throwable e) {
             throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
-        } finally {
-            try {
-                ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(buffer);
-            } catch (Throwable e) {
-            } finally {
-                buffer = null;
-            }
         }
     }
 

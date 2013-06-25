@@ -19,8 +19,6 @@ import jd.plugins.download.DownloadInterfaceFactory;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.Application;
-import org.appwork.utils.ReusableByteArrayOutputStream;
-import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.io.streamingio.Streaming;
 import org.appwork.utils.io.streamingio.StreamingInputStream;
 import org.appwork.utils.io.streamingio.StreamingOutputStream;
@@ -101,18 +99,16 @@ public class StreamingProvider {
                                 if (fileSize == -1) fileSize = con.getCompleteContentLength();
                                 new Thread("HTTP Reader Stream") {
                                     public void run() {
-                                        ReusableByteArrayOutputStream buffer = null;
                                         long read = 0;
                                         try {
-
-                                            buffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(10240, false);
+                                            byte[] buffer = new byte[10240];
                                             InputStream is = con.getInputStream();
                                             while (true) {
-                                                int ret = is.read(buffer.getInternalBuffer());
+                                                int ret = is.read(buffer);
                                                 if (ret == -1) break;
                                                 if (ret == 0) continue;
                                                 read += ret;
-                                                streamingOutputStream.write(buffer.getInternalBuffer(), 0, ret);
+                                                streamingOutputStream.write(buffer, 0, ret);
                                             }
                                             System.out.println("Chunk Done -> Chunk Started at: " + startPosition + " read: " + read);
                                         } catch (StreamingOverlapWrite e) {
@@ -130,7 +126,6 @@ public class StreamingProvider {
                                             } catch (final Throwable e) {
                                                 e.printStackTrace();
                                             }
-                                            ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(buffer);
                                             streamingOutputStream.close();
                                         }
                                     }

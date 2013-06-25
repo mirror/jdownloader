@@ -16,8 +16,6 @@ import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReusableByteArrayOutputStream;
-import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.Base64OutputStream;
@@ -75,14 +73,13 @@ public class CaptchaAPIImpl implements CaptchaAPI {
             out.write(header.getBytes("UTF-8"));
             Base64OutputStream b64os = new Base64OutputStream(out);
             FileInputStream fis = null;
-            ReusableByteArrayOutputStream ros = null;
             try {
                 fis = new FileInputStream(challenge.getImageFile());
-                ros = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(1024);
+                byte[] buffer = new byte[1024];
                 int read = 0;
-                while ((read = fis.read(ros.getInternalBuffer())) >= 0) {
+                while ((read = fis.read(buffer)) >= 0) {
                     if (read > 0) {
-                        b64os.write(ros.getInternalBuffer(), 0, read);
+                        b64os.write(buffer, 0, read);
                     } else {
                         synchronized (this) {
                             try {
@@ -102,10 +99,6 @@ public class CaptchaAPIImpl implements CaptchaAPI {
                 }
                 try {
                     fis.close();
-                } catch (final Throwable e) {
-                }
-                try {
-                    ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(ros);
                 } catch (final Throwable e) {
                 }
             }

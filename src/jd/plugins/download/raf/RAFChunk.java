@@ -22,7 +22,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.ReusableByteArrayOutputStream;
-import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
@@ -37,8 +36,6 @@ public class RAFChunk extends Thread {
      * eine sehr hohe Intervalzeit. Das fuehrt zu verstaerkt intervalartigem laden und ist ungewuenscht
      */
     public static final long                MIN_CHUNKSIZE        = 1 * 1024 * 1024;
-
-    protected ReusableByteArrayOutputStream buffer               = null;
 
     private long                            chunkBytesLoaded     = 0;
 
@@ -70,6 +67,7 @@ public class RAFChunk extends Thread {
     private PluginForHost                   plugin;
 
     private LinkStatus                      linkStatus;
+    protected ReusableByteArrayOutputStream buffer               = null;
 
     /**
      * Die Connection wird entsprechend der start und endbytes neu aufgebaut.
@@ -233,7 +231,7 @@ public class RAFChunk extends Thread {
         int flushTimeout = JsonConfig.create(GeneralSettings.class).getFlushBufferTimeout();
         try {
             int maxbuffersize = JsonConfig.create(GeneralSettings.class).getMaxBufferSize() * 1024;
-            buffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(Math.max(maxbuffersize, 10240), false);
+            buffer = new ReusableByteArrayOutputStream(Math.max(maxbuffersize, 10240));
             /*
              * now we calculate the max fill level when to force buffer flushing
              */
@@ -396,8 +394,6 @@ public class RAFChunk extends Thread {
             dl.error(LinkStatus.ERROR_RETRY, Exceptions.getStackTrace(e));
             dl.addException(e);
         } finally {
-            ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(buffer);
-            buffer = null;
             try {
                 inputStream.close();
             } catch (Throwable e) {

@@ -30,8 +30,6 @@ import java.util.regex.Pattern;
 import jd.utils.JDHexUtils;
 
 import org.appwork.utils.Regex;
-import org.appwork.utils.ReusableByteArrayOutputStream;
-import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -177,16 +175,12 @@ class SplitUtil {
         long progressInBytes = 0l;
         BufferedOutputStream bos = null;
         FileOutputStream fos = null;
-        ReusableByteArrayOutputStream writeBuffer = null;
-        ReusableByteArrayOutputStream readBuffer = null;
         try {
             /*
              * write buffer, use same as downloadbuffer, so we have a pool of same sized buffers
              */
             int maxbuffersize = config.getBufferSize() * 1024;
-            writeBuffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(Math.max(maxbuffersize, 10240), false);
             /* read buffer, we use 64kb here which should be okay */
-            readBuffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(64 * 1024, true);
             if (file.exists()) {
                 if (controller.isOverwriteFiles()) {
                     if (!file.delete()) {
@@ -207,13 +201,8 @@ class SplitUtil {
 
             archive.addExtractedFiles(file);
             fos = new FileOutputStream(file);
-            final ReusableByteArrayOutputStream fwriteBuffer = writeBuffer;
-            bos = new BufferedOutputStream(fos, 1) {
-                {
-                    this.buf = fwriteBuffer.getInternalBuffer();
-                }
-            };
-
+            bos = new BufferedOutputStream(fos, Math.max(maxbuffersize, 10240));
+            byte[] buffer = new byte[10240];
             for (int i = 0; i < files.size(); i++) {
                 File source = new File(files.get(i));
                 FileInputStream in = null;
@@ -222,19 +211,14 @@ class SplitUtil {
                     if (start > 0) {
                         in.skip(start);
                     }
-
                     int l = 0;
-                    while ((l = in.read(readBuffer.getInternalBuffer())) >= 0) {
+                    while ((l = in.read(buffer)) >= 0) {
                         if (l == 0) {
                             /* nothing read, we wait a moment and see again */
-                            try {
-                                Thread.sleep(200);
-                            } catch (InterruptedException e) {
-                                throw new IOException(e);
-                            }
+                            Thread.yield();
                             continue;
                         }
-                        bos.write(readBuffer.getInternalBuffer(), 0, l);
+                        bos.write(buffer, 0, l);
                         progressInBytes += l;
                         controller.setProgress(progressInBytes / size);
                         if (controller.gotKilled()) throw new IOException("Extraction has been aborted!");
@@ -269,14 +253,6 @@ class SplitUtil {
             }
             try {
                 bos.close();
-            } catch (Throwable e) {
-            }
-            try {
-                ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(writeBuffer);
-            } catch (Throwable e) {
-            }
-            try {
-                ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(readBuffer);
             } catch (Throwable e) {
             }
             try {

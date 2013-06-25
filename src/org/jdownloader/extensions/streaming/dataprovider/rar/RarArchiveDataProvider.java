@@ -30,7 +30,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.ReusableByteArrayOutputStream;
-import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.io.streamingio.StreamingChunk;
 import org.appwork.utils.logging2.LogSource;
@@ -157,7 +156,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
     }
 
     public void setCompleted(Long files, Long bytes) throws SevenZipException {
-        
+
     }
 
     public void setTotal(Long files, Long bytes) throws SevenZipException {
@@ -213,7 +212,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
         this.password = password;
         ReusableByteArrayOutputStream buffer = null;
         try {
-            buffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(64 * 1024, false);
+            buffer = new ReusableByteArrayOutputStream(64 * 1024);
             try {
                 close();
             } catch (final Throwable e) {
@@ -345,15 +344,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
                 e1.printStackTrace();
             }
             throw new ExtractionException(e, getLatestAccessedStream() == null ? null : getLatestAccessedStream().getArchiveFile());
-        } finally {
-            try {
-                ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(buffer);
-            } catch (Throwable e) {
-            } finally {
-                buffer = null;
-            }
         }
-
     }
 
     private boolean isSilent() {

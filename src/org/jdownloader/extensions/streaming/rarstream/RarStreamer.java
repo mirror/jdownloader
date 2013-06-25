@@ -21,7 +21,6 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.ReusableByteArrayOutputStream;
-import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.io.streamingio.StreamingChunk;
 import org.appwork.utils.logging2.LogSource;
@@ -269,7 +268,7 @@ public class RarStreamer implements Runnable {
 
         ReusableByteArrayOutputStream buffer = null;
         try {
-            buffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(64 * 1024, false);
+            buffer = new ReusableByteArrayOutputStream(64 * 1024);
             try {
                 rarStreamProvider.close();
             } catch (final Throwable e) {
@@ -388,15 +387,7 @@ public class RarStreamer implements Runnable {
             throw new ExtractionException(e, rarStreamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null);
         } catch (Throwable e) {
             throw new ExtractionException(e, rarStreamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null);
-        } finally {
-            try {
-                ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(buffer);
-            } catch (Throwable e) {
-            } finally {
-                buffer = null;
-            }
         }
-
     }
 
     private void open() throws ExtractionException, DialogClosedException, DialogCanceledException {
