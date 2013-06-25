@@ -624,6 +624,8 @@ public class DirectHTTP extends PluginForHost {
                 } else if (downloadLink.getBooleanProperty("MOVIE2K", false)) {
                     String ext = new Regex(this.contentType, "(audio|video)/(x\\-)?(.*?)$").getMatch(2);
                     downloadLink.setFinalFileName(downloadLink.getName() + "." + ext);
+                } else if (downloadLink.getBooleanProperty("urlDecodeFinalFileName", false)) {
+                    downloadLink.setFinalFileName(Encoding.urlDecode(Plugin.getFileNameFromHeader(urlConnection), false));
                 } else {
                     downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(urlConnection));
                 }
