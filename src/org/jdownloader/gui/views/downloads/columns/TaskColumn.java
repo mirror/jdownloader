@@ -150,7 +150,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             } else if (ls.isFailed() || dl.getAvailableStatus() == AvailableStatus.FALSE) { return falseIcon; }
 
             if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
-                if (!dl.isSkipped() && !dl.getLinkStatus().isFinished()) {
+                if (!dl.getLinkStatus().isFinished()) {
                     /* enabled links that are not running */
                     ProxyBlock timeout = null;
                     if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
@@ -172,10 +172,12 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
-            if (((DownloadLink) value).isSkipped()) { return ((DownloadLink) value).getSkipReason().getExplanation(); }
             DownloadLink dl = (DownloadLink) value;
+            PluginProgress prog = dl.getPluginProgress();
+            if (prog != null) return prog.getMessage();
+            if (((DownloadLink) value).isSkipped()) { return ((DownloadLink) value).getSkipReason().getExplanation(); }
             if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
-                if (!dl.isSkipped() && !dl.getLinkStatus().isFinished()) {
+                if (!dl.getLinkStatus().isFinished()) {
                     /* enabled links that are not running */
                     ProxyBlock timeout = null;
                     String message = null;

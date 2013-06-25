@@ -151,6 +151,13 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
 
     private long getWaitingTimeout(DownloadLink dlLink) {
         if (dlLink.isEnabled()) {
+            PluginProgress progress = null;
+            if ((progress = dlLink.getPluginProgress()) != null) {
+                icon2Use = progress.getIcon();
+                long eta = progress.getETA();
+                if (eta >= 0) return eta;
+                return -1;
+            }
             long time;
             if (dlLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && (time = dlLink.getLinkStatus().getRemainingWaittime()) > 0) {
                 icon2Use = wait;
@@ -166,13 +173,6 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
                     icon2Use = wait;
                     return timeout.getBlockedTimeout();
                 }
-            }
-            PluginProgress progress = null;
-            if ((progress = dlLink.getPluginProgress()) != null) {
-                icon2Use = progress.getIcon();
-                long eta = progress.getETA();
-                if (eta >= 0) return eta;
-                return Math.max(0, progress.getCurrent());
             }
         }
         return -1;

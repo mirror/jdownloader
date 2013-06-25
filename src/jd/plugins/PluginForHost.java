@@ -811,12 +811,14 @@ public abstract class PluginForHost extends Plugin {
         PluginProgress progress = new PluginProgress(i, i, null);
         progress.setIcon(NewTheme.I().getIcon("wait", 16));
         progress.setProgressSource(this);
-        downloadLink.setPluginProgress(progress);
         try {
+            downloadLink.setPluginProgress(progress);
             while (i > 0 && dlc != null && !dlc.isAborted()) {
                 i -= 1000;
                 progress.setCurrent(i);
-                downloadLink.getLinkStatus().setStatusText(message + _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(i / 1000)));
+                String msg = message + _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(i / 1000));
+                progress.setMessage(msg);
+                downloadLink.getLinkStatus().setStatusText(msg);
                 synchronized (this) {
                     this.wait(1000);
                 }

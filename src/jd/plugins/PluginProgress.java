@@ -22,14 +22,23 @@ import javax.swing.ImageIcon;
 
 public class PluginProgress {
 
-    private long      total;
+    protected long      total;
 
-    private long      current;
-    private long      ETA            = -1;
+    protected long      current;
+    protected long      ETA            = -1;
 
-    private Color     color;
-    private ImageIcon icon           = null;
-    private Object    progressSource = null;
+    protected Color     color;
+    protected ImageIcon icon           = null;
+    protected Object    progressSource = null;
+    protected String    message        = null;
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
 
     public PluginProgress(final long current, final long total, final Color color) {
         this.total = total;
@@ -99,6 +108,9 @@ public class PluginProgress {
      */
     public void setETA(long eTA) {
         ETA = eTA;
+    }
+
+    public void abort() {
     }
 
 }

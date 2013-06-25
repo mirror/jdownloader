@@ -32,9 +32,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.images.NewTheme;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "https?://(www\\.)?mega\\.co\\.nz/#N?![a-zA-Z0-9]+![a-zA-Z0-9_,\\-]+" }, flags = { 0 })
 public class MegaConz extends PluginForHost {
@@ -272,7 +275,34 @@ public class MegaConz extends PluginForHost {
         FileOutputStream fos = null;
         boolean deleteDst = true;
         try {
+            long total = src.length();
+            final PluginProgress progress = new PluginProgress(0, total, null) {
+                long lastCurrent    = -1;
+                long startTimeStamp = -1;
+
+                @Override
+                public void updateValues(long current, long total) {
+                    super.updateValues(current, total);
+                    if (lastCurrent == -1 || lastCurrent > current) {
+                        lastCurrent = current;
+                        startTimeStamp = System.currentTimeMillis();
+                        this.setETA(-1);
+                        return;
+                    }
+                    long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
+                    if (currentTimeDifference <= 0) return;
+                    long speed = (current * 10000) / currentTimeDifference;
+                    if (speed == 0) return;
+                    long eta = ((total - current) * 10000) / speed;
+                    this.setETA(eta);
+                }
+
+            };
+            progress.setProgressSource(this);
+            progress.setIcon(NewTheme.I().getIcon("lock", 16));
             link.getLinkStatus().setStatusText("Decrypting");
+            progress.setMessage("Decrypting");
+            link.setPluginProgress(progress);
             fis = new FileInputStream(src);
             if (tmp != null) {
                 fos = new FileOutputStream(tmp);
@@ -287,6 +317,7 @@ public class MegaConz extends PluginForHost {
             final byte[] buffer = new byte[32767];
             while ((read = fis.read(buffer)) != -1) {
                 if (read > 0) {
+                    progress.updateValues(progress.getCurrent() + read, total);
                     cos.write(buffer, 0, read);
                 }
             }
@@ -314,6 +345,7 @@ public class MegaConz extends PluginForHost {
                 tmp.renameTo(dst);
             }
         } finally {
+            link.setPluginProgress(null);
             try {
                 fis.close();
             } catch (final Throwable e) {

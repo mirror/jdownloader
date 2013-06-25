@@ -111,7 +111,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
     private MyJDownloaderExtension              extension;
     private HashMap<String, RIDArray>           rids;
 
-    private static int getRevision() {
+    public static int getRevision() {
         String revision = new Regex("$Revision$", "Revision:\\s*?(\\d+)").getMatch(0);
         if (revision == null) return 0;
         return Integer.parseInt(revision);
