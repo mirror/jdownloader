@@ -78,7 +78,6 @@ ProxyDialog_password_help=Wprowadź hasło
 ProxyDialog_requires_auth=Autoryzacja wymagana
 ProxyDialog_socks4=Socks4
 ProxyDialog_socks5=Socks5
-ProxyDialog_title=Dodaj nowe proxy
 ProxyDialog_type=Typ
 ProxyDialog_username=Użytkownik:
 ProxyDialog_username_help=Wprowadź nazwę użytkownika
