@@ -43,12 +43,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eyesfile.com", "eyesfile.org" }, urls = { "https?://rfhj4t560rwegeobgrhjnuebrhjikDELETEME", "https?://(www\\.)?eyesfile\\.(com?|org)/[a-z0-9]{12}" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eyesfile.com", "eyesfile.org", "eyesfile.ca" }, urls = { "https?://rfhj4t560rwegeobgrhjnuebrhjikDELETEME", "https?://rfhj4t560rwegeobgrhjnuebrhjikDELETEME", "https?://(www\\.)?eyesfile\\.(com?|org|ca)/[a-z0-9]{12}" }, flags = { 0, 0, 0 })
 public class EyesFileCom extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://eyesfile.org";
+    private static final String COOKIE_HOST         = "http://eyesfile.ca";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
@@ -62,7 +62,7 @@ public class EyesFileCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://eyesfile.org/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        link.setUrlDownload("http://eyesfile.ca/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
 
     }
 
@@ -88,7 +88,9 @@ public class EyesFileCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        // Correct old links
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");

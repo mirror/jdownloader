@@ -12,7 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/(?!category|linkex|feed|\\d{4}/|tag)[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/[a-z0-9\\-]+" }, flags = { 0 })
 public class NaughtyBlgOrg extends PluginForDecrypt {
 
     private enum Category {
@@ -26,7 +26,8 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private Category CATEGORY;
+    private Category            CATEGORY;
+    private static final String INVALIDLINKS = "http://(www\\.)?naughtyblog\\.org/(category|linkex|feed|\\d{4}/|tag|free\\-desktop\\-strippers)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         CATEGORY = Category.UNDEF;
@@ -34,6 +35,10 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (br.containsHTML(">Page not found \\(404\\)<|>403 Forbidden<") || br.containsHTML("No htmlCode read")) {
             logger.info("Link offline: " + parameter);

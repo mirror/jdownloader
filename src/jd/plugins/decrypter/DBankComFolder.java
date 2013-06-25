@@ -53,6 +53,27 @@ public class DBankComFolder extends PluginForDecrypt {
         if (br.getURL().contains("vmall.com/linknotexist.html") || br.getURL().contains("vmall.com/netdisk/search.html") || br.containsHTML("(>抱歉，此外链不存在。|1、你输入的地址错误；<br/>|2、外链中含非法内容；<br />|3、创建外链的文件还没有上传到服务器，请稍后再试。<br /><br />)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
+        } else if (br.getURL().contains("dl.vmall.com/m_forbidsave.html")) {
+            // Link can only be accessed if a specified Referer is set
+            final String linkID = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*");
+            br.postPage("http://dl.vmall.com/app/encry_resource.php", "action=getAccessWhite&id=" + linkID);
+            final String whiteListAsText = br.getRegex("\"whitelist\":\\[(.*?)\\]").getMatch(0);
+            if (whiteListAsText == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final String[] whitelistedDomains = whiteListAsText.split(",");
+            if (whitelistedDomains == null || whitelistedDomains.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final int pickRandom = new Random().nextInt(whitelistedDomains.length - 1);
+            String randomWhitelistedDomain = whitelistedDomains[pickRandom].replace("\"", "");
+            if (!randomWhitelistedDomain.startsWith("http://")) randomWhitelistedDomain = "http://" + randomWhitelistedDomain;
+            br.getHeaders().put("Referer", randomWhitelistedDomain);
+            br.getPage(parameter);
         }
         /* Password protected links */
         String passCode = null;
@@ -79,7 +100,10 @@ public class DBankComFolder extends PluginForDecrypt {
         if (globalLinkData == null) br.getRegex("var globallinkdata = \\{(.*?)\\}\\;").getMatch(0);
         String links = new Regex(globalLinkData, "\"files\":\\[(.*?)\\]\\}").getMatch(0);
 
-        if (links == null) return null;
+        if (links == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
 
         HashMap<String, String> linkParameter = new HashMap<String, String>();
 

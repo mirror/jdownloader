@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoweed.com" }, urls = { "http://(www\\.)?videoweed\\.(com|es)/(file/|embed\\.php\\?.*?v=)[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoweed.com" }, urls = { "http://(www\\.)?(videoweed\\.(com|es)/(file/|embed\\.php\\?.*?v=)|embed\\.videoweed\\.(com|es)/embed\\.php\\?v=)[a-z0-9]+" }, flags = { 0 })
 public class VideoWeedCom extends PluginForHost {
 
     private String dllink = null;

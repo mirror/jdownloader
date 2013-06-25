@@ -48,7 +48,7 @@ public class PromptFileCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getURL().equals("http://www.promptfile.com/?404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fInfo = br.getRegex("<span style=\"text\\-decoration:none;cursor:text;\" title=\"([^<>\"]*?)\">([^<>\"]*?) \\((\\d+(\\.\\d{2})? [A-Za-z]{2,5})\\)</span>");
+        final Regex fInfo = br.getRegex("<span style=\"text\\-decoration:none;cursor:text;\" title=\"([^<>\"]*?)\">([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? [A-Za-z]{2,5})\\)</span>");
         final String filename = fInfo.getMatch(1);
         final String filesize = fInfo.getMatch(2);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

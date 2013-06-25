@@ -77,6 +77,7 @@ public class FakkuNet extends PluginForDecrypt {
             br.getPage(parameter);
             String fpName = br.getRegex("\",\"name\":\"([^<>\"\\']+)\"").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<title>([^<>\"\\']+) \\| Read Online</title>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
             final String importantID = br.getRegex("cdn\\.fakku\\.net/([A-Z0-9]+)/").getMatch(0);
             if (importantID == null || fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

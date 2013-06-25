@@ -105,9 +105,11 @@ public class BxNt extends PluginForDecrypt {
                     br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                     final String pathValue = br.getRegex("\\{\"p_(\\d+)\"").getMatch(0);
                     fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
+                    // Hmm maybe a single link
                     if (pathValue == null || fpName == null) {
-                        logger.warning("Decrypt failed for link: " + cryptedlink);
-                        return null;
+                        final DownloadLink dl = createDownloadlink(cryptedlink.replace("box.com/", "boxdecrypted.com/").replace("boxdecrypted.com/s/", "boxdecrypted.com/shared/"));
+                        decryptedLinks.add(dl);
+                        return decryptedLinks;
                     }
                     final String basicLink = br.getURL().replace("/shared/", "/s/");
                     final String pageCount = br.getRegex("\"page_count\":(\\d+)").getMatch(0);

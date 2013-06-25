@@ -65,9 +65,11 @@ public class EHentaiOrg extends PluginForDecrypt {
             }
             for (final String singleLink : links) {
                 br.getPage(singleLink);
-                final String finallink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?/h/[^<>\"]*?)\"").getMatch(0);
+                String finallink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?/h/[^<>\"]*?)\"").getMatch(0);
+                if (finallink == null) finallink = br.getRegex("\\-\\d+\"><img src=\"(http://[^<>\"]*?image\\.php\\?[^<>\"]*?)\"").getMatch(0);
                 if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
+                    logger.warning("Current link is: " + singleLink);
                     return null;
                 }
                 final DownloadLink dl = createDownloadlink("directhttp://" + finallink);

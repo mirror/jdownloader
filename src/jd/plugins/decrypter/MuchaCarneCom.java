@@ -46,6 +46,7 @@ public class MuchaCarneCom extends PluginForDecrypt {
         }
         br.setFollowRedirects(false);
         String filename = br.getRegex("<title>([^<>\"]*?)\\- MuchaCarne\\.xxx</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         String externID = br.getRedirectLocation();
         if (externID != null) {
             DownloadLink dl = createDownloadlink(externID);

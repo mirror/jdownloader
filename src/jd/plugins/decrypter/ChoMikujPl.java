@@ -273,7 +273,6 @@ public class ChoMikujPl extends PluginForDecrypt {
                     FOLDERPASSWORD = param.getStringProperty("password");
                     if (FOLDERPASSWORD == null) {
                         FOLDERPASSWORD = getUserInput(null, param);
-
                     }
                     // you should exit if they enter blank password!
                     if (FOLDERPASSWORD == null || FOLDERPASSWORD.length() == 0) { return decryptedLinks; }
