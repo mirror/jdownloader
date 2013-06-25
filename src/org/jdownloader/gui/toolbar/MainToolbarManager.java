@@ -53,6 +53,10 @@ import org.jdownloader.gui.toolbar.action.RemoteCaptchaToogleAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
+import org.jdownloader.gui.views.downloads.action.DeleteDisabledSelectedLinks;
+import org.jdownloader.gui.views.downloads.action.DeleteSelectedAndFailedLinksAction;
+import org.jdownloader.gui.views.downloads.action.DeleteSelectedFinishedLinksAction;
+import org.jdownloader.gui.views.downloads.action.DeleteSelectedOfflineLinksAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 
@@ -175,6 +179,11 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         ocr.add(JAntiCaptchaToogleAction.class);
         ocr.add(RemoteCaptchaToogleAction.class);
         ocr.add(CaptchaDialogsToogleAction.class);
+
+        opt.add(DeleteDisabledSelectedLinks.class);
+        opt.add(DeleteSelectedAndFailedLinksAction.class);
+        opt.add(DeleteSelectedFinishedLinksAction.class);
+        opt.add(DeleteSelectedOfflineLinksAction.class);
         return mr;
     }
 
