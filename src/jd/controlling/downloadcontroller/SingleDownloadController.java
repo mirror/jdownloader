@@ -213,20 +213,21 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     private void handlePlugin() {
         try {
             startTimestamp = System.currentTimeMillis();
-            /* check ob Datei existiert oder bereits geladen wird */
-            if (!preDownloadCheck(new Runnable() {
-
-                @Override
-                public void run() {
-                    linkStatus.setInProgress(true);
-                }
-            }, null)) return;
 
             linkStatus.setStatusText(_JDT._.gui_download_create_connection());
             if ((downloadLink.getLinkStatus().getRetryCount()) <= livePlugin.getMaxRetries(downloadLink, getAccount())) {
                 final long sizeBefore = Math.max(0, downloadLink.getDownloadCurrent());
                 long traffic = 0;
                 try {
+                    /* check ob Datei existiert oder bereits geladen wird */
+                    if (!preDownloadCheck(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            linkStatus.setInProgress(true);
+                        }
+                    }, null)) return;
+
                     try {
                         handling = true;
                         try {
@@ -599,8 +600,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         }
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
-         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss
+         * in ms. value==0 macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());
