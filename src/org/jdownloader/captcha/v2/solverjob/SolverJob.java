@@ -188,7 +188,7 @@ public class SolverJob<T> {
 
     public void waitFor(int timeout, ChallengeSolver<?>... instances) throws InterruptedException {
 
-        long start = System.currentTimeMillis();
+        long endtime = System.currentTimeMillis() + timeout;
         logger.info(this + " Wait " + timeout + " ms for " + instances);
         try {
             while (!areDone(instances)) {
@@ -196,17 +196,20 @@ public class SolverJob<T> {
                 if (isSolved()) throw new InterruptedException("Is Solved");
                 synchronized (this) {
                     if (!areDone(instances)) {
-                        long timeToWait = System.currentTimeMillis() - (start + timeout);
-                        logger.info(this + " Wait " + timeout);
-                        if (timeToWait > 0 && timeout > 0) {
+                        long timeToWait = endtime - System.currentTimeMillis();
+
+                        if (timeToWait > 0) {
+                            logger.info(this + " Wait " + timeToWait);
                             this.wait(timeToWait);
                         } else if (timeout <= 0) {
+                            logger.info(this + " Wait endless");
                             // wait endless
                             this.wait();
                         }
+                        timeToWait = endtime - System.currentTimeMillis();
 
                         logger.info(this + " Wokeup");
-                        if (System.currentTimeMillis() - start >= timeout && timeout > 0) {
+                        if (timeToWait <= 0 && timeout > 0) {
                             logger.info(this + " Timed Out! ");
                             return;
                         }
