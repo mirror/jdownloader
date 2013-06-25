@@ -93,6 +93,7 @@ public class DlFreeFr extends PluginForHost {
 
         switch (CaptchaTyp.valueOf(cType)) {
         case image:
+            ayl.setFollowRedirects(true);
             instructions = c.get("instructions_visual");
             // Captcha also broken via browser
             if (c.get("token") == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "No captcha shown, please contact the dl.free.fr support!"); }
