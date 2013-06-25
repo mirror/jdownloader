@@ -28,12 +28,32 @@ public class DeleteSelectedFinishedLinksAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
 
         List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
-        for (DownloadLink dl : si.getChildren()) {
-            if (dl.getLinkStatus().isFinished()) {
-                nodesToDelete.add(dl);
+
+        if (si != null) {
+            for (DownloadLink dl : si.getChildren()) {
+                if (dl.getLinkStatus().isFinished()) {
+                    nodesToDelete.add(dl);
+                }
+            }
+        } else {
+            DownloadController dlc = DownloadController.getInstance();
+            final boolean readL = dlc.readLock();
+            try {
+                for (FilePackage fp : dlc.getPackages()) {
+                    synchronized (fp) {
+                        for (DownloadLink dl : fp.getChildren()) {
+                            if (dl.getLinkStatus().isFinished())
+                                nodesToDelete.add(dl);
+                        }
+                    }
+                }
+            } finally {
+                dlc.readUnlock(readL);
             }
         }
-        DownloadController.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete), _GUI._.DeleteSelectedFinishedLinksAction_actionPerformed());
+
+        DownloadController.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete),
+                _GUI._.DeleteSelectedFinishedLinksAction_actionPerformed(si != null ? "selected & " : ""));
     }
 
 }
