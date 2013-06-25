@@ -1,0 +1,24 @@
+language:
+- java
+
+jdk:
+- openjdk7
+
+install:
+- sudo apt-get -qq update
+
+- sudo apt-get -qq install eclipse-platform
+- unzip /usr/lib/eclipse/plugins/org.eclipse.jdt.core_*.dist.jar jdtCompilerAdapter.jar
+
+- wget http://sourceforge.net/projects/launch4j/files/launch4j-3/3.1.0-beta1/launch4j-3.1.0-beta1-linux.tgz/download -O launch4j-3.1.0-beta1-linux.tgz && tar xfv launch4j*.tgz
+- sudo apt-get -qq install binutils-mingw-w64-i686
+- cp -v /usr/bin/i686*windres launch4j/bin/windres; cp -v /usr/bin/i686*ld launch4j/bin/ld
+
+- svn co svn://svn.appwork.org/updclient/v2 ../UpdateClientV2
+- svn co svn://svn.appwork.org/utils ../AppWorkUtils
+- svn co svn://svn.jdownloader.org/jdownloader/MyJDownloaderClient ../MyJDownloaderClient
+- svn co svn://svn.jdownloader.org/jdownloader/browser ../JDBrowser
+
+script:
+- launch4j/launch4j `pwd`/build/launch4j.xml
+- ant -Dbasedir=. -Dbuild.compiler=org.eclipse.jdt.core.JDTCompilerAdapter -lib jdtCompilerAdapter.jar -lib /usr/lib/eclipse/plugins/org.eclipse.jdt.core_*.dist.jar -f build/newBuild/build.xml withoutsign
