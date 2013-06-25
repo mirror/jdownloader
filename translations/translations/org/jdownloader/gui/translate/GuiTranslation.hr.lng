@@ -568,6 +568,7 @@ SettingsMenu_SettingsMenu_=Postavke
 SilentModeToggleAction_getNameWhenDisabled_=Aktiviraj tihi način
 SilentModeToggleAction_getNameWhenEnabled_=Deaktiviraj tihi način
 SizeColumn_SizeColumn=Veličina
+SkipAction_run_msg_=Želite li preskočiti i zaustaviti pokrenuta preuzimanja?\r\nIzgubit ćete %s1 zbog %s2 preuzimanja koja se nemogu nastaviti?
 SortAction_SortAction_object_=Sortiraj pakete po "%s1"
 SortAction_SortAction_object_empty=Sortiraj pakete po stupcu
 SpeedColumn_SpeedColumn=Brzina
