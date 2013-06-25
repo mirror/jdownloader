@@ -2,7 +2,7 @@
   <dontWrapJar>true</dontWrapJar>
   <headerType>gui</headerType>
   <jar>JDownloader.jar</jar>
-  <outfile>C:\workspace\JDownloader\ressourcen\JDownloader.exe</outfile>
+  <outfile>../ressourcen/JDownloader.exe</outfile>
   <errTitle></errTitle>
   <cmdLine></cmdLine>
   <chdir></chdir>
@@ -12,7 +12,7 @@
   <customProcName>false</customProcName>
   <stayAlive>false</stayAlive>
   <manifest></manifest>
-  <icon>C:\workspace\JDownloader\artwork\icons\by TRazo\jdicon.ico</icon>
+  <icon>../artwork/icons/by TRazo/jdicon.ico</icon>
   <jre>
     <path>jre/</path>
     <minVersion>1.6.0</minVersion>
