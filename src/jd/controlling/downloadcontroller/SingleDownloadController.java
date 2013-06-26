@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.controlling.AccountController;
+import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -46,6 +47,7 @@ import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.ProxyAuthException;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.FileCreationEvent;
@@ -280,8 +282,24 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_disconnect());
                     linkStatus.setValue(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
+                } catch (ProxyAuthException e) {
+                    // Disable proxy for Proxy Rotation.
+                    HTTPProxy p = getCurrentProxy();
+                    if (p != null && p instanceof ProxyInfo) {
+                        if (p != ProxyController.getInstance().getNone()) {
+                            ProxyController.getInstance().setproxyRotationEnabled((ProxyInfo) p, false);
+                            if (ProxyController.getInstance().hasRotation() == false) {
+                                ProxyController.getInstance().setproxyRotationEnabled(ProxyController.getInstance().getNone(), true);
+                            }
+                        }
+
+                    }
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    linkStatus.setErrorMessage(_JDT._.plugins_errors_proxy_auth());
+                    linkStatus.setValue(JsonConfig.create(GeneralSettings.class).getDownloadUnknownIOExceptionWaittime());
                 } catch (IOException e) {
                     LogSource.exception(logger, e);
+
                     linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_hosterproblem());
                     linkStatus.setValue(JsonConfig.create(GeneralSettings.class).getDownloadUnknownIOExceptionWaittime());

@@ -14,6 +14,7 @@ import java.util.logging.Level;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
+import jd.controlling.proxy.ProxyInfo;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
@@ -25,6 +26,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -60,7 +62,8 @@ public class UpdateController implements UpdateCallbackInterface {
     private UpdateSettings settings;
 
     /**
-     * Create a new instance of UpdateController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of UpdateController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private UpdateController() {
         confirmedThreads = new HashSet<Thread>();
@@ -469,6 +472,11 @@ public class UpdateController implements UpdateCallbackInterface {
 
     public String[] listExtensionIds() throws IOException {
         return handler.getOptionalsList();
+    }
+
+    public HTTPProxy getUpdatedProxy(ProxyInfo proxy) {
+        if (handler == null) return null;
+        return handler.getUpdatedProxy(proxy);
     }
 
 }

@@ -5,8 +5,10 @@ import java.util.List;
 
 import jd.controlling.IOEQ;
 import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.ProxyInfo;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.swing.dialog.MessageDialogImpl;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 
@@ -27,8 +29,19 @@ public class ProxyAutoAction extends AppAction {
         IOEQ.add(new Runnable() {
 
             public void run() {
+
                 List<HTTPProxy> list = ProxyController.autoConfig();
-                ProxyController.getInstance().addProxy(list);
+                if (list.size() > 0) {
+                    ProxyController.getInstance().addProxy(list);
+                    if (ProxyController.getInstance().getDefaultProxy().getType() == HTTPProxy.TYPE.DIRECT || ProxyController.getInstance().getDefaultProxy().getType() == HTTPProxy.TYPE.NONE) {
+
+                        ProxyController.getInstance().setDefaultProxy(new ProxyInfo(list.get(0)));
+                    }
+                    new MessageDialogImpl(0, _GUI._.ProxyAutoAction_run_added_proxies_(list.size())).show();
+                } else {
+                    new MessageDialogImpl(0, _GUI._.ProxyAutoAction_run_added_proxies_(0)).show();
+                }
+
             }
         });
 

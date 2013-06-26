@@ -463,4 +463,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Skipped - File already exists" })
     String DownloadLink_setSkipped_statusmessage_file_exists();
 
+    @Default(lngs = { "en" }, values = { "Proxy Authentication failed" })
+    String plugins_errors_proxy_auth();
+
 }

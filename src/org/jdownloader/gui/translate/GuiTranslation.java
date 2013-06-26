@@ -2633,4 +2633,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reset Window Positions and Dimensions" })
     String GUISettings_GUISettings_resetdialog_positions_();
 
+    @Default(lngs = { "en" }, values = { "Native Authentication" })
+    String gui_column_nativeauth();
+
+    @Default(lngs = { "en" }, values = { "Default Connection" })
+    String ProxyConfig_ProxyConfig_defaultproxy_();
+
+    @Default(lngs = { "en" }, values = { "Found Proxies: %s1" })
+    String ProxyAutoAction_run_added_proxies_(int size);
+
 }

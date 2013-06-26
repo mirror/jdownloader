@@ -4,6 +4,7 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
@@ -42,10 +43,14 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
         this.setRenderer(new ListCellRenderer() {
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 Component ret;
-                renderComponent(ret = orgRenderer.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus), list, (ContentType) value, index, isSelected, cellHasFocus);
+                renderComponent(ret = orgRenderer.getListCellRendererComponent(list, valueToString((ContentType) value), index, isSelected, cellHasFocus), list, (ContentType) value, index, isSelected, cellHasFocus);
                 return ret;
             }
         });
+    }
+
+    protected String valueToString(ContentType value) {
+        return value.toString();
     }
 
     @SuppressWarnings("unchecked")
@@ -108,5 +113,9 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
     @Override
     public void onConfigValueModified(KeyHandler<ContentType> keyHandler, ContentType newValue) {
         setSelectedItem(keyHandler.getValue());
+    }
+
+    public void setModel(ContentType[] array) {
+        super.setModel(new DefaultComboBoxModel<ContentType>(array));
     }
 }

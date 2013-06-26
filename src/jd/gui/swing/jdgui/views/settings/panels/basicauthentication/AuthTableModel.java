@@ -9,6 +9,7 @@ import javax.swing.table.JTableHeader;
 
 import jd.controlling.authentication.AuthenticationController;
 import jd.controlling.authentication.AuthenticationInfo;
+import jd.controlling.authentication.AuthenticationInfo.Type;
 
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -79,7 +80,7 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
                 object.setEnabled(value);
             }
         });
-        this.addColumn(new ExtComboColumn<AuthenticationInfo>(_GUI._.authtablemodel_column_type(), null) {
+        this.addColumn(new ExtComboColumn<AuthenticationInfo, AuthenticationInfo.Type>(_GUI._.authtablemodel_column_type(), null) {
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -87,10 +88,22 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
                 return false;
             }
 
-            private ComboBoxModel typeModel = new DefaultComboBoxModel(new String[] { _GUI._.authtablemodel_column_type_ftp(), _GUI._.authtablemodel_column_type_http() });
+            private ComboBoxModel<AuthenticationInfo.Type> typeModel = new DefaultComboBoxModel<AuthenticationInfo.Type>(new AuthenticationInfo.Type[] { AuthenticationInfo.Type.FTP, AuthenticationInfo.Type.HTTP });
 
             @Override
-            public ComboBoxModel updateModel(ComboBoxModel dataModel, AuthenticationInfo value) {
+            protected String modelItemToString(Type selectedItem) {
+                switch (selectedItem) {
+                case FTP:
+                    return _GUI._.authtablemodel_column_type_ftp();
+                case HTTP:
+                    return _GUI._.authtablemodel_column_type_http();
+
+                }
+                return null;
+            }
+
+            @Override
+            public ComboBoxModel<AuthenticationInfo.Type> updateModel(ComboBoxModel<AuthenticationInfo.Type> dataModel, AuthenticationInfo value) {
                 return typeModel;
             }
 
@@ -115,13 +128,13 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
             }
 
             @Override
-            protected int getSelectedIndex(AuthenticationInfo value) {
-                return value.getType().ordinal();
+            protected Type getSelectedItem(AuthenticationInfo object) {
+                return object.getType();
             }
 
             @Override
-            protected void setSelectedIndex(int value, AuthenticationInfo object) {
-                object.setType(AuthenticationInfo.Type.values()[value]);
+            protected void setSelectedItem(AuthenticationInfo object, Type value) {
+                object.setType(value);
             }
 
         });
