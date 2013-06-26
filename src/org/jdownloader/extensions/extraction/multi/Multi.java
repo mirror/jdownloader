@@ -658,10 +658,11 @@ public class Multi extends IExtraction {
 
                 if (item.getSize() != extractTo.length()) {
                     if (ExtractOperationResult.OK == res) {
-                        logger.info("Size missmatch, but Extraction returned OK?! Archive seems incomplete");
+                        logger.info("Size missmatch for " + item.getPath() + ", but Extraction returned OK?! Archive seems incomplete");
                         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
                         return;
                     }
+                    logger.info("Size missmatch for " + item.getPath() + " is " + extractTo.length() + " but should be " + item.getSize());
                     for (ArchiveFile link : getAffectedArchiveFileFromArchvieFiles(item.getPath())) {
                         archive.addCrcError(link);
                     }
@@ -673,6 +674,7 @@ public class Multi extends IExtraction {
                     /* extraction successfully ,continue with next file */
                     break;
                 case CRCERROR:
+                    logger.info("CRC Error for " + item.getPath());
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
                     return;
                 default:
