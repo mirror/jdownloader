@@ -60,18 +60,18 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddlstorage.com" }, urls = { "https?://(www\\.)?ddlstorage\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class DdlStorageCom extends PluginForHost {
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "ortofiles.com" }, urls = { "https?://(www\\.)?ortofiles\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class OrtoFilesCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://ddlstorage.com";
+    private final String               COOKIE_HOST                  = "http://www.ortofiles.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(ddlstorage\\.com)";
+    private final String               DOMAINS                      = "(ortofiles\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final boolean              videoHoster                  = false;
-    private final boolean              supportsHTTPS                = false;
+    private final boolean              supportsHTTPS                = true;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
     private final boolean              useAltExpire                 = true;
@@ -84,17 +84,16 @@ public class DdlStorageCom extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.5.0
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // mods: country blocked stuff, this is done at the firewall based && and when users do bad things to httpd based on logs.
-    // mods: premium storage account.
-    // protocol: no https
+    // mods:
+    // protocol: http && https
     // captchatype: recaptcha
-    // other: no redirects
+    // other: redirects to www.
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("nopremium")) {
             // free account
             chunks = 1;
-            resumes = true;
+            resumes = false;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("nopremium")) {
@@ -105,8 +104,8 @@ public class DdlStorageCom extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 1;
-            resumes = true;
+            chunks = 1; // tested
+            resumes = false;
             acctype = "Non Account";
             directlinkproperty = "freelink";
         }
@@ -126,7 +125,7 @@ public class DdlStorageCom extends PluginForHost {
     }
 
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
@@ -146,9 +145,9 @@ public class DdlStorageCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public DdlStorageCom(PluginWrapper wrapper) {
+    public OrtoFilesCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @Override
@@ -186,17 +185,11 @@ public class DdlStorageCom extends PluginForHost {
             }
         }
 
-        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration))|\"err\">No such file with this filename</font>)")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (cbr.containsHTML(MAINTENANCE)) {
+        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (cbr.containsHTML(MAINTENANCE)) {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
-        } else if (cbr.containsHTML("<li>The Premium account in your possession does not allow the download")) {
-            // current premium account (storage account) can only download their own files.
-            downloadLink.getLinkStatus().setStatusText("This download requires a premium account.");
-            return AvailableStatus.UNCHECKABLE;
         }
-
         br.setFollowRedirects(false);
 
         // scan the first page
@@ -305,16 +298,6 @@ public class DdlStorageCom extends PluginForHost {
             logger.info(account.getUser() + " @ " + acctype + " -> Free Download");
         } else {
             logger.info("Guest @ " + acctype + " -> Free Download");
-        }
-        if (cbr.containsHTML("<li>The Premium account in your possession does not allow the download")) {
-            // current premium account (storage account) can only download their own files.
-            logger.warning("You can not download this file. It seems you need premium account");
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "You can not download this file. It seems you need premium Account");
         }
         passCode = downloadLink.getStringProperty("pass");
         // First, bring up saved final links
@@ -593,7 +576,7 @@ public class DdlStorageCom extends PluginForHost {
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        String ttt = cbr.getRegex("limit: (\\d+),").getMatch(0);
+        String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (inValidate(ttt)) ttt = cbr.getRegex("id=\"countdown_str\"[^>]+>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
         if (!inValidate(ttt)) {
             int tt = Integer.parseInt(ttt);
@@ -689,11 +672,7 @@ public class DdlStorageCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        // free account
-        // <td class="td_title">Used space:<span class="td_descr">(<span id="usr_disk_used">0.00</span> GB of <span
-        // id="usr_disk_available">10</span> GB)</span></td>
-        // data based account = same as above
-        final String space[] = cbr.getRegex(">Used space:[^>]+>[^>]+>([0-9\\.]+)</span> (KB|MB|GB|TB)").getRow(0);
+        final String space[] = cbr.getRegex(">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -702,21 +681,17 @@ public class DdlStorageCom extends PluginForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        // free account
-        // <td class="td_title">Monthly bandwidth used:<span class="td_descr">(<span id="usr_bandwidth_used">2</span> Mb of <span
-        // id="usr_bandwidth_available">1500</span> Mb)</span></td>
-        // <td class="td_title">Monthly bandwidth used:<span class="td_descr">(<span id="usr_bandwidth_used">0.00</span> Gb of <span
-        // id="usr_bandwidth_available">UNLIMITED</span>)</span></td>
-        final String[] availabletraffic = cbr.getRegex(">Monthly bandwidth used:[^>]+>[^>]+>([0-9\\.]+)</span> (KB|MB|GB|TB) of <[^>]+>(([0-9\\.]+)</span> (KB|MB|GB|TB)|UNLIMITED)").getRow(0);
-        if (availabletraffic != null && (availabletraffic[2].equalsIgnoreCase("UNLIMITED") || availabletraffic[3].equalsIgnoreCase("0"))) {
-            // availabletraffic[3].equalsIgnoreCase("0") account type the user can only download their own files...
-            // not sure how we are going to support this else were, other than error catching within premium download method?
+        final String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
+            availabletraffic.trim();
+            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+            if (!availabletraffic.startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setTrafficLeft(0);
+            }
+        } else {
             ai.setUnlimitedTraffic();
-        } else if (availabletraffic != null && availabletraffic.length == 5) {
-            long usedTraffic = SizeFormatter.getSize(availabletraffic[0] + availabletraffic[1]);
-            long maxTraffic = SizeFormatter.getSize(availabletraffic[3] + availabletraffic[4]);
-            ai.setTrafficLeft(maxTraffic - usedTraffic);
-            ai.setTrafficMax(maxTraffic);
         }
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
@@ -843,16 +818,6 @@ public class DdlStorageCom extends PluginForHost {
             dllink = checkDirectLink(downloadLink);
             if (inValidate(dllink)) {
                 getPage(downloadLink.getDownloadURL());
-                if (cbr.containsHTML("<li>The Premium account in your possession does not allow the download")) {
-                    // current premium account (storage account) can only download their own files.
-                    logger.warning("This account can not download external files");
-                    try {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                    } catch (final Throwable e) {
-                        if (e instanceof PluginException) throw (PluginException) e;
-                    }
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "This account can not download external files");
-                }
                 getDllink();
                 if (inValidate(dllink)) {
                     checkErrors(downloadLink, true);
@@ -1034,30 +999,20 @@ public class DdlStorageCom extends PluginForHost {
         downloadLink.setProperty("retry", Property.NULL);
     }
 
-    private void ipBlock() throws PluginException {
-        if (cbr.containsHTML("(Access from [^ ]+ is not allowed|DDLStorage temporarily unavailable from your region)")) {
-            logger.warning("Country/IP Block issued by " + COOKIE_HOST);
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Country/IP block issued by" + COOKIE_HOST);
-        }
-    }
-
     private void getPage(final String page) throws Exception {
         br.getPage(page);
         correctBR();
-        ipBlock();
     }
 
     @SuppressWarnings("unused")
     private void postPage(final String page, final String postData) throws Exception {
         br.postPage(page, postData);
         correctBR();
-        ipBlock();
     }
 
     private void sendForm(final Form form) throws Exception {
         br.submitForm(form);
         correctBR();
-        ipBlock();
     }
 
     private void fixFilename(final DownloadLink downloadLink) {
