@@ -36,6 +36,10 @@ public class NewPackageDialog extends AbstractDialog<Object> {
         return Math.min(Math.max(tf.getPreferredSize().width, fc.getPreferredSize().width) * 2, getDialog().getParent().getWidth());
     }
 
+    protected void initFocus(final JComponent focus) {
+
+    }
+
     private String getNewName() {
         String defValue = _GUI._.MergeToPackageAction_actionPerformed_newpackage_();
         try {
