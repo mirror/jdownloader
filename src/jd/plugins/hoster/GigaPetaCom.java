@@ -55,7 +55,7 @@ public class GigaPetaCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("All threads for IP")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.gigapeta.unavailable", "Your IP is already downloading a file"));
         if (br.containsHTML("<div id=\"page_error\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex infos = br.getRegex(Pattern.compile("<img src=\".*\" alt=\"file\" />(.*?)</td>.*?</tr>.*?<tr>.*?<th>.*?</th>.*?<td>(.*?)</td>", Pattern.DOTALL));
+        Regex infos = br.getRegex(Pattern.compile("<img src=\".*\" alt=\"file\" />\\-\\->(.*?)</td>.*?</tr>.*?<tr>.*?<th>.*?</th>.*?<td>(.*?)</td>", Pattern.DOTALL));
         String fileName = infos.getMatch(0);
         String fileSize = infos.getMatch(1);
         if (fileName == null || fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -72,6 +72,16 @@ public class GigaPetaCom extends PluginForHost {
             String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
             br.postPage(br.getURL(), "download=&captcha_key=" + captchaKey + "&captcha=" + captchaCode);
             if (br.containsHTML("class=\"big_error\">404</h1>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 60 * 60 * 1000l);
+            if (br.containsHTML("You will get ability to download next file after")) {
+                final Regex wttime = br.getRegex("<b>(\\d+) min\\. (\\d+) sec\\.</b>");
+                final String minutes = wttime.getMatch(0);
+                final String seconds = wttime.getMatch(1);
+                if (minutes != null && seconds != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(minutes) * 60 * 1001l) + (Integer.parseInt(seconds) * 1001l));
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                }
+            }
             if (br.getRedirectLocation() != null) break;
         }
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
