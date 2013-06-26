@@ -36,14 +36,14 @@ public class AvxHmeW extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String AVXHMEREGEX = "http://(www\\.)?avaxhome\\.(ws|bz)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+";
+    private static final String AVXHMEREGEX = "http://(www\\.)?avaxhome\\.(ws|bz)|avaxho\\.me/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.clearCookies(getHost());
-        String parameter = cryptedLink.getCryptedUrl().replaceAll("avaxhome.ws", "avaxhome.bz");
-        parameter = parameter.replaceFirst("avaxho.me/", "avaxhome.bz/");
+        String parameter = cryptedLink.getCryptedUrl().replaceAll("avaxhome.ws", "avaxho.me");
+        parameter = parameter.replaceFirst("avaxhome.bz/", "avaxho.me/");
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
