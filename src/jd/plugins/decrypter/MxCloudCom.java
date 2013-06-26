@@ -110,6 +110,7 @@ public class MxCloudCom extends PluginForDecrypt {
 
         byte[] enc = null;
         try {
+            br.setKeepResponseContentBytes(true);
             br.getPage(playInfoUrl);
             /* will throw Exception in stable <=9581 */
             if (br.getRequest().isContentDecoded()) {

@@ -126,7 +126,7 @@ public class Srnnks extends PluginForDecrypt {
                 if (System.currentTimeMillis() - OldBlock < 60000) { return true; }
                 if (System.currentTimeMillis() - OldReconnect < 15000) {
                     // redo the request
-                    br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
+                    br.loadConnection(br.openRequestConnection(null));
                     return false;
                 }
                 ret = UserIO.getInstance().requestConfirmDialog(0, "Captchalimit", JDL.L("plugins.decrypter.srnks.CaptchaLimitReached", "Sie haben zu oft das Captcha falsch eingegeben sie müssen entweder warten oder einen Reconnect durchführen"), null, "Reconnect", JDL.L("plugins.decrypter.srnks.canceldecrypt", "Decryptvorgang abbrechen"));
@@ -137,7 +137,7 @@ public class Srnnks extends PluginForDecrypt {
                 if (System.currentTimeMillis() - OldBlock < 60000) { return true; }
                 if (System.currentTimeMillis() - OldReconnect < 15000) {
                     // redo the request
-                    br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
+                    br.loadConnection(br.openRequestConnection(null));
                     return false;
                 }
                 ret = UserIO.getInstance().requestConfirmDialog(0, "Downloadlimit", JDL.L("plugins.decrypter.srnks.DownloadLimitReached", "Das Downloadlimit wurde erreicht sie müssen entweder warten oder einen Reconnect durchführen"), null, "Reconnect", JDL.L("plugins.decrypter.srnks.canceldecrypt", "Decryptvorgang abbrechen"));
@@ -149,7 +149,7 @@ public class Srnnks extends PluginForDecrypt {
                 if (Reconnecter.waitForNewIP(15000, false)) {
                     Srnnks.LATEST_RECONNECT.set(System.currentTimeMillis());
                     // redo the request
-                    br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
+                    br.loadConnection(br.openRequestConnection(null));
 
                     return false;
                 }

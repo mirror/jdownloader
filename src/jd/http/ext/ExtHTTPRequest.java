@@ -2,6 +2,7 @@ package jd.http.ext;
 
 import java.awt.Image;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +10,9 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
 
 import jd.http.Browser;
 import jd.http.Request;
@@ -21,17 +25,18 @@ import org.w3c.dom.Document;
 
 public class ExtHTTPRequest implements HttpRequest {
 
-    private ExtBrowser                          browser;
+    private ExtBrowser                               browser;
 
     private java.util.List<ReadyStateChangeListener> listener;
 
-    private int                                 readyState = NetworkRequest.STATE_UNINITIALIZED;
+    private int                                      readyState = NetworkRequest.STATE_UNINITIALIZED;
 
-    private Request                             request;
+    private Request                                  request;
 
-    private boolean                             asyncFlag;
+    private boolean                                  asyncFlag;
 
-    private Browser                             br;
+    private Browser                                  br;
+    private Image                                    image      = null;
 
     public ExtHTTPRequest(ExtBrowser browser) {
         this.browser = browser;
@@ -82,8 +87,21 @@ public class ExtHTTPRequest implements HttpRequest {
     }
 
     public Image getResponseImage() {
-        return request.getResponseImage();
-
+        byte[] byteArray = getResponseBytes();
+        URLConnectionAdapter connection = request.getHttpConnection();
+        final String ct = connection.getContentType();
+        /* check for image content */
+        if (ct != null && !Pattern.compile("images?/\\w*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(ct).matches()) { throw new IllegalStateException("Content-Type: " + ct); }
+        // TODO..this is just quick and dirty.. may result in memory leaks
+        if (this.image == null && byteArray != null) {
+            final InputStream fake = new ByteArrayInputStream(byteArray);
+            try {
+                this.image = ImageIO.read(fake);
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return this.image;
     }
 
     public String getResponseText() {

@@ -196,16 +196,17 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            if (root != null && root.isShowing()) return;
-                            root = new ExtPopupMenu();
-
-                            new MenuBuilder(MainToolbarManager.getInstance(), root, null, (MenuContainer) menudata).run();
+                            ExtPopupMenu lroot = root;
+                            if (lroot != null && lroot.isShowing()) { return; }
                             Object src = e.getSource();
                             if (e.getSource() instanceof Component) {
+                                lroot = new ExtPopupMenu();
+                                new MenuBuilder(MainToolbarManager.getInstance(), lroot, null, (MenuContainer) menudata).run();
                                 Component button = (Component) e.getSource();
-                                Dimension prefSize = root.getPreferredSize();
+                                Dimension prefSize = lroot.getPreferredSize();
                                 int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
-                                root.show(button, -insets[1], button.getHeight() - insets[0]);
+                                root = lroot;
+                                lroot.show(button, -insets[1], button.getHeight() - insets[0]);
 
                             }
                         }
@@ -220,48 +221,55 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                         @Override
                         public void mouseReleased(MouseEvent e) {
-                            if (timer != null) {
-                                timer.stop();
-                                timer = null;
+                            Timer ltimer = timer;
+                            timer = null;
+                            if (ltimer != null) {
+                                ltimer.stop();
                             }
                         }
 
                         @Override
                         public void mousePressed(MouseEvent e) {
-                            if (timer != null) {
-                                timer.stop();
-                                timer = null;
+                            Timer ltimer = timer;
+                            timer = null;
+                            if (ltimer != null) {
+                                ltimer.stop();
                             }
                         }
 
                         @Override
                         public void mouseExited(MouseEvent e) {
-                            if (timer != null) {
-                                timer.stop();
-                                timer = null;
+                            Timer ltimer = timer;
+                            timer = null;
+                            if (ltimer != null) {
+                                ltimer.stop();
                             }
                         }
 
                         @Override
                         public void mouseEntered(MouseEvent e) {
-
-                            timer = new Timer(200, new ActionListener() {
+                            Timer ltimer = timer;
+                            timer = null;
+                            if (ltimer != null) ltimer.stop();
+                            ltimer = new Timer(200, new ActionListener() {
 
                                 @Override
                                 public void actionPerformed(ActionEvent e) {
                                     finalBt.doClick();
                                 }
                             });
-                            timer.setRepeats(false);
-                            timer.start();
+                            ltimer.setRepeats(false);
+                            ltimer.start();
+                            timer = ltimer;
 
                         }
 
                         @Override
                         public void mouseClicked(MouseEvent e) {
-                            if (timer != null) {
-                                timer.stop();
-                                timer = null;
+                            Timer ltimer = timer;
+                            timer = null;
+                            if (ltimer != null) {
+                                ltimer.stop();
                             }
                         }
                     });

@@ -164,6 +164,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
 
             byte[] enc = null;
             try {
+                br.setKeepResponseContentBytes(true);
                 br.getPage(req);
                 if (br.getHttpConnection().getResponseCode() == 403) {
                     next = false;

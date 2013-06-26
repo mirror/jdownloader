@@ -111,6 +111,7 @@ public class AboutCom extends PluginForHost {
 
         /* AMF-Request */
         Browser amf = br.cloneBrowser();
+
         amf.getHeaders().put("Content-Type", "application/x-amf");
         getAMFRequest(amf, createAMFMessage(dlink, videoId), playerId);
 
@@ -239,6 +240,7 @@ public class AboutCom extends PluginForHost {
     private void getAMFRequest(final Browser amf, final byte[] b, String s) {
         amf.getHeaders().put("Content-Type", "application/x-amf");
         try {
+            amf.setKeepResponseContentBytes(true);
             PostRequest request = (PostRequest) amf.createPostRequest("http://c.brightcove.com/services/messagebroker/amf?playerId=" + s, (String) null);
             request.setPostBytes(b);
             amf.openRequestConnection(request);

@@ -28,8 +28,7 @@ public class AccountManager extends JPanel implements SettingsComponent {
     private ExtButton           refreshButton;
 
     /**
-     * Create a new instance of AccountManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}
-     * .
+     * Create a new instance of AccountManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()} .
      * 
      * @param accountManagerSettings
      */
@@ -57,11 +56,6 @@ public class AccountManager extends JPanel implements SettingsComponent {
     }
 
     public void setEnabled(boolean enabled) {
-        // refreshButton.setEnabled(enabled);
-        // buyButton.setEnabled(enabled);
-        // removeButton.setEnabled(enabled);
-        // newButton.setEnabled(enabled);
-        // table.setEnabled(enabled);
     }
 
     /**
