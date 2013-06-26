@@ -122,7 +122,7 @@ public class XFileSharingProBasic extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
             /* free accounts also have captchas */
             return true;
         }

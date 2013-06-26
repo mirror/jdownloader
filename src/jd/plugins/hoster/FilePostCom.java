@@ -112,7 +112,7 @@ public class FilePostCom extends PluginForHost {
                     } else {
                         dl.setAvailable(true);
                     }
-                    dl.setName(Encoding.htmlDecode(filename));
+                    dl.setFinalFileName(Encoding.htmlDecode(filename));
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
                 if (index == urls.length) break;

@@ -82,7 +82,7 @@ public class OrtoFilesCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.5.0
+    // XfileShare Version 3.0.5.1
     // last XfileSharingProBasic compare :: 2.6.2.1
     // mods:
     // protocol: http && https
@@ -125,7 +125,7 @@ public class OrtoFilesCom extends PluginForHost {
     }
 
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
@@ -145,11 +145,13 @@ public class OrtoFilesCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
+    @SuppressWarnings("deprecation")
     public OrtoFilesCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
@@ -203,6 +205,10 @@ public class OrtoFilesCom extends PluginForHost {
                 sendForm(download1);
                 scanInfo(fileInfo, downloadLink);
             }
+            if (inValidate(fileInfo[0]) && inValidate(fileInfo[1])) {
+                logger.warning("Possible plugin error, trying fail over!");
+                altAvailStat(fileInfo, downloadLink);
+            }
         }
         if (inValidate(fileInfo[0])) {
             if (cbr.containsHTML("You have reached the download(\\-| )limit")) {
@@ -253,7 +259,8 @@ public class OrtoFilesCom extends PluginForHost {
                     fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                     if (inValidate(fileInfo[1])) {
                         try {
-                            altAvailStat(fileInfo, downloadLink);
+                            // only needed in rare circumstances
+                            // altAvailStat(fileInfo, downloadLink);
                         } catch (Exception e) {
                         }
                     }
@@ -1346,11 +1353,9 @@ public class OrtoFilesCom extends PluginForHost {
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
      * 
      * @param s
-     *          Imported String to match against.
-     * @returns true 
-     *          on valid rule match
-     * @returns false
-     *          on invalid rule match.
+     *            Imported String to match against.
+     * @returns true on valid rule match
+     * @returns false on invalid rule match.
      * @author raztoki
      * */
     private boolean inValidate(final String s) {
@@ -1365,12 +1370,12 @@ public class OrtoFilesCom extends PluginForHost {
      * Returns the first form that has a 'key' that equals 'value'.
      * 
      * @param key
-     *          name
+     *            name
      * @param value
-     *          expected value
+     *            expected value
      * @param ibr
-     *          import browser
-     * @return 
+     *            import browser
+     * @return
      * */
     private Form getFormByKey(final Browser ibr, final String key, final String value) {
         Form[] workaround = ibr.getForms();

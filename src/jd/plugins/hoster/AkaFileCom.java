@@ -82,7 +82,7 @@ public class AkaFileCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.5.0
+    // XfileShare Version 3.0.5.1
     // last XfileSharingProBasic compare :: 2.6.2.1
     // mods:
     // protocol: has https but, not setup correctly
@@ -146,11 +146,13 @@ public class AkaFileCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
+    @SuppressWarnings("deprecation")
     public AkaFileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
@@ -203,6 +205,10 @@ public class AkaFileCom extends PluginForHost {
                 download1.remove("method_premium");
                 sendForm(download1);
                 scanInfo(fileInfo, downloadLink);
+            }
+            if (inValidate(fileInfo[0]) && inValidate(fileInfo[1])) {
+                logger.warning("Possible plugin error, trying fail over!");
+                altAvailStat(fileInfo, downloadLink);
             }
         }
         if (inValidate(fileInfo[0])) {

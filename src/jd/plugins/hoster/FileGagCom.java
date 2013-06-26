@@ -82,7 +82,7 @@ public class FileGagCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.5.0
+    // XfileShare Version 3.0.5.1
     // last XfileSharingProBasic compare :: 2.6.2.1
     // mods:
     // protocol: no https
@@ -92,19 +92,19 @@ public class FileGagCom extends PluginForHost {
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("nopremium")) {
             // free account
-            chunks = 0;
+            chunks = 1;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("nopremium")) {
             // prem account
-            chunks = 0;
+            chunks = -10;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 0;
+            chunks = 1;
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -125,17 +125,17 @@ public class FileGagCom extends PluginForHost {
     }
 
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return true;
+            return false;
         }
         if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
             /* free accounts also have captchas */
-            return true;
+            return false;
         }
         return false;
     }
@@ -145,11 +145,13 @@ public class FileGagCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
+    @SuppressWarnings("deprecation")
     public FileGagCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
@@ -203,6 +205,10 @@ public class FileGagCom extends PluginForHost {
                 sendForm(download1);
                 scanInfo(fileInfo, downloadLink);
             }
+            if (inValidate(fileInfo[0]) && inValidate(fileInfo[1])) {
+                logger.warning("Possible plugin error, trying fail over!");
+                altAvailStat(fileInfo, downloadLink);
+            }
         }
         if (inValidate(fileInfo[0])) {
             if (cbr.containsHTML("You have reached the download(\\-| )limit")) {
@@ -253,7 +259,8 @@ public class FileGagCom extends PluginForHost {
                     fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                     if (inValidate(fileInfo[1])) {
                         try {
-                            altAvailStat(fileInfo, downloadLink);
+                            // only needed in rare circumstances
+                            // altAvailStat(fileInfo, downloadLink);
                         } catch (Exception e) {
                         }
                     }
@@ -1346,11 +1353,9 @@ public class FileGagCom extends PluginForHost {
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
      * 
      * @param s
-     *          Imported String to match against.
-     * @returns true 
-     *          on valid rule match
-     * @returns false
-     *          on invalid rule match.
+     *            Imported String to match against.
+     * @returns true on valid rule match
+     * @returns false on invalid rule match.
      * @author raztoki
      * */
     private boolean inValidate(final String s) {
@@ -1365,12 +1370,12 @@ public class FileGagCom extends PluginForHost {
      * Returns the first form that has a 'key' that equals 'value'.
      * 
      * @param key
-     *          name
+     *            name
      * @param value
-     *          expected value
+     *            expected value
      * @param ibr
-     *          import browser
-     * @return 
+     *            import browser
+     * @return
      * */
     private Form getFormByKey(final Browser ibr, final String key, final String value) {
         Form[] workaround = ibr.getForms();

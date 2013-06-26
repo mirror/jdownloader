@@ -82,7 +82,7 @@ public class DdlStorageCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.5.0
+    // XfileShare Version 3.0.5.1
     // last XfileSharingProBasic compare :: 2.6.2.1
     // mods: country blocked stuff, this is done at the firewall based && and when users do bad things to httpd based on logs.
     // mods: premium storage account.
@@ -146,11 +146,13 @@ public class DdlStorageCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
+    @SuppressWarnings("deprecation")
     public DdlStorageCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
@@ -210,6 +212,10 @@ public class DdlStorageCom extends PluginForHost {
                 sendForm(download1);
                 scanInfo(fileInfo, downloadLink);
             }
+            if (inValidate(fileInfo[0]) && inValidate(fileInfo[1])) {
+                logger.warning("Possible plugin error, trying fail over!");
+                altAvailStat(fileInfo, downloadLink);
+            }
         }
         if (inValidate(fileInfo[0])) {
             if (cbr.containsHTML("You have reached the download(\\-| )limit")) {
@@ -260,7 +266,8 @@ public class DdlStorageCom extends PluginForHost {
                     fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                     if (inValidate(fileInfo[1])) {
                         try {
-                            altAvailStat(fileInfo, downloadLink);
+                            // only needed in rare circumstances
+                            // altAvailStat(fileInfo, downloadLink);
                         } catch (Exception e) {
                         }
                     }
