@@ -232,8 +232,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     @Override
     public JComponent layoutDialogContent() {
 
-        MigPanel p = new MigPanel("ins 0 0 3 0,wrap 3", "[][grow,fill][]", "[fill,grow][grow,24!][grow,24!][grow,24!][grow,24!]");
-
         destination = new PathChooser("ADDLinks", true) {
             protected void onChanged(ExtTextField txt2) {
                 delayedValidate.run();
@@ -308,7 +306,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
         comment = new ExtTextField();
         comment.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_comment_help());
-
+        comment.setBorder(BorderFactory.createCompoundBorder(comment.getBorder(), BorderFactory.createEmptyBorder(2, 6, 2, 6)));
         destination.setQuickSelectionList(DownloadPath.loadList(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
 
         String latest = config.getLatestDownloadDestinationFolder();
@@ -355,22 +353,26 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         // extractToggle.setBorderPainted(false);
 
         extractToggle.setToolTipText(_GUI._.AddLinksDialog_layoutDialogContent_autoextract_tooltip());
+        int height = Math.max(24, (int) (comment.getPreferredSize().height * 0.9));
+        MigPanel p = new MigPanel("ins 0 0 3 0,wrap 3", "[][grow,fill][]", "[fill,grow][grow," + height + "!][grow," + height + "!][grow," + height + "!][grow," + height + "!]");
+
         p.add(new JLabel(NewTheme.I().getIcon("linkgrabber", 32)), "aligny top,height 32!,width 32!");
 
         p.add(sp, "height 30:100:n,spanx");
         p.add(createIconLabel("save", _GUI._.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,width 32!");
-        p.add(destination, "height 24!");
+
+        p.add(destination, "height " + height + "!");
         p.add(destination.getButton(), "sg right");
 
         p.add(createIconLabel("package_open", _GUI._.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,width 32!");
-        p.add(packagename, "spanx,height 24!");
+        p.add(packagename, "spanx,height " + height + "!");
         p.add(createIconLabel("document", _GUI._.AddLinksDialog_layoutDialogContent_comment_tt()), "aligny center,width 32!");
-        p.add(comment, "spanx,height 24!");
+        p.add(comment, "spanx,height " + height + "!");
 
-        p.add(createIconLabel("archivepassword", _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height 24!,width 32!");
+        p.add(createIconLabel("archivepassword", _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height " + height + "!,width 32!");
 
-        p.add(password, "pushx,growx,height 24!");
-        MigPanel subpanel = new MigPanel("ins 0", "[grow,fill][]", "[24!,grow]");
+        p.add(password, "pushx,growx,height " + height + "!");
+        MigPanel subpanel = new MigPanel("ins 0", "[grow,fill][]", "[" + height + "!,grow]");
 
         p.add(subpanel, "sg right");
         JLabel lbl;

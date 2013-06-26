@@ -35,7 +35,6 @@ import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
@@ -58,14 +57,13 @@ import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContex
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate.JdownloaderTranslation;
-import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.AvoidRlyExistListener;
 import org.jdownloader.updatev2.RestartController;
 
 public class GUISettings extends AbstractConfigPanel {
 
     private static final long serialVersionUID = 1L;
-    private Spinner           captchaSize;
+
     private ComboBox<String>  lng;
     private String[]          languages;
     private Thread            languageScanner;
@@ -83,8 +81,6 @@ public class GUISettings extends AbstractConfigPanel {
 
     public GUISettings() {
         super();
-        captchaSize = new Spinner(org.jdownloader.settings.staticreferences.CFG_GUI.CAPTCHA_SCALE_FACTOR);
-        captchaSize.setFormat("#'%'");
 
         lng = new ComboBox<String>(TranslationFactory.getDesiredLanguage()) {
 
@@ -294,9 +290,8 @@ public class GUISettings extends AbstractConfigPanel {
         this.addPair("", null, mainMenuManager);
         this.addPair("", null, trayMenuManager);
 
-        this.addHeader(_GUI._.GUISettings_GUISettings_object_accessability(), NewTheme.I().getIcon("barrierfreesettings", 32));
-        this.addDescription(_JDT._.gui_settings_barrierfree_description());
-        this.addPair(_GUI._.gui_config_barrierfree_captchasize(), null, captchaSize);
+        // this.addHeader(_GUI._.GUISettings_GUISettings_object_accessability(), NewTheme.I().getIcon("barrierfreesettings", 32));
+        // this.addDescription(_JDT._.gui_settings_barrierfree_description());
 
     }
 

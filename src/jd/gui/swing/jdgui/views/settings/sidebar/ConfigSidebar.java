@@ -201,7 +201,7 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
 
             public Dimension getPreferredSize() {
                 Dimension ret = super.getPreferredSize();
-                ret.width = TreeRenderer.DIMENSION.width + getVerticalScrollBar().getPreferredSize().width;
+                ret.width = Math.max(TreeRenderer.DIMENSION.width, TreeRenderer.SMALL_DIMENSION.width) + getVerticalScrollBar().getPreferredSize().width;
                 return ret;
             }
 

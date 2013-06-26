@@ -42,9 +42,11 @@ import org.jdownloader.gui.settings.AbstractConfigPanel;
 
 public class TreeRenderer extends JPanel implements ListCellRenderer {
 
+    private static final double        _1_15            = 1.15;
+
     private static final long          serialVersionUID = -3927390875702401200L;
 
-    public static final Dimension      SMALL_DIMENSION  = new Dimension(0, 25);
+    public static final Dimension      SMALL_DIMENSION  = new Dimension(0, 10);
 
     public static final Dimension      DIMENSION        = new Dimension(0, 35);
 
@@ -79,6 +81,7 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
         // we need to update the height here - if font scale faktor is over 100% we need higher rows
         TreeRenderer.DIMENSION.height += lbl.getPreferredSize().getHeight();
 
+        TreeRenderer.SMALL_DIMENSION.height += lbl.getPreferredSize().getHeight();
         // this.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
         f = lbl.getForeground();
         selectedBackground = ColorUtils.getAlphaInstance(f, 60);
@@ -110,8 +113,9 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
         } else if (value instanceof CheckBoxedEntry) {
             ret = (JComponent) extension.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             ret.setPreferredSize(null);
+
             // ret.setBorder(matteBorder);
-            TreeRenderer.DIMENSION.width = Math.max(TreeRenderer.DIMENSION.width, ret.getPreferredSize().width);
+            TreeRenderer.DIMENSION.width = (int) Math.max(TreeRenderer.DIMENSION.width, ret.getPreferredSize().width * _1_15);
             ret.setPreferredSize(TreeRenderer.DIMENSION);
         } else if (value instanceof AdvancedSettings) {
             AbstractConfigPanel te = (AbstractConfigPanel) value;
@@ -122,7 +126,13 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
             lbl.setHorizontalAlignment(JLabel.CENTER);
             ret = this;
             this.setBorder(matteBorder);
-            TreeRenderer.SMALL_DIMENSION.width = Math.max(TreeRenderer.SMALL_DIMENSION.width, ret.getPreferredSize().width);
+            if (isSelected) {
+                lbl.setFont(boldFont);
+            } else {
+                lbl.setFont(orgFont);
+            }
+            ret.setPreferredSize(null);
+            TreeRenderer.SMALL_DIMENSION.width = (int) Math.max(TreeRenderer.SMALL_DIMENSION.width, ret.getPreferredSize().width * _1_15);
             ret.setPreferredSize(TreeRenderer.SMALL_DIMENSION);
         } else if (value instanceof ExtensionManager) {
             AbstractConfigPanel te = (AbstractConfigPanel) value;
@@ -132,8 +142,14 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
             lbl.setHorizontalTextPosition(JLabel.RIGHT);
             lbl.setHorizontalAlignment(JLabel.CENTER);
             ret = this;
+            if (isSelected) {
+                lbl.setFont(boldFont);
+            } else {
+                lbl.setFont(orgFont);
+            }
             this.setBorder(matteBorder);
-            TreeRenderer.SMALL_DIMENSION.width = Math.max(TreeRenderer.SMALL_DIMENSION.width, ret.getPreferredSize().width);
+            ret.setPreferredSize(null);
+            TreeRenderer.SMALL_DIMENSION.width = (int) Math.max(TreeRenderer.SMALL_DIMENSION.width, ret.getPreferredSize().width * _1_15);
             ret.setPreferredSize(TreeRenderer.SMALL_DIMENSION);
         } else if (value instanceof AbstractConfigPanel) {
             AbstractConfigPanel te = (AbstractConfigPanel) value;
@@ -144,7 +160,13 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
             lbl.setHorizontalAlignment(JLabel.CENTER);
             ret = this;
             this.setBorder(null);
-            TreeRenderer.DIMENSION.width = Math.max(TreeRenderer.DIMENSION.width, ret.getPreferredSize().width);
+            if (isSelected) {
+                lbl.setFont(boldFont);
+            } else {
+                lbl.setFont(orgFont);
+            }
+            ret.setPreferredSize(null);
+            TreeRenderer.DIMENSION.width = (int) Math.max(TreeRenderer.DIMENSION.width, ret.getPreferredSize().width * _1_15);
             ret.setPreferredSize(TreeRenderer.DIMENSION);
         } else if (value instanceof ExtensionHeader) {
             ret = ((ExtensionHeader) value);
@@ -157,20 +179,28 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
             lbl.setHorizontalTextPosition(JLabel.CENTER);
             lbl.setHorizontalAlignment(JLabel.CENTER);
             ret = this;
+
+            if (isSelected) {
+                lbl.setFont(boldFont);
+            } else {
+                lbl.setFont(orgFont);
+            }
+
             this.setBorder(null);
-            TreeRenderer.DIMENSION.width = Math.max(TreeRenderer.DIMENSION.width, ret.getPreferredSize().width);
+            ret.setPreferredSize(null);
+            TreeRenderer.DIMENSION.width = (int) Math.max(TreeRenderer.DIMENSION.width, ret.getPreferredSize().width * _1_15);
             ret.setPreferredSize(TreeRenderer.DIMENSION);
         }
 
         if (isSelected) {
-            lbl.setFont(boldFont);
+            // lbl.setFont(boldFont);
             // lbl.setBorder(brd);
             setBackground(selectedBackground);
             // lbl.setForeground(b);
             setOpaque(true);
             // lbl.setForeground(b);
         } else {
-            lbl.setFont(orgFont);
+            // lbl.setFont(orgFont);
             if (index % 2 == 0) {
                 setBackground(alternateHighlight);
                 setOpaque(true);
