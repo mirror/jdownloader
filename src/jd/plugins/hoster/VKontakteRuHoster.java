@@ -59,6 +59,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private final String        REPLACEUSERLINKS     = "REPLACEUSERLINKS";
     private final String        FASTLINKCHECK        = "FASTLINKCHECK";
     private final String        FASTPICTURELINKCHECK = "FASTPICTURELINKCHECK";
+    private final String        FASTAUDIOLINKCHECK   = "FASTAUDIOLINKCHECK";
     private static final String ALLOW_BEST           = "ALLOW_BEST";
     private static final String ALLOW_240P           = "ALLOW_240P";
     private static final String ALLOW_360P           = "ALLOW_360P";
@@ -427,6 +428,7 @@ public class VKontakteRuHoster extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastLinkcheck", "Fast linkcheck for video links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTPICTURELINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastPictureLinkcheck", "Fast LinkCheck for picture links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTAUDIOLINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastAudioLinkcheck", "Fast LinkCheck for audio links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings: "));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

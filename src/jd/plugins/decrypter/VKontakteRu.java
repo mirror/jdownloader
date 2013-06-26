@@ -52,6 +52,16 @@ public class VKontakteRu extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private final String        REPLACEUSERLINKS              = "REPLACEUSERLINKS";
+    private final String        FASTLINKCHECK                 = "FASTLINKCHECK";
+    private final String        FASTPICTURELINKCHECK          = "FASTPICTURELINKCHECK";
+    private final String        FASTAUDIOLINKCHECK            = "FASTAUDIOLINKCHECK";
+    private static final String ALLOW_BEST                    = "ALLOW_BEST";
+    private static final String ALLOW_240P                    = "ALLOW_240P";
+    private static final String ALLOW_360P                    = "ALLOW_360P";
+    private static final String ALLOW_480P                    = "ALLOW_480P";
+    private static final String ALLOW_720P                    = "ALLOW_720P";
+
     private static final String FILEOFFLINE                   = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
     private static final String DOMAIN                        = "http://vk.com";
     private static final String PATTERN_AUDIO_GENERAL         = ".*?vk\\.com/audio.*?";
@@ -154,7 +164,7 @@ public class VKontakteRu extends PluginForDecrypt {
                      */
                     decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a single-photo-album-link");
-                } else if (parameter.matches(PATTERN_PHOTO_ALBUMS) || (!parameter.matches(PATTERN_WALL_LINK) && cfg.getBooleanProperty("REPLACEUSERLINKS", false))) {
+                } else if (parameter.matches(PATTERN_PHOTO_ALBUMS) || (!parameter.matches(PATTERN_WALL_LINK) && cfg.getBooleanProperty(REPLACEUSERLINKS, false))) {
                     /**
                      * Photo albums lists/overviews Example: http://vk.com/albums46486585
                      */
@@ -214,7 +224,7 @@ public class VKontakteRu extends PluginForDecrypt {
             dl.setProperty("directlink", Encoding.htmlDecode(singleAudioDataAsArray[2]));
             // Set filename so we have nice filenames here ;)
             dl.setFinalFileName(Encoding.htmlDecode(singleAudioDataAsArray[5].trim()) + " - " + Encoding.htmlDecode(singleAudioDataAsArray[6].trim()) + ".mp3");
-            dl.setAvailable(true);
+            if (cfg.getBooleanProperty(FASTAUDIOLINKCHECK, false)) dl.setAvailable(true);
             decryptedLinks.add(dl);
             logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
             overallCounter++;
@@ -242,7 +252,7 @@ public class VKontakteRu extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(finallink);
             // Set filename so we have nice filenames here ;)
             dl.setFinalFileName(Encoding.htmlDecode(audioInfo[3].trim()) + " - " + Encoding.htmlDecode(audioInfo[2].trim()) + ".mp3");
-            dl.setAvailable(true);
+            if (cfg.getBooleanProperty(FASTAUDIOLINKCHECK, false)) dl.setAvailable(true);
             decryptedLinks.add(dl);
             logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
             overallCounter++;
@@ -325,7 +335,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private DownloadLink getSinglePhotoDownloadLink(final String photoID) throws IOException {
-        final boolean fastLinkcheck = cfg.getBooleanProperty("FASTPICTURELINKCHECK", false);
+        final boolean fastLinkcheck = cfg.getBooleanProperty(FASTPICTURELINKCHECK, false);
         final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + photoID);
         if (fastLinkcheck) dl.setAvailable(true);
         return dl;
@@ -451,7 +461,28 @@ public class VKontakteRu extends PluginForDecrypt {
                 return foundVideolinks;
             }
         }
-        /** This doesn't work yet */
+        embeddedVideo = new Regex(correctedBR, "url: \\'//(www\\.)?kinopoisk\\.ru/player/vk/f/([^<>\"]*?)\\'").getMatch(1);
+        if (embeddedVideo != null) {
+            // http://www.kinopoisk.ru/player/vk/f/518097/ad/6/10/tr/62368/file/kinopoisk.ru-Le-Skylab-99112.mp4
+            final Regex dlInfo = new Regex(embeddedVideo, "(\\d+)/ad/\\d+/\\d+/[a-z]{2}/(\\d+)/file/(.+)");
+            final String trid = dlInfo.getMatch(1);
+            final String film = dlInfo.getMatch(0);
+            final String tid = dlInfo.getMatch(2);
+            if (trid == null || film == null || tid == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final String redirectLink = "http://www.kinopoisk.ru/gettrailer.php?trid=" + trid + "&film=" + film + "&from_src=vk&tid=" + tid;
+            br.getPage(redirectLink);
+            final String finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            foundVideolinks.add(createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink)));
+            return foundVideolinks;
+        }
+        /** This one doesn't work yet */
         embeddedVideo = new Regex(correctedBR, "url: \\'(//myvi\\.ru[^<>\"]*?)\\'").getMatch(0);
         if (embeddedVideo != null) {
             foundVideolinks.add(createDownloadlink(embeddedVideo));
@@ -491,17 +522,17 @@ public class VKontakteRu extends PluginForDecrypt {
         fp.setName(filename);
         /** Decrypt qualities, selected by the user */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
-        boolean fastLinkcheck = cfg.getBooleanProperty("FASTLINKCHECK", false);
-        if (cfg.getBooleanProperty("ALLOW_BEST", false)) {
+        boolean fastLinkcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
+        if (cfg.getBooleanProperty(ALLOW_BEST, false)) {
             final ArrayList<String> list = new ArrayList<String>(foundQualities.keySet());
             final String highestAvailableQualityValue = list.get(0);
             selectedQualities.add(highestAvailableQualityValue);
         } else {
             /** User selected nothing -> Decrypt everything */
-            boolean q240p = cfg.getBooleanProperty("ALLOW_240P", false);
-            boolean q360p = cfg.getBooleanProperty("ALLOW_360P", false);
-            boolean q480p = cfg.getBooleanProperty("ALLOW_480P", false);
-            boolean q720p = cfg.getBooleanProperty("ALLOW_720P", false);
+            boolean q240p = cfg.getBooleanProperty(ALLOW_240P, false);
+            boolean q360p = cfg.getBooleanProperty(ALLOW_360P, false);
+            boolean q480p = cfg.getBooleanProperty(ALLOW_480P, false);
+            boolean q720p = cfg.getBooleanProperty(ALLOW_720P, false);
             if (q240p == false && q360p == false && q480p == false && q720p == false) {
                 q240p = true;
                 q360p = true;

@@ -98,7 +98,10 @@ public class FreeWayMe extends PluginForHost {
 
         int maxPremi = 1;
         final String maxPremApi = getJson("parallel", br.toString());
-        if (maxPremApi != null) maxPremi = Integer.parseInt(maxPremApi);
+        if (maxPremApi != null) {
+            maxPremi = Integer.parseInt(maxPremApi);
+            account.setProperty("parallel", maxPremApi);
+        }
         maxPrem.set(maxPremi);
         try {
             Long guthaben = Long.parseLong(getRegexTag(br.toString(), "guthaben").getMatch(0));
@@ -123,6 +126,7 @@ public class FreeWayMe extends PluginForHost {
                 ac.setUnlimitedTraffic();
             }
         }
+        ac.setProperty("acctype", accountType);
         // now let's get a list of all supported hosts:
         br.getPage("https://www.free-way.me/ajax/jd.php?id=3");
         hosts = br.getRegex("\"([^\"]*)\"").getColumn(0);
@@ -229,6 +233,57 @@ public class FreeWayMe extends PluginForHost {
         dl.startDownload();
     }
 
+    public void showAccountDetailsDialog(final Account account) {
+        final AccountInfo ai = account.getAccountInfo();
+        if (ai != null) {
+            final Object supported = ai.getProperty("multiHostSupport", Property.NULL);
+            if (supported != null) {
+                final HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+                ArrayList<String> unavailableHosts = new ArrayList<String>();
+                if (unavailableMap != null) {
+                    unavailableHosts = new ArrayList<String>(unavailableMap.keySet());
+                }
+                String windowTitleLangText = null;
+                ArrayList<String> supportedHosts = (ArrayList) supported;
+                final String lang = System.getProperty("user.language");
+                final String accType = ai.getStringProperty("acctype", null);
+                final String maxSimultanDls = account.getStringProperty("parallel", null);
+                String message = "";
+                if ("de".equalsIgnoreCase(lang)) {
+                    windowTitleLangText = "Account Zusatzinformationen für " + account.getUser();
+                    message += "Account Typ: " + accType + "\r\n";
+                    if (maxSimultanDls != null) message += "Max. Anzahl gleichzeitiger Downloads: " + maxSimultanDls + "\r\n";
+                    message += "Unterstützte Hoster [" + supportedHosts.size() + "]:\r\n\r\n";
+                    for (final String host : supportedHosts) {
+                        message += host + "\r\n";
+                    }
+                    if (unavailableHosts != null && unavailableHosts.size() != 0) {
+                        message += "\r\nTemporär deaktivierte Hoster [" + unavailableHosts.size() + "]:\r\n\r\n";
+                        for (final String tempDeactivatedHost : unavailableHosts) {
+                            message += tempDeactivatedHost + "\r\n";
+                        }
+                    }
+                } else {
+                    windowTitleLangText = "extended account information for " + account.getUser();
+                    message += "Account type: " + accType + "\r\n";
+                    if (maxSimultanDls != null) message += "Max. number of simultan downloads: " + maxSimultanDls + "\r\n";
+                    message += "Supported hosts[" + supportedHosts.size() + "]:\r\n\r\n";
+                    for (final String host : supportedHosts) {
+                        message += host + "\r\n";
+                    }
+                    if (unavailableHosts != null && unavailableHosts.size() != 0) {
+                        message += "\r\nTemporarily deactivated hosts [" + unavailableHosts.size() + "]:\r\n\r\n";
+                        for (final String tempDeactivatedHost : unavailableHosts) {
+                            message += tempDeactivatedHost + "\r\n";
+                        }
+                    }
+                }
+                jd.gui.UserIO.getInstance().requestMessageDialog(this.getHost() + " " + windowTitleLangText, message);
+            }
+        }
+
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
@@ -244,6 +299,7 @@ public class FreeWayMe extends PluginForHost {
             }
             /* wait to retry this host */
             unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            account.setProperty("unavailablemap", unavailableMap);
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }

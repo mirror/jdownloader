@@ -22,6 +22,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.text.DecimalFormat;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -215,9 +216,19 @@ public class ARDMediathek extends PluginForHost {
         final String[] matches = new Regex(xmlContent, "(<p id=\"subtitle\\d+\".*?</p>)").getColumn(0);
         try {
             for (final String info : matches) {
+                if (counter > 460) {
+                    System.out.println("");
+                }
                 dest.write(counter++ + lineseparator);
-                final String start = "00:" + new Regex(info, "begin=\"10:([^<>\"]*?)\"").getMatch(0).replace(".", ",");
-                final String end = "00:" + new Regex(info, "end=\"10:([^<>\"]*?)\"").getMatch(0).replace(".", ",");
+                final DecimalFormat df = new DecimalFormat("00");
+                final Regex startInfo = new Regex(info, "begin=\"(\\d{2}):([^<>\"]*?)\"");
+                final Regex endInfo = new Regex(info, "begin=\"(\\d{2}):([^<>\"]*?)\"");
+                int startHour = Integer.parseInt(startInfo.getMatch(0));
+                int endHour = Integer.parseInt(endInfo.getMatch(0));
+                startHour -= 10;
+                endHour -= 10;
+                final String start = df.format(startHour) + ":" + startInfo.getMatch(1).replace(".", ",");
+                final String end = df.format(endHour) + ":" + endInfo.getMatch(1).replace(".", ",");
                 dest.write(start + " --> " + end + lineseparator);
 
                 String text = new Regex(info, "style=\"s\\d+\">?(.*?)</p>").getMatch(0);
