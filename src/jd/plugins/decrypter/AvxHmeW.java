@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -32,12 +32,14 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?(avaxhome\\.(ws|bz)|avaxho\\.me)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+" }, flags = { 0 })
 public class AvxHmeW extends PluginForDecrypt {
 
+    @SuppressWarnings("deprecation")
     public AvxHmeW(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String AVXHMEREGEX = "http://(www\\.)?avaxhome\\.(ws|bz)|avaxho\\.me/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+";
+    private final String notThis = "https?://(?!(www\\.imdb\\.com|(avaxhome\\.(ws|bz)|avaxho\\.me)))[\\S&]+";
 
+    @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -52,23 +54,19 @@ public class AvxHmeW extends PluginForDecrypt {
         }
         // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore
         // images/self site refs + imdb refs
-        String[][] links = br.getRegex("<a href=\"(http(s)?://(?!(www[.]imdb[.]com|avaxhome[.](ws|bz)))[\\S&&[^<]]+?)\" target=\"_blank\" rel=\"nofollow\">(?!<img)").getMatches();
-        if (null != links && 0 < links.length) {
-            for (String[] link : links) {
-                if (null != link && 0 < link.length && null != link[0] && 0 < link[0].length()) {
-                    if (!link[0].matches(AVXHMEREGEX)) decryptedLinks.add(createDownloadlink(link[0]));
-                }
+        String[] links = br.getRegex("<a href=\"(" + notThis + ")\" target=\"_blank\" rel=\"nofollow\">(?!<img)").getColumn(0);
+        if (links != null && links.length != 0) {
+            for (String link : links) {
+                if (!link.matches(this.getSupportedLinks().pattern())) decryptedLinks.add(createDownloadlink(link));
             }
         }
 
         // try also LINK</br>, but ignore self site refs + imdb refs
         links = null;
-        links = br.getRegex("(http(s)?://(?!(www[.]imdb[.]com|avaxhome[.](ws|bz)))[\\S&&[^<]]+?)<br/>").getMatches();
-        if (null != links && 0 < links.length) {
-            for (String[] link : links) {
-                if (null != link && 0 < link.length && null != link[0] && 0 < link[0].length()) {
-                    if (!link[0].matches(AVXHMEREGEX)) decryptedLinks.add(createDownloadlink(link[0]));
-                }
+        links = br.getRegex("(" + notThis + ")<br/>").getColumn(0);
+        if (links != null && links.length != 0) {
+            for (String link : links) {
+                if (!link.matches(this.getSupportedLinks().pattern())) decryptedLinks.add(createDownloadlink(link));
             }
         }
 
