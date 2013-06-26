@@ -108,10 +108,12 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
     public void windowLostFocus(final WindowEvent e) {
     }
 
-    private static SwingGui INSTANCE = null;
+    private static SwingGui  INSTANCE      = null;
+    private volatile boolean dialogShowing = false;
 
     public SwingGui(final String string) {
         mainFrame = new JFrame(string) {
+
             public void dispose() {
 
                 super.dispose();
@@ -144,7 +146,10 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
                 if (b && !isVisible()) {
                     if (CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
                         String password;
+                        if (dialogShowing) return;
                         try {
+
+                            dialogShowing = true;
                             password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.SwingGui_setVisible_password_(), _GUI._.SwingGui_setVisible_password_msg(), null, NewTheme.I().getIcon("lock", 32), null, null);
                             String internPw = CFG_GUI.PASSWORD.getValue();
                             if (!internPw.equals(password)) {
@@ -155,6 +160,8 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
                             }
                         } catch (DialogNoAnswerException e) {
                             return;
+                        } finally {
+                            dialogShowing = false;
                         }
                     }
                 }
