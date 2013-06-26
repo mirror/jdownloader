@@ -57,11 +57,11 @@ public class AccountManager extends JPanel implements SettingsComponent {
     }
 
     public void setEnabled(boolean enabled) {
-        refreshButton.setEnabled(enabled);
-        buyButton.setEnabled(enabled);
-        removeButton.setEnabled(enabled);
-        newButton.setEnabled(enabled);
-        table.setEnabled(enabled);
+        // refreshButton.setEnabled(enabled);
+        // buyButton.setEnabled(enabled);
+        // removeButton.setEnabled(enabled);
+        // newButton.setEnabled(enabled);
+        // table.setEnabled(enabled);
     }
 
     /**
