@@ -18,6 +18,7 @@ public abstract class Restarter {
     protected Restarter() {
 
         logger = LogController.getInstance().getLogger(getClass().getName());
+        logger.setInstantFlush(true);
         logger.info("Create Restarter");
     }
 
@@ -35,9 +36,9 @@ public abstract class Restarter {
             logger.info("RestartIt");
             List<String> lst = getApplicationStartCommands(root);
             logger.info("appcommands");
-
+            logger.info("appcmd " + lst);
             lst.addAll(parameters);
-            logger.info("cmd " + lst);
+            logger.info("cmdline " + lst);
 
             ProcessBuilder p = ProcessBuilderFactory.create(lst);
             p.directory(getRunInDirectory(root));
@@ -66,7 +67,6 @@ public abstract class Restarter {
         Restarter restarter;
         if (CrossSystem.isWindows()) {
             restarter = new WindowsRestarter();
-
         } else if (CrossSystem.isMac()) {
             restarter = new MacRestarter();
         } else {
