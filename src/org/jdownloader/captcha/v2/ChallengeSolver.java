@@ -34,7 +34,6 @@ public abstract class ChallengeSolver<T> {
         JobRunnable<T> jr;
         jr = new JobRunnable<T>(this, job);
         synchronized (map) {
-
             map.put(job, jr);
             threadPool.execute(jr);
         }

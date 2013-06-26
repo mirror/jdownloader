@@ -187,39 +187,41 @@ public class SolverJob<T> {
     }
 
     public void waitFor(int timeout, ChallengeSolver<?>... instances) throws InterruptedException {
-
-        long endtime = System.currentTimeMillis() + timeout;
-        logger.info(this + " Wait " + timeout + " ms for " + instances);
+        long endTime = -1;
+        if (timeout > 0) {
+            endTime = System.currentTimeMillis() + timeout;
+            logger.info(this + " Wait max" + timeout + " ms for " + instances);
+        } else {
+            logger.info(this + " Wait infinite for " + instances);
+        }
         try {
             while (!areDone(instances)) {
-                if (Thread.interrupted()) throw new InterruptedException();
-                if (isSolved()) throw new InterruptedException("Is Solved");
+                if (Thread.interrupted()) throw new InterruptedException(this + " got interrupted");
+                if (isSolved()) throw new InterruptedException(this + " is Solved");
                 synchronized (this) {
                     if (!areDone(instances)) {
-                        long timeToWait = endtime - System.currentTimeMillis();
-
-                        if (timeToWait > 0) {
-                            logger.info(this + " Wait " + timeToWait);
-                            this.wait(timeToWait);
-                        } else if (timeout <= 0) {
-                            logger.info(this + " Wait endless");
-                            // wait endless
+                        if (endTime > 0) {
+                            long timeToWait = endTime - System.currentTimeMillis();
+                            if (timeToWait > 0) {
+                                logger.info(this + " Wait " + timeToWait);
+                                this.wait(timeToWait);
+                            } else {
+                                logger.info(this + " Timed Out! ");
+                                return;
+                            }
+                        } else {
+                            logger.info(this + " Wait infinite");
                             this.wait();
                         }
-                        timeToWait = endtime - System.currentTimeMillis();
-
                         logger.info(this + " Wokeup");
-                        if (timeToWait <= 0 && timeout > 0) {
-                            logger.info(this + " Timed Out! ");
-                            return;
-                        }
                     }
                 }
             }
-            if (Thread.interrupted()) throw new InterruptedException();
-            if (isSolved()) throw new InterruptedException("Is Solved");
-            logger.info("Exit by done: " + areDone(instances));
+            if (Thread.interrupted()) throw new InterruptedException(this + " got interrupted");
+            if (isSolved()) throw new InterruptedException(this + " is Solved");
+            logger.info("Exit " + this + " by done: " + areDone(instances));
         } catch (InterruptedException e) {
+            logger.log(e);
             logger.info(this + " exit by interrupt");
             throw e;
         }
