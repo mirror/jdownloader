@@ -81,6 +81,8 @@ public class AllDebridCom extends PluginForHost {
             if (hosts != null) {
                 String hoster[] = new Regex(hosts, "\"(.*?)\"").getColumn(0);
                 if (hosts != null) {
+                    /* workaround for buggy getHost call */
+                    supportedHosts.add("tusfiles.net");
                     for (String host : hoster) {
                         if (hosts == null || host.length() == 0) continue;
                         host = host.trim();
