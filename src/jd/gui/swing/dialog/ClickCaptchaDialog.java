@@ -30,6 +30,7 @@ import jd.SecondLevelLaunch;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -47,7 +48,7 @@ public class ClickCaptchaDialog extends AbstractCaptchaDialog implements ClickCa
         try {
             Application.setApplication(".jd_home");
             SecondLevelLaunch.statics();
-            cp = new ClickCaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), getGifImages(new File("C:/Users/Thomas/.BuildServ/applications/beta/sources/JDownloader/src/org/jdownloader/extensions/webinterface/webinterface/themes/main/images/core/load.gif").toURI().toURL()), "Enter both words...");
+            cp = new ClickCaptchaDialog(UIOManager.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), getGifImages(new File("C:/Users/Thomas/.BuildServ/applications/beta/sources/JDownloader/src/org/jdownloader/extensions/webinterface/webinterface/themes/main/images/core/load.gif").toURI().toURL()), "Enter both words...");
 
             LookAndFeelController.getInstance().setUIManager();
 
@@ -68,8 +69,14 @@ public class ClickCaptchaDialog extends AbstractCaptchaDialog implements ClickCa
     }
 
     public ClickCaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, Image[] images, String explain) {
-        super(flag | Dialog.STYLE_HIDE_ICON | Dialog.BUTTONS_HIDE_OK, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
+        super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
 
+    }
+
+    public ClickCaptchaDialogInterface show() {
+        final ClickCaptchaDialogInterface ret = UIOManager.I().show(ClickCaptchaDialogInterface.class, this);
+
+        return ret;
     }
 
     @Override

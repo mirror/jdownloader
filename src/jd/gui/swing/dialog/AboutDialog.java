@@ -38,6 +38,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging.Log;
@@ -52,7 +53,7 @@ import org.jdownloader.images.NewTheme;
 public class AboutDialog extends AbstractDialog<Integer> {
 
     public AboutDialog() {
-        super(Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK | Dialog.STYLE_HIDE_ICON, _GUI._.jd_gui_swing_components_AboutDialog_title(), null, null, null);
+        super(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.BUTTONS_HIDE_OK | Dialog.STYLE_HIDE_ICON, _GUI._.jd_gui_swing_components_AboutDialog_title(), null, null, null);
     }
 
     @Override
@@ -78,7 +79,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
                 public void actionPerformed(ActionEvent e) {
                     String license = JDIO.readFileToString(JDUtilities.getResourceFile("licenses/jdownloader.license"));
                     try {
-                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | Dialog.BUTTONS_HIDE_CANCEL, _GUI._.jd_gui_swing_components_AboutDialog_license_title(), license, null, null, null) {
+                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.jd_gui_swing_components_AboutDialog_license_title(), license, null, null, null) {
 
                             @Override
                             protected boolean isResizable() {

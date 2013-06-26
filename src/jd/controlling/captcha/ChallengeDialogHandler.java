@@ -16,11 +16,11 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -72,13 +72,13 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
             if (captchaChallenge.getPlugin() instanceof PluginForHost) {
                 dialogType = DialogType.HOSTER;
                 if (config.isDialogCountdownForDownloadsEnabled() && config.getCountdown() > 0) {
-                    f = f | Dialog.LOGIC_COUNTDOWN;
+                    f = f | UIOManager.LOGIC_COUNTDOWN;
                 }
             } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
                 dialogType = DialogType.CRAWLER;
 
                 if (config.isDialogCountdownForCrawlerEnabled() && config.getCountdown() > 0) {
-                    f = f | Dialog.LOGIC_COUNTDOWN;
+                    f = f | UIOManager.LOGIC_COUNTDOWN;
                 }
             }
 

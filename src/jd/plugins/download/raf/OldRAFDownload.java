@@ -50,6 +50,7 @@ import jd.plugins.download.RAFDownload;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
@@ -513,7 +514,7 @@ public class OldRAFDownload extends DownloadInterface {
                         }
                         int o = 0;
                         try {
-                            o = Dialog.I().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, org.jdownloader.extensions.neembuu.translate._NT._.neembuu_could_not_handle_title(), org.jdownloader.extensions.neembuu.translate._NT._.neembuu_could_not_handle_message());
+                            o = Dialog.I().showConfirmDialog(UIOManager.LOGIC_COUNTDOWN, org.jdownloader.extensions.neembuu.translate._NT._.neembuu_could_not_handle_title(), org.jdownloader.extensions.neembuu.translate._NT._.neembuu_could_not_handle_message());
                         } catch (Exception a) {
                             o = Dialog.RETURN_CANCEL;
                         }

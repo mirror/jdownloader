@@ -2,7 +2,6 @@ package org.jdownloader.premium;
 
 import java.awt.event.ActionEvent;
 
-import org.appwork.uio.UIOManager;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 
@@ -22,7 +21,7 @@ public class BuyPremiumAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
 
-        UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, new BuyAndAddPremiumAccount(info, id));
+        new BuyAndAddPremiumAccount(info, id).show();
 
     }
 

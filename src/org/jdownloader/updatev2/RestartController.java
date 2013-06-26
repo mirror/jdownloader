@@ -19,7 +19,6 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.updatev2.restart.Restarter;
@@ -162,17 +161,15 @@ public class RestartController implements ShutdownVetoListener {
 
             // if you do not want to ask here, use
             // ShutdownController.getInstance().removeShutdownVetoListener(RestartController.getInstance());
-            ConfirmDialog cd = new ConfirmDialog(Dialog.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmToExit_(), _UPDATE._.RestartController_confirmToExit_msg(), AWUTheme.I().getIcon("exit", 32), null, null) {
+            new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmToExit_(), _UPDATE._.RestartController_confirmToExit_msg(), AWUTheme.I().getIcon("exit", 32), null, null) {
 
                 @Override
                 public String getDontShowAgainKey() {
                     return "Exit - Are you sure?";
                 }
 
-            };
+            }.show().throwCloseExceptions();
 
-            UIOManager.I().show(ConfirmDialogInterface.class, cd);
-            cd.checkCloseReason();
         } catch (DialogNoAnswerException e) {
             throw new ShutdownVetoException("Really Exit question denied", this);
         }

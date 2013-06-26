@@ -426,7 +426,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 }
                 if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) {
 
-                    if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.Extraction_onShutdownRequest_(), _JDT._.Extraction_onShutdownRequest_msg(), NewTheme.I().getIcon("unpack", 32), _JDT._.literally_yes(), null)) { return; }
+                    if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.Extraction_onShutdownRequest_(), _JDT._.Extraction_onShutdownRequest_msg(), NewTheme.I().getIcon("unpack", 32), _JDT._.literally_yes(), null)) { return; }
                     throw new ShutdownVetoException("ExtractionExtension is still running", this);
                 }
             }

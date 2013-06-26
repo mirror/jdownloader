@@ -4,6 +4,7 @@ import java.util.logging.Level;
 
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -31,7 +32,7 @@ public class RlyExitListener implements ShutdownVetoListener {
      * {@link #getInstance()}.
      */
     private RlyExitListener() {
-        this.dialogFlags = Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN;
+        this.dialogFlags = UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN;
         this.title = _UPDATE._.rlyexit_title();
 
         this.text = _UPDATE._.rlyexit();

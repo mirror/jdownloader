@@ -14,6 +14,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -43,7 +44,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     private String       packageID;
 
     public IfFileExistsDialog(String filepath, String packagename, String packageID) {
-        super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_COUNTDOWN, _JDT._.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
+        super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN, _JDT._.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
         //
         this.packagename = packagename;
         this.packageID = packageID;
@@ -152,6 +153,10 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
 
     public String getFilePath() {
         return path;
+    }
+
+    public IfFileExistsDialogInterface show() {
+        return UIOManager.I().show(IfFileExistsDialogInterface.class, this);
     }
 
 }

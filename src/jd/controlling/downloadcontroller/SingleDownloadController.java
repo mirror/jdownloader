@@ -42,12 +42,11 @@ import jd.plugins.download.DownloadInterface;
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.uio.UIOManager;
+import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition.CloseReason;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
@@ -477,17 +476,19 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 doAction = DownloadWatchDog.getInstance().getSession().getOnFileExistsAction(downloadLink.getFilePackage());
                 if (doAction == null || doAction == IfFileExistsAction.ASK_FOR_EACH_FILE) {
                     IfFileExistsDialog d = new IfFileExistsDialog(downloadLink.getFileOutput(), downloadLink.getFilePackage().getName(), downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated());
-                    doAction = UIOManager.I().show(IfFileExistsDialogInterface.class, d).getAction();
-                    if (d.isDontShowAgainSelected()) {
+                    IfFileExistsDialogInterface io = d.show();
+                    d = null;
+                    doAction = io.getAction();
+                    if (io.isDontShowAgainSelected()) {
                         DownloadWatchDog.getInstance().getSession().setOnFileExistsAction(downloadLink.getFilePackage(), doAction);
                     } else {
                         DownloadWatchDog.getInstance().getSession().setOnFileExistsAction(downloadLink.getFilePackage(), null);
                     }
-                    if (d.getCloseReason() == CloseReason.TIMEOUT) {
+                    if (io.getCloseReason() == CloseReason.TIMEOUT) {
                         downloadLink.setSkipReason(SkipReason.FILE_EXISTS);
                         return;
                     }
-                    if (d.getCloseReason() != CloseReason.OK) {
+                    if (io.getCloseReason() != CloseReason.OK) {
                         doAction = IfFileExistsAction.SKIP_FILE;
                     }
                 }

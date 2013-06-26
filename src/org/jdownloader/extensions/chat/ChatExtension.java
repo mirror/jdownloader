@@ -80,7 +80,6 @@ import org.jdownloader.extensions.chat.settings.ChatConfigPanel;
 import org.jdownloader.extensions.chat.translate.ChatTranslation;
 import org.jdownloader.gui.mainmenu.MainMenuManager;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
-import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.logging.LogController;
 import org.schwering.irc.lib.IRCConnection;
@@ -368,6 +367,10 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             nick += "[" + this.getNickCount() + "]";
         }
         return nick;
+    }
+
+    public boolean isGuiOptional() {
+        return false;
     }
 
     public TreeMap<String, JDChatPMS> getPms() {
@@ -1136,9 +1139,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     private MenuItemData updateMainToolbar(MenuContainerRoot mr) {
         ExtensionsMenuContainer container = new ExtensionsMenuContainer(MenuItemProperty.ALWAYS_HIDDEN);
-        ExtensionsMenuWindowContainer windows;
-        container.add(windows = new ExtensionsMenuWindowContainer());
-        windows.add(ChatExtensionGuiToggleAction.class);
+        // ExtensionsMenuWindowContainer windows;
+        // container.add(windows = new ExtensionsMenuWindowContainer());
+        // windows.add(ChatExtensionGuiToggleAction.class);
 
         return container;
 
@@ -1147,9 +1150,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
     private MenuItemData updateMainMenu(MenuContainerRoot mr) {
 
         ExtensionsMenuContainer container = new ExtensionsMenuContainer();
-        ExtensionsMenuWindowContainer windows = new ExtensionsMenuWindowContainer();
-        container.add(windows);
-        windows.add(ChatExtensionGuiToggleAction.class);
+        // ExtensionsMenuWindowContainer windows = new ExtensionsMenuWindowContainer();
+        // container.add(windows);
+        // windows.add(ChatExtensionGuiToggleAction.class);
         return container;
 
     }

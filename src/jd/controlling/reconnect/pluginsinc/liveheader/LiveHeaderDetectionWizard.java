@@ -44,7 +44,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -716,7 +715,7 @@ public class LiveHeaderDetectionWizard {
             DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
             // dcd.setLoginsText(T._.LiveHeaderDetectionWizard_userConfirm_loginstext());
             DataCompareDialogInterface impl = UIOManager.I().show(DataCompareDialogInterface.class, dcd);
-            dcd.checkCloseReason();
+            dcd.throwCloseExceptions();
             username = impl.getUsername();
 
             password = impl.getPassword();
@@ -729,9 +728,8 @@ public class LiveHeaderDetectionWizard {
                 gatewayAdressHost = gatewayAdress.getHostName();
                 break;
             } catch (IOException e) {
-                ConfirmDialog d;
-                UIOManager.I().show(ConfirmDialogInterface.class, d = new ConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), NewTheme.I().getIcon("error", 32), _GUI._.literally_edit(), null));
-                d.checkCloseReason();
+                new ConfirmDialog(0, _GUI._.literall_error(), T._.LiveHeaderDetectionWizard_runOnlineScan_warning_badhost(dcd.getHostName()), NewTheme.I().getIcon("error", 32), _GUI._.literally_edit(), null).show().throwCloseExceptions();
+
             }
         }
     }
@@ -832,7 +830,7 @@ public class LiveHeaderDetectionWizard {
                     DataCompareDialog dcd = new DataCompareDialog(gatewayAdressHost, firmware, manufactor, routerName, JsonConfig.create(LiveHeaderReconnectSettings.class).getUserName(), JsonConfig.create(LiveHeaderReconnectSettings.class).getPassword());
                     dcd.setLoginsText(T._.LiveHeaderDetectionWizard_userConfirm_loginstext());
                     DataCompareDialogInterface impl = UIOManager.I().show(DataCompareDialogInterface.class, dcd);
-                    dcd.checkCloseReason();
+                    dcd.throwCloseExceptions();
                     username = impl.getUsername();
 
                     password = impl.getPassword();

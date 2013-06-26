@@ -7,6 +7,7 @@ import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 
 import org.appwork.swing.MigPanel;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.DummyArchive;
@@ -18,7 +19,7 @@ public class DummyArchiveDialog extends AbstractDialog<Object> {
     private DummyArchive archive;
 
     public DummyArchiveDialog(DummyArchive da) {
-        super(Dialog.STYLE_HIDE_ICON | Dialog.BUTTONS_HIDE_CANCEL, T._.dummyarchivedialog_title(da.getName()), null, T._.close(), null);
+        super(Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_CANCEL, T._.dummyarchivedialog_title(da.getName()), null, T._.close(), null);
         archive = da;
 
     }

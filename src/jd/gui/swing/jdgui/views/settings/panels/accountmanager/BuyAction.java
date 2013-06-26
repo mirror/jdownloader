@@ -171,7 +171,7 @@ public class BuyAction extends AbstractAction {
                     try {
                         BuyAndAddPremiumAccount dia;
                         UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
-                        dia.checkCloseReason();
+                        dia.throwCloseExceptions();
                     } catch (DialogClosedException e1) {
                         e1.printStackTrace();
                     } catch (DialogCanceledException e1) {

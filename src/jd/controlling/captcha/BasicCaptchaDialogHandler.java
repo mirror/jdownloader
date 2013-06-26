@@ -6,11 +6,10 @@ import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.DialogType;
 
-import org.appwork.uio.UIOManager;
+import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition.CloseReason;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 
@@ -37,18 +36,19 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
         dialog = d;
         if (suggest != null) dialog.suggest(suggest);
 
-        result = UIOManager.I().show(CaptchaDialogInterface.class, d).getResult();
+        CaptchaDialogInterface io = d.show();
+        result = io.getResult();
         try {
-            if (d.getCloseReason() != CloseReason.OK) {
+            if (io.getCloseReason() != CloseReason.OK) {
 
-                if (d.isHideCaptchasForHost()) throw new HideCaptchasByHostException();
-                if (d.isHideCaptchasForPackage()) throw new HideCaptchasByPackageException();
-                if (d.isStopDownloads()) throw new StopCurrentActionException();
-                if (d.isHideAllCaptchas()) throw new HideAllCaptchasException();
-                if (d.isStopCrawling()) throw new StopCurrentActionException();
-                if (d.isStopShowingCrawlerCaptchas()) throw new HideAllCaptchasException();
-                if (d.isRefresh()) throw new RefreshException();
-                d.checkCloseReason();
+                if (io.isHideCaptchasForHost()) throw new HideCaptchasByHostException();
+                if (io.isHideCaptchasForPackage()) throw new HideCaptchasByPackageException();
+                if (io.isStopDownloads()) throw new StopCurrentActionException();
+                if (io.isHideAllCaptchas()) throw new HideAllCaptchasException();
+                if (io.isStopCrawling()) throw new StopCurrentActionException();
+                if (io.isStopShowingCrawlerCaptchas()) throw new HideAllCaptchasException();
+                if (io.isRefresh()) throw new RefreshException();
+                io.throwCloseExceptions();
             }
         } catch (IllegalStateException e) {
             // Captcha has been solved externally

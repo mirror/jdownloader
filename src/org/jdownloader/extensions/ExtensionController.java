@@ -24,14 +24,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.SecondLevelLaunch;
-import jd.gui.UserIO;
 
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
@@ -579,16 +582,21 @@ public class ExtensionController implements MenuExtenderHandler {
             try {
                 object._setEnabled(true);
                 if (object instanceof LazyExtension) {
-                    if (((LazyExtension) object)._getExtension().getGUI() != null) {
-                        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName()));
+                    if (((LazyExtension) object)._getExtension().getGUI() != null && ((LazyExtension) object)._getExtension().isGuiOptional()) {
 
-                        if (UserIO.isOK(ret)) {
+                        ConfirmDialogInterface io = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName())).show();
+                        if (io.getCloseReason() == CloseReason.OK) {
                             // activate panel
                             ((LazyExtension) object)._getExtension().getGUI().setActive(true);
                             // bring panel to front
                             ((LazyExtension) object)._getExtension().getGUI().toFront();
 
                         }
+                    } else if (!((LazyExtension) object)._getExtension().isGuiOptional()) {
+                        // activate panel
+                        ((LazyExtension) object)._getExtension().getGUI().setActive(true);
+                        // bring panel to front
+                        ((LazyExtension) object)._getExtension().getGUI().toFront();
                     }
                 }
             } catch (StartException e1) {
@@ -607,5 +615,4 @@ public class ExtensionController implements MenuExtenderHandler {
             }
         }
     }
-
 }

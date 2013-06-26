@@ -9,8 +9,8 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 
 import org.appwork.swing.MigPanel;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -24,9 +24,14 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog implements ConfirmDe
     private Image     image;
 
     public ConfirmDeleteLinksDialog(String msg, long bytes) {
-        super(Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), msg, NewTheme.I().getIcon("robot_del", -1), _GUI._.lit_delete(), _GUI._.lit_cancel());
+        super(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), msg, NewTheme.I().getIcon("robot_del", -1), _GUI._.lit_delete(), _GUI._.lit_cancel());
         this.bytes = bytes;
 
+    }
+
+    public ConfirmDeleteLinksDialogInterface show() {
+
+        return UIOManager.I().show(ConfirmDeleteLinksDialogInterface.class, this);
     }
 
     @Override

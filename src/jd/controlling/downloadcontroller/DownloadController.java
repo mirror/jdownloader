@@ -54,9 +54,7 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.uio.IconDialog;
-import org.appwork.uio.MessageDialogInterface;
-import org.appwork.uio.UIOManager;
+import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -64,7 +62,9 @@ import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition.CloseReason;
+import org.appwork.utils.swing.IconDialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.DownloadLinkWalker;
@@ -804,8 +804,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     public static void deleteLinksRequest(final SelectionInfo<FilePackage, DownloadLink> si, String msg) {
         AggregatedNumbers agg = new AggregatedNumbers(si);
         if (agg.getLinkCount() == 0) {
+            new IconDialog(0, _GUI._.lit_ups_something_is_wrong(), _GUI._.DownloadController_deleteLinksRequest_nolinks(), NewTheme.I().getIcon("robot_sos", 256), null).show();
 
-            UIOManager.I().show(MessageDialogInterface.class, new IconDialog(0, _GUI._.lit_ups_something_is_wrong(), _GUI._.DownloadController_deleteLinksRequest_nolinks(), NewTheme.I().getIcon("robot_sos", 256), null));
             return;
         }
         boolean confirmed = si.isShiftDown();
@@ -860,7 +860,23 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             public boolean isRecycleSupported() {
                 return false;
             }
-        } : UIOManager.I().show(ConfirmDeleteLinksDialogInterface.class, dialog);
+
+            @Override
+            public void throwCloseExceptions() throws DialogClosedException, DialogCanceledException {
+            }
+
+            @Override
+            public boolean isDontShowAgainSelected() {
+                return false;
+            }
+
+            @Override
+            public int getFlags() {
+                return 0;
+            }
+
+        } : dialog.show();
+
         final boolean deleteFiles = d.isDeleteFilesFromDiskEnabled();
         confirmed = d.getCloseReason() == CloseReason.OK;
 

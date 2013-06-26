@@ -36,6 +36,7 @@ import jd.plugins.RuntimeDecrypterException;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
@@ -113,7 +114,8 @@ public class UserIO {
      */
     public static final int RETURN_CANCEL                  = 1 << 2;
     /**
-     * don't show again flag has been set. the dialog may has been visible. if RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this flag latly
+     * don't show again flag has been set. the dialog may has been visible. if RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this
+     * flag latly
      */
     public static final int RETURN_DONT_SHOW_AGAIN         = 1 << 3;
     /**
@@ -210,13 +212,13 @@ public class UserIO {
         int ret = 0;
 
         if (BinaryLogic.containsNone(flag, UserIO.NO_COUNTDOWN)) {
-            ret |= Dialog.LOGIC_COUNTDOWN;
+            ret |= UIOManager.LOGIC_COUNTDOWN;
         }
         if (BinaryLogic.containsAll(flag, UserIO.NO_OK_OPTION)) {
-            ret |= Dialog.BUTTONS_HIDE_OK;
+            ret |= UIOManager.BUTTONS_HIDE_OK;
         }
         if (BinaryLogic.containsAll(flag, UserIO.NO_CANCEL_OPTION)) {
-            ret |= Dialog.BUTTONS_HIDE_CANCEL;
+            ret |= UIOManager.BUTTONS_HIDE_CANCEL;
         }
         if (BinaryLogic.containsAll(flag, UserIO.DONT_SHOW_AGAIN)) {
             ret |= Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN;
@@ -231,10 +233,10 @@ public class UserIO {
             ret |= Dialog.STYLE_HIDE_ICON;
         }
         if (BinaryLogic.containsAll(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL)) {
-            ret |= Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL;
+            ret |= UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL;
         }
         if (BinaryLogic.containsAll(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_OK)) {
-            ret |= Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK;
+            ret |= UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK;
         }
         if (BinaryLogic.containsAll(flag, UserIO.STYLE_PASSWORD)) {
             ret |= Dialog.STYLE_PASSWORD;
@@ -358,7 +360,7 @@ public class UserIO {
     public int requestComboDialog(int flag, final String title, final String question, final Object[] options, final int defaultSelection, final ImageIcon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
         try {
             flag = this.convertFlagToAWDialog(flag);
-            if ((flag & Dialog.LOGIC_BYPASS) > 0) { return defaultSelection; }
+
             ComboBoxDialog d = new ComboBoxDialog(flag, title, question, options, defaultSelection, icon, okText, cancelText, renderer) {
 
                 @Override

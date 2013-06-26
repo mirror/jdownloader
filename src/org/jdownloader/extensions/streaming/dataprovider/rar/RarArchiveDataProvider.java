@@ -34,6 +34,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.io.streamingio.StreamingChunk;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -368,11 +369,19 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
         }
         try {
             // if (StringUtils.isEmpty(password)) {
+            InputDialog dialog = null;
             if (passwords.size() > 0) {
-                password = Dialog.getInstance().showInputDialog(Dialog.LOGIC_COUNTDOWN, T._.enter_password(archive.getName()), T._.enter_passwordfor(passwords.toString()), password, null, null, null);
+
+                dialog = new InputDialog(0, T._.enter_password(archive.getName()), T._.enter_passwordfor(passwords.toString()), password);
+                // password = Dialog.getInstance().showInputDialog(Dialog.LOGIC_COUNTDOWN, T._.enter_password(archive.getName()),
+                // T._.enter_passwordfor(passwords.toString()), password, null, null, null);
             } else {
-                password = Dialog.getInstance().showInputDialog(Dialog.LOGIC_COUNTDOWN, T._.enter_password(archive.getName()), T._.enter_passwordfor2(), password, null, null, null);
+
+                dialog = new InputDialog(0, T._.enter_password(archive.getName()), T._.enter_passwordfor2(), password);
+
             }
+
+            password = dialog.show().getText();
         } catch (Throwable e) {
             throw new PasswordNotFoundException(e);
         }

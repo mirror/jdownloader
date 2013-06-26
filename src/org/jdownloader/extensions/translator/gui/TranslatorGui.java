@@ -42,6 +42,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
@@ -348,7 +349,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                 };
 
                 try {
-                    Dialog.getInstance().showDialog(new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, "Saving", "Please wait.", null, null, null) {
+                    Dialog.getInstance().showDialog(new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_CANCEL, "Saving", "Please wait.", null, null, null) {
 
                         @Override
                         public Dimension getPreferredSize() {
@@ -416,7 +417,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                 };
 
                 try {
-                    Dialog.getInstance().showDialog(new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, "Saving", "Please wait.", null, null, null) {
+                    Dialog.getInstance().showDialog(new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_CANCEL, "Saving", "Please wait.", null, null, null) {
 
                         @Override
                         public Dimension getPreferredSize() {
@@ -643,7 +644,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                     };
 
                     try {
-                        Dialog.getInstance().showDialog(new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, "Reverting", "Please wait. Reverting all Changes", null, null, null) {
+                        Dialog.getInstance().showDialog(new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_CANCEL, "Reverting", "Please wait. Reverting all Changes", null, null, null) {
 
                             @Override
                             public Dimension getPreferredSize() {
@@ -816,7 +817,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         };
 
         try {
-            Dialog.getInstance().showDialog(new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, "Login", "Please wait.", null, null, null) {
+            Dialog.getInstance().showDialog(new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_CANCEL, "Login", "Please wait.", null, null, null) {
 
                 @Override
                 public Dimension getPreferredSize() {
@@ -893,7 +894,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         };
 
         try {
-            Dialog.getInstance().showDialog(new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, "Load Language", "Please wait. Loading " + locale, null, null, null) {
+            Dialog.getInstance().showDialog(new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_CANCEL, "Load Language", "Please wait. Loading " + locale, null, null, null) {
 
                 @Override
                 public Dimension getPreferredSize() {

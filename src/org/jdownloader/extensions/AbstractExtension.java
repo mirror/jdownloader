@@ -354,4 +354,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     public void handleCommand(String command, String... parameters) {
     }
 
+    public boolean isGuiOptional() {
+        return true;
+    }
+
 }

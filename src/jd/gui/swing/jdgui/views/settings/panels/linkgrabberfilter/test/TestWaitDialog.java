@@ -25,6 +25,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -58,7 +59,7 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
     private PackagizerController        packagizer;
 
     public TestWaitDialog(String string, String title, LinkFilterController controller) {
-        super(Dialog.BUTTONS_HIDE_OK, title, null, null, _GUI._.literally_close());
+        super(UIOManager.BUTTONS_HIDE_OK, title, null, null, _GUI._.literally_close());
         this.url = string;
         linkFilterController = controller;
         delayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 200, 1000) {

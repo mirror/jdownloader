@@ -33,6 +33,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -51,6 +52,12 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
     private ExtTextField textField;
     private String       suggest;
 
+    public CaptchaDialogInterface show() {
+        final CaptchaDialogInterface ret = UIOManager.I().show(CaptchaDialogInterface.class, this);
+
+        return ret;
+    }
+
     public static void main(String[] args) {
         AbstractCaptchaDialog cp;
         try {
@@ -59,7 +66,7 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
             JsonConfig.create(SoundSettings.class).setCaptchaSoundVolume(100);
             // getGifImages(new
             // File("C:/Users/Thomas/.BuildServ/applications/beta/sources/JDownloader/src/org/jdownloader/extensions/webinterface/webinterface/themes/main/images/core/load.gif").toURI().toURL())
-            cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), ImageProvider.read(new File("C:\\Users\\Thomas\\.jd_home\\captchas\\rusfolder.ru_10.07.2012_11.36.41.860.png")), "Enter both words...");
+            cp = new CaptchaDialog(UIOManager.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), ImageProvider.read(new File("C:\\Users\\Thomas\\.jd_home\\captchas\\rusfolder.ru_10.07.2012_11.36.41.860.png")), "Enter both words...");
 
             LookAndFeelController.getInstance().setUIManager();
 

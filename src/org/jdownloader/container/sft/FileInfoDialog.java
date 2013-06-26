@@ -23,11 +23,11 @@ import javax.swing.event.HyperlinkListener;
 
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
-import org.appwork.utils.swing.dialog.Dialog;
 
 public class FileInfoDialog extends AbstractDialog<String> implements ActionListener, DocumentListener {
     protected final JButton        dynamicOkButton = new JButton(_AWU.T.ABSTRACTDIALOG_BUTTON_OK());
@@ -38,7 +38,7 @@ public class FileInfoDialog extends AbstractDialog<String> implements ActionList
     protected boolean              lastCryptState;
 
     public FileInfoDialog(sftContainer container) {
-        super(Dialog.BUTTONS_HIDE_OK, "Downloaddetails", null, null, null);
+        super(UIOManager.BUTTONS_HIDE_OK, "Downloaddetails", null, null, null);
         this.needPassword = container.needPassword();
         this.lastCryptState = !container.isDecrypted();
         this.container = container;

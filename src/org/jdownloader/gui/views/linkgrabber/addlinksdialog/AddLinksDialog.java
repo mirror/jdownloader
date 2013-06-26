@@ -52,6 +52,7 @@ import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Lists;
 import org.appwork.utils.StringUtils;
@@ -116,7 +117,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     }
 
     public AddLinksDialog() {
-        super(Dialog.BUTTONS_HIDE_OK, _GUI._.AddLinksDialog_AddLinksDialog_(), null, _GUI._.AddLinksDialog_AddLinksDialog_confirm(), null);
+        super(UIOManager.BUTTONS_HIDE_OK, _GUI._.AddLinksDialog_AddLinksDialog_(), null, _GUI._.AddLinksDialog_AddLinksDialog_confirm(), null);
         config = JsonConfig.create(LinkgrabberSettings.class);
         delayedValidate = new DelayedRunnable(IOEQ.TIMINGQUEUE, 500l, 10000l) {
 

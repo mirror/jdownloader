@@ -18,6 +18,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -47,7 +48,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
     private ExtTree                  tree;
 
     public ManagerFrame(ContextMenuManager<?, ?> manager) {
-        super(Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK, _GUI._.ManagerFrame_ManagerFrame_title(manager.getName()), null, null, null);
+        super(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.BUTTONS_HIDE_OK, _GUI._.ManagerFrame_ManagerFrame_title(manager.getName()), null, null, null);
 
         this.manager = manager;
         ext = manager.getFileExtension();

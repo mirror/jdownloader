@@ -358,11 +358,16 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
                 WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_shutdown(), message);
 
-                UIOManager.I().show(WarningDialogInterface.class, d);
-
-                if ((d.getReturnmask() & Dialog.RETURN_OK) == Dialog.RETURN_OK || (d.getReturnmask() & Dialog.RETURN_TIMEOUT) == Dialog.RETURN_TIMEOUT) {
+                WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
+                switch (io.getCloseReason()) {
+                case OK:
+                case TIMEOUT:
                     shutdown();
+                    break;
+                default:
+                    break;
                 }
+
                 break;
             case STANDBY:
                 /* try to standby */
@@ -370,14 +375,17 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
                 message = _.interaction_shutdown_dialog_msg_standby();
                 d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_standby(), message);
-                try {
-                    UIOManager.I().show(WarningDialogInterface.class, d);
-                } catch (Throwable e) {
+                io = UIOManager.I().show(WarningDialogInterface.class, d);
 
-                }
-                if ((d.getReturnmask() & Dialog.RETURN_OK) == Dialog.RETURN_OK || (d.getReturnmask() & Dialog.RETURN_TIMEOUT) == Dialog.RETURN_TIMEOUT) {
+                switch (io.getCloseReason()) {
+                case OK:
+                case TIMEOUT:
                     standby();
+                    break;
+                default:
+                    break;
                 }
+
                 break;
             case HIBERNATE:
                 /* try to hibernate */
@@ -385,14 +393,18 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
                 message = _.interaction_shutdown_dialog_msg_hibernate();
                 d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_hibernate(), message);
-                try {
-                    UIOManager.I().show(WarningDialogInterface.class, d);
-                } catch (Throwable e) {
 
-                }
-                if ((d.getReturnmask() & Dialog.RETURN_OK) == Dialog.RETURN_OK || (d.getReturnmask() & Dialog.RETURN_TIMEOUT) == Dialog.RETURN_TIMEOUT) {
+                io = UIOManager.I().show(WarningDialogInterface.class, d);
+
+                switch (io.getCloseReason()) {
+                case OK:
+                case TIMEOUT:
                     hibernate();
+                    break;
+                default:
+                    break;
                 }
+
                 break;
             case CLOSE:
                 /* try to close */
@@ -400,14 +412,17 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 message = _.interaction_shutdown_dialog_msg_closejd();
 
                 d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_closejd(), message);
-                try {
-                    UIOManager.I().show(WarningDialogInterface.class, d);
-                } catch (Throwable e) {
+                io = UIOManager.I().show(WarningDialogInterface.class, d);
 
-                }
-                if ((d.getReturnmask() & Dialog.RETURN_OK) == Dialog.RETURN_OK || (d.getReturnmask() & Dialog.RETURN_TIMEOUT) == Dialog.RETURN_TIMEOUT) {
+                switch (io.getCloseReason()) {
+                case OK:
+                case TIMEOUT:
                     RestartController.getInstance().exitAsynch(new AvoidRlyExistListener(true));
+                    break;
+                default:
+                    break;
                 }
+
                 break;
             default:
                 break;

@@ -1,6 +1,6 @@
 package org.jdownloader.gui.views.downloads.action;
 
-import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
+import org.appwork.uio.ConfirmDialogInterface;
 
 public interface ConfirmDeleteLinksDialogInterface extends ConfirmDialogInterface {
 

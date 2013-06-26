@@ -85,6 +85,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
@@ -217,7 +218,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         private final JButton dynamicOkButton = new JButton(_AWU.T.ABSTRACTDIALOG_BUTTON_OK());
 
         public SliderCaptchaDialog(int flag, String title, URL[] imageUrls) {
-            super(flag | Dialog.STYLE_HIDE_ICON | Dialog.LOGIC_COUNTDOWN | Dialog.BUTTONS_HIDE_OK, title, null, null, null);
+            super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, title, null, null, null);
             setCountdownTime(120);
             this.images = imageUrls.length - 1;
             this.imageUrls = imageUrls;
@@ -886,7 +887,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         private String                             url;
 
         public KeyCaptchaDialog(final int flag, final String title, final String[] imageUrl, final LinkedHashMap<String, int[]> coordinates, final String cancelOption, Browser br, String url) {
-            super(flag | Dialog.STYLE_HIDE_ICON | Dialog.LOGIC_COUNTDOWN, title, null, null, null);
+            super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.LOGIC_COUNTDOWN, title, null, null, null);
             setCountdownTime(120);
             this.imageUrl = imageUrl;
             this.coordinates = coordinates;

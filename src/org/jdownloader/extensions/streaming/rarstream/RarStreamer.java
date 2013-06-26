@@ -17,6 +17,7 @@ import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
@@ -214,7 +215,7 @@ public class RarStreamer implements Runnable {
             }
         };
 
-        ProgressDialog d = new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, T._.open_rar(), T._.open_rar_msg(), null, null, null) {
+        ProgressDialog d = new ProgressDialog(pg, UIOManager.BUTTONS_HIDE_CANCEL, T._.open_rar(), T._.open_rar_msg(), null, null, null) {
 
             @Override
             public Dimension getPreferredSize() {
@@ -456,9 +457,9 @@ public class RarStreamer implements Runnable {
         }
         // if (StringUtils.isEmpty(password)) {
         if (passwords.size() > 0) {
-            password = Dialog.getInstance().showInputDialog(Dialog.LOGIC_COUNTDOWN, T._.enter_password(archive.getName()), T._.enter_passwordfor(passwords.toString()), password, null, null, null);
+            password = Dialog.getInstance().showInputDialog(UIOManager.LOGIC_COUNTDOWN, T._.enter_password(archive.getName()), T._.enter_passwordfor(passwords.toString()), password, null, null, null);
         } else {
-            password = Dialog.getInstance().showInputDialog(Dialog.LOGIC_COUNTDOWN, T._.enter_password(archive.getName()), T._.enter_passwordfor2(), password, null, null, null);
+            password = Dialog.getInstance().showInputDialog(UIOManager.LOGIC_COUNTDOWN, T._.enter_password(archive.getName()), T._.enter_passwordfor2(), password, null, null, null);
         }
         return password;
     }

@@ -14,12 +14,12 @@ import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.resources.AWUTheme;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
-import org.appwork.utils.swing.dialog.Dialog;
 
 public class UpdateFoundDialog extends ConfirmDialog {
 
@@ -27,7 +27,7 @@ public class UpdateFoundDialog extends ConfirmDialog {
     private AbstractAction nowAction   = null;
 
     public UpdateFoundDialog(final Runnable later, final Runnable now) {
-        super(Dialog.LOGIC_COUNTDOWN | Dialog.BUTTONS_HIDE_OK, _UPDATE._.update_dialog_title_updates_available(), _UPDATE._.update_dialog_msg_x_updates_available(), AWUTheme.I().getIcon("updatericon", 32), null, _UPDATE._.update_dialog_cancel());
+        super(UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _UPDATE._.update_dialog_title_updates_available(), _UPDATE._.update_dialog_msg_x_updates_available(), AWUTheme.I().getIcon("updatericon", 32), null, _UPDATE._.update_dialog_cancel());
         this.setCountdownTime(60);
         if (later != null) {
             this.laterAction = new AbstractAction(_UPDATE._.update_dialog_later()) {

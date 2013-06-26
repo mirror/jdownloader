@@ -22,6 +22,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
@@ -48,7 +49,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
     private JLabel             state;
 
     public ReconnectDialog() {
-        super(Dialog.BUTTONS_HIDE_OK, _GUI._.ReconnectDialog_ReconnectDialog_(), null, null, _GUI._.literally_close());
+        super(UIOManager.BUTTONS_HIDE_OK, _GUI._.ReconnectDialog_ReconnectDialog_(), null, null, _GUI._.literally_close());
     }
 
     @Override

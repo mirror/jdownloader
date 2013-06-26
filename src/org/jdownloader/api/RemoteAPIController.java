@@ -5,6 +5,7 @@ import org.appwork.remoteapi.SessionRemoteAPI;
 import org.appwork.remoteapi.events.EventPublisher;
 import org.appwork.remoteapi.events.EventsAPI;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.jdownloader.api.accounts.AccountAPIImpl;
@@ -34,6 +35,7 @@ public class RemoteAPIController {
     private EventsAPI                          eventsapi;
 
     private RemoteAPIController() {
+
         rapi = new SessionRemoteAPI<RemoteAPISession>();
         sessionc = new RemoteAPISessionControllerImp();
 
@@ -58,9 +60,16 @@ public class RemoteAPIController {
         register(eventsapi = new EventsAPI());
         register(new DownloadWatchDogEventPublisher());
         register(new CaptchaAPIEventPublisher());
+
         register(new LinkCollectorEventPublisher());
         register(new DownloadControllerEventPublisher());
         register(new ExtensionsAPIImpl());
+
+        RemoteAPIHandlerWrapper wrapper;
+        UIOManager.setUserIO(wrapper = new RemoteAPIHandlerWrapper(UIOManager.I()));
+
+        register(wrapper.getEventPublisher());
+        register(wrapper.getApi());
     }
 
     public HttpRequestHandler getRequestHandler() {

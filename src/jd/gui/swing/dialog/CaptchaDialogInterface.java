@@ -2,7 +2,7 @@ package jd.gui.swing.dialog;
 
 import java.awt.Image;
 
-import org.appwork.utils.swing.dialog.UserIODefinition;
+import org.appwork.uio.UserIODefinition;
 import org.jdownloader.DomainInfo;
 
 public interface CaptchaDialogInterface extends UserIODefinition {
@@ -26,5 +26,19 @@ public interface CaptchaDialogInterface extends UserIODefinition {
     public void dispose();
 
     public void suggest(String value);
+
+    public boolean isHideCaptchasForHost();
+
+    public boolean isHideCaptchasForPackage();
+
+    public boolean isStopDownloads();
+
+    public boolean isHideAllCaptchas();
+
+    public boolean isStopCrawling();
+
+    public boolean isStopShowingCrawlerCaptchas();
+
+    public boolean isRefresh();
 
 }

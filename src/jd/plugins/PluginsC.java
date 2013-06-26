@@ -27,15 +27,13 @@ import jd.nutils.encoding.Encoding;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.uio.UIOManager;
+import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.OKCancelCloseUserIODefinition.CloseReason;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -170,14 +168,14 @@ public abstract class PluginsC {
                             }
                         };
 
-                        UIOManager.I().show(ConfirmDialogInterface.class, d);
-                        if (d.getCloseReason() == CloseReason.OK) {
+                        org.appwork.uio.ConfirmDialogInterface io = d.show();
+                        if (io.getCloseReason() == CloseReason.OK) {
                             file.delete();
-                            if (d.isDontShowAgainSelected()) {
+                            if (io.isDontShowAgainSelected()) {
                                 JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DELETE);
                             }
                         } else {
-                            if (d.isDontShowAgainSelected()) {
+                            if (io.isDontShowAgainSelected()) {
                                 JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DONT_DELETE);
                             }
                         }

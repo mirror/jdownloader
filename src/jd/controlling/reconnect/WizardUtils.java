@@ -5,10 +5,10 @@ import java.net.InetAddress;
 
 import javax.swing.AbstractAction;
 
+import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.ConfirmDialogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -71,7 +71,7 @@ public class WizardUtils {
                 try {
                     ConfirmDialog cd;
                     UIOManager.I().show(ConfirmDialogInterface.class, cd = new ConfirmDialog(0, _GUI._.ReconnectPluginController_autoFind_gatewaywarning_t(), _GUI._.ReconnectPluginController_autoFind_gatewaywarning(), NewTheme.I().getIcon("warning", 32), _GUI._.literally_continue(), null));
-                    cd.checkCloseReason();
+                    cd.throwCloseExceptions();
                 } catch (DialogNoAnswerException e) {
                     return true;
                 }

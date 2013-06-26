@@ -17,6 +17,7 @@ import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.tooltips.BasicTooltipFactory;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.event.ProcessCallBackAdapter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -88,7 +89,7 @@ public class AutoDetectUpnpAction extends BasicAction {
 
                     public void showDialog(Object caller, String title, String message, ImageIcon icon) {
                         try {
-                            Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, title, message, icon, null, null);
+                            Dialog.getInstance().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, title, message, icon, null, null);
                         } catch (DialogClosedException e) {
                             e.printStackTrace();
                         } catch (DialogCanceledException e) {
