@@ -156,8 +156,7 @@ public class ChallengeResponseController {
             if (job.getSkipRequest() != null) { throw new SkipException(job.getSkipRequest()); }
             logger.info("All Responses: " + job.getResponses());
             logger.info("Solving Done. Result: " + job.getResponse());
-        } catch (InterruptedException e) {
-            // for example downloads have been stopped
+        } catch (InterruptedException e) { // for example downloads have been stopped
 
             job.kill();
             throw e;

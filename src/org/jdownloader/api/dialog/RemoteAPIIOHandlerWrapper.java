@@ -1,4 +1,4 @@
-package org.jdownloader.api;
+package org.jdownloader.api.dialog;
 
 import javax.swing.ImageIcon;
 
@@ -21,14 +21,12 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.MessageDialogImpl;
 
-public class RemoteAPIHandlerWrapper implements UserIOHandlerInterface {
+public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
 
-    private AsynchApiHandler remoteHandler;
+    private DialogApiImpl remoteHandler;
 
-    public RemoteAPIHandlerWrapper(UserIOHandlerInterface i) {
-
-        remoteHandler = new AsynchApiHandler(this);
-
+    public RemoteAPIIOHandlerWrapper(UserIOHandlerInterface i) {
+        remoteHandler = new DialogApiImpl(this);
     }
 
     @Override
@@ -72,34 +70,27 @@ public class RemoteAPIHandlerWrapper implements UserIOHandlerInterface {
             } finally {
                 handle.dispose();
             }
-
             return (T) (handle.getAnswer() != null ? handle.getAnswer() : impl);
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return impl;
 
     }
 
     @Override
     public void showErrorMessage(String message) {
-
         this.showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _AWU.T.DIALOG_ERROR_TITLE(), message, AWUTheme.I().getIcon(Dialog.ICON_ERROR, 32), null, null);
-
     }
 
     public void onHandlerDone(final ApiHandle ret) {
         if (ret.getImpl() instanceof AbstractDialog) {
             new EDTRunner() {
-
                 @Override
                 protected void runInEDT() {
                     ((AbstractDialog) ret.getImpl()).interrupt();
-
                 }
             };
-
         }
     }
 

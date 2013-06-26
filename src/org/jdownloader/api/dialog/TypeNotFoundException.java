@@ -1,4 +1,4 @@
-package org.jdownloader.api;
+package org.jdownloader.api.dialog;
 
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;

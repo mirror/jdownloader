@@ -1,4 +1,4 @@
-package org.jdownloader.api;
+package org.jdownloader.api.dialog;
 
 import java.util.HashMap;
 

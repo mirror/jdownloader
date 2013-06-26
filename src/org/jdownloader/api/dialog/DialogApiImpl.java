@@ -1,4 +1,4 @@
-package org.jdownloader.api;
+package org.jdownloader.api.dialog;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -27,9 +27,9 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.jdownloader.logging.LogController;
 
-public class AsynchApiHandler implements EventPublisher, DialogApiInterface {
+public class DialogApiImpl implements EventPublisher, DialogApiInterface {
 
-    private RemoteAPIHandlerWrapper           callback;
+    private RemoteAPIIOHandlerWrapper         callback;
     private AtomicLong                        id;
     private LogSource                         logger;
     private HashMap<Long, ApiHandle>          map;
@@ -41,45 +41,47 @@ public class AsynchApiHandler implements EventPublisher, DialogApiInterface {
         EXPIRED
     }
 
-    public AsynchApiHandler(RemoteAPIHandlerWrapper remoteAPIHandlerWrapper) {
+    public DialogApiImpl(RemoteAPIIOHandlerWrapper remoteAPIHandlerWrapper) {
         this.callback = remoteAPIHandlerWrapper;
         id = new AtomicLong();
-        logger = LogController.getInstance().getLogger(AsynchApiHandler.class.getName());
+        logger = LogController.getInstance().getLogger(DialogApiImpl.class.getName());
         map = new HashMap<Long, ApiHandle>();
         eventIDs = new String[] { Event.NEW.toString(), Event.EXPIRED.toString() };
         eventSenders = new CopyOnWriteArraySet<EventsSender>();
-
     }
 
     public <T extends UserIODefinition> ApiHandle enqueue(Class<T> class1, T impl) {
-
         final ApiHandle ret = new ApiHandle(class1, impl, id.incrementAndGet(), Thread.currentThread());
         synchronized (map) {
             map.put(ret.getId(), ret);
         }
-        new Thread("AsynchApiHandler") {
-
+        new Thread("Dialog: " + ((AbstractDialog) impl).getTitle()) {
             public void run() {
                 try {
-                    EventObject eventObject = new SimpleEventObject(AsynchApiHandler.this, Event.NEW.toString(), ret.getId());
+                    EventObject eventObject = new SimpleEventObject(DialogApiImpl.this, Event.NEW.toString(), ret.getId(), "" + ret.getId());
                     for (EventsSender eventSender : eventSenders) {
                         eventSender.publishEvent(eventObject, null);
                     }
-
                     ret.waitFor();
                 } catch (Exception e) {
                     logger.log(e);
                 } finally {
-                    callback.onHandlerDone(ret);
-                    synchronized (map) {
-                        map.remove(ret.getId());
+                    try {
+                        EventObject eventObject = new SimpleEventObject(DialogApiImpl.this, Event.EXPIRED.toString(), ret.getId(), "" + ret.getId());
+                        for (EventsSender eventSender : eventSenders) {
+                            eventSender.publishEvent(eventObject, null);
+                        }
+                    } finally {
+                        synchronized (map) {
+                            map.remove(ret.getId());
+                        }
+                        callback.onHandlerDone(ret);
                     }
                 }
             }
 
         }.start();
         return ret;
-
     }
 
     @Override
@@ -94,15 +96,12 @@ public class AsynchApiHandler implements EventPublisher, DialogApiInterface {
 
     @Override
     public synchronized void register(EventsSender eventsAPI) {
-
         eventSenders.add(eventsAPI);
-
     }
 
     @Override
     public synchronized void unregister(EventsSender eventsAPI) {
         eventSenders.remove(eventsAPI);
-
     }
 
     @Override
@@ -145,7 +144,6 @@ public class AsynchApiHandler implements EventPublisher, DialogApiInterface {
                 if (((AbstractDialog) handle.getImpl()).isCountdownFlagEnabled()) {
                     ret.put("timeout", ((AbstractDialog) handle.getImpl()).getCountdown() * 1000l);
                 }
-
             }
         }
         if (icons) {
@@ -196,7 +194,7 @@ public class AsynchApiHandler implements EventPublisher, DialogApiInterface {
         }
         if (handle == null) { throw new InvalidIdException(id); }
         final CloseReason closeReason = CloseReason.valueOf(data.get("closereason").toString().toUpperCase(Locale.ENGLISH));
-        UserIODefinition ret = (UserIODefinition) Proxy.newProxyInstance(AsynchApiHandler.class.getClassLoader(), new Class<?>[] { handle.getIface() }, new InvocationHandler() {
+        UserIODefinition ret = (UserIODefinition) Proxy.newProxyInstance(DialogApiImpl.class.getClassLoader(), new Class<?>[] { handle.getIface() }, new InvocationHandler() {
 
             @Override
             public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {

@@ -13,9 +13,11 @@ import org.jdownloader.api.captcha.CaptchaAPIEventPublisher;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
 import org.jdownloader.api.config.AdvancedConfigManagerAPIImpl;
 import org.jdownloader.api.content.ContentAPIImpl;
+import org.jdownloader.api.dialog.RemoteAPIIOHandlerWrapper;
 import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
 import org.jdownloader.api.downloads.DownloadWatchDogEventPublisher;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
+import org.jdownloader.api.extensions.ExtensionsAPIImpl;
 import org.jdownloader.api.jd.JDAPIImpl;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
 import org.jdownloader.api.linkcollector.LinkCollectorEventPublisher;
@@ -64,10 +66,8 @@ public class RemoteAPIController {
         register(new LinkCollectorEventPublisher());
         register(new DownloadControllerEventPublisher());
         register(new ExtensionsAPIImpl());
-
-        RemoteAPIHandlerWrapper wrapper;
-        UIOManager.setUserIO(wrapper = new RemoteAPIHandlerWrapper(UIOManager.I()));
-
+        RemoteAPIIOHandlerWrapper wrapper;
+        UIOManager.setUserIO(wrapper = new RemoteAPIIOHandlerWrapper(UIOManager.I()));
         register(wrapper.getEventPublisher());
         register(wrapper.getApi());
     }
@@ -85,7 +85,6 @@ public class RemoteAPIController {
             Log.exception(e);
             return false;
         }
-
     }
 
     public boolean unregister(final RemoteAPIInterface x) {

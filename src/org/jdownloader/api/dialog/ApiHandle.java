@@ -1,16 +1,16 @@
-package org.jdownloader.api;
+package org.jdownloader.api.dialog;
 
 import org.appwork.uio.UserIODefinition;
 
 public class ApiHandle {
 
-    private long                              id;
-    private long                              created;
-    private boolean                           disposed = false;
-    private UserIODefinition                  impl;
-    private Thread                            thread;
+    private final long                        id;
+    private final long                        created  = System.currentTimeMillis();
+    private volatile boolean                  disposed = false;
+    private final UserIODefinition            impl;
+    private final Thread                      thread;
     private Class<? extends UserIODefinition> iface;
-    private UserIODefinition                  answer;
+    private volatile UserIODefinition         answer;
 
     public UserIODefinition getAnswer() {
         return answer;
@@ -28,14 +28,9 @@ public class ApiHandle {
         return id;
     }
 
-    public void setId(long id) {
-        this.id = id;
-    }
-
     public ApiHandle(Class<? extends UserIODefinition> iface, UserIODefinition impl, long id, Thread thread) {
         this.thread = thread;
         this.id = id;
-        created = System.currentTimeMillis();
         this.impl = impl;
         this.iface = iface;
     }
@@ -49,24 +44,26 @@ public class ApiHandle {
     }
 
     public void waitFor() throws InterruptedException {
-
-        while (!disposed && answer == null) {
+        while (true) {
             synchronized (this) {
+                if (disposed || answer != null) return;
                 wait();
             }
         }
     }
 
     public void dispose() {
-        disposed = true;
         synchronized (this) {
+            disposed = true;
             notifyAll();
         }
     }
 
     public void setAnswer(UserIODefinition ret) {
-        this.answer = ret;
-        dispose();
+        synchronized (this) {
+            this.answer = ret;
+            dispose();
+        }
     }
 
 }
