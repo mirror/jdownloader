@@ -172,6 +172,11 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     @Override
     protected Integer createReturnValue() {
         return this.getReturnmask();
+
+    }
+
+    protected void initFocus(final JComponent focus) {
+
     }
 
     @Override
