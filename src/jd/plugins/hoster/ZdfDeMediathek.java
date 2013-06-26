@@ -189,6 +189,8 @@ public class ZdfDeMediathek extends PluginForHost {
                             final String completeNewText = "<font color=#" + colorCode + ">" + plainText + "</font>";
                             dest.write(completeNewText + lineseparator + lineseparator);
                         }
+                    } else {
+                        dest.write(text + lineseparator + lineseparator);
                     }
 
                 }
