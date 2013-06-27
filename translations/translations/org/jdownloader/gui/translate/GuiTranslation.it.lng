@@ -568,6 +568,7 @@ SettingsMenu_SettingsMenu_=Impostazioni
 SilentModeToggleAction_getNameWhenDisabled_=Attiva modo silente
 SilentModeToggleAction_getNameWhenEnabled_=Disattiva modo silente
 SizeColumn_SizeColumn=Dimensione
+SkipAction_run_msg_=Vuoi ignorare e fermare i download in esecuzione?\nPotresti perdere %s1 a causa di %s2 download non recuperabili!
 SortAction_SortAction_object_=Ordina pacchetto(i) in '%s1'
 SortAction_SortAction_object_empty=Ordina pacchetti per colonna
 SpeedColumn_SpeedColumn=Velocità
