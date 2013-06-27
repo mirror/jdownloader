@@ -461,7 +461,8 @@ public class DirectHTTP extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        this.requestFileInformation(downloadLink);
+        if (this.requestFileInformation(downloadLink) == AvailableStatus.UNCHECKABLE) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l); }
+
         final String auth = this.br.getHeaders().get("Authorization");
         /*
          * replace with br.setCurrentURL(null); in future (after 0.9)
@@ -488,6 +489,7 @@ public class DirectHTTP extends PluginForHost {
         } else {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), resume, chunks);
         }
+        if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l); }
         if (!this.dl.startDownload()) {
             try {
                 if (dl.externalDownloadStop()) return;
@@ -594,6 +596,8 @@ public class DirectHTTP extends PluginForHost {
             }
             if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             downloadLink.setProperty("auth", basicauth);
+
+            if (urlConnection.getResponseCode() == 503) { return AvailableStatus.UNCHECKABLE; }
             this.contentType = urlConnection.getContentType();
             if (this.contentType.startsWith("text/html") && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
