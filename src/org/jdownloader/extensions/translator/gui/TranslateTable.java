@@ -3,7 +3,6 @@ package org.jdownloader.extensions.translator.gui;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.JComponent;
@@ -102,7 +101,7 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
                 TranslateEntry object = tableModel.getObjectbyRow(getSelectedRow());
                 tableModel.getEditColum().startEditing(object);
                 tableModel.getEditColum().getEditorField().requestFocus();
-                TranslateTable.this.scrollToSelection();
+                TranslateTable.this.scrollToSelection(-1);
                 // editCellAt(index + 1, tableModel.getEditColum().getIndex());
                 // ((ExtTextColumn) getCellEditor()).
             }

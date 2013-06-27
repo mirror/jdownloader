@@ -24,6 +24,7 @@ import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverview;
 import org.jdownloader.gui.views.downloads.overviewpanel.OverViewHeader;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadsPanel extends SwitchPanel implements DownloadControllerListener, GenericConfigEventListener<Boolean> {
@@ -47,7 +48,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         table = new DownloadsTable(tableModel);
         tableScrollPane = new JScrollPane(table);
         tableScrollPane.setBorder(null);
-
+        HorizontalScrollbarAction.setup(CFG_GUI.HORIZONTAL_SCROLLBARS_IN_DOWNLOAD_TABLE_ENABLED, table);
         bottomBar = new BottomBar(table);
 
         layoutComponents();
@@ -207,8 +208,8 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     long contentChanges = DownloadController.getInstance().getContentChanges();
                     if (lastContentChanges != contentChanges && tableModel.isFilteredView()) {
                         /*
-                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the tablemodel to reflect
-                         * possible status changes in filtered view
+                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the
+                         * tablemodel to reflect possible status changes in filtered view
                          */
                         tableModel.recreateModel();
                     } else {

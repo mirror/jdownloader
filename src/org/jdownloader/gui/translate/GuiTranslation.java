@@ -2642,4 +2642,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Found Proxies: %s1" })
     String ProxyAutoAction_run_added_proxies_(int size);
 
+    @Default(lngs = { "en" }, values = { "Horizontal Scrollbar" })
+    String HorizontalScrollbarAction_columnControlMenu_scrollbar_();
+
 }

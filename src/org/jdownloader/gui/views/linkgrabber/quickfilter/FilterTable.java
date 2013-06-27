@@ -91,7 +91,6 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         this.setShowGrid(false);
         this.setShowHorizontalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        this.setRowHeight(22);
 
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor();
         Color b2;

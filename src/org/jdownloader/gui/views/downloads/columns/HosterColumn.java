@@ -90,7 +90,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
         }
         moreIcon = NewTheme.I().getIcon("more", -1);
-        panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[]"));
+        panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[fill,grow]"));
         // panel.add(Box.createGlue(), "pushx,growx");
         setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
 

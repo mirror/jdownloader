@@ -78,7 +78,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
         proxyConnection = NewTheme.I().getIcon("proxy_rotate", 16);
         accountInUse = NewTheme.I().getIcon("users", 16);
         connections = NewTheme.I().getIcon("paralell", 16);
-        panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[]"));
+        panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[grow,fill]"));
         // panel.add(Box.createGlue(), "pushx,growx");
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
 

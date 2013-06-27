@@ -28,6 +28,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.exttable.DropHighlighter;
+import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.uio.UIOManager;
@@ -38,9 +39,11 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
+import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ContextMenuFactory;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionLinkgrabberAction;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 
 public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, CrawledLink> {
@@ -186,6 +189,13 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final java.util.List<AbstractNode> selection, final ExtColumn<AbstractNode> column, MouseEvent event) {
 
         return contextMenuFactory.createPopup(contextObject, selection, column, event);
+    }
+
+    protected JPopupMenu columnControlMenu(final ExtColumn<AbstractNode> extColumn) {
+        JPopupMenu popup = super.columnControlMenu(extColumn);
+        popup.add(new JSeparator());
+        popup.add(new ExtCheckBoxMenuItem(new HorizontalScrollbarAction(this, CFG_GUI.HORIZONTAL_SCROLLBARS_IN_LINKGRABBER_TABLE_ENABLED)));
+        return popup;
     }
 
     @Override

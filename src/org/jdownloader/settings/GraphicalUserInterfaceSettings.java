@@ -433,4 +433,18 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setStartButtonActionInLinkgrabberContext(StartButtonAction b);
 
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Use horizontal Scrollbars in DownloadTable")
+    @AboutConfig
+    boolean isHorizontalScrollbarsInDownloadTableEnabled();
+
+    void setHorizontalScrollbarsInDownloadTableEnabled(boolean b);
+
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Use horizontal Scrollbars in Linkgrabber")
+    @AboutConfig
+    boolean isHorizontalScrollbarsInLinkgrabberTableEnabled();
+
+    void setHorizontalScrollbarsInLinkgrabberTableEnabled(boolean b);
+
 }

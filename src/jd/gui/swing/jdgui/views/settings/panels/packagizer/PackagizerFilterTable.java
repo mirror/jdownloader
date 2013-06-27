@@ -3,7 +3,6 @@ package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
-import java.util.ArrayList;
 
 import javax.swing.DropMode;
 import javax.swing.JMenuItem;
@@ -34,8 +33,6 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
 
         setTransferHandler(new ExtTransferHandler<PackagizerRule>());
         if (Application.getJavaVersion() >= Application.JAVA16) setDropMode(DropMode.INSERT_ROWS);
-
-        setRowHeight(24);
 
         addMouseMotionListener(new MouseMotionListener() {
             private DelayedRunnable delayer;

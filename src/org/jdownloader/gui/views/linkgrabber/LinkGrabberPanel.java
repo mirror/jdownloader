@@ -42,6 +42,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
+import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ClearLinkgrabberAction;
@@ -89,7 +90,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         tableModel = LinkGrabberTableModel.getInstance();
         table = new LinkGrabberTable(this, tableModel);
         tableScrollPane = new JScrollPane(table);
-        // tableScrollPane.setBorder(null);
+        HorizontalScrollbarAction.setup(CFG_GUI.HORIZONTAL_SCROLLBARS_IN_LINKGRABBER_TABLE_ENABLED, table);
         filteredAdd = new ExtButton(new AppAction() {
             /**
              * 

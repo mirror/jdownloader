@@ -12,6 +12,7 @@ import java.util.EventObject;
 import javax.swing.DropMode;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
+import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
@@ -27,6 +28,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.exttable.DropHighlighter;
+import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -36,6 +38,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.action.DeleteSelectionAction;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> {
 
@@ -110,6 +113,13 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 removeLoaderPanel(loaderPanel, orgLayout, rendererPane);
             }
         });
+    }
+
+    protected JPopupMenu columnControlMenu(final ExtColumn<AbstractNode> extColumn) {
+        JPopupMenu popup = super.columnControlMenu(extColumn);
+        popup.add(new JSeparator());
+        popup.add(new ExtCheckBoxMenuItem(new HorizontalScrollbarAction(this, CFG_GUI.HORIZONTAL_SCROLLBARS_IN_DOWNLOAD_TABLE_ENABLED)));
+        return popup;
     }
 
     protected void removeLoaderPanel(final MigPanel loaderPanel, final LayoutManager orgLayout, final Component rendererPane) {

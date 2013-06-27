@@ -477,6 +477,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         Graphics2D g2 = (Graphics2D) g;
         Composite comp = g2.getComposite();
         final Rectangle visibleRect = this.getVisibleRect();
+
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
         if (filteredView) {
             g2.setColor(filterNotifyColor);
@@ -484,8 +485,12 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         }
         if (filteredColumn >= 0 && tableModel.isTristateSorterEnabled()) {
             Rectangle first = this.getCellRect(0, filteredColumn, true);
-            g2.setColor(sortNotifyColor);
-            g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
+
+            int w = getModel().getSortColumn().getWidth() - Math.max(0, visibleRect.x - first.x);
+            if (w > 0) {
+                g2.setColor(sortNotifyColor);
+                g2.fillRect(Math.max(first.x, visibleRect.x), visibleRect.y, w, visibleRect.height);
+            }
         }
         g2.setComposite(comp);
     }

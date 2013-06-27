@@ -567,10 +567,6 @@ public class JDGui extends SwingGui {
         }
     }
 
-    public static void main(String[] args) {
-        System.out.println(System.currentTimeMillis());
-    }
-
     protected void showStatsDialog() {
 
         ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.JDGui_showStatsDialog_title_(), _GUI._.JDGui_showStatsDialog_message_(), NewTheme.I().getIcon("bug", 32), _GUI._.JDGui_showStatsDialog_yes_(), _GUI._.JDGui_showStatsDialog_no_());
@@ -688,8 +684,8 @@ public class JDGui extends SwingGui {
     }
 
     /**
-     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT and only put the
-     * mainframe stuff into EDT
+     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT
+     * and only put the mainframe stuff into EDT
      * 
      * restores the dimension and location to the window
      */
@@ -803,7 +799,11 @@ public class JDGui extends SwingGui {
         final Dimension finalDim = dim;
         final Integer finalState = state;
         new EDTRunner() {
-
+            // 7. Why a JFrame hides the OS TaskBar when being displayed maximized via JFrame#setExtendedState()?
+            //
+            // The described problem is a Swing issue which appears only with non-native decorated frames by using
+            // JFrame#setExtendedState().
+            // The workaround below can be used to fix the issue - whereas this is the JFrame instance:
             @Override
             protected void runInEDT() {
                 if (finalLocation != null) mainFrame.setLocation(finalLocation);
@@ -1263,8 +1263,8 @@ public class JDGui extends SwingGui {
     private Thread trayIconChecker;
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
-     * changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
+     * avoid sideeffects when changing anything
      * 
      * @param minimize
      */

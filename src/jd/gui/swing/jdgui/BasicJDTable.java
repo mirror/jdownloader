@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui;
 import java.awt.Color;
 import java.awt.Dimension;
 
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.ListSelectionModel;
 
@@ -13,6 +14,7 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.swing.exttable.ExtTable;
 import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.ColorUtils;
 
 public class BasicJDTable<T> extends ExtTable<T> {
@@ -25,7 +27,6 @@ public class BasicJDTable<T> extends ExtTable<T> {
         this.setShowGrid(true);
         this.setShowHorizontalLines(true);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        this.setRowHeight(22);
 
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor();
         Color b2;
@@ -47,6 +48,20 @@ public class BasicJDTable<T> extends ExtTable<T> {
             }
 
         });
+        // Try to determine the correct auto row height.
+        ExtTextColumn<String> col = new ExtTextColumn<String>("Test") {
+
+            @Override
+            public String getStringValue(String value) {
+                return "Test";
+            }
+        };
+        JComponent rend = col.getRendererComponent("Test", true, true, 1, 1);
+        // use letters that are as height as possible
+        col.configureRendererComponent("T§gj²*", true, true, 1, 1);
+        int prefHeight = rend.getPreferredSize().height;
+
+        this.setRowHeight(prefHeight + 3);
 
         this.addRowHighlighter(new AlternateHighlighter(null, ColorUtils.getAlphaInstance(new JLabel().getForeground(), 6)));
         this.setIntercellSpacing(new Dimension(0, 0));

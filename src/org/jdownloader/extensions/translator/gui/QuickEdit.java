@@ -116,7 +116,7 @@ public class QuickEdit extends MigPanel implements ListSelectionListener {
                     // next value
                     int nextIndex = index == table.getModel().getTableData().size() - 1 ? 0 : index + 1;
                     table.getSelectionModel().setSelectionInterval(nextIndex, nextIndex);
-                    table.scrollToRow(nextIndex);
+                    table.scrollToRow(nextIndex, -1);
                 } else {
                     // next untranslated
 
@@ -129,7 +129,7 @@ public class QuickEdit extends MigPanel implements ListSelectionListener {
                         }
                     }
                     table.getSelectionModel().setSelectionInterval(nextIndex, nextIndex);
-                    table.scrollToRow(nextIndex);
+                    table.scrollToRow(nextIndex, -1);
                 }
             }
         }));
