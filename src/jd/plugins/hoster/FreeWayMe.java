@@ -272,7 +272,7 @@ public class FreeWayMe extends PluginForHost {
                 final String accType = ai.getStringProperty("acctype", null);
                 final String maxSimultanDls = account.getStringProperty("parallel", null);
 
-                Map<String, String> displayInfos = new HashMap<>();
+                Map<String, String> displayInfos = new HashMap<String, String>();
                 String accountCaption = "";
                 Set<MultihostContainer> hostList = new HashSet();
                 for (String host : supportedHosts) {
