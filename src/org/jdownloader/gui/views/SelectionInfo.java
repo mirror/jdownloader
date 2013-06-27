@@ -15,6 +15,8 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.BinaryLogic;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 
 public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
 
@@ -24,22 +26,24 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         return ret;
     }
 
-    private List<PackageType>                                 allPackages;
-    private AbstractNode                                      contextObject;
-    private List<PackageType>                                 fullPackages;
-    private List<PackageType>                                 incompletePackages;
-    private HashMap<PackageType, List<ChildrenType>>          incompleteSelectecPackages;
-    private KeyEvent                                          keyEvent;
-    private MouseEvent                                        mouseEvent;
-    private LinkedHashSet<AbstractNode>                       rawMap;
+    private List<PackageType>                                                  allPackages;
+    private AbstractNode                                                       contextObject;
+    private List<PackageType>                                                  fullPackages;
+    private List<PackageType>                                                  incompletePackages;
+    private HashMap<PackageType, List<ChildrenType>>                           incompleteSelectecPackages;
+    private KeyEvent                                                           keyEvent;
+    private MouseEvent                                                         mouseEvent;
+    private LinkedHashSet<AbstractNode>                                        rawMap;
 
-    private List<? extends AbstractNode>                      rawSelection;
+    private List<? extends AbstractNode>                                       rawSelection;
 
-    private List<ChildrenType>                                children;
+    private List<ChildrenType>                                                 children;
 
-    private PackageControllerTable<PackageType, ChildrenType> table;
-    private ExtColumn<AbstractNode>                           contextColumn;
-    private boolean                                           shiftDown = false;
+    private PackageControllerTable<PackageType, ChildrenType>                  table;
+    private ExtColumn<AbstractNode>                                            contextColumn;
+    private boolean                                                            shiftDown = false;
+    private List<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters;
+    private ActionEvent                                                        actionEvent;
 
     public SelectionInfo<PackageType, ChildrenType> setShiftDown(boolean shiftDown) {
         this.shiftDown = shiftDown;
@@ -50,25 +54,25 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         return table;
     }
 
-    public SelectionInfo(AbstractNode clicked) {
-        this(clicked, pack(clicked));
-    }
+    // public SelectionInfo(AbstractNode clicked) {
+    // this(clicked, pack(clicked));
+    // }
+    //
+    // public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection) {
+    // this(contextObject, selection, null);
+    //
+    // }
+    //
+    // public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event) {
+    // this(contextObject, selection, event, null);
+    // }
+    //
+    // public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event, KeyEvent kEvent) {
+    //
+    // this(contextObject, selection, event, kEvent, null);
+    // }
 
-    public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection) {
-        this(contextObject, selection, null);
-
-    }
-
-    public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event) {
-        this(contextObject, selection, event, null);
-    }
-
-    public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event, KeyEvent kEvent) {
-
-        this(contextObject, selection, event, kEvent, null);
-    }
-
-    public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event, KeyEvent kEvent, PackageControllerTable<PackageType, ChildrenType> table) {
+    public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event, KeyEvent kEvent, ActionEvent actionEvent, PackageControllerTable<PackageType, ChildrenType> table) {
 
         this.contextObject = contextObject;
         rawSelection = selection == null ? new ArrayList<AbstractNode>() : selection;
@@ -84,20 +88,31 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
         this.mouseEvent = event;
         this.keyEvent = kEvent;
+        this.actionEvent = actionEvent;
         this.table = table;
+        if (table != null) {
+            PackageControllerTableModel<PackageType, ChildrenType> tableModel = table.getModel();
+            filters = tableModel.getTableFilters();
+            if (filters != null && filters.size() == 0) filters = null;
+        }
+
         // System.out.println(isShiftDown());
         agregate();
 
-        if (keyEvent != null && BinaryLogic.containsSome(keyEvent.getModifiers(), ActionEvent.SHIFT_MASK)) {
+        if (keyEvent != null && keyEvent.isShiftDown()) {
+            shiftDown = true;
+        }
+        if (actionEvent != null && BinaryLogic.containsSome(actionEvent.getModifiers(), ActionEvent.SHIFT_MASK)) {
             shiftDown = true;
         }
         if (mouseEvent != null && mouseEvent.isShiftDown()) shiftDown = true;
     }
 
-    public SelectionInfo(List<? extends AbstractNode> selection) {
-        this(null, selection, null);
-
-    }
+    //
+    // public SelectionInfo(List<? extends AbstractNode> selection) {
+    // this(null, selection, null);
+    //
+    // }
 
     @SuppressWarnings("unchecked")
     public void agregate() {
@@ -108,13 +123,13 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         for (AbstractNode node : rawSelection) {
             rawMap.add(node);
             if (node instanceof AbstractPackageChildrenNode) {
-                if (!has.contains(((AbstractPackageChildrenNode) node).getParentNode())) {
-                    if (has.add((AbstractNode) ((AbstractPackageChildrenNode) node).getParentNode())) {
-                        raw.add((AbstractNode) ((AbstractPackageChildrenNode) node).getParentNode());
-
-                    }
+                // if (!has.contains(((AbstractPackageChildrenNode) node).getParentNode())) {
+                if (has.add((AbstractNode) ((AbstractPackageChildrenNode) node).getParentNode())) {
+                    raw.add((AbstractNode) ((AbstractPackageChildrenNode) node).getParentNode());
 
                 }
+
+                // }
             }
         }
 
@@ -155,16 +170,41 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                         boolean containsNone = true;
                         boolean containsAll = true;
                         java.util.List<ChildrenType> selected = new ArrayList<ChildrenType>();
+                        java.util.List<ChildrenType> unFiltered = new ArrayList<ChildrenType>();
                         for (ChildrenType l : childs) {
                             if (has.contains(l)) {
                                 selected.add(l);
                                 containsNone = false;
                             } else {
                                 containsAll = false;
+                                if (filters != null) {
+                                    boolean filtered = false;
+                                    for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
+                                        if (filter.isFiltered(l)) {
+                                            filtered = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!filtered) unFiltered.add(l);
+                                }
                             }
 
                         }
-                        if (containsAll || containsNone) {
+                        // table.getModel()
+                        if (containsNone) {
+                            // this is a special case. if the user selected only the package, we cannot simply add all children. We need to
+                            // check if he works on a filtered view.
+                            if (filters == null) {
+                                ret.addAll(childs);
+                                fullPkg.add((PackageType) node);
+                            } else {
+                                ret.addAll(unFiltered);
+                                if (unFiltered.size() == childs.size()) {
+                                    fullPkg.add((PackageType) node);
+                                }
+                            }
+                        } else if (containsAll) {
+
                             ret.addAll(childs);
                             fullPkg.add((PackageType) node);
                         } else {

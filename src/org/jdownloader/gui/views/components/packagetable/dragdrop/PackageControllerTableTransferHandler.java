@@ -88,7 +88,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
     }
 
     protected boolean canImportPackageControllerTransferable(TransferSupport support) {
-        if (!table.isOriginalOrder() || table.getPackageControllerTableModel().isFilteredView()) { return false; }
+        if (!table.isOriginalOrder() || table.getModel().isFilteredView()) { return false; }
         PackageControllerTableTransferableContent<PackageType, ChildrenType> content = getContent(support);
         if (content == null) return false;
         if (!allowImport(content.packages, content.links)) return false;
@@ -102,8 +102,8 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
             int dropRow = dl.getRow();
             if (isInsert) {
                 /* handle insert,move here */
-                Object beforeElement = table.getExtTableModel().getObjectbyRow(dropRow - 1);
-                Object afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
+                Object beforeElement = table.getModel().getObjectbyRow(dropRow - 1);
+                Object afterElement = table.getModel().getObjectbyRow(dropRow);
                 if (beforeElement == null && afterElement == null) {
                     /* no before element, table is empty */
                     return true;
@@ -151,11 +151,11 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                 }
             } else {
                 /* handle dropOn,merge here */
-                onElement = table.getExtTableModel().getObjectbyRow(dropRow);
+                onElement = table.getModel().getObjectbyRow(dropRow);
             }
         } else {
             /* Paste */
-            java.util.List<AbstractNode> firstSelected = table.getExtTableModel().getSelectedObjects(1);
+            java.util.List<AbstractNode> firstSelected = table.getModel().getSelectedObjects(1);
             if (firstSelected.size() > 0) {
                 onElement = firstSelected.get(0);
             }
@@ -235,13 +235,13 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
             JTable.DropLocation dl = (JTable.DropLocation) support.getDropLocation();
             isInsert = dl.isInsertRow();
             int dropRow = dl.getRow();
-            afterElement = table.getExtTableModel().getObjectbyRow(dropRow);
+            afterElement = table.getModel().getObjectbyRow(dropRow);
             if (isInsert) {
-                beforeElement = table.getExtTableModel().getObjectbyRow(dropRow - 1);
+                beforeElement = table.getModel().getObjectbyRow(dropRow - 1);
             }
         } else {
             /* paste */
-            java.util.List<AbstractNode> firstSelected = table.getExtTableModel().getSelectedObjects(1);
+            java.util.List<AbstractNode> firstSelected = table.getModel().getSelectedObjects(1);
             if (firstSelected.size() > 0) {
                 afterElement = firstSelected.get(0);
                 if (afterElement instanceof AbstractPackageChildrenNode) {

@@ -16,6 +16,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.NewTheme;
 
 public class RemoveOptionsAction extends AppAction {
@@ -35,12 +36,12 @@ public class RemoveOptionsAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
         JPopupMenu popup = new JPopupMenu();
-        java.util.List<AbstractNode> selection = table.getExtTableModel().getSelectedObjects();
+        java.util.List<AbstractNode> selection = table.getModel().getSelectedObjects();
         popup.add(new RemoveAllVisibleDownloadsAction());
 
         JMenu m = new JMenu(_GUI._.RemoveOptionsAction_actionPerformed_selected());
         m.setIcon(NewTheme.I().getIcon("delete", 18));
-        SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(selection);
+        SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, selection, null, null, e, DownloadsTableModel.getInstance().getTable());
         m.add(new DeleteSelectedLinks(si));
         m.add(new DeleteDisabledSelectedLinks(si));
         m.add(new DeleteSelectedAndFailedLinksAction(si));

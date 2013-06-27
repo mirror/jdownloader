@@ -175,11 +175,11 @@ public class BottomBar extends MigPanel {
             @Override
             public void onChanged(View value) {
                 if (View.ALL.equals(value)) {
-                    table.getPackageControllerTableModel().removeFilter(filter);
+                    table.getModel().removeFilter(filter);
                 } else {
-                    table.getPackageControllerTableModel().addFilter(filter);
+                    table.getModel().addFilter(filter);
                 }
-                table.getPackageControllerTableModel().recreateModel(true);
+                table.getModel().recreateModel(true);
                 CFG_GUI.DOWNLOAD_VIEW.setValue(value);
             }
         };

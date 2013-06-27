@@ -139,12 +139,12 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     }
 
     protected boolean onHeaderSortClick(final MouseEvent event, final ExtColumn<AbstractNode> oldColumn, final String oldIdentifier, ExtColumn<AbstractNode> newColumn) {
-        if (((LinkGrabberTableModel) getExtTableModel()).isTristateSorterEnabled()) return false;
+        if (((LinkGrabberTableModel) getModel()).isTristateSorterEnabled()) return false;
 
         //
         UIOManager.I().showConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.getNextSortIdentifier_sort_warning_rly_title_(), _JDT._.getNextSortIdentifier_sort_warning_rly_msg(newColumn.getName()), NewTheme.I().getIcon("help", 32), _JDT._.basics_yes(), _JDT._.basics_no());
 
-        sortPackageChildren(newColumn.getRowSorter(), getExtTableModel().getNextSortIdentifier(newColumn.getSortOrderIdentifier()));
+        sortPackageChildren(newColumn.getRowSorter(), getModel().getNextSortIdentifier(newColumn.getSortOrderIdentifier()));
 
         return true;
     }
@@ -175,7 +175,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(e.getPoint());
 
         // for (JMenuItem mm : ContextMenuFactory.fillPropertiesMenu(new SelectionInfo<CrawledPackage, CrawledLink>(obj,
-        // getExtTableModel().getSelectedObjects()), col)) {
+        // getModel().getSelectedObjects()), col)) {
         // m.add(mm);
         // }
         m.show(this, e.getPoint().x, e.getPoint().y);
@@ -191,7 +191,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
         if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown() || evt.isControlDown()) return false;
-        new RemoveSelectionLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(selectedObjects)).actionPerformed(null);
+        new RemoveSelectionLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, selectedObjects, null, evt, null, this)).actionPerformed(null);
         return true;
     }
 

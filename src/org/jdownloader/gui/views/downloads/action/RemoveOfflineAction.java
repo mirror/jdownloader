@@ -13,6 +13,7 @@ import jd.plugins.LinkStatus;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
 public class RemoveOfflineAction extends AppAction {
 
@@ -42,7 +43,7 @@ public class RemoveOfflineAction extends AppAction {
             }
         });
 
-        DownloadController.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete), _GUI._.RemoveOfflineAction_actionPerformed());
+        DownloadController.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.RemoveOfflineAction_actionPerformed());
     }
 
 }

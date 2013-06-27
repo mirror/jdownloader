@@ -13,6 +13,7 @@ import jd.plugins.FilePackage;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
 public class RemoveNonSelectedAction extends AppAction {
 
@@ -34,7 +35,7 @@ public class RemoveNonSelectedAction extends AppAction {
 
         // LinkCollector.getInstance().getChildrenByFilter(filter)
 
-        final SelectionInfo<FilePackage, DownloadLink> selectionInfo = new SelectionInfo<FilePackage, DownloadLink>(selection);
+        final SelectionInfo<FilePackage, DownloadLink> selectionInfo = new SelectionInfo<FilePackage, DownloadLink>(null, selection, null, null, e, DownloadsTableModel.getInstance().getTable());
         final HashSet<DownloadLink> set = new HashSet<DownloadLink>();
         set.addAll(selectionInfo.getChildren());
         List<DownloadLink> nodesToDelete = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
@@ -50,7 +51,7 @@ public class RemoveNonSelectedAction extends AppAction {
             }
         });
 
-        DownloadController.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete), _GUI._.RemoveNonSelectedAction_actionPerformed());
+        DownloadController.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.RemoveNonSelectedAction_actionPerformed());
     }
 
 }

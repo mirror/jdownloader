@@ -25,6 +25,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
 import org.jdownloader.translate._JDT;
 
@@ -49,7 +50,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean onRenameClick(MouseEvent e, AbstractNode obj) {
-        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj)).actionPerformed(null);
+        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, e, null, null, LinkGrabberTableModel.getInstance().getTable())).actionPerformed(null);
         return true;
     }
 

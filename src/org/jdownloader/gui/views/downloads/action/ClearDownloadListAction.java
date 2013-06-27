@@ -26,7 +26,7 @@ public class ClearDownloadListAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         final List<DownloadLink> nodesToDelete = DownloadsTableModel.getInstance().getAllChildrenNodes();
 
-        DownloadController.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete), _GUI._.ClearDownloadListAction_actionPerformed_());
+        DownloadController.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.ClearDownloadListAction_actionPerformed_());
 
     }
 

@@ -80,6 +80,6 @@ public class AccountManagerSettings extends AbstractConfigPanel {
 
     @Override
     public void updateContents() {
-        ((PremiumAccountTableModel) acm.getTable().getExtTableModel()).fill();
+        ((PremiumAccountTableModel) acm.getTable().getModel()).fill();
     }
 }

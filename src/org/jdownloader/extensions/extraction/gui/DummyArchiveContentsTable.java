@@ -25,14 +25,14 @@ public class DummyArchiveContentsTable extends BasicJDTable<DummyArchiveFile> {
             }
         }
 
-        // getExtTableModel().setColumnVisible(((DummyArchiveContentsTableModel)
-        // getExtTableModel()).getLocal(), !linkgrabber);
-        getExtTableModel().setColumnVisible(((DummyArchiveContentsTableModel) getExtTableModel()).getLinkStatus(), linkgrabber);
+        // getModel().setColumnVisible(((DummyArchiveContentsTableModel)
+        // getModel()).getLocal(), !linkgrabber);
+        getModel().setColumnVisible(((DummyArchiveContentsTableModel) getModel()).getLinkStatus(), linkgrabber);
         addRowHighlighter(new ExtOverlayRowHighlighter(null, ColorUtils.getAlphaInstance(Color.RED, 20)) {
 
             @Override
             public boolean doHighlight(ExtTable<?> extTable, int row) {
-                DummyArchiveFile e = getExtTableModel().getObjectbyRow(row);
+                DummyArchiveFile e = getModel().getObjectbyRow(row);
                 return e.isMissing();
             }
         });
@@ -40,7 +40,7 @@ public class DummyArchiveContentsTable extends BasicJDTable<DummyArchiveFile> {
 
             @Override
             public boolean doHighlight(ExtTable<?> extTable, int row) {
-                DummyArchiveFile e = getExtTableModel().getObjectbyRow(row);
+                DummyArchiveFile e = getModel().getObjectbyRow(row);
                 return e.isIncomplete() && !e.isLocalFileAvailable();
             }
         });
@@ -49,7 +49,7 @@ public class DummyArchiveContentsTable extends BasicJDTable<DummyArchiveFile> {
 
             @Override
             public boolean doHighlight(ExtTable<?> extTable, int row) {
-                DummyArchiveFile e = getExtTableModel().getObjectbyRow(row);
+                DummyArchiveFile e = getModel().getObjectbyRow(row);
                 return e.isLocalFileAvailable();
             }
         });

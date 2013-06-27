@@ -101,7 +101,7 @@ public class QuickFilterTypeTable extends FilterTable {
                     @Override
                     public void setEnabled(boolean enabled) {
                         super.setEnabled(enabled);
-                        getLinkgrabberTable().getPackageControllerTableModel().recreateModel(false);
+                        getLinkgrabberTable().getModel().recreateModel(false);
                         updateAllFiltersInstant();
                     }
 
@@ -115,7 +115,7 @@ public class QuickFilterTypeTable extends FilterTable {
                     @Override
                     public void setEnabled(boolean enabled) {
                         super.setEnabled(enabled);
-                        getLinkgrabberTable().getPackageControllerTableModel().recreateModel(false);
+                        getLinkgrabberTable().getModel().recreateModel(false);
                         updateAllFiltersInstant();
 
                     }
@@ -129,7 +129,7 @@ public class QuickFilterTypeTable extends FilterTable {
                     @Override
                     public void setEnabled(boolean enabled) {
                         super.setEnabled(enabled);
-                        getLinkgrabberTable().getPackageControllerTableModel().recreateModel(false);
+                        getLinkgrabberTable().getModel().recreateModel(false);
                         updateAllFiltersInstant();
                     }
                 });
@@ -142,7 +142,7 @@ public class QuickFilterTypeTable extends FilterTable {
                     @Override
                     public void setEnabled(boolean enabled) {
                         super.setEnabled(enabled);
-                        getLinkgrabberTable().getPackageControllerTableModel().recreateModel(false);
+                        getLinkgrabberTable().getModel().recreateModel(false);
                         updateAllFiltersInstant();
                     }
                 });
@@ -168,7 +168,7 @@ public class QuickFilterTypeTable extends FilterTable {
                     @Override
                     public void setEnabled(boolean enabled) {
                         super.setEnabled(enabled);
-                        getLinkgrabberTable().getPackageControllerTableModel().recreateModel(false);
+                        getLinkgrabberTable().getModel().recreateModel(false);
                         updateAllFiltersInstant();
                     }
                 });

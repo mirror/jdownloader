@@ -49,9 +49,9 @@ public class RemoveOptionsAction extends AbstractAction {
 
     public void actionPerformed(ActionEvent e) {
         JPopupMenu popup = new JPopupMenu();
-        java.util.List<AbstractNode> selection = table.getExtTableModel().getSelectedObjects();
+        java.util.List<AbstractNode> selection = table.getModel().getSelectedObjects();
 
-        SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(null, selection, null, null, table);
+        SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(null, selection, null, null, e, table);
         popup.add(new RemoveAllLinkgrabberAction(null));
         popup.add(new RemoveSelectionLinkgrabberAction(si) {
             {
@@ -60,7 +60,7 @@ public class RemoveOptionsAction extends AbstractAction {
         });
         popup.add(new RemoveNonSelectedAction(si));
         popup.add(new RemoveOfflineAction(null));
-        popup.add(new RemoveIncompleteArchives(new SelectionInfo<CrawledPackage, CrawledLink>(new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes()))));
+        popup.add(new RemoveIncompleteArchives(new SelectionInfo<CrawledPackage, CrawledLink>(null, new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes()), null, null, e, table)));
         popup.add(new JSeparator());
         popup.add(new ResetPopupAction(null));
         int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();

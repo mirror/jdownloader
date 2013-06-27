@@ -100,7 +100,7 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
         }
-        getExtTableModel().fireTableDataChanged();
+        getModel().fireTableDataChanged();
         PackagizerController.getInstance().update();
         return false;
     }

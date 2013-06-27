@@ -34,7 +34,7 @@ public class RemoveAction extends AbstractRemoveAction {
         if (!rly(_JDT._.RemoveAction_actionPerformed_rly_msg())) return;
         remove = selected;
         if (remove == null) {
-            remove = table.getExtTableModel().getSelectedObjects();
+            remove = table.getModel().getSelectedObjects();
         }
         if (remove != null && remove.size() > 0) {
             IOEQ.add(new Runnable() {
@@ -43,7 +43,7 @@ public class RemoveAction extends AbstractRemoveAction {
                     for (PackagizerRule lf : remove) {
                         PackagizerController.getInstance().remove(lf);
                     }
-                    table.getExtTableModel()._fireTableStructureChanged(PackagizerController.getInstance().list(), false);
+                    table.getModel()._fireTableStructureChanged(PackagizerController.getInstance().list(), false);
                 }
 
             }, true);

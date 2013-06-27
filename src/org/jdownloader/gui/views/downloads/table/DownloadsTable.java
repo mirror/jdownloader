@@ -171,7 +171,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     // final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(point);
     //
     // for (Component mm : DownloadTableContextMenuFactory.fillPropertiesMenu(new SelectionInfo<FilePackage, DownloadLink>(obj,
-    // getExtTableModel().getSelectedObjects()), col)) {
+    // getModel().getSelectedObjects()), col)) {
     // m.add(mm);
     // }
     // m.show(this, point.x, point.y);
@@ -180,7 +180,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
 
-        new DeleteSelectionAction(new SelectionInfo<FilePackage, DownloadLink>(null, selectedObjects, null, evt)).actionPerformed(null);
+        new DeleteSelectionAction(new SelectionInfo<FilePackage, DownloadLink>(null, selectedObjects, null, evt, null, this)).actionPerformed(null);
         return true;
     }
 
@@ -214,9 +214,9 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             public void actionPerformed(ActionEvent e) {
                 Timer t = (Timer) e.getSource();
                 t.stop();
-                if (oldSortColumn == getExtTableModel().getSortColumn()) return;
-                if (getExtTableModel().getSortColumn() != null) {
-                    HelpDialog.show(e1.getLocationOnScreen(), "downloadtabe_sortwarner", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsTable_actionPerformed_sortwarner_title(getExtTableModel().getSortColumn().getName()), _GUI._.DownloadsTable_actionPerformed_sortwarner_text(), NewTheme.I().getIcon("sort", 32));
+                if (oldSortColumn == getModel().getSortColumn()) return;
+                if (getModel().getSortColumn() != null) {
+                    HelpDialog.show(e1.getLocationOnScreen(), "downloadtabe_sortwarner", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsTable_actionPerformed_sortwarner_title(getModel().getSortColumn().getName()), _GUI._.DownloadsTable_actionPerformed_sortwarner_text(), NewTheme.I().getIcon("sort", 32));
 
                 }
 

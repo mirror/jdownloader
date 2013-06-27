@@ -36,7 +36,7 @@ public class MediaTable<MediaItemType extends MediaItem> extends BasicJDTable<Me
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                MediaArchiveController archive = ((MediaTableModel) getExtTableModel()).getExtension().getMediaArchiveController();
+                MediaArchiveController archive = ((MediaTableModel) getModel()).getExtension().getMediaArchiveController();
                 for (MediaItem mi : selection) {
                     archive.refreshMetadata(mi);
                 }
@@ -50,7 +50,7 @@ public class MediaTable<MediaItemType extends MediaItem> extends BasicJDTable<Me
     protected boolean onShortcutDelete(List<MediaItemType> selectedObjects, KeyEvent evt, boolean direct) {
         try {
             Dialog.getInstance().showConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T._.mediatable_rly_remove_title(), T._.mediatable_rly_remove_msg(selectedObjects.size()));
-            ((MediaTableModel<MediaItemType, MediaListController<MediaItemType>>) getExtTableModel()).getListController().remove(selectedObjects);
+            ((MediaTableModel<MediaItemType, MediaListController<MediaItemType>>) getModel()).getListController().remove(selectedObjects);
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {

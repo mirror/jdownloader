@@ -56,7 +56,7 @@ public class ExportAction extends AppAction {
 
             if (exportList == null) {
                 if (linkgrabberFilter == null) return;
-                exportList = linkgrabberFilter.getView().getExtTableModel().getTableData();
+                exportList = linkgrabberFilter.getView().getModel().getTableData();
             }
             if (exportList.size() == 0) return;
             final String ext = exportList.get(0).isAccept() ? ImportAction.VIEW : ImportAction.EXT;

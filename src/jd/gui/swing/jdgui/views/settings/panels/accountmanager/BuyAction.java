@@ -77,7 +77,7 @@ public class BuyAction extends AbstractAction {
                 final LazyHostPlugin[] options = plugins.toArray(new LazyHostPlugin[plugins.size()]);
                 LazyHostPlugin plg = HostPluginController.getInstance().get(getPreselectedHoster());
                 if (table != null && plg == null) {
-                    List<AccountEntry> selection = table.getExtTableModel().getSelectedObjects();
+                    List<AccountEntry> selection = table.getModel().getSelectedObjects();
                     if (selection != null && selection.size() > 0) {
 
                         for (Iterator<?> iterator = plugins.iterator(); iterator.hasNext();) {

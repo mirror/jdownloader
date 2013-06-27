@@ -42,7 +42,7 @@ public class DownloadTableContextMenuFactory {
     public JPopupMenu create(DownloadsTable downloadsTable, JPopupMenu popup, AbstractNode contextObject, java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
         if (selection == null && contextObject == null) return emtpy(popup);
 
-        SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(contextObject, selection, ev, null, downloadsTable);
+        SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(contextObject, selection, ev, null, null, downloadsTable);
         si.setContextColumn(column);
         /* Properties */
 

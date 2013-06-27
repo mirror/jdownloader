@@ -58,7 +58,7 @@ public class ConfirmAllAction extends AppAction {
         this(false);
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(final ActionEvent e) {
 
         IOEQ.add(new Runnable() {
 
@@ -66,7 +66,7 @@ public class ConfirmAllAction extends AppAction {
 
                 java.util.List<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
 
-                ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(packages));
+                ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, packages, null, null, e, LinkGrabberTableModel.getInstance().getTable()));
                 ca.setAutostart(autostart);
                 ca.actionPerformed(null);
             }

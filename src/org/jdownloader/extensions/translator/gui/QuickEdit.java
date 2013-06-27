@@ -114,17 +114,17 @@ public class QuickEdit extends MigPanel implements ListSelectionListener {
                 if (((e.getModifiers() & ActionEvent.SHIFT_MASK) != 0)) {
 
                     // next value
-                    int nextIndex = index == table.getExtTableModel().getTableData().size() - 1 ? 0 : index + 1;
+                    int nextIndex = index == table.getModel().getTableData().size() - 1 ? 0 : index + 1;
                     table.getSelectionModel().setSelectionInterval(nextIndex, nextIndex);
                     table.scrollToRow(nextIndex);
                 } else {
                     // next untranslated
 
-                    int nextIndex = index == table.getExtTableModel().getTableData().size() - 1 ? 0 : index + 1;
-                    while (!table.getExtTableModel().getObjectbyRow(nextIndex).isMissing() && !table.getExtTableModel().getObjectbyRow(nextIndex).isDefault() && !table.getExtTableModel().getObjectbyRow(nextIndex).isParameterInvalid()) {
-                        nextIndex = nextIndex == table.getExtTableModel().getTableData().size() - 1 ? 0 : nextIndex + 1;
+                    int nextIndex = index == table.getModel().getTableData().size() - 1 ? 0 : index + 1;
+                    while (!table.getModel().getObjectbyRow(nextIndex).isMissing() && !table.getModel().getObjectbyRow(nextIndex).isDefault() && !table.getModel().getObjectbyRow(nextIndex).isParameterInvalid()) {
+                        nextIndex = nextIndex == table.getModel().getTableData().size() - 1 ? 0 : nextIndex + 1;
                         if (nextIndex == index) {
-                            nextIndex = index == table.getExtTableModel().getTableData().size() - 1 ? 0 : index + 1;
+                            nextIndex = index == table.getModel().getTableData().size() - 1 ? 0 : index + 1;
                             break;
                         }
                     }
@@ -140,9 +140,9 @@ public class QuickEdit extends MigPanel implements ListSelectionListener {
     public void valueChanged(ListSelectionEvent e) {
         index = table.getSelectionModel().getLeadSelectionIndex();
         // System.out.println(index);
-        TranslateEntry obj = table.getExtTableModel().getObjectbyRow(index);
+        TranslateEntry obj = table.getModel().getObjectbyRow(index);
         if (table.getSelectionModel().isSelectedIndex(index)) {
-            set(table.getExtTableModel().getObjectbyRow(index));
+            set(table.getModel().getObjectbyRow(index));
         } else {
             set(null);
         }

@@ -64,7 +64,7 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
         IOEQ.add(new Runnable() {
 
             public void run() {
-                packagizer.getTable().getExtTableModel()._fireTableStructureChanged(PackagizerController.getInstance().list(), false);
+                packagizer.getTable().getModel()._fireTableStructureChanged(PackagizerController.getInstance().list(), false);
             }
 
         }, true);

@@ -214,7 +214,7 @@ public class QuickFilterExceptionsTable extends FilterTable {
                         /*
                          * request recreate the model of filtered view
                          */
-                        getLinkgrabberTable().getPackageControllerTableModel().recreateModel(false);
+                        getLinkgrabberTable().getModel().recreateModel(false);
                         updateAllFiltersInstant();
                     }
                 };

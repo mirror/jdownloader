@@ -65,7 +65,7 @@ public class BasicAuthenticationPanel extends JPanel implements SettingsComponen
         IOEQ.add(new Runnable() {
 
             public void run() {
-                table.getExtTableModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
+                table.getModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
             }
 
         }, true);

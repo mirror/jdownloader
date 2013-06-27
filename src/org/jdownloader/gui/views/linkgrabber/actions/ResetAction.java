@@ -50,8 +50,8 @@ public class ResetAction extends AppAction {
                             @Override
                             protected void runInEDT() {
 
-                                table.getExtTableModel().setSortColumn(null);
-                                table.getExtTableModel().refreshSort();
+                                table.getModel().setSortColumn(null);
+                                table.getModel().refreshSort();
                                 table.getTableHeader().repaint();
                             }
                         };

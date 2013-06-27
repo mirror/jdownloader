@@ -172,9 +172,9 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
 
             public void run() {
                 if (!isDisplayable()) { return; }
-                final AggregatedNumbers total = CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks())) : null;
-                final AggregatedNumbers filtered = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getAllChildrenNodes())) : null;
-                final AggregatedNumbers selected = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getSelectedObjects())) : null;
+                final AggregatedNumbers total = CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks(), null, null, null, null)) : null;
+                final AggregatedNumbers filtered = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getAllChildrenNodes(), null, null, null, DownloadsTableModel.getInstance().getTable())) : null;
+                final AggregatedNumbers selected = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getSelectedObjects(), null, null, null, DownloadsTableModel.getInstance().getTable())) : null;
                 new EDTRunner() {
 
                     @Override

@@ -59,7 +59,7 @@ public class FilterTable extends AbstractFilterTable {
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
         }
-        getExtTableModel().fireTableDataChanged();
+        getModel().fireTableDataChanged();
         LinkFilterController.getInstance().update();
         return false;
     }

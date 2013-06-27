@@ -50,13 +50,13 @@ public class RenameAction<PackageType extends AbstractPackageNode<ChildrenType, 
 
                 if (view instanceof DownloadsView) {
                     DownloadsTable table = ((DownloadsPanel) ((DownloadsView) view).getContent()).getTable();
-                    FileColumn col = table.getExtTableModel().getColumnByClass(FileColumn.class);
-                    AbstractNode obj = table.getExtTableModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex());
+                    FileColumn col = table.getModel().getColumnByClass(FileColumn.class);
+                    AbstractNode obj = table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex());
                     col.startEditing(obj);
                 } else if (view instanceof LinkGrabberView) {
                     LinkGrabberTable table = ((LinkGrabberPanel) ((LinkGrabberView) view).getContent()).getTable();
-                    FileColumn col = table.getExtTableModel().getColumnByClass(FileColumn.class);
-                    AbstractNode obj = table.getExtTableModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex());
+                    FileColumn col = table.getModel().getColumnByClass(FileColumn.class);
+                    AbstractNode obj = table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex());
                     col.startEditing(obj);
                 }
             }

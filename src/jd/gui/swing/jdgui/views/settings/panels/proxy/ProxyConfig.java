@@ -173,7 +173,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                ProxyTable.export(table.getExtTableModel().getElements());
+                ProxyTable.export(table.getModel().getElements());
             }
         });
         // tb.add(, "height 26!,sg 2");
@@ -183,7 +183,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
             @Override
             public void valueChanged(final ListSelectionEvent e) {
                 boolean canremove = false;
-                java.util.List<ProxyInfo> selected = ProxyConfig.this.table.getExtTableModel().getSelectedObjects();
+                java.util.List<ProxyInfo> selected = ProxyConfig.this.table.getModel().getSelectedObjects();
                 if (selected != null) {
                     for (ProxyInfo pi : selected) {
                         if (pi.isRemote()) {
@@ -227,7 +227,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
 
                     @Override
                     protected void runInEDT() {
-                        table.getExtTableModel()._fireTableStructureChanged(ProxyController.getInstance().getList(), false);
+                        table.getModel()._fireTableStructureChanged(ProxyController.getInstance().getList(), false);
                         cb.setModel(ProxyController.getInstance().getList().toArray(new ProxyInfo[] {}));
                         cb.setValue(ProxyController.getInstance().getDefaultProxy());
 
@@ -292,7 +292,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
-                    table.getExtTableModel()._fireTableStructureChanged(ProxyController.getInstance().getList(), false);
+                    table.getModel()._fireTableStructureChanged(ProxyController.getInstance().getList(), false);
                     cb.setModel(ProxyController.getInstance().getList().toArray(new ProxyInfo[] {}));
                     cb.setValue(ProxyController.getInstance().getDefaultProxy());
                 };

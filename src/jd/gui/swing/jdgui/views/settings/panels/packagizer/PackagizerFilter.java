@@ -40,7 +40,7 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
 
         tb.add(btExport = new ExtButton(new ExportAction()), "height 26!,sg 2");
 
-        table.getExtTableModel().addTableModelListener(new TableModelListener() {
+        table.getModel().addTableModelListener(new TableModelListener() {
 
             public void tableChanged(TableModelEvent e) {
                 btExport.setEnabled(table.getRowCount() > 0);

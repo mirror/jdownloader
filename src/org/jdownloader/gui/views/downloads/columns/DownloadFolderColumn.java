@@ -18,6 +18,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
+import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     /**
@@ -50,7 +51,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     public boolean onRenameClick(MouseEvent e, AbstractNode clicked) {
         // JDGui.help(_GUI._.literall_usage_tipp(), _GUI._.DownloadFolderColumn_onSingleClick_object_(), NewTheme.I().getIcon("smart", 48));
 
-        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(clicked)).actionPerformed(null);
+        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(clicked, null, e, null, null, DownloadsTableModel.getInstance().getTable())).actionPerformed(null);
         return true;
     }
 

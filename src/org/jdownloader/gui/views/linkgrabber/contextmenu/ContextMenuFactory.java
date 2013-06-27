@@ -29,7 +29,7 @@ public class ContextMenuFactory {
 
     public JPopupMenu createPopup(AbstractNode context, java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent event) {
 
-        SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(context, selection, event, null, table);
+        SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(context, selection, event, null, null, table);
         si.setContextColumn(column);
 
         if (selection == null || selection.size() == 0) {

@@ -164,15 +164,15 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
                 }
                 filterPatterns = list;
 
-                table2Filter.getPackageControllerTableModel().addFilter(this);
+                table2Filter.getModel().addFilter(this);
 
             } catch (final Throwable e) {
                 Log.exception(e);
             }
         } else {
-            table2Filter.getPackageControllerTableModel().removeFilter(this);
+            table2Filter.getModel().removeFilter(this);
         }
-        table2Filter.getPackageControllerTableModel().recreateModel(true);
+        table2Filter.getModel().recreateModel(true);
 
     }
 

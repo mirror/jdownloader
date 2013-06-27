@@ -105,7 +105,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         }
         this.setBackground(new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor()));
 
-        this.getExtTableModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<Filter>(f2, b2, null) {
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<Filter>(f2, b2, null) {
 
             @Override
             public boolean accept(ExtColumn<Filter> column, Filter value, boolean selected, boolean focus, int row) {
@@ -117,7 +117,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         this.addRowHighlighter(new AlternateHighlighter(null, ColorUtils.getAlphaInstance(new JLabel().getForeground(), 6)));
 
         // this.addRowHighlighter(new SelectionHighlighter(null, b2));
-        // this.getExtTableModel().addExtComponentRowHighlighter(new
+        // this.getModel().addExtComponentRowHighlighter(new
         // ExtComponentRowHighlighter<T>(f2, b2, null) {
         //
         // @Override
@@ -159,17 +159,17 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
                 java.util.List<Filter> selection = getSelectedFilters();
                 java.util.List<AbstractNode> newSelection = getMatches(selection);
 
-                getLinkgrabberTable().getExtTableModel().setSelectedObjects(newSelection);
+                getLinkgrabberTable().getModel().setSelectedObjects(newSelection);
             }
         }
     }
 
     private java.util.List<Filter> getSelectedFilters() {
-        java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
+        java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getModel().getTableFilters();
         java.util.List<Filter> ret = new ArrayList<Filter>();
         for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
             if (f instanceof FilterTable) {
-                ret.addAll(((FilterTable) f).getExtTableModel().getSelectedObjects());
+                ret.addAll(((FilterTable) f).getModel().getSelectedObjects());
             }
         }
 
@@ -205,16 +205,16 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
             ret.add(f.getName());
         }
 
-        popup.add(new EnabledAllAction(getExtTableModel().getSelectedObjects()));
-        java.util.List<Filter> nonSel = new ArrayList<Filter>(getExtTableModel().getTableData());
-        for (Filter f : getExtTableModel().getSelectedObjects()) {
+        popup.add(new EnabledAllAction(getModel().getSelectedObjects()));
+        java.util.List<Filter> nonSel = new ArrayList<Filter>(getModel().getTableData());
+        for (Filter f : getModel().getSelectedObjects()) {
             nonSel.remove(f);
         }
 
         // if
         // (org.jdownloader.settings.statics.LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue())
         // {
-        SelectionInfo<CrawledPackage, CrawledLink> matches = new SelectionInfo<CrawledPackage, CrawledLink>(getMatches(getSelectedFilters()));
+        SelectionInfo<CrawledPackage, CrawledLink> matches = new SelectionInfo<CrawledPackage, CrawledLink>(null, getMatches(getSelectedFilters()), mouseEvent, null, null, null);
         popup.add(new ConfirmAction(matches));
         popup.add(new MergeToPackageAction(matches));
         popup.add(new CreateDLCAction(matches));
@@ -252,7 +252,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
 
     @Override
     protected boolean onSingleClick(MouseEvent e, Filter obj) {
-        java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
+        java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getModel().getTableFilters();
 
         if (!e.isControlDown()) {
             for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
@@ -271,7 +271,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         case KeyEvent.VK_ENTER:
         case KeyEvent.VK_BACK_SPACE:
         case KeyEvent.VK_DELETE:
-            new EnabledAllAction(getExtTableModel().getSelectedObjects()).actionPerformed(null);
+            new EnabledAllAction(getModel().getSelectedObjects()).actionPerformed(null);
             return true;
         case KeyEvent.VK_X:
         case KeyEvent.VK_V:
@@ -299,13 +299,13 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         filters = newData;
         if (visibleKeyHandler.getValue()) {
             //
-            getExtTableModel()._fireTableStructureChanged(newData, true);
+            getModel()._fireTableStructureChanged(newData, true);
         }
 
     }
 
     protected int getCountWithout(Filter filter, java.util.List<CrawledLink> filteredLinks) {
-        java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
+        java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getModel().getTableFilters();
         int ret = 0;
         main: for (CrawledLink l : filteredLinks) {
             if (filter.isFiltered(l)) {
@@ -350,13 +350,13 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     }
 
     protected List<CrawledLink> getVisibleLinks() {
-        return ((PackageControllerTableModel<CrawledPackage, CrawledLink>) linkgrabberTable.getExtTableModel()).getAllChildrenNodes();
+        return ((PackageControllerTableModel<CrawledPackage, CrawledLink>) linkgrabberTable.getModel()).getAllChildrenNodes();
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         if (Boolean.TRUE.equals(newValue) && org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarEnabled()) {
             enabled = true;
-            linkgrabberTable.getPackageControllerTableModel().addFilter(this);
+            linkgrabberTable.getModel().addFilter(this);
 
             this.linkgrabberTable.getModel().addTableModelListener(listener);
             super.setVisible(true);
@@ -366,15 +366,15 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
             enabled = false;
             /* filter disabled */
 
-            linkgrabberTable.getPackageControllerTableModel().removeFilter(this);
+            linkgrabberTable.getModel().removeFilter(this);
             super.setVisible(false);
         }
         updateAllFiltersInstant();
-        linkgrabberTable.getPackageControllerTableModel().recreateModel(false);
+        linkgrabberTable.getModel().recreateModel(false);
     }
 
     protected void updateAllFiltersInstant() {
-        java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
+        java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getModel().getTableFilters();
 
         for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
             if (f instanceof FilterTable) {

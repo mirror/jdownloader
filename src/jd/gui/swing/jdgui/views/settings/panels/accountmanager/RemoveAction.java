@@ -35,7 +35,7 @@ public class RemoveAction extends AbstractRemoveAction {
 
     public void actionPerformed(ActionEvent e) {
         List<AccountEntry> selection = this.selection;
-        if (selection == null && this.table != null) selection = table.getExtTableModel().getSelectedObjects();
+        if (selection == null && this.table != null) selection = table.getModel().getSelectedObjects();
         if (selection != null && selection.size() > 0) {
             final List<AccountEntry> fselection = selection;
             IOEQ.add(new Runnable() {

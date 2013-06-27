@@ -52,27 +52,27 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
         addRowHighlighter(new ExtOverlayRowHighlighter(null, new Color(255, 80, 0, opacity)) {
             @Override
             public boolean doHighlight(ExtTable<?> extTable, int row) {
-                return getExtTableModel().getObjectbyRow(row).isMissing();
+                return getModel().getObjectbyRow(row).isMissing();
             }
         });
         addRowHighlighter(new ExtOverlayRowHighlighter(null, new Color(255, 0, 0, opacity)) {
             @Override
             public boolean doHighlight(ExtTable<?> extTable, int row) {
-                return getExtTableModel().getObjectbyRow(row).isParameterInvalid();
+                return getModel().getObjectbyRow(row).isParameterInvalid();
             }
         });
         addRowHighlighter(new ExtOverlayRowHighlighter(null, new Color(255, 255, 80, opacity)) {
             @Override
             public boolean doHighlight(ExtTable<?> extTable, int row) {
 
-                TranslateEntry e = getExtTableModel().getObjectbyRow(row);
+                TranslateEntry e = getModel().getObjectbyRow(row);
                 return e.isDefault();
             }
         });
         addRowHighlighter(new ExtOverlayRowHighlighter(null, new Color(0, 255, 80, opacity)) {
             @Override
             public boolean doHighlight(ExtTable<?> extTable, int row) {
-                TranslateEntry e = getExtTableModel().getObjectbyRow(row);
+                TranslateEntry e = getModel().getObjectbyRow(row);
                 return (e.isOK() && !e.isDefault());
             }
         });
@@ -116,7 +116,7 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
 
     public void updaterFilter(SearchField searchField) {
 
-        ((TranslateTableModel) getExtTableModel()).updateFilter(searchField);
+        ((TranslateTableModel) getModel()).updateFilter(searchField);
     }
 
 }

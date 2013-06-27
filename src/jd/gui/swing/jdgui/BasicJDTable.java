@@ -39,7 +39,7 @@ public class BasicJDTable<T> extends ExtTable<T> {
         }
         this.setBackground(new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor()));
 
-        this.getExtTableModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(f2, b2, null) {
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(f2, b2, null) {
 
             @Override
             public boolean accept(ExtColumn<T> column, T value, boolean selected, boolean focus, int row) {

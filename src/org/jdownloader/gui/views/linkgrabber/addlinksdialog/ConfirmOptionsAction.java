@@ -60,9 +60,9 @@ public class ConfirmOptionsAction extends AbstractAction {
             }
         }));
         // selected.add(new JMenuItem(new ConfirmAction(false,
-        // table.getExtTableModel().getSelectedObjects())));
+        // table.getModel().getSelectedObjects())));
         // selected.add(new JMenuItem(new ConfirmAction(true,
-        // table.getExtTableModel().getSelectedObjects())));
+        // table.getModel().getSelectedObjects())));
         int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
         JComponent comp = (JComponent) e.getSource();
 

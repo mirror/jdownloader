@@ -45,14 +45,14 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
         onGuiMainTabSwitch(null, MainTabbedPane.getInstance().getSelectedView());
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(final ActionEvent e) {
         if (JDGui.getInstance().isCurrentPanel(Panels.LINKGRABBER)) {
             IOEQ.add(new Runnable() {
                 public void run() {
                     switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
                     case ADD_ALL_LINKS_AND_START_DOWNLOADS:
                         java.util.List<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
-                        ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(packages));
+                        ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, packages, null, null, e, LinkGrabberTableModel.getInstance().getTable()));
                         ca.setAutostart(true);
                         ca.actionPerformed(null);
                         break;

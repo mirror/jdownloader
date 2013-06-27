@@ -33,7 +33,7 @@ public class RemoveAction extends AbstractRemoveAction {
 
     public void actionPerformed(ActionEvent e) {
         if (selection == null) {
-            selection = ((AuthTableModel) table.getExtTableModel()).getSelectedObjects();
+            selection = ((AuthTableModel) table.getModel()).getSelectedObjects();
         }
         IOEQ.add(new Runnable() {
             public void run() {

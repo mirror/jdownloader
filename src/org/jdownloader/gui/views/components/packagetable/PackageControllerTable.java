@@ -13,6 +13,7 @@ import java.util.ArrayList;
 
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
+import javax.swing.table.TableModel;
 
 import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -22,6 +23,7 @@ import jd.controlling.packagecontroller.PackageController;
 import jd.gui.swing.jdgui.BasicJDTable;
 import jd.gui.swing.laf.LookAndFeelController;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
@@ -55,8 +57,17 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         initAppActions();
     }
 
-    public PackageControllerTableModel<ParentType, ChildrenType> getPackageControllerTableModel() {
-        return tableModel;
+    @SuppressWarnings("unchecked")
+    public PackageControllerTableModel<ParentType, ChildrenType> getModel() {
+        return (PackageControllerTableModel<ParentType, ChildrenType>) super.getModel();
+    }
+
+    public void setModel(TableModel dataModel) {
+        if (dataModel instanceof PackageControllerTableModel) {
+            super.setModel(dataModel);
+        } else {
+            throw new WTFException("The Model is not instanceof PackageControllerTableModel!");
+        }
     }
 
     public PackageController<ParentType, ChildrenType> getController() {
@@ -85,12 +96,12 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     protected boolean updateMoveButtonEnabledStatus() {
-        if (getPackageControllerTableModel().isFilteredView()) return false;
+        if (getModel().isFilteredView()) return false;
         return true;
     }
 
     protected boolean moveUpPossible(java.util.List<ParentType> pkgs, java.util.List<ChildrenType> selectedChld) {
-        if (getPackageControllerTableModel().isFilteredView()) return false;
+        if (getModel().isFilteredView()) return false;
         if (pkgs.size() > 0 && selectedChld.size() > 0) {
             /* we don't allow moving of packages/children at the same time */
             return false;
@@ -116,7 +127,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     protected boolean moveDownPossible(java.util.List<ParentType> pkgs, java.util.List<ChildrenType> selectedChld) {
-        if (getPackageControllerTableModel().isFilteredView()) return false;
+        if (getModel().isFilteredView()) return false;
         if (pkgs.size() > 0 && selectedChld.size() > 0) {
             /* we don't allow moving of packages/children at the same time */
             return false;
@@ -365,7 +376,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         switch (evt.getKeyCode()) {
         case KeyEvent.VK_KP_LEFT:
         case KeyEvent.VK_LEFT: {
-            AbstractNode element = this.getPackageControllerTableModel().getElementAt(this.getSelectedRow());
+            AbstractNode element = this.getModel().getElementAt(this.getSelectedRow());
             if (element != null && element instanceof AbstractPackageNode) {
                 tableModel.setFilePackageExpand((AbstractPackageNode<?, ?>) element, false);
                 return true;
@@ -374,7 +385,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             break;
         case KeyEvent.VK_KP_RIGHT:
         case KeyEvent.VK_RIGHT: {
-            AbstractNode element = this.getPackageControllerTableModel().getElementAt(this.getSelectedRow());
+            AbstractNode element = this.getModel().getElementAt(this.getSelectedRow());
             if (element != null && element instanceof AbstractPackageNode) {
                 tableModel.setFilePackageExpand((AbstractPackageNode<?, ?>) element, true);
                 return true;
@@ -450,14 +461,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     public boolean isOriginalOrder() {
-        return getExtTableModel().getSortColumn() == null;
+        return getModel().getSortColumn() == null;
     }
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         boolean filteredView = filterNotifyColor != null && tableModel.isFilteredView();
-        ExtColumn<AbstractNode> sortColumn = getExtTableModel().getSortColumn();
+        ExtColumn<AbstractNode> sortColumn = getModel().getSortColumn();
         int filteredColumn = -1;
         if (sortNotifyColor != null && sortColumn != null) {
             filteredColumn = sortColumn.getIndex();
@@ -474,7 +485,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         if (filteredColumn >= 0 && tableModel.isTristateSorterEnabled()) {
             Rectangle first = this.getCellRect(0, filteredColumn, true);
             g2.setColor(sortNotifyColor);
-            g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getExtTableModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
+            g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
         }
         g2.setComposite(comp);
     }
@@ -484,7 +495,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         final java.util.List<ParentType> ret = new ArrayList<ParentType>();
         final int[] rows = this.getSelectedRows();
         for (final int row : rows) {
-            final AbstractNode node = getExtTableModel().getObjectbyRow(row);
+            final AbstractNode node = getModel().getObjectbyRow(row);
             if (node != null && node instanceof AbstractPackageNode<?, ?>) {
                 ret.add((ParentType) node);
             }
@@ -497,7 +508,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         final java.util.List<ChildrenType> ret = new ArrayList<ChildrenType>();
         final int[] rows = this.getSelectedRows();
         for (final int row : rows) {
-            final AbstractNode node = getExtTableModel().getObjectbyRow(row);
+            final AbstractNode node = getModel().getObjectbyRow(row);
             if (node != null && node instanceof AbstractPackageChildrenNode<?>) {
                 ret.add((ChildrenType) node);
             }

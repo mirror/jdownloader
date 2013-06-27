@@ -45,7 +45,7 @@ public class ConfirmOptionsAction extends AbstractAction {
         selected.setIcon(NewTheme.I().getIcon("confirmSelectedLinks", 16));
         all.add(new JMenuItem(new ConfirmAllAction(false).setAccelerator(null)));
         all.add(new JMenuItem(new ConfirmAllAction(true).setAccelerator(null)));
-        SelectionInfo<CrawledPackage, CrawledLink> selection = new SelectionInfo<CrawledPackage, CrawledLink>(table.getExtTableModel().getSelectedObjects());
+        SelectionInfo<CrawledPackage, CrawledLink> selection = new SelectionInfo<CrawledPackage, CrawledLink>(null, table.getModel().getSelectedObjects(), null, null, e, table);
         selected.add(new JMenuItem(new ConfirmAction(selection).setAutostart(false).setAccelerator(null)));
         ConfirmAction action = new ConfirmAction(selection);
         action.setAutostart(true);

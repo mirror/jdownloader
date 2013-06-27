@@ -35,7 +35,7 @@ public class RemoveAction extends AbstractRemoveAction {
         if (!rly(_JDT._.RemoveAction_actionPerformed_rly_msg())) return;
         remove = selected;
         if (remove == null) {
-            remove = getTable().getExtTableModel().getSelectedObjects();
+            remove = getTable().getModel().getSelectedObjects();
         }
         if (remove != null && remove.size() > 0) {
             IOEQ.add(new Runnable() {
@@ -44,7 +44,7 @@ public class RemoveAction extends AbstractRemoveAction {
                     for (LinkgrabberFilterRule lf : remove) {
                         LinkFilterController.getInstance().remove(lf);
                     }
-                    getTable().getExtTableModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
+                    getTable().getModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
                 }
 
             }, true);
