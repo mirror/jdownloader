@@ -17,7 +17,6 @@ import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.downloadcontroller.DownloadInformations;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
@@ -62,7 +61,6 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
         this.setName("INFODIALOG");
         this.setAlwaysOnTop(true);
-        this.setLocation(GUIUtils.getLastLocation(SwingGui.getInstance().getMainFrame(), this));
 
         initGui();
 

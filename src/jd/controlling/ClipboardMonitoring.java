@@ -10,7 +10,6 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
@@ -221,6 +220,7 @@ public class ClipboardMonitoring {
         } catch (final Throwable e) {
             return "";
         }
+        if (currentContent == null) return "";
         String stringContent = null;
         try {
             stringContent = getStringTransferData(currentContent);
@@ -336,6 +336,7 @@ public class ClipboardMonitoring {
             /* we found a flavor for html content, lets fetch its content */
             final String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
             byte[] htmlBytes = (byte[]) transferable.getTransferData(htmlFlavor);
+            if (htmlBytes == null || htmlBytes.length == 0) return null;
             if (CrossSystem.isLinux()) {
                 /*
                  * workaround for firefox bug https://bugzilla .mozilla.org/show_bug .cgi?id=385421
@@ -422,52 +423,53 @@ public class ClipboardMonitoring {
     }
 
     public static String getStringTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
-        if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) { return (String) transferable.getTransferData(DataFlavor.stringFlavor); }
+        if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+            Object ret = transferable.getTransferData(DataFlavor.stringFlavor);
+            if (ret == null) return null;
+            return (String) ret;
+        }
         return null;
     }
 
     public static String getURLTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
-        if (urlFlavor != null && transferable.isDataFlavorSupported(urlFlavor)) { return ((URL) transferable.getTransferData(urlFlavor)).toString(); }
+        if (urlFlavor != null && transferable.isDataFlavorSupported(urlFlavor)) {
+            Object ret = transferable.getTransferData(urlFlavor);
+            if (ret == null) return null;
+            URL url = (URL) ret;
+            if (StringUtils.isEmpty(url.getFile())) return null;
+            return url.toExternalForm();
+        }
         return null;
     }
 
     @SuppressWarnings("unchecked")
     public static String getListTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException, URISyntaxException {
+        final StringBuilder sb = new StringBuilder("");
         if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-            final List<File> list = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
-            final StringBuilder sb = new StringBuilder("");
-            boolean isWindows = CrossSystem.isWindows();
-            for (final File f : list) {
-                String path = f.getPath();
-                if (isWindows) {
-                    /* windows paths must start with driveLetter: */
-                    if (!path.matches("^[a-zA-Z]:.+")) continue;
-                } else {
-                    /* linux and mac must start with / */
-                    if (!path.matches("^/.+")) continue;
-                }
-                if (sb.length() > 0) sb.append("\r\n");
-                sb.append("file://" + path);
-            }
-            if (sb.length() == 0) return null;
-            return sb.toString();
-        } else if (uriListFlavor != null && transferable.isDataFlavorSupported(uriListFlavor)) {
-            /* url-lists are defined by rfc 2483 as crlf-delimited */
-            final StringTokenizer izer = new StringTokenizer((String) transferable.getTransferData(uriListFlavor), "\r\n");
-            final StringBuilder sb = new StringBuilder("");
-            while (izer.hasMoreTokens()) {
-                if (sb.length() > 0) sb.append("\r\n");
-                final URI fi = new URI(izer.nextToken());
-                if (fi.getScheme() != null && (fi.getScheme().contains("http") || fi.getScheme().contains("ftp"))) {
-                    sb.append(fi.toString());
-                } else {
-                    sb.append(fi.getPath());
+            Object ret = transferable.getTransferData(DataFlavor.javaFileListFlavor);
+            if (ret != null) {
+                final List<File> list = (List<File>) ret;
+                for (final File f : list) {
+                    if (!f.isAbsolute()) continue;
+                    if (sb.length() > 0) sb.append("\r\n");
+                    sb.append("file://" + f.getPath());
                 }
             }
-            if (sb.length() == 0) return null;
-            return sb.toString();
         }
-        return null;
+        if (uriListFlavor != null && transferable.isDataFlavorSupported(uriListFlavor)) {
+            /* url-lists are defined by rfc 2483 as crlf-delimited */
+            Object ret = transferable.getTransferData(uriListFlavor);
+            if (ret != null) {
+                final StringTokenizer izer = new StringTokenizer((String) ret, "\r\n");
+                while (izer.hasMoreTokens()) {
+                    if (sb.length() > 0) sb.append("\r\n");
+                    String next = izer.nextToken();
+                    if (StringUtils.isNotEmpty(next)) sb.append(next);
+                }
+            }
+        }
+        if (sb.length() == 0) return null;
+        return sb.toString();
     }
 
     /**
@@ -487,6 +489,7 @@ public class ClipboardMonitoring {
         for (final DataFlavor flav : transferable.getTransferDataFlavors()) {
             if (flav.getMimeType().contains("x-moz-url-priv") && flav.getRepresentationClass().isAssignableFrom(byte[].class)) {
                 byte[] xmozurlprivBytes = (byte[]) transferable.getTransferData(flav);
+                if (xmozurlprivBytes == null || xmozurlprivBytes.length == 0) return null;
                 if (CrossSystem.isLinux()) {
                     /*
                      * workaround for firefox bug https://bugzilla .mozilla.org/show_bug .cgi?id=385421

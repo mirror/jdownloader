@@ -610,8 +610,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     protected void onErrorLocalIO() {
-        downloadLogger.severe("LOCALIO Error on: " + downloadLink.getFileOutput() + " -> disable link!");
-        downloadLink.setEnabled(false);
+        downloadLogger.severe("LOCALIO Error on: " + downloadLink.getFileOutput());
+        downloadLink.setSkipReason(SkipReason.INVALID_DESTINATION);
     }
 
     protected void onErrorDownloadTemporarilyUnavailable() {
@@ -619,8 +619,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         }
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss
-         * in ms. value==0 macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
+         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());

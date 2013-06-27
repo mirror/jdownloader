@@ -157,6 +157,12 @@ public class JDGui extends SwingGui {
 
     private TrayExtension           tray;
 
+    private Thread                  initThread = null;
+
+    public Thread getInitThread() {
+        return initThread;
+    }
+
     public MainFrameClosingHandler getClosingHandler() {
         return closingHandler;
     }
@@ -206,6 +212,7 @@ public class JDGui extends SwingGui {
                 if (abstractDialog.getDialog().getParent() != null && abstractDialog.getDialog().getParent().isShowing()) { return AbstractDialog.LOCATE_CENTER_OF_SCREEN.getLocationOnScreen(abstractDialog); }
                 GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
                 Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.getDefaultConfiguration());
+                /* WARNING: this can cause deadlock under linux EDT/XAWT */
                 final Rectangle bounds = gd.getDefaultConfiguration().getBounds();
                 bounds.y += insets.top;
                 bounds.x += insets.left;
@@ -230,13 +237,20 @@ public class JDGui extends SwingGui {
         this.layoutComponents();
         this.mainFrame.pack();
         Dialog.getInstance().setParentOwner(this.mainFrame);
-        this.initLocationAndDimension();
-        this.mainFrame.setVisible(true);
-        initToolTipSettings();
 
-        if (this.mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
-            ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) this.mainFrame.getRootPane().getUI()).setMaximizedBounds(this.mainFrame);
-        }
+        initThread = new Thread("initLocationAndDimension") {
+            @Override
+            public void run() {
+                try {
+                    initLocationAndDimension();
+                } finally {
+                    initThread = null;
+                }
+            }
+        };
+        initThread.start();
+
+        initToolTipSettings();
 
         mainFrame.addWindowListener(new WindowListener() {
 
@@ -674,15 +688,19 @@ public class JDGui extends SwingGui {
     }
 
     /**
+     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT and only put the
+     * mainframe stuff into EDT
+     * 
      * restores the dimension and location to the window
      */
     private void initLocationAndDimension() {
 
-        FrameStatus status = JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus();
+        FrameStatus stat = JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus();
 
-        if (status == null) {
-            status = new FrameStatus();
+        if (stat == null) {
+            stat = new FrameStatus();
         }
+        final FrameStatus status = stat;
         Dimension dim = null;
         if (status.getWidth() > 0 && status.getHeight() > 0) {
             dim = new Dimension(status.getWidth(), status.getHeight());
@@ -690,9 +708,6 @@ public class JDGui extends SwingGui {
         if (dim == null) {
             dim = new Dimension(1024, 728);
         }
-        this.mainFrame.setPreferredSize(dim);
-        this.mainFrame.setSize(dim);
-        this.mainFrame.setMinimumSize(new Dimension(400, 100));
 
         Point loc = new Point(status.getX(), status.getY());
         GraphicsDevice lastScreen = null;
@@ -728,14 +743,9 @@ public class JDGui extends SwingGui {
         }
 
         if (!status.isLocationSet()) {
-            this.mainFrame.setLocation(Screen.getCenterOfComponent(null, mainFrame));
-        } else {
-
-            if (lastScreen != null) {
-                mainFrame.setLocation(loc);
-            } else {
-                this.mainFrame.setLocation(Screen.getCenterOfComponent(null, mainFrame));
-            }
+            loc = Screen.getCenterOfComponent(null, mainFrame);
+        } else if (lastScreen == null) {
+            loc = Screen.getCenterOfComponent(null, mainFrame);
         }
 
         // try to find offscreen
@@ -772,54 +782,43 @@ public class JDGui extends SwingGui {
             }
 
         }
+        final Point finalLocation;
         if (!isok) {
-            this.mainFrame.setPreferredSize(new Dimension(800, 600));
-            this.mainFrame.setSize(new Dimension(800, 600));
-            loc = Screen.getCenterOfComponent(null, mainFrame);
-            this.mainFrame.setLocation(loc);
+            finalLocation = Screen.getCenterOfComponent(null, mainFrame);
+            dim = new Dimension(800, 600);
+        } else {
+            finalLocation = loc;
         }
-
-        // if (status.isSilentShutdown() && Application.getJavaVersion() >=
-        // 17000000) {
-        // try {
-        // // has no effect yet? maybe later in 1.7
-        // mainFrame.setAutoRequestFocus(false);
-        // } catch (Throwable e) {
-        //
-        // Log.exception(e);
-        // }
-        // }
-        // if (Application.getJavaVersion() >= 17000000) {
-        // // we can ope frames in background
-        // if (status.getExtendedState() == ExtendedState.ICONIFIED) {
-        // this.mainFrame.setExtendedState(Frame.NORMAL);
-        // } else {
-        // this.mainFrame.setExtendedState(status.getExtendedState().getId());
-        // }
-        //
-        // } else {
-
+        Integer state = null;
         if (status.isSilentShutdown() && !status.isActive()) {
-
             // else frame would jump to the front
-            this.mainFrame.setExtendedState(Frame.ICONIFIED);
+            state = Frame.ICONIFIED;
         } else {
             if (status.getExtendedState() == ExtendedState.ICONIFIED) {
-
-                this.mainFrame.setExtendedState(Frame.NORMAL);
-
+                state = Frame.NORMAL;
             } else {
-
-                this.mainFrame.setExtendedState(status.getExtendedState().getId());
-
+                state = status.getExtendedState().getId();
             }
         }
-        //
-        // }
+        final Dimension finalDim = dim;
+        final Integer finalState = state;
+        new EDTRunner() {
 
-        if (this.mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
-            ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) this.mainFrame.getRootPane().getUI()).setMaximizedBounds(this.mainFrame);
-        }
+            @Override
+            protected void runInEDT() {
+                if (finalLocation != null) mainFrame.setLocation(finalLocation);
+                mainFrame.setMinimumSize(new Dimension(400, 100));
+                mainFrame.setSize(finalDim);
+                mainFrame.setPreferredSize(finalDim);
+                if (finalState != null) mainFrame.setExtendedState(finalState);
+
+                mainFrame.setVisible(true);
+
+                if (mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
+                    ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
+                }
+            }
+        }.waitForEDT();
 
     }
 
@@ -1264,8 +1263,8 @@ public class JDGui extends SwingGui {
     private Thread trayIconChecker;
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
-     * avoid sideeffects when changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
+     * changing anything
      * 
      * @param minimize
      */

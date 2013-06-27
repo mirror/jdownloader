@@ -144,6 +144,7 @@ public class IconBadgePainter {
 
         final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         final GraphicsDevice gd = ge.getDefaultScreenDevice();
+        /* WARNING: this can cause deadlock under linux and EDT/XAWT */
         final GraphicsConfiguration gc = gd.getDefaultConfiguration();
         final BufferedImage img = gc.createCompatibleImage(back.getWidth(null), back.getHeight(null), Transparency.TRANSLUCENT);
         final Graphics2D g2 = img.createGraphics();

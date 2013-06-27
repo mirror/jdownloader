@@ -56,6 +56,8 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ContainerDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.images.NewTheme;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
@@ -262,19 +264,19 @@ public class FreeWayMe extends PluginForHost {
             final Object supported = ai.getProperty("multiHostSupport", Property.NULL);
             if (supported != null) {
                 final HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-                Set<String> unavailableHosts = new HashSet();
+                Set<String> unavailableHosts = new HashSet<String>();
                 if (unavailableMap != null) {
                     unavailableHosts.addAll(unavailableMap.keySet());
                 }
                 String windowTitleLangText = null;
-                ArrayList<String> supportedHosts = (ArrayList) supported;
+                ArrayList<String> supportedHosts = (ArrayList<String>) supported;
                 final String lang = System.getProperty("user.language");
                 final String accType = ai.getStringProperty("acctype", null);
                 final String maxSimultanDls = account.getStringProperty("parallel", null);
 
                 Map<String, String> displayInfos = new HashMap<String, String>();
                 String accountCaption = "";
-                Set<MultihostContainer> hostList = new HashSet();
+                Set<MultihostContainer> hostList = new HashSet<MultihostContainer>();
                 for (String host : supportedHosts) {
                     if (host.equals("uploaded.net") || host.equals("ul.to")) {
                         host = "uploaded.to";
@@ -344,7 +346,10 @@ public class FreeWayMe extends PluginForHost {
                 panel.add(spTable, c);
 
                 ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panel, null, "Close", "");
-                dialog.show();
+                try {
+                    Dialog.getInstance().showDialog(dialog);
+                } catch (DialogNoAnswerException e) {
+                }
             }
         }
 

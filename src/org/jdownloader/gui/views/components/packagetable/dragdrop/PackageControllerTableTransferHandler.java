@@ -3,7 +3,6 @@ package org.jdownloader.gui.views.components.packagetable.dragdrop;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.InputEvent;
-import java.util.ArrayList;
 
 import javax.swing.JComponent;
 import javax.swing.JTable;

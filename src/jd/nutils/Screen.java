@@ -24,22 +24,31 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 
+import org.appwork.utils.swing.EDTHelper;
+
 public class Screen {
 
     /**
-     * Liefert einen Punkt zurueck, mit dem eine Komponente auf eine andere
-     * zentriert werden kann
+     * Liefert einen Punkt zurueck, mit dem eine Komponente auf eine andere zentriert werden kann
      * 
      * @param parent
      *            Die Komponente, an der ausgerichtet wird
      * @param child
      *            Die Komponente die ausgerichtet werden soll
-     * @return Ein Punkt, mit dem diese Komponente mit der setLocation Methode
-     *         zentriert dargestellt werden kann
+     * @return Ein Punkt, mit dem diese Komponente mit der setLocation Methode zentriert dargestellt werden kann
      */
-    public static Point getCenterOfComponent(Component parent, Component child) {
-        Point center;
-        if (parent == null || !parent.isShowing()) {
+    public static Point getCenterOfComponent(final Component parent, Component child) {
+        Point center = new EDTHelper<Point>() {
+
+            @Override
+            public Point edtRun() {
+                if (parent != null && parent.isShowing()) { return parent.getLocationOnScreen(); }
+                return null;
+            }
+
+        }.getReturnValue();
+
+        if (center == null) {
             // use default screen device instead of toolkit screensizes. This
             // should have the same behaviour on all systems
             final GraphicsDevice ge = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
@@ -49,7 +58,6 @@ public class Screen {
             int height = screenSize.height;
             center = new Point(screenSize.x + width / 2, screenSize.y + height / 2);
         } else {
-            center = parent.getLocationOnScreen();
             center.x += parent.getWidth() / 2;
             center.y += parent.getHeight() / 2;
         }

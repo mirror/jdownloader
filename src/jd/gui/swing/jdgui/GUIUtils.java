@@ -20,13 +20,10 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 
 import javax.swing.JFrame;
-
-import jd.nutils.Screen;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
@@ -51,24 +48,6 @@ public class GUIUtils {
         }
 
         return null;
-    }
-
-    public static Point getLastLocation(Component parent, Component child) {
-        String key = child.getName();
-
-        if (STORAGE.hasProperty("location." + key + ".x") && STORAGE.hasProperty("location." + key + ".y")) {
-            Integer x = STORAGE.get("location." + key + ".x", -1);
-            Integer y = STORAGE.get("location." + key + ".y", -1);
-
-            GraphicsDevice screen = getScreenDevice(x, y);
-            if (screen != null) return new Point(x, y);
-        }
-        if (parent != null) {
-            Point center = Screen.getCenterOfComponent(parent, child);
-            GraphicsDevice screen = getScreenDevice(center.x, center.y);
-            if (screen != null) return center;
-        }
-        return Screen.getCenterOfComponent(null, child);
     }
 
     /**

@@ -662,6 +662,16 @@ public class SecondLevelLaunch {
             thread.join(10000);
         } catch (InterruptedException e) {
         }
+        while (true) {
+            Thread initThread = JDGui.getInstance().getInitThread();
+            if (initThread == null || initThread.isAlive() == false) break;
+            try {
+                initThread.join(100);
+            } catch (InterruptedException e1) {
+                SecondLevelLaunch.LOG.log(e1);
+                break;
+            }
+        }
         if (!JDGui.getInstance().getMainFrame().isVisible()) {
             ShutdownController.getInstance().requestShutdown(true);
             return;

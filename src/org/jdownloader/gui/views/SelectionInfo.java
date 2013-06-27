@@ -137,7 +137,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         LinkedHashSet<PackageType> allPkg = new LinkedHashSet<PackageType>();
         LinkedHashSet<PackageType> fullPkg = new LinkedHashSet<PackageType>();
         LinkedHashSet<PackageType> incPkg = new LinkedHashSet<PackageType>();
-
         for (AbstractNode node : raw) {
 
             if (node instanceof AbstractPackageChildrenNode) {
@@ -345,8 +344,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe {@link #getChildren()}
-     * instead
+     * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe {@link #getChildren()} instead
      * 
      * @return
      */
@@ -364,8 +362,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Not all links of a package may have been selected @see ( {@link #getIncompletePackages()}. to get a list of all selected links for a
-     * certain package, use this method
+     * Not all links of a package may have been selected @see ( {@link #getIncompletePackages()}. to get a list of all selected links for a certain package, use
+     * this method
      * 
      * @param pkg
      * @return
