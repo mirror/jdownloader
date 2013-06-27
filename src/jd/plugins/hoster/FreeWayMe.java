@@ -17,14 +17,12 @@
 package jd.plugins.hoster;
 
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -65,12 +63,13 @@ public class FreeWayMe extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
+    // we can switch to BETAENCODING next days if there are no problems, otherwise we have to switch back
     private final String                                   USEBETAENCODING    = "USEBETAENCODING";
 
     public FreeWayMe(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(1 * 1000l);
-        setConfigElements();
+        // setConfigElements();
         this.enablePremium("https://www.free-way.me/premium");
     }
 
@@ -90,7 +89,7 @@ public class FreeWayMe extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        boolean betaEncoding = this.getPluginConfig().getBooleanProperty(USEBETAENCODING, false);
+        boolean betaEncoding = true;// this.getPluginConfig().getBooleanProperty(USEBETAENCODING, false);
 
         AccountInfo ac = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
@@ -193,7 +192,7 @@ public class FreeWayMe extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
-        boolean betaEncoding = this.getPluginConfig().getBooleanProperty(USEBETAENCODING, false);
+        boolean betaEncoding = true;// this.getPluginConfig().getBooleanProperty(USEBETAENCODING, false);
         String user = (betaEncoding) ? Encoding.urlTotalEncode(acc.getUser()) : Encoding.urlEncode(acc.getUser());
         String pw = (betaEncoding) ? Encoding.urlTotalEncode(acc.getPass()) : Encoding.urlEncode(acc.getPass());
         final String url = (betaEncoding) ? Encoding.urlTotalEncode(link.getDownloadURL()) : Encoding.urlEncode(link.getDownloadURL());
@@ -274,9 +273,8 @@ public class FreeWayMe extends PluginForHost {
                 final String accType = ai.getStringProperty("acctype", null);
                 final String maxSimultanDls = account.getStringProperty("parallel", null);
 
-                Map<String, String> displayInfos = new HashMap<String, String>();
-                String accountCaption = "";
                 Set<MultihostContainer> hostList = new HashSet<MultihostContainer>();
+
                 for (String host : supportedHosts) {
                     if (host.equals("uploaded.net") || host.equals("ul.to")) {
                         host = "uploaded.to";
@@ -285,72 +283,123 @@ public class FreeWayMe extends PluginForHost {
                     if (unavailableHosts != null && unavailableHosts.contains(host)) container.setIsWorking(false);
                     hostList.add(container);
                 }
+
+                /* it manages new panel */
+                PanelGenerator panelGenerator = new PanelGenerator();
+
+                JLabel hostLabel = new JLabel("<html><b>" + account.getHoster() + "</b></html>");
+                hostLabel.setIcon(account.getDomainInfo().getFavIcon());
+                panelGenerator.addLabel(hostLabel);
+
                 if ("de".equalsIgnoreCase(lang)) {
-                    windowTitleLangText = "Account Zusatzinformationen für " + account.getUser();
-                    displayInfos.put("Account Typ: ", accType);
-                    if (maxSimultanDls != null) displayInfos.put("Max. Anzahl gleichz. Downloads: ", maxSimultanDls);
-                    accountCaption = "Unterstützte Hoster [" + hostList.size() + "]:\r\n\r\n";
+                    windowTitleLangText = "Account Zusatzinformationen";
+
+                    panelGenerator.addCategory("Account");
+                    panelGenerator.addEntry("Account Name:", account.getUser());
+                    panelGenerator.addEntry("Account Typ:", accType);
+
+                    if (maxSimultanDls != null) panelGenerator.addEntry("Gleichzeitige Downloads:", maxSimultanDls);
+
+                    panelGenerator.addCategory("Unterstützte Hoster");
+                    panelGenerator.addEntry("Anzahl: ", Integer.toString(hostList.size()));
 
                 } else {
-                    windowTitleLangText = "extended account information for " + account.getUser();
-                    displayInfos.put("Account type: ", accType);
-                    if (maxSimultanDls != null) displayInfos.put("Max. number of sim. downloads: ", maxSimultanDls);
-                    accountCaption = "Supported hosts[" + hostList.size() + "]:\r\n\r\n";
+                    windowTitleLangText = "Account Information";
+
+                    panelGenerator.addCategory("Account");
+                    panelGenerator.addEntry("Account Name:", account.getUser());
+                    panelGenerator.addEntry("Account Type:", accType);
+
+                    if (maxSimultanDls != null) panelGenerator.addEntry("Simultaneous Downloads:", maxSimultanDls);
+
+                    panelGenerator.addCategory("Supported Hosts");
+                    panelGenerator.addEntry("Amount: ", Integer.toString(hostList.size()));
+
                 }
-                // jd.gui.UserIO.getInstance().requestMessageDialog(this.getHost() + " " + windowTitleLangText, message);
-                final JPanel panel = new JPanel();
-                panel.setLayout(new GridBagLayout());
+                panelGenerator.addTable(hostList);
 
-                GridBagConstraints c = new GridBagConstraints();
-
-                int y = 0;
-                for (String current : displayInfos.keySet()) {
-                    JLabel captionLabel = new JLabel(current);
-                    captionLabel.setFont(captionLabel.getFont().deriveFont(Font.BOLD));
-                    c.fill = GridBagConstraints.HORIZONTAL;
-                    c.weightx = 0.9;
-                    c.gridx = 0;
-                    c.gridy = y;
-                    panel.add(captionLabel, c);
-
-                    JLabel valueLabel = new JLabel(displayInfos.get(current));
-                    c.fill = GridBagConstraints.HORIZONTAL;
-                    c.gridx = 1;
-                    c.gridy = y;
-                    panel.add(valueLabel, c);
-
-                    y++;
-                }
-                JLabel numberHostsLabel = new JLabel(accountCaption);
-                numberHostsLabel.setFont(numberHostsLabel.getFont().deriveFont(Font.BOLD));
-                c.fill = GridBagConstraints.HORIZONTAL;
-                c.weightx = 0.9;
-                c.gridx = 0;
-                c.gridy = y;
-                c.insets = new Insets(10, 0, 0, 0);
-                panel.add(numberHostsLabel, c);
-
-                MultihostTableModel tableModel = new MultihostTableModel();
-                tableModel.addAllElements(hostList);
-                MultihostTable table = new MultihostTable(tableModel);
-
-                c.fill = GridBagConstraints.HORIZONTAL;
-                c.weightx = 0.9;
-                c.gridx = 0;
-                c.gridy = y + 1;
-                c.insets = new Insets(1, 0, 0, 0);
-                c.gridwidth = 2;
-
-                JScrollPane spTable = new JScrollPane(table);
-                spTable.setPreferredSize(new Dimension(180, 150));
-                panel.add(spTable, c);
-
-                ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panel, null, "Close", "");
+                ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panelGenerator.getPanel(), null, "Close", "");
                 try {
                     Dialog.getInstance().showDialog(dialog);
                 } catch (DialogNoAnswerException e) {
                 }
             }
+        }
+
+    }
+
+    public class PanelGenerator {
+        private JPanel panel = new JPanel();
+        private int    y     = 0;
+
+        public PanelGenerator() {
+            panel.setLayout(new GridBagLayout());
+            panel.setMinimumSize(new Dimension(270, 200));
+        }
+
+        public void addLabel(JLabel label) {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 0;
+            c.gridwidth = 2;
+            c.gridy = y;
+            c.insets = new Insets(0, 5, 0, 5);
+            panel.add(label, c);
+            y++;
+        }
+
+        public void addCategory(String categoryName) {
+            JLabel category = new JLabel("<html><u><b>" + categoryName + "</b></u></html>");
+
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 0;
+            c.gridwidth = 2;
+            c.gridy = y;
+            c.insets = new Insets(10, 5, 0, 5);
+            panel.add(category, c);
+            y++;
+        }
+
+        public void addEntry(String key, String value) {
+            GridBagConstraints c = new GridBagConstraints();
+            JLabel keyLabel = new JLabel(key);
+            // keyLabel.setFont(keyLabel.getFont().deriveFont(Font.BOLD));
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.weightx = 0.9;
+            c.gridx = 0;
+            c.gridy = y;
+            c.insets = new Insets(0, 5, 0, 5);
+            panel.add(keyLabel, c);
+
+            JLabel valueLabel = new JLabel(value);
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 1;
+            panel.add(valueLabel, c);
+
+            y++;
+        }
+
+        public void addTable(Set<MultihostContainer> hostList) {
+            MultihostTableModel tableModel = new MultihostTableModel();
+            tableModel.addAllElements(hostList);
+            MultihostTable table = new MultihostTable(tableModel);
+
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.weightx = 0.9;
+            c.gridx = 0;
+            c.gridy = y + 1;
+            c.insets = new Insets(1, 0, 0, 0);
+            c.gridwidth = 2;
+
+            JScrollPane spTable = new JScrollPane(table);
+            spTable.setPreferredSize(new Dimension(180, 150));
+            panel.add(spTable, c);
+        }
+
+        public JPanel getPanel() {
+            return panel;
         }
 
     }
