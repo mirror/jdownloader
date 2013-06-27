@@ -48,6 +48,10 @@ public class MikSeriNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (parameter.matches(".*?mikseri.net/artists/\\?id=.*?")) {
+            if (br.containsHTML("Artistilla ei valitettavasti toistaiseksi ole kappaleita Mikseri\\.netissä")) {
+                logger.info("Link offline (there is no downloadable content): " + parameter);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("<meta name=\"og:title\" content=\"(.*?)\"").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);

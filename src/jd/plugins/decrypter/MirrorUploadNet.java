@@ -43,7 +43,7 @@ public class MirrorUploadNet extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
 
-        if (br.containsHTML("</span>This file has been deleted by its owner or by our team\\.</div>")) {
+        if (br.containsHTML("</span>This file has been deleted by its owner or by our team\\.</div>|>This file has been removed for infringement of copyright")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
