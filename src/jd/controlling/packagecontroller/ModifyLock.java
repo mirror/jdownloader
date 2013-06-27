@@ -26,4 +26,23 @@ public class ModifyLock {
     public void writeUnlock() throws IllegalMonitorStateException {
         this.lock.writeLock().unlock();
     }
+
+    public void runReadLock(Runnable run) {
+        Boolean readL = null;
+        try {
+            readL = readLock();
+            run.run();
+        } finally {
+            if (readL != null) readUnlock(readL);
+        }
+    }
+
+    public void runWriteLock(Runnable run) {
+        try {
+            writeLock();
+            run.run();
+        } finally {
+            writeUnlock();
+        }
+    }
 }
