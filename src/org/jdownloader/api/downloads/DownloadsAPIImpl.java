@@ -377,7 +377,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     private List<DownloadLink> getAllTheLinks(final List<Long> linkIds, final List<Long> packageIds) {
         DownloadController dlc = DownloadController.getInstance();
 
-        List<DownloadLink> rmv = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+        final List<DownloadLink> rmv = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
             @Override
             public int returnMaxResults() {
                 return 0;
@@ -390,9 +390,14 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             }
         });
         if (packageIds != null) {
-            for (FilePackage fp : dlc.getPackages()) {
+            for (final FilePackage fp : dlc.getPackages()) {
                 if (packageIds.contains(fp.getUniqueID().getID())) {
-                    rmv.addAll(fp.getChildren());
+                    fp.getModifyLock().runReadLock(new Runnable() {
+                        @Override
+                        public void run() {
+                            rmv.addAll(fp.getChildren());
+                        }
+                    });
                 }
             }
         }

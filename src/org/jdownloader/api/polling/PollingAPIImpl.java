@@ -52,7 +52,9 @@ public class PollingAPIImpl implements PollingAPI {
         PollingResultAPIStorable prs = new PollingResultAPIStorable();
         prs.setEventName("aggregatedNumbers");
 
-        SelectionInfo<FilePackage, DownloadLink> sel = new SelectionInfo<FilePackage, DownloadLink>(dc.getAllDownloadLinks());
+        boolean dcrl = dc.readLock();
+        SelectionInfo<FilePackage, DownloadLink> sel = new SelectionInfo<FilePackage, DownloadLink>(null, dc.getPackages(), null, null, null, null);
+        dc.readUnlock(dcrl);
 
         QueryResponseMap eventData = new QueryResponseMap();
         eventData.put("data", new AggregatedNumbersAPIStorable(new AggregatedNumbers(sel)));
