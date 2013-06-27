@@ -16,14 +16,30 @@
 
 package jd.plugins.hoster;
 
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.ListSelectionModel;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.gui.swing.jdgui.BasicJDTable;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -34,6 +50,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+
+import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.swing.dialog.ContainerDialog;
+import org.jdownloader.images.NewTheme;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class FreeWayMe extends PluginForHost {
@@ -239,46 +262,89 @@ public class FreeWayMe extends PluginForHost {
             final Object supported = ai.getProperty("multiHostSupport", Property.NULL);
             if (supported != null) {
                 final HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-                ArrayList<String> unavailableHosts = new ArrayList<String>();
+                Set<String> unavailableHosts = new HashSet();
                 if (unavailableMap != null) {
-                    unavailableHosts = new ArrayList<String>(unavailableMap.keySet());
+                    unavailableHosts.addAll(unavailableMap.keySet());
                 }
                 String windowTitleLangText = null;
                 ArrayList<String> supportedHosts = (ArrayList) supported;
                 final String lang = System.getProperty("user.language");
                 final String accType = ai.getStringProperty("acctype", null);
                 final String maxSimultanDls = account.getStringProperty("parallel", null);
-                String message = "";
+
+                Map<String, String> displayInfos = new HashMap<>();
+                String accountCaption = "";
+                Set<MultihostContainer> hostList = new HashSet();
+                for (String host : supportedHosts) {
+                    if (host.equals("uploaded.net") || host.equals("ul.to")) {
+                        host = "uploaded.to";
+                    }
+                    MultihostContainer container = new MultihostContainer(host);
+                    if (unavailableHosts != null && unavailableHosts.contains(host)) container.setIsWorking(false);
+                    hostList.add(container);
+                }
                 if ("de".equalsIgnoreCase(lang)) {
                     windowTitleLangText = "Account Zusatzinformationen für " + account.getUser();
-                    message += "Account Typ: " + accType + "\r\n";
-                    if (maxSimultanDls != null) message += "Max. Anzahl gleichzeitiger Downloads: " + maxSimultanDls + "\r\n";
-                    message += "Unterstützte Hoster [" + supportedHosts.size() + "]:\r\n\r\n";
-                    for (final String host : supportedHosts) {
-                        message += host + "\r\n";
-                    }
-                    if (unavailableHosts != null && unavailableHosts.size() != 0) {
-                        message += "\r\nTemporär deaktivierte Hoster [" + unavailableHosts.size() + "]:\r\n\r\n";
-                        for (final String tempDeactivatedHost : unavailableHosts) {
-                            message += tempDeactivatedHost + "\r\n";
-                        }
-                    }
+                    displayInfos.put("Account Typ: ", accType);
+                    if (maxSimultanDls != null) displayInfos.put("Max. Anzahl gleichz. Downloads: ", maxSimultanDls);
+                    accountCaption = "Unterstützte Hoster [" + hostList.size() + "]:\r\n\r\n";
+
                 } else {
                     windowTitleLangText = "extended account information for " + account.getUser();
-                    message += "Account type: " + accType + "\r\n";
-                    if (maxSimultanDls != null) message += "Max. number of simultan downloads: " + maxSimultanDls + "\r\n";
-                    message += "Supported hosts[" + supportedHosts.size() + "]:\r\n\r\n";
-                    for (final String host : supportedHosts) {
-                        message += host + "\r\n";
-                    }
-                    if (unavailableHosts != null && unavailableHosts.size() != 0) {
-                        message += "\r\nTemporarily deactivated hosts [" + unavailableHosts.size() + "]:\r\n\r\n";
-                        for (final String tempDeactivatedHost : unavailableHosts) {
-                            message += tempDeactivatedHost + "\r\n";
-                        }
-                    }
+                    displayInfos.put("Account type: ", accType);
+                    if (maxSimultanDls != null) displayInfos.put("Max. number of sim. downloads: ", maxSimultanDls);
+                    accountCaption = "Supported hosts[" + hostList.size() + "]:\r\n\r\n";
                 }
-                jd.gui.UserIO.getInstance().requestMessageDialog(this.getHost() + " " + windowTitleLangText, message);
+                // jd.gui.UserIO.getInstance().requestMessageDialog(this.getHost() + " " + windowTitleLangText, message);
+                final JPanel panel = new JPanel();
+                panel.setLayout(new GridBagLayout());
+
+                GridBagConstraints c = new GridBagConstraints();
+
+                int y = 0;
+                for (String current : displayInfos.keySet()) {
+                    JLabel captionLabel = new JLabel(current);
+                    captionLabel.setFont(captionLabel.getFont().deriveFont(Font.BOLD));
+                    c.fill = GridBagConstraints.HORIZONTAL;
+                    c.weightx = 0.9;
+                    c.gridx = 0;
+                    c.gridy = y;
+                    panel.add(captionLabel, c);
+
+                    JLabel valueLabel = new JLabel(displayInfos.get(current));
+                    c.fill = GridBagConstraints.HORIZONTAL;
+                    c.gridx = 1;
+                    c.gridy = y;
+                    panel.add(valueLabel, c);
+
+                    y++;
+                }
+                JLabel numberHostsLabel = new JLabel(accountCaption);
+                numberHostsLabel.setFont(numberHostsLabel.getFont().deriveFont(Font.BOLD));
+                c.fill = GridBagConstraints.HORIZONTAL;
+                c.weightx = 0.9;
+                c.gridx = 0;
+                c.gridy = y;
+                c.insets = new Insets(10, 0, 0, 0);
+                panel.add(numberHostsLabel, c);
+
+                MultihostTableModel tableModel = new MultihostTableModel();
+                tableModel.addAllElements(hostList);
+                MultihostTable table = new MultihostTable(tableModel);
+
+                c.fill = GridBagConstraints.HORIZONTAL;
+                c.weightx = 0.9;
+                c.gridx = 0;
+                c.gridy = y + 1;
+                c.insets = new Insets(1, 0, 0, 0);
+                c.gridwidth = 2;
+
+                JScrollPane spTable = new JScrollPane(table);
+                spTable.setPreferredSize(new Dimension(180, 150));
+                panel.add(spTable, c);
+
+                ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panel, null, "Close", "");
+                dialog.show();
             }
         }
 
@@ -329,4 +395,149 @@ public class FreeWayMe extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    public class MultihostTable extends BasicJDTable<MultihostContainer> {
+
+        public MultihostTable(ExtTableModel<MultihostContainer> tableModel) {
+            super(tableModel);
+            setSearchEnabled(true);
+            setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        }
+    }
+
+    public class MultihostTableModel extends ExtTableModel<MultihostContainer> {
+
+        public MultihostTableModel() {
+            super("multihostTable");
+        }
+
+        @Override
+        protected void initColumns() {
+            this.addColumn(new ExtTextColumn<MultihostContainer>("Host") {
+
+                private static final long serialVersionUID = -8070328156326837828L;
+
+                @Override
+                protected Icon getIcon(MultihostContainer value) {
+                    return value.getIcon();
+                }
+
+                @Override
+                public boolean isHidable() {
+                    return false;
+                }
+
+                @Override
+                public int getMaxWidth() {
+                    return 240;
+                }
+
+                @Override
+                public int getDefaultWidth() {
+                    return getMinWidth();
+                }
+
+                @Override
+                public int getMinWidth() {
+                    return 150;
+                }
+
+                @Override
+                public boolean isEditable(MultihostContainer obj) {
+                    return false;
+                }
+
+                @Override
+                public String getStringValue(MultihostContainer value) {
+                    return value.getHost();
+                }
+            });
+
+            this.addColumn(new ExtTextColumn<MultihostContainer>("Working?") {
+
+                @Override
+                protected Icon getIcon(MultihostContainer value) {
+                    return value.isWorking ? NewTheme.I().getIcon("ok", 14) : NewTheme.I().getIcon("cancel", 14);
+                }
+
+                @Override
+                public boolean isHidable() {
+                    return false;
+                }
+
+                @Override
+                public int getMaxWidth() {
+                    return 30;
+                }
+
+                @Override
+                public int getDefaultWidth() {
+                    return getMinWidth();
+                }
+
+                @Override
+                public boolean isEditable(MultihostContainer obj) {
+                    return false;
+                }
+
+                @Override
+                public String getStringValue(MultihostContainer value) {
+                    return "";
+                }
+            });
+        }
+    }
+
+    public class MultihostContainer {
+
+        private String  host;
+
+        private boolean isWorking = true;
+
+        public MultihostContainer(String host) {
+            this.host = host;
+        }
+
+        public void setIsWorking(boolean working) {
+            this.isWorking = working;
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public ImageIcon getIcon() {
+            try {
+                return JDUtilities.getPluginForHost(host).getDomainInfo().getFavIcon();
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + getOuterType().hashCode();
+            result = prime * result + ((host == null) ? 0 : host.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null) return false;
+            if (getClass() != obj.getClass()) return false;
+            MultihostContainer other = (MultihostContainer) obj;
+            if (!getOuterType().equals(other.getOuterType())) return false;
+            if (host == null) {
+                if (other.host != null) return false;
+            } else if (!host.equals(other.host)) return false;
+            return true;
+        }
+
+        private FreeWayMe getOuterType() {
+            return FreeWayMe.this;
+        }
+
+    }
 }
