@@ -230,7 +230,7 @@
 		<echo message="ClassPath ${class-path}  ${class-path-extensions}" />
 		<manifest file="${dist}/Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and AppWork GmbH" />
-			<attribute name="Main-Class" value="jd.Main" />
+			<attribute name="Main-Class" value="org.jdownloader.startup.Main" />
 			<!-- plugins that serialize own classes have to be put in the classpath -->
 			<attribute name="Class-Path" value="JDownloader.jar ${class-path} ${class-path-extensions}" />
 
