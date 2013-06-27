@@ -14,12 +14,19 @@ import org.appwork.remoteapi.events.SimpleEventObject;
 
 public class DownloadControllerEventPublisher implements EventPublisher, DownloadControllerListener {
 
+    private enum EVENTID {
+        REFRESH_STRUCTURE,
+        REMOVE_CONTENT,
+        ADD_CONTENT,
+        REFRESH_CONTENT
+    }
+
     private CopyOnWriteArraySet<EventsSender> eventSenders = new CopyOnWriteArraySet<EventsSender>();
     private final List<String>                eventIDs;
 
     public DownloadControllerEventPublisher() {
         eventIDs = new ArrayList<String>();
-        for (DownloadControllerEvent.TYPE t : DownloadControllerEvent.TYPE.values()) {
+        for (EVENTID t : EVENTID.values()) {
             eventIDs.add(t.name());
         }
     }

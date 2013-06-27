@@ -3,6 +3,7 @@ package org.jdownloader.api.polling;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.plugins.DownloadLink;
@@ -12,11 +13,15 @@ import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
 import org.jdownloader.api.captcha.CaptchaAPI;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
+import org.jdownloader.api.jd.AggregatedNumbersAPIStorable;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.overviewpanel.AggregatedNumbers;
 
 public class PollingAPIImpl implements PollingAPI {
 
-    private DownloadWatchDog dwd = DownloadWatchDog.getInstance();
-    private APIQuery         queryParams;
+    private DownloadWatchDog   dwd = DownloadWatchDog.getInstance();
+    private DownloadController dc  = DownloadController.getInstance();
+    private APIQuery           queryParams;
 
     @Override
     public List<PollingResultAPIStorable> poll(APIQuery queryParams) {
@@ -36,8 +41,24 @@ public class PollingAPIImpl implements PollingAPI {
         if (queryParams.containsKey("captchasWaiting")) {
             result.add(getCaptchasWaiting());
         }
+        if (queryParams.containsKey("aggregatedNumbers")) {
+            result.add(getAggregatedNumbers());
+        }
 
         return result;
+    }
+
+    private PollingResultAPIStorable getAggregatedNumbers() {
+        PollingResultAPIStorable prs = new PollingResultAPIStorable();
+        prs.setEventName("aggregatedNumbers");
+
+        SelectionInfo<FilePackage, DownloadLink> sel = new SelectionInfo<FilePackage, DownloadLink>(dc.getAllDownloadLinks());
+
+        QueryResponseMap eventData = new QueryResponseMap();
+        eventData.put("data", new AggregatedNumbersAPIStorable(new AggregatedNumbers(sel)));
+        prs.setEventData(eventData);
+
+        return prs;
     }
 
     @SuppressWarnings("rawtypes")

@@ -232,25 +232,17 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
     @Override
     public boolean removeLinks(final List<Long> linkIds) {
+        return removeLinks(linkIds, null);
+    }
+
+    @Override
+    public boolean removeLinks(final List<Long> linkIds, final List<Long> packageIds) {
         if (linkIds == null) return true;
 
         DownloadController dlc = DownloadController.getInstance();
 
-        List<DownloadLink> rmv = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-            @Override
-            public int returnMaxResults() {
-                return 0;
-            }
-
-            @Override
-            public boolean acceptNode(DownloadLink node) {
-                if (linkIds.contains(node.getUniqueID().getID())) return true;
-                return false;
-            }
-        });
-
         dlc.writeLock();
-        dlc.removeChildren(rmv);
+        dlc.removeChildren(getAllTheLinks(linkIds, packageIds));
         dlc.writeUnlock();
 
         return true;
@@ -258,25 +250,15 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
     @Override
     public boolean forceDownload(final List<Long> linkIds) {
-        if (linkIds == null) return true;
+        return forceDownload(linkIds, null);
+    }
+
+    @Override
+    public boolean forceDownload(final List<Long> linkIds, final List<Long> packageIds) {
 
         DownloadController dlc = DownloadController.getInstance();
-
-        List<DownloadLink> sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-            @Override
-            public int returnMaxResults() {
-                return 0;
-            }
-
-            @Override
-            public boolean acceptNode(DownloadLink node) {
-                if (linkIds.contains(node.getUniqueID().getID())) return true;
-                return false;
-            }
-        });
-
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
-        dwd.forceDownload(sdl);
+        dwd.forceDownload(getAllTheLinks(linkIds, packageIds));
 
         return true;
     }
@@ -284,52 +266,32 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     @Override
     public boolean enableLinks(final List<Long> linkIds) {
         if (linkIds == null) return true;
+        return enableLinks(linkIds, null);
+    }
 
+    @Override
+    public boolean enableLinks(final List<Long> linkIds, final List<Long> packageIds) {
         DownloadController dlc = DownloadController.getInstance();
-
-        List<DownloadLink> sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-            @Override
-            public int returnMaxResults() {
-                return 0;
-            }
-
-            @Override
-            public boolean acceptNode(DownloadLink node) {
-                if (linkIds.contains(node.getUniqueID().getID())) return true;
-                return false;
-            }
-        });
-
+        List<DownloadLink> sdl = getAllTheLinks(linkIds, packageIds);
         for (DownloadLink dl : sdl) {
             dl.setEnabled(true);
         }
-
         return true;
     }
 
     @Override
     public boolean disableLinks(final List<Long> linkIds) {
         if (linkIds == null) return true;
+        return disableLinks(linkIds, null);
+    }
 
+    @Override
+    public boolean disableLinks(final List<Long> linkIds, final List<Long> packageIds) {
         DownloadController dlc = DownloadController.getInstance();
-
-        List<DownloadLink> sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-            @Override
-            public int returnMaxResults() {
-                return 0;
-            }
-
-            @Override
-            public boolean acceptNode(DownloadLink node) {
-                if (linkIds.contains(node.getUniqueID().getID())) return true;
-                return false;
-            }
-        });
-
+        List<DownloadLink> sdl = getAllTheLinks(linkIds, packageIds);
         for (DownloadLink dl : sdl) {
             dl.setEnabled(false);
         }
-
         return true;
     }
 
@@ -362,4 +324,79 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         return true;
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public boolean moveLinks(APIQuery query) {
+        List<Long> selectedUUIDs = query._getQueryParam("linkUUIDs", List.class, new ArrayList<Long>());
+        Long afterDestLinkUUID = query._getQueryParam("afterDestLinkUUID", Long.class, new Long(-1));
+        Long targetPackageUUID = query._getQueryParam("destPackageUUID", Long.class, new Long(-1));
+
+        DownloadController dlc = DownloadController.getInstance();
+
+        List<DownloadLink> selectedLinks = new ArrayList<DownloadLink>();
+        DownloadLink afterDestLink = null;
+        FilePackage destPackage = null;
+
+        boolean b = dlc.readLock();
+        try {
+            for (DownloadLink dl : dlc.getAllDownloadLinks()) {
+                if (selectedUUIDs.contains(dl.getUniqueID().getID())) {
+                    selectedLinks.add(dl);
+                }
+                if (afterDestLink == null && afterDestLinkUUID.equals(dl.getUniqueID().getID())) {
+                    afterDestLink = dl;
+                }
+            }
+            for (FilePackage fp : dlc.getPackages()) {
+                if (targetPackageUUID.equals(fp.getUniqueID().getID())) {
+                    destPackage = fp;
+                    break;
+                }
+            }
+        } finally {
+            dlc.readUnlock(b);
+        }
+
+        dlc.move(selectedLinks, destPackage, afterDestLink);
+        return true;
+    }
+
+    @Override
+    public Long getChildrenChanged(Long structureWatermark) {
+        DownloadController lc = DownloadController.getInstance();
+        if (lc.getChildrenChanges() != structureWatermark) {
+            return lc.getChildrenChanges();
+        } else {
+            return -1l;
+        }
+    }
+
+    /*
+     * Util to convert selected Links and Packages to only links
+     */
+    private List<DownloadLink> getAllTheLinks(final List<Long> linkIds, final List<Long> packageIds) {
+        DownloadController dlc = DownloadController.getInstance();
+
+        List<DownloadLink> rmv = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+            @Override
+            public int returnMaxResults() {
+                return 0;
+            }
+
+            @Override
+            public boolean acceptNode(DownloadLink node) {
+                if (linkIds.contains(node.getUniqueID().getID())) return true;
+                return false;
+            }
+        });
+        if (packageIds != null) {
+            for (FilePackage fp : dlc.getPackages()) {
+                if (packageIds.contains(fp.getUniqueID().getID())) {
+                    rmv.addAll(fp.getChildren());
+                }
+            }
+        }
+
+        return rmv;
+    }
 }

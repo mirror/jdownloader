@@ -40,6 +40,7 @@ import org.jdownloader.api.toolbar.LinkCheckResult.STATUS;
 import org.jdownloader.api.toolbar.specialurls.YouTubeSpecialUrlHandling;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
+import org.jdownloader.updatev2.UpdateController;
 
 //Toolbar NameSpace
 //http://localhost:3128/toolbar/
@@ -548,5 +549,19 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         } else {
             return "";
         }
+    }
+
+    @Override
+    public boolean triggerUpdate() {
+        /* WebUpdate is running in its own Thread */
+        new Thread() {
+            public void run() {
+                // runUpdateChecker is synchronized and may block
+                UpdateController.getInstance().setGuiVisible(true);
+                UpdateController.getInstance().runUpdateChecker(true);
+            }
+        }.start();
+
+        return true;
     }
 }

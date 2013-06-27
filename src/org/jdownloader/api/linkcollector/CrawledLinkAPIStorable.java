@@ -18,6 +18,11 @@ public class CrawledLinkAPIStorable implements Storable {
         this.link = link;
     }
 
+    public Long getUuid() {
+        return link.getUniqueID().getID();
+    }
+    
+    //to be compatbile with older API version
     public Long getUniqueID() {
         return link.getUniqueID().getID();
     }

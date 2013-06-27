@@ -42,4 +42,5 @@ public interface JDownloaderToolBarAPI extends RemoteAPIInterface {
 
     public LinkCheckResult pollCheckedLinksFromDOM(String checkID);
 
+    boolean triggerUpdate();
 }

@@ -24,26 +24,17 @@ public interface DownloadsAPI extends RemoteAPIInterface {
     /**
      * Query Packages currently in downloads
      * 
-     * Example:
-     * http://localhost:3128/downloads/queryPackages?{"saveTo":true,"childCount":true,"hosts":true,"startAt":0,"maxResults":10}
+     * Example: http://localhost:3128/downloads/queryPackages?{"saveTo":true,"childCount":true,"hosts":true,"startAt":0,"maxResults":10}
      * 
      * Default fields returned: name, uuid
      * 
      * @param queryParams
-     * Hashmap with the following allowed values:
+     *            Hashmap with the following allowed values:
      * 
-     * Optional selectors:
-     * startAt, Integer, index of first element to be returned
-     * maxResults, Integer, total number of elements to be returned
+     *            Optional selectors: startAt, Integer, index of first element to be returned maxResults, Integer, total number of elements
+     *            to be returned
      * 
-     * Optional fields (Boolean):
-     * saveTo
-     * size
-     * childCount
-     * hosts
-     * done
-     * comment
-     * enabled
+     *            Optional fields (Boolean): saveTo size childCount hosts done comment enabled
      * 
      * @return
      */
@@ -54,23 +45,19 @@ public interface DownloadsAPI extends RemoteAPIInterface {
      * Query Packages links in downloads
      * 
      * Example:
-     * http://localhost:3128/downloads/queryLinks?{"packageUUIDs":[1358496436106,1358496436107],"enabled":true,"size":true,"host":true,"startAt":0,"maxResults":10}
+     * http://localhost:3128/downloads/queryLinks?{"packageUUIDs":[1358496436106,1358496436107],"enabled":true,"size":true,"host":true
+     * ,"startAt":0,"maxResults":10}
      * 
      * Default fields returned: name, uuid, packageUUID
      * 
      * @param queryParams
-     * Hashmap with the following allowed values:
+     *            Hashmap with the following allowed values:
      * 
-     * Optional selectors:
-     * packageUUIDs, List<Long>, links contained in the packages with given uuids are returned, if empty all links are returned
-     * startAt, Integer, index of first element to be returned
-     * maxResults, Integer, total number of elements to be returned
+     *            Optional selectors: packageUUIDs, List<Long>, links contained in the packages with given uuids are returned, if empty all
+     *            links are returned startAt, Integer, index of first element to be returned maxResults, Integer, total number of elements
+     *            to be returned
      * 
-     * Optional fields (Boolean):
-     * host
-     * size
-     * done
-     * enabled
+     *            Optional fields (Boolean): host size done enabled
      * 
      * @return
      */
@@ -81,19 +68,34 @@ public interface DownloadsAPI extends RemoteAPIInterface {
      */
     boolean removeLinks(final List<Long> linkIds);
 
+    boolean removeLinks(final List<Long> linkIds, final List<Long> packageIds);
+
+    boolean forceDownload(List<Long> linkIds, List<Long> packageIds);
+
     boolean forceDownload(final List<Long> linkIds);
 
     boolean enableLinks(List<Long> linkIds);
 
+    boolean enableLinks(List<Long> linkIds, List<Long> packageIds);
+
     boolean disableLinks(List<Long> linkIds);
+
+    boolean disableLinks(List<Long> linkIds, List<Long> packageIds);
 
     /*
      * Sorting
      */
     boolean movePackages(APIQuery query);
 
+    boolean moveLinks(APIQuery query);
+
     /*
      * Info
      */
     int speed();
+
+    /*
+     * Changed?
+     */
+    Long getChildrenChanged(Long structureWatermark);
 }

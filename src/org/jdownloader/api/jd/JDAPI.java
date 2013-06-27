@@ -12,6 +12,8 @@ public interface JDAPI extends RemoteAPIInterface {
 
     public long version();
 
+    public Integer getCoreRevision();
+
     public boolean refreshPlugins();
 
     public int sum(int a, int b);

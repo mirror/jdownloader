@@ -4,6 +4,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.api.downloads.LinkStatusAPIStorable;
 
 public class PollingAPIDownloadLinkStorable implements Storable {
 
@@ -39,5 +40,9 @@ public class PollingAPIDownloadLinkStorable implements Storable {
 
     public Long getEta() {
         return link.getFinishedDate();
+    }
+
+    public LinkStatusAPIStorable getLinkStatus() {
+        return new LinkStatusAPIStorable(link.getLinkStatus());
     }
 }

@@ -216,7 +216,11 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public Boolean startDownloads(final List<Long> linkIds) {
+        return startDownloads(linkIds, null);
+    }
 
+    @Override
+    public Boolean startDownloads(final List<Long> linkIds, final List<Long> packageIds) {
         LinkCollector lc = LinkCollector.getInstance();
         DownloadController dc = DownloadController.getInstance();
 
@@ -224,17 +228,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
         boolean lb = lc.readLock();
         try {
-            lks = lc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
-                @Override
-                public int returnMaxResults() {
-                    return -1;
-                }
-
-                @Override
-                public boolean acceptNode(CrawledLink node) {
-                    return linkIds != null && linkIds.contains(node.getUniqueID().getID());
-                }
-            });
+            lks = getAllTheLinks(linkIds, packageIds);
         } finally {
             lc.readUnlock(lb);
         }
@@ -247,26 +241,19 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public Boolean removeLinks(final List<Long> linkIds) {
-        LinkCollector lc = LinkCollector.getInstance();
+        return removeLinks(linkIds, null);
+    }
 
+    @Override
+    public Boolean removeLinks(final List<Long> linkIds, final List<Long> packageIds) {
+        LinkCollector lc = LinkCollector.getInstance();
         lc.writeLock();
         try {
-            List<CrawledLink> lks = lc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
-                @Override
-                public int returnMaxResults() {
-                    return -1;
-                }
-
-                @Override
-                public boolean acceptNode(CrawledLink node) {
-                    return linkIds != null && linkIds.contains(node.getUniqueID().getID());
-                }
-            });
-
-            lc.removeChildren(lks);
+            lc.removeChildren(getAllTheLinks(linkIds, packageIds));
         } finally {
             lc.writeUnlock();
         }
+
         return true;
     }
 
@@ -277,5 +264,103 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         // } catch (InterruptedException e) {
         // e.printStackTrace();
         // }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public boolean movePackages(APIQuery query) {
+        List<Long> packageUUIDs = query._getQueryParam("packageUUIDs", List.class, new ArrayList<Long>());
+        Long afterDestPackageUUID = query._getQueryParam("afterDestPackageUUID", Long.class, null);
+
+        LinkCollector dlc = LinkCollector.getInstance();
+
+        List<CrawledPackage> selectedPackages = new ArrayList<CrawledPackage>();
+        CrawledPackage afterDestPackage = null;
+
+        boolean b = dlc.readLock();
+        try {
+            for (CrawledPackage fp : dlc.getPackages()) {
+                if (packageUUIDs.contains(fp.getUniqueID().getID())) {
+                    selectedPackages.add(fp);
+                }
+                if (afterDestPackageUUID != null && afterDestPackageUUID.equals(fp.getUniqueID().getID())) {
+                    afterDestPackage = fp;
+                }
+            }
+        } finally {
+            dlc.readUnlock(b);
+        }
+
+        dlc.move(selectedPackages, afterDestPackage);
+        return true;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public boolean moveLinks(APIQuery query) {
+        List<Long> selectedUUIDs = query._getQueryParam("linkUUIDs", List.class, new ArrayList<Long>());
+        Long afterDestLinkUUID = query._getQueryParam("afterDestLinkUUID", Long.class, new Long(-1));
+        Long targetPackageUUID = query._getQueryParam("destPackageUUID", Long.class, new Long(-1));
+
+        LinkCollector dlc = LinkCollector.getInstance();
+
+        List<CrawledLink> selectedLinks = new ArrayList<CrawledLink>();
+        CrawledLink afterDestLink = null;
+        CrawledPackage destPackage = null;
+
+        boolean b = dlc.readLock();
+        try {
+            List<CrawledLink> allLinks = new ArrayList<CrawledLink>();
+            for (CrawledPackage cpkg : dlc.getPackages()) {
+                allLinks.addAll(cpkg.getChildren());
+            }
+            for (CrawledLink dl : allLinks) {
+                if (selectedUUIDs.contains(dl.getUniqueID().getID())) {
+                    selectedLinks.add(dl);
+                }
+                if (afterDestLink == null && afterDestLinkUUID.equals(dl.getUniqueID().getID())) {
+                    afterDestLink = dl;
+                }
+            }
+            for (CrawledPackage fp : dlc.getPackages()) {
+                if (targetPackageUUID.equals(fp.getUniqueID().getID())) {
+                    destPackage = fp;
+                    break;
+                }
+            }
+        } finally {
+            dlc.readUnlock(b);
+        }
+
+        dlc.move(selectedLinks, destPackage, afterDestLink);
+        return true;
+    }
+
+    /*
+     * UTIL to break down package and links selections into links only
+     */
+    private List<CrawledLink> getAllTheLinks(final List<Long> linkIds, final List<Long> packageIds) {
+        LinkCollector lc = LinkCollector.getInstance();
+        List<CrawledLink> lks = lc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
+            @Override
+            public int returnMaxResults() {
+                return -1;
+            }
+
+            @Override
+            public boolean acceptNode(CrawledLink node) {
+                return linkIds != null && linkIds.contains(node.getUniqueID().getID());
+            }
+        });
+
+        if (packageIds != null) {
+            for (CrawledPackage cp : lc.getPackages()) {
+                if (packageIds.contains(cp.getUniqueID().getID())) {
+                    lks.addAll(cp.getChildren());
+                }
+            }
+        }
+
+        return lks;
     }
 }
