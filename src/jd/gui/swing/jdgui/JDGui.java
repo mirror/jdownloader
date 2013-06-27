@@ -694,22 +694,52 @@ public class JDGui extends SwingGui {
         this.mainFrame.setSize(dim);
         this.mainFrame.setMinimumSize(new Dimension(400, 100));
 
-        Point loc = GUIUtils.getLastLocation(null, this.mainFrame);
+        Point loc = new Point(status.getX(), status.getY());
+        GraphicsDevice lastScreen = null;
+        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        final GraphicsDevice[] screens = ge.getScreenDevices();
+
+        for (final GraphicsDevice screen : screens) {
+            if (screen.getIDstring() != null && screen.getIDstring().equals(status.getScreenID())) {
+                lastScreen = screen;
+                break;
+            }
+        }
+        if (lastScreen == null) {
+            lastScreen = GUIUtils.getScreenDevice(status.getX(), status.getY());
+        }
+        switch (status.getExtendedState()) {
+        case MAXIMIZED_BOTH:
+            if (lastScreen != null) {
+                loc = lastScreen.getDefaultConfiguration().getBounds().getLocation();
+            }
+            break;
+        case MAXIMIZED_HORIZ:
+            // TODO: no idea what this should do. seems do have no effect for win7
+            // Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_HORIZ)==false
+            // check on other OSs
+            break;
+
+        case MAXIMIZED_VERT:
+            // TODO: no idea what this should do. seems do have no effect for win7
+            // Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_VERT)==false
+            // check on other OSs
+            break;
+        }
 
         if (!status.isLocationSet()) {
             this.mainFrame.setLocation(Screen.getCenterOfComponent(null, mainFrame));
         } else {
-            GraphicsDevice screen = GUIUtils.getScreenDevice(status.getX(), status.getY());
-            if (screen != null) {
-                mainFrame.setLocation(new Point(status.getX(), status.getY()));
+
+            if (lastScreen != null) {
+                mainFrame.setLocation(loc);
             } else {
                 this.mainFrame.setLocation(Screen.getCenterOfComponent(null, mainFrame));
             }
         }
 
         // try to find offscreen
-        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        final GraphicsDevice[] screens = ge.getScreenDevices();
+
         boolean isok = false;
         for (final GraphicsDevice screen : screens) {
             final Rectangle bounds = screen.getDefaultConfiguration().getBounds();
@@ -779,7 +809,9 @@ public class JDGui extends SwingGui {
                 this.mainFrame.setExtendedState(Frame.NORMAL);
 
             } else {
+
                 this.mainFrame.setExtendedState(status.getExtendedState().getId());
+
             }
         }
         //
