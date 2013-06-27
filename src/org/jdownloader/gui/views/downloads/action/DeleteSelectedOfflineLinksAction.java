@@ -29,12 +29,34 @@ public class DeleteSelectedOfflineLinksAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
 
         List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
-        for (DownloadLink dl : si.getChildren()) {
-            if (dl.getAvailableStatus() == AvailableStatus.FALSE || dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
-                nodesToDelete.add(dl);
+
+        if (si != null) {
+            for (DownloadLink dl : si.getChildren()) {
+                if (dl.getAvailableStatus() == AvailableStatus.FALSE || dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
+                    nodesToDelete.add(dl);
+                }
+            }
+        } else {
+            DownloadController dlc = DownloadController.getInstance();
+            final boolean readL = dlc.readLock();
+            try {
+                for (FilePackage fp : dlc.getPackages()) {
+                    synchronized (fp) {
+                        for (DownloadLink dl : fp.getChildren()) {
+                            if (dl.getAvailableStatus() == AvailableStatus.FALSE
+                                    || dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
+                                nodesToDelete.add(dl);
+                            }
+                        }
+                    }
+                }
+            } finally {
+                DownloadController.getInstance().readUnlock(readL);
             }
         }
-        DownloadController.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete), _GUI._.DeleteSelectedOfflineLinksAction_actionPerformed());
+
+        DownloadController.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete),
+                _GUI._.DeleteSelectedOfflineLinksAction_actionPerformed(si != null ? "selected & " : ""));
 
     }
 

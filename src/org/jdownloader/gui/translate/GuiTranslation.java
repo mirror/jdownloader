@@ -2270,14 +2270,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "\r\n%s1 Links(s) to delete\r\n%s2 Files on Disk\r\nLinks left in Downloadlist: %s3" })
     String DeleteSelectionAction_actionPerformed_affected(int linkCount, String bytes, int i);
 
-    @Default(lngs = { "en" }, values = { "Do you want to delete all selected & disabled Downloadlinks?" })
-    String DeleteDisabledLinksFromListAndDiskAction_actionPerformed_object_();
+    @Default(lngs = { "en" }, values = { "Do you want to delete all %s1disabled Downloadlinks?" })
+    String DeleteDisabledLinksFromListAndDiskAction_actionPerformed_object_(String selected);
 
-    @Default(lngs = { "en" }, values = { "Do you want to delete all selected & failed Downloadlinks?" })
-    String DeleteFailedFromListAndDiskAction_actionPerformed();
+    @Default(lngs = { "en" }, values = { "Do you want to delete all %s1failed Downloadlinks?" })
+    String DeleteFailedFromListAndDiskAction_actionPerformed(String selected);
 
-    @Default(lngs = { "en" }, values = { "Do you want to delete all selected & unavailable Downloadlinks?" })
-    String DeleteSelectedOfflineLinksAction_actionPerformed();
+    @Default(lngs = { "en" }, values = { "Do you want to delete all %s1unavailable Downloadlinks?" })
+    String DeleteSelectedOfflineLinksAction_actionPerformed(String selected);
 
     @Default(lngs = { "en" }, values = { "Ups... something is wrong!" })
     String lit_ups_something_is_wrong();
@@ -2288,8 +2288,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Delete" })
     String lit_delete();
 
-    @Default(lngs = { "en" }, values = { "Do you want to delete all selected & successfully downloaded Downloadlinks?" })
-    String DeleteSelectedFinishedLinksAction_actionPerformed();
+    @Default(lngs = { "en" }, values = { "Do you want to delete all %s1successfully downloaded Downloadlinks?" })
+    String DeleteSelectedFinishedLinksAction_actionPerformed(String selected);
 
     @Default(lngs = { "en" }, values = { "Right Click Menu: Download Table" })
     String gui_config_menumanager_downloadlist();
@@ -2446,6 +2446,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Export the current Menu Structure" })
     String ManagerFrame_actionPerformed_export_title();
+
+    @Default(lngs = { "en" }, values = { "Import the current Menu Structure" })
+    String ManagerFrame_actionPerformed_import_title();
 
     @Default(lngs = { "en" }, values = { "An Error occured..." })
     String lit_error_occured();
