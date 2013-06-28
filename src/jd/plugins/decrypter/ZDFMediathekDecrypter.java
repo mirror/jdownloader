@@ -108,6 +108,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
                 ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
                 HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
+                String lastQualityFMT = null;
                 for (String streams[] : br2.getRegex("<formitaet basetype=\"([^\"]+)\" isDownload=\"[^\"]+\">(.*?)</formitaet>").getMatches()) {
 
                     if (!(streams[0].contains("mp4_http") || streams[0].contains("mp4_rtmp_zdfmeta"))) continue;
@@ -163,6 +164,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 }
                             }
                         }
+                        lastQualityFMT = fmt.toUpperCase(Locale.ENGLISH);
 
                         final String name = title + "@" + fmt.toUpperCase(Locale.ENGLISH) + extension;
                         final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + fmt);
@@ -190,9 +192,18 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     if (BEST) {
                         /* only keep best quality */
                         DownloadLink keep = bestMap.get("hd");
-                        if (keep == null) keep = bestMap.get("veryhigh");
-                        if (keep == null) keep = bestMap.get("high");
-                        if (keep == null) keep = bestMap.get("low");
+                        if (keep == null) {
+                            lastQualityFMT = "VERYHIGH";
+                            keep = bestMap.get("veryhigh");
+                        }
+                        if (keep == null) {
+                            lastQualityFMT = "HIGH";
+                            keep = bestMap.get("high");
+                        }
+                        if (keep == null) {
+                            lastQualityFMT = "LOW";
+                            keep = bestMap.get("low");
+                        }
                         if (keep != null) {
                             newRet.clear();
                             newRet.add(keep);
@@ -204,7 +215,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     if (subtitleInfo != null) {
                         String subtitleUrl = new Regex(subtitleInfo, "<url>(http://utstreaming\\.zdf\\.de/tt/\\d{4}/[A-Za-z0-9_\\-]+\\.xml)</url>").getMatch(0);
                         final String startTime = new Regex(subtitleInfo, "<offset>(\\-)?(\\d+)</offset>").getMatch(1);
-                        final String name = title + "@" + "SUBTITLE.xml";
+                        final String name = title + "@" + lastQualityFMT + ".xml";
                         final DownloadLink link = createDownloadlink("decrypted://zdf.de/subtitles/" + System.currentTimeMillis() + new Random().nextInt(1000000));
                         link.setAvailable(true);
                         link.setFinalFileName(name);

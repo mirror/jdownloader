@@ -38,7 +38,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/.*?set=a\\.\\d+\\.\\d+\\.\\d+|facebook\\.com/photo\\.php\\?fbid=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/media/set/\\?set=a\\.\\d+\\.\\d+\\.\\d+)" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
 
     public FaceBookComGallery(PluginWrapper wrapper) {
@@ -46,11 +46,12 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     /* must be static so all plugins share same lock */
-    private static Object       LOCK             = new Object();
-    private static final String FACEBOOKMAINPAGE = "http://www.facebook.com";
-    private static final String FBSHORTLINK      = "http(s)?://(www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
-    private static final String SINGLEPHOTO      = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
-    private int                 DIALOGRETURN     = -1;
+    private static Object       LOCK                   = new Object();
+    private static final String FACEBOOKMAINPAGE       = "http://www.facebook.com";
+    private static final String FBSHORTLINK            = "http(s)?://(www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
+    private static final String SINGLEPHOTO            = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
+    private int                 DIALOGRETURN           = -1;
+    private static final String FASTLINKCHECK_PICTURES = "FASTLINKCHECK_PICTURES";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         synchronized (LOCK) {
@@ -162,7 +163,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 if (fpName == null) fpName = "Facebook_album_of_user_" + user;
                 fpName = Encoding.htmlDecode(fpName.trim());
                 boolean dynamicLoadAlreadyDecrypted = false;
-                final ArrayList<String> allLinks = new ArrayList<String>();
 
                 for (int i = 1; i <= 50; i++) {
                     int currentMaxPicCount = 28;
@@ -182,11 +182,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
                         }
                         final String loadLink = mainpage + "/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A%22" + currentLastFbid + "%22%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%223%22%2C%22pager_fired_on_init%22%3Atrue%7D&__user=" + user + "&__a=1&__dyn=798aD5z5CF-&__req=jsonp_" + i + "&__adt=" + i;
                         br.getPage(loadLink);
-                        links = br.getRegex("data\\-non\\-starred-src=\\\\\"(https?:[^<>\"]*?)\\\\\"").getColumn(0);
+                        links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
                         currentMaxPicCount = 32;
                         dynamicLoadAlreadyDecrypted = true;
                     } else {
-                        links = br.getRegex("data\\-starred\\-src=\"(https?://[^<>\"]*?)\"").getColumn(0);
+                        links = br.getRegex("id=\"pic_(\\d+)\"").getColumn(0);
                     }
                     if (links == null || links.length == 0) {
                         logger.warning("Decrypter broken for link: " + parameter);
@@ -194,11 +194,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     }
                     boolean stop = false;
                     logger.info("Decrypting page " + i + " of ??");
-                    for (final String directlink : links) {
-                        final String finallink = Encoding.htmlDecode(directlink.trim().replace("\\", ""));
-                        allLinks.add(finallink);
-                        final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-                        dl.setAvailable(true);
+                    for (final String finallink : links) {
+                        final DownloadLink dl = createDownloadlink("http://www.facebook.com/photo.php?fbid=" + finallink);
+                        if (aa == null) dl.setProperty("nologin", true);
+                        if (SubConfiguration.getConfig("facebook.com").getBooleanProperty(FASTLINKCHECK_PICTURES, false)) dl.setAvailable(true);
                         decryptedLinks.add(dl);
                     }
                     // 28 links = max number of links per segment
