@@ -409,7 +409,8 @@ public class JDGui extends SwingGui {
             public <T> T showDialog(AbstractDialog<T> dialog) throws DialogClosedException, DialogCanceledException {
                 // synchronized (this) {
                 try {
-                    if (CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.CANCEL_DIALOG) {
+                    boolean silentModeActive = isSilentModeActive();
+                    if (silentModeActive && CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.CANCEL_DIALOG) {
                         // Cancel dialog
                         throw new DialogClosedException(Dialog.RETURN_CLOSED);
                     }
