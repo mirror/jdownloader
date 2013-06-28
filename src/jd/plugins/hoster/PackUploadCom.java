@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "packupload.com" }, urls = { "http://(www\\.)?packupload.com/[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "packupload.com" }, urls = { "http://([a-z]+\\.)?packupload.com/[A-Z0-9]+" }, flags = { 0 })
 public class PackUploadCom extends PluginForHost {
 
     public PackUploadCom(PluginWrapper wrapper) {
