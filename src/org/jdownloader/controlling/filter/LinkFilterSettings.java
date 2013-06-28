@@ -22,7 +22,7 @@ public interface LinkFilterSettings extends ConfigInterface {
         public ArrayList<LinkgrabberFilterRule> getDefaultValue() {
 
             LinkgrabberFilterRule offline = new LinkgrabberFilterRule();
-            offline.setOnlineStatusFilter(new OnlineStatusFilter(OnlineStatusMatchtype.ISNOT, true, OnlineStatus.ONLINE));
+            offline.setOnlineStatusFilter(new OnlineStatusFilter(OnlineStatusMatchtype.IS, true, OnlineStatus.OFFLINE));
             offline.setName(_JDT._.LinkFilterSettings_DefaultFilterList_getDefaultValue_());
             offline.setIconKey("error");
             offline.setAccept(true);
