@@ -158,6 +158,7 @@ public class RDMdthk extends PluginForDecrypt {
 
                 ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
                 final HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
+                String lastQualityFMT = null;
                 for (String quality[] : br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (\\d+), \"([^\"]+|)\", \"([^\"]+)\", \"([^\"]+)\"\\);").getMatches()) {
                     // get streamtype id
                     t = Integer.valueOf(quality[0]);
@@ -205,6 +206,7 @@ public class RDMdthk extends PluginForDecrypt {
                         break;
                     }
 
+                    lastQualityFMT = fmt.toUpperCase(Locale.ENGLISH);
                     final String name = title + "@" + fmt.toUpperCase(Locale.ENGLISH) + extension;
                     final DownloadLink link = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=" + fmt);
                     if (t == 1 ? false : true) link.setAvailable(true);
@@ -222,8 +224,28 @@ public class RDMdthk extends PluginForDecrypt {
                     newRet.add(link);
                 }
                 if (newRet.size() > 0) {
+                    if (BEST) {
+                        /* only keep best quality */
+                        DownloadLink keep = bestMap.get("hd");
+                        if (keep == null) {
+                            lastQualityFMT = "HIGH";
+                            keep = bestMap.get("high");
+                        }
+                        if (keep == null) {
+                            lastQualityFMT = "MEDIUM";
+                            keep = bestMap.get("medium");
+                        }
+                        if (keep == null) {
+                            lastQualityFMT = "LOW";
+                            keep = bestMap.get("low");
+                        }
+                        if (keep != null) {
+                            newRet.clear();
+                            newRet.add(keep);
+                        }
+                    }
                     if (cfg.getBooleanProperty(Q_SUBTITLES, false)) {
-                        final String filename = title + "@SUBTITLE.xml";
+                        final String filename = title + "@" + lastQualityFMT + ".xml";
                         String subtitleLink = br.getRegex("mediaCollection\\.setSubtitleUrl\\(\"(/static/avportal/untertitel_mediathek/\\d+\\.xml)\"").getMatch(0);
                         if (subtitleLink != null) {
                             final String finallink = "http://www.ardmediathek.de" + subtitleLink + "@";
@@ -234,17 +256,6 @@ public class RDMdthk extends PluginForDecrypt {
                             dl.setProperty("directName", filename);
                             dl.setProperty("streamingType", "subtitle");
                             newRet.add(dl);
-                        }
-                    }
-                    if (BEST) {
-                        /* only keep best quality */
-                        DownloadLink keep = bestMap.get("hd");
-                        if (keep == null) keep = bestMap.get("high");
-                        if (keep == null) keep = bestMap.get("medium");
-                        if (keep == null) keep = bestMap.get("low");
-                        if (keep != null) {
-                            newRet.clear();
-                            newRet.add(keep);
                         }
                     }
                     if (newRet.size() > 1) {

@@ -224,20 +224,32 @@ public class GameOneDeA extends PluginForDecrypt {
                         String ext = dllink.substring(dllink.lastIndexOf("."));
                         ext = ext == null || ext.length() > 4 ? ".flv" : ext;
 
+                        DownloadLink dlLink_rtmp = null;
+                        if (dllink.startsWith("rtmp://")) dlLink_rtmp = createDownloadlink(dllink.replace("rtmp", "gameonertmp"));
                         /* Episode > 102 */
                         dllink = dllink.replaceAll("^.*?/r2/", "http://cdn.riptide-mtvn.com/r2/");
                         /* Fallback */
                         dllink = dllink.replace("rtmp", "gameonertmp");
-
-                        dllink = dllink.startsWith("http") ? "directhttp://" + dllink : dllink;
-                        final DownloadLink dlLink = createDownloadlink(dllink);
+                        DownloadLink dlLink_http = createDownloadlink(dllink);
+                        if (dllink.startsWith("http://"))
+                            dlLink_http = createDownloadlink("directhttp://" + dllink);
+                        else
+                            dlLink_rtmp = createDownloadlink(dllink);
                         if (!newEpisode) {
-                            dlLink.setFinalFileName(filename + "_Part_" + df.format(i + 1) + "@" + q + ext);
+                            if (dlLink_http != null) dlLink_http.setFinalFileName(filename + "_Part_" + df.format(i + 1) + "@" + q + "_http" + ext);
+                            if (dlLink_rtmp != null) dlLink_http.setFinalFileName(filename + "_Part_" + df.format(i + 1) + "@" + q + "_rtmp" + ext);
                         } else {
-                            dlLink.setFinalFileName(filename + "@" + q + ext);
+                            if (dlLink_http != null) dlLink_http.setFinalFileName(filename + "@" + q + "_http" + ext);
+                            if (dlLink_rtmp != null) dlLink_rtmp.setFinalFileName(filename + "@" + q + "_rtmp" + ext);
                         }
-                        fp.add(dlLink);
-                        decryptedLinks.add(dlLink);
+                        if (dlLink_http != null) {
+                            fp.add(dlLink_http);
+                            decryptedLinks.add(dlLink_http);
+                        }
+                        if (dlLink_rtmp != null) {
+                            fp.add(dlLink_rtmp);
+                            decryptedLinks.add(dlLink_rtmp);
+                        }
                     }
                 }
             }

@@ -216,13 +216,10 @@ public class ARDMediathek extends PluginForHost {
         final String[] matches = new Regex(xmlContent, "(<p id=\"subtitle\\d+\".*?</p>)").getColumn(0);
         try {
             for (final String info : matches) {
-                if (counter > 460) {
-                    System.out.println("");
-                }
                 dest.write(counter++ + lineseparator);
                 final DecimalFormat df = new DecimalFormat("00");
                 final Regex startInfo = new Regex(info, "begin=\"(\\d{2}):([^<>\"]*?)\"");
-                final Regex endInfo = new Regex(info, "begin=\"(\\d{2}):([^<>\"]*?)\"");
+                final Regex endInfo = new Regex(info, "end=\"(\\d{2}):([^<>\"]*?)\"");
                 int startHour = Integer.parseInt(startInfo.getMatch(0));
                 int endHour = Integer.parseInt(endInfo.getMatch(0));
                 startHour -= 10;
@@ -249,17 +246,17 @@ public class ARDMediathek extends PluginForHost {
                 text = text.replaceAll("<br />", lineseparator);
                 text = text.replaceAll("</?(p|span)>?", "");
                 text = text.trim();
-                final String[][] colorTags = new Regex(text, "(tts:color=\"([a-z0-9]+)\">([^<>]+))").getMatches();
+                // color=\"#([A-Z0-9]+)\">(.*?)($|tts:)
+                final String[][] colorTags = new Regex(text, "color=\"([a-z0-9]+)\">(.*?)($|tts:)").getMatches();
                 if (colorTags != null && colorTags.length != 0) {
                     for (final String[] singleText : colorTags) {
-                        final String completeOldText = singleText[0];
-                        final String colorText = singleText[1];
-                        final String plainText = singleText[2];
+                        final String colorText = singleText[0];
+                        final String plainText = singleText[1];
                         final String completeNewText = "<font color=#" + getColorCode(colorText) + ">" + plainText + "</font>";
+                        final String completeOldText = "tts:color=\"" + colorText + "\">" + plainText;
                         text = text.replace(completeOldText, completeNewText);
                     }
                 }
-
                 dest.write(text + lineseparator + lineseparator);
             }
         } catch (Exception e) {
@@ -315,11 +312,12 @@ public class ARDMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings: "));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.ard.best", "Load Best Version ONLY")).setDefaultValue(false));
+        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.ard.best", "Load Best Version ONLY")).setDefaultValue(false);
+        getConfig().addEntry(bestonly);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.ard.loadlow", "Load Low Version")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.ard.loadmedium", "Load Medium Version")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.ard.loadhigh", "Load High Version")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.ard.loadlow", "Load Low Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.ard.loadmedium", "Load Medium Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.ard.loadhigh", "Load High Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.ard.loadhd", "Load HD Version")).setDefaultValue(false).setEnabled(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "For Dossier links:"));
