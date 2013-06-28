@@ -1,8 +1,6 @@
 package org.jdownloader.gui.settings;
 
 import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Rectangle;
 import java.util.ArrayList;
 
 import javax.swing.Box;
@@ -105,15 +103,6 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
 
     }
 
-    public Dimension getPreferredScrollableViewportSize() {
-
-        return this.getPreferredSize();
-    }
-
-    public int getScrollableBlockIncrement(final Rectangle visibleRect, final int orientation, final int direction) {
-        return Math.max(visibleRect.height * 9 / 10, 1);
-    }
-
     @Override
     protected void onShow() {
 
@@ -131,19 +120,6 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     @Override
     protected void onHide() {
         save();
-    }
-
-    public boolean getScrollableTracksViewportHeight() {
-
-        return false;
-    }
-
-    public boolean getScrollableTracksViewportWidth() {
-        return true;
-    }
-
-    public int getScrollableUnitIncrement(final Rectangle visibleRect, final int orientation, final int direction) {
-        return Math.max(visibleRect.height / 10, 1);
     }
 
     protected JLabel createLabel(String name) {

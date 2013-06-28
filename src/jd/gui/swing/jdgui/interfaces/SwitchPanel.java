@@ -57,7 +57,20 @@ public abstract class SwitchPanel extends JPanel {
             }
 
         };
+
     }
+
+    // public Dimension getPreferredSize() {
+    // try {
+    // Container p = getParent().getParent();
+    // Dimension ret = p.getPreferredSize();
+    //
+    // return ret;
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // return super.getPreferredSize();
+    // }
+    // }
 
     /**
      * returns the panels eventbroadcaster

@@ -28,20 +28,19 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     private SwitchPanel                    panel;
     private GraphicalUserInterfaceSettings cfg;
     private MigPanel                       right;
-    private JScrollPane                    sb;
 
     public ConfigurationPanel() {
         super(new MigLayout("ins 0", "[][grow,fill]", "[grow,fill]"));
         sidebar = new ConfigSidebar();
         right = new RightPanel();
-        sb = new JScrollPane();
-        sb.setBorder(null);
-        right.add(sb, "pushx,growx,pushy,growy");
+
+        // right.add(sb, "pushx,growx,pushy,growy");
         add(sidebar, "");
         JScrollPane sp;
         add(sp = new JScrollPane(right));
         sp.setBorder(null);
-        sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        // sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         cfg = JsonConfig.create(GraphicalUserInterfaceSettings.class);
         // add(viewport);
         sidebar.addListener(this);
@@ -50,6 +49,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
             setBackground(new Color(c).brighter());
             super.setOpaque(true);
         }
+        // sb.addComponentL7istener(this);
     }
 
     public void setOpaque(boolean isOpaque) {
@@ -139,8 +139,11 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
             cfg.setActiveConfigPanel(selectedPanel.getClass().getName());
         }
 
-        sb.setViewportView(selectedPanel);
-
+        // selectedPanel.setPreferredSize(sb.getSize());
+        // sb.setViewportView(selectedPanel);
+        right.removeAll();
+        right.add(selectedPanel, "pushx,growx,pushy,growy");
+        right.revalidate();
         panel = selectedPanel;
         panel.setShown();
 

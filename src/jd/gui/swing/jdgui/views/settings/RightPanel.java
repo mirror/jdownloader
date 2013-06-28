@@ -1,10 +1,10 @@
 package jd.gui.swing.jdgui.views.settings;
 
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 
+import javax.swing.JViewport;
 import javax.swing.Scrollable;
 
 import jd.gui.swing.laf.LookAndFeelController;
@@ -34,13 +34,24 @@ public class RightPanel extends MigPanel implements Scrollable {
         return visibleRect.height;
     }
 
+    public void setSize(Dimension d) {
+
+        resize(d);
+    }
+
     public boolean getScrollableTracksViewportWidth() {
-        return true;
+
+        final JViewport viewport = (JViewport) getParent();
+        Rectangle viewRect = viewport.getViewRect();
+
+        return viewRect.getWidth() > getMinimumSize().width;
+
     }
 
     public boolean getScrollableTracksViewportHeight() {
-        final Container viewport = getParent();
-        return viewport.getHeight() > getMinimumSize().height;
+        final JViewport viewport = (JViewport) getParent();
+        Rectangle viewRect = viewport.getViewRect();
+        return viewRect.getHeight() > getMinimumSize().height;
     }
 
 }
