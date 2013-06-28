@@ -18,7 +18,6 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/jd/ressourcen/code-ressourcen/swing-worker-doc-1.2.zip!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="ressourcen/libs/clink170.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/mail.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/debug-1.0.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/jcip-annotations-1.0.jar"/>
@@ -87,32 +86,20 @@
 	<classpathentry kind="lib" path="ressourcen/libs/bcprov-jdk15on-147.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingLinux.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingMac.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/UPNP/cling-core-2.0-SNAPSHOT.jar" sourcepath="C:/Users/Thomas/Downloads/cling-distribution-2.0-SNAPSHOT/core/src/main/java">
-		<attributes>
-			<attribute name="javadoc_location" value="file:/C:/Users/Thomas/Downloads/cling-distribution-2.0-SNAPSHOT/core/apidocs/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="ressourcen/libs/UPNP/cling-support-2.0-SNAPSHOT.jar" sourcepath="C:/Users/Thomas/Downloads/cling-distribution-2.0-SNAPSHOT/support/src/main/java">
-		<attributes>
-			<attribute name="javadoc_location" value="file:/C:/Users/Thomas/Downloads/cling-distribution-2.0-SNAPSHOT/support/apidocs/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-http-1.0-SNAPSHOT.jar" sourcepath="C:/Users/Thomas/Downloads/cling-distribution-2.0-SNAPSHOT/core/src/main/java">
-		<attributes>
-			<attribute name="javadoc_location" value="file:/C:/Users/Thomas/Downloads/cling-distribution-2.0-SNAPSHOT/core/apidocs/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-util-1.0-20111017.170503-1.jar" sourcepath="C:/Users/Thomas/Downloads/cling-distribution-2.0-SNAPSHOT/core/src/main/java">
-		<attributes>
-			<attribute name="javadoc_location" value="file:/C:/Users/Thomas/Downloads/cling-distribution-2.0-SNAPSHOT/core/apidocs/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-xml-1.0-SNAPSHOT.jar" sourcepath="C:/Users/Thomas/Downloads/cling-distribution-2.0-SNAPSHOT/core/src/main/java">
-		<attributes>
-			<attribute name="javadoc_location" value="file:/C:/Users/Thomas/Downloads/cling-distribution-2.0-SNAPSHOT/core/apidocs/"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/MyJDownloaderClient"/>
 	<classpathentry kind="lib" path="ressourcen/libs/jna_platform.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/UPNP/cling-core.jar" sourcepath="C:/Users/Thomas/Downloads/cling-distribution-2.0-alpha2/core/cling-core-2.0-alpha2-sources.jar">
+		<attributes>
+			<attribute name="source_encoding" value="UTF-8"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="ressourcen/libs/UPNP/cling-support.jar" sourcepath="C:/Users/Thomas/Downloads/cling-distribution-2.0-alpha2/support/cling-support-2.0-alpha2-sources.jar">
+		<attributes>
+			<attribute name="source_encoding" value="UTF-8"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-http.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-util.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-xml.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

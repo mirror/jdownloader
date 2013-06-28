@@ -21,6 +21,8 @@ import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.IPCheckProvider;
 import jd.controlling.reconnect.ipcheck.InvalidIPRangeException;
 import jd.controlling.reconnect.ipcheck.InvalidProviderException;
+import jd.controlling.reconnect.pluginsinc.upnp.cling.UPNPDeviceScanner;
+import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
 import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
 import net.miginfocom.swing.MigLayout;
 
@@ -79,7 +81,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
                 ReconnectResult res;
                 try {
-                    processCallBack.setStatusString(this, T._.try_reconnect(device.getFriendlyname() == null ? device.getModelname() : device.getFriendlyname()));
+                    processCallBack.setStatusString(this, T._.try_reconnect(device.getModelname()));
                     logger.info("Try " + device);
                     res = new UPNPReconnectInvoker(this, device.getServiceType(), device.getControlURL()).validate();
                     logger.info("REsult " + res);
@@ -292,9 +294,8 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
     public synchronized java.util.List<UpnpRouterDevice> getDevices() throws InterruptedException {
         if (devices == null || devices.size() == 0) {
-            // upnp somtimes works, sometimes not - no idea why. that's why we
-            // do a scan if we have no responses
-            devices = UPNPScanner.scanDevices();
+            // This will create necessary network resources for UPnP right away
+            devices = new UPNPDeviceScanner().scan();
         }
         return devices;
     }

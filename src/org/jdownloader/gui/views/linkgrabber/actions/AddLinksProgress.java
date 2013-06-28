@@ -77,7 +77,7 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         header.setText(_GUI._.AddLinksProgress_layoutDialogContent_header_(stz.substring(0, Math.min(45, stz.length()))));
         p.add(label(_GUI._.AddLinksProgress_layoutDialogContent_duration()));
 
-        p.add(duration = new JLabel(), "width 50!");
+        p.add(duration = new JLabel(), "width 50:n:n,growx");
         p.add(new JLabel(NewTheme.I().getIcon("go-next", 18)));
         p.add(label(_GUI._.AddLinksProgress_found()));
         p.add(old = new JLabel());

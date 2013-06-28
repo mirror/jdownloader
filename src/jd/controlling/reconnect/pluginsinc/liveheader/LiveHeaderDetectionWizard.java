@@ -28,7 +28,7 @@ import jd.controlling.reconnect.pluginsinc.liveheader.recoll.RecollController;
 import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
-import jd.controlling.reconnect.pluginsinc.upnp.UpnpRouterDevice;
+import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.utils.JDUtilities;

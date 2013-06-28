@@ -116,26 +116,8 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
                 LogSource logger = LogController.CL();
                 try {
                     logger.setAllowTimeoutFlush(false);
-                    ReconnectInvoker plg = ReconnectPluginController.getInstance().getActivePlugin().getReconnectInvoker();
-                    if (plg == null) throw new ReconnectException(_GUI._.ReconnectDialog_run_failed_not_setup_());
-                    plg.setLogger(logger);
 
-                    // if (IPController.getInstance().getIpState().isOffline()) {
-                    // ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.GRAY);
-                    // ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.RED);
-                    // progress.setValue(0);
-                    // Dialog.getInstance().showMessageDialog(_GUI._.reconnect_test_offline());
-                    // new EDTRunner() {
-                    //
-                    // @Override
-                    // protected void runInEDT() {
-                    // dispose();
-                    // }
-                    // };
-                    // return;
-                    // }
-                    ReconnectResult result = plg.validate();
-                    if (result.isSuccess()) {
+                    if (startReconnectAndWait(logger)) {
                         logger.clear();
                         new EDTRunner() {
 
@@ -153,6 +135,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
                             }
                         };
                     }
+                    update();
                     progress.setIndeterminate(false);
                     if (IPController.getInstance().isInvalidated()) {
                         ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.GRAY);
@@ -197,11 +180,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
         updateTimer = new Timer(1000, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
-                // if (!IPController.getInstance().isInvalidated()) {
-                newIP.setText(IPController.getInstance().getIP().toString());
-                // updateTimer.stop();
-                // }
+                update();
 
             }
         });
@@ -276,5 +255,40 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
     }
 
     public void onIPStateChanged(IPConnectionState parameter, IPConnectionState parameter2) {
+    }
+
+    protected boolean startReconnectAndWait(LogSource logger) throws ReconnectException, InterruptedException {
+        ReconnectInvoker plg = ReconnectPluginController.getInstance().getActivePlugin().getReconnectInvoker();
+        if (plg == null) throw new ReconnectException(_GUI._.ReconnectDialog_run_failed_not_setup_());
+        plg.setLogger(logger);
+
+        // if (IPController.getInstance().getIpState().isOffline()) {
+        // ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.GRAY);
+        // ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.RED);
+        // progress.setValue(0);
+        // Dialog.getInstance().showMessageDialog(_GUI._.reconnect_test_offline());
+        // new EDTRunner() {
+        //
+        // @Override
+        // protected void runInEDT() {
+        // dispose();
+        // }
+        // };
+        // return;
+        // }
+        ReconnectResult result = plg.validate();
+        return result.isSuccess();
+    }
+
+    protected void update() {
+        duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
+        // if (!IPController.getInstance().isInvalidated()) {
+
+        IPConnectionState ip = IPController.getInstance().getIpState();
+
+        newIP.setText(ip.toString());
+
+        // updateTimer.stop();
+        // }
     }
 }

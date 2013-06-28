@@ -1,5 +1,6 @@
 package jd.controlling.reconnect.ipcheck;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.regex.Matcher;
@@ -24,7 +25,7 @@ public class BalancedWebIPCheck implements IPCheckProvider {
         return BalancedWebIPCheck.INSTANCE;
     }
 
-    private static final java.util.List<String>  SERVICES = new ArrayList<String>();
+    private static final java.util.List<String> SERVICES = new ArrayList<String>();
     static {
         SERVICES.add("http://ipcheck3.jdownloader.org");
         SERVICES.add("http://ipcheck2.jdownloader.org");
@@ -34,16 +35,16 @@ public class BalancedWebIPCheck implements IPCheckProvider {
     /**
      * All registered ip check urls
      */
-    private final java.util.List<String>         servicesInUse;
+    private final java.util.List<String>        servicesInUse;
 
-    private final Browser                   br;
+    private final Browser                       br;
 
-    private final Pattern                   pattern;
+    private final Pattern                       pattern;
 
-    private static final BalancedWebIPCheck INSTANCE = new BalancedWebIPCheck(false);
-    private final Object                    LOCK     = new Object();
+    private static final BalancedWebIPCheck     INSTANCE = new BalancedWebIPCheck(false);
+    private final Object                        LOCK     = new Object();
 
-    private boolean                         checkOnlyOnce;
+    private boolean                             checkOnlyOnce;
 
     public BalancedWebIPCheck(boolean useGlobalProxy) {
         this.servicesInUse = new ArrayList<String>();
@@ -80,6 +81,11 @@ public class BalancedWebIPCheck implements IPCheckProvider {
                             logger.clear();
                             return IP.getInstance(matcher.group(1));
                         }
+                    }
+                } catch (final IOException e2) {
+                    try {
+                        br.disconnect();
+                    } catch (final Throwable e) {
                     }
                 } catch (final Throwable e2) {
                     try {

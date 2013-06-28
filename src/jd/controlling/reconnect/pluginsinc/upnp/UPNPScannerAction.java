@@ -2,12 +2,13 @@ package jd.controlling.reconnect.pluginsinc.upnp;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JList;
 
+import jd.controlling.reconnect.pluginsinc.upnp.cling.UPNPDeviceScanner;
+import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
 import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
 
 import org.appwork.swing.action.BasicAction;
@@ -45,7 +46,7 @@ public class UPNPScannerAction extends BasicAction {
 
             public void run() throws Exception {
 
-                final java.util.List<UpnpRouterDevice> devices = UPNPScanner.scanDevices();
+                final java.util.List<UpnpRouterDevice> devices = new UPNPDeviceScanner().scan();
                 if (devices.size() == 0) {
                     Dialog.getInstance().showErrorDialog(T._.UPNPRouterPlugin_run_error());
 
