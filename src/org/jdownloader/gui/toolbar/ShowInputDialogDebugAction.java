@@ -7,7 +7,7 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
 public class ShowInputDialogDebugAction extends AppAction {
     {
-        setIconKey("dialog");
+        setIconKey("menu");
         setTooltipText(getClass().getName());
         setName(getTooltipText());
 

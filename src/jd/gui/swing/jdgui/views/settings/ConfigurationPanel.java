@@ -1,7 +1,6 @@
 package jd.gui.swing.jdgui.views.settings;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Graphics;
 
 import javax.swing.JScrollPane;
@@ -29,12 +28,15 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     private SwitchPanel                    panel;
     private GraphicalUserInterfaceSettings cfg;
     private MigPanel                       right;
+    private JScrollPane                    sb;
 
     public ConfigurationPanel() {
         super(new MigLayout("ins 0", "[][grow,fill]", "[grow,fill]"));
         sidebar = new ConfigSidebar();
         right = new RightPanel();
-
+        sb = new JScrollPane();
+        sb.setBorder(null);
+        right.add(sb, "pushx,growx,pushy,growy");
         add(sidebar, "");
         JScrollPane sp;
         add(sp = new JScrollPane(right));
@@ -127,18 +129,9 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     @SuppressWarnings("rawtypes")
     private void setContent(SwitchPanel selectedPanel) {
         if (selectedPanel == null || selectedPanel == panel) return;
+
         if (panel != null) {
             panel.setHidden();
-            panel.setVisible(false);
-
-        }
-        boolean found = false;
-        for (final Component c : right.getComponents()) {
-            // c.setVisible(false);
-            if (c == selectedPanel) {
-                found = true;
-                break;
-            }
         }
         if (selectedPanel instanceof ExtensionConfigPanel) {
             cfg.setActiveConfigPanel(((ExtensionConfigPanel) selectedPanel).getExtension().getClass().getName());
@@ -146,11 +139,8 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
             cfg.setActiveConfigPanel(selectedPanel.getClass().getName());
         }
 
-        if (!found) {
-            right.add(selectedPanel, "hidemode 3");
-        } else {
-            selectedPanel.setVisible(true);
-        }
+        sb.setViewportView(selectedPanel);
+
         panel = selectedPanel;
         panel.setShown();
 

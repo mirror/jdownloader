@@ -10,7 +10,6 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtTable;
-import org.appwork.swing.exttable.columnmenu.ResetColumns;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 
@@ -25,7 +24,7 @@ public class HorizontalScrollbarAction extends AppAction implements GenericConfi
         setName(_GUI._.HorizontalScrollbarAction_columnControlMenu_scrollbar_());
         setSelected(keyHandler.isEnabled());
         keyHandler.getEventSender().addListener(this, true);
-        setup(keyHandler, table);
+        // setup(keyHandler, table);
 
     }
 
@@ -33,7 +32,7 @@ public class HorizontalScrollbarAction extends AppAction implements GenericConfi
     public void actionPerformed(ActionEvent e) {
         keyHandler.toggle();
         setup(keyHandler, table);
-        new ResetColumns(table).actionPerformed(e);
+        this.table.updateColumns();
 
     }
 
@@ -42,10 +41,12 @@ public class HorizontalScrollbarAction extends AppAction implements GenericConfi
         JScrollPane sp = (JScrollPane) table.getParent().getParent();
 
         if (keyHandler.isEnabled()) {
+            table.setColumnSaveID("hBAR");
             table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
             sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-            sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+            sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         } else {
+            table.setColumnSaveID(null);
             table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
             sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
             sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);

@@ -156,7 +156,23 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                     // add allTODO
                     boolean readL = ((PackageType) node).getModifyLock().readLock();
                     try {
-                        ret.addAll(((PackageType) node).getChildren());
+                        if (filters == null) {
+                            ret.addAll(((PackageType) node).getChildren());
+                        } else {
+                            for (ChildrenType l : ((PackageType) node).getChildren()) {
+
+                                boolean filtered = false;
+                                for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
+                                    if (filter.isFiltered(l)) {
+                                        filtered = true;
+                                        break;
+                                    }
+                                }
+                                if (!filtered) ret.add(l);
+
+                            }
+
+                        }
                     } finally {
                         ((PackageType) node).getModifyLock().readUnlock(readL);
                     }
@@ -344,7 +360,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe {@link #getChildren()} instead
+     * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe {@link #getChildren()}
+     * instead
      * 
      * @return
      */
@@ -362,8 +379,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Not all links of a package may have been selected @see ( {@link #getIncompletePackages()}. to get a list of all selected links for a certain package, use
-     * this method
+     * Not all links of a package may have been selected @see ( {@link #getIncompletePackages()}. to get a list of all selected links for a
+     * certain package, use this method
      * 
      * @param pkg
      * @return
