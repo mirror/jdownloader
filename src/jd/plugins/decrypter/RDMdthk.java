@@ -57,8 +57,12 @@ public class RDMdthk extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
+        // Add offline link so user can see it
         if (!br.containsHTML("var \\$jPlayer =")) {
-            logger.info("This link might be offline: " + parameter);
+            final DownloadLink dl = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=offline");
+            dl.setAvailable(false);
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
 

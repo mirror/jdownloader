@@ -21,7 +21,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -47,9 +46,10 @@ public class FilesFlashCom extends PluginForHost {
         this.enablePremium("http://filesflash.com/premium.php");
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://filesflash.com/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-    }
+    /** Leave urls unchange as for some countries, only urls with the port in it are accessable */
+    // public void correctDownloadLink(DownloadLink link) {
+    // link.setUrlDownload("http://filesflash.com/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+    // }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {

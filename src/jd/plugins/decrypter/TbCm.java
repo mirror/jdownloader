@@ -59,7 +59,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?(.*?list=[a-z\\-_A-Z0-9]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://(www\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|course\\?list=)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?(.*?list=[a-z\\-_A-Z0-9]+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
     private static AtomicBoolean PLUGIN_CHECKED  = new AtomicBoolean(false);
     private static AtomicBoolean PLUGIN_DISABLED = new AtomicBoolean(false);
@@ -122,6 +122,7 @@ public class TbCm extends PluginForDecrypt {
     private final Pattern                       StreamingShareLink  = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
 
     static public final Pattern                 YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
+    private static final String                 COURSE_LINK         = "http://(www\\.)?youtube\\.com/course\\?list=[A-Z0-9]+";
     private static final String                 UNSUPPORTEDRTMP     = "itag%2Crtmpe%2";
 
     HashMap<DestinationFormat, ArrayList<Info>> possibleconverts    = null;
@@ -381,7 +382,7 @@ public class TbCm extends PluginForDecrypt {
             // choice == 2 -> Ask
 
             if (choice == 2) {
-                int ret = UserIO.getInstance().requestConfirmDialog(0, parameter, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video an a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", "Complete playlist"));
+                int ret = UserIO.getInstance().requestConfirmDialog(0, parameter, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video and a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", "Complete playlist"));
                 // Video selected
                 if (ret == 2) choice = 0;
                 // Playlist selected
@@ -435,6 +436,27 @@ public class TbCm extends PluginForDecrypt {
                     page = "";
                 }
             } while (page.length() != 0);
+        } else if (parameter.matches(COURSE_LINK)) {
+            br.getPage(parameter);
+            if (br.getURL().contains("youtube.com/oops?ytsession=")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            final String[] videoIDs = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Z0-9]+\" class=\"yt\\-uix\\-sessionlink\"").getColumn(0);
+            if (videoIDs == null || videoIDs.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            int videoNumberCounter = 1;
+            for (String videoID : videoIDs) {
+                videoID = Encoding.htmlDecode(videoID);
+                videoID = "http://www.youtube.com" + videoID;
+                final String[] finalInformation = new String[2];
+                finalInformation[0] = videoID;
+                finalInformation[1] = playlistNumberFormat.format(videoNumberCounter);
+                linkstodecrypt.add(finalInformation);
+                videoNumberCounter++;
+            }
         } else if (parameter.contains("/user/")) {
             // Handle user links
             parameter = "http://www.youtube.com/user/" + new Regex(parameter, "youtube\\.com/user/([a-z\\-_A-Z0-9]+)($|\\?.*?)").getMatch(0);

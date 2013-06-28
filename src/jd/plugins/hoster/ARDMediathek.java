@@ -77,6 +77,7 @@ public class ARDMediathek extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, GeneralSecurityException {
+        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (downloadLink.getStringProperty("directURL", null) == null) {
             /* fetch fresh directURL */
             setBrowserExclusive();
@@ -246,7 +247,6 @@ public class ARDMediathek extends PluginForHost {
                 text = text.replaceAll("<br />", lineseparator);
                 text = text.replaceAll("</?(p|span)>?", "");
                 text = text.trim();
-                // color=\"#([A-Z0-9]+)\">(.*?)($|tts:)
                 final String[][] colorTags = new Regex(text, "color=\"([a-z0-9]+)\">(.*?)($|tts:)").getMatches();
                 if (colorTags != null && colorTags.length != 0) {
                     for (final String[] singleText : colorTags) {
@@ -305,6 +305,11 @@ public class ARDMediathek extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's ARD Plugin helps downloading videoclips from ardmediathek.de and daserste.de. You can choose between different video qualities.";
     }
 
     private void setConfigElements() {
