@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -31,7 +32,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.table.JTableHeader;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -50,12 +53,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ContainerDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
@@ -279,7 +285,7 @@ public class FreeWayMe extends PluginForHost {
                     if (host.equals("uploaded.net") || host.equals("ul.to")) {
                         host = "uploaded.to";
                     }
-                    MultihostContainer container = new MultihostContainer(host);
+                    MultihostContainer container = new MultihostContainer(host, account);
                     if (unavailableHosts != null && unavailableHosts.contains(host)) container.setIsWorking(false);
                     hostList.add(container);
                 }
@@ -409,6 +415,13 @@ public class FreeWayMe extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
+    private ArrayList<String> getDisabledHosts(Account account) {
+        final Object disabledHostsObject = account.getAccountInfo().getProperty("disabledHosts", Property.NULL);
+        ArrayList<String> disabledHosts;
+        if (disabledHostsObject.equals(Property.NULL)) return new ArrayList<String>();
+        return (ArrayList<String>) disabledHostsObject;
+    }
+
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, long timeout) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         synchronized (hostUnavailableMap) {
@@ -426,6 +439,7 @@ public class FreeWayMe extends PluginForHost {
 
     @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+        if (getDisabledHosts(account).contains(downloadLink.getHost())) return false;
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -466,6 +480,61 @@ public class FreeWayMe extends PluginForHost {
 
         @Override
         protected void initColumns() {
+
+            this.addColumn(new ExtCheckColumn<MultihostContainer>(_GUI._.premiumaccounttablemodel_column_enabled()) {
+
+                private static final long serialVersionUID = 1515656228974789237L;
+
+                public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
+
+                    final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+
+                        private static final long serialVersionUID = 3224931991570756349L;
+
+                        @Override
+                        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                            setIcon(NewTheme.I().getIcon("ok", 14));
+                            setHorizontalAlignment(CENTER);
+                            setText(null);
+                            return this;
+                        }
+
+                    };
+
+                    return ret;
+                }
+
+                @Override
+                public int getMaxWidth() {
+                    return 30;
+                }
+
+                @Override
+                public boolean isHidable() {
+                    return false;
+                }
+
+                @Override
+                protected boolean getBooleanValue(MultihostContainer value) {
+                    return value.isEnabled();
+                }
+
+                @Override
+                public boolean isEditable(MultihostContainer obj) {
+                    return true;
+                }
+
+                @Override
+                protected void setBooleanValue(boolean value, final MultihostContainer container) {
+                    if (value) {
+                        container.enable();
+                    } else {
+                        container.disable();
+                    }
+                }
+            });
+
             this.addColumn(new ExtTextColumn<MultihostContainer>("Host") {
 
                 private static final long serialVersionUID = -8070328156326837828L;
@@ -545,10 +614,40 @@ public class FreeWayMe extends PluginForHost {
 
         private String  host;
 
+        private Account account;
+
         private boolean isWorking = true;
 
-        public MultihostContainer(String host) {
+        public MultihostContainer(String host, Account account) {
             this.host = host;
+            this.account = account;
+        }
+
+        public void enable() {
+            ArrayList<String> disabledHosts = getDisabledHosts();
+            if (disabledHosts.contains(host)) {
+                disabledHosts.remove(host);
+                account.getAccountInfo().setProperty("disabledHosts", disabledHosts);
+            }
+        }
+
+        public void disable() {
+            ArrayList<String> disabledHosts = getDisabledHosts();
+            if (!disabledHosts.contains(host)) {
+                disabledHosts.add(host);
+                account.getAccountInfo().setProperty("disabledHosts", disabledHosts);
+            }
+        }
+
+        public boolean isEnabled() {
+            return !getDisabledHosts().contains(host);
+        }
+
+        private ArrayList<String> getDisabledHosts() {
+            final Object disabledHostsObject = account.getAccountInfo().getProperty("disabledHosts", Property.NULL);
+            ArrayList<String> disabledHosts;
+            if (disabledHostsObject.equals(Property.NULL)) return new ArrayList<String>();
+            return (ArrayList<String>) disabledHostsObject;
         }
 
         public void setIsWorking(boolean working) {
