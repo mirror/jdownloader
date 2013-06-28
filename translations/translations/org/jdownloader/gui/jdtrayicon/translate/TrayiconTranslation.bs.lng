@@ -1,0 +1,13 @@
+JDGui_windowClosing_try_answer_totaskbar=Minimiziraj u Taskbar
+JDGui_windowClosing_try_answer_tray=Sakrij u Tray
+OnCloseAction_exit=Napusti Aplikaciju
+OnCloseAction_totaskbar=Minimiziraj u Taskbar
+OnCloseAction_totray=Zatvori u Tray
+OnMinimizeAction_ask=Pitaj me
+OnMinimizeAction_totaskbar=Minimiziraj u Taskbar
+OnMinimizeAction_totray=Zatvori u Tray
+plugins_optional_JDLightTray_tooltip=Prikaži Tooltip
+popup_exit=Napusti JDownloader
+popup_pause=Pauziraj Download-e
+popup_reconnect=Ponovo se konektuj Sada
+popup_update=Provjeri Nadgradnje

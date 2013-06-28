@@ -24,3 +24,5 @@ jd_plugins_optional_jdshutdown=JD Gašenje
 jd_plugins_optional_jdshutdown_description=Automatski isključi, suspenduj, hiberniraj računar ili zatvori JDownloader kada se završe svi download-i.
 lit_shutdownn=Shutdown
 show_admin=Potrebna su administratorska prava za podešavanje JDownloader-a da pošalje sistem u Hibernaciju ili Standby
+shutdown_toggle_action_disabled=Omogući Shutdown nakon Download-a
+shutdown_toggle_action_enabled=Onemogući Shutdown nakon Download-a
