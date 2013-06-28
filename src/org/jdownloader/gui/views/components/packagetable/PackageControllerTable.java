@@ -10,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
@@ -102,7 +103,21 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
     protected boolean moveUpPossible(java.util.List<ParentType> pkgs, java.util.List<ChildrenType> selectedChld) {
         if (getModel().isFilteredView()) return false;
-        if (pkgs.size() > 0 && selectedChld.size() > 0) {
+        // let's check if we have only full packages selected. that means, that selectedChld contains all links in the packages
+        boolean onlyFullPackagesSelected = true;
+        HashSet<ChildrenType> allInPackages = new HashSet<ChildrenType>();
+        for (ParentType pkg : pkgs) {
+            allInPackages.addAll(pkg.getChildren());
+        }
+
+        for (ChildrenType ch : selectedChld) {
+            if (!allInPackages.remove(ch)) {
+                onlyFullPackagesSelected = false;
+                break;
+            }
+        }
+        onlyFullPackagesSelected &= allInPackages.size() == 0;
+        if (pkgs.size() > 0 && selectedChld.size() > 0 && !onlyFullPackagesSelected) {
             /* we don't allow moving of packages/children at the same time */
             return false;
         }
@@ -128,7 +143,20 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
     protected boolean moveDownPossible(java.util.List<ParentType> pkgs, java.util.List<ChildrenType> selectedChld) {
         if (getModel().isFilteredView()) return false;
-        if (pkgs.size() > 0 && selectedChld.size() > 0) {
+        boolean onlyFullPackagesSelected = true;
+        HashSet<ChildrenType> allInPackages = new HashSet<ChildrenType>();
+        for (ParentType pkg : pkgs) {
+            allInPackages.addAll(pkg.getChildren());
+        }
+
+        for (ChildrenType ch : selectedChld) {
+            if (!allInPackages.remove(ch)) {
+                onlyFullPackagesSelected = false;
+                break;
+            }
+        }
+        onlyFullPackagesSelected &= allInPackages.size() == 0;
+        if (pkgs.size() > 0 && selectedChld.size() > 0 && !onlyFullPackagesSelected) {
             /* we don't allow moving of packages/children at the same time */
             return false;
         }
