@@ -1,4 +1,5 @@
 AddContainerAction_delete_container_title=Izbrisati Kontejner Dokumente?
+CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Pristup Captcha Podešenjima
 DownloadLink_setSkipped_statusmessage=Preskočeno
 DownloadWatchDog_onShutdownRequest_=U toku su Download-i!
 DownloadWatchDog_onShutdownRequest_msg=Želite li da zaustavite aktivne download-e da zatvorite JDownloader?
