@@ -16,10 +16,10 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -28,6 +28,8 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -36,7 +38,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -47,26 +48,23 @@ public class DlPrtcCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String  CAPTCHATEXT    = ">Security Code";
-    private static final String  CAPTCHAFAILED  = ">The security code is incorrect";
-    private static final String  PASSWORDTEXT   = ">Password :";
-    private static final String  PASSWORDFAILED = ">The password is incorrect";
-    private static final String  JDDETECTED     = "JDownloader is prohibited.";
-    private static String        agent          = null;
+    private final String         CAPTCHATEXT    = ">Security Code";
+    private final String         CAPTCHAFAILED  = ">The security code is incorrect";
+    private final String         PASSWORDTEXT   = ">Password :";
+    private final String         PASSWORDFAILED = ">The password is incorrect";
+    private final String         JDDETECTED     = "JDownloader is prohibited.";
+    private String               agent          = null;
     private static AtomicInteger maxConProIns   = new AtomicInteger(1);
-    private static AtomicBoolean mfLoaded       = new AtomicBoolean(false);
     private boolean              coLoaded       = false;
-    private String               correctedBR    = "";
+    private Browser              cbr            = new Browser();
 
+    @SuppressWarnings("unchecked")
     private Browser prepBrowser(Browser prepBr) {
         // load previous agent, could be referenced with cookie session. (not tested)
         if (agent == null) agent = this.getPluginConfig().getStringProperty("agent", null);
         if (agent == null) {
             /* we first have to load the plugin, before we can reference it */
-            if (mfLoaded.equals(false)) {
-                JDUtilities.getPluginForHost("mediafire.com");
-                mfLoaded.set(true);
-            }
+            JDUtilities.getPluginForHost("mediafire.com");
             agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
         prepBr.getHeaders().put("User-Agent", agent);
@@ -82,51 +80,54 @@ public class DlPrtcCom extends PluginForDecrypt {
         // Prefer English language
         if (!coLoaded) prepBr.setCookie(this.getHost(), "l", "en");
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        prepBr.getHeaders().put("Pragma", null);
+        prepBr.getHeaders().put("Accept-Charset", null);
         return prepBr;
     }
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceAll("dl\\-protect\\.com/(en|fr)/", "dl-protect.com/");
         prepBrowser(br);
-        br.getPage(parameter);
-        if (br.containsHTML(">Unfortunately, the link you are looking for is not found")) {
+        getPage(parameter);
+        if (cbr.containsHTML(">Unfortunately, the link you are looking for is not found")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML(PASSWORDTEXT) || br.containsHTML(CAPTCHATEXT)) {
+        if (cbr.containsHTML(PASSWORDTEXT) || cbr.containsHTML(CAPTCHATEXT)) {
             for (int i = 0; i <= 5; i++) {
                 Form importantForm = getForm();
                 if (importantForm == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                if (br.containsHTML(PASSWORDTEXT)) {
+                if (cbr.containsHTML(PASSWORDTEXT)) {
                     importantForm.put("pwd", getUserInput(null, param));
                 }
-                if (br.containsHTML(CAPTCHATEXT)) {
-                    String captchaLink = getCaptchaLink();
+                if (cbr.containsHTML(CAPTCHATEXT)) {
+                    String captchaLink = getCaptchaLink(importantForm.getHtmlCode());
                     if (captchaLink == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
                     captchaLink = "http://www.dl-protect.com" + captchaLink;
                     String code = getCaptchaCode(captchaLink, param);
-                    String formName = importantForm.getRegex("<td>Copy the code :</td>.*?name=\"([^\"]+)\" maxlength=\"\\d+\"").getMatch(0);
-                    if (formName == null) formName = "secure";
+                    String formName = "secure";
                     importantForm.put(formName, code);
+                    importantForm.remove("secures");
                 }
                 importantForm.put("i", Encoding.Base64Encode(String.valueOf(System.currentTimeMillis())));
-                br.submitForm(importantForm);
-                if (getCaptchaLink() != null || br.containsHTML(CAPTCHAFAILED) || br.containsHTML(PASSWORDFAILED) || br.containsHTML(PASSWORDTEXT)) continue;
+                sendForm(importantForm);
+                if (getCaptchaLink(cbr.toString()) != null || cbr.containsHTML(CAPTCHAFAILED) || cbr.containsHTML(PASSWORDFAILED) || cbr.containsHTML(PASSWORDTEXT)) continue;
                 break;
             }
-            if (br.containsHTML(CAPTCHAFAILED) && br.containsHTML(CAPTCHAFAILED)) throw new DecrypterException("Wrong captcha and password entered!");
-            if (getCaptchaLink() != null || br.containsHTML(CAPTCHAFAILED) || br.containsHTML(CAPTCHATEXT)) throw new DecrypterException(DecrypterException.CAPTCHA);
-            if (br.containsHTML(PASSWORDTEXT) || br.containsHTML(PASSWORDFAILED)) throw new DecrypterException(DecrypterException.PASSWORD);
+            if (cbr.containsHTML(CAPTCHAFAILED) && cbr.containsHTML(CAPTCHAFAILED)) throw new DecrypterException("Wrong captcha and password entered!");
+            if (getCaptchaLink(cbr.toString()) != null || cbr.containsHTML(CAPTCHAFAILED) || cbr.containsHTML(CAPTCHATEXT)) throw new DecrypterException(DecrypterException.CAPTCHA);
+            if (cbr.containsHTML(PASSWORDTEXT) || cbr.containsHTML(PASSWORDFAILED)) throw new DecrypterException(DecrypterException.PASSWORD);
         }
 
-        if (br.containsHTML(">Please click on continue to see the content")) {
+        if (cbr.containsHTML(">Please click on continue to see the content")) {
             Form continueForm = getForm();
             if (continueForm == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -136,12 +137,12 @@ public class DlPrtcCom extends PluginForDecrypt {
                 continueForm.remove("submitform");
                 // continueForm.put("submitform", "");
             }
-            br.submitForm(continueForm);
+            sendForm(continueForm);
         }
         if (JDHash.getMD5(JDDETECTED).equals(JDHash.getMD5(br.toString()))) {
             rmCookie(parameter);
         }
-        String linktext = br.getRegex("class=\"divlink link\"\\s+id=\"slinks\"><a(.*?)valign=\"top\" align=\"right\" width=\"500px\" height=\"280px\"><pre style=\"text\\-align:center\">").getMatch(0);
+        String linktext = cbr.getRegex("class=\"divlink link\"\\s+id=\"slinks\"><a(.*?)valign=\"top\" align=\"right\" width=\"500px\" height=\"280px\"><pre style=\"text\\-align:center\">").getMatch(0);
         if (linktext == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -171,56 +172,64 @@ public class DlPrtcCom extends PluginForDecrypt {
 
     }
 
-    private String getCaptchaLink() throws Exception {
-        correctBR();
+    private String getCaptchaLink(String source) throws Exception {
         // proper captcha url seem to have 32 (md5) char length
-        String captchaLink = new Regex(correctedBR, "src=\"(\\s+)?(/captcha\\.php\\?uid=_?[a-z0-9]{32})(\\s+)?\"").getMatch(1);
+        String captchaLink = new Regex(source, "src=\"(\\s+)?(/captcha\\.php\\?uid=_?[a-z0-9]{32})(\\s+)?\"").getMatch(1);
         if (captchaLink == null) {
-            captchaLink = new Regex(correctedBR, "(/captcha\\.php\\?uid=_?[a-z0-9]{32})").getMatch(0);
+            captchaLink = new Regex(source, "(/captcha\\.php\\?uid=_?[a-z0-9]{32})").getMatch(0);
             if (captchaLink == null) {
-                captchaLink = new Regex(correctedBR, "src=[^>]+(/captcha\\.php\\?[^\"]+)").getMatch(0);
+                captchaLink = new Regex(source, "src=[^>]+(/captcha\\.php\\?[^\"]+)").getMatch(0);
                 if (captchaLink == null) {
-                    captchaLink = new Regex(correctedBR, "(/captcha\\.php\\?[^\"']+)").getMatch(0);
+                    captchaLink = new Regex(source, "(/captcha\\.php\\?[^\"']+)").getMatch(0);
                 }
-                // String[] imgs = new Regex(correctedBR, "<img[^>]+(/captcha\\.php\\?[^\"]+)").getColumn(0);
-                // if (imgs != null && imgs.length != 0) {
-                // for (String img : imgs) {
-                // if (new Regex(img, "([a-z0-9]{28,32})").matches()) {
-                // captchaLink = img; } }
-                // }
             }
         }
-        // implement a verification of captcha link to prevent fakes.
-
         return captchaLink;
     }
 
     private Form getForm() {
-        Form theForm = br.getFormbyProperty("name", "ccerure");
-        if (theForm == null) theForm = br.getForm(0);
+        Form theForm = cbr.getFormbyProperty("name", "ccerure");
+        if (theForm == null) theForm = cbr.getForm(0);
         return theForm;
     }
 
-    /** Remove HTML code which could break the plugin */
-    public void correctBR() throws NumberFormatException, PluginException {
-        correctedBR = br.toString();
+    /**
+     * Removes patterns which could break the plugin due to fake/hidden HTML, or false positives caused by HTML comments.
+     * 
+     * @throws Exception
+     * @author raztoki
+     */
+    public void correctBR() throws Exception {
+        String toClean = br.toString();
+
         ArrayList<String> regexStuff = new ArrayList<String>();
 
         // remove custom rules first!!! As html can change because of generic cleanup rules.
 
+        // generic cleanup
+        // this checks for fake or empty forms from original source, and adds form html to regexStuff.
+        for (final Form f : br.getForms()) {
+            if (!f.containsHTML("<input[^>]+type=\"submit\"[^>]+>")) {
+                regexStuff.add("(" + f.getHtmlCode() + ")");
+            }
+        }
         // fake captchas are lame, so lets remove them here
         // <center><img id="captcha_" src="/captcha.php?uid=a1" style="display:none">
-        regexStuff.add("(<img[^>]+display:(\\s+)?(none|hidden)\">)");
-        regexStuff.add("(<img[^>]+display:(\\s+)?(none|hidden)'>)");
+        // regexStuff.add("((?!<script[^>]+)<!--.*?-->)");
+        regexStuff.add("(<img[^>]+display:(\\s+)?(none|hidden)[^>]+>)");
         regexStuff.add("(\\{[^\\}]+getElementById\\('captcha'\\)[^\\}]+/captcha\\.php[^\\}]+)");
+
         for (String aRegex : regexStuff) {
-            String results[] = new Regex(correctedBR, aRegex).getColumn(0);
+            String results[] = new Regex(toClean, aRegex).getColumn(0);
             if (results != null) {
                 for (String result : results) {
-                    correctedBR = correctedBR.replace(result, "");
+                    toClean = toClean.replace(result, "");
                 }
             }
         }
+
+        cbr = br.cloneBrowser();
+        cbr = cleanupBrowser(cbr, toClean);
     }
 
     private void rmCookie(String parameter) {
@@ -230,6 +239,55 @@ public class DlPrtcCom extends PluginForDecrypt {
         this.getPluginConfig().save();
         maxConProIns.set(1);
         coLoaded = false;
+    }
+
+    /**
+     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
+     * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
+     * 
+     * @param ibr
+     *            Import Browser
+     * @param t
+     *            Provided replacement string output browser
+     * @author raztoki
+     * */
+    private Browser cleanupBrowser(final Browser ibr, final String t) throws Exception {
+        if (br.isDebug()) logger.info("\r\ndirtyMD5sum = " + JDHash.getMD5(ibr.toString()) + "\r\ncleanMD5sum = " + JDHash.getMD5(t) + "\r\n");
+        Request req = ibr.createRequest(ibr.getURL());
+        URLConnectionAdapter con = ibr.getRequest().getHttpConnection();
+        req = new Request(con) {
+            {
+                requested = true;
+            }
+
+            @Override
+            public long postRequest() throws IOException {
+                return 0;
+            }
+
+            @Override
+            public void preRequest() throws IOException {
+            }
+        };
+        req.setHtmlCode(t);
+        ibr.setRequest(req);
+        return ibr;
+    }
+
+    private void getPage(final String page) throws Exception {
+        br.getPage(page);
+        correctBR();
+    }
+
+    @SuppressWarnings("unused")
+    private void postPage(final String page, final String postData) throws Exception {
+        br.postPage(page, postData);
+        correctBR();
+    }
+
+    private void sendForm(final Form form) throws Exception {
+        br.submitForm(form);
+        correctBR();
     }
 
     /* NO OVERRIDE!! */
