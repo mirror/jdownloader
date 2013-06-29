@@ -16,3 +16,4 @@ interaction_shutdown_dialog_title_shutdown=Vypnúť?
 interaction_shutdown_dialog_title_standby=Uspať?
 jd_plugins_optional_jdshutdown=JD Vypnutie
 lit_shutdownn=Vypnúť
+show_admin=Sú potrebné administrátorské práva pre nastavenie JDownloadera na prechod do režimu spánku alebo pohotovostného režimu.
