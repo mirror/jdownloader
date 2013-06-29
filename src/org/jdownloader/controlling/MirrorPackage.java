@@ -1,5 +1,6 @@
 package org.jdownloader.controlling;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -62,7 +63,7 @@ public class MirrorPackage {
             // hash mismatch
             return id + "/" + link.getSha1Hash().toLowerCase(Locale.ENGLISH);
         }
-        finished |= link.getLinkStatus().isFinished();
+        finished |= link.getLinkStatus().isFinished() && new File(link.getFileOutput()).exists();
         if (link.isEnabled()) {
             bytesLoaded = Math.max(bytesLoaded, link.getDownloadCurrent());
         }
