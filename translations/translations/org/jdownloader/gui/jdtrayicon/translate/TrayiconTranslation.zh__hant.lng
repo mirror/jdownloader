@@ -12,6 +12,7 @@ OnMinimizeAction_totray=關閉到系統匣
 TrayMenuManager_getName=系統匣圖示管理
 getName=系統匣圖示
 plugins_optional_JDLightTray_closetotray2=按一下「關閉 <X>」動作
+plugins_optional_JDLightTray_hideifframevisible=如果視窗可見則隱藏系統匣
 plugins_optional_JDLightTray_minimizetotray=按一下「最小化 <_>」動作
 plugins_optional_JDLightTray_passwordRequired=從系統匣開啟時請輸入密碼
 plugins_optional_JDLightTray_singleClick=按一下切換視窗狀態
