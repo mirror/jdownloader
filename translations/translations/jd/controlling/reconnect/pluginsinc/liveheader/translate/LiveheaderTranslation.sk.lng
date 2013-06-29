@@ -44,6 +44,7 @@ gui_fengshuiconfig_routerip=IP routera
 jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save=Uložiť
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Zakázali ste Kontrolu IP. Týmto dramaticky zvýšite množstvo znovupripojení!\n\n\n\nNiekoľko modulov ako Záznam Znovupripojení bolo zakázaných.
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=Kontrola IP zakázaná!
+jd_nrouter_recorder_Gui_info1=Skontrolujte IP adresu routera a stlačte tlačidlo Štart
 literally_password=Heslo
 literally_router_ip=IP routera
 literally_router_model=Model routera

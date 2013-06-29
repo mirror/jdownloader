@@ -31,6 +31,7 @@ offline=Súbor je offline alebo chýba
 plugins_optional_extraction_askForPassword=Heslo pre %s1?
 plugins_optional_extraction_crcerrorin=Rozbalovanie: zlyhalo (CRC v %s1)
 plugins_optional_extraction_error_extrfailedcrc=Rozbalovanie: zlyhalo (CRC neznámého súboru)
+plugins_optional_extraction_filefilter=Všetky podporované formáty
 plugins_optional_extraction_filenotfound=Rozbalovanie: zlyhalo (Súbor nebol nájdený)
 plugins_optional_extraction_status_crackingpass_progress=Lámanie hesla: %s1 %
 plugins_optional_extraction_status_extractfailedpass=Rozbalovanie zlyhalo (heslo)
