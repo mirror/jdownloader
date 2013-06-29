@@ -12,6 +12,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.uio.UserIODefinition;
 import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.uio.UserIOHandlerInterface;
+import org.appwork.utils.Application;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -55,7 +56,10 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
         try {
             try {
                 if (impl instanceof AbstractDialog) {
-                    ((AbstractDialog<?>) impl).setTitle(((AbstractDialog<?>) impl).getTitle() + " ID: " + handle.getId());
+                    if (!Application.isJared(RemoteAPIIOHandlerWrapper.class)) {
+                        ((AbstractDialog<?>) impl).setTitle(((AbstractDialog<?>) impl).getTitle() + " DialogID: " + handle.getId());
+                    }
+
                     Dialog.getInstance().showDialog((AbstractDialog<?>) impl);
                 } else {
                     throw new WTFException("Not Supported Dialog Type!: " + impl);
