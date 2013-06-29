@@ -370,42 +370,60 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptVideoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
-        final String type = "multiplevideoalbums";
-        /* not needed as we already have requested this page */
-        // br.getPage(parameter);
-        final String numberOfEntrys = br.getRegex("(\\d+) videos<").getMatch(0);
-        final String jsVideoArray = br.getRegex("videoList: \\{\\'all\\': \\[(.*?)\\]\\]\\}").getMatch(0);
-        if (numberOfEntrys == null || jsVideoArray == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        final String[] videos = new Regex(jsVideoArray, "\\[(\\d+, \\d+), \\'").getColumn(0);
-        if (videos == null || videos.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        int counter = 1;
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        final String albumID = new Regex(parameter, "(\\d+)$").getMatch(0);
+        final int numberOfEntrys = Integer.parseInt(br.getRegex("(\\d+) videos<").getMatch(0));
+        int totalCounter = 0;
+        int onlineCounter = 0;
         int offlineCounter = 0;
-        for (String singleVideo : videos) {
-            singleVideo = singleVideo.replace(", ", "_");
-            logger.info("Decrypting video " + counter + " / " + numberOfEntrys);
-            String completeVideolink = "http://vk.com/video" + singleVideo;
-            br.getPage(completeVideolink);
-            ArrayList<DownloadLink> temp = new ArrayList<DownloadLink>();
-            temp = decryptSingleVideo(temp, completeVideolink);
-            if (temp == null) {
-                logger.warning("Decrypter broken for link: " + parameter + "\n");
-                logger.warning("stopped at: " + completeVideolink);
-                return null;
-            } else if (temp.size() == 0) {
-                offlineCounter++;
-                logger.info("Continuing, found " + offlineCounter + " offline/invalid videolinks so far...");
-                continue;
+        while (totalCounter < numberOfEntrys) {
+            String[] videos = null;
+            if (totalCounter < 12) {
+                final String jsVideoArray = br.getRegex("videoList: \\{\\'all\\': \\[(.*?)\\]\\]\\}").getMatch(0);
+                if (jsVideoArray == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                videos = new Regex(jsVideoArray, "\\[(\\d+, \\d+), \\'").getColumn(0);
+            } else {
+                br.postPage("https://vk.com/al_video.php", "act=load_videos_silent&al=1&offset=" + totalCounter + "&oid=" + albumID);
+                videos = br.getRegex("\\[(\\d+, \\d+), \\'").getColumn(0);
             }
-            final DownloadLink finallink = temp.get(0);
-            decryptedLinks.add(finallink);
-            counter++;
+            if (videos == null || videos.length == 0) {
+                break;
+            }
+            for (String singleVideo : videos) {
+                try {
+                    singleVideo = singleVideo.replace(", ", "_");
+                    logger.info("Decrypting video " + totalCounter + " / " + numberOfEntrys);
+                    String completeVideolink = "http://vk.com/video" + singleVideo;
+                    br.getPage(completeVideolink);
+                    ArrayList<DownloadLink> temp = new ArrayList<DownloadLink>();
+                    temp = decryptSingleVideo(temp, completeVideolink);
+                    if (temp == null) {
+                        logger.warning("Decrypter broken for link: " + parameter + "\n");
+                        logger.warning("stopped at: " + completeVideolink);
+                        return null;
+                    } else if (temp.size() == 0) {
+                        offlineCounter++;
+                        logger.info("Continuing, found " + offlineCounter + " offline/invalid videolinks so far...");
+                        continue;
+                    }
+                    final DownloadLink finallink = temp.get(0);
+                    decryptedLinks.add(finallink);
+                    onlineCounter++;
+                } finally {
+                    totalCounter++;
+                }
+            }
         }
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        logger.info("Total links found: " + totalCounter);
+        logger.info("Total online links: " + onlineCounter);
+        logger.info("Total offline links: " + offlineCounter);
         return decryptedLinks;
     }
 
@@ -421,15 +439,9 @@ public class VKontakteRu extends PluginForDecrypt {
             return foundVideolinks;
         }
         // Find rutube.ru link if it exists
-        embeddedVideo = new Regex(correctedBR, "video\\.rutube\\.ru/(.*?)\\'").getMatch(0);
+        embeddedVideo = new Regex(correctedBR, "url: \\'(https?://video\\.rutube\\.ru/[a-z0-9]+)\\'").getMatch(0);
         if (embeddedVideo != null) {
-            br.getPage("http://rutube.ru/trackinfo/" + embeddedVideo + ".html");
-            String finalID = br.getRegex("<track_id>(\\d+)</track_id>").getMatch(0);
-            if (finalID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            foundVideolinks.add(createDownloadlink("http://rutube.ru/tracks/" + finalID + ".html"));
+            foundVideolinks.add(createDownloadlink(embeddedVideo));
             return foundVideolinks;
         }
         // Find vimeo.com link if it exists

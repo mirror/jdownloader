@@ -51,7 +51,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -472,9 +471,12 @@ public class TbCm extends PluginForDecrypt {
             do {
                 String content = unescape(br.toString());
 
-                if (content.contains("iframe style=\"display:block;border:0;\" src=\"/error")) throw new PluginException(LinkStatus.ERROR_RETRY, "An unkown error occured");
+                if (content.contains("iframe style=\"display:block;border:0;\" src=\"/error")) {
+                    logger.warning("An unkown error occured");
+                    return null;
+                }
 
-                String[][] links = new Regex(content, "a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\" class=\"ux\\-thumb\\-wrap yt\\-uix\\-sessionlink yt\\-uix\\-contextlink contains\\-addto spf\\-link\"").getMatches();
+                String[][] links = new Regex(content, "a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\" class=\"ux\\-thumb\\-wrap yt\\-uix\\-sessionlink yt\\-uix\\-contextlink contains\\-addto").getMatches();
 
                 for (String[] url : links) {
                     String video = Encoding.htmlDecode(url[0]);
@@ -486,12 +488,10 @@ public class TbCm extends PluginForDecrypt {
                     videoNumberCounter++;
                 }
 
-                next = new Regex(content, "button class=\"yt\\-uix\\-load\\-more load\\-more\\-button yt\\-uix\\-button yt\\-uix\\-button\\-hh\\-default\" type=\"button\" onclick=\";return false;\" data\\-uix\\-load\\-more\\-href=\"(.*?)\"").getMatch(0);
-                if (next == null) next = new Regex(content, "button onclick=\";return false;\" class=\"yt\\-uix\\-load\\-more load\\-more\\-button yt\\-uix\\-button yt\\-uix\\-button\\-hh\\-default\" type=\"button\" data\\-uix\\-load\\-more\\-href=\"(.*?)\"").getMatch(0);
-                if (next == null) next = new Regex(content, "button type=\"button\" class=\"yt\\-uix\\-load\\-more load\\-more\\-button yt\\-uix\\-button yt\\-uix\\-button\\-hh\\-default\" onclick=\";return false;\" data\\-uix\\-load\\-more\\-href=\"(.*?)\"").getMatch(0);
-                if (next == null) next = new Regex(content, "button onclick=\";return false;\" type=\"button\" class=\"yt\\-uix\\-load\\-more load\\-more\\-button yt\\-uix\\-button yt\\-uix\\-button\\-hh\\-default\" data\\-uix\\-load\\-more\\-href=\"(.*?)\"").getMatch(0);
+                next = new Regex(content, "data\\-uix\\-load\\-more\\-href=\"(/[^<>\"]*?)\"").getMatch(0);
 
                 if (next != null && next.length() > 0) {
+                    next = Encoding.htmlDecode(next);
                     br.getPage("http://www.youtube.com" + next);
                 }
             } while (next != null && next.length() > 0);

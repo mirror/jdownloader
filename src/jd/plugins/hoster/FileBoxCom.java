@@ -205,12 +205,6 @@ public class FileBoxCom extends PluginForHost {
         String passCode = downloadLink.getStringProperty("pass");
         Browser br2 = br.cloneBrowser();
         String dllink = checkDirectLink(downloadLink, br2);
-        if (dllink == null) {
-            // revert back to vidembed!
-            br2.getPage("http://www.filebox.com/vidembed-" + LINKID);
-            doSomething();
-            dllink = br2.getRedirectLocation();
-        }
 
         if (dllink == null) {
             long timeBefore = System.currentTimeMillis();
@@ -229,13 +223,20 @@ public class FileBoxCom extends PluginForHost {
             checkErrors(downloadLink, true, passCode);
             dllink = getDllink();
 
-            String filename = br.getRegex(">File Name : <span>(.*?)</span></div>").getMatch(0);
-            if (filename == null) filename = br.getRegex(">(.*?)</a></textarea></div>").getMatch(0);
-            if (filename != null) downloadLink.setFinalFileName(filename.trim());
-            if (downloadLink.getStringProperty(directlinkproperty) != null) {
-                br2 = new Browser();
-                br2.setCookiesExclusive(true);
-                loadDownloadSession(downloadLink, br2);
+            String filename = br.getRegex("<strong>File Name : </strong>([^<>\"]*?)<br").getMatch(0);
+            if (filename != null) downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            if (dllink == null) {
+                // revert back to vidembed!
+                br2.getPage("http://www.filebox.com/vidembed-" + LINKID);
+                doSomething();
+                dllink = br2.getRedirectLocation();
+            }
+            if (dllink == null) {
+                if (downloadLink.getStringProperty(directlinkproperty) != null) {
+                    br2 = new Browser();
+                    br2.setCookiesExclusive(true);
+                    loadDownloadSession(downloadLink, br2);
+                }
             }
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
