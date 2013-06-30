@@ -437,8 +437,8 @@ public class DepositFiles extends PluginForHost {
                 br.getPage(dllink);
                 br.getPage(MAINPAGE.string + "/get_file.php?fid=" + fid + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
                 if (br.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                finallink = br.getRegex("\"(http://fileshare\\d+\\." + DOMAINS + "/auth.*?)\"").getMatch(0);
-                if (finallink == null) finallink = br.getRegex("<form action=\"(http://.*?)\"").getMatch(0);
+                finallink = br.getRegex("\"(https?://fileshare\\d+\\." + DOMAINS + "/auth.*?)\"").getMatch(0);
+                if (finallink == null) finallink = br.getRegex("<form action=\"(https?://.*?)\"").getMatch(0);
                 if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -590,7 +590,7 @@ public class DepositFiles extends PluginForHost {
         try {
             brc.setFollowRedirects(true);
             // I assume they don't redirect for this subdomain, just incase...
-            brc.getPage("http://system.depositfiles.com/api/get_downloader_version.php");
+            brc.getPage(fixLinkSSL("http://system.depositfiles.com/api/get_downloader_version.php"));
         } catch (Throwable e) {
             return null;
         }
