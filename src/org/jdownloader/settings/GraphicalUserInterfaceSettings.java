@@ -447,4 +447,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setHorizontalScrollbarsInLinkgrabberTableEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultIntValue(0)
+    @DescriptionForConfigEntry("by default, table row's height dynamicly adapts to the fontsize. Set a value>0 to set your own custom row height.")
+    int getCustomTableRowHeight();
+
+    void setCustomTableRowHeight(int height);
+
 }

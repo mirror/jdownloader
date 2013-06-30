@@ -34,11 +34,6 @@ public class RightPanel extends MigPanel implements Scrollable {
         return visibleRect.height;
     }
 
-    public void setSize(Dimension d) {
-
-        resize(d);
-    }
-
     public boolean getScrollableTracksViewportWidth() {
 
         final JViewport viewport = (JViewport) getParent();
