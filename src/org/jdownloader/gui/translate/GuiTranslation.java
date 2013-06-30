@@ -2645,4 +2645,25 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Horizontal Scrollbar" })
     String HorizontalScrollbarAction_columnControlMenu_scrollbar_();
 
+    @Default(lngs = { "en" }, values = { "Overwrite file?" })
+    String lit_file_exists();
+
+    @Default(lngs = { "en" }, values = { "The file %s1 already exists.\r\nDo you want to overwrite it?" })
+    String lit_file_already_exists_overwrite_question(String absoluteFile);
+
+    @Default(lngs = { "en" }, values = { "No file selected!" })
+    String DLCFactory_createDLCByCrawledLinks_nofile_title();
+
+    @Default(lngs = { "en" }, values = { "Please choose a valid path to save the DownloadLinkContainer (DLC)." })
+    String DLCFactory_createDLCByCrawledLinks_nofile_msg();
+
+    @Default(lngs = { "en" }, values = { "DLC creation Sucessful" })
+    String DLCFactory_writeDLC_success_ok();
+
+    @Default(lngs = { "en" }, values = { "Open Path" })
+    String DLCFactory_writeDLC_showpath();
+
+    @Default(lngs = { "en" }, values = { "Close" })
+    String lit_close();
+
 }

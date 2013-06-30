@@ -864,7 +864,13 @@ public class LinkCrawler {
         dest.setSourceLink(source);
         dest.setMatchingFilter(source.getMatchingFilter());
         dest.setSourceJob(source.getSourceJob());
-        dest.setDesiredPackageInfo(source.getDesiredPackageInfo());
+        // if we decrypted a dlc,source.getDesiredPackageInfo() is null, and dest might already have package infos from the container.
+        // maybe it would be even better to merge the packageinfos
+        // However. if there are crypted links in the container, it may be up to the decrypterplugin to decide
+        // example: share-links.biz uses CNL to post links to localhost. the dlc origin get's lost on such a way
+        if (source.getDesiredPackageInfo() != null) {
+            dest.setDesiredPackageInfo(source.getDesiredPackageInfo());
+        }
 
         ArchiveInfo d = dest.getArchiveInfo();
         if (source.hasArchiveInfo()) {
