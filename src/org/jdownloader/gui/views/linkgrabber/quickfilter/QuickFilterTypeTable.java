@@ -18,6 +18,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.Header;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.translate._JDT;
 
 public class QuickFilterTypeTable extends FilterTable {
     private static final long      serialVersionUID = 2109715691047942399L;
@@ -98,6 +99,10 @@ public class QuickFilterTypeTable extends FilterTable {
                         return "Type_Audio";
                     }
 
+                    public String getDescription() {
+                        return _JDT._.audiofilter_description();
+                    }
+
                     @Override
                     public void setEnabled(boolean enabled) {
                         super.setEnabled(enabled);
@@ -110,6 +115,10 @@ public class QuickFilterTypeTable extends FilterTable {
                 allFilters.add(filter = new ExtensionFilter(VideoExtensions.ASF) {
                     protected String getID() {
                         return "Type_Video";
+                    }
+
+                    public String getDescription() {
+                        return _JDT._.video_description();
                     }
 
                     @Override
@@ -126,6 +135,10 @@ public class QuickFilterTypeTable extends FilterTable {
                         return "Type_Image";
                     }
 
+                    public String getDescription() {
+                        return _JDT._.image_description();
+                    }
+
                     @Override
                     public void setEnabled(boolean enabled) {
                         super.setEnabled(enabled);
@@ -137,6 +150,10 @@ public class QuickFilterTypeTable extends FilterTable {
                 allFilters.add(filter = new ExtensionFilter(ArchiveExtensions.ACE) {
                     protected String getID() {
                         return "Type_Archive";
+                    }
+
+                    public String getDescription() {
+                        return _JDT._.archive_description();
                     }
 
                     @Override
@@ -151,9 +168,14 @@ public class QuickFilterTypeTable extends FilterTable {
                 /*
                  * now we add special extensionfilter which will handle all unknown extensions
                  */
-                allFilters.add(new ExtensionFilter(_GUI._.settings_linkgrabber_filter_others(), NewTheme.I().getIcon("help", 16), false) {
+                allFilters.add(new ExtensionFilter(_GUI._.settings_linkgrabber_filter_others(), NewTheme.I().getIcon("file", 16), false) {
                     protected String getID() {
                         return "Type_Others";
+
+                    }
+
+                    public String getDescription() {
+                        return _JDT._.other_files_description();
                     }
 
                     @Override

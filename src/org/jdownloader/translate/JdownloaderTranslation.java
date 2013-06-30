@@ -466,4 +466,19 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Proxy Authentication failed" })
     String plugins_errors_proxy_auth();
 
+    @Default(lngs = { "en" }, values = { "Audio files: mp3, wav, ogg, mid,..." })
+    String audiofilter_description();
+
+    @Default(lngs = { "en" }, values = { "Archive Files: rar, zip,..." })
+    String archive_description();
+
+    @Default(lngs = { "en" }, values = { "Video Files: mp4, avi, mov,..." })
+    String video_description();
+
+    @Default(lngs = { "en" }, values = { "Image Files: jpg, png, gif,..." })
+    String image_description();
+
+    @Default(lngs = { "en" }, values = { "All files except audio, archive, video & image files" })
+    String other_files_description();
+
 }

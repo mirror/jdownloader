@@ -13,6 +13,7 @@ import org.jdownloader.images.NewTheme;
 public abstract class ExtensionFilter extends Filter {
 
     private Pattern pattern;
+    private String  description = null;
 
     public ExtensionFilter(String string, ImageIcon icon, boolean b) {
         super(string, icon);
@@ -20,7 +21,13 @@ public abstract class ExtensionFilter extends Filter {
 
     public ExtensionFilter(ExtensionsFilterInterface filter) {
         super(filter.getDesc(), NewTheme.I().getIcon(filter.getIconID(), 16));
+        description = filter.getDesc();
         pattern = filter.compiledAllPattern();
+
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     @Override
