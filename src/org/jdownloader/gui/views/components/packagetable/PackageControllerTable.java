@@ -396,6 +396,10 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             }
 
         };
+        moveDownAction.setEnabled(false);
+        moveBottomAction.setEnabled(false);
+        moveTopAction.setEnabled(false);
+        moveUpAction.setEnabled(false);
     }
 
     @Override
