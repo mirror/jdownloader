@@ -147,6 +147,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("The link is either offline or an account is needed to grab it: " + parameter);
                     return decryptedLinks;
                 }
+                String scriptRedirect = br.getRegex("<script>window\\.location\\.replace\\(\"(https?:[^<>\"]*?)\"\\);</script>").getMatch(0);
+                if (scriptRedirect != null) {
+                    scriptRedirect = Encoding.htmlDecode(scriptRedirect.replace("\\", ""));
+                    br.getPage(scriptRedirect);
+                }
                 String mainpage = "http://www.facebook.com";
                 if (br.getURL().contains("https://")) {
                     mainpage = "https://www.facebook.com";
@@ -194,10 +199,12 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     }
                     boolean stop = false;
                     logger.info("Decrypting page " + i + " of ??");
-                    for (final String finallink : links) {
-                        final DownloadLink dl = createDownloadlink("http://www.facebook.com/photo.php?fbid=" + finallink);
+                    for (final String picID : links) {
+                        final DownloadLink dl = createDownloadlink("http://www.facebook.com/photo.php?fbid=" + picID);
                         if (aa == null) dl.setProperty("nologin", true);
                         if (SubConfiguration.getConfig("facebook.com").getBooleanProperty(FASTLINKCHECK_PICTURES, false)) dl.setAvailable(true);
+                        // Set temp name, correct name will be set in hosterplugin later
+                        dl.setName(fpName + "_" + picID + ".jpg");
                         decryptedLinks.add(dl);
                     }
                     // 28 links = max number of links per segment
