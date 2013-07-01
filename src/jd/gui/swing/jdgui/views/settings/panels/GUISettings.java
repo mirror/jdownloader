@@ -57,8 +57,8 @@ import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContex
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate.JdownloaderTranslation;
-import org.jdownloader.updatev2.SmartRlyExitOrRestartRequest;
 import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
 public class GUISettings extends AbstractConfigPanel {
 
@@ -104,7 +104,7 @@ public class GUISettings extends AbstractConfigPanel {
 
                     try {
                         Dialog.getInstance().showConfirmDialog(0, _GUI._.GUISettings_save_language_changed_restart_required_title(), _GUI._.GUISettings_save_language_changed_restart_required_msg(), NewTheme.getInstance().getIcon("language", 32), null, null);
-                        RestartController.getInstance().asyncRestart(new SmartRlyExitOrRestartRequest(true));
+                        RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
                     } catch (DialogClosedException e2) {
 
                     } catch (DialogCanceledException e2) {
@@ -166,7 +166,7 @@ public class GUISettings extends AbstractConfigPanel {
                 }).length > 0) {
                     try {
                         Dialog.getInstance().showConfirmDialog(0, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title(), _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion(), NewTheme.getInstance().getIcon("desktop", 32), null, null);
-                        RestartController.getInstance().asyncRestart(new SmartRlyExitOrRestartRequest(true));
+                        RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
                     } catch (DialogClosedException e2) {
 
                     } catch (DialogCanceledException e2) {

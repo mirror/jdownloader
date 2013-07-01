@@ -20,7 +20,7 @@ import java.awt.event.ActionEvent;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.updatev2.SmartRlyExitOrRestartRequest;
+import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.RestartController;
 
 public class ExitAction extends AppAction {
@@ -36,7 +36,7 @@ public class ExitAction extends AppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        RestartController.getInstance().exitAsynch(new SmartRlyExitOrRestartRequest());
+        RestartController.getInstance().exitAsynch(new SmartRlyExitRequest());
     }
 
 }

@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.downloads.overviewpanel;
+package org.jdownloader.gui.components;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;

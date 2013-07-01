@@ -98,7 +98,6 @@ import org.appwork.utils.swing.dialog.TimerDialog.InternDialog;
 import org.appwork.utils.swing.dialog.locator.DialogLocator;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.appwork.utils.swing.locator.AbstractLocator;
-import org.appwork.utils.swing.locator.CenterOfScreenLocator;
 import org.jdownloader.gui.GuiUtils;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.jdtrayicon.TrayExtension;
@@ -115,7 +114,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.RestartController;
-import org.jdownloader.updatev2.SmartRlyExitOrRestartRequest;
+import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.UpdateController;
 
 public class JDGui extends SwingGui {
@@ -756,7 +755,9 @@ public class JDGui extends SwingGui {
         for (final GraphicsDevice screen : screens) {
             logger.info("Screen: " + screen.getIDstring() + " " + screen.getDefaultConfiguration());
             final Rectangle bounds = screen.getDefaultConfiguration().getBounds();
+
             Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(screen.getDefaultConfiguration());
+
             logger.info("Screenbounds: " + bounds);
             logger.info("Screen Insets: " + insets);
             bounds.x += insets.left;
@@ -764,30 +765,12 @@ public class JDGui extends SwingGui {
             bounds.width -= (insets.left + insets.right);
             bounds.height -= (insets.top + insets.bottom);
             logger.info("New Screenbounds: " + bounds);
-            int xMin, xMax, yMin, yMax;
-            if (CrossSystem.isWindows()) {
-                xMin = Math.max(bounds.x, loc.x);
-                xMax = Math.min(bounds.x + bounds.width, loc.x + dim.width);
-                yMin = Math.max(bounds.y, loc.y);
-                yMax = Math.min(bounds.y + bounds.height, loc.y + 30);
-            } else if (CrossSystem.isLinux()) {
-                xMin = Math.max(bounds.x, loc.x);
-                xMax = Math.min(bounds.x + bounds.width, loc.x + dim.width);
-                yMin = Math.max(bounds.y, loc.y);
-                yMax = Math.min(bounds.y + bounds.height, loc.y + 30);
-            } else {
-                xMin = Math.max(bounds.x, loc.x);
-                xMax = Math.min(bounds.x + bounds.width, loc.x + dim.width);
-                yMin = Math.max(bounds.y + 30, loc.y);
-                yMax = Math.min(bounds.y + bounds.height, loc.y + 30);
-            }
+
             jdRectange.height = 30;
             Rectangle inter = jdRectange.intersection(bounds);
-            int intersectionWidth = xMax - xMin;
-            int intersectionHeight = yMax - yMin;
-            logger.info("Intersection: " + intersectionWidth + "x" + intersectionHeight);
+
             logger.info("Intersection(actual): " + inter);
-            if (intersectionWidth > 50 && intersectionHeight >= 30) {
+            if (jdRectange.width > 50 && jdRectange.height >= 30) {
                 // ok. Titlebar is in screen.
                 isok = true;
                 logger.info("Screen OK");
@@ -809,13 +792,14 @@ public class JDGui extends SwingGui {
 
         Point finalLocation;
         if (!isok) {
-            dim = new Dimension(800, 600);
+
             final Dimension fDim = dim;
+            final Point cuLoc = loc;
             finalLocation = new EDTHelper<Point>() {
                 @Override
                 public Point edtRun() {
                     mainFrame.setSize(fDim);
-                    return new CenterOfScreenLocator().getLocationOnScreen(mainFrame);
+                    return AbstractLocator.correct(cuLoc, mainFrame);
                 }
             }.getReturnValue();
 
@@ -1274,7 +1258,7 @@ public class JDGui extends SwingGui {
                 return;
             }
 
-            RestartController.getInstance().exitAsynch(new SmartRlyExitOrRestartRequest());
+            RestartController.getInstance().exitAsynch(new SmartRlyExitRequest());
         }
     }
 

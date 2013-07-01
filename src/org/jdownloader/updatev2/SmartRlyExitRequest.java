@@ -4,25 +4,18 @@ import org.appwork.shutdown.BasicShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 
-public class SmartRlyExitOrRestartRequest extends BasicShutdownRequest implements RestartRequest {
+public class SmartRlyExitRequest extends BasicShutdownRequest {
 
     private volatile boolean alreadyAsked = false;
     private volatile boolean gotVeto      = false;
-    private String[]         restartParams;
 
-    public SmartRlyExitOrRestartRequest(boolean alreadyAsked, String[] arguments) {
+    public SmartRlyExitRequest(boolean alreadyAsked) {
         super();
         this.alreadyAsked = alreadyAsked;
-        restartParams = arguments;
+
     }
 
-    public SmartRlyExitOrRestartRequest(boolean alreadyAsked) {
-        super();
-        this.alreadyAsked = alreadyAsked;
-        restartParams = new String[] {};
-    }
-
-    public SmartRlyExitOrRestartRequest() {
+    public SmartRlyExitRequest() {
         this(false);
     }
 
@@ -50,8 +43,4 @@ public class SmartRlyExitOrRestartRequest extends BasicShutdownRequest implement
         gotVeto = true;
     }
 
-    @Override
-    public String[] getArguments() {
-        return restartParams;
-    }
 }

@@ -44,14 +44,14 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.downloads.overviewpanel.AggregatedNumbers;
 import org.jdownloader.icon.IconBadgePainter;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.MacDockProgressDisplay;
-import org.jdownloader.updatev2.SmartRlyExitOrRestartRequest;
+import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.RestartController;
 
 import com.apple.eawt.AboutHandler;
@@ -267,7 +267,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
     public void handleQuitRequestWith(QuitEvent e, final QuitResponse response) {
         quitResponse = response;
-        RestartController.getInstance().exitAsynch(new SmartRlyExitOrRestartRequest());
+        RestartController.getInstance().exitAsynch(new SmartRlyExitRequest());
     }
 
     public void handlePreferences(PreferencesEvent e) {

@@ -144,12 +144,20 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isLinkgrabberSidebarEnabled();
 
     @AboutConfig
-    @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Sidebar")
+    @DescriptionForConfigEntry("Enable/Disable the DownloadPanel Overview panel ")
     @DefaultBooleanValue(false)
     @RequiresRestart
     boolean isDownloadPanelOverviewVisible();
 
     void setDownloadPanelOverviewVisible(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Overview panel ")
+    @DefaultBooleanValue(false)
+    @RequiresRestart
+    boolean isLinkgrabberOverviewVisible();
+
+    void setLinkgrabberOverviewVisible(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(true)

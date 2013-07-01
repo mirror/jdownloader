@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.downloads.overviewpanel;
+package org.jdownloader.gui.views.linkgrabber.overview;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
@@ -40,27 +40,28 @@ import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.gui.views.downloads.overviewpanel.DataEntry;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class DownloadOverview extends MigPanel implements ActionListener, DownloadControllerListener, HierarchyListener, GenericConfigEventListener<Boolean> {
+public class LinkgrabberOverview extends MigPanel implements ActionListener, DownloadControllerListener, HierarchyListener, GenericConfigEventListener<Boolean> {
 
-    private DownloadsTable downloadTable;
-    private DataEntry      packageCount;
-    private DataEntry      linkCount;
-    private DataEntry      size;
-    private DataEntry      bytesLoaded;
-    private DataEntry      speed;
-    private DataEntry      eta;
-    protected Timer        updateTimer;
+    private LinkGrabberTable table;
+    private DataEntry        packageCount;
+    private DataEntry        linkCount;
+    private DataEntry        size;
+    private DataEntry        bytesLoaded;
+    private DataEntry        speed;
+    private DataEntry        eta;
+    protected Timer          updateTimer;
 
-    private DataEntry      runningDownloads;
-    private DataEntry      connections;
+    private DataEntry        runningDownloads;
+    private DataEntry        connections;
 
-    public DownloadOverview(DownloadsTable table) {
+    public LinkgrabberOverview(LinkGrabberTable table) {
         super("ins 0", "[][grow,fill][]", "[grow,fill]");
-        this.downloadTable = table;
+        this.table = table;
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
 
         if (c >= 0) {
@@ -257,7 +258,7 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
 
     protected void startUpdateTimer() {
         if (updateTimer != null) updateTimer.stop();
-        updateTimer = new Timer(1000, DownloadOverview.this);
+        updateTimer = new Timer(1000, LinkgrabberOverview.this);
         updateTimer.setRepeats(true);
         updateTimer.start();
     }

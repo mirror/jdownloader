@@ -37,8 +37,8 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.shutdown.ShutdownController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.updatev2.SmartRlyExitOrRestartRequest;
 import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
 public abstract class ConfigPanel extends SwitchPanel {
 
@@ -173,7 +173,7 @@ public abstract class ConfigPanel extends SwitchPanel {
             if (!ShutdownController.getInstance().isShutDownRequested()) {
                 int answer = UserIO.getInstance().requestConfirmDialog(0, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title(), _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion(), null, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_ok(), null);
                 if (UserIO.isOK(answer)) {
-                    RestartController.getInstance().asyncRestart(new SmartRlyExitOrRestartRequest(true));
+                    RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
                 }
             }
         }

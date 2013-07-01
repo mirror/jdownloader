@@ -19,6 +19,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.components.OverviewHeaderScrollPane;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverview;
 import org.jdownloader.gui.views.downloads.overviewpanel.OverViewHeader;
@@ -104,7 +105,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     private Component getOverView() {
         if (overView == null) {
             overView = new DownloadOverview(table);
-            overViewScrollBar = new DownloadOverviewHeaderScrollPane(overView);
+            overViewScrollBar = new OverviewHeaderScrollPane(overView);
 
             LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(overViewScrollBar);
 

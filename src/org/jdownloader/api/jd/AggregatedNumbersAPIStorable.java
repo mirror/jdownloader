@@ -1,7 +1,7 @@
 package org.jdownloader.api.jd;
 
 import org.appwork.storage.Storable;
-import org.jdownloader.gui.views.downloads.overviewpanel.AggregatedNumbers;
+import org.jdownloader.controlling.AggregatedNumbers;
 
 public class AggregatedNumbersAPIStorable implements Storable {
 

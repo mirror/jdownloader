@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
@@ -37,11 +38,13 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.components.OverviewHeaderScrollPane;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
+import org.jdownloader.gui.views.downloads.overviewpanel.OverViewHeader;
 import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
@@ -51,6 +54,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.RemoveOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ResetAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
+import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverview;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.WindowState;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -83,9 +87,12 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     private JButton                                                            popupRemove;
     private JToggleButton                                                      showHideSidebar;
     private AutoConfirmButton                                                  autoConfirm;
+    private LinkgrabberOverview                                                overView;
+    private OverviewHeaderScrollPane                                           overViewScrollBar;
+    private JToggleButton                                                      bottomBar;
 
     public LinkGrabberPanel() {
-        super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
+        super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[]2[fill]", "[grow, fill]2[]"));
         LinkgrabberContextMenuManager.getInstance().setPanel(this);
         tableModel = LinkGrabberTableModel.getInstance();
         table = new LinkGrabberTable(this, tableModel);
@@ -270,6 +277,19 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         leftBar.add(popup, "height 24!,width 12!,aligny top");
         leftBar.add(resetButton, "width 24!,height 24!,aligny top");
         leftBar.add(popupRemove, "height 24!,width 12!,aligny top");
+        bottomBar = new JToggleButton(new AppAction() {
+            {
+                setIconKey("bottombar");
+                setSelected(CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.isEnabled());
+
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.toggle();
+            }
+        });
+
         searchField = new SearchField<LinktablesSearchCategory, CrawledPackage, CrawledLink>(table, LinktablesSearchCategory.FILENAME) {
 
             @Override
@@ -308,6 +328,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(this);
+        org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.getEventSender().addListener(this);
 
     }
 
@@ -336,12 +357,35 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         }
     }
 
+    private Component getOverView() {
+        if (overView == null) {
+            overView = new LinkgrabberOverview(table);
+            overViewScrollBar = new OverviewHeaderScrollPane(overView);
+
+            LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(overViewScrollBar);
+
+            // overViewScrollBar.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+            // overViewScrollBar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+            overViewScrollBar.setColumnHeaderView(new OverViewHeader() {
+
+                @Override
+                protected void onCloseAction() {
+                    CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.setValue(false);
+
+                }
+
+            });
+        }
+        return overViewScrollBar;
+    }
+
     private void layoutComponents() {
         rightBar.removeAll();
         rightBar.add(autoConfirm, "height 24!,width 24!,hidemode 3,gapright 3");
 
         rightBar.add(confirmAll, "height 24!,pushx,growx");
         rightBar.add(popupConfirm, "height 24!,width 12!");
+        rightBar.add(bottomBar, "height 24!,width 24!");
         if (org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue() && org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_ENABLED.getValue()) {
             //
             rightBar.add(showHideSidebar, "height 24!,width 24!,gapleft 4");
@@ -353,12 +397,25 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 createSidebar();
             }
 
-            Dimension a = tableScrollPane.getPreferredSize();
-            Dimension b = sidebarScrollPane.getPreferredSize();
-            this.add(tableScrollPane, "");
-            add(sidebarScrollPane);
+            if (CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.isEnabled()) {
+                this.add(tableScrollPane, "");
+                add(sidebarScrollPane, "spany 2");
+                add(getOverView());
+
+            } else {
+                this.add(tableScrollPane, "spany 2");
+                add(sidebarScrollPane, "spany 2");
+            }
+
         } else {
-            this.add(tableScrollPane, "spanx");
+
+            if (CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.isEnabled()) {
+
+                this.add(tableScrollPane, "spanx");
+                add(getOverView(), "spanx");
+            } else {
+                this.add(tableScrollPane, "spany 2,spanx");
+            }
 
         }
 
@@ -467,6 +524,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             @Override
             protected void runInEDT() {
+                bottomBar.setSelected(CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.isEnabled());
                 removeAll();
                 layoutComponents();
 

@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.downloads.overviewpanel;
+package org.jdownloader.controlling;
 
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.plugins.DownloadLink;

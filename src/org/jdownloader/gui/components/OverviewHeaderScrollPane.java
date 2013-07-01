@@ -1,16 +1,16 @@
-package org.jdownloader.gui.views.downloads;
+package org.jdownloader.gui.components;
 
 import java.awt.Dimension;
 import java.awt.Insets;
 
+import javax.swing.JComponent;
 import javax.swing.JScrollBar;
 
 import org.jdownloader.gui.views.components.HeaderScrollPane;
-import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverview;
 
-public class DownloadOverviewHeaderScrollPane extends HeaderScrollPane {
+public class OverviewHeaderScrollPane extends HeaderScrollPane {
 
-    public DownloadOverviewHeaderScrollPane(DownloadOverview overView) {
+    public OverviewHeaderScrollPane(JComponent overView) {
         super(overView);
     }
 

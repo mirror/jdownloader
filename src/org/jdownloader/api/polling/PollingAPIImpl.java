@@ -14,8 +14,8 @@ import org.appwork.remoteapi.QueryResponseMap;
 import org.jdownloader.api.captcha.CaptchaAPI;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
 import org.jdownloader.api.jd.AggregatedNumbersAPIStorable;
+import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.downloads.overviewpanel.AggregatedNumbers;
 
 public class PollingAPIImpl implements PollingAPI {
 
