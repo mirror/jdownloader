@@ -19,7 +19,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,33 +30,43 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/(?!link\\-deleted\\.php|index|login)[^<>\r\n\t]+" }, flags = { 0 })
+@SuppressWarnings("deprecation")
 public class AdfLy extends PluginForDecrypt {
 
     public AdfLy(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String HOSTS = "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)";
-    private static Object       LOCK  = new Object();
+    private boolean       supportsHTTPS = true;
+    private String        protocol      = null;
+    private final String  HOSTS         = "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)";
+    private static Object LOCK          = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String finallink = null;
-        final String parameter = param.toString().replace("www.", "").replace("https://", "http://");
+        final String parameter = param.toString().replace("www.", "");
+        // imported protocol choice
+        protocol = new Regex(parameter, "(https?://)").getMatch(0);
+        // poll plugin setting for default protocol, if not set ask the user.
+        protocol = getDefaultProtocol() + "://";
+
         br.setFollowRedirects(false);
         br.setReadTimeout(3 * 60 * 1000);
-        if (parameter.matches("https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/\\d+/.+")) {
-            String linkInsideLink = new Regex(parameter, "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/\\d+/(.+)").getMatch(2);
-            linkInsideLink = "http://" + linkInsideLink;
-            if (!linkInsideLink.matches("https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/.+")) {
+
+        if (parameter.matches(HOSTS + "/\\d+/.+")) {
+            String linkInsideLink = new Regex(parameter, HOSTS + "/\\d+/(.+)").getMatch(2);
+            linkInsideLink = protocol + linkInsideLink;
+            if (!linkInsideLink.matches(HOSTS + "/.+")) {
                 decryptedLinks.add(createDownloadlink(linkInsideLink));
                 return decryptedLinks;
             }
         }
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0");
         boolean skipWait = true;
+        String finallink = null;
         for (int i = 0; i <= 2; i++) {
             synchronized (LOCK) {
                 br.getPage(parameter);
@@ -70,7 +82,7 @@ public class AdfLy extends PluginForDecrypt {
                 logger.info("adf.ly link offline: " + parameter);
                 return decryptedLinks;
             }
-            if ("http://adf.ly/".equals(br.getRedirectLocation())) {
+            if ("https?://adf\\.ly/".matches(br.getRedirectLocation())) {
                 logger.info("adf.ly link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -108,7 +120,7 @@ public class AdfLy extends PluginForDecrypt {
                 if (extendedProtectionPage == null) {
                     extendedProtectionPage = br.getRegex("(/go(/|\\.php\\?)[^<>\"\\']+)").getMatch(0);
                     if (extendedProtectionPage != null) {
-                        extendedProtectionPage = "http://adf.ly" + extendedProtectionPage;
+                        extendedProtectionPage = protocol + "adf.ly" + extendedProtectionPage;
                     }
                 }
                 if (extendedProtectionPage == null)
@@ -131,7 +143,7 @@ public class AdfLy extends PluginForDecrypt {
                     if (tempLink != null) {
                         tempLink = tempLink.replace("www.", "");
                         // Redirected to the same link or blocked...try again
-                        if (tempLink.equals(parameter) || tempLink.contains("adf.ly/locked/") || tempLink.contains("adf.ly/blocked")) {
+                        if (tempLink.replaceAll("https?://", "").equals(parameter.replaceAll("https?://", "")) || tempLink.contains("adf.ly/locked/") || tempLink.contains("adf.ly/blocked")) {
                             logger.info("Blocked, re-trying with waittime...");
                             skipWait = false;
                             try {
@@ -147,7 +159,7 @@ public class AdfLy extends PluginForDecrypt {
                         }
                     } else {
                         // Everything should have worked correctly, try to get final link
-                        finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(http://[^<>\"\\']+)\"").getMatch(0);
+                        finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(https?://[^<>\"\\']+)\"").getMatch(0);
                         break;
                     }
                 }
@@ -165,7 +177,7 @@ public class AdfLy extends PluginForDecrypt {
             // Use this because they often change the page
             final String[] lol = HTMLParser.getHttpLinks(br.toString(), "");
             for (final String aLink : lol) {
-                if (!new Regex(aLink, "http://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/.+").matches() && !aLink.contains("/javascript/")) {
+                if (!new Regex(aLink, HOSTS + "/.+").matches() && !aLink.contains("/javascript/")) {
                     decryptedLinks.add(createDownloadlink(aLink));
                 }
             }
@@ -174,21 +186,74 @@ public class AdfLy extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private String getWaittime() {
+        return br.getRegex("var countdown\\s?+=\\s?+'?(\\d+)'?;").getMatch(0);
+    }
+
     private void skipWait() {
         final Browser brAds = br.cloneBrowser();
         brAds.setConnectTimeout(5 * 1000);
         brAds.setReadTimeout(5 * 1000);
-        final String[] skpWaitLinks = { "http://cdn.adf.ly/css/adfly_1.css", "http://cdn.adf.ly/js/adfly.js", "http://cdn.adf.ly/images/logo_fb.png", "http://cdn.adf.ly/images/skip_ad/en.png", "http://adf.ly/favicon.ico", "http://adf.ly/favicon.ico", "http://cdn.adf.ly/images/ad_top_bg.png", "http://adf.ly/omnigy7425325410.swf" };
+        final String[] skpWaitLinks = { "cdn.adf.ly/css/adfly_1.css", "cdn.adf.ly/js/adfly.js", "cdn.adf.ly/images/logo_fb.png", "cdn.adf.ly/images/skip_ad/en.png", "adf.ly/favicon.ico", "cdn.adf.ly/images/ad_top_bg.png", "adf.ly/omnigy7425325410.swf" };
         for (final String skWaitLink : skpWaitLinks) {
             try {
-                brAds.openGetConnection(skWaitLink);
+                brAds.openGetConnection(protocol + skWaitLink);
             } catch (final Exception e) {
             }
         }
     }
 
-    private String getWaittime() {
-        return br.getRegex("var countdown\\s?+=\\s?+'?(\\d+)'?;").getMatch(0);
+    /**
+     * Issue the user with a dialog prompt and asks them to select a default request protocol. Saves users preference for future
+     * communication requests!<br/>
+     * <br/>
+     * Decrypter Template: Default Request Protocol.
+     * 
+     * @return default request protocol
+     * @author raztoki
+     * */
+    private String getDefaultProtocol() {
+        String defaultProtocol = null;
+        if (!supportsHTTPS) {
+            defaultProtocol = "http";
+        } else {
+            SubConfiguration config = null;
+            try {
+                config = getPluginConfig();
+                defaultProtocol = config.getStringProperty("defaultProtocol", null);
+                if (defaultProtocol == null) {
+                    String lng = System.getProperty("user.language");
+                    String message = null;
+                    String title = null;
+                    if ("de".equalsIgnoreCase(lng)) {
+                        title = "Wähle bitte Dein Standard Request Protokoll aus.";
+                        message = "Dies ist eine einmalige Auswahl. Einmal gespeichert, nutzt der JDownloader Dein\r\ngewähltes Standard Protokoll auch für alle zukünftigen Verbindungen zu diesem Anbieter.";
+                    } else {
+                        title = "Please select your default request Protocol.";
+                        message = "This is a once off choice. Once saved, JDownloader will reuse\r\n your default Protocol for all future requests to this provider.";
+                    }
+                    String[] select = new String[] { "http (insecure)", "https (secure)" };
+                    int userSelect = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolTitle", title), JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolMessage", message), select, 0, null, null, null, null);
+                    if (userSelect != -1) {
+                        defaultProtocol = userSelect == 0 ? "http" : "https";
+                    } else {
+                        // user cancelled! or dialog timed out! respect imported protocol, as fail over!
+                        defaultProtocol = protocol;
+                        config = null;
+                    }
+                } else {
+                    // no need to save again, and again..
+                    config = null;
+                }
+            } catch (final Throwable e) {
+            } finally {
+                if (config != null) {
+                    config.setProperty("defaultProtocol", defaultProtocol);
+                    config.save();
+                }
+            }
+        }
+        return defaultProtocol;
     }
 
     /* NO OVERRIDE!! */

@@ -42,6 +42,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl-protect.com" }, urls = { "http://(www\\.)?dl\\-protect\\.com/(?!fr)(en/)?[A-Z0-9]+" }, flags = { 0 })
+@SuppressWarnings("deprecation")
 public class DlPrtcCom extends PluginForDecrypt {
 
     public DlPrtcCom(PluginWrapper wrapper) {
@@ -85,7 +86,6 @@ public class DlPrtcCom extends PluginForDecrypt {
         return prepBr;
     }
 
-    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceAll("dl\\-protect\\.com/(en|fr)/", "dl-protect.com/");

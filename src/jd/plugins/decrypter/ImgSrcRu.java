@@ -251,7 +251,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                         if (password == null) {
                             password = getUserInput("Enter password for link: " + param.getCryptedUrl(), param);
                             if (password == null || password.equals("")) {
-                                logger.info("User abored/entered blank password");
+                                logger.info("User aborted/entered blank password");
                                 exaustedPassword = true;
                                 return false;
                             }
