@@ -690,7 +690,7 @@ public class TbCm extends PluginForDecrypt {
                 if ((LinksFound == null || LinksFound.isEmpty()) && error != null) {
                     error = Encoding.urlDecode(error, false);
                     logger.info("Video unavailable: " + currentVideoUrl);
-                    logger.info("Reason: " + error.trim());
+                    if (error != null) logger.info("Reason: " + error.trim());
                     continue;
                 }
                 if (LinksFound == null || LinksFound.isEmpty()) {
@@ -732,8 +732,8 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
-                 * return multiple results if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
+                 * if they are in the same quality rating
                  */
                 if (best) {
                     final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
@@ -1100,7 +1100,7 @@ public class TbCm extends PluginForDecrypt {
                     }
                 }
             }
-            if (html5_fmt_map != null && !html5_fmt_map.contains("signature") && !html5_fmt_map.contains("sig")) {
+            if (html5_fmt_map != null && !html5_fmt_map.contains("signature") && !html5_fmt_map.contains("sig") && !html5_fmt_map.contains("s=")) {
                 Thread.sleep(5000);
                 br.clearCookies(getHost());
                 return getLinks(video, prem, br, retrycount + 1);
@@ -1114,6 +1114,7 @@ public class TbCm extends PluginForDecrypt {
                         String hitUrl = new Regex(hit, "url=(http.*?)(\\&|$)").getMatch(0);
                         String sig = new Regex(hit, "url=http.*?(\\&|$)(sig|signature)=(.*?)(\\&|$)").getMatch(2);
                         if (sig == null) sig = new Regex(hit, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
+                        if (sig == null) sig = decryptSignature(new Regex(hit, "s=(.*?)(\\&|$)").getMatch(0));
                         String hitFmt = new Regex(hit, "itag=(\\d+)").getMatch(0);
                         String hitQ = new Regex(hit, "quality=(.*?)(\\&|$)").getMatch(0);
                         if (hitUrl != null && hitFmt != null && hitQ != null) {
@@ -1193,6 +1194,87 @@ public class TbCm extends PluginForDecrypt {
             links.put(-1, new String[] { YT_FILENAME });
         }
         return links;
+    }
+
+    /**
+     * thx to youtube-dl
+     * 
+     * @param s
+     * @return
+     */
+    private String decryptSignature(String s) {
+        if (s == null) return s;
+        StringBuilder sb = new StringBuilder();
+        logger.info("SigLength: " + s.length());
+        if (s.length() == 88) {
+            sb.append(s.charAt(48));
+            sb.append(new StringBuilder(s.substring(68, 82)).reverse());
+            sb.append(s.charAt(82));
+            sb.append(new StringBuilder(s.substring(63, 67)).reverse());
+            sb.append(s.charAt(85));
+            sb.append(new StringBuilder(s.substring(49, 62)).reverse());
+            sb.append(s.charAt(67));
+            sb.append(new StringBuilder(s.substring(13, 48)).reverse());
+            sb.append(s.charAt(3));
+            sb.append(new StringBuilder(s.substring(4, 12)).reverse());
+            sb.append(s.charAt(2));
+            sb.append(s.charAt(12));
+        } else if (s.length() == 87) {
+            sb.append(s.charAt(62));
+            sb.append(new StringBuilder(s.substring(63, 83)).reverse());
+            sb.append(s.charAt(83));
+            sb.append(new StringBuilder(s.substring(53, 62)).reverse());
+            sb.append(s.charAt(0));
+            sb.append(new StringBuilder(s.substring(3, 52)).reverse());
+        } else if (s.length() == 86) {
+            sb.append(s.substring(2, 63));
+            sb.append(s.charAt(82));
+            sb.append(s.substring(64, 82));
+            sb.append(s.charAt(63));
+        } else if (s.length() == 85) {
+            sb.append(s.charAt(76));
+            sb.append(new StringBuilder(s.substring(77, 83)).reverse());
+            sb.append(s.charAt(83));
+            sb.append(new StringBuilder(s.substring(61, 76)).reverse());
+            sb.append(s.charAt(0));
+            sb.append(new StringBuilder(s.substring(51, 60)).reverse());
+            sb.append(s.charAt(1));
+            sb.append(new StringBuilder(s.substring(3, 50)).reverse());
+        } else if (s.length() == 84) {
+            sb.append(new StringBuilder(s.substring(37, 84)).reverse());
+            sb.append(s.charAt(2));
+            sb.append(new StringBuilder(s.substring(27, 36)).reverse());
+            sb.append(s.charAt(3));
+            sb.append(new StringBuilder(s.substring(4, 26)).reverse());
+            sb.append(s.charAt(26));
+        } else if (s.length() == 83) {
+            sb.append(s.charAt(52));
+            sb.append(new StringBuilder(s.substring(56, 82)).reverse());
+            sb.append(s.charAt(2));
+            sb.append(new StringBuilder(s.substring(53, 55)).reverse());
+            sb.append(s.charAt(82));
+            sb.append(new StringBuilder(s.substring(37, 52)).reverse());
+            sb.append(s.charAt(55));
+            sb.append(new StringBuilder(s.substring(3, 36)).reverse());
+            sb.append(s.charAt(36));
+        } else if (s.length() == 82) {
+            sb.append(s.charAt(36));
+            sb.append(new StringBuilder(s.substring(68, 80)).reverse());
+            sb.append(s.charAt(81));
+            sb.append(new StringBuilder(s.substring(41, 67)).reverse());
+            sb.append(s.charAt(33));
+            sb.append(new StringBuilder(s.substring(37, 40)).reverse());
+            sb.append(s.charAt(40));
+            sb.append(s.charAt(35));
+            sb.append(s.charAt(0));
+            sb.append(s.charAt(67));
+            sb.append(new StringBuilder(s.substring(1, 33)).reverse());
+            sb.append(s.charAt(34));
+        } else {
+            logger.info("Unsupported SigLength: " + s.length());
+            return null;
+        }
+        return sb.toString();
     }
 
     private synchronized String unescape(final String s) {
