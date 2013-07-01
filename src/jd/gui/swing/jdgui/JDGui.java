@@ -686,8 +686,8 @@ public class JDGui extends SwingGui {
     }
 
     /**
-     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT
-     * and only put the mainframe stuff into EDT
+     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT and only put the
+     * mainframe stuff into EDT
      * 
      * restores the dimension and location to the window
      */
@@ -773,7 +773,6 @@ public class JDGui extends SwingGui {
                 xMax = Math.min(bounds.x + bounds.width, loc.x + dim.width);
                 yMin = Math.max(bounds.y, loc.y);
                 yMax = Math.min(bounds.y + bounds.height, loc.y + 30);
-
             } else {
                 xMin = Math.max(bounds.x, loc.x);
                 xMax = Math.min(bounds.x + bounds.width, loc.x + dim.width);
@@ -797,13 +796,27 @@ public class JDGui extends SwingGui {
             }
 
         }
-        mainFrame.setSize(dim);
+        final Dimension fDim2 = dim;
+        new EDTRunner() {
 
-        final Point finalLocation;
+            @Override
+            protected void runInEDT() {
+                mainFrame.setSize(fDim2);
+            }
+        };
+
+        Point finalLocation;
         if (!isok) {
             dim = new Dimension(800, 600);
-            mainFrame.setSize(dim);
-            finalLocation = new CenterOfScreenLocator().getLocationOnScreen(mainFrame);
+            final Dimension fDim = dim;
+            finalLocation = new EDTHelper<Point>() {
+                @Override
+                public Point edtRun() {
+                    mainFrame.setSize(fDim);
+                    return new CenterOfScreenLocator().getLocationOnScreen(mainFrame);
+                }
+            }.getReturnValue();
+
             logger.info("Screen BAD: Reset the Location to: " + finalLocation + "@" + dim);
 
         } else {
@@ -829,12 +842,12 @@ public class JDGui extends SwingGui {
 
         final Dimension finalDim = dim;
         final Integer finalState = state;
-
+        final Point finalLocation2 = finalLocation;
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-                if (finalLocation != null) mainFrame.setLocation(finalLocation);
+                if (finalLocation2 != null) mainFrame.setLocation(finalLocation2);
                 mainFrame.setMinimumSize(new Dimension(400, 100));
                 mainFrame.setSize(finalDim);
                 mainFrame.setPreferredSize(finalDim);
@@ -1295,8 +1308,8 @@ public class JDGui extends SwingGui {
     private Thread trayIconChecker;
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
-     * avoid sideeffects when changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
+     * changing anything
      * 
      * @param minimize
      */
