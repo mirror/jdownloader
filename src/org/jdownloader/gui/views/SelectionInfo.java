@@ -130,6 +130,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         // LinkedHashSet<AbstractNode> notSelectedParents = new LinkedHashSet<AbstractNode>();
         // if we selected a link, and not its parent, this parent will not be agregated. That's why we add them here.
         for (AbstractNode node : rawSelection) {
+            if (node == null) continue;
             rawMap.add(node);
             if (node instanceof AbstractPackageChildrenNode) {
                 // if (!has.contains(((AbstractPackageChildrenNode) node).getParentNode())) {
@@ -147,7 +148,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         LinkedHashSet<PackageType> fullPkg = new LinkedHashSet<PackageType>();
         LinkedHashSet<PackageType> incPkg = new LinkedHashSet<PackageType>();
         for (AbstractNode node : raw) {
-
+            if (node == null) continue;
             if (node instanceof AbstractPackageChildrenNode) {
                 ret.add((ChildrenType) node);
                 allPkg.add(((ChildrenType) node).getParentNode());

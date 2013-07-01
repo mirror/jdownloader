@@ -67,6 +67,7 @@ public class AggregatedCrawlerNumbers {
         packageCount = selection.getAllPackages().size();
         linkCount = selection.getChildren().size();
         for (CrawledLink cl : selection.getChildren()) {
+            if (cl == null) continue;
             if (cl.isEnabled()) {
                 totalBytes += cl.getSize();
             } else {
