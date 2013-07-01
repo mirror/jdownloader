@@ -17,7 +17,7 @@ import org.jdownloader.controlling.contextmenu.MenuItemData.Type;
 public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
 
     private MenuContainerRoot data;
-    private ExtTree           tree;
+    private MenuManagerTree           tree;
 
     public ManagerTreeModel(MenuContainerRoot menuContainerRoot) {
         super(null, false);
@@ -167,7 +167,7 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
         fireTreeStructureChanged(this, new Object[] { data }, null, null);
     }
 
-    public void setTree(ExtTree extTree) {
+    public void setTree(MenuManagerTree extTree) {
         this.tree = extTree;
     }
 

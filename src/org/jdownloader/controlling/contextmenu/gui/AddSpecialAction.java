@@ -33,6 +33,7 @@ public class AddSpecialAction extends AppAction {
         this.managerFrame = managerFrame;
         setTooltipText(_GUI._.ManagerFrame_layoutPanel_addspecials());
         setIconKey("add_special");
+        setName(_GUI._.ManagerFrame_layoutPanel_addspecials());
     }
 
     @Override

@@ -45,7 +45,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
     private InfoPanel                infoPanel;
     private ContextMenuManager<?, ?> manager;
     private ManagerTreeModel         model;
-    private ExtTree                  tree;
+    private MenuManagerTree          tree;
 
     public ManagerFrame(ContextMenuManager<?, ?> manager) {
         super(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.BUTTONS_HIDE_OK, _GUI._.ManagerFrame_ManagerFrame_title(manager.getName()), null, null, null);
@@ -214,6 +214,10 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
             }
         };
         ExtButton remove = new ExtButton(new RemoveAction(this));
+        add.setText(null);
+        addSubmenu.setText(null);
+        addSpecials.setText(null);
+        remove.setText(null);
         topline.add(add, "height 24!");
         topline.add(addSubmenu, "height 24!");
         topline.add(addSpecials, "height 24!");
@@ -306,7 +310,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
         LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(panel);
 
         model = new ManagerTreeModel(manager.getMenuData());
-        tree = new ExtTree(this);
+        tree = new MenuManagerTree(this);
 
         tree.getSelectionModel().addTreeSelectionListener(this);
         LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(tree);

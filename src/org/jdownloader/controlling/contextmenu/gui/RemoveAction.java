@@ -14,6 +14,7 @@ public class RemoveAction extends AppAction {
         this.managerFrame = managerFrame;
         setTooltipText(_GUI._.literally_remove());
         setSmallIcon(NewTheme.I().getIcon("delete", 20));
+        setName(_GUI._.ManagerFrame_layoutPanel_remove());
     }
 
     @Override

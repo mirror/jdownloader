@@ -26,7 +26,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 
-public class ExtTree extends JTree {
+public class MenuManagerTree extends JTree {
     // private void expandAll(boolean expand) {
     // Object root = getModel().getRoot();
     //
@@ -58,7 +58,7 @@ public class ExtTree extends JTree {
         return (TreeUI) ui;
     }
 
-    public ExtTree(ManagerFrame mf) {
+    public MenuManagerTree(ManagerFrame mf) {
         super(mf.getModel());
         this.model = mf.getModel();
         model.setTree(this);
@@ -126,7 +126,7 @@ public class ExtTree extends JTree {
                     popup.add(new AddSpecialAction(managerFrame));
                     popup.add(new AddGenericItem(managerFrame, new SeperatorData()));
                     popup.add(new RemoveAction(managerFrame));
-                    popup.show(ExtTree.this, e.getPoint().x, e.getPoint().y);
+                    popup.show(MenuManagerTree.this, e.getPoint().x, e.getPoint().y);
                 }
             }
 
@@ -208,7 +208,7 @@ public class ExtTree extends JTree {
                     TreePath data = (TreePath) transferable.getTransferData(MenuItemTransferAble.NODE_FLAVOR);
                     int childIndex = dropLocation.getChildIndex();
 
-                    ExtTree.this.model.moveTo(data, (MenuItemData) path.getLastPathComponent(), childIndex);
+                    MenuManagerTree.this.model.moveTo(data, (MenuItemData) path.getLastPathComponent(), childIndex);
                     TreePath newPath = path.pathByAddingChild(data.getLastPathComponent());
                     setSelectionPath(newPath);
                     // expandAll(true);

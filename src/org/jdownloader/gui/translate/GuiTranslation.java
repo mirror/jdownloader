@@ -2666,4 +2666,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Close" })
     String lit_close();
 
+    @Default(lngs = { "en" }, values = { "Remove selected item" })
+    String ManagerFrame_layoutPanel_remove();
+
 }
