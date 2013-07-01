@@ -35,7 +35,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_LINKFILTER;
 
@@ -187,7 +187,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                                     }
                                 }
 
-                                ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, null, null, null, LinkGrabberTableModel.getInstance().getTable()));
+                                ConfirmAutoAction ca = new ConfirmAutoAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, null, null, null, LinkGrabberTableModel.getInstance().getTable()));
                                 ca.setAutostart(autoStart);
                                 ca.actionPerformed(null);
                             }

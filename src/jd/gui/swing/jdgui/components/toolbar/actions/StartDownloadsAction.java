@@ -24,7 +24,7 @@ import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
-import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.StartButtonAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
@@ -52,7 +52,7 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
                     switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
                     case ADD_ALL_LINKS_AND_START_DOWNLOADS:
                         java.util.List<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
-                        ConfirmAction ca = new ConfirmAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, packages, null, null, e, LinkGrabberTableModel.getInstance().getTable()));
+                        ConfirmAutoAction ca = new ConfirmAutoAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, packages, null, null, e, LinkGrabberTableModel.getInstance().getTable()));
                         ca.setAutostart(true);
                         ca.actionPerformed(null);
                         break;

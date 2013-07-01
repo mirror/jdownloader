@@ -27,7 +27,9 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
-import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAndStartLinksAction;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmLinksAction;
 
 public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPackage, CrawledLink> {
 
@@ -65,11 +67,12 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
     public MenuContainerRoot createDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
         mr.setSource(VERSION);
-        mr.add(new MenuItemData(new ActionData(ConfirmAction.class), MenuItemProperty.HIDE_IF_DISABLED));
+        mr.add(new MenuItemData(new ActionData(ConfirmAutoAction.class), MenuItemProperty.HIDE_IF_DISABLED));
         mr.add(new SeperatorData());
         mr.add(new MenuItemData(new ActionData(AddLinksAction.class), MenuItemProperty.ALWAYS_HIDDEN));
         mr.add(new MenuItemData(new ActionData(AddContainerAction.class), MenuItemProperty.ALWAYS_HIDDEN));
-
+        mr.add(new MenuItemData(new ActionData(ConfirmLinksAction.class), MenuItemProperty.ALWAYS_HIDDEN));
+        mr.add(new MenuItemData(new ActionData(ConfirmAndStartLinksAction.class), MenuItemProperty.ALWAYS_HIDDEN));
         mr.add(new SeperatorData());
         mr.add(createSettingsSubmenu());
 

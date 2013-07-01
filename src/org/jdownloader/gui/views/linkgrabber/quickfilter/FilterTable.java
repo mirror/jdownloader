@@ -39,7 +39,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.CreateDLCAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveNonSelectedAction;
@@ -214,7 +214,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         // (org.jdownloader.settings.statics.LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue())
         // {
         SelectionInfo<CrawledPackage, CrawledLink> matches = new SelectionInfo<CrawledPackage, CrawledLink>(null, getMatches(getSelectedFilters()), mouseEvent, null, null, null);
-        popup.add(new ConfirmAction(matches));
+        popup.add(new ConfirmAutoAction(matches));
         popup.add(new MergeToPackageAction(matches));
         popup.add(new CreateDLCAction(matches));
         popup.add(new RemoveNonSelectedAction(matches));

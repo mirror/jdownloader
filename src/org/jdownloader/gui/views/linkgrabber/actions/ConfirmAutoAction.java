@@ -42,7 +42,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 
-public class ConfirmAction extends AppAction {
+public class ConfirmAutoAction extends AppAction {
 
     /**
      * 
@@ -56,7 +56,7 @@ public class ConfirmAction extends AppAction {
         return autostart;
     }
 
-    public ConfirmAction setAutostart(boolean autostart) {
+    public ConfirmAutoAction setAutostart(boolean autostart) {
         this.autostart = autostart;
         if (autostart) {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
@@ -70,7 +70,7 @@ public class ConfirmAction extends AppAction {
         return this;
     }
 
-    public ConfirmAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
+    public ConfirmAutoAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
 
         setAutostart(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue());
 
