@@ -831,11 +831,7 @@ public class JDGui extends SwingGui {
         final Integer finalState = state;
 
         new EDTRunner() {
-            // 7. Why a JFrame hides the OS TaskBar when being displayed maximized via JFrame#setExtendedState()?
-            //
-            // The described problem is a Swing issue which appears only with non-native decorated frames by using
-            // JFrame#setExtendedState().
-            // The workaround below can be used to fix the issue - whereas this is the JFrame instance:
+
             @Override
             protected void runInEDT() {
                 if (finalLocation != null) mainFrame.setLocation(finalLocation);
@@ -845,7 +841,11 @@ public class JDGui extends SwingGui {
                 if (finalState != null) mainFrame.setExtendedState(finalState);
 
                 mainFrame.setVisible(true);
-
+                // 7. Why a JFrame hides the OS TaskBar when being displayed maximized via JFrame#setExtendedState()?
+                //
+                // The described problem is a Swing issue which appears only with non-native decorated frames by using
+                // JFrame#setExtendedState().
+                // The workaround below can be used to fix the issue - whereas this is the JFrame instance:
                 if (mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
                     ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
                 }
