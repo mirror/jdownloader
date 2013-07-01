@@ -80,8 +80,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Encoding", "gzip,deflate");
         br.getHeaders().put("Accept-Charset", "utf-8,*");
-        br.getHeaders().put("Keep-Alive", "115");
-        br.getHeaders().put("Connection", "keep-alive");
+        br.getHeaders().put("Connection", "close");
 
         parameter += "?lng=en";
 
