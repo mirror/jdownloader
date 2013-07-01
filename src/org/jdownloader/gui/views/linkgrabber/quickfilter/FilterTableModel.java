@@ -79,7 +79,7 @@ public class FilterTableModel extends ExtTableModel<Filter> {
             // }
             @Override
             protected int getMaxWidth() {
-                return 40;
+                return 50;
             }
 
             @Override
@@ -113,6 +113,7 @@ public class FilterTableModel extends ExtTableModel<Filter> {
             public void configureRendererComponent(Filter value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.configureRendererComponent(value, isSelected, hasFocus, row, column);
                 if (getLong(value) < 0) renderer.setText("");
+
             }
 
             @Override
