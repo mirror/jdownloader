@@ -31,6 +31,7 @@ import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 
 import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.UIOManager;
@@ -415,38 +416,33 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         ShutdownController.getInstance().addShutdownVetoListener(listener = new ShutdownVetoListener() {
 
             @Override
-            public void onShutdownVeto(ShutdownVetoException[] vetos) {
-            }
-
-            @Override
-            public void onShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
-                if (vetos.length > 0) {
+            public void onShutdownVetoRequest(ShutdownRequest request) throws ShutdownVetoException {
+                if (request.hasVetos()) {
                     /* we already abort shutdown, no need to ask again */
                     return;
                 }
-                if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) {
+                if (request.isSilent()) {
+                    if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) { throw new ShutdownVetoException("ExtractionExtension is still running", this); }
+                } else {
+                    if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) {
 
-                    if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.Extraction_onShutdownRequest_(), _JDT._.Extraction_onShutdownRequest_msg(), NewTheme.I().getIcon("unpack", 32), _JDT._.literally_yes(), null)) { return; }
-                    throw new ShutdownVetoException("ExtractionExtension is still running", this);
+                        if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.Extraction_onShutdownRequest_(), _JDT._.Extraction_onShutdownRequest_msg(), NewTheme.I().getIcon("unpack", 32), _JDT._.literally_yes(), null)) { return; }
+                        throw new ShutdownVetoException("ExtractionExtension is still running", this);
+                    }
                 }
-            }
-
-            @Override
-            public void onShutdown(boolean silent) {
-            }
-
-            @Override
-            public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
-                if (shutdownVetoExceptions.length > 0) {
-                    /* we already abort shutdown, no need to ask again */
-                    return;
-                }
-                if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) { throw new ShutdownVetoException("ExtractionExtension is still running", this); }
             }
 
             @Override
             public long getShutdownVetoPriority() {
                 return 0;
+            }
+
+            @Override
+            public void onShutdown(ShutdownRequest request) {
+            }
+
+            @Override
+            public void onShutdownVeto(ShutdownRequest request) {
             }
 
         });

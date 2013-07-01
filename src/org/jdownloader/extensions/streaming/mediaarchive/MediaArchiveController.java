@@ -9,6 +9,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.T;
@@ -43,7 +44,7 @@ public class MediaArchiveController implements MediaListListener {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
-            public void onShutdown(final Object shutdownRequest) {
+            public void onShutdown(final ShutdownRequest shutdownRequest) {
                 videoController.save();
                 audioController.save();
                 imageController.save();

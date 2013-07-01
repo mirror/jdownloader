@@ -57,6 +57,7 @@ import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.config.JsonConfig;
@@ -1705,75 +1706,64 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     @Override
-    public void onSilentShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
-        if (vetos.length > 0) {
+    public void onShutdownVetoRequest(ShutdownRequest request) throws ShutdownVetoException {
+
+        if (request.getVetos().size() > 0) {
             /* we already abort shutdown, no need to ask again */
-            /* no need to increment the shutdownRequests because it wont happen */
+            /*
+             */
             return;
         }
-        synchronized (this.shutdownLock) {
-            /*
-             * we sync to make sure that no new downloads get started meanwhile
-             */
-            if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE)) {
-                synchronized (this.downloadControllers) {
-                    for (final SingleDownloadController con : downloadControllers) {
-                        DownloadLink link = con.getDownloadLink();
-                        if (con.getAccount() == null) { throw new ShutdownVetoException("DownloadWatchDog is still running: no account", this); }
-                        if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                            DownloadInterface dl = link.getDownloadInstance();
-                            if (dl != null && !dl.isResumable()) { throw new ShutdownVetoException("DownloadWatchDog is still running: non resumeable", this); }
-                        }
-                    }
-                }
-
-            }
-
-        }
-    }
-
-    @Override
-    public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
-        if (shutdownVetoExceptions.length > 0) {
-            /* we already abort shutdown, no need to ask again */
-            /* no need to increment the shutdownRequests because it wont happen */
-            /*
-             * we need this ShutdownVetoException here to avoid count issues with shutdownRequests
-             */
-            throw new ShutdownVetoException("Shutdown already cancelled!", this);
-        }
-        synchronized (this.shutdownLock) {
-            /*
-             * we sync on shutdownRequests to make sure that no new downloads get started meanwhile
-             */
-            if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE)) {
-                String dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_();
-                synchronized (this.downloadControllers) {
-                    for (final SingleDownloadController con : downloadControllers) {
-                        DownloadLink link = con.getDownloadLink();
-                        if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                            DownloadInterface dl = link.getDownloadInstance();
-                            if (dl != null && !dl.isResumable()) {
-                                dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_nonresumable();
-                                break;
+        if (request.isSilent()) {
+            synchronized (this.shutdownLock) {
+                /*
+                 * we sync to make sure that no new downloads get started meanwhile
+                 */
+                if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE)) {
+                    synchronized (this.downloadControllers) {
+                        for (final SingleDownloadController con : downloadControllers) {
+                            DownloadLink link = con.getDownloadLink();
+                            if (con.getAccount() == null) { throw new ShutdownVetoException("DownloadWatchDog is still running: no account", this); }
+                            if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                                DownloadInterface dl = link.getDownloadInstance();
+                                if (dl != null && !dl.isResumable()) { throw new ShutdownVetoException("DownloadWatchDog is still running: non resumeable", this); }
                             }
                         }
                     }
+
                 }
 
-                if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, dialogTitle, _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null)) { return; }
+            }
 
-                throw new ShutdownVetoException("DownloadWatchDog is still running", this);
-            } else {
-                /* downloadWatchDog was not running */
+        } else {
+            synchronized (this.shutdownLock) {
+                /*
+                 * we sync on shutdownRequests to make sure that no new downloads get started meanwhile
+                 */
+                if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE)) {
+                    String dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_();
+                    synchronized (this.downloadControllers) {
+                        for (final SingleDownloadController con : downloadControllers) {
+                            DownloadLink link = con.getDownloadLink();
+                            if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                                DownloadInterface dl = link.getDownloadInstance();
+                                if (dl != null && !dl.isResumable()) {
+                                    dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_nonresumable();
+                                    break;
+                                }
+                            }
+                        }
+                    }
 
+                    if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, dialogTitle, _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null)) { return; }
+
+                    throw new ShutdownVetoException("DownloadWatchDog is still running", this);
+                } else {
+                    /* downloadWatchDog was not running */
+
+                }
             }
         }
-    }
-
-    @Override
-    public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
-
     }
 
     @Override
@@ -1834,6 +1824,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     public boolean isRunning() {
         return stateMachine.isState(RUNNING_STATE);
+    }
+
+    @Override
+    public void onShutdown(ShutdownRequest request) {
+    }
+
+    @Override
+    public void onShutdownVeto(ShutdownRequest request) {
     }
 
 }

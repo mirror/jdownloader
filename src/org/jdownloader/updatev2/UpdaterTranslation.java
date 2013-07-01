@@ -212,4 +212,10 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you really want to exit JDownloader?" })
     String RestartController_confirmToExit_msg();
 
+    @Default(lngs = { "en" }, values = { "Really Restart?" })
+    String RestartController_confirmTorestart_title();
+
+    @Default(lngs = { "en" }, values = { "Do you really want to restart JDownloader?" })
+    String RestartController_confirmTorestart_msg();
+
 }

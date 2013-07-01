@@ -25,6 +25,7 @@ import javax.imageio.ImageIO;
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.fourthline.cling.UpnpServiceImpl;
@@ -104,7 +105,7 @@ public class MediaServer implements Runnable {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
-            public void onShutdown(final Object shutdownRequest) {
+            public void onShutdown(final ShutdownRequest shutdownRequest) {
                 shutdown();
             }
         });
@@ -133,8 +134,8 @@ public class MediaServer implements Runnable {
                                     return isByeBye(incomingRequest) || isSupportedServiceAdvertisement(incomingRequest) ? new ExtReceivingNotification(getUpnpService(), incomingRequest) : null;
                                 case MSEARCH:
                                     /**
-                                     * IT seems like rpoot device searches must be answered by a OutgoingSearchResponseRootDevice - USNRootDeviceHeader header.
-                                     * . xbmc for example has discovery problems if jd has a bad formated answer
+                                     * IT seems like rpoot device searches must be answered by a OutgoingSearchResponseRootDevice -
+                                     * USNRootDeviceHeader header. . xbmc for example has discovery problems if jd has a bad formated answer
                                      */
                                     return new ReceivingSearch(getUpnpService(), incomingRequest) {
                                         @Override

@@ -35,6 +35,7 @@ import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.swing.MigPanel;
@@ -677,7 +678,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                RestartController.getInstance().asyncRestart(new AvoidRlyExistListener(false), "-translatortest", getExtension().getLoadedLocale().getId());
+                RestartController.getInstance().asyncRestart(new AvoidRlyExistListener(false, new String[] { "-translatortest", getExtension().getLoadedLocale().getId() }));
             }
         }));
         menuPanel2.add(logout = new ExtButton(new AppAction() {
@@ -779,8 +780,8 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     /**
-     * Is called if gui is visible now, and has not been visible before. For example, user starte the extension, opened the view, or switched form a different
-     * tab to this one
+     * Is called if gui is visible now, and has not been visible before. For example, user starte the extension, opened the view, or
+     * switched form a different tab to this one
      */
     @Override
     protected void onShow() {
@@ -834,7 +835,8 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     /**
-     * gets called of the extensiongui is not visible any more. for example because it has been closed or user switched to a different tab/view
+     * gets called of the extensiongui is not visible any more. for example because it has been closed or user switched to a different
+     * tab/view
      */
     @Override
     protected void onHide() {
@@ -1023,20 +1025,17 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     @Override
-    public void onShutdown(boolean silent) {
+    public void onShutdown(ShutdownRequest request) {
     }
 
     @Override
-    public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
+    public void onShutdownVeto(ShutdownRequest request) {
     }
 
     @Override
-    public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
-    }
+    public void onShutdownVetoRequest(ShutdownRequest request) throws ShutdownVetoException {
+        if (request.isSilent()) { throw new ShutdownVetoException("TranslatorGui is Active", this); }
 
-    @Override
-    public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
-        throw new ShutdownVetoException("TranslatorGui is Active", this);
     }
 
     @Override

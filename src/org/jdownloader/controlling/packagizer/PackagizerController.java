@@ -18,6 +18,7 @@ import jd.plugins.DownloadLink;
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -86,7 +87,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
                 @Override
-                public void onShutdown(final Object shutdownRequest) {
+                public void onShutdown(final ShutdownRequest shutdownRequest) {
                     synchronized (PackagizerController.this) {
                         if (config != null) config.setRuleList(list);
                     }

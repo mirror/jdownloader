@@ -59,6 +59,7 @@ import org.appwork.app.gui.copycutpaste.CopyPasteSupport;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -339,7 +340,7 @@ public class SecondLevelLaunch {
             }
 
             @Override
-            public void onShutdown(final Object shutdownRequest) {
+            public void onShutdown(final ShutdownRequest shutdownRequest) {
                 FILE.delete();
             }
         });

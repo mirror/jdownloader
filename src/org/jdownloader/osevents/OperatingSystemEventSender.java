@@ -19,7 +19,8 @@ public class OperatingSystemEventSender extends Eventsender<OperatingSystemListe
     }
 
     /**
-     * Create a new instance of OperatingSystemEventSender. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of OperatingSystemEventSender. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private OperatingSystemEventSender() {
     }
@@ -54,7 +55,7 @@ public class OperatingSystemEventSender extends Eventsender<OperatingSystemListe
 
     @Override
     public void onOperatingSystemTerm() {
-        ShutdownController.getInstance().requestShutdown(true, new ForcedShutdown());
+        ShutdownController.getInstance().requestShutdown(new ForcedShutdown());
     }
 
 }

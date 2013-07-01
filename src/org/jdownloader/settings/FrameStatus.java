@@ -5,6 +5,7 @@ import java.awt.Frame;
 import javax.swing.JFrame;
 
 import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.Storable;
 
 public class FrameStatus implements Storable {
@@ -44,8 +45,8 @@ public class FrameStatus implements Storable {
         MAXIMIZED_VERT(Frame.MAXIMIZED_VERT),
 
         /**
-         * This state bit mask indicates that frame is fully maximized (that is both horizontally and vertically). It is just a convenience alias for
-         * <code>MAXIMIZED_VERT&nbsp;|&nbsp;MAXIMIZED_HORIZ</code>.
+         * This state bit mask indicates that frame is fully maximized (that is both horizontally and vertically). It is just a convenience
+         * alias for <code>MAXIMIZED_VERT&nbsp;|&nbsp;MAXIMIZED_HORIZ</code>.
          * 
          * <p>
          * Note that the correct test for frame being fully maximized is
@@ -194,7 +195,8 @@ public class FrameStatus implements Storable {
             ret.locationSet = true;
         }
         ret.visible = mainFrame.isVisible();
-        ret.silentShutdown = ShutdownController.getInstance().isSilentShutDown();
+        ShutdownRequest requ = ShutdownController.getInstance().getShutdownRequest();
+        ret.silentShutdown = requ != null && requ.isSilent();
         ret.focus = mainFrame.hasFocus();
         ret.active = mainFrame.isActive();
 

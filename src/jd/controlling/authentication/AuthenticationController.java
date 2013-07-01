@@ -7,6 +7,7 @@ import jd.http.Browser;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
@@ -30,7 +31,8 @@ public class AuthenticationController {
     private ChangeEventSender                eventSender = new ChangeEventSender();
 
     /**
-     * Create a new instance of AuthenticationController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of AuthenticationController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private AuthenticationController() {
         config = JsonConfig.create(AuthenticationControllerSettings.class);
@@ -38,7 +40,7 @@ public class AuthenticationController {
         if (list == null) list = new ArrayList<AuthenticationInfo>();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             @Override
-            public void onShutdown(final Object shutdownRequest) {
+            public void onShutdown(final ShutdownRequest shutdownRequest) {
                 config.setList(list);
             }
 

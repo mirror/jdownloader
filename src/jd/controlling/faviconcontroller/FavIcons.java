@@ -38,6 +38,7 @@ import net.sf.image4j.codec.ico.ICODecoder;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
@@ -105,7 +106,7 @@ public class FavIcons {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
-            public void onShutdown(final Object shutdownRequest) {
+            public void onShutdown(final ShutdownRequest shutdownRequest) {
                 CONFIG.setLastRefresh(System.currentTimeMillis());
                 CONFIG.setFailedHosts(FAILED_LIST);
             }

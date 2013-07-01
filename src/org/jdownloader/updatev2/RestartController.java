@@ -12,8 +12,8 @@ import org.appwork.app.launcher.parameterparser.ParameterParser;
 import org.appwork.resources.AWUTheme;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
-import org.appwork.shutdown.ShutdownVetoFilter;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -78,11 +78,12 @@ public class RestartController implements ShutdownVetoListener {
             }
 
             @Override
-            public void onShutdown(final Object shutdownRequest) {
-                if (shutdownRequest instanceof RestartShutdownRequest) {
-                    restarter.restart(getRoot(), getFilteredRestartParameters(((RestartShutdownRequest) shutdownRequest).getArguments()));
+            public void onShutdown(final ShutdownRequest shutdownRequest) {
+                if (shutdownRequest instanceof RestartRequest) {
+                    restarter.restart(getRoot(), getFilteredRestartParameters(((RestartRequest) shutdownRequest).getArguments()));
                 }
             }
+
         });
 
     }
@@ -112,25 +113,24 @@ public class RestartController implements ShutdownVetoListener {
         return ret;
     }
 
-    public void directRestart(final ShutdownVetoFilter filter, String... strings) {
-        Log.L.info("direct Restart");
-        ShutdownController.getInstance().requestShutdown(false, filter, new RestartShutdownRequest(strings));
+    public void directRestart(RestartRequest request) {
+        ShutdownController.getInstance().requestShutdown(request);
     }
 
-    public void asyncRestart(final ShutdownVetoFilter filter, final String... strings) {
+    public void asyncRestart(final RestartRequest request) {
         new Thread("RestartAsynch") {
             public void run() {
                 Log.L.info("asyn Restart");
-                ShutdownController.getInstance().requestShutdown(false, filter, new RestartShutdownRequest(strings));
+                ShutdownController.getInstance().requestShutdown(request);
             }
         }.start();
 
     }
 
-    public void exitAsynch(final ShutdownVetoFilter filter) {
+    public void exitAsynch(final ShutdownRequest filter) {
         new Thread("ExitAsynch") {
             public void run() {
-                ShutdownController.getInstance().requestShutdown(false, filter);
+                ShutdownController.getInstance().requestShutdown(filter);
             }
         }.start();
     }
@@ -147,29 +147,31 @@ public class RestartController implements ShutdownVetoListener {
     }
 
     @Override
-    public void onShutdown(boolean silent) {
-    }
-
-    @Override
-    public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
-    }
-
-    @Override
-    public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
-        if (shutdownVetoExceptions.length > 0) { return; }
+    public void onShutdownVetoRequest(ShutdownRequest shutdownVetoExceptions) throws ShutdownVetoException {
+        if (shutdownVetoExceptions.hasVetos()) { return; }
         try {
+            if (shutdownVetoExceptions instanceof RestartRequest) {
+                new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmTorestart_title(), _UPDATE._.RestartController_confirmTorestart_msg(), AWUTheme.I().getIcon("exit", 32), null, null) {
 
-            // if you do not want to ask here, use
-            // ShutdownController.getInstance().removeShutdownVetoListener(RestartController.getInstance());
-            new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmToExit_(), _UPDATE._.RestartController_confirmToExit_msg(), AWUTheme.I().getIcon("exit", 32), null, null) {
+                    @Override
+                    public String getDontShowAgainKey() {
+                        return "Exit - Are you sure?";
+                    }
 
-                @Override
-                public String getDontShowAgainKey() {
-                    return "Exit - Are you sure?";
-                }
+                }.show().throwCloseExceptions();
+            } else {
+                // if you do not want to ask here, use
+                // ShutdownController.getInstance().removeShutdownVetoListener(RestartController.getInstance());
+                new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmToExit_(), _UPDATE._.RestartController_confirmToExit_msg(), AWUTheme.I().getIcon("exit", 32), null, null) {
 
-            }.show().throwCloseExceptions();
+                    @Override
+                    public String getDontShowAgainKey() {
+                        return "Exit - Are you sure?";
+                    }
 
+                }.show().throwCloseExceptions();
+
+            }
         } catch (DialogNoAnswerException e) {
             throw new ShutdownVetoException("Really Exit question denied", this);
         }
@@ -177,12 +179,16 @@ public class RestartController implements ShutdownVetoListener {
     }
 
     @Override
-    public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+    public long getShutdownVetoPriority() {
+        return 0;
     }
 
     @Override
-    public long getShutdownVetoPriority() {
-        return 0;
+    public void onShutdown(ShutdownRequest request) {
+    }
+
+    @Override
+    public void onShutdownVeto(ShutdownRequest request) {
     }
 
 }

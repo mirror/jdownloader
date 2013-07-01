@@ -10,6 +10,7 @@ import jd.plugins.DownloadLink;
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
@@ -50,7 +51,8 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private boolean                                      testInstance = false;
 
     /**
-     * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     public LinkFilterController(boolean testInstance) {
         eventSender = new ChangeEventSender();
@@ -62,7 +64,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
             ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
                 @Override
-                public void onShutdown(final Object shutdownRequest) {
+                public void onShutdown(final ShutdownRequest shutdownRequest) {
                     synchronized (LinkFilterController.this) {
                         if (config != null) config.setFilterList(filter);
                     }

@@ -21,6 +21,7 @@ import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.exttable.ExtTableTranslation;
 import org.appwork.swing.synthetica.LanguageFileSetup;
@@ -121,7 +122,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             }
 
             @Override
-            public void onShutdown(final Object shutdownRequest) {
+            public void onShutdown(final ShutdownRequest shutdownRequest) {
 
                 if (!getSettings().isRememberLoginsEnabled()) {
                     try {

@@ -3,6 +3,7 @@ package org.jdownloader.extensions.myjdownloader;
 import jd.plugins.AddonPanel;
 
 import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.txtresource.TranslateInterface;
@@ -78,7 +79,7 @@ public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtens
     }
 
     @Override
-    public void onShutdown(boolean silent) {
+    public void onShutdown(ShutdownRequest request) {
         try {
             stop();
         } catch (final Throwable e) {
@@ -86,15 +87,11 @@ public class MyJDownloaderExtension extends AbstractExtension<MyDownloaderExtens
     }
 
     @Override
-    public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
+    public void onShutdownVeto(ShutdownRequest request) {
     }
 
     @Override
-    public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
-    }
-
-    @Override
-    public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+    public void onShutdownVetoRequest(ShutdownRequest request) throws ShutdownVetoException {
     }
 
     @Override

@@ -70,6 +70,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -361,7 +362,7 @@ public class JDGui extends SwingGui {
                 ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
                     @Override
-                    public void onShutdown(final Object shutdownRequest) {
+                    public void onShutdown(final ShutdownRequest shutdownRequest) {
                         new EDTHelper<Object>() {
 
                             @Override

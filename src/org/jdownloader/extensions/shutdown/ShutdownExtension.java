@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
@@ -31,8 +30,9 @@ import org.appwork.controlling.State;
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.controlling.StateMachine;
+import org.appwork.shutdown.BasicShutdownRequest;
 import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -502,9 +502,10 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
         if (event.getNewState() == DownloadWatchDog.STOPPED_STATE) {
             if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) {
-                List<ShutdownVetoException> vetos = ShutdownController.getInstance().collectVetos(true);
-                if (vetos.size() > 0) {
-                    logger.info("Vetos: " + vetos + " Wait until there is no veto");
+                ShutdownRequest request = ShutdownController.getInstance().collectVetos(new BasicShutdownRequest(true));
+
+                if (request.hasVetos()) {
+                    logger.info("Vetos: " + request.getVetos().size() + " Wait until there is no veto");
                     new Thread("Wait to Shutdown") {
                         public void run() {
 
@@ -514,9 +515,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                                     logger.info("Cancel Shutdown.");
                                     return;
                                 }
-                                List<ShutdownVetoException> vetos = ShutdownController.getInstance().collectVetos(true);
+                                ShutdownRequest request = ShutdownController.getInstance().collectVetos(new BasicShutdownRequest(true));
 
-                                if (vetos.size() == 0) {
+                                if (!request.hasVetos()) {
                                     logger.info("No Vetos");
                                     if (sm.isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
 
@@ -524,7 +525,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                                         return;
                                     }
                                 }
-                                logger.info("Vetos: " + vetos + " Wait until there is no veto");
+                                logger.info("Vetos: " + request.getVetos().size() + " Wait until there is no veto");
                                 try {
                                     Thread.sleep(1000);
                                 } catch (InterruptedException e) {

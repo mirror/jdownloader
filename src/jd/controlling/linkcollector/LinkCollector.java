@@ -43,6 +43,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.JSonStorage;
@@ -132,7 +133,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
-            public void onShutdown(final Object shutdownRequest) {
+            public void onShutdown(final ShutdownRequest shutdownRequest) {
                 LinkCollector.this.abort();
                 IOEQ.getQueue().addWait(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
 
@@ -1441,56 +1442,47 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_CONTENT, pkg, priority));
     }
 
-    @Override
-    public void onShutdown(boolean silent) {
-    }
-
-    @Override
-    public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
-    }
-
     private Object shutdownLock = new Object();
 
     @Override
-    public void onShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
-        if (vetos.length > 0) {
+    public void onShutdownVetoRequest(ShutdownRequest request) throws ShutdownVetoException {
+        if (request.hasVetos()) {
             /* we already abort shutdown, no need to ask again */
             /*
              * we need this ShutdownVetoException here to avoid count issues with shutdownRequests
              */
             throw new ShutdownVetoException("Shutdown already cancelled!", this);
         }
-        synchronized (shutdownLock) {
 
-            if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) {
-                if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.LinkCollector_onShutdownRequest_(), _JDT._.LinkCollector_onShutdownRequest_msg(), NewTheme.I().getIcon("linkgrabber", 32), _JDT._.literally_yes(), null)) {
+        if (request.isSilent()) {
+            synchronized (shutdownLock) {
+                if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) { throw new ShutdownVetoException("LinkCollector is still running", this); }
 
-                return; }
-                throw new ShutdownVetoException("LinkCollector is still running", this);
             }
+        } else {
+            synchronized (shutdownLock) {
 
-        }
-    }
+                if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) {
+                    if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.LinkCollector_onShutdownRequest_(), _JDT._.LinkCollector_onShutdownRequest_msg(), NewTheme.I().getIcon("linkgrabber", 32), _JDT._.literally_yes(), null)) {
 
-    @Override
-    public void onSilentShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
-
-        if (vetos.length > 0) {
-            /* we already abort shutdown, no need to ask again */
-            /*
-             * we need this ShutdownVetoException here to avoid count issues with shutdownRequests
-             */
-            throw new ShutdownVetoException("Shutdown already cancelled!", this);
-        }
-        synchronized (shutdownLock) {
-            if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) { throw new ShutdownVetoException("LinkCollector is still running", this); }
-
+                    return; }
+                    throw new ShutdownVetoException("LinkCollector is still running", this);
+                }
+            }
         }
     }
 
     @Override
     public long getShutdownVetoPriority() {
         return 0;
+    }
+
+    @Override
+    public void onShutdown(ShutdownRequest request) {
+    }
+
+    @Override
+    public void onShutdownVeto(ShutdownRequest request) {
     }
 
 }
