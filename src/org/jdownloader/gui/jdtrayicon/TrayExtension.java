@@ -70,7 +70,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.updatev2.AvoidRlyExistListener;
+import org.jdownloader.updatev2.SmartRlyExitOrRestartRequest;
 import org.jdownloader.updatev2.RestartController;
 
 public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
@@ -651,7 +651,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             }.start();
             return;
         }
-        RestartController.getInstance().exitAsynch(new AvoidRlyExistListener(asked.get()));
+        RestartController.getInstance().exitAsynch(new SmartRlyExitOrRestartRequest(asked.get()));
 
     }
 

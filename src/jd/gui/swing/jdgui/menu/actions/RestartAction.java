@@ -20,7 +20,7 @@ import java.awt.event.ActionEvent;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.updatev2.AvoidRlyExistListener;
+import org.jdownloader.updatev2.SmartRlyExitOrRestartRequest;
 import org.jdownloader.updatev2.RestartController;
 
 public class RestartAction extends AppAction {
@@ -35,7 +35,7 @@ public class RestartAction extends AppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        RestartController.getInstance().asyncRestart(new AvoidRlyExistListener(false));
+        RestartController.getInstance().asyncRestart(new SmartRlyExitOrRestartRequest(false));
     }
 
 }

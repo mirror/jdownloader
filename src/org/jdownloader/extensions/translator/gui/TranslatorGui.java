@@ -65,7 +65,7 @@ import org.jdownloader.extensions.translator.gui.actions.NewTranslationAction;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.updatev2.AvoidRlyExistListener;
+import org.jdownloader.updatev2.SmartRlyExitOrRestartRequest;
 import org.jdownloader.updatev2.RestartController;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNCommitItem;
@@ -678,7 +678,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                RestartController.getInstance().asyncRestart(new AvoidRlyExistListener(false, new String[] { "-translatortest", getExtension().getLoadedLocale().getId() }));
+                RestartController.getInstance().asyncRestart(new SmartRlyExitOrRestartRequest(false, new String[] { "-translatortest", getExtension().getLoadedLocale().getId() }));
             }
         }));
         menuPanel2.add(logout = new ExtButton(new AppAction() {

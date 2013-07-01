@@ -6,6 +6,7 @@ import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.SmartRlyExitOrRestartRequest;
 
 public class ExitToolbarAction extends ToolBarAction {
 
@@ -23,7 +24,7 @@ public class ExitToolbarAction extends ToolBarAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        RestartController.getInstance().exitAsynch(null);
+        RestartController.getInstance().exitAsynch(new SmartRlyExitOrRestartRequest());
 
     }
 }

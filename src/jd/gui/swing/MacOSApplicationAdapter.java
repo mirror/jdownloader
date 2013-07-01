@@ -51,6 +51,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.MacDockProgressDisplay;
+import org.jdownloader.updatev2.SmartRlyExitOrRestartRequest;
 import org.jdownloader.updatev2.RestartController;
 
 import com.apple.eawt.AboutHandler;
@@ -266,7 +267,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
     public void handleQuitRequestWith(QuitEvent e, final QuitResponse response) {
         quitResponse = response;
-        RestartController.getInstance().exitAsynch(null);
+        RestartController.getInstance().exitAsynch(new SmartRlyExitOrRestartRequest());
     }
 
     public void handlePreferences(PreferencesEvent e) {

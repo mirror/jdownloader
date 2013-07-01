@@ -21,6 +21,7 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.updatev2.restart.Restarter;
 
 public class RestartController implements ShutdownVetoListener {
@@ -128,6 +129,7 @@ public class RestartController implements ShutdownVetoListener {
     }
 
     public void exitAsynch(final ShutdownRequest filter) {
+        if (filter == null) throw new NullPointerException();
         new Thread("ExitAsynch") {
             public void run() {
                 ShutdownController.getInstance().requestShutdown(filter);
@@ -151,7 +153,7 @@ public class RestartController implements ShutdownVetoListener {
         if (shutdownVetoExceptions.hasVetos()) { return; }
         try {
             if (shutdownVetoExceptions instanceof RestartRequest) {
-                new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmTorestart_title(), _UPDATE._.RestartController_confirmTorestart_msg(), AWUTheme.I().getIcon("exit", 32), null, null) {
+                new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmTorestart_title(), _UPDATE._.RestartController_confirmTorestart_msg(), AWUTheme.I().getIcon(IconKey.ICON_RESTART, 32), null, null) {
 
                     @Override
                     public String getDontShowAgainKey() {
@@ -162,7 +164,7 @@ public class RestartController implements ShutdownVetoListener {
             } else {
                 // if you do not want to ask here, use
                 // ShutdownController.getInstance().removeShutdownVetoListener(RestartController.getInstance());
-                new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmToExit_(), _UPDATE._.RestartController_confirmToExit_msg(), AWUTheme.I().getIcon("exit", 32), null, null) {
+                new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmToExit_(), _UPDATE._.RestartController_confirmToExit_msg(), AWUTheme.I().getIcon(IconKey.ICON_EXIT, 32), null, null) {
 
                     @Override
                     public String getDontShowAgainKey() {

@@ -56,7 +56,7 @@ import org.jdownloader.gui.mainmenu.MainMenuManager;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.updatev2.AvoidRlyExistListener;
+import org.jdownloader.updatev2.SmartRlyExitOrRestartRequest;
 import org.jdownloader.updatev2.ForcedShutdown;
 import org.jdownloader.updatev2.RestartController;
 
@@ -417,7 +417,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 switch (io.getCloseReason()) {
                 case OK:
                 case TIMEOUT:
-                    RestartController.getInstance().exitAsynch(new AvoidRlyExistListener(true));
+                    RestartController.getInstance().exitAsynch(new SmartRlyExitOrRestartRequest(true));
                     break;
                 default:
                     break;

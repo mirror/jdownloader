@@ -115,6 +115,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.SmartRlyExitOrRestartRequest;
 import org.jdownloader.updatev2.UpdateController;
 
 public class JDGui extends SwingGui {
@@ -687,8 +688,8 @@ public class JDGui extends SwingGui {
     }
 
     /**
-     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT and only put the
-     * mainframe stuff into EDT
+     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT
+     * and only put the mainframe stuff into EDT
      * 
      * restores the dimension and location to the window
      */
@@ -1273,7 +1274,7 @@ public class JDGui extends SwingGui {
                 return;
             }
 
-            RestartController.getInstance().exitAsynch(null);
+            RestartController.getInstance().exitAsynch(new SmartRlyExitOrRestartRequest());
         }
     }
 
@@ -1309,8 +1310,8 @@ public class JDGui extends SwingGui {
     private Thread trayIconChecker;
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
-     * changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
+     * avoid sideeffects when changing anything
      * 
      * @param minimize
      */

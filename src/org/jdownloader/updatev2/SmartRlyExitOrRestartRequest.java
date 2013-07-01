@@ -4,22 +4,26 @@ import org.appwork.shutdown.BasicShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 
-public class AvoidRlyExistListener extends BasicShutdownRequest implements RestartRequest {
+public class SmartRlyExitOrRestartRequest extends BasicShutdownRequest implements RestartRequest {
 
     private volatile boolean alreadyAsked = false;
     private volatile boolean gotVeto      = false;
     private String[]         restartParams;
 
-    public AvoidRlyExistListener(boolean alreadyAsked, String[] arguments) {
+    public SmartRlyExitOrRestartRequest(boolean alreadyAsked, String[] arguments) {
         super();
         this.alreadyAsked = alreadyAsked;
         restartParams = arguments;
     }
 
-    public AvoidRlyExistListener(boolean alreadyAsked) {
+    public SmartRlyExitOrRestartRequest(boolean alreadyAsked) {
         super();
         this.alreadyAsked = alreadyAsked;
         restartParams = new String[] {};
+    }
+
+    public SmartRlyExitOrRestartRequest() {
+        this(false);
     }
 
     @Override
