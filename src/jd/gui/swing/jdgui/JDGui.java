@@ -97,6 +97,7 @@ import org.appwork.utils.swing.dialog.TimerDialog.InternDialog;
 import org.appwork.utils.swing.dialog.locator.DialogLocator;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.appwork.utils.swing.locator.AbstractLocator;
+import org.appwork.utils.swing.locator.CenterOfScreenLocator;
 import org.jdownloader.gui.GuiUtils;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.jdtrayicon.TrayExtension;
@@ -746,11 +747,21 @@ public class JDGui extends SwingGui {
         }
 
         // try to find offscreen
+        logger.info("Check if Screen Location are ok " + loc + " - " + dim);
 
+        Rectangle jdRectange = new Rectangle(loc, dim);
         boolean isok = false;
         for (final GraphicsDevice screen : screens) {
+            logger.info("Screen: " + screen.getIDstring() + " " + screen.getDefaultConfiguration());
             final Rectangle bounds = screen.getDefaultConfiguration().getBounds();
-
+            Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(screen.getDefaultConfiguration());
+            logger.info("Screenbounds: " + bounds);
+            logger.info("Screen Insets: " + insets);
+            bounds.x += insets.left;
+            bounds.y += insets.top;
+            bounds.width -= (insets.left + insets.right);
+            bounds.height -= (insets.top + insets.bottom);
+            logger.info("New Screenbounds: " + bounds);
             int xMin, xMax, yMin, yMax;
             if (CrossSystem.isWindows()) {
                 xMin = Math.max(bounds.x, loc.x);
@@ -767,25 +778,43 @@ public class JDGui extends SwingGui {
                 xMin = Math.max(bounds.x, loc.x);
                 xMax = Math.min(bounds.x + bounds.width, loc.x + dim.width);
                 yMin = Math.max(bounds.y + 30, loc.y);
-                yMax = Math.min(bounds.y - 30 + bounds.height, loc.y + 30);
+                yMax = Math.min(bounds.y + bounds.height, loc.y + 30);
             }
+            jdRectange.height = 30;
+            Rectangle inter = jdRectange.intersection(bounds);
             int intersectionWidth = xMax - xMin;
             int intersectionHeight = yMax - yMin;
+            logger.info("Intersection: " + intersectionWidth + "x" + intersectionHeight);
+            logger.info("Intersection(actual): " + inter);
             if (intersectionWidth > 50 && intersectionHeight >= 30) {
                 // ok. Titlebar is in screen.
                 isok = true;
+                logger.info("Screen OK");
                 break;
 
+            } else {
+                logger.info("Screen BAD");
             }
 
         }
+        mainFrame.setSize(dim);
+
         final Point finalLocation;
         if (!isok) {
-            finalLocation = Screen.getCenterOfComponent(null, mainFrame);
             dim = new Dimension(800, 600);
+            mainFrame.setSize(dim);
+            finalLocation = new CenterOfScreenLocator().getLocationOnScreen(mainFrame);
+            logger.info("Screen BAD: Reset the Location to: " + finalLocation + "@" + dim);
+
         } else {
+            // Point correctedLocation = AbstractLocator.correct(loc, mainFrame);
+            // if (!correctedLocation.equals(loc)) {
+            // logger.info("Corrected Location from " + loc + " to " + correctedLocation);
+            // loc = correctedLocation;
+            // }
             finalLocation = loc;
         }
+
         Integer state = null;
         if (status.isSilentShutdown() && !status.isActive()) {
             // else frame would jump to the front
@@ -797,8 +826,10 @@ public class JDGui extends SwingGui {
                 state = status.getExtendedState().getId();
             }
         }
+
         final Dimension finalDim = dim;
         final Integer finalState = state;
+
         new EDTRunner() {
             // 7. Why a JFrame hides the OS TaskBar when being displayed maximized via JFrame#setExtendedState()?
             //
