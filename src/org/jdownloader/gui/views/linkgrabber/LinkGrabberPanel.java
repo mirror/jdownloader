@@ -44,7 +44,6 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
-import org.jdownloader.gui.views.downloads.overviewpanel.OverViewHeader;
 import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
@@ -54,6 +53,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.RemoveOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ResetAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
+import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverViewHeader;
 import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverview;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.WindowState;
@@ -366,7 +366,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             // overViewScrollBar.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
             // overViewScrollBar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-            overViewScrollBar.setColumnHeaderView(new OverViewHeader() {
+            overViewScrollBar.setColumnHeaderView(new LinkgrabberOverViewHeader() {
 
                 @Override
                 protected void onCloseAction() {
@@ -399,12 +399,12 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             if (CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.isEnabled()) {
                 this.add(tableScrollPane, "");
-                add(sidebarScrollPane, "spany 2");
+                add(sidebarScrollPane, "spany 2,growx");
                 add(getOverView());
 
             } else {
                 this.add(tableScrollPane, "spany 2");
-                add(sidebarScrollPane, "spany 2");
+                add(sidebarScrollPane, "spany 2,growx");
             }
 
         } else {
@@ -414,7 +414,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 this.add(tableScrollPane, "spanx");
                 add(getOverView(), "spanx");
             } else {
-                this.add(tableScrollPane, "spany 2,spanx");
+                this.add(tableScrollPane, "spany 2,spanx,growx");
             }
 
         }

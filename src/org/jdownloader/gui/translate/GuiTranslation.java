@@ -2669,4 +2669,22 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Remove selected item" })
     String ManagerFrame_layoutPanel_remove();
 
+    @Default(lngs = { "en" }, values = { "Overview" })
+    String LinkgrabberOverViewHeader_LinkgrabberOverViewHeader_();
+
+    @Default(lngs = { "en" }, values = { "Aggregated Overview over all Links in the Linkgrabber" })
+    String LinkgrabberOverViewHeader_LinkgrabberOverViewHeader_settings_tooltip_();
+
+    @Default(lngs = { "en" }, values = { "Hoster(s):" })
+    String DownloadOverview_DownloadOverview_hoster();
+
+    @Default(lngs = { "en" }, values = { "Online:" })
+    String DownloadOverview_DownloadOverview_online();
+
+    @Default(lngs = { "en" }, values = { "Offline:" })
+    String DownloadOverview_DownloadOverview_offline();
+
+    @Default(lngs = { "en" }, values = { "Unknown Status:" })
+    String DownloadOverview_DownloadOverview_unknown();
+
 }

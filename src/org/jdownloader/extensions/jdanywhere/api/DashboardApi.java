@@ -254,7 +254,7 @@ public class DashboardApi implements IDashboardApi {
     @Override
     public List<RunningObjectStorable> runningLinks() {
         DownloadController dlc = DownloadController.getInstance();
-        List<RunningObjectStorable> ret = new ArrayList<RunningObjectStorable>(dlc.getAllDownloadLinks().size());
+        List<RunningObjectStorable> ret = new ArrayList<RunningObjectStorable>(dlc.getAllChildren().size());
         boolean b = dlc.readLock();
         try {
             for (FilePackage fpkg : dlc.getPackages()) {

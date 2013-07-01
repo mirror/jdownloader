@@ -362,7 +362,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         ProxyController.getInstance().removeIPBlockTimeout(null, true);
         /* reset temp unavailble times for all ips */
         ProxyController.getInstance().removeHostBlockedTimeout(null, false);
-        for (final DownloadLink link : DownloadController.getInstance().getAllDownloadLinks()) {
+        for (final DownloadLink link : DownloadController.getInstance().getAllChildren()) {
             /*
              * do not reset if link is offline, finished , already exist or pluginerror (because only plugin updates can fix this)
              */

@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.downloads.overviewpanel;
+package org.jdownloader.gui.views.linkgrabber.overview;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -27,18 +27,18 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class OverViewHeader extends MigPanel {
+public class LinkgrabberOverViewHeader extends MigPanel {
 
     private JButton   bt;
     private ExtButton options;
 
-    public OverViewHeader() {
+    public LinkgrabberOverViewHeader() {
         super("ins 0 0 1 0", "[]2[][][grow,fill][]0", "[grow,fill]");
 
         // setBackground(Color.RED);
         // setOpaque(true);
 
-        JLabel lbl = SwingUtils.toBold(new JLabel(_GUI._.OverViewHeader_OverViewHeader_()));
+        JLabel lbl = SwingUtils.toBold(new JLabel(_GUI._.LinkgrabberOverViewHeader_LinkgrabberOverViewHeader_()));
         LookAndFeelController.getInstance().getLAFOptions().applyDownloadOverviewHeaderColor(lbl);
         add(new JLabel(NewTheme.I().getIcon("download", 16)), "gapleft 1");
         add(lbl, "height 17!");
@@ -48,7 +48,7 @@ public class OverViewHeader extends MigPanel {
                 //
 
                 setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("exttable/columnButton", -1), NewTheme.I().getImage("popupButton", -1), 0, 0, 16, 4)));
-                setTooltipText(_GUI._.OverViewHeader_OverViewHeader_settings_tooltip_());
+                setTooltipText(_GUI._.LinkgrabberOverViewHeader_LinkgrabberOverViewHeader_settings_tooltip_());
             }
 
             @Override
@@ -63,9 +63,6 @@ public class OverViewHeader extends MigPanel {
                 pu.add(total);
                 pu.add(filtered);
                 pu.add(selected);
-                pu.add(new JSeparator(JSeparator.HORIZONTAL));
-                pu.add(new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_quicksettings(), CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE));
-
                 int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
 
                 Dimension pref = pu.getPreferredSize();

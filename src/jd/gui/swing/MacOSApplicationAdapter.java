@@ -51,8 +51,8 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.MacDockProgressDisplay;
-import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.SmartRlyExitRequest;
 
 import com.apple.eawt.AboutHandler;
 import com.apple.eawt.AppEvent;
@@ -186,7 +186,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                                     LogController.GL.log(e);
                                     break;
                                 }
-                                final AggregatedNumbers aggn = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks(), null, null, null, null));
+                                final AggregatedNumbers aggn = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren(), null, null, null, null));
                                 int percent = 0;
                                 if (aggn.getTotalBytes() > 0) {
                                     percent = (int) ((aggn.getLoadedBytes() * 100) / aggn.getTotalBytes());

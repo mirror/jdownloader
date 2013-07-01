@@ -339,7 +339,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
         boolean b = dlc.readLock();
         try {
-            for (DownloadLink dl : dlc.getAllDownloadLinks()) {
+            for (DownloadLink dl : dlc.getAllChildren()) {
                 if (selectedUUIDs.contains(dl.getUniqueID().getID())) {
                     selectedLinks.add(dl);
                 }

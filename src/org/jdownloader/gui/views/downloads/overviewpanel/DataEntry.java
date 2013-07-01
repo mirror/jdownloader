@@ -81,7 +81,7 @@ public class DataEntry {
     }
 
     public void updateVisibility() {
-        if (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled() || (!CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SELECTED_INFO_VISIBLE.isEnabled() && !CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_TOTAL_INFO_VISIBLE.isEnabled() && !CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE_ONLY_INFO_VISIBLE.isEnabled())) {
+        if (CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled() || (!CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() && !CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled() && !CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled())) {
             if (DownloadsTableModel.getInstance().getSelectedObjects().size() > 0) {
                 filtered.setVisible(false);
                 total.setVisible(false);
@@ -92,9 +92,9 @@ public class DataEntry {
                 selected.setVisible(false);
             }
         } else {
-            filtered.setVisible(CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE_ONLY_INFO_VISIBLE.isEnabled());
-            total.setVisible(CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_TOTAL_INFO_VISIBLE.isEnabled());
-            selected.setVisible(CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SELECTED_INFO_VISIBLE.isEnabled());
+            filtered.setVisible(CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled());
+            total.setVisible(CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled());
+            selected.setVisible(CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled());
         }
     }
 

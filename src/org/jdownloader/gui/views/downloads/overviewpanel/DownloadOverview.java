@@ -21,6 +21,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.ChunksEditor;
 import jd.gui.swing.jdgui.menu.ParalellDownloadsEditor;
 import jd.gui.swing.jdgui.menu.ParallelDownloadsPerHostEditor;
@@ -38,13 +39,16 @@ import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.controlling.AggregatedNumbers;
+import org.jdownloader.gui.event.GUIEventSender;
+import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class DownloadOverview extends MigPanel implements ActionListener, DownloadControllerListener, HierarchyListener, GenericConfigEventListener<Boolean> {
+public class DownloadOverview extends MigPanel implements ActionListener, DownloadControllerListener, HierarchyListener, GenericConfigEventListener<Boolean>, GUIListener {
 
     private DownloadsTable downloadTable;
     private DataEntry      packageCount;
@@ -67,6 +71,7 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
             setBackground(new Color(c));
             setOpaque(true);
         }
+        GUIEventSender.getInstance().addListener(this, true);
         MigPanel info = new MigPanel("ins 2 0 0 0", "[grow]10[grow]", "[grow,fill]2[grow,fill]");
         info.setOpaque(false);
 
@@ -99,10 +104,10 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
 
         // DownloadWatchDog.getInstance().getActiveDownloads(), DownloadWatchDog.getInstance().getDownloadSpeedManager().connections()
 
-        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_TOTAL_INFO_VISIBLE.getEventSender().addListener(this);
-        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SELECTED_INFO_VISIBLE.getEventSender().addListener(this);
-        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().addListener(this);
-        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.getEventSender().addListener(this);
+        CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.getEventSender().addListener(this);
+        CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.getEventSender().addListener(this);
+        CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().addListener(this);
+        CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().addListener(this);
         final MigPanel settings = new MigPanel("ins 2 0 0 0 ,wrap 3", "[][fill][fill]", "[]2[]");
         SwingUtils.setOpaque(settings, false);
         settings.add(new JSeparator(JSeparator.VERTICAL), "spany,pushy,growy");
@@ -173,9 +178,9 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
 
             public void run() {
                 if (!isDisplayable()) { return; }
-                final AggregatedNumbers total = CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllDownloadLinks(), null, null, null, null)) : null;
-                final AggregatedNumbers filtered = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getAllChildrenNodes(), null, null, null, DownloadsTableModel.getInstance().getTable())) : null;
-                final AggregatedNumbers selected = (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getSelectedObjects(), null, null, null, DownloadsTableModel.getInstance().getTable())) : null;
+                final AggregatedNumbers total = CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren(), null, null, null, null)) : null;
+                final AggregatedNumbers filtered = (CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getAllChildrenNodes(), null, null, null, DownloadsTableModel.getInstance().getTable())) : null;
+                final AggregatedNumbers selected = (CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getSelectedObjects(), null, null, null, DownloadsTableModel.getInstance().getTable())) : null;
                 new EDTRunner() {
 
                     @Override
@@ -286,4 +291,19 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
         };
     }
 
+    @Override
+    public void onGuiMainTabSwitch(View oldView, final View newView) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (newView instanceof DownloadsView) {
+                    startUpdateTimer();
+                } else {
+                    if (updateTimer != null) updateTimer.stop();
+                }
+            }
+        };
+
+    }
 }

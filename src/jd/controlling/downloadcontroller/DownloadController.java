@@ -246,29 +246,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     /**
-     * return a list of all DownloadLinks controlled by this DownloadController
-     * 
-     * @return
-     */
-    public java.util.List<DownloadLink> getAllDownloadLinks() {
-        final java.util.List<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final boolean readL = readLock();
-        try {
-            for (final FilePackage fp : packages) {
-                final boolean readL2 = fp.getModifyLock().readLock();
-                try {
-                    ret.addAll(fp.getChildren());
-                } finally {
-                    if (readL2) fp.getModifyLock().readUnlock(readL2);
-                }
-            }
-        } finally {
-            readUnlock(readL);
-        }
-        return ret;
-    }
-
-    /**
      * return a list of all DownloadLinks from a given FilePackage with status
      * 
      * @param fp

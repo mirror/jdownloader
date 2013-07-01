@@ -28,6 +28,24 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return structureChanged.get();
     }
 
+    public java.util.List<ChildType> getAllChildren() {
+        final java.util.List<ChildType> ret = new ArrayList<ChildType>();
+        final boolean readL = readLock();
+        try {
+            for (final PackageType fp : packages) {
+                final boolean readL2 = fp.getModifyLock().readLock();
+                try {
+                    ret.addAll(fp.getChildren());
+                } finally {
+                    if (readL2) fp.getModifyLock().readUnlock(readL2);
+                }
+            }
+        } finally {
+            readUnlock(readL);
+        }
+        return ret;
+    }
+
     public long getChildrenChanges() {
         return childrenChanged.get();
     }
@@ -40,8 +58,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     private ModifyLock               lock     = new ModifyLock();
 
     /**
-     * add a Package at given position position in this PackageController. in case the Package is already controlled by this PackageController this function
-     * does move it to the given position
+     * add a Package at given position position in this PackageController. in case the Package is already controlled by this
+     * PackageController this function does move it to the given position
      * 
      * @param pkg
      * @param index
@@ -466,7 +484,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of the children
+     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of
+     * the children
      * 
      * @param pkg
      * @param children
