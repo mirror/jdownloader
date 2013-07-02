@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -25,6 +27,8 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -222,7 +226,9 @@ public class OneFichierCom extends PluginForHost {
             if (br.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             if (br.containsHTML(IPBLOCKEDTEXTS)) {
                 final boolean preferReconnect = this.getPluginConfig().getBooleanProperty("PREFER_RECONNECT", false);
-                final String waittime = br.getRegex("you can download only one file at a time and you must wait at least (\\d+) minutes between each downloads").getMatch(0);
+                // Warning ! Without premium status, you can download only one file at a time and you must wait up to 5 minutes between each
+                // downloads.
+                final String waittime = br.getRegex("you can download only one file at a time and you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
                 if (waittime != null && preferReconnect) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
                 } else if (preferReconnect) {
@@ -230,7 +236,7 @@ public class OneFichierCom extends PluginForHost {
                 } else if (waittime != null) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", Integer.parseInt(waittime) * 60 * 1001l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", 90 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", 5 * 60 * 1001);
                 }
             }
             if (br.containsHTML(PASSWORDTEXT) || pwProtected) {
@@ -248,11 +254,9 @@ public class OneFichierCom extends PluginForHost {
                     if (passCode != null) downloadLink.setProperty("pass", passCode);
                 }
             } else {
-                // ddlink is within the ?e=1 page request! but it seems you need
-                // to do the following posts to be able to use the link
-                // dllink = br.getRegex("(http.+/get/" + new
-                // Regex(downloadLink.getDownloadURL(),
-                // "https?://([^\\.]+)").getMatch(0) + "[^;]+)").getMatch(0);
+                // ddlink is within the ?e=1 page request! but it seems you need to do the following posts to be able to use the link
+                // dllink = br.getRegex("(http.+/get/" + new Regex(downloadLink.getDownloadURL(), "https?://([^\\.]+)").getMatch(0) +
+                // "[^;]+)").getMatch(0);
                 br.postPage(downloadLink.getDownloadURL() + "/en/", "a=1&submit=Download+the+file");
             }
             if (dllink == null) dllink = br.getRedirectLocation();
@@ -286,25 +290,22 @@ public class OneFichierCom extends PluginForHost {
         br.getPage("https://1fichier.com/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));
         String timeStamp = br.getRegex("(\\d+)").getMatch(0);
         String freeCredits = br.getRegex("0[\r\n]+([0-9\\.]+)").getMatch(0);
-        // Use site login/site download if either API is not working or API says
-        // that there are no credits available
+        // Use site login/site download if either API is not working or API says that there are no credits available
         if ("error".equalsIgnoreCase(timeStamp) || ("0".equals(timeStamp) && freeCredits == null)) {
             /**
              * Only used if the API fails and is wrong but that usually doesn't happen!
              */
-            logger.info("Using site login because API is either wrong or no free credits...");
-            br.postPage("https://www.1fichier.com/en/login.pl", "lt=on&Login=Login&secure=on&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + account.getPass());
-            final String logincheck = br.getCookie("http://1fichier.com/", "SID");
-            if (logincheck == null || logincheck.equals("")) {
-                logger.info("Username/Password also invalid via site login!");
+            try {
+                login(account, true);
+            } catch (Exception e) {
                 ai.setStatus("Username/Password also invalid via site login!");
                 account.setProperty("type", Property.NULL);
                 account.setValid(false);
                 return ai;
             }
+            ai.setStatus("Free User (Credits available)");
             account.setValid(true);
             account.setProperty("type", "FREE");
-            ai.setStatus("Free User (Credits available)");
 
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("https://www.1fichier.com/en/console/details.pl");
@@ -313,9 +314,9 @@ public class OneFichierCom extends PluginForHost {
                 ai.setTrafficLeft(SizeFormatter.getSize(freeCredits2));
             else
                 ai.setUnlimitedTraffic();
+            maxPrem.set(1);
             try {
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(-1);
+                account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
@@ -330,7 +331,7 @@ public class OneFichierCom extends PluginForHost {
                 ai.setTrafficLeft(SizeFormatter.getSize(freeCredits + " GB"));
                 try {
                     maxPrem.set(1);
-                    account.setMaxSimultanDownloads(-1);
+                    account.setMaxSimultanDownloads(1);
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
                 }
@@ -357,6 +358,51 @@ public class OneFichierCom extends PluginForHost {
             return ai;
         }
     }
+
+    @SuppressWarnings("unchecked")
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                prepareBrowser(br);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            br.setCookie(this.getHost(), key, value);
+                        }
+                        return;
+                    }
+                }
+                logger.info("Using site login because API is either wrong or no free credits...");
+                br.postPage("https://www.1fichier.com/en/login.pl", "lt=on&Login=Login&secure=on&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + account.getPass());
+                final String logincheck = br.getCookie("http://1fichier.com/", "SID");
+                if (logincheck == null || logincheck.equals("")) {
+                    logger.info("Username/Password also invalid via site login!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = br.getCookies(this.getHost());
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
+    }
+
+    private static final Object LOCK = new Object();
 
     @Override
     public String getAGBLink() {
@@ -417,6 +463,7 @@ public class OneFichierCom extends PluginForHost {
             /**
              * Only used if the API fails and is wrong but that usually doesn't happen!
              */
+            login(account, false);
             doFree(link);
         } else {
             br.setFollowRedirects(false);
@@ -479,7 +526,7 @@ public class OneFichierCom extends PluginForHost {
     private void prepareBrowser(final Browser br) {
         try {
             if (br == null) { return; }
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.16) Gecko/20110323 Ubuntu/10.10 (maverick) Firefox/3.6.16");
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36");
             br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
             br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
             br.getHeaders().put("Pragma", null);

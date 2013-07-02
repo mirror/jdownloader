@@ -48,7 +48,7 @@ public class Wrdprss extends PluginForDecrypt {
     public static String[] getAnnotationUrls() {
 
         StringBuilder completePattern = new StringBuilder();
-        completePattern.append("http://[\\w\\.]*?(");
+        completePattern.append("http://(\\w+\\.)?(");
         completePattern.append("(cinetopia\\.ws/.*\\.html)");
         String[] listType1 = { "hd-area.org", "movie-blog.org", "doku.cc", "sound-blog.org" };
         for (String pattern : listType1) {
@@ -88,6 +88,7 @@ public class Wrdprss extends PluginForDecrypt {
     }
 
     // @Override
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         // System.out.println(param);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -116,7 +117,7 @@ public class Wrdprss extends PluginForDecrypt {
         String[] links = br.getRegex(Pattern.compile("href=.*?(http://[^\"']+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(links.length);
         for (String link : links) {
-            if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
+            if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true) && !link.matches(".+\\.(css|xml)(.*)?")) {
                 DownloadLink dLink = createDownloadlink(link);
                 if (link_passwds != null && link_passwds.size() > 0) dLink.setSourcePluginPasswordList(link_passwds);
                 if (!customHeaders.isEmpty()) {
