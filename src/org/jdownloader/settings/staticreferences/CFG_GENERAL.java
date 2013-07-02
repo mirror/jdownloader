@@ -24,13 +24,13 @@ public class CFG_GENERAL {
     // wrong.
     // true
     public static final BooleanKeyHandler               LINKCHECK_ENABLED                               = SH.getKeyHandler("LinkcheckEnabled", BooleanKeyHandler.class);
-    // false
-    public static final BooleanKeyHandler               AUTOADD_LINKS_AFTER_LINKCHECK                   = SH.getKeyHandler("AutoaddLinksAfterLinkcheck", BooleanKeyHandler.class);
-    // [Ljava.lang.String;@2950fcc7
+    // [Ljava.lang.String;@4ac93274
     /**
      * CommandLine to open a link in a browser. Use %s as wildcard for the url
      **/
     public static final StringListHandler               BROWSER_COMMAND_LINE                            = SH.getKeyHandler("BrowserCommandLine", StringListHandler.class);
+    // false
+    public static final BooleanKeyHandler               AUTOADD_LINKS_AFTER_LINKCHECK                   = SH.getKeyHandler("AutoaddLinksAfterLinkcheck", BooleanKeyHandler.class);
     // 15000
     /**
      * Timeout for network problems
@@ -46,13 +46,13 @@ public class CFG_GENERAL {
      * http://jdownloader.org/knowledge/wiki/glossary/chunkload
      **/
     public static final IntegerKeyHandler               MAX_CHUNKS_PER_FILE                             = SH.getKeyHandler("MaxChunksPerFile", IntegerKeyHandler.class);
-    // true
-    public static final BooleanKeyHandler               AUTO_SORT_CHILDREN_ENABLED                      = SH.getKeyHandler("AutoSortChildrenEnabled", BooleanKeyHandler.class);
     // 120000
     /**
      * flush download buffers after x ms
      **/
     public static final IntegerKeyHandler               FLUSH_BUFFER_TIMEOUT                            = SH.getKeyHandler("FlushBufferTimeout", IntegerKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler               AUTO_SORT_CHILDREN_ENABLED                      = SH.getKeyHandler("AutoSortChildrenEnabled", BooleanKeyHandler.class);
     // true
     /**
      * Use available Accounts?
@@ -97,6 +97,11 @@ public class CFG_GENERAL {
     public static final BooleanKeyHandler               CONVERT_RELATIVE_PATHES_JDROOT                  = SH.getKeyHandler("ConvertRelativePathesJDRoot", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler               MAX_DOWNLOADS_PER_HOST_ENABLED                  = SH.getKeyHandler("MaxDownloadsPerHostEnabled", BooleanKeyHandler.class);
+    // ON_DOWNLOAD_START
+    /**
+     * Create subfolders after adding links? When should we create the final Downloaddirectory?
+     **/
+    public static final EnumKeyHandler                  CREATE_FOLDER_TRIGGER                           = SH.getKeyHandler("CreateFolderTrigger", EnumKeyHandler.class);
     // false
     public static final BooleanKeyHandler               SILENT_RESTART                                  = SH.getKeyHandler("SilentRestart", BooleanKeyHandler.class);
     // 5
@@ -155,10 +160,10 @@ public class CFG_GENERAL {
      * How often a Plugin restarts a download if download failed
      **/
     public static final IntegerKeyHandler               MAX_PLUGIN_RETRIES                              = SH.getKeyHandler("MaxPluginRetries", IntegerKeyHandler.class);
-    // ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS
-    public static final EnumKeyHandler                  AUTO_START_DOWNLOAD_OPTION                      = SH.getKeyHandler("AutoStartDownloadOption", EnumKeyHandler.class);
     // false
     public static final BooleanKeyHandler               DOWNLOAD_SPEED_LIMIT_ENABLED                    = SH.getKeyHandler("DownloadSpeedLimitEnabled", BooleanKeyHandler.class);
+    // ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS
+    public static final EnumKeyHandler                  AUTO_START_DOWNLOAD_OPTION                      = SH.getKeyHandler("AutoStartDownloadOption", EnumKeyHandler.class);
     // null
     public static final ObjectKeyHandler                DOWNLOAD_FOLDER_HISTORY                         = SH.getKeyHandler("DownloadFolderHistory", ObjectKeyHandler.class);
     // ASK_FOR_EACH_FILE
@@ -170,10 +175,10 @@ public class CFG_GENERAL {
     public static final BooleanKeyHandler               SHOW_FILE_NAME_IN_CAPTCHA_DIALOG_ENABLED        = SH.getKeyHandler("ShowFileNameInCaptchaDialogEnabled", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler               COPY_SINGLE_REAL_URL                            = SH.getKeyHandler("CopySingleRealURL", BooleanKeyHandler.class);
-    // 1
-    public static final IntegerKeyHandler               MAX_SIMULTANE_DOWNLOADS_PER_HOST                = SH.getKeyHandler("MaxSimultaneDownloadsPerHost", IntegerKeyHandler.class);
     // true
     public static final BooleanKeyHandler               CLEAN_UP_FILENAMES                              = SH.getKeyHandler("CleanUpFilenames", BooleanKeyHandler.class);
+    // 1
+    public static final IntegerKeyHandler               MAX_SIMULTANE_DOWNLOADS_PER_HOST                = SH.getKeyHandler("MaxSimultaneDownloadsPerHost", IntegerKeyHandler.class);
     // false
     public static final BooleanKeyHandler               FILTER_REGEX                                    = SH.getKeyHandler("FilterRegex", BooleanKeyHandler.class);
     // 300000

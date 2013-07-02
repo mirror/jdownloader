@@ -15,6 +15,7 @@ import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
@@ -382,5 +383,20 @@ public interface GeneralSettings extends ConfigInterface {
     int getMaxPremiumIcons();
 
     void setMaxPremiumIcons(int icons);
+
+    public static enum CreateFolderTrigger {
+        @EnumLabel("When the actual Download starts")
+        ON_DOWNLOAD_START,
+        @EnumLabel("When the links are added to the Downloadlist")
+        ON_LINKS_ADDED,
+
+    }
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Create subfolders after adding links? When should we create the final Downloaddirectory?")
+    @DefaultEnumValue("ON_DOWNLOAD_START")
+    CreateFolderTrigger getCreateFolderTrigger();
+
+    void setCreateFolderTrigger(CreateFolderTrigger trigger);
 
 }

@@ -64,7 +64,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
      * @param pkg
      * @param index
      */
-    public void addmovePackageAt(final PackageType pkg, final int index) {
+    protected void addmovePackageAt(final PackageType pkg, final int index) {
         addmovePackageAt(pkg, index, false);
     }
 

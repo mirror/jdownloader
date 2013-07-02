@@ -79,7 +79,9 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.GeneralSettings.CreateFolderTrigger;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.utils.JDFileUtils;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
@@ -220,6 +222,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 protected Void run() throws RuntimeException {
                     int counter = index;
                     for (FilePackage fp : fps) {
+                        if (CFG_GENERAL.CREATE_FOLDER_TRIGGER.getValue() == CreateFolderTrigger.ON_LINKS_ADDED) {
+                            new File(fp.getDownloadDirectory()).mkdirs();
+                        }
+
                         addmovePackageAt(fp, counter++);
                     }
                     return null;
@@ -234,15 +240,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     public void addListener(final DownloadControllerListener l, boolean weak) {
         broadcaster.addListener(l, weak);
-    }
-
-    /**
-     * add given FilePackage to this DownloadController at the beginning
-     * 
-     * @param fp
-     */
-    public void addPackage(final FilePackage fp) {
-        this.addmovePackageAt(fp, 0);
     }
 
     /**
