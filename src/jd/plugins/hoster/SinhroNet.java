@@ -62,15 +62,15 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "salefiles.com" }, urls = { "https?://(www\\.)?salefiles\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "sinhro.net" }, urls = { "https?://(www\\.)?sinhro\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
-public class SaleFilesCom extends PluginForHost {
+public class SinhroNet extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://salefiles.com";
+    private final String               COOKIE_HOST                  = "http://sinhro.net";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(salefiles\\.com)";
+    private final String               DOMAINS                      = "(sinhro\\.net)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final boolean              videoHoster                  = false;
@@ -104,7 +104,7 @@ public class SaleFilesCom extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = -10;
+            chunks = 0;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -151,10 +151,10 @@ public class SaleFilesCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public SaleFilesCom(PluginWrapper wrapper) {
+    public SinhroNet(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @Override
@@ -697,7 +697,7 @@ public class SaleFilesCom extends PluginForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        final String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD[^>]+><b>([^<>\"']+)</b>").getMatch(0);
+        final String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
         if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.

@@ -85,7 +85,7 @@ public class DdlStorageCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.5.5
+    // XfileShare Version 3.0.5.6
     // last XfileSharingProBasic compare :: 2.6.2.1
     // mods: country blocked stuff, this is done at the firewall based && and when users do bad things to httpd based on logs.
     // mods: premium storage account.
@@ -166,12 +166,12 @@ public class DdlStorageCom extends PluginForHost {
         String[] fileInfo = new String[3];
 
         if (useAltLinkCheck) {
-            altAvailStat(fileInfo, downloadLink);
+            altAvailStat(downloadLink, fileInfo);
         }
 
         getPage(downloadLink.getDownloadURL());
 
-        if (br.getURL().contains("/?op=login&redirect=")) {
+        if (br.getURL().matches(".+(\\?|&)op=login(.*)?")) {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
             Account account = null;
             if (accounts != null && accounts.size() != 0) {
@@ -188,7 +188,7 @@ public class DdlStorageCom extends PluginForHost {
                 login(account, false);
                 getPage(downloadLink.getDownloadURL());
             } else {
-                altAvailStat(fileInfo, downloadLink);
+                altAvailStat(downloadLink, fileInfo);
             }
         }
 
@@ -206,7 +206,7 @@ public class DdlStorageCom extends PluginForHost {
         br.setFollowRedirects(false);
 
         // scan the first page
-        scanInfo(fileInfo, downloadLink);
+        scanInfo(downloadLink, fileInfo);
         // scan the second page. filesize[1] and md5hash[2] are not mission critical
         if (inValidate(fileInfo[0])) {
             Form download1 = getFormByKey(cbr, "op", "download1");
@@ -214,11 +214,11 @@ public class DdlStorageCom extends PluginForHost {
                 download1 = cleanForm(download1);
                 download1.remove("method_premium");
                 sendForm(download1);
-                scanInfo(fileInfo, downloadLink);
+                scanInfo(downloadLink, fileInfo);
             }
             if (inValidate(fileInfo[0]) && inValidate(fileInfo[1])) {
                 logger.warning("Possible plugin error, trying fail over!");
-                altAvailStat(fileInfo, downloadLink);
+                altAvailStat(downloadLink, fileInfo);
             }
         }
         if (inValidate(fileInfo[0])) {
@@ -231,13 +231,13 @@ public class DdlStorageCom extends PluginForHost {
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
         downloadLink.setName(fileInfo[0].trim());
-        if ("UNCHECKED".equals(downloadLink.getAvailableStatus())) downloadLink.setAvailable(true);
+        if (downloadLink.getAvailableStatus().toString().equals("UNCHECKED")) downloadLink.setAvailable(true);
         if (!inValidate(fileInfo[1])) downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         if (!inValidate(fileInfo[2])) downloadLink.setMD5Hash(fileInfo[2].trim());
         return downloadLink.getAvailableStatus();
     }
 
-    private String[] scanInfo(final String[] fileInfo, final DownloadLink downloadLink) {
+    private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
         // standard traits from base page
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + this.getHost() + "/" + fuid + "/(.*?)</font>").getMatch(1);
@@ -288,7 +288,7 @@ public class DdlStorageCom extends PluginForHost {
      * method doesn't give filename...
      * 
      * */
-    private String[] altAvailStat(final String[] fileInfo, final DownloadLink downloadLink) throws Exception {
+    private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
         prepBrowser(alt);
         alt.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());

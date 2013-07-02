@@ -30,6 +30,8 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -61,6 +63,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "sanshare.com" }, urls = { "https?://(www\\.)?sanshare\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@SuppressWarnings("deprecation")
 public class SanShareCom extends PluginForHost {
 
     // Site Setters
@@ -82,7 +85,7 @@ public class SanShareCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.5.1
+    // XfileShare Version 3.0.5.6
     // last XfileSharingProBasic compare :: 2.6.2.1
     // mods:
     // protocol: no https, accepts but goes into infinite loop
@@ -90,13 +93,13 @@ public class SanShareCom extends PluginForHost {
     // other: no redirects
 
     private void setConstants(final Account account) {
-        if (account != null && account.getBooleanProperty("nopremium")) {
+        if (account != null && account.getBooleanProperty("free")) {
             // free account
             chunks = -2;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
-        } else if (account != null && !account.getBooleanProperty("nopremium")) {
+        } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
             chunks = -10;
             resumes = true;
@@ -112,10 +115,10 @@ public class SanShareCom extends PluginForHost {
     }
 
     private boolean allowsConcurrent(final Account account) {
-        if (account != null && account.getBooleanProperty("nopremium")) {
+        if (account != null && account.getBooleanProperty("free")) {
             // free account
             return false;
-        } else if (account != null && !account.getBooleanProperty("nopremium")) {
+        } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
             return true;
         } else {
@@ -133,7 +136,7 @@ public class SanShareCom extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
             return true;
         }
@@ -145,15 +148,16 @@ public class SanShareCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    @SuppressWarnings("deprecation")
     public SanShareCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        // make sure the downloadURL protocol is of site ability and user preference
+        correctDownloadLink(downloadLink);
         fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         br.setFollowRedirects(true);
         prepBrowser(br);
@@ -161,12 +165,12 @@ public class SanShareCom extends PluginForHost {
         String[] fileInfo = new String[3];
 
         if (useAltLinkCheck) {
-            altAvailStat(fileInfo, downloadLink);
+            altAvailStat(downloadLink, fileInfo);
         }
 
         getPage(downloadLink.getDownloadURL());
 
-        if (br.getURL().contains("/?op=login&redirect=")) {
+        if (br.getURL().matches(".+(\\?|&)op=login(.*)?")) {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
             Account account = null;
             if (accounts != null && accounts.size() != 0) {
@@ -183,7 +187,7 @@ public class SanShareCom extends PluginForHost {
                 login(account, false);
                 getPage(downloadLink.getDownloadURL());
             } else {
-                altAvailStat(fileInfo, downloadLink);
+                altAvailStat(downloadLink, fileInfo);
             }
         }
 
@@ -192,10 +196,11 @@ public class SanShareCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
         }
+
         br.setFollowRedirects(false);
 
         // scan the first page
-        scanInfo(fileInfo, downloadLink);
+        scanInfo(downloadLink, fileInfo);
         // scan the second page. filesize[1] and md5hash[2] are not mission critical
         if (inValidate(fileInfo[0])) {
             Form download1 = getFormByKey(cbr, "op", "download1");
@@ -203,11 +208,11 @@ public class SanShareCom extends PluginForHost {
                 download1 = cleanForm(download1);
                 download1.remove("method_premium");
                 sendForm(download1);
-                scanInfo(fileInfo, downloadLink);
+                scanInfo(downloadLink, fileInfo);
             }
             if (inValidate(fileInfo[0]) && inValidate(fileInfo[1])) {
                 logger.warning("Possible plugin error, trying fail over!");
-                altAvailStat(fileInfo, downloadLink);
+                altAvailStat(downloadLink, fileInfo);
             }
         }
         if (inValidate(fileInfo[0])) {
@@ -218,14 +223,15 @@ public class SanShareCom extends PluginForHost {
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!inValidate(fileInfo[2])) downloadLink.setMD5Hash(fileInfo[2].trim());
-        fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
         downloadLink.setName(fileInfo[0].trim());
+        if (downloadLink.getAvailableStatus().toString().equals("UNCHECKED")) downloadLink.setAvailable(true);
         if (!inValidate(fileInfo[1])) downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
-        return AvailableStatus.TRUE;
+        if (!inValidate(fileInfo[2])) downloadLink.setMD5Hash(fileInfo[2].trim());
+        return downloadLink.getAvailableStatus();
     }
 
-    private String[] scanInfo(final String[] fileInfo, final DownloadLink downloadLink) {
+    private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
         // standard traits from base page
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + this.getHost() + "/" + fuid + "/(.*?)</font>").getMatch(1);
@@ -276,12 +282,12 @@ public class SanShareCom extends PluginForHost {
      * method doesn't give filename...
      * 
      * */
-    private String[] altAvailStat(final String[] fileInfo, final DownloadLink downloadLink) throws Exception {
+    private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
         prepBrowser(alt);
         alt.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
         String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+)</td><td>([^<>]+)?</td>").getRow(0);
-        if (linkInformation[0].equalsIgnoreCase("found")) {
+        if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);
             if (!inValidate(linkInformation[1]) && inValidate(fileInfo[1])) fileInfo[1] = linkInformation[1];
         } else {
@@ -700,7 +706,7 @@ public class SanShareCom extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getBooleanProperty("free")) {
             ai.setStatus("Registered (free) User");
             totalMaxSimultanPremDownload.set(20);
         } else {
@@ -764,11 +770,10 @@ public class SanShareCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/login.html");
+                getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html");
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
-                    String lang = System.getProperty("user.language");
-                    if ("de".equalsIgnoreCase(lang)) {
+                    if ("de".equalsIgnoreCase(language)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -779,8 +784,7 @@ public class SanShareCom extends PluginForHost {
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                    String lang = System.getProperty("user.language");
-                    if ("de".equalsIgnoreCase(lang)) {
+                    if ("de".equalsIgnoreCase(language)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -790,9 +794,9 @@ public class SanShareCom extends PluginForHost {
                     getPage("/?op=my_account");
                 }
                 if (!cbr.containsHTML("(Premium(\\-| )Account expire|>Renew premium<)")) {
-                    account.setProperty("nopremium", true);
+                    account.setProperty("free", true);
                 } else {
-                    account.setProperty("nopremium", false);
+                    account.setProperty("free", false);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -817,7 +821,7 @@ public class SanShareCom extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account, false);
         br.setFollowRedirects(false);
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getBooleanProperty("free")) {
             getPage(downloadLink.getDownloadURL());
             doFree(downloadLink, account);
         } else {
@@ -914,8 +918,10 @@ public class SanShareCom extends PluginForHost {
 
     private boolean                                           resumes                      = false;
 
-    private final String                                      MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private final String                                      language                     = System.getProperty("user.language");
+    private final String                                      preferHTTPS                  = "preferHTTPS";
     private final String                                      ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private final String                                      MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private final String                                      PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private final String                                      PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
 
@@ -937,15 +943,36 @@ public class SanShareCom extends PluginForHost {
         public String string = null;
     }
 
+    @SuppressWarnings("unused")
+    public void setConfigElements() {
+        if (supportsHTTPS && enforcesHTTPS) {
+            // preferhttps setting isn't needed! lets make sure preferhttps setting removed.
+            getPluginConfig().setProperty(preferHTTPS, Property.NULL);
+            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "This Host Provider enforces secure communication requests via 'https' over SSL/TLS"));
+        } else if (supportsHTTPS && !enforcesHTTPS) {
+            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), preferHTTPS, JDL.L("plugins.hoster.xfileshare.preferHTTPS", "Enforce secure communication requests via 'https' over SSL/TLS")).setDefaultValue(false));
+        } else {
+            // lets make sure preferhttps setting removed when hoster or we disable the plugin https ability.
+            getPluginConfig().setProperty(preferHTTPS, Property.NULL);
+        }
+    }
+
+    /**
+     * Corrects downloadLink.urlDownload().<br/>
+     * <br/>
+     * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
+     * 
+     * @author raztoki
+     * */
+    @SuppressWarnings("unused")
     @Override
     public void correctDownloadLink(final DownloadLink downloadLink) {
-        if (enforcesHTTPS) {
+        if ((supportsHTTPS && enforcesHTTPS) || (supportsHTTPS && getPluginConfig().getBooleanProperty(preferHTTPS, false))) {
             // does the site enforce the use of https?
             downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceFirst("http://", "https://"));
         } else if (!supportsHTTPS) {
             // link cleanup, but respect users protocol choosing.
             downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceFirst("https://", "http://"));
-            // else we respect the users importation preference
         }
         // strip video hosting url's to reduce possible duped links.
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replace("/vidembed-", "/"));
@@ -953,6 +980,15 @@ public class SanShareCom extends PluginForHost {
         String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
         String importedHost = new Regex(downloadLink.getDownloadURL(), "https?://([^/]+)").getMatch(0);
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(importedHost, desiredHost));
+    }
+
+    @SuppressWarnings("unused")
+    private String getProtocol() {
+        if ((supportsHTTPS && enforcesHTTPS) || (supportsHTTPS && getPluginConfig().getBooleanProperty(preferHTTPS, false))) {
+            return "https://";
+        } else {
+            return "http://";
+        }
     }
 
     private Browser prepBrowser(final Browser prepBr) {
@@ -1123,12 +1159,12 @@ public class SanShareCom extends PluginForHost {
     private synchronized void controlSimHost(final Account account) {
         if (usedHost == null) return;
         int was, current;
-        if (account != null && account.getBooleanProperty("nopremium")) {
+        if (account != null && account.getBooleanProperty("free")) {
             // free account
             was = maxFreeAccSimDlPerHost.get();
             maxFreeAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
             current = maxFreeAccSimDlPerHost.get();
-        } else if (account != null && !account.getBooleanProperty("nopremium")) {
+        } else if (account != null && !account.getBooleanProperty("free")) {
             // premium account
             was = maxPremAccSimDlPerHost.get();
             maxPremAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
@@ -1197,7 +1233,7 @@ public class SanShareCom extends PluginForHost {
         Integer simHost;
         if (accHolder != null) {
             user = accHolder.getUser();
-            if (accHolder.getBooleanProperty("nopremium")) {
+            if (accHolder.getBooleanProperty("free")) {
                 // free account
                 simHost = maxFreeAccSimDlPerHost.get();
             } else {
@@ -1354,8 +1390,7 @@ public class SanShareCom extends PluginForHost {
      * 
      * @param s
      *            Imported String to match against.
-     * @returns true on valid rule match
-     * @returns false on invalid rule match.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
      * */
     private boolean inValidate(final String s) {
@@ -1375,7 +1410,6 @@ public class SanShareCom extends PluginForHost {
      *            expected value
      * @param ibr
      *            import browser
-     * @return
      * */
     private Form getFormByKey(final Browser ibr, final String key, final String value) {
         Form[] workaround = ibr.getForms();

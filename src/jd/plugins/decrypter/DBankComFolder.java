@@ -99,6 +99,7 @@ public class DBankComFolder extends PluginForDecrypt {
         String globalLinkData = br.getRegex("var globallinkdata = \\{.*?\"resource\":\\{(.*?)\\}\\;").getMatch(0);
         if (globalLinkData == null) br.getRegex("var globallinkdata = \\{(.*?)\\}\\;").getMatch(0);
         String links = new Regex(globalLinkData, "\"files\":\\[(.*?)\\]\\}").getMatch(0);
+        if (links == null) links = new Regex(globalLinkData, "\"files\":\\[(.*?)\\],").getMatch(0);
 
         if (links == null) {
             logger.warning("Decrypter broken for link: " + parameter);

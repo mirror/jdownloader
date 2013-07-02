@@ -101,6 +101,7 @@ public class DBankCom extends PluginForHost {
 
         String key = br.getRegex("\"encryKey\":\"([^\"]+)").getMatch(0);
         String linkList = br.getRegex("\"files\":\\[(.*?)\\]\\}").getMatch(0);
+        if (linkList == null) linkList = br.getRegex("\"files\":\\[(.*?)\\],").getMatch(0);
         String fileId = downloadLink.getStringProperty("id");
         String currentJsonString = null;
         for (String s : new Regex(linkList == null ? "NPE" : linkList, "\\{(.*?)\\}").getColumn(0)) {
