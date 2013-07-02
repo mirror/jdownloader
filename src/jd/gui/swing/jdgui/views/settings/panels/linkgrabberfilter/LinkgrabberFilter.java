@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 
 import javax.swing.Box;
 import javax.swing.ImageIcon;
@@ -15,6 +14,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
@@ -33,6 +33,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkFilterController;
+import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -143,8 +144,46 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         buttonbar.add(btImport, "height 26!,sg 1");
         buttonbar.add(btExport, "height 26!,sg 1");
 
-        exceptionsTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(exceptionsTable, btRemove.getAction(), 1));
-        filterTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(filterTable, btRemove.getAction(), 1));
+        exceptionsTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(exceptionsTable, btRemove.getAction(), 1) {
+            public void valueChanged(final ListSelectionEvent e) {
+                boolean en = true;
+                for (LinkgrabberFilterRule rule : LinkgrabberFilter.this.exceptionsTable.getModel().getSelectedObjects()) {
+                    en &= !rule.isStaticRule();
+
+                }
+
+                if (!en) {
+                    btRemove.setToolTipText(_GUI._.PackagizerFilter_valueChanged_disable_static());
+                    action.setEnabled(false);
+                    return;
+                } else {
+                    btRemove.setToolTipText(null);
+                }
+
+                this.action.setEnabled(LinkgrabberFilter.this.exceptionsTable.getSelectedRowCount() >= this.minSelections);
+
+            }
+        });
+        filterTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(filterTable, btRemove.getAction(), 1) {
+            public void valueChanged(final ListSelectionEvent e) {
+                boolean en = true;
+                for (LinkgrabberFilterRule rule : LinkgrabberFilter.this.filterTable.getModel().getSelectedObjects()) {
+                    en &= !rule.isStaticRule();
+
+                }
+
+                if (!en) {
+                    btRemove.setToolTipText(_GUI._.PackagizerFilter_valueChanged_disable_static());
+                    action.setEnabled(false);
+                    return;
+                } else {
+                    btRemove.setToolTipText(null);
+                }
+
+                this.action.setEnabled(LinkgrabberFilter.this.filterTable.getSelectedRowCount() >= this.minSelections);
+
+            }
+        });
 
     }
 

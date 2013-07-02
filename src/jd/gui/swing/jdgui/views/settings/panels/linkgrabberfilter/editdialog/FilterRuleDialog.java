@@ -1,6 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog;
 
-import java.util.ArrayList;
+import java.awt.Component;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -147,7 +147,21 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         updateGUI();
         JScrollPane sp = new JScrollPane(ret);
         sp.setBorder(null);
+        if (rule.isStaticRule()) {
+            okButton.setEnabled(false);
+            okButton.setText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_cannot_modify_());
+            disable(ret);
+        }
         return sp;
     }
 
+    private void disable(JComponent ret) {
+
+        ret.setEnabled(false);
+        for (Component c : ret.getComponents()) {
+            if (c instanceof JComponent) {
+                disable((JComponent) c);
+            }
+        }
+    }
 }

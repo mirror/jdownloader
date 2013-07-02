@@ -48,6 +48,32 @@ public abstract class FilterRule implements Storable {
         this.iconKey = iconKey;
     }
 
+    /**
+     * is used for predefined rules only
+     */
+    private String id;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    /**
+     * Static Rules cannot be modified. we use them for predefined rules
+     */
+    private boolean staticRule = false;
+
+    public boolean isStaticRule() {
+        return staticRule;
+    }
+
+    public void setStaticRule(boolean removeAllowed) {
+        this.staticRule = removeAllowed;
+    }
+
     public BooleanFilter getMatchAlwaysFilter() {
         if (matchesAlwaysFilter == null) matchesAlwaysFilter = new BooleanFilter(false);
         return matchesAlwaysFilter;

@@ -61,6 +61,26 @@ public class LinkFilterController implements LinkCrawlerFilter {
             config = JsonConfig.create(LinkFilterSettings.class);
             filter = config.getFilterList();
             if (filter == null) filter = new ArrayList<LinkgrabberFilterRule>();
+
+            ArrayList<LinkgrabberFilterRule> newList = new ArrayList<LinkgrabberFilterRule>();
+
+            boolean offlineRule = false;
+            for (LinkgrabberFilterRule rule : filter) {
+
+                if (OfflineView.ID.equals(rule.getId())) {
+                    newList.add(new OfflineView());
+                    offlineRule = true;
+                    break;
+
+                }
+                newList.add(rule);
+            }
+            if (!offlineRule) {
+                newList.add(new OfflineView());
+            }
+
+            filter = newList;
+
             ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
                 @Override

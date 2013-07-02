@@ -1,7 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
 
@@ -12,13 +11,13 @@ import org.jdownloader.gui.views.components.AbstractRemoveAction;
 import org.jdownloader.translate._JDT;
 
 public class RemoveAction extends AbstractRemoveAction {
-    private static final long                serialVersionUID = -477419276505058907L;
+    private static final long                     serialVersionUID = -477419276505058907L;
     private java.util.List<LinkgrabberFilterRule> selected;
 
     private java.util.List<LinkgrabberFilterRule> remove;
-    private boolean                          ignoreSelection  = false;
-    private AbstractFilterTable              table;
-    private LinkgrabberFilter                linkgrabberFilter;
+    private boolean                               ignoreSelection  = false;
+    private AbstractFilterTable                   table;
+    private LinkgrabberFilter                     linkgrabberFilter;
 
     public RemoveAction(LinkgrabberFilter linkgrabberFilter) {
         this.linkgrabberFilter = linkgrabberFilter;
@@ -60,6 +59,11 @@ public class RemoveAction extends AbstractRemoveAction {
 
     @Override
     public boolean isEnabled() {
+        if (selected != null) {
+            for (LinkgrabberFilterRule rule : selected) {
+                if (rule.isStaticRule()) return false;
+            }
+        }
         if (ignoreSelection) return super.isEnabled();
         return selected != null && selected.size() > 0;
     }

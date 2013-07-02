@@ -4,6 +4,7 @@ import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
@@ -14,6 +15,8 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
+import org.jdownloader.controlling.packagizer.PackagizerRule;
+import org.jdownloader.gui.translate._GUI;
 
 public class PackagizerFilter extends JPanel implements SettingsComponent {
     private static final long     serialVersionUID = 6070464296168772795L;
@@ -47,7 +50,27 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
             }
         });
         setOpaque(false);
-        table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
+        table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1) {
+            public void valueChanged(final ListSelectionEvent e) {
+                boolean en = true;
+                for (PackagizerRule rule : PackagizerFilter.this.table.getModel().getSelectedObjects()) {
+                    en &= !rule.isStaticRule();
+
+                }
+
+                if (!en) {
+                    btRemove.setToolTipText(_GUI._.PackagizerFilter_valueChanged_disable_static());
+                    action.setEnabled(false);
+                    return;
+                } else {
+                    btRemove.setToolTipText(null);
+                }
+
+                this.action.setEnabled(PackagizerFilter.this.table.getSelectedRowCount() >= this.minSelections);
+
+            }
+
+        });
 
         add(new JScrollPane(table));
         add(tb);

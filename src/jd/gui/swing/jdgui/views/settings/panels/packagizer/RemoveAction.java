@@ -1,7 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
 
@@ -11,11 +10,11 @@ import org.jdownloader.gui.views.components.AbstractRemoveAction;
 import org.jdownloader.translate._JDT;
 
 public class RemoveAction extends AbstractRemoveAction {
-    private static final long         serialVersionUID = -477419276505058907L;
+    private static final long              serialVersionUID = -477419276505058907L;
     private java.util.List<PackagizerRule> selected;
-    private PackagizerFilterTable     table;
+    private PackagizerFilterTable          table;
     private java.util.List<PackagizerRule> remove;
-    private boolean                   ignoreSelection  = false;
+    private boolean                        ignoreSelection  = false;
 
     public RemoveAction(PackagizerFilterTable table) {
         this.table = table;
@@ -30,7 +29,7 @@ public class RemoveAction extends AbstractRemoveAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-
+        if (!isEnabled()) return;
         if (!rly(_JDT._.RemoveAction_actionPerformed_rly_msg())) return;
         remove = selected;
         if (remove == null) {
@@ -53,6 +52,11 @@ public class RemoveAction extends AbstractRemoveAction {
 
     @Override
     public boolean isEnabled() {
+        if (selected != null) {
+            for (PackagizerRule rule : selected) {
+                if (rule.isStaticRule()) return false;
+            }
+        }
         if (ignoreSelection) return super.isEnabled();
         return selected != null && selected.size() > 0;
     }

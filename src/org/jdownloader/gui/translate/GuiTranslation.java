@@ -2687,4 +2687,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Unknown Status:" })
     String DownloadOverview_DownloadOverview_unknown();
 
+    @Default(lngs = { "en" }, values = { "Cannot modify this rule" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_cannot_modify_();
+
+    @Default(lngs = { "en" }, values = { "Predifined rules cannot be modified" })
+    String PackagizerFilter_valueChanged_disable_static();
+
+    @Default(lngs = { "en" }, values = { "Predefined rule: %s1" })
+    String FilterTableModel_initColumns_static_(String name);
+
 }

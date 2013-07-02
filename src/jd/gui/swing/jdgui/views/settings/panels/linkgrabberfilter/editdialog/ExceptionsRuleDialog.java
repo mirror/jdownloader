@@ -1,6 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog;
 
-import java.util.ArrayList;
+import java.awt.Component;
 
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
@@ -122,6 +122,16 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
         return _GUI._.ExceptionsRuleDialog_getIfText_();
     }
 
+    private void disable(JComponent ret) {
+
+        ret.setEnabled(false);
+        for (Component c : ret.getComponents()) {
+            if (c instanceof JComponent) {
+                disable((JComponent) c);
+            }
+        }
+    }
+
     @Override
     public JComponent layoutDialogContent() {
         MigPanel ret = (MigPanel) super.layoutDialogContent();
@@ -129,10 +139,16 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
         // "gaptop 10, spanx,growx,pushx");
 
         updateGUI();
+        if (rule.isStaticRule()) {
+            okButton.setEnabled(false);
+            okButton.setText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_cannot_modify_());
+            disable(ret);
+        }
         JScrollPane sp = new JScrollPane(ret);
         sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         sp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         sp.setBorder(null);
+
         return sp;
     }
 

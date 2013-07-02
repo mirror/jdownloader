@@ -2,38 +2,15 @@ package org.jdownloader.controlling.filter;
 
 import java.util.ArrayList;
 
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
-import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultFactory;
+import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.RequiresRestart;
-import org.appwork.storage.config.defaults.AbstractDefaultFactory;
-import org.jdownloader.translate._JDT;
 
 public interface LinkFilterSettings extends ConfigInterface {
 
-    class DefaultFilterList extends AbstractDefaultFactory<ArrayList<LinkgrabberFilterRule>> {
-
-        @Override
-        public ArrayList<LinkgrabberFilterRule> getDefaultValue() {
-
-            LinkgrabberFilterRule offline = new LinkgrabberFilterRule();
-            offline.setOnlineStatusFilter(new OnlineStatusFilter(OnlineStatusMatchtype.IS, true, OnlineStatus.OFFLINE));
-            offline.setName(_JDT._.LinkFilterSettings_DefaultFilterList_getDefaultValue_());
-            offline.setIconKey("error");
-            offline.setAccept(true);
-            offline.setEnabled(true);
-            ArrayList<LinkgrabberFilterRule> ret = new ArrayList<LinkgrabberFilterRule>();
-            ret.add(offline);
-            return ret;
-        }
-    }
-
-    @DefaultFactory(DefaultFilterList.class)
+    @DefaultJsonObject("[]")
     @AboutConfig
     ArrayList<LinkgrabberFilterRule> getFilterList();
 

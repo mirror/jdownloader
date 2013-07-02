@@ -2,7 +2,6 @@ package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 
 import javax.swing.DropMode;
 import javax.swing.JMenuItem;
@@ -11,7 +10,6 @@ import javax.swing.ListSelectionModel;
 
 import jd.gui.swing.jdgui.BasicJDTable;
 
-import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTransferHandler;
 import org.appwork.utils.Application;
@@ -34,38 +32,6 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
         setTransferHandler(new ExtTransferHandler<PackagizerRule>());
         if (Application.getJavaVersion() >= Application.JAVA16) setDropMode(DropMode.INSERT_ROWS);
 
-        addMouseMotionListener(new MouseMotionListener() {
-            private DelayedRunnable delayer;
-            private int             index;
-
-            // {
-            // delayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 20, 50) {
-            //
-            // @Override
-            // public void delayedrun() {
-            // new EDTRunner() {
-            //
-            // @Override
-            // protected void runInEDT() {
-            //
-            // }
-            // };
-            //
-            // }
-            //
-            // };
-            // }
-
-            public void mouseMoved(MouseEvent e) {
-                index = getRowIndexByPoint(e.getPoint());
-                getSelectionModel().setSelectionInterval(index, index);
-
-            }
-
-            public void mouseDragged(MouseEvent e) {
-            }
-        });
-
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     }
 
@@ -81,8 +47,7 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
         popup.add(new JMenuItem(new RemoveAction(this, selection, false)));
 
         popup.add(new JMenuItem(new DuplicateAction(contextObject, this)));
-        popup.addSeparator();
-        popup.add(new DefaultRulesAction());
+
         popup.addSeparator();
         popup.add(new ExportAction(selection));
         return popup;

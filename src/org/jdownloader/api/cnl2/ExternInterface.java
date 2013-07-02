@@ -11,7 +11,7 @@ public class ExternInterface {
     private static ExternInterface INSTANCE = new ExternInterface();
 
     private ExternInterface() {
-        if (JsonConfig.create(RemoteAPIConfig.class).getExternInterfaceEnabled()) {
+        if (JsonConfig.create(RemoteAPIConfig.class).isExternInterfaceEnabled()) {
             RemoteAPI remoteAPI = new RemoteAPI();
             try {
                 remoteAPI.register(new ExternInterfaceImpl());

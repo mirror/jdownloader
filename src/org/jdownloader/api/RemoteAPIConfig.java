@@ -14,7 +14,7 @@ public interface RemoteAPIConfig extends ConfigInterface {
     @AboutConfig
     @RequiresRestart
     @DescriptionForConfigEntry("ExternInterface(Cnl2,Flashgot) will listen on 9666")
-    boolean getExternInterfaceEnabled();
+    boolean isExternInterfaceEnabled();
 
     void setExternInterfaceEnabled(boolean b);
 
@@ -29,4 +29,11 @@ public interface RemoteAPIConfig extends ConfigInterface {
     boolean isDeprecatedApiEnabled();
 
     void setDeprecatedApiEnabled(boolean b);
+
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    @DescriptionForConfigEntry("Enable or disable the JDAnywhere API")
+    boolean isJDAnywhereApiEnabled();
+
+    void setJDAnywhereApiEnabled(boolean b);
 }

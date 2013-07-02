@@ -19,6 +19,7 @@ import org.jdownloader.api.downloads.DownloadWatchDogEventPublisher;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.extensions.ExtensionsAPIImpl;
 import org.jdownloader.api.jd.JDAPIImpl;
+import org.jdownloader.api.jdanywhere.JDAnywhereAPI;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
 import org.jdownloader.api.linkcollector.LinkCollectorEventPublisher;
 import org.jdownloader.api.polling.PollingAPIImpl;
@@ -70,6 +71,9 @@ public class RemoteAPIController {
         UIOManager.setUserIO(wrapper = new RemoteAPIIOHandlerWrapper(UIOManager.I()));
         register(wrapper.getEventPublisher());
         register(wrapper.getApi());
+
+        JDAnywhereAPI.getInstance().init();
+
     }
 
     public HttpRequestHandler getRequestHandler() {

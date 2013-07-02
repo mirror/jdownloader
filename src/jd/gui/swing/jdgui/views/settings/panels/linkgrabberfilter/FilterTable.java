@@ -2,7 +2,6 @@ package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -41,11 +40,7 @@ public class FilterTable extends AbstractFilterTable {
 
         popup.add(new JMenuItem(new DuplicateAction(contextObject, this)));
         popup.addSeparator();
-        DefaultRulesAction defaults = new DefaultRulesAction(false);
-        if (defaults.getMenuComponentCount() > 0) {
-            popup.add(defaults);
-            popup.addSeparator();
-        }
+
         popup.add(new ExportAction(selection));
         return popup;
     }

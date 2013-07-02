@@ -81,6 +81,32 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
         if (list == null) list = new ArrayList<PackagizerRule>();
 
+        ArrayList<PackagizerRule> newList = new ArrayList<PackagizerRule>();
+        boolean subfolderFound = false;
+        boolean revFileRule = false;
+        for (PackagizerRule rule : list) {
+
+            if (SubFolderByPackageRule.ID.equals(rule.getId())) {
+                newList.add(new SubFolderByPackageRule());
+                subfolderFound = true;
+                break;
+
+            }
+            if (DisableRevFilesPackageRule.ID.equals(rule.getId())) {
+                newList.add(new DisableRevFilesPackageRule());
+                revFileRule = true;
+                break;
+
+            }
+            newList.add(rule);
+        }
+        if (!subfolderFound) {
+            newList.add(new SubFolderByPackageRule());
+        }
+        if (!revFileRule) {
+            newList.add(new DisableRevFilesPackageRule());
+        }
+        list = newList;
         update();
 
         if (!isTestInstance()) {

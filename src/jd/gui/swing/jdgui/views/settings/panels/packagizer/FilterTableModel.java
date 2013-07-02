@@ -120,6 +120,7 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
             @Override
             public String getStringValue(PackagizerRule value) {
                 if (!value.isValid()) { return _GUI._.FilterTableModel_getStringValue_name_invalid(value.getName()); }
+                if (value.isStaticRule()) { return _GUI._.FilterTableModel_initColumns_static_(value.getName()); }
                 return value.getName();
             }
         });
