@@ -1,5 +1,7 @@
 RestartController_confirmToExit_=Έξοδος;
 RestartController_confirmToExit_msg=Θέλετε σίγουρα να τερματίσετε τον JDownloader;
+RestartController_confirmTorestart_msg=Θέλετε σίγουρα να γίνει επανεκκίνηση του JDownloader;
+RestartController_confirmTorestart_title=Επανεκκίνηση;
 TranslationProxyDialogAuthRequired=Ο JDownloader δεν μπόρεσε να συνδεθεί με το %s1! Ο Διακομιστής Μεσολάβησης απαιτεί πιστοποίηση.\nΕλέγξτε τα στοιχεία σας...
 TranslationProxyDialogNoConnection=Ο JDownloader δεν μπόρεσε να συνδεθεί με το %s1! Παρακαλούμε ελέγξτε τις ρυθμίσεις σύνδεσης...
 close_jd=Ανεπαρκή δικαιώματα για την εγγραφή στο %s1.\nΔοκιμάστε να τερματίσετε όλες τις διεργασίες του JDownloader και της Java και ξαναπροσπαθήστε!\nΠαρακαλούμε επικοινωνήστε με την Υποστήριξη εάν το πρόβλημα εξακολουθεί να υπάρχει μετά από Επανεκκίνηση του συστήματος.
