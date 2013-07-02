@@ -82,7 +82,7 @@ public class AdfLy extends PluginForDecrypt {
                 logger.info("adf.ly link offline: " + parameter);
                 return decryptedLinks;
             }
-            if ("https?://adf\\.ly/".matches(br.getRedirectLocation())) {
+            if (br.getRedirectLocation() != null && "https?://adf\\.ly/".matches(br.getRedirectLocation())) {
                 logger.info("adf.ly link offline: " + parameter);
                 return decryptedLinks;
             }

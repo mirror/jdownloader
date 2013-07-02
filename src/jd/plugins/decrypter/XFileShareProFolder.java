@@ -16,37 +16,45 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = { "https?://(www\\.)?(ortofiles\\.com|filegag(plus)?\\.com|verzend\\.be|lemuploads\\.com|shareprofi\\.com|(mediafilestorage\\.net|multishared\\.me)|interfile\\.net|filezy\\.net|epicshare\\.net|fileom\\.com|goldbytez\\.com|sanshare\\.com|dupload\\.com|tishare\\.com|restfile\\.(ws|ca|co|com)|rapidstone\\.com|akafile\\.com|storagely\\.com|mightyupload\\.com|sube\\.me|lalata\\.info|guizmodl\\.net|(4upfiles\\.com|4up\\.(im|me))|senseless\\.tv|ufox\\.com|dynaupload\\.com|thefile\\.me|free\\-uploading\\.com|oteupload\\.com|iperupload\\.com|megafiles\\.se|uploadboxs\\.com|hotfiles\\.ws|cyberlocker\\.ch|filevice\\.com|filexb\\.com|wizzfile\\.com|rapidfileshare\\.net|rd\\-fs\\.com|hostinoo\\.com|fireget\\.com|creafile\\.net|247upload\\.com|dippic\\.com|4savefile\\.com|fileprohost\\.com|bitupload\\.com|galaxy\\-file\\.com|aa\\.vg|allbox4\\.com|ishareupload\\.com|project\\-free\\-upload\\.com|upfile\\.biz|syfiles\\.com|gorillavid\\.in|ezzfile\\.(com|it|co\\.nz)|foxishare\\.com|your\\-filehosting\\.com|mp3the\\.net|kongsifile\\.com|ddl\\.mn|spaceha\\.com|mooshare\\.biz|flashdrive\\.it|zooupload\\.com|xenubox\\.com|mixshared\\.com|longfiles\\.com|helluploads\\.com|novafile\\.com|saryshare\\.com|orangefiles\\.com|ufile\\.eu|qtyfiles\\.com|pizzaupload\\.com|filesbb\\.com|free\\-uploading\\.com|megaul\\.com|megaup1oad\\.net|fireuploads\\.net|filestay\\.com|(igetfile\\.com|pandamemo\\.com)|free\\-uploading\\.com|uload\\.to|cosmobox\\.org|uploadjet\\.net|fileove\\.com|rapidapk\\.com|hyshare\\.com|(uppit\\.com)|nosupload\\.com|potload\\.com|uploadbaz\\.com|simpleshare\\.org|ryushare\\.com|lafiles\\.com|clicktoview\\.org|lumfiles\\.com|gigfiles\\.net|shareonline\\.org|downloadani\\.me|movdivx\\.com|filenuke\\.com|((flashstream\\.in|sharefiles4u\\.com)|xvidstage\\.com|vidstream\\.in)|ginbig\\.com|vidbux\\.com|queenshare\\.com|filesabc\\.com|((fiberupload|bulletupload)\\.com)|edoc\\.com|filesabc\\.com|henchfile\\.com|cometfiles\\.com)/(users/[a-z0-9_]+/.+|folder/\\d+/.+)|https?://(www\\.)?lafile\\.com/f/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = { "https?://(www\\.)?(tusfiles\\.net|ortofiles\\.com|filegag(plus)?\\.com|verzend\\.be|lemuploads\\.com|shareprofi\\.com|(mediafilestorage\\.net|multishared\\.me)|interfile\\.net|filezy\\.net|epicshare\\.net|fileom\\.com|goldbytez\\.com|sanshare\\.com|dupload\\.com|tishare\\.com|restfile\\.(ws|ca|co|com)|rapidstone\\.com|akafile\\.com|storagely\\.com|mightyupload\\.com|sube\\.me|lalata\\.info|guizmodl\\.net|(4upfiles\\.com|4up\\.(im|me))|senseless\\.tv|ufox\\.com|dynaupload\\.com|thefile\\.me|free\\-uploading\\.com|oteupload\\.com|iperupload\\.com|megafiles\\.se|uploadboxs\\.com|hotfiles\\.ws|cyberlocker\\.ch|filevice\\.com|filexb\\.com|wizzfile\\.com|rapidfileshare\\.net|rd\\-fs\\.com|hostinoo\\.com|fireget\\.com|creafile\\.net|247upload\\.com|dippic\\.com|4savefile\\.com|fileprohost\\.com|bitupload\\.com|galaxy\\-file\\.com|aa\\.vg|allbox4\\.com|ishareupload\\.com|project\\-free\\-upload\\.com|upfile\\.biz|syfiles\\.com|gorillavid\\.in|ezzfile\\.(com|it|co\\.nz)|foxishare\\.com|your\\-filehosting\\.com|mp3the\\.net|kongsifile\\.com|ddl\\.mn|spaceha\\.com|mooshare\\.biz|flashdrive\\.it|zooupload\\.com|xenubox\\.com|mixshared\\.com|longfiles\\.com|helluploads\\.com|novafile\\.com|saryshare\\.com|orangefiles\\.com|ufile\\.eu|qtyfiles\\.com|pizzaupload\\.com|filesbb\\.com|free\\-uploading\\.com|megaul\\.com|megaup1oad\\.net|fireuploads\\.net|filestay\\.com|(igetfile\\.com|pandamemo\\.com)|free\\-uploading\\.com|uload\\.to|cosmobox\\.org|uploadjet\\.net|fileove\\.com|rapidapk\\.com|hyshare\\.com|(uppit\\.com)|nosupload\\.com|potload\\.com|uploadbaz\\.com|simpleshare\\.org|ryushare\\.com|lafiles\\.com|clicktoview\\.org|lumfiles\\.com|gigfiles\\.net|shareonline\\.org|downloadani\\.me|movdivx\\.com|filenuke\\.com|((flashstream\\.in|sharefiles4u\\.com)|xvidstage\\.com|vidstream\\.in)|ginbig\\.com|vidbux\\.com|queenshare\\.com|filesabc\\.com|((fiberupload|bulletupload)\\.com)|edoc\\.com|filesabc\\.com|henchfile\\.com|cometfiles\\.com)/(users/[a-z0-9_]+/[^\\?\r\n]+|folder/\\d+/[^\\?\r\n]+)|https?://(www\\.)?lafile\\.com/f/[a-z0-9]+" }, flags = { 0 })
+@SuppressWarnings("deprecation")
 public class XFileShareProFolder extends PluginForDecrypt {
 
     // DEV NOTES
     // other: keep last /.+ for fpName. Not needed otherwise.
     // other: group sister sites or aliased domains together, for easy maintenance.
-    // TODO: add spanning folders + page support, at this stage it's not important.
     // TODO: remove old xfileshare folder plugins after next major update.
 
-    @SuppressWarnings("deprecation")
+    private String HOST = null;
+
+    /**
+     * @author raztoki
+     * */
     public XFileShareProFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        HashSet<String> dupe = new HashSet<String>();
         String parameter = param.toString();
-        String HOST = new Regex(parameter, "https?://([^:/]+)").getMatch(0);
+        HOST = new Regex(parameter, "https?://(www\\.)?([^:/]+)").getMatch(1);
         if (HOST == null) {
             logger.warning("Failure finding HOST : " + parameter);
             return null;
@@ -60,18 +68,6 @@ public class XFileShareProFolder extends PluginForDecrypt {
             logger.warning("Incorrect URL or Invalid user : " + parameter);
             return null;
         }
-        final String[] links = br.getRegex("href=\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12})").getColumn(0);
-        if (links != null && links.length > 0) {
-            for (String dl : links) {
-                decryptedLinks.add(createDownloadlink(dl));
-            }
-        }
-        String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + HOST + "[^\"]+users/[^\"]+)").getColumn(0);
-        if (folders != null && folders.length > 0) {
-            for (String dl : folders) {
-                decryptedLinks.add(createDownloadlink(dl));
-            }
-        }
         // name isn't needed, other than than text output for fpName.
         String fpName = new Regex(parameter, "folder/\\d+/.+/(.+)").getMatch(0); // name
         if (fpName == null) {
@@ -83,6 +79,9 @@ public class XFileShareProFolder extends PluginForDecrypt {
                 }
             }
         }
+        dupe.add(parameter);
+        parsePage(dupe, decryptedLinks);
+        parseNextPage(dupe, decryptedLinks);
 
         if (fpName != null) {
             fpName = "Folder - " + (Encoding.urlDecode(fpName, false));
@@ -91,6 +90,36 @@ public class XFileShareProFolder extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private void parsePage(HashSet<String> dupe, ArrayList<DownloadLink> ret) throws PluginException {
+        final String[] links = br.getRegex("href=\"(https?://(www\\.)?" + HOST + "/[a-z0-9]{12})(\"|/)").getColumn(0);
+        if (links != null && links.length > 0) {
+            for (String dl : links) {
+                if (dupe.add(dl)) ret.add(createDownloadlink(dl));
+            }
+        }
+        String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + HOST + "[^\"]+users/[^\"]+)").getColumn(0);
+        if (folders != null && folders.length > 0) {
+            for (String dl : folders) {
+                if (dupe.add(dl)) ret.add(createDownloadlink(dl));
+            }
+        }
+    }
+
+    private boolean parseNextPage(HashSet<String> dupe, ArrayList<DownloadLink> ret) throws IOException, PluginException {
+        // not sure if this is the same for normal folders, but the following picks up users/username/*
+        String nextPage = br.getRegex("<div class=\"paging\">[^\r\n]+<a href='(\\?&amp;page=\\d+)'>Next").getMatch(0);
+        if (nextPage != null) {
+            nextPage = HTMLEntities.unhtmlentities(nextPage);
+            if (dupe.add(nextPage)) {
+                br.getPage(br.getURL() + nextPage);
+                parsePage(dupe, ret);
+                parseNextPage(dupe, ret);
+                return true;
+            }
+        }
+        return false;
     }
 
     /* NO OVERRIDE!! */
