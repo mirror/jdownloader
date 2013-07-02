@@ -317,7 +317,7 @@ public class OneFichierCom extends PluginForHost {
             maxPrem.set(1);
             try {
                 account.setMaxSimultanDownloads(1);
-                account.setConcurrentUsePossible(true);
+                account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
             account.setProperty("freeAPIdisabled", true);
@@ -332,7 +332,7 @@ public class OneFichierCom extends PluginForHost {
                 try {
                     maxPrem.set(1);
                     account.setMaxSimultanDownloads(1);
-                    account.setConcurrentUsePossible(true);
+                    account.setConcurrentUsePossible(false);
                 } catch (final Throwable e) {
                 }
                 account.setProperty("freeAPIdisabled", false);

@@ -16,13 +16,20 @@
 
 package jd.plugins.hoster;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
+import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -34,10 +41,18 @@ import jd.utils.JDUtilities;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://googlebooksdecrypter(\\.[a-z]+){1,2}/books\\?id=.*&pg=.*" }, flags = { 0 })
 public class GoogleBooks extends PluginForHost {
 
-    private static AtomicInteger counter = new AtomicInteger(0);
-    private static Object        LOCK    = new Object();
-    private final boolean        useRUA  = true;
+    // Dev Notes
+    // not entirely sure if sigs are bound to cookie session.
 
+    private String                        agent    = null;
+    // [bookuid+pageuid], sig
+    private LinkedHashMap<String, String> bookList = new LinkedHashMap<String, String>();
+    // last ajax request
+    private static AtomicLong             sysTime  = new AtomicLong(0);
+
+    /**
+     * @author raztoki
+     * */
     public GoogleBooks(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,7 +64,7 @@ public class GoogleBooks extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://books.google.de/accounts/TOS";
+        return "http://books.google.com/intl/en/googlebooks/tos.html";
     }
 
     // @Override
@@ -57,51 +72,69 @@ public class GoogleBooks extends PluginForHost {
         return 1;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void handleFree(DownloadLink link) throws Exception {
+        // jd on first run needs to load previous LinkedHashMap
+        LinkedHashMap<String, String> saved = new LinkedHashMap<String, String>();
+        saved = (LinkedHashMap<String, String>) getPluginConfig().getProperty("savedSigs");
+        if (saved != null) bookList = saved;
         this.setBrowserExclusive();
         prepBrowser(br);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("src=\"/googlebooks/restricted_logo.gif\"")) {
-            agent.string = null;
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+        br.setFollowRedirects(true);
+
+        String buid = link.getStringProperty("buid", null);
+        if (buid == null) buid = new Regex(link.getDownloadURL(), "(&|\\?)id=([a-zA-Z_\\-]{12})").getMatch(1);
+        String page = link.getStringProperty("page", null);
+        if (page == null) page = new Regex(link.getDownloadURL(), "(&|\\?)pg=([A-Z]{2}\\d+)").getMatch(1);
+
+        if (br.getCookies(this.getHost()) == null) br.getPage(link.getDownloadURL());
+
+        String dllink = bookList.get(buid + page);
+        if (dllink == null) {
+            // when was the last download?? lets prevent more requests if last download was to recent.
+            long ran = (new Random().nextInt(10) * 1317) + 9531;
+            if (System.currentTimeMillis() <= sysTime.get() + ran) sleep(ran, link);
+            dllink = getImg(buid, page, link);
+            if (dllink == null) {
+                // we have hit some session limit
+                getPluginConfig().setProperty("cookies", Property.NULL);
+                getPluginConfig().setProperty("agent", Property.NULL);
+                getPluginConfig().save();
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit Reached", ran * 69);
+            }
         }
-        if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // page moved + capcha - secure for automatic downloads
-        if (br.containsHTML("http://sorry.google.com/sorry/\\?continue=.*")) {
-            String url = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getRegex("<A HREF=\"(http://sorry.google.com/sorry/\\?continue=http://books.google.com/books.*?)\">").getMatch(0);
-            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
-            // TODO: can make redirect and capcha but this only for secure to continue connect not for download page
-        }
-        String dllink = br.getRegex(";preloadImg.src = \\'(.*?)\\';window").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType().contains("html")) {
             br.followConnection();
-            synchronized (LOCK) {
-                if (counter.get() > 10) {
-                    /* too many failed lets wait and retry later */
-                    counter.set(0);
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-                } else {
-                    /* lets temp unavail this download, maybe it works later */
-                    counter.incrementAndGet();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-                }
-            }
-
+            bookList.remove(buid + page);
+            getPluginConfig().setProperty("cookies", Property.NULL);
+            getPluginConfig().setProperty("agent", Property.NULL);
+            getPluginConfig().save();
+            throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         // Get and set the correct ending of the file!
-        String correctEnding = LoadImage.getFileType(dllink, dl.getConnection().getContentType());
+        String correctEnding = LoadImage.getFileType(link.getDownloadURL(), dl.getConnection().getContentType());
         String wrongEnding = null;
         if (link.getName().lastIndexOf('.') > 0) wrongEnding = link.getName().substring(link.getName().lastIndexOf('.'));
         if (correctEnding != null && wrongEnding != null) link.setFinalFileName(link.getName().replace(wrongEnding, correctEnding));
         if (correctEnding != null && wrongEnding == null) link.setFinalFileName(link.getName() + correctEnding);
         dl.startDownload();
-
+        // post download events
+        bookList.remove(buid + page);
+        getPluginConfig().setProperty("savedSigs", bookList);
+        // set last download
+        sysTime.set(System.currentTimeMillis());
+        // saving session info can result in you not having to enter a captcha for each new link viewed!
+        final HashMap<String, String> cookies = new HashMap<String, String>();
+        final Cookies add = br.getCookies(this.getHost());
+        for (final Cookie c : add.getCookies()) {
+            cookies.put(c.getKey(), c.getValue());
+        }
+        getPluginConfig().setProperty("cookies", cookies);
+        getPluginConfig().setProperty("agent", agent);
+        getPluginConfig().save();
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -116,7 +149,6 @@ public class GoogleBooks extends PluginForHost {
 
     @Override
     public void reset() {
-        counter.set(0);
     }
 
     @Override
@@ -129,24 +161,59 @@ public class GoogleBooks extends PluginForHost {
     }
 
     private Browser prepBrowser(Browser prepBr) {
+        // load previous agent, could be referenced with cookie session. (not tested)
+
         // define custom browser headers and language settings.
-        if (useRUA) {
-            if (agent.string == null) {
-                /* we first have to load the plugin, before we can reference it */
-                if (!loaded.getAndSet(true)) JDUtilities.getPluginForHost("mediafire.com");
-                agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
-            }
-            prepBr.getHeaders().put("User-Agent", agent.string);
+        if (agent == null) agent = getPluginConfig().getStringProperty("agent", null);
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
+        prepBr.getHeaders().put("User-Agent", agent);
+
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        prepBr.getHeaders().put("Accept-Charset", null);
+        prepBr.getHeaders().put("Pragma", null);
+        // loading previous cookie session results in less captchas
+        final Object ret = getPluginConfig().getProperty("cookies", null);
+        if (ret != null) {
+            final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+            for (Map.Entry<String, String> entry : cookies.entrySet()) {
+                prepBr.setCookie(this.getHost(), entry.getKey(), entry.getValue());
+            }
+        }
         return prepBr;
     }
 
-    private static AtomicBoolean   loaded = new AtomicBoolean(false);
+    public String getImg(String buid, String page, DownloadLink link) throws Exception {
+        String dl = null;
+        String host = new Regex(link.getDownloadURL(), "(https?://[^/]+)").getMatch(0);
 
-    private static StringContainer agent  = new StringContainer();
+        br.getHeaders().put("Referer", host + "/books?id=" + buid + "&printsec=frontcover&source=gbs_v2_summary_r&pg=pa1&redir_esc=y");
+        br.getPage(host + "/books?id=" + buid + "&lpg=PP1&pg=" + page + "&jscmd=click3");
 
-    public static class StringContainer {
-        public String string = null;
+        String[][] results = br.getRegex("\"pid\":\"(P[AP][0-9]+)\",\"src\":\"(http[^\"]+)").getMatches();
+
+        if (results != null && results.length != 0) {
+            for (String[] result : results) {
+                bookList.put(buid + result[0], unescape(result[1]));
+                if (result[0].equalsIgnoreCase(page)) {
+                    dl = unescape(result[1]);
+                }
+            }
+        }
+        // lets save after each run
+        getPluginConfig().setProperty("savedSigs", bookList);
+        return dl;
     }
+
+    private static synchronized String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+        if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+
+        return jd.plugins.hoster.Youtube.unescape(s);
+    }
+
 }
