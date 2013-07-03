@@ -1,5 +1,7 @@
 RestartController_confirmToExit_=確定離開嗎？
 RestartController_confirmToExit_msg=確定要退出 JDownloader 嗎？
+RestartController_confirmTorestart_msg=您確定要重新啟動 JDownloader 嗎？
+RestartController_confirmTorestart_title=確定要重新啟動嗎？
 TranslationProxyDialogAuthRequired=JDownloader 無法連線到 %s1！您的代理伺服器要求身份驗證。\r\n請檢查您的憑證...
 TranslationProxyDialogNoConnection=JDownloader 無法連線到 %s1！請檢查您的連線設定...
 close_jd=沒有足夠權限寫入 %s1。\r\n嘗試關閉所有執行中的 JDownloader 和 Java 處理程序，並在之後重試一次！\r\n如果問題在系統重新啟動後仍然發生，請聯絡您的技術支援。
