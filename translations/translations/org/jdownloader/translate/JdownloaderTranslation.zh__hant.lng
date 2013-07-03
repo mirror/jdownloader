@@ -132,6 +132,7 @@ jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=不使用重新連線
 jd_plugins_PluginUtils_askPassword=請輸入 %s1 的密碼
 literally_offline=不存在
 literally_yes=是
+other_files_description=音訊，壓縮檔，視訊和圖像檔案以外的所有檔案
 pattern_password=пароль|пасс|pa?s?w|passwort|password|passw?|pw|密碼
 pluginforhost_infogenerator_title=帳號 %s1@%s2
 plugins_error_downloadfailed=下載失敗
