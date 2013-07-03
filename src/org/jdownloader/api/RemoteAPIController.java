@@ -9,8 +9,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.jdownloader.api.accounts.AccountAPIImpl;
-import org.jdownloader.api.captcha.CaptchaAPIEventPublisher;
-import org.jdownloader.api.captcha.CaptchaAPIImpl;
+import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.api.config.AdvancedConfigManagerAPIImpl;
 import org.jdownloader.api.content.ContentAPIImpl;
 import org.jdownloader.api.dialog.RemoteAPIIOHandlerWrapper;
@@ -51,7 +50,9 @@ public class RemoteAPIController {
         } catch (Throwable e) {
             Log.exception(e);
         }
-        register(new CaptchaAPIImpl());
+        register(eventsapi = new EventsAPI());
+        register(CaptchaAPISolver.getInstance());
+        register(CaptchaAPISolver.getInstance().getEventPublisher());
         register(new JDAPIImpl());
         register(new DownloadsAPIImpl());
         register(new AdvancedConfigManagerAPIImpl());
@@ -60,9 +61,8 @@ public class RemoteAPIController {
         register(new LinkCollectorAPIImpl());
         register(new ContentAPIImpl());
         register(new PollingAPIImpl());
-        register(eventsapi = new EventsAPI());
+
         register(new DownloadWatchDogEventPublisher());
-        register(new CaptchaAPIEventPublisher());
 
         register(new LinkCollectorEventPublisher());
         register(new DownloadControllerEventPublisher());
@@ -72,7 +72,7 @@ public class RemoteAPIController {
         register(wrapper.getEventPublisher());
         register(wrapper.getApi());
 
-        JDAnywhereAPI.getInstance().init();
+        JDAnywhereAPI.getInstance().init(this);
 
     }
 

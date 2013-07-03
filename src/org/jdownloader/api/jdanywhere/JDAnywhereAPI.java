@@ -48,35 +48,36 @@ public class JDAnywhereAPI implements GenericConfigEventListener<Boolean> {
     private EventsAPI                eva;
 
     private JDAnywhereEventPublisher events;
+    private RemoteAPIController      controller;
 
     protected void stop() {
         logger.info("Stop API");
-        RemoteAPIController.getInstance().unregister(cma);
-        RemoteAPIController.getInstance().unregister(coma);
-        RemoteAPIController.getInstance().unregister(dba);
-        RemoteAPIController.getInstance().unregister(dla);
-        RemoteAPIController.getInstance().unregister(fpa);
-        RemoteAPIController.getInstance().unregister(lca);
-        RemoteAPIController.getInstance().unregister(eva);
-        RemoteAPIController.getInstance().unregister(events);
+        controller.unregister(cma);
+        controller.unregister(coma);
+        controller.unregister(dba);
+        controller.unregister(dla);
+        controller.unregister(fpa);
+        controller.unregister(lca);
+        controller.unregister(eva);
+        controller.unregister(events);
 
     }
 
     protected void start() {
         logger.info("Start API");
-        RemoteAPIController.getInstance().register(cma = new CaptchaApi());
-        RemoteAPIController.getInstance().register(coma = new ContentApi());
-        RemoteAPIController.getInstance().register(dba = new DashboardApi());
-        RemoteAPIController.getInstance().register(dla = new DownloadLinkApi());
-        RemoteAPIController.getInstance().register(fpa = new FilePackageApi());
-        RemoteAPIController.getInstance().register(lca = new LinkCrawlerApi());
-        RemoteAPIController.getInstance().register(eva = new EventsAPI());
-        RemoteAPIController.getInstance().register(events = new JDAnywhereEventPublisher());
+        controller.register(cma = new CaptchaApi());
+        controller.register(coma = new ContentApi());
+        controller.register(dba = new DashboardApi());
+        controller.register(dla = new DownloadLinkApi());
+        controller.register(fpa = new FilePackageApi());
+        controller.register(lca = new LinkCrawlerApi());
+        controller.register(eva = new EventsAPI());
+        controller.register(events = new JDAnywhereEventPublisher());
 
     }
 
-    public void init() {
-
+    public void init(RemoteAPIController remoteAPIController) {
+        this.controller = remoteAPIController;
         CFG_API.JDANYWHERE_API_ENABLED.getEventSender().addListener(this, true);
         onConfigValueModified(null, true);
     }
