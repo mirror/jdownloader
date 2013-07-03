@@ -63,10 +63,23 @@ public class WrzutaPl extends PluginForHost {
         String linkurl = null;
         br.setFollowRedirects(true);
         if (filetype.equalsIgnoreCase("audio")) {
+
+            String wrzutaPlayerSource = br.getRegex("window\\['__wrzuta_player_src'\\] = (.*) \\+ '\\?autoplay=true';").getMatch(0);
+
             String xmlAudioPage = "http://" + host + "/xml/kontent/" + fileid + "/wrzuta.pl/sa/" + new Random().nextInt(100000);
             br.getPage(xmlAudioPage);
             linkurl = br.getRegex("<fileId><\\!\\[CDATA\\[(http://.*?)\\]\\]></fileId>").getMatch(0);
             addext = false;
+            if (linkurl == null) {
+                // try to get final link via wrzuta player
+                String[][] matches = new Regex(wrzutaPlayerSource, "\"[a-zA-Z:/\\.0-9]*\"").getMatches();
+                String playerUrl = concatenate(matches);
+                br.getPage(playerUrl);
+
+                String flashSrcUrl = br.getRegex("var __flashSrcUrl = (.*)var __htmlSrcUrl ").getMatch(0);
+                matches = new Regex(flashSrcUrl, "\"[a-zA-z\\d:/\\.\\?=%&]*\"").getMatches();
+                linkurl = concatenate(matches);
+            }
         } else if (filetype.equalsIgnoreCase("film")) {
             String xmlFilmPage = "http://" + host + "/xml/kontent/" + fileid + "/wrztua.pl/sa/" + new Random().nextInt(100000);
             br.getPage(xmlFilmPage);
@@ -118,6 +131,16 @@ public class WrzutaPl extends PluginForHost {
             }
         }
         dl.startDownload();
+    }
+
+    private String concatenate(String[][] m) {
+        String concatenatedString = "";
+        for (String s[] : m) {
+
+            concatenatedString = concatenatedString.concat(s[0]);
+        }
+        concatenatedString = concatenatedString.replace("\"", "");
+        return concatenatedString;
     }
 
     @Override
