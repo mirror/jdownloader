@@ -420,8 +420,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             setServer();
             setPath();
             if (!smBr.getURL().contains("solvemedia.com/")) {
-                // when we retry solving a solvemedia session, we reuse smBr,
-                // browser already contains the info we need!
+                // when we retry solving a solvemedia session, we reuse smBr, browser already contains the info we need!
                 smBr.getPage(server + path + challenge);
             }
             if (noscript) {
@@ -648,7 +647,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             FORM = null;
             if (br.containsHTML("(KeyCAPTCHA|www\\.keycaptcha\\.com)")) {
                 for (final Form f : br.getForms()) {
-                    if (f.containsHTML("var s_s_c_user_id = \'\\d+\'")) {
+                    if (f.containsHTML("var s_s_c_user_id = ('\\d+'|\"\\d+\")")) {
                         FORM = f;
                         break;
                     }
@@ -657,7 +656,8 @@ public class LnkCrptWs extends PluginForDecrypt {
                     throw new Exception("KeyCaptcha form couldn't be found");
                 } else {
                     PARAMS = new HashMap<String, String>();
-                    final String[][] parameter = FORM.getRegex("(s_s_c_\\w+) = \'(.*?)\'").getMatches();
+                    String[][] parameter = FORM.getRegex("(s_s_c_\\w+) = \'(.*?)\'").getMatches();
+                    if (parameter == null || parameter.length == 0) parameter = FORM.getRegex("(s_s_c_\\w+) = \"(.*?)\"").getMatches();
                     for (final String[] para : parameter) {
                         if (para.length != 2) {
                             continue;
@@ -667,7 +667,12 @@ public class LnkCrptWs extends PluginForDecrypt {
                     if (PARAMS == null || PARAMS.size() == 0) {
                         throw new Exception("KeyCaptcha values couldn't be found");
                     } else {
-                        PARAMS.put("src", FORM.getRegex("src=\'(.*?)\'").getMatch(0));
+                        String src = FORM.getRegex("src=\'(.*?)\'").getMatch(0);
+                        if (src == null) {
+                            src = FORM.getRegex("src=\"(.*?)\"").getMatch(0);
+                            if (src == null) { throw new Exception("KeyCaptcha Module fails"); }
+                        }
+                        PARAMS.put("src", src);
                     }
                 }
             } else {

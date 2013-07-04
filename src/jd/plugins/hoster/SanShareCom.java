@@ -62,7 +62,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "sanshare.com" }, urls = { "https?://(www\\.)?sanshare\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "sanshare.com" }, urls = { "https?://(www\\.)?sanshare\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
 public class SanShareCom extends PluginForHost {
 
@@ -74,6 +74,7 @@ public class SanShareCom extends PluginForHost {
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final boolean              videoHoster                  = false;
+    private final boolean              useAltEmbed                  = false;
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
@@ -85,12 +86,12 @@ public class SanShareCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.5.6
+    // XfileShare Version 3.0.6.0
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // mods:
     // protocol: no https, accepts but goes into infinite loop
     // captchatype: null 4dignum recaptcha solvemedia keycaptcha
     // other: no redirects
+    // mods:
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -266,7 +267,7 @@ public class SanShareCom extends PluginForHost {
                     if (inValidate(fileInfo[1])) {
                         try {
                             // only needed in rare circumstances
-                            // altAvailStat(fileInfo, downloadLink);
+                            // altAvailStat(downloadLink, fileInfo);
                         } catch (Exception e) {
                         }
                     }
@@ -319,9 +320,24 @@ public class SanShareCom extends PluginForHost {
         if (inValidate(dllink)) getDllink();
         // Third, do they provide video hosting?
         if (inValidate(dllink) && videoHoster) {
-            final Browser brv = br.cloneBrowser();
-            brv.getPage("/vidembed-" + fuid);
-            dllink = brv.getRedirectLocation();
+            final Browser obr = br.cloneBrowser();
+            final Browser obrc = cbr.cloneBrowser();
+            if (!useAltEmbed) {
+                getPage("/vidembed-" + fuid);
+            } else {
+                // alternative embed format
+                String embed = cbr.getRegex("(http[^\"']+" + DOMAINS + "/embed-" + fuid + "-\\d+x\\d+\\.html)").getMatch(0);
+                if (inValidate(embed) && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mpeg4?|mpg|ogm|vob|wmv|webm)$")) embed = "/embed-" + fuid + ".html";
+                if (!inValidate(embed)) {
+                    getPage(embed);
+                }
+            }
+            getDllink();
+            if (inValidate(dllink)) {
+                logger.warning("Failed to find 'embed dllink'");
+                br = obr;
+                cbr = obrc;
+            }
         }
         // Fourth, continue like normal.
         if (inValidate(dllink)) {
@@ -357,10 +373,10 @@ public class SanShareCom extends PluginForHost {
                     if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
                 }
                 /* Captcha START */
-                if (cbr.containsHTML(";background:#ccc;text-align")) {
-                    logger.info("Detected captcha method \"plaintext captcha\"");
+                if (dlForm.containsHTML(";background:#ccc;text-align")) {
+                    logger.info("Detected captcha method \"Plaintext Captcha\"");
                     /** Captcha method by ManiacMansion */
-                    final String[][] letters = cbr.getRegex("<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
+                    final String[][] letters = dlForm.getRegex("<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
                     if (letters == null || letters.length == 0) {
                         logger.warning("plaintext captchahandling broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -375,32 +391,43 @@ public class SanShareCom extends PluginForHost {
                     }
                     dlForm.put("code", code.toString());
                     logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-                } else if (cbr.containsHTML("/captchas/")) {
-                    logger.info("Detected captcha method \"Standard captcha\"");
-                    final String[] sitelinks = HTMLParser.getHttpLinks(cbr.toString(), null);
+                } else if (dlForm.containsHTML("/captchas/")) {
+                    logger.info("Detected captcha method \"Standard Captcha\"");
+                    final String[] sitelinks = HTMLParser.getHttpLinks(dlForm.getHtmlCode(), null);
                     String captchaurl = null;
                     if (sitelinks == null || sitelinks.length == 0) {
                         logger.warning("Standard captcha captchahandling broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    String code = null;
                     for (String link : sitelinks) {
-                        if (link.contains("/captchas/")) {
-                            captchaurl = link;
-                            break;
+                        if (link.matches("(https?.+" + DOMAINS + ")?/captchas/[a-z0-9]{18,}\\.jpg")) {
+                            Browser testcap = br.cloneBrowser();
+                            URLConnectionAdapter con = null;
+                            try {
+                                con = testcap.openGetConnection(link);
+                                if (con.getResponseCode() == 200) {
+                                    code = getCaptchaCode("xfilesharingprobasic", link, downloadLink);
+                                    if (!inValidate(code)) break;
+                                }
+                            } catch (Exception e) {
+                                continue;
+                            }
                         }
                     }
-                    if (inValidate(captchaurl)) {
+                    if (inValidate(code)) {
                         logger.warning("Standard captcha captchahandling broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
                     dlForm.put("code", code);
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-                } else if (cbr.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                } else if (dlForm.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     logger.info("Detected captcha method \"Re Captcha\"");
+                    final Browser captcha = br.cloneBrowser();
+                    cleanupBrowser(captcha, dlForm.getHtmlCode());
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    final String id = cbr.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha);
+                    final String id = dlForm.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                     if (inValidate(id)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     rc.setId(id);
                     rc.load();
@@ -411,19 +438,23 @@ public class SanShareCom extends PluginForHost {
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
-                } else if (cbr.containsHTML("solvemedia\\.com/papi/")) {
-                    logger.info("Detected captcha method \"solvemedia\"");
+                } else if (dlForm.containsHTML("solvemedia\\.com/papi/")) {
+                    logger.info("Detected captcha method \"Solve Media\"");
+                    final Browser captcha = br.cloneBrowser();
+                    cleanupBrowser(captcha, dlForm.getHtmlCode());
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(captcha);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     final String code = getCaptchaCode(cf, downloadLink);
                     final String chid = sm.getChallenge(code);
                     dlForm.put("adcopy_challenge", chid);
                     dlForm.put("adcopy_response", "manual_challenge");
-                } else if (cbr.containsHTML("id=\"capcode\" name= \"capcode\"")) {
-                    logger.info("Detected captcha method \"keycaptca\"");
+                } else if (dlForm.containsHTML("id=\"capcode\" name= \"capcode\"")) {
+                    logger.info("Detected captcha method \"Key Captca\"");
+                    final Browser captcha = br.cloneBrowser();
+                    cleanupBrowser(captcha, dlForm.getHtmlCode());
                     final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
+                    final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(captcha);
                     final String result = kc.showDialog(downloadLink.getDownloadURL());
                     if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
                     dlForm.put("capcode", result);
@@ -538,11 +569,11 @@ public class SanShareCom extends PluginForHost {
             }
         }
         cbr = br.cloneBrowser();
-        cbr = cleanupBrowser(cbr, toClean);
+        cleanupBrowser(cbr, toClean);
     }
 
     private String regexDllink(final String source) {
-        return new Regex(source, "(\"|')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|')").getMatch(1);
+        return new Regex(source, "(\"|')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/dl)?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+)(\"|')").getMatch(1);
     }
 
     private void getDllink() {
@@ -554,7 +585,7 @@ public class SanShareCom extends PluginForHost {
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
                         decodeDownloadLink(crypted);
-                        if (dllink != null) break;
+                        if (!inValidate(dllink)) break;
                     }
                 }
             }
@@ -581,7 +612,7 @@ public class SanShareCom extends PluginForHost {
         } catch (Exception e) {
         }
 
-        if (decoded != null) {
+        if (!inValidate(decoded)) {
             dllink = regexDllink(decoded);
         }
     }
@@ -975,7 +1006,7 @@ public class SanShareCom extends PluginForHost {
             downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceFirst("https://", "http://"));
         }
         // strip video hosting url's to reduce possible duped links.
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replace("/vidembed-", "/"));
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("/(vid)?embed-", "/"));
         // output the hostmask as we wish based on COOKIE_HOST url!
         String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
         String importedHost = new Regex(downloadLink.getDownloadURL(), "https?://([^/]+)").getMatch(0);
@@ -1463,27 +1494,32 @@ public class SanShareCom extends PluginForHost {
      *            Provided replacement string output browser
      * @author raztoki
      * */
-    private Browser cleanupBrowser(final Browser ibr, final String t) throws Exception {
-        if (br.isDebug()) logger.info("\r\ndirtyMD5sum = " + JDHash.getMD5(ibr.toString()) + "\r\ncleanMD5sum = " + JDHash.getMD5(t) + "\r\n");
-        Request req = ibr.createRequest(ibr.getURL());
-        URLConnectionAdapter con = ibr.getRequest().getHttpConnection();
-        req = new Request(con) {
+    private void cleanupBrowser(final Browser ibr, final String t) throws Exception {
+        String dMD5 = JDHash.getMD5(ibr.toString());
+        // preserve valuable original request components.
+        final String oURL = ibr.getURL();
+        final URLConnectionAdapter con = ibr.getRequest().getHttpConnection();
+
+        Request req = new Request(oURL) {
             {
                 requested = true;
+                httpConnection = con;
+                setHtmlCode(t);
             }
 
-            @Override
             public long postRequest() throws IOException {
                 return 0;
             }
 
-            @Override
             public void preRequest() throws IOException {
             }
         };
-        req.setHtmlCode(t);
+
         ibr.setRequest(req);
-        return ibr;
+        if (ibr.isDebug()) {
+            logger.info("\r\ndirtyMD5sum = " + dMD5 + "\r\ncleanMD5sum = " + JDHash.getMD5(ibr.toString()) + "\r\n");
+            System.out.println(ibr.toString());
+        }
     }
 
 }
