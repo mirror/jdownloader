@@ -80,7 +80,9 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.api.cnl2.ExternInterface;
+import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solver.CBSolver;
 import org.jdownloader.captcha.v2.solver.Captcha9kwSolver;
@@ -440,6 +442,11 @@ public class SecondLevelLaunch {
                     } catch (final Throwable e) {
                         SecondLevelLaunch.LOG.log(e);
                     }
+
+                    // init
+
+                    Dialog.getInstance().setDefaultTimeout(Math.max(2000, JsonConfig.create(GraphicalUserInterfaceSettings.class).getDialogDefaultTimeoutInMS()));
+
                     /* set gloabel logger for browser */
                     Browser.setGlobalLogger(LogController.getInstance().getLogger("GlobalBrowser"));
                     /* init default global Timeouts */
@@ -502,6 +509,7 @@ public class SecondLevelLaunch {
                             ChallengeResponseController.getInstance().addSolver(Captcha9kwSolver.getInstance());
                             ChallengeResponseController.getInstance().addSolver(Captcha9kwSolverClick.getInstance());
                             ChallengeResponseController.getInstance().addSolver(CaptchaResolutorCaptchaSolver.getInstance());
+                            ChallengeResponseController.getInstance().addSolver(CaptchaAPISolver.getInstance());
 
                             if (!jared) {
                                 HostPluginController.getInstance().invalidateCache();
@@ -517,6 +525,8 @@ public class SecondLevelLaunch {
                             /* start remote api */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init RemoteAPI");
                             RemoteAPIController.getInstance();
+                            Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init MYJDownloader");
+                            MyJDownloaderController.getInstance();
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Extern INterface");
                             ExternInterface.getINSTANCE();
                             // GarbageController.getInstance();
@@ -598,7 +608,7 @@ public class SecondLevelLaunch {
 
                                                     if (JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
                                                         ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
-                                                        d.setCountdownTime(JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds());
+                                                        d.setTimeout(JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() * 1000);
                                                         try {
                                                             Dialog.getInstance().showDialog(d);
                                                             DownloadWatchDog.getInstance().startDownloads();

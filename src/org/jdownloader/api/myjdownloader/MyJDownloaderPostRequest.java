@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.myjdownloader;
+package org.jdownloader.api.myjdownloader;
 
 import java.io.IOException;
 import java.io.InputStream;

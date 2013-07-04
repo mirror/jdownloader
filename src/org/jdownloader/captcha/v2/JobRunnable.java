@@ -76,6 +76,8 @@ public class JobRunnable<T> implements Runnable {
             } finally {
                 if (timeout != null) timeout.stop();
                 job.fireAfterSolveEvent(solver);
+                job.setSolverDone(solver);
+
             }
         } finally {
             thread = null;

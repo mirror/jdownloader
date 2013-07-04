@@ -69,15 +69,17 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
         DialogType dialogType = null;
         try {
             int f = 0;
+
+            int countdown = getTimeoutInMS();
             if (captchaChallenge.getPlugin() instanceof PluginForHost) {
                 dialogType = DialogType.HOSTER;
-                if (config.isDialogCountdownForDownloadsEnabled() && config.getCountdown() > 0) {
+                if (countdown > 0) {
                     f = f | UIOManager.LOGIC_COUNTDOWN;
                 }
             } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
                 dialogType = DialogType.CRAWLER;
 
-                if (config.isDialogCountdownForCrawlerEnabled() && config.getCountdown() > 0) {
+                if (countdown > 0) {
                     f = f | UIOManager.LOGIC_COUNTDOWN;
                 }
             }
@@ -173,6 +175,32 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
         } catch (RefreshException e) {
             throw new SkipException(SkipRequest.REFRESH);
         }
+    }
+
+    protected int getTimeoutInMS() {
+
+        int countdown = -1;
+
+        if (captchaChallenge.getPlugin() instanceof PluginForHost) {
+
+            if (config.isDialogCountdownForDownloadsEnabled()) {
+                countdown = config.getDialogCountdown();
+            }
+        } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
+
+            if (config.isDialogCountdownForCrawlerEnabled()) {
+                countdown = config.getDialogCountdown();
+            }
+
+        }
+        int pluginTimeout = captchaChallenge.getTimeout();
+        if (pluginTimeout > 0) {
+
+            if (countdown <= 0 || pluginTimeout < countdown) {
+                countdown = pluginTimeout;
+            }
+        }
+        return countdown;
     }
 
     /**

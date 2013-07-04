@@ -16,6 +16,8 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 public abstract class Challenge<T> {
     private final UniqueAlltimeID id = new UniqueAlltimeID();
     private Class<T>              resultType;
+    private long                  created;
+    private int                   timeout;
 
     public UniqueAlltimeID getId() {
         return id;
@@ -36,6 +38,16 @@ public abstract class Challenge<T> {
 
         }
         resultType = (Class<T>) ((ParameterizedType) superClass).getActualTypeArguments()[0];
+        created = System.currentTimeMillis();
+        timeout = -1;
+    }
+
+    public int getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
     }
 
     public Class<T> getResultType() {

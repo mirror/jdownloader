@@ -12,7 +12,7 @@ public class WarningDialog extends ConfirmDialog implements WarningDialogInterfa
     public WarningDialog(ShutdownExtension shutDown, String title, String message) {
         super(Dialog.STYLE_HTML | UIOManager.LOGIC_COUNTDOWN, title, message, NewTheme.I().getIcon("warning", 32), null, null);
         this.extension = shutDown;
-        this.setCountdownTime(shutDown.getSettings().getCountdownTime());
+        this.setTimeout(shutDown.getSettings().getCountdownTime() * 1000);
 
     }
 

@@ -46,9 +46,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @SpinnerValidator(min = 50, max = 500, step = 10)
     int getCaptchaScaleFactor();
 
-    @DefaultIntValue(20)
+    @DefaultIntValue(20000)
     @AboutConfig
-    int getDialogDefaultTimeout();
+    int getDialogDefaultTimeoutInMS();
 
     @DefaultEnumValue("ALL")
     org.jdownloader.gui.views.downloads.View getDownloadView();
@@ -269,7 +269,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setConfigViewVisible(boolean b);
 
-    void setDialogDefaultTimeout(int value);
+    void setDialogDefaultTimeoutInMS(int ms);
 
     void setDownloadView(org.jdownloader.gui.views.downloads.View view);
 

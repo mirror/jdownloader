@@ -12,7 +12,7 @@ import jd.plugins.FilePackage;
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
 import org.jdownloader.api.captcha.CaptchaAPI;
-import org.jdownloader.api.captcha.CaptchaAPIImpl;
+import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.api.jd.AggregatedNumbersAPIStorable;
 import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -146,7 +146,7 @@ public class PollingAPIImpl implements PollingAPI {
         return prs;
     }
 
-    private CaptchaAPI captchaAPI = new CaptchaAPIImpl();
+    private CaptchaAPI captchaAPI = CaptchaAPISolver.getInstance();
 
     private PollingResultAPIStorable getCaptchasWaiting() {
         PollingResultAPIStorable prs = new PollingResultAPIStorable();

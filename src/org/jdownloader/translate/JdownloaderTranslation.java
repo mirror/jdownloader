@@ -484,4 +484,13 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Disable Archive *.rev Files" })
     String DisableRevFilesPackageRulee_rule_name();
 
+    @Default(lngs = { "en" }, values = { "Your 'My JDownloader' email has not been confirmed yet. \r\nPlease check your emails and click the confirmal Link" })
+    String MyJDownloaderController_onError_account_unconfirmed();
+
+    @Default(lngs = { "en" }, values = { "Your 'My JDownloader' logins are not correct. \r\nPlease check username/email and password!" })
+    String MyJDownloaderController_onError_badlogins();
+
+    @Default(lngs = { "en" }, values = { "JDownloader could not connect to the My JDownloader service: %s1" })
+    String MyJDownloaderController_onError_unknown(String string);
+
 }

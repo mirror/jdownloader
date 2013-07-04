@@ -108,14 +108,19 @@ public class SolverJob<T> {
     }
 
     public void fireAfterSolveEvent(ChallengeSolver<T> solver) {
+
+        controller.fireAfterSolveEvent(this, solver);
+
+    }
+
+    public void setSolverDone(ChallengeSolver<T> solver) {
+
         synchronized (LOCK) {
             if (!solverList.contains(solver)) throw new IllegalStateException("This Job does not contain this solver");
-            doneList.add(solver);
+            if (!doneList.add(solver)) return;
             // runningList.remove(solver);
         }
         if (eventSender != null) eventSender.fireEvent(new ChallengeSolverJobEvent(this, ChallengeSolverJobEvent.Type.SOLVER_DONE, solver));
-        controller.fireAfterSolveEvent(this, solver);
-        logger.info("Notify");
         synchronized (this) {
             this.notifyAll();
         }
@@ -155,12 +160,22 @@ public class SolverJob<T> {
 
     public boolean isDone() {
         synchronized (LOCK) {
+            for (ChallengeSolver<T> sj : solverList) {
+                if (!doneList.contains(sj)) {
+                    if (sj.isJobDone(this)) {
+                        setSolverDone(sj);
+                    }
+                }
+            }
             return solverList.size() == doneList.size();
         }
     }
 
     public boolean isDone(ChallengeSolver<T> instance) {
         synchronized (LOCK) {
+            if (instance.isJobDone(this)) {
+                setSolverDone(instance);
+            }
             return !solverList.contains(instance) || doneList.contains(instance);
         }
     }

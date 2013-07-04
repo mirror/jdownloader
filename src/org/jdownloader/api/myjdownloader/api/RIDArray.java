@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.myjdownloader.api;
+package org.jdownloader.api.myjdownloader.api;
 
 import java.util.ArrayList;
 

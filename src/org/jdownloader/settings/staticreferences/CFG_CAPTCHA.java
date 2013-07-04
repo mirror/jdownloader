@@ -28,16 +28,26 @@ public class CFG_CAPTCHA {
      * Disable all Remote Captchas. (Android App, IPhone App, Webinterface, ...)
      **/
     public static final BooleanKeyHandler               REMOTE_CAPTCHA_ENABLED                        = SH.getKeyHandler("RemoteCaptchaEnabled", BooleanKeyHandler.class);
-    // 0
-    /**
-     * Milliseconds after which a Captcha Dialog will appear even if Auto CaptchaBroptherhood Service is still running
-     **/
-    public static final IntegerKeyHandler               CAPTCHA_DIALOG_CAPTCHA_BROPTHERHOOD_TIMEOUT   = SH.getKeyHandler("CaptchaDialogCaptchaBroptherhoodTimeout", IntegerKeyHandler.class);
     // true
     /**
      * Disable JAntiCaptcha
      **/
     public static final BooleanKeyHandler               JANTI_CAPTCHA_ENABLED                         = SH.getKeyHandler("JAntiCaptchaEnabled", BooleanKeyHandler.class);
+    // 0
+    /**
+     * Milliseconds after which a Captcha Dialog will appear even if Auto CaptchaBroptherhood Service is still running
+     **/
+    public static final IntegerKeyHandler               CAPTCHA_DIALOG_CAPTCHA_BROPTHERHOOD_TIMEOUT   = SH.getKeyHandler("CaptchaDialogCaptchaBroptherhoodTimeout", IntegerKeyHandler.class);
+    // 20000
+    /**
+     * MS to wait until captcha dialog gets answered. Close dialog after this timeout unanswered
+     **/
+    public static final IntegerKeyHandler               DIALOG_COUNTDOWN                              = SH.getKeyHandler("DialogCountdown", IntegerKeyHandler.class);
+    // 300000
+    /**
+     * Timeout after which a challenge (captcha) invalidates (e.g sessions run out...) this timeout should be set by the plugins
+     **/
+    public static final IntegerKeyHandler               DEFAULT_CHALLENGE_TIMEOUT                     = SH.getKeyHandler("DefaultChallengeTimeout", IntegerKeyHandler.class);
     // true
     /**
      * Disable Captcha Exchangeservices like 9kw or Captchabrotherhood
@@ -58,11 +68,6 @@ public class CFG_CAPTCHA {
      * True to enable a countdown in crawler captcha dialogs. Dialog will close automated after the coundown
      **/
     public static final BooleanKeyHandler               DIALOG_COUNTDOWN_FOR_CRAWLER_ENABLED          = SH.getKeyHandler("DialogCountdownForCrawlerEnabled", BooleanKeyHandler.class);
-    // 20
-    /**
-     * Seconds to wait until captcha dialog gets answered. Close dialog after this timeout unanswered
-     **/
-    public static final IntegerKeyHandler               COUNTDOWN                                     = SH.getKeyHandler("Countdown", IntegerKeyHandler.class);
     // true
     /**
      * If the Dialog Countdown is reached, the link will be skipped. Disable this option to retry instead
@@ -73,16 +78,16 @@ public class CFG_CAPTCHA {
      * Milliseconds after which a Captcha Dialog will appear even if Auto 9kw Service is still running
      **/
     public static final IntegerKeyHandler               CAPTCHA_DIALOG9KW_TIMEOUT                     = SH.getKeyHandler("CaptchaDialog9kwTimeout", IntegerKeyHandler.class);
-    // 120000
-    /**
-     * Milliseconds after which a Captcha Dialog will appear even if Auto ResolutorCaptcha Service is still running
-     **/
-    public static final IntegerKeyHandler               CAPTCHA_DIALOG_RESOLUTOR_CAPTCHA_TIMEOUT      = SH.getKeyHandler("CaptchaDialogResolutorCaptchaTimeout", IntegerKeyHandler.class);
     // 15000
     /**
      * Milliseconds after which a Captcha Dialog will appear even if Auto AntiCaptcha is still running
      **/
     public static final IntegerKeyHandler               CAPTCHA_DIALOG_JANTI_CAPTCHA_TIMEOUT          = SH.getKeyHandler("CaptchaDialogJAntiCaptchaTimeout", IntegerKeyHandler.class);
+    // 120000
+    /**
+     * Milliseconds after which a Captcha Dialog will appear even if Auto ResolutorCaptcha Service is still running
+     **/
+    public static final IntegerKeyHandler               CAPTCHA_DIALOG_RESOLUTOR_CAPTCHA_TIMEOUT      = SH.getKeyHandler("CaptchaDialogResolutorCaptchaTimeout", IntegerKeyHandler.class);
     // 90
     /**
      * Do not Change me unless you know 100000% what this value is used for!

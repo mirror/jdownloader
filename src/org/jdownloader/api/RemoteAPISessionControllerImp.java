@@ -4,8 +4,8 @@ import java.util.HashMap;
 
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.utils.net.httpserver.session.HttpSessionController;
-import org.jdownloader.extensions.myjdownloader.MyJDownloaderAPISession;
-import org.jdownloader.extensions.myjdownloader.MyJDownloaderHttpConnection;
+import org.jdownloader.api.myjdownloader.MyJDownloaderAPISession;
+import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
 
 public class RemoteAPISessionControllerImp extends HttpSessionController<RemoteAPISession> {
 

@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.myjdownloader;
+package org.jdownloader.api.myjdownloader;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;

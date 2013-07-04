@@ -135,14 +135,14 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /**
-     * use {@link #setEnabled(false)} to stop the extension. avoid to call this method directly
+     * use {@link #setAutoConnectEnabled(false)} to stop the extension. avoid to call this method directly
      * 
      * @throws StopException
      */
     protected abstract void stop() throws StopException;
 
     /**
-     * use {@link #setEnabled(true)} to start the extension. avoid to call this method directly
+     * use {@link #setAutoConnectEnabled(true)} to start the extension. avoid to call this method directly
      * 
      * @throws StartException
      */

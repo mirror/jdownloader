@@ -7,6 +7,7 @@ import jd.gui.swing.dialog.ClickCaptchaDialogInterface;
 import jd.gui.swing.dialog.DialogType;
 
 import org.appwork.uio.UserIODefinition.CloseReason;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
@@ -31,7 +32,11 @@ public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptc
 
         ClickCaptchaDialog d = new ClickCaptchaDialog(flag, dialogType, getHost(), images, captchaChallenge.getExplain());
         d.setPlugin(captchaChallenge.getPlugin());
-        d.setCountdownTime(CaptchaSettings.CFG.getCountdown());
+        d.setTimeout(getTimeoutInMS());
+        if (getTimeoutInMS() == captchaChallenge.getTimeout()) {
+            // no reason to let the user stop the countdown if the result cannot be used after the countdown anyway
+            d.setCountdownPausable(false);
+        }
         ClickCaptchaDialogInterface io = d.show();
         d = null;
         result = io.getResult();
@@ -46,6 +51,7 @@ public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptc
                 if (io.isStopShowingCrawlerCaptchas()) throw new HideAllCaptchasException();
                 if (io.isRefresh()) throw new RefreshException();
                 io.throwCloseExceptions();
+                throw new DialogClosedException(Dialog.RETURN_CLOSED);
             }
         } catch (IllegalStateException e) {
             // Captcha has been solved externally

@@ -6,42 +6,72 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.plugins.DownloadLink;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
-import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.Base64OutputStream;
 import org.appwork.utils.net.httpserver.responses.FileResponse;
+import org.jdownloader.api.myjdownloader.MyJDownloaderController;
+import org.jdownloader.captcha.event.ChallengeResponseListener;
+import org.jdownloader.captcha.v2.AbstractResponse;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.JobRunnable;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
+import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
-public class CaptchaAPIImpl implements CaptchaAPI {
+public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
 
-    public CaptchaAPIImpl() {
-        // ChallengeResponseController.getInstance().getEventSender().addListener(this);
+    private static final CaptchaAPISolver INSTANCE = new CaptchaAPISolver();
+
+    public static CaptchaAPISolver getInstance() {
+        return INSTANCE;
+    }
+
+    private CaptchaAPIEventPublisher eventPublisher;
+
+    @Override
+    public boolean canHandle(Challenge<?> c) {
+        return CFG_CAPTCHA.REMOTE_CAPTCHA_ENABLED.isEnabled() && c instanceof ImageCaptchaChallenge && super.canHandle(c);
+    }
+
+    @Override
+    public void solve(SolverJob<Object> solverJob) throws InterruptedException, SolverException, SkipException {
+
+    }
+
+    private CaptchaAPISolver() {
+        // 0: no threadpool
+        super(0);
+        eventPublisher = new CaptchaAPIEventPublisher();
+        ChallengeResponseController.getInstance().getEventSender().addListener(this);
+    }
+
+    public CaptchaAPIEventPublisher getEventPublisher() {
+        return eventPublisher;
     }
 
     public List<CaptchaJob> list() {
 
         java.util.List<CaptchaJob> ret = new ArrayList<CaptchaJob>();
         if (!CFG_CAPTCHA.REMOTE_CAPTCHA_ENABLED.isEnabled()) return ret;
-        for (SolverJob<?> entry : ChallengeResponseController.getInstance().listJobs()) {
+        for (SolverJob<?> entry : listJobs()) {
             if (entry.isDone()) continue;
             if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
                 CaptchaJob job = new CaptchaJob();
@@ -61,9 +91,9 @@ public class CaptchaAPIImpl implements CaptchaAPI {
         return ret;
     }
 
-    public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id) throws InternalApiException, RemoteAPIException {
+    public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id) throws InternalApiException, InvalidCaptchaIDException {
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new RemoteAPIException(CaptchaAPI.Error.NOT_AVAILABLE); }
+        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new InvalidCaptchaIDException(); }
 
         ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
         try {
@@ -108,11 +138,41 @@ public class CaptchaAPIImpl implements CaptchaAPI {
         }
     }
 
+    public boolean isJobDone(SolverJob<Object> job) {
+        if (!isMyJDownloaderActive()) return true;
+        synchronized (map) {
+            return !map.containsKey(job);
+        }
+
+    }
+
+    @Override
+    public void enqueue(SolverJob<Object> job) {
+
+        if (!isMyJDownloaderActive()) {
+            job.setSolverDone(this);
+        }
+
+        JobRunnable<Object> jr;
+        jr = new JobRunnable<Object>(this, job);
+        synchronized (map) {
+            map.put(job, jr);
+            MyJDownloaderController.getInstance().pushCaptchaFlag(true);
+
+        }
+        eventPublisher.fireNewJobEvent(job);
+
+    }
+
+    private boolean isMyJDownloaderActive() {
+        return MyJDownloaderController.getInstance().isConnected();
+    }
+
     @SuppressWarnings("unchecked")
-    public boolean solve(long id, String result) throws RemoteAPIException {
+    public boolean solve(long id, String result) throws InvalidCaptchaIDException, InvalidChallengeTypeException {
 
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new RemoteAPIException(CaptchaAPI.Error.NOT_AVAILABLE); }
+        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new InvalidCaptchaIDException(); }
 
         ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
 
@@ -127,24 +187,20 @@ public class CaptchaAPIImpl implements CaptchaAPI {
 
             ((SolverJob<ClickedPoint>) job).addAnswer(new ClickCaptchaResponse((ClickCaptchaChallenge) challenge, this, res, 100));
         } else {
-            throw new RemoteAPIException(CaptchaAPI.Error.UNKNOWN_CHALLENGETYPE, challenge.getClass().getName());
+            throw new InvalidChallengeTypeException(challenge.getClass().getName());
 
         }
 
         return true;
     }
 
-    public boolean abort(long id) throws RemoteAPIException {
-        SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new RemoteAPIException(CaptchaAPI.Error.NOT_AVAILABLE); }
-
-        // ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
-        job.kill();
-        return true;
+    @Deprecated
+    public boolean skip(long id) throws InvalidCaptchaIDException {
+        return skip(id, SkipRequest.SINGLE);
     }
 
     @SuppressWarnings("static-access")
-    public boolean skip(long id) throws RemoteAPIException {
+    public boolean skip(long id, SkipRequest type) throws InvalidCaptchaIDException {
         // SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
         // if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new
         // RemoteAPIException(CaptchaAPI.Error.NOT_AVAILABLE); }
@@ -152,15 +208,17 @@ public class CaptchaAPIImpl implements CaptchaAPI {
         // // ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
         // job.kill();
 
-        SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        DownloadLink downloadLink = job.getChallenge().getDownloadLink(job.getChallenge());
-        if (downloadLink != null) {
-            downloadLink.setSkipReason(SkipReason.CAPTCHA);
-        } else {
-            throw new WTFException("Not Implemented");
-        }
-
+        SolverJob<Object> job = (SolverJob<Object>) ChallengeResponseController.getInstance().getJobById(id);
+        if (job == null) throw new InvalidCaptchaIDException();
+        ChallengeResponseController.getInstance().setSkipRequest(SkipRequest.SINGLE, this, job.getChallenge());
         return true;
+    }
+
+    public void kill(SolverJob<Object> job) {
+
+        super.kill(job);
+
+        MyJDownloaderController.getInstance().pushCaptchaFlag(true);
     }
 
     @Override
@@ -187,6 +245,7 @@ public class CaptchaAPIImpl implements CaptchaAPI {
 
         return ret;
     }
+
     // public void captchaTodo(CaptchaHandler controller) {
     // sendEvent(controller, "new");
     // }
@@ -209,5 +268,37 @@ public class CaptchaAPIImpl implements CaptchaAPI {
     // }
     //
     // }
+
+    @Override
+    public void onNewJobAnswer(SolverJob<?> job, AbstractResponse<?> response) {
+
+    }
+
+    @Override
+    public void onJobDone(SolverJob<?> job) {
+        eventPublisher.fireJobDoneEvent(job);
+        synchronized (map) {
+            map.remove(job);
+            if (map.size() > 0) {
+                MyJDownloaderController.getInstance().pushCaptchaFlag(true);
+            } else {
+                MyJDownloaderController.getInstance().pushCaptchaFlag(false);
+            }
+        }
+
+    }
+
+    @Override
+    public void onNewJob(SolverJob<?> job) {
+        // we fire our event in #enqueue(..)
+    }
+
+    @Override
+    public void onJobSolverEnd(ChallengeSolver<?> solver, SolverJob<?> job) {
+    }
+
+    @Override
+    public void onJobSolverStart(ChallengeSolver<?> solver, SolverJob<?> job) {
+    }
 
 }

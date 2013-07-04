@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.myjdownloader.api;
+package org.jdownloader.api.myjdownloader.api;
 
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Type;
@@ -20,10 +20,10 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64InputStream;
 import org.appwork.utils.net.BasicHTTP.BasicHTTP;
 import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.jdownloader.extensions.myjdownloader.MyDownloaderExtensionConfig;
-import org.jdownloader.extensions.myjdownloader.MyJDownloaderExtension;
+import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
 import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
+import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
 public class MyJDownloaderAPI extends AbstractMyJDClient {
 
@@ -103,13 +103,11 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         }
     }
 
-    protected AtomicLong                        TIMESTAMP    = new AtomicLong(System.currentTimeMillis());
-    protected volatile String                   connectToken = null;
+    protected AtomicLong              TIMESTAMP    = new AtomicLong(System.currentTimeMillis());
+    protected volatile String         connectToken = null;
 
-    protected final MyDownloaderExtensionConfig config;
-
-    private MyJDownloaderExtension              extension;
-    private HashMap<String, RIDArray>           rids;
+    private MyJDownloaderController    extension;
+    private HashMap<String, RIDArray> rids;
 
     public static int getRevision() {
         String revision = new Regex("$Revision$", "Revision:\\s*?(\\d+)").getMatch(0);
@@ -117,12 +115,11 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         return Integer.parseInt(revision);
     }
 
-    public MyJDownloaderAPI(MyJDownloaderExtension myJDownloaderExtension) {
+    public MyJDownloaderAPI(MyJDownloaderController myJDownloaderExtension) {
         super("JD_" + getRevision());
         extension = myJDownloaderExtension;
 
-        this.config = extension.getSettings();
-        setServerRoot("http://" + config.getConnectIP() + ":" + config.getClientConnectPort());
+        setServerRoot("http://" + CFG_MYJD.CONNECT_IP.getValue() + ":" + CFG_MYJD.CLIENT_CONNECT_PORT.getValue());
         logger = extension.getLogger();
         br = new BasicHTTP();
         br.setAllowedResponseCodes(200, 503, 401, 407, 403, 500, 429);

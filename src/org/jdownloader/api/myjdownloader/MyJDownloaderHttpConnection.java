@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.myjdownloader;
+package org.jdownloader.api.myjdownloader;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -36,7 +36,7 @@ import org.appwork.utils.net.httpserver.requests.JSonRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.api.RemoteAPIController;
-import org.jdownloader.extensions.myjdownloader.api.MyJDownloaderAPI;
+import org.jdownloader.api.myjdownloader.api.MyJDownloaderAPI;
 import org.jdownloader.myjdownloader.RequestLineParser;
 
 public class MyJDownloaderHttpConnection extends HttpConnection {

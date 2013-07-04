@@ -102,8 +102,6 @@ public class CFG_GUI {
     public static final EnumKeyHandler                                 SHOW_DELETE_LINKS_DIALOG_OPTION                      = SH.getKeyHandler("ShowDeleteLinksDialogOption", EnumKeyHandler.class);
     // null
     public static final StringKeyHandler                               PASSWORD                                             = SH.getKeyHandler("Password", StringKeyHandler.class);
-    // 20
-    public static final IntegerKeyHandler                              DIALOG_DEFAULT_TIMEOUT                               = SH.getKeyHandler("DialogDefaultTimeout", IntegerKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              CAPTCHA_DIALOG_UNIQUE_POSITION_BY_HOSTER_ENABLED     = SH.getKeyHandler("CaptchaDialogUniquePositionByHosterEnabled", BooleanKeyHandler.class);
     // true
@@ -213,6 +211,8 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              SHOW_FULL_HOSTNAME                                   = SH.getKeyHandler("ShowFullHostname", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_VISIBLE                          = SH.getKeyHandler("LinkgrabberSidebarVisible", BooleanKeyHandler.class);
+    // 20000
+    public static final IntegerKeyHandler                              DIALOG_DEFAULT_TIMEOUT_IN_MS                         = SH.getKeyHandler("DialogDefaultTimeoutInMS", IntegerKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_SELECTED_INFO_VISIBLE                 = SH.getKeyHandler("OverviewPanelSelectedInfoVisible", BooleanKeyHandler.class);
     // true

@@ -3,6 +3,8 @@ package jd.gui.swing.jdgui.views.settings.components;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.JComponent;
+
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
 
@@ -12,8 +14,8 @@ public class Checkbox extends ExtCheckBox implements SettingsComponent {
     private StateUpdateEventSender<Checkbox> eventSender;
     private boolean                          setting;
 
-    public Checkbox(BooleanKeyHandler keyHandler) {
-        super(keyHandler);
+    public Checkbox(BooleanKeyHandler keyHandler, JComponent... dependencies) {
+        super(keyHandler, dependencies);
         eventSender = new StateUpdateEventSender<Checkbox>();
         this.addActionListener(new ActionListener() {
 

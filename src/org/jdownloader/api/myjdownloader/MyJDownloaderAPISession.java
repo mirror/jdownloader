@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.myjdownloader;
+package org.jdownloader.api.myjdownloader;
 
 import org.appwork.utils.net.httpserver.session.HttpSession;
 import org.appwork.utils.net.httpserver.session.HttpSessionController;

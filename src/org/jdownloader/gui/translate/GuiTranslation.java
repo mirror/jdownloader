@@ -2696,4 +2696,73 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Predefined rule: %s1" })
     String FilterTableModel_initColumns_static_(String name);
 
+    @Default(lngs = { "en" }, values = { "My JDownloader" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_title_();
+
+    @Default(lngs = { "en" }, values = { "Sign up for an account at my.jdownloader.org, and access a lot of premium features like a JDownloader Remotecontrol via a Webinterface for your Browser, or apps for Android, IPhone and WindowsPhone" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_description();
+
+    @Default(lngs = { "en" }, values = { "Go to My.JDownloader.org" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_open_();
+
+    @Default(lngs = { "en" }, values = { "My Account" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_();
+
+    @Default(lngs = { "en" }, values = { "Username/Email" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_username_();
+
+    @Default(lngs = { "en" }, values = { "Password" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_password_();
+
+    @Default(lngs = { "en" }, values = { "Account active" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled();
+
+    @Default(lngs = { "en" }, values = { "Your Account has been deactivated because your Email has not been confirmed yet. We sent you an Email to confirm your adress. Please click the Link in the Email." })
+    String MyJDownloaderSettingsPanel_runInEDT_account_unconfirmed_();
+
+    @Default(lngs = { "en" }, values = { "Your Account has been deactivated because an error occured: %s1" })
+    String MyJDownloaderSettingsPanel_runInEDT_account_unknown(String string);
+
+    @Default(lngs = { "en" }, values = { "Your Account has been deactivated because the entered Username/Email or Password is wrong." })
+    String MyJDownloaderSettingsPanel_runInEDT_account_badlogins();
+
+    @Default(lngs = { "en" }, values = { "Connection estabilished. Great! Account: %s1" })
+    String MyJDownloaderSettingsPanel_runInEDT_connected_(String email);
+
+    @Default(lngs = { "en" }, values = { "Not Connected!" })
+    String MyJDownloaderSettingsPanel_runInEDT_disconnected_();
+
+    @Default(lngs = { "en" }, values = { "Connect" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_connect_();
+
+    @Default(lngs = { "en" }, values = { "Disconnect" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_disconnect_();
+
+    @Default(lngs = { "en" }, values = { "Auto connect" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_autoconnect_();
+
+    @Default(lngs = { "en" }, values = { "Auto connect on JDownloader start" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_autoconnect_tt();
+
+    @Default(lngs = { "en" }, values = { "Save Changes" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_reconnect_();
+
+    @Default(lngs = { "en" }, values = { "Local Settings" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_local();
+
+    @Default(lngs = { "en" }, values = { "My Account" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_remote();
+
+    @Default(lngs = { "en" }, values = { "Information and configuration of your My JDownloader Account" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_remote_description();
+
+    @Default(lngs = { "en" }, values = { "Enter the device name of this JDownloader instance. You can manage different JDownloader instances in one My JDownloader Account." })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_jd_name();
+
+    @Default(lngs = { "en" }, values = { "Device Name" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_devicename_();
+
+    @Default(lngs = { "en" }, values = { "Enter your My JDownloader Logins below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_jd_logins();
+
 }

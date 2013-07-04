@@ -49,7 +49,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         this.packagename = packagename;
         this.packageID = packageID;
         this.path = filepath;
-        setCountdownTime(60);
+        setTimeout(60000);
 
     }
 

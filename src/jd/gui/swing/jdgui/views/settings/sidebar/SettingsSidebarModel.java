@@ -10,6 +10,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.panels.GUISettings;
+import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
@@ -35,24 +36,25 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class SettingsSidebarModel extends DefaultListModel implements GenericConfigEventListener<Object>, ExtensionControllerListener {
 
-    private static final long      serialVersionUID = -204494527404304349L;
-    private ConfigPanelGeneral     cfg;
+    private static final long            serialVersionUID = -204494527404304349L;
+    private ConfigPanelGeneral           cfg;
 
-    private ReconnectSettings      rcs;
-    private ProxyConfig            pc;
-    private AccountManagerSettings ams;
-    private BasicAuthentication    ba;
-    private PluginSettings         ps;
-    private GUISettings            gs;
-    private Packagizer             pz;
-    private AdvancedSettings       ads;
-    private Linkgrabber            lg;
-    private ExtensionHeader        eh;
-    private ExtensionManager       extm;
-    private Object                 lock             = new Object();
+    private ReconnectSettings            rcs;
+    private ProxyConfig                  pc;
+    private AccountManagerSettings       ams;
+    private BasicAuthentication          ba;
+    private PluginSettings               ps;
+    private GUISettings                  gs;
+    private Packagizer                   pz;
+    private AdvancedSettings             ads;
+    private Linkgrabber                  lg;
+    private ExtensionHeader              eh;
+    private ExtensionManager             extm;
+    private Object                       lock             = new Object();
 
-    private SingleReachableState   TREE_COMPLETE    = new SingleReachableState("TREE_COMPLETE");
-    private final JList            list;
+    private SingleReachableState         TREE_COMPLETE    = new SingleReachableState("TREE_COMPLETE");
+    private final JList                  list;
+    protected MyJDownloaderSettingsPanel myJDownloader;
 
     public SettingsSidebarModel(JList list) {
         super();
@@ -170,6 +172,18 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         }.getReturnValue();
     }
 
+    private MyJDownloaderSettingsPanel getMyJDownloaderPanel() {
+        if (myJDownloader != null) return myJDownloader;
+
+        return new EDTHelper<MyJDownloaderSettingsPanel>() {
+            public MyJDownloaderSettingsPanel edtRun() {
+                if (myJDownloader != null) return myJDownloader;
+                myJDownloader = new MyJDownloaderSettingsPanel();
+                return myJDownloader;
+            }
+        }.getReturnValue();
+    }
+
     private Packagizer getPackagizer() {
         if (pz != null) return pz;
 
@@ -253,6 +267,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                         getBasicAuthentication();
                         getPluginSettings();
                         getGUISettings();
+                        getMyJDownloaderPanel();
                         getLinkgrabber();
                         getPackagizer();
                         if (!Application.isJared(Application.class)) {
@@ -271,6 +286,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                                 addElement(getBasicAuthentication());
                                 addElement(getPluginSettings());
                                 addElement(getGUISettings());
+                                addElement(getMyJDownloaderPanel());
                                 addElement(getLinkgrabber());
                                 addElement(getPackagizer());
                                 if (finalExtract != null) addElement(finalExtract);

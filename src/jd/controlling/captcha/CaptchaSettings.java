@@ -34,12 +34,12 @@ public interface CaptchaSettings extends ConfigInterface {
     void setSkipDownloadLinkOnCaptchaTimeoutEnabled(boolean b);
 
     @AboutConfig
-    @DefaultIntValue(20)
+    @DefaultIntValue(20000)
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
-    @DescriptionForConfigEntry("Seconds to wait until captcha dialog gets answered. Close dialog after this timeout unanswered")
-    int getCountdown();
+    @DescriptionForConfigEntry("MS to wait until captcha dialog gets answered. Close dialog after this timeout unanswered")
+    int getDialogCountdown();
 
-    void setCountdown(int seconds);
+    void setDialogCountdown(int seconds);
 
     // @DefaultIntValue(0)
     // int getLastCancelOption();
@@ -122,4 +122,11 @@ public interface CaptchaSettings extends ConfigInterface {
     boolean isRemoteCaptchaEnabled();
 
     void setRemoteCaptchaEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultIntValue(5 * 60 * 1000)
+    @DescriptionForConfigEntry("Timeout after which a challenge (captcha) invalidates (e.g sessions run out...) this timeout should be set by the plugins")
+    int getDefaultChallengeTimeout();
+
+    void setDefaultChallengeTimeout(int ms);
 }

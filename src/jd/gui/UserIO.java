@@ -134,7 +134,7 @@ public class UserIO {
     protected static UserIO INSTANCE                       = new UserIO();
 
     public UserIO() {
-        Dialog.getInstance().setCountdownTime(UserIO.getUserCountdownTime());
+        Dialog.getInstance().setDefaultTimeout(UserIO.getUserCountdownTime());
 
     }
 
@@ -144,14 +144,14 @@ public class UserIO {
      */
     public static void setCountdownTime(int countdownTime) {
         if (countdownTime < 0) {
-            Dialog.getInstance().setCountdownTime(UserIO.getUserCountdownTime());
+            Dialog.getInstance().setDefaultTimeout(UserIO.getUserCountdownTime() * 1000);
         } else {
-            Dialog.getInstance().setCountdownTime(countdownTime);
+            Dialog.getInstance().setDefaultTimeout(countdownTime * 1000);
         }
     }
 
     private static int getUserCountdownTime() {
-        return Math.max(2, JsonConfig.create(GraphicalUserInterfaceSettings.class).getDialogDefaultTimeout());
+        return Math.max(2, JsonConfig.create(GraphicalUserInterfaceSettings.class).getDialogDefaultTimeoutInMS() / 1000);
     }
 
     public static UserIO getInstance() {
@@ -303,6 +303,7 @@ public class UserIO {
                 }
 
             };
+            c.setTimeout(plugin.getCaptchaTimeout());
             plugin.invalidateLastChallengeResponse();
             if (CaptchaBlackList.getInstance().matches(c)) {
                 plugin.getLogger().warning("Cancel. Blacklist Matching");

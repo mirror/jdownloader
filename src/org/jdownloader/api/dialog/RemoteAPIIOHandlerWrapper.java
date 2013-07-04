@@ -92,7 +92,13 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
-                    ((AbstractDialog) ret.getImpl()).interrupt();
+                    try {
+                        if (!((AbstractDialog) ret.getImpl()).isDisposed()) {
+                            ((AbstractDialog) ret.getImpl()).interrupt();
+                        }
+                    } catch (Exception e) {
+
+                    }
                 }
             };
         }

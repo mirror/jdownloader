@@ -152,8 +152,8 @@ public abstract class PluginForDecrypt extends Plugin {
     public abstract ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception;
 
     /**
-     * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen Vector<String> mit den decoded
-     * Links setzen
+     * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen
+     * Vector<String> mit den decoded Links setzen
      * 
      * @param cryptedLink
      *            Ein einzelner verschlüsselter Link
@@ -423,6 +423,8 @@ public abstract class PluginForDecrypt extends Plugin {
                 }
             }
         };
+        int ct = getCaptchaTimeout();
+        c.setTimeout(ct);
         invalidateLastChallengeResponse();
         if (CaptchaBlackList.getInstance().matches(c)) {
             logger.warning("Cancel. Blacklist Matching");
