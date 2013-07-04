@@ -134,7 +134,7 @@ public class UserIO {
     protected static UserIO INSTANCE                       = new UserIO();
 
     public UserIO() {
-        Dialog.getInstance().setDefaultTimeout(UserIO.getUserCountdownTime());
+        setCountdownTime(UserIO.getUserCountdownTime());
 
     }
 
@@ -142,6 +142,7 @@ public class UserIO {
      * @param countdownTime
      *            sets the countdown time or resets it to the user-selected value, if <code>countdownTime < 0</code>
      */
+    @Deprecated
     public static void setCountdownTime(int countdownTime) {
         if (countdownTime < 0) {
             Dialog.getInstance().setDefaultTimeout(UserIO.getUserCountdownTime() * 1000);
@@ -150,6 +151,7 @@ public class UserIO {
         }
     }
 
+    @Deprecated
     private static int getUserCountdownTime() {
         return Math.max(2, JsonConfig.create(GraphicalUserInterfaceSettings.class).getDialogDefaultTimeoutInMS() / 1000);
     }
