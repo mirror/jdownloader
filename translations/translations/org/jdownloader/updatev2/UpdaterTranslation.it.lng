@@ -1,5 +1,7 @@
 RestartController_confirmToExit_=Uscire veramente?
 RestartController_confirmToExit_msg=Vuoi veramente uscire da JDonwloader?
+RestartController_confirmTorestart_msg=Vuoi veramente riavviare JDownloader?
+RestartController_confirmTorestart_title=Confermi il riavvio?
 TranslationProxyDialogAuthRequired=JDownloader non può connettersi a %s1! Il tuo proxy richiede un'autentificazione.\nVerifica le tue credenziali.
 TranslationProxyDialogNoConnection=JDownloader non può connettersi a %s1! Verifica le tue impostazioni di connessione...
 close_jd=Permessi di scrittura insufficienti %s1.\r\nProva a chiudere tutti i JDownloader e i processi Java in esecuzione e dopo prova ancora!\r\nPer favore contatta il nostro supporto se questo problema si presenta ancora, dopo aver riavviato il tuo sistema.
