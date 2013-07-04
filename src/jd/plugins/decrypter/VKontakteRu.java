@@ -73,6 +73,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String PATTERN_PHOTO_ALBUM           = ".*?(tag|album(\\-)?\\d+_|photos)\\d+";
     private static final String PATTERN_PHOTO_ALBUMS          = ".*?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)";
     private static final String PATTERN_WALL_LINK             = "https?://(www\\.)?vk\\.com/wall\\-\\d+";
+    private static final String PATTERN_PUBLIC_LINK           = "https?://(www\\.)?vk\\.com/public\\d+";
 
     private SubConfiguration    cfg                           = null;
 
@@ -82,6 +83,7 @@ public class VKontakteRu extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setReadTimeout(3 * 60 * 1000);
         String parameter = param.toString().replace("vkontakte.ru/", "vk.com/").replace("https://", "http://");
+        parameter = parameter.replace("vk.com/public", "vk.com/wall-");
         br.setCookiesExclusive(false);
         prepBrowser(br);
         if (parameter.matches(PATTERN_PHOTO_SINGLE)) {
@@ -173,7 +175,7 @@ public class VKontakteRu extends PluginForDecrypt {
                             logger.info("Link offline: " + parameter);
                             return decryptedLinks;
                         }
-                        final String profileAlbumsID = br.getRegex("\"(/albums\\d+)\\?profile=1\"").getMatch(0);
+                        final String profileAlbumsID = br.getRegex("id=\"profile_albums\">[\t\n\r ]+<a href=\"(/albums\\d+)\"").getMatch(0);
                         if (profileAlbumsID == null) {
                             logger.warning("Failed to find profileAlbumsID for user-link: " + parameter);
                             return null;

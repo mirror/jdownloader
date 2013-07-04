@@ -416,7 +416,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private void load() throws Exception {
             smBr = br.cloneBrowser();
-            getChallengeKey();
+            if (this.challenge == null) getChallengeKey();
             setServer();
             setPath();
             if (!smBr.getURL().contains("solvemedia.com/")) {
@@ -493,6 +493,10 @@ public class LnkCrptWs extends PluginForDecrypt {
         private void setPath() {
             path = "/papi/challenge.noscript?k=";
             if (!noscript) path = "/papi/_challenge.js?k=";
+        }
+
+        public void setChallengeKey(final String challengeKey) {
+            this.challenge = challengeKey;
         }
 
         public String getChallengeUrl() {

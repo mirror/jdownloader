@@ -59,6 +59,10 @@ public class XxxBunkerCom extends PluginForDecrypt {
             } catch (Throwable e) {
             }
         }
+        if (br.containsHTML(">FILE NOT FOUND<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.getURL().equals("http://xxxbunker.com/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

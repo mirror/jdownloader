@@ -158,7 +158,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
 
         /** Decrypt qualities start */
         /** First, find all available qualities */
-        final String[] qualities = { "hd1080URL", "hd720URL", "hqURL", "sdURL", "ldURL" };
+        final String[] qualities = { "hd1080URL", "hd720URL", "hqURL", "sdURL", "ldURL", "video_url" };
         for (final String quality : qualities) {
             final String currentQualityUrl = getQuality(quality);
             if (currentQualityUrl != null) {
@@ -194,18 +194,21 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             boolean qhq = cfg.getBooleanProperty("ALLOW_HQ", false);
             boolean q720 = cfg.getBooleanProperty("ALLOW_720", false);
             boolean q1080 = cfg.getBooleanProperty("ALLOW_720", false);
-            if (qld == false && qsd == false && qhq == false && q720 == false && q1080 == false) {
+            boolean others = cfg.getBooleanProperty("ALLOW_OTHERS", false);
+            if (qld == false && qsd == false && qhq == false && q720 == false && q1080 == false && others == false) {
                 qld = true;
                 qsd = true;
                 qhq = true;
                 q720 = true;
                 q1080 = true;
+                others = true;
             }
             if (qld) selectedQualities.add("ldURL");
             if (qsd) selectedQualities.add("sdURL");
             if (qhq) selectedQualities.add("hqURL");
             if (q720) selectedQualities.add("hd720URL");
             if (q1080) selectedQualities.add("hd1080URL");
+            if (others) selectedQualities.add("video_url");
         }
         for (final String selectedQualityValue : selectedQualities) {
             final DownloadLink dl = getVideoDownloadlink(selectedQualityValue);
@@ -222,8 +225,9 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     }
 
     private DownloadLink getVideoDownloadlink(final String qualityValue) {
-        final String directlink = FOUNDQUALITIES.get(qualityValue);
+        String directlink = FOUNDQUALITIES.get(qualityValue);
         if (directlink != null) {
+            directlink = Encoding.htmlDecode(directlink);
             final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new Random().nextInt(10000));
             dl.setProperty("directlink", directlink);
             dl.setProperty("qualityvalue", qualityValue);

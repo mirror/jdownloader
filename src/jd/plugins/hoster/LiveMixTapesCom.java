@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -29,7 +30,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -39,7 +42,7 @@ public class LiveMixTapesCom extends PluginForHost {
 
     private static final String CAPTCHATEXT            = "/captcha/captcha\\.gif\\?";
     private static final String MAINPAGE               = "http://www.livemixtapes.com/";
-    private static final String MUSTBELOGGEDIN         = ">You must be logged in to access this page|by Tweeting this mixtape or sharing it on Facebook";
+    private static final String MUSTBELOGGEDIN         = ">You must be logged in to access this page";
     private static final String ONLYREGISTEREDUSERTEXT = "Download is only available for registered users";
 
     public LiveMixTapesCom(PluginWrapper wrapper) {
@@ -65,12 +68,15 @@ public class LiveMixTapesCom extends PluginForHost {
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.livemixtapescom.only4registered", ONLYREGISTEREDUSERTEXT));
         } else {
-            if (!br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String captchaUrl = br.getRegex("\"(/captcha/captcha\\.gif\\?\\d+)\"").getMatch(0);
-            if (captchaUrl == null) captchaUrl = br.getRegex("<td width=\"200\">[\t\n\r ]+<img src=\"(/.*?)\"").getMatch(0);
-            if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            captchaUrl = "http://www.livemixtapes.com" + captchaUrl;
-            String code = getCaptchaCode(captchaUrl, downloadLink);
+            final String timestamp = br.getRegex("name=\"timestamp\" value=\"(\\d+)\"").getMatch(0);
+            final String challengekey = br.getRegex("ACPuzzle\\.create\\(\\'(.*?)\\'").getMatch(0);
+            if (timestamp == null || challengekey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+            final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+            sm.setChallengeKey(challengekey);
+            final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+            final String code = getCaptchaCode(cf, downloadLink);
+            final String chid = sm.getChallenge(code);
             // Usually we have a waittime here but it can be skipped
             // int waittime = 40;
             // String wait =
@@ -82,10 +88,10 @@ public class LiveMixTapesCom extends PluginForHost {
             // sleep(waittime * 1001, downloadLink);
             // }
             try {
-                br.postPage(br.getURL(), "code=" + code);
+                br.postPage(br.getURL(), "retries=0&timestamp=" + timestamp + "&adcopy_response=manual_challenge&adcopy_challenge=" + chid);
             } catch (Exception e) {
             }
-            if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("solvemedia\\.com/papi/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             dllink = br.getRedirectLocation();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

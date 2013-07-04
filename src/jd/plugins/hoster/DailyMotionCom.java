@@ -49,6 +49,7 @@ public class DailyMotionCom extends PluginForHost {
     private static final String ALLOW_HQ               = "ALLOW_HQ";
     private static final String ALLOW_720              = "ALLOW_720";
     private static final String ALLOW_1080             = "ALLOW_1080";
+    private static final String ALLOW_OTHERS           = "ALLOW_OTHERS";
 
     public DailyMotionCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -202,6 +203,7 @@ public class DailyMotionCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HQ, JDL.L("plugins.hoster.dailymotioncom.checkHQ", "Grab HQ?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720, JDL.L("plugins.hoster.dailymotioncom.check720", "Grab 720p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080, JDL.L("plugins.hoster.dailymotioncom.check1080", "Grab 1080p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.dailymotioncom.checkother", "Grab other available qualities?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
     }
 
     @Override
