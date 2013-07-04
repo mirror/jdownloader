@@ -16,8 +16,8 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,6 +27,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetobox.com", "maxmirror.com", "exzip.net", "bikupload.com", "uploadseeds.com", "indirbindir.biz", "createmirror.com", "exoshare.com", "3ll3.in", "go4up.com", "uploadonall.com", "up4vn.com", "directmirror.com", "nextdown.net", "mirrorafile.com", "lougyl.com", "neo-share.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "mirrorfusion.com", "needmirror.com" }, urls = { "http://(www\\.)?filetobox\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?exzip\\.net/download/[0-9A-Z]{8}", "http://(www\\.)?bikupload\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?uploadseeds\\.com/(download\\.php\\?uid=|download/)[0-9A-Z]{8}",
         "http://(www\\.)?indirbindir\\.biz/files/[0-9A-Z]{8}", "http://(www\\.)?createmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "http://(www\\.)?3ll3\\.in/(files|dl)/\\w{14,18}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "https?://(www\\.)?up4vn\\.com/\\?go=[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}",
@@ -39,11 +40,23 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     private static final String DEFAULTREGEX = "<frame name=\"main\" src=\"(.*?)\">";
 
+    private Browser prepBrowser(Browser prepBr) {
+        // define custom browser headers and language settings.
+        /* we first have to load the plugin, before we can reference it */
+        JDUtilities.getPluginForHost("mediafire.com");
+        prepBr.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        prepBr.getHeaders().put("Accept-Charset", null);
+        prepBr.getHeaders().put("Pragma", null);
+        prepBr.setReadTimeout(3 * 60 * 1000);
+        prepBr.setFollowRedirects(true);
+        return prepBr;
+    }
+
     // This decrypter should handle nearly all sites using the qooy.com script!
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        br.setReadTimeout(3 * 60 * 1000);
+        prepBrowser(br);
         String parameter = param.toString();
         // Only uploadmirrors.com has those "/download/" links so we need to
         // correct them
@@ -68,25 +81,25 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         }
         if (parameter.contains("3ll3.in/")) {
             // do some more processing as status always claims its been removed.
-            br.getPage(parameter);
+            getPage(br, parameter);
             String url = br.getRegex("url=(http[^\"]+)").getMatch(0);
             if (url == null) {
                 logger.warning("Couldn't find url=!! Please inform the support. : " + param.toString());
             } else
-                br.getPage(url);
+                getPage(br, url);
         } else if (parameter.contains("uploadmirrors.com")) {
-            br.getPage(parameter);
+            getPage(br, parameter);
             String status = br.getRegex("ajaxRequest\\.open\\(\"GET\", \"(/[A-Za-z0-9]+\\.php\\?uid=" + id + "&name=[^<>\"/]*?)\"").getMatch(0);
             if (status == null) {
                 logger.warning("Couldn't find status : " + param.toString());
                 return null;
             }
-            br.getPage(protocol + host + status);
+            getPage(br, protocol + host + status);
         } else if (parameter.matches(".+(up4vn\\.com|go4up\\.com)/.+")) {
             // use standard page, status.php doesn't exist
-            br.getPage(parameter);
+            getPage(br, parameter);
         } else {
-            br.getPage(protocol + host + "/status.php?uid=" + id);
+            getPage(br, protocol + host + "/status.php?uid=" + id);
         }
         /* Error handling */
         if (!br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">") || ((parameter.contains("3ll3.in/")) && br.containsHTML("<h1>FILE NOT FOUND</h1>"))) {
@@ -109,7 +122,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             // Handling for links that need to be regexed or that need to be get
             // by redirect
             if (singlelink.contains("/redirect") || singlelink.contains("/rd/") || singlelink.matches("/r/.+") || singlelink.matches("/dl/.+") || singlelink.matches("/mirror/.+")) {
-                brc.getPage(protocol + host + singlelink);
+                getPage(brc, protocol + host + singlelink);
                 dllink = decryptLink(brc, parameter);
             } else {
                 // Handling for already regexed final-links
@@ -130,7 +143,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String decryptLink(Browser brc, final String parameter) throws IOException {
+    private String decryptLink(Browser brc, final String parameter) throws Exception {
         String dllink = null;
         if (parameter.contains("flameupload.com/")) {
             dllink = brc.getRegex(">Download Link:<br><a href=\"([^\"]+)").getMatch(0);
@@ -139,13 +152,14 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("needmirror.com/")) {
             dllink = brc.getRegex(">Please <a href=\"([^\"\\']+)\"").getMatch(0);
         } else if (parameter.contains("go4up.com/")) {
-            dllink = brc.getRegex("window\\.location = \"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = brc.getRedirectLocation();
+            if (dllink == null) dllink = brc.getRegex("window\\.location = \"(http[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("qooy.com/")) {
             dllink = brc.getRegex("<a style=\"text\\-decoration: none;border:none;\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("exzip.net/") || parameter.contains("maxmirror.com/")) {
             dllink = brc.getRegex("\"(/down/[A-Z0-9]{8}/\\d+)\"").getMatch(0);
             if (dllink != null) {
-                brc.getPage(dllink);
+                getPage(brc, dllink);
                 dllink = brc.getRegex(DEFAULTREGEX).getMatch(0);
             }
         } else {
@@ -155,6 +169,32 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             }
         }
         return dllink;
+    }
+
+    private Browser getPage(Browser ibr, String url) throws Exception {
+        if (ibr == null || url == null) return null;
+        boolean failed = false;
+        int repeat = 4;
+        for (int i = 0; i <= repeat; i++) {
+            long meep = new Random().nextInt(5) * 1000;
+            if (failed) {
+                Thread.sleep(meep);
+                failed = false;
+            }
+            try {
+                ibr.getPage(url);
+                if (ibr.getRedirectLocation() != null || ibr.getURL().contains(url)) {
+                    break;
+                }
+            } catch (Throwable e) {
+                failed = true;
+                continue;
+            }
+        }
+        if (failed) {
+            logger.warning("Exausted getPage retry count");
+        }
+        return ibr;
     }
 
     /* NO OVERRIDE!! */

@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,14 +29,10 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -66,24 +61,23 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ryushare.com" }, urls = { "https?://(www\\.)?ryushare\\.com/((vid)?embed\\-)?[a-z0-9]{10,12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "treefiles.com" }, urls = { "https?://(www\\.)?treefiles\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
-public class RyuShareCom extends PluginForHost {
+public class TreeFilesCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://ryushare.com";
+    private final String               COOKIE_HOST                  = "http://treefiles.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(ryushare\\.com)";
+    private final String               DOMAINS                      = "(treefiles\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final boolean              videoHoster                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = true;
+    private final boolean              useRUA                       = false;
     private final boolean              useAltExpire                 = true;
     private final boolean              useAltLinkCheck              = false;
 
@@ -95,17 +89,14 @@ public class RyuShareCom extends PluginForHost {
     // XfileShare Version 3.0.6.0
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
-    // captchatype: keycaptcha
+    // captchatype: recaptcha
     // other: no redirects
     // mods:
-
-    // TODO: feature to factor in current download IP. NOTE: this current mod might not work well with JD2 multi-proxing, until thats
-    // implemented.
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -17;
+            chunks = 0;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -117,7 +108,7 @@ public class RyuShareCom extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -17;
+            chunks = 0;
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -158,17 +149,17 @@ public class RyuShareCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public RyuShareCom(PluginWrapper wrapper) {
+    public TreeFilesCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // make sure the downloadURL protocol is of site ability and user preference
         correctDownloadLink(downloadLink);
-        fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{10,12})$").getMatch(0);
+        fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         br.setFollowRedirects(true);
         prepBrowser(br);
 
@@ -332,17 +323,16 @@ public class RyuShareCom extends PluginForHost {
             final Browser obr = br.cloneBrowser();
             final Browser obrc = cbr.cloneBrowser();
             if (!useAltEmbed) {
-                br.getPage("/vidembed-" + fuid);
-                dllink = br.getRedirectLocation();
+                getPage("/vidembed-" + fuid);
             } else {
                 // alternative embed format
                 String embed = cbr.getRegex("(http[^\"']+" + DOMAINS + "/embed-" + fuid + "-\\d+x\\d+\\.html)").getMatch(0);
                 if (inValidate(embed) && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mpeg4?|mpg|ogm|vob|wmv|webm)$")) embed = "/embed-" + fuid + ".html";
                 if (!inValidate(embed)) {
                     getPage(embed);
-                    getDllink();
                 }
             }
+            getDllink();
             if (inValidate(dllink)) {
                 logger.warning("Failed to find 'embed dllink'");
                 br = obr;
@@ -428,7 +418,7 @@ public class RyuShareCom extends PluginForHost {
                             }
                         }
                     }
-                    if (inValidate(captchaurl)) {
+                    if (inValidate(code)) {
                         logger.warning("Standard captcha captchahandling broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -659,7 +649,7 @@ public class RyuShareCom extends PluginForHost {
             if (cbr.containsHTML("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         // monitor this
-        if (cbr.containsHTML("(class=\"err\">You have reached the download(\\-| )limit(\\!\\!\\!|[^<]+for last)[^<]+)")) {
+        if (cbr.containsHTML("(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
             /*
              * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
              * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
@@ -729,7 +719,7 @@ public class RyuShareCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String space[] = cbr.getRegex(">Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getRow(0);
+        final String space[] = cbr.getRegex(">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -869,29 +859,6 @@ public class RyuShareCom extends PluginForHost {
             getPage(downloadLink.getDownloadURL());
             doFree(downloadLink, account);
         } else {
-            try {
-                SubConfiguration config = null;
-                try {
-                    config = getPluginConfig();
-                    if (config.getBooleanProperty("premIssueShown", Boolean.FALSE) == false) {
-                        if (config.getProperty("premIssueShown") == null) {
-                            premiumWarning();
-                        } else {
-                            config = null;
-                        }
-                    } else {
-                        config = null;
-                    }
-                } catch (final Throwable e) {
-                } finally {
-                    if (config != null) {
-                        config.setProperty("premIssueShown", Boolean.TRUE);
-                        config.setProperty("premIssueShown", "shown");
-                        config.save();
-                    }
-                }
-            } catch (final Throwable b) {
-            }
             logger.info(account.getUser() + " @ " + acctype + " -> Premium Download");
             dllink = checkDirectLink(downloadLink);
             if (inValidate(dllink)) {
@@ -966,39 +933,6 @@ public class RyuShareCom extends PluginForHost {
                     controlSlot(-1, account);
                 }
             }
-        }
-    }
-
-    private static void premiumWarning() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = "RyuShare Premium-Probleme";
-                            message = "Hi, Falls du Probleme beim Downloaden von RyuShare hast, öffne bitte die 'Mein Account' Seite (klicke ok) und aktiviere 'direct downloads'.\r\n";
-                            message += "Indem du das tust werden RyuShare Links, die du im Browser öffnest sofort heruntergeladen.\r\n";
-                            message += "Dies scheint die einzige Lösung für die RyuShare Premium Probleme mit JD zu sein. Wenn du Feedback geben willst, besuche bitte unser Supportforum: http://board.jdownloader.org";
-                        } else {
-                            title = "RyuShare Premium Issues";
-                            message = "Hi, If you're experiencing download issues with RyuShare Premium, please visit 'My Account' control panel (click ok) and enable 'direct downloads'.\r\n";
-                            message += "By enabling 'direct downloads' it automatically starts downloading when viewing Ryushare links in your browser.\r\n";
-                            message += "This seems to be the only solution for Ryushare Premium download issues. For feedback please visit our forum http://board.jdownloader.org";
-                        }
-                        if (CrossSystem.isOpenBrowserSupported()) {
-                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://ryushare.com/my-account.python"));
-                        }
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
         }
     }
 

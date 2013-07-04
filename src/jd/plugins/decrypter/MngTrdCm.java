@@ -66,11 +66,9 @@ public class MngTrdCm extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://www.mangatraders.com/download/file/" + dl));
         }
 
-        // Catch for the first page and links within subsequence pages. Instead
-        // of loading back into the plugin as this creates multiple packages of
-        // the same name (==bad|dirty).
-        // Might need to adjust in the future. As far as I could tell all pages
-        // are shown on the first page.
+        // Catch for the first page and links within subsequence pages. Instead of loading back into the plugin as this creates multiple
+        // packages of the same name (==bad|dirty). Might need to adjust in the future. As far as I could tell all pages are shown on the
+        // first page.
         if (pages != null && pages.length != 0) {
             for (String page : pages) {
                 br.getPage(page);

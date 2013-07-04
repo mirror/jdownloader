@@ -376,10 +376,13 @@ public class SaleFilesCom extends PluginForHost {
                 if (dlForm.containsHTML(";background:#ccc;text-align")) {
                     logger.info("Detected captcha method \"Plaintext Captcha\"");
                     /** Captcha method by ManiacMansion */
-                    final String[][] letters = dlForm.getRegex("<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
+                    String[][] letters = dlForm.getRegex("<span style=\"position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\">(&#\\d+;)</span>").getMatches();
                     if (letters == null || letters.length == 0) {
-                        logger.warning("plaintext captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        letters = cbr.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
+                        if (letters == null || letters.length == 0) {
+                            logger.warning("plaintext captchahandling broken!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                     final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
                     for (String[] letter : letters) {
@@ -468,7 +471,7 @@ public class SaleFilesCom extends PluginForHost {
                 getDllink();
                 if (inValidate(dllink) && (getFormByKey(cbr, "op", "download2") == null || i == repeat)) {
                     if (i == repeat)
-                        logger.warning("Exausted repeat count, after dllink == null");
+                        logger.warning("Exausted repeat count, after 'dllink == null'");
                     else
                         logger.warning("Couldn't find 'download2' and 'dllink == null'");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

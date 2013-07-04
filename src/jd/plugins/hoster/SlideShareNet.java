@@ -56,7 +56,14 @@ public class SlideShareNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (Exception e) {
+            if (br.getHttpConnection().getResponseCode() == 410)
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            else
+                throw e;
+        }
         if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

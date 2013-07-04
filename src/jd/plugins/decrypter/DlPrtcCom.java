@@ -229,7 +229,7 @@ public class DlPrtcCom extends PluginForDecrypt {
         }
 
         cbr = br.cloneBrowser();
-        cbr = cleanupBrowser(cbr, toClean);
+        cleanupBrowser(cbr, toClean);
     }
 
     private void rmCookie(String parameter) {
@@ -251,27 +251,32 @@ public class DlPrtcCom extends PluginForDecrypt {
      *            Provided replacement string output browser
      * @author raztoki
      * */
-    private Browser cleanupBrowser(final Browser ibr, final String t) throws Exception {
-        if (br.isDebug()) logger.info("\r\ndirtyMD5sum = " + JDHash.getMD5(ibr.toString()) + "\r\ncleanMD5sum = " + JDHash.getMD5(t) + "\r\n");
-        Request req = ibr.createRequest(ibr.getURL());
-        URLConnectionAdapter con = ibr.getRequest().getHttpConnection();
-        req = new Request(con) {
+    private void cleanupBrowser(final Browser ibr, final String t) throws Exception {
+        String dMD5 = JDHash.getMD5(ibr.toString());
+        // preserve valuable original request components.
+        final String oURL = ibr.getURL();
+        final URLConnectionAdapter con = ibr.getRequest().getHttpConnection();
+
+        Request req = new Request(oURL) {
             {
                 requested = true;
+                httpConnection = con;
+                setHtmlCode(t);
             }
 
-            @Override
             public long postRequest() throws IOException {
                 return 0;
             }
 
-            @Override
             public void preRequest() throws IOException {
             }
         };
-        req.setHtmlCode(t);
+
         ibr.setRequest(req);
-        return ibr;
+        if (ibr.isDebug()) {
+            logger.info("\r\ndirtyMD5sum = " + dMD5 + "\r\ncleanMD5sum = " + JDHash.getMD5(ibr.toString()) + "\r\n");
+            System.out.println(ibr.toString());
+        }
     }
 
     private void getPage(final String page) throws Exception {
