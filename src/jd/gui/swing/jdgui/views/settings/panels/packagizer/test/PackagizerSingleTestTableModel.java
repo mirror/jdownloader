@@ -41,10 +41,6 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
                 return 60;
             }
 
-            public boolean isPaintWidthLockIcon() {
-                return false;
-            }
-
             protected boolean isDefaultResizable() {
 
                 return false;
@@ -137,10 +133,6 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
                 return 100;
             }
 
-            public boolean isPaintWidthLockIcon() {
-                return false;
-            }
-
             protected boolean isDefaultResizable() {
 
                 return false;
@@ -178,10 +170,6 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
                 return 80;
             }
 
-            public boolean isPaintWidthLockIcon() {
-                return false;
-            }
-
             protected boolean isDefaultResizable() {
 
                 return false;
@@ -200,10 +188,6 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
             public int getDefaultWidth() {
                 return 65;
-            }
-
-            public boolean isPaintWidthLockIcon() {
-                return false;
             }
 
             protected Icon getIcon(final CrawledLink value) {
@@ -230,10 +214,6 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
             public int getDefaultWidth() {
                 return 100;
-            }
-
-            public boolean isPaintWidthLockIcon() {
-                return false;
             }
 
             protected boolean isDefaultResizable() {

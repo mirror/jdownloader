@@ -172,9 +172,4 @@ public class OrderColumn extends ExtComponentColumn<PackagizerRule> {
         return false;
     }
 
-    @Override
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
 }

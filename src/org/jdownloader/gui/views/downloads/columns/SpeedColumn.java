@@ -61,10 +61,6 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         });
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     public JPopupMenu createHeaderPopup() {
 
         final JPopupMenu ret = new JPopupMenu();

@@ -186,10 +186,6 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
 
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     @Override
     protected boolean isDefaultResizable() {
         return false;

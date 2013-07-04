@@ -37,10 +37,6 @@ public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
         return isEditable(obj);
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     @Override
     protected void setStringValue(String value, AbstractNode object) {
         DownloadLink dl = null;

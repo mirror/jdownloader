@@ -58,10 +58,6 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
         return false;
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     @Override
     protected Icon getIcon(AbstractNode value) {
         if (DownloadWatchDog.getInstance().isStopMark(value)) { return icon; }

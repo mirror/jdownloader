@@ -95,10 +95,6 @@ public class PriorityColumn extends ExtIconColumn<AbstractNode> {
         return false;
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     // /**
     // * Sets max width to 30. overwrite to set other maxsizes
     // */

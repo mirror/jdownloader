@@ -19,10 +19,6 @@ public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
         super(_GUI._.RemainingColumn_RemainingColumn());
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     // @Override
     // public int getMaxWidth() {
     //

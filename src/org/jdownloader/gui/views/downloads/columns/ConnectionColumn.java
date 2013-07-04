@@ -154,10 +154,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
         return false;
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     @Override
     public boolean isSortable(AbstractNode obj) {
         return true;

@@ -41,10 +41,6 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
         return false;
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     @Override
     protected Icon getIcon(AbstractNode value) {
         AvailableStatus status = null;

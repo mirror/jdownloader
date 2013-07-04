@@ -138,10 +138,6 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
         return obj.isEnabled();
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     @Override
     public boolean isSortable(AbstractNode obj) {
         return true;

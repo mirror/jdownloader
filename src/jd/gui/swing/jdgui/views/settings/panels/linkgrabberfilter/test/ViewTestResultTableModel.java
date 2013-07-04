@@ -27,10 +27,6 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
                 return 100;
             }
 
-            public boolean isPaintWidthLockIcon() {
-                return false;
-            }
-
             protected boolean isDefaultResizable() {
 
                 return false;
@@ -116,10 +112,6 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
                 return 120;
             }
 
-            public boolean isPaintWidthLockIcon() {
-                return false;
-            }
-
             protected boolean isDefaultResizable() {
 
                 return false;
@@ -161,10 +153,6 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
                 return 80;
             }
 
-            public boolean isPaintWidthLockIcon() {
-                return false;
-            }
-
             protected boolean isDefaultResizable() {
 
                 return false;
@@ -178,10 +166,6 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
         addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_filetype_()) {
             public int getDefaultWidth() {
                 return 65;
-            }
-
-            public boolean isPaintWidthLockIcon() {
-                return false;
             }
 
             protected Icon getIcon(final CrawledLink value) {
@@ -203,10 +187,6 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
         addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_hoster()) {
             public int getDefaultWidth() {
                 return 100;
-            }
-
-            public boolean isPaintWidthLockIcon() {
-                return false;
             }
 
             protected boolean isDefaultResizable() {

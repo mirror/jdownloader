@@ -23,10 +23,6 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
 
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     @Override
     public boolean isEnabled(AbstractNode obj) {
         if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }

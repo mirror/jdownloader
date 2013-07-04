@@ -16,10 +16,6 @@ public class DurationColumn extends ExtTextColumn<AbstractNode> {
         rendererField.setHorizontalAlignment(SwingConstants.CENTER);
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     @Override
     protected boolean isDefaultResizable() {
         return false;

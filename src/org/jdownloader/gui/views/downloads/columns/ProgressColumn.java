@@ -147,10 +147,6 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
         return 16;
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     @Override
     public int getDefaultWidth() {
         return 100;

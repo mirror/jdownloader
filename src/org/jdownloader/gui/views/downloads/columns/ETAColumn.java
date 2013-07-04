@@ -52,10 +52,6 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
         return 80;
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     @Override
     public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();

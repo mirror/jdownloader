@@ -52,10 +52,6 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         return 180;
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     @Override
     public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();

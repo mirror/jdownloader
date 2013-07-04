@@ -64,11 +64,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         setClickcount(0);
         hideSinglePackage = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
         CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.getEventSender().addListener(this, true);
-    }
 
-    public boolean isPaintWidthLockIcon() {
-
-        return false;
     }
 
     @Override

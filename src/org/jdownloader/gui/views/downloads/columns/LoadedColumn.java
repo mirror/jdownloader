@@ -23,10 +23,6 @@ public class LoadedColumn extends ExtFileSizeColumn<AbstractNode> {
         return false;
     }
 
-    public boolean isPaintWidthLockIcon() {
-        return false;
-    }
-
     @Override
     public int getDefaultWidth() {
         return 90;
