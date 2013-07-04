@@ -91,7 +91,7 @@ public class AkaFileCom extends PluginForHost {
     // protocol: has https but, not setup correctly
     // captchatype: null
     // other: no redirects
-    // mods:
+    // mods: redirects to some lame .php pages. added extra validation of acceptable dllink
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -575,13 +575,15 @@ public class AkaFileCom extends PluginForHost {
         cleanupBrowser(cbr, toClean);
     }
 
+    private String dlregex = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/dl)?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
+
     private String regexDllink(final String source) {
-        return new Regex(source, "(\"|')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/dl)?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+)(\"|')").getMatch(1);
+        return new Regex(source, "(\"|')(" + dlregex + ")(\"|')").getMatch(1);
     }
 
     private void getDllink() {
         dllink = br.getRedirectLocation();
-        if (inValidate(dllink)) {
+        if (inValidate(dllink) || !dllink.matches(dlregex)) {
             dllink = regexDllink(cbr.toString());
             if (inValidate(dllink)) {
                 final String cryptedScripts[] = cbr.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
@@ -857,12 +859,14 @@ public class AkaFileCom extends PluginForHost {
         br.setFollowRedirects(false);
         if (account.getBooleanProperty("free")) {
             getPage(downloadLink.getDownloadURL());
+            if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches(dlregex)) getPage(br.getRedirectLocation());
             doFree(downloadLink, account);
         } else {
             logger.info(account.getUser() + " @ " + acctype + " -> Premium Download");
             dllink = checkDirectLink(downloadLink);
             if (inValidate(dllink)) {
                 getPage(downloadLink.getDownloadURL());
+                if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches(dlregex)) getPage(br.getRedirectLocation());
                 getDllink();
                 if (inValidate(dllink)) {
                     checkErrors(downloadLink, true);

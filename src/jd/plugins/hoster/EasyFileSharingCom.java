@@ -112,7 +112,7 @@ public class EasyFileSharingCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-
+            if (br.containsHTML("<div class=\"error\">Your requested file is not found</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML(">AccessKey is expired, please request")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error, waittime skipped?");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
