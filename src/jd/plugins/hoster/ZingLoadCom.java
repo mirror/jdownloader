@@ -94,6 +94,7 @@ public class ZingLoadCom extends PluginForHost {
     // captchatype: null
     // other: no redirects
     // mods:
+    // other: sister site easybytez.com
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
