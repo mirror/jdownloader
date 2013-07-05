@@ -21,6 +21,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -73,6 +75,58 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
         this.download = NewTheme.I().getIcon("download", 16);
         this.wait = NewTheme.I().getIcon("wait", 16);
         this.ipwait = NewTheme.I().getIcon("auto-reconnect", 16);
+
+        this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
+            @Override
+            public int compare(final AbstractNode o1, final AbstractNode o2) {
+
+                final long l1 = getLong(o1);
+                final long l2 = getLong(o2);
+                if (l1 == l2) { return 0; }
+                if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
+                    return l1 > l2 ? -1 : 1;
+                } else {
+                    return l1 < l2 ? -1 : 1;
+                }
+            }
+
+        });
+    }
+
+    protected long getLong(AbstractNode value) {
+        if (value instanceof DownloadLink) {
+            DownloadLink dlLink = ((DownloadLink) value);
+            if (dlLink.isEnabled()) {
+                if (dlLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                    long speed = dlLink.getDownloadSpeed();
+                    if (speed > 0) {
+                        if (dlLink.getDownloadSize() < 0) {
+                            return -1;
+                        } else {
+                            long remainingBytes = (dlLink.getDownloadSize() - dlLink.getDownloadCurrent());
+                            long eta = remainingBytes / speed;
+                            return eta;
+                        }
+                    } else {
+                        return 0;
+                    }
+                } else {
+                    long ret = getWaitingTimeout(dlLink);
+                    if (ret > 0) return (ret / 1000);
+                }
+            }
+        } else if (value instanceof FilePackage) {
+            long eta = ((FilePackage) value).getView().getETA();
+            if (eta > 0) {
+                return eta;
+            } else if (eta == Integer.MIN_VALUE) {
+                /*
+                 * no size known, no eta,show infinite symbol
+                 */
+                return Long.MAX_VALUE;
+            }
+        }
+        return -2;
     }
 
     @Override
