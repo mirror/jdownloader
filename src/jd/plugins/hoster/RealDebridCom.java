@@ -158,10 +158,6 @@ public class RealDebridCom extends PluginForHost {
                         // download is 100%
                         break;
                     }
-                    if (this.isAborted(link)) {
-                        // if user aborts
-                        break;
-                    }
                     if (link.getLinkStatus().getErrorMessage().contains("Unexpected rangeheader format:")) {
                         logger.warning("Bad Range Header! Resuming isn't possible without resetting");
                         new PluginException(LinkStatus.ERROR_FATAL);
@@ -179,6 +175,7 @@ public class RealDebridCom extends PluginForHost {
                 }
             } catch (Throwable e) {
                 if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof InterruptedException) throw (InterruptedException) e;
                 sleep(3000, link);
                 LogSource.exception(logger, e);
                 continue;
@@ -491,6 +488,5 @@ public class RealDebridCom extends PluginForHost {
         }
         return false;
     }
-
 
 }

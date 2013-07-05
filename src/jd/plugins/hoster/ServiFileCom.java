@@ -99,7 +99,17 @@ public class ServiFileCom extends PluginForHost {
 
         String getLink = br.getRegex(GETLINKREGEX).getMatch(0);
         if (getLink == null) getLink = br.getRegex(GETLINKREGEX2).getMatch(0);
-        if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (getLink == null) {
+            if (br.containsHTML("Free users have a limit of")) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only for premium users");
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // waittime
         String ttt = br.getRegex("var time = (\\d+);").getMatch(0);
         int tt = 60;

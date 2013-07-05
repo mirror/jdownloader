@@ -90,7 +90,6 @@ public class TeraFilesNet extends PluginForHost {
             try {
                 ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(Encoding.urlDecode(ftp_dl, true), downloadLink, true);
             } catch (InterruptedIOException e) {
-                if (downloadLink.isAborted()) return;
                 throw e;
             } catch (IOException e) {
                 if (e.toString().contains("maximum number of clients")) {

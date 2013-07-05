@@ -64,6 +64,24 @@ public class Freaksharenet extends PluginForHost {
     }
 
     @Override
+    public Boolean rewriteHost(Account acc) {
+        if ("freakshare.net".equals(getHost())) {
+            if (acc != null && "freakshare.net".equals(acc.getHoster())) {
+                acc.setHoster("freakshare.com");
+                return true;
+            }
+            return false;
+        }
+        return null;
+    }
+
+    @Override
+    public boolean isPremiumEnabled() {
+        if ("freakshare.com".equals(getHost())) return true;
+        return false;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(false);

@@ -1,7 +1,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -63,9 +62,6 @@ public class HdmekaniCom extends PluginForHost {
             if (e.getMessage() != null && e.getMessage().contains("530")) {
                 downloadLink.getLinkStatus().setErrorMessage("Login incorrect");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            if (e instanceof InterruptedIOException) {
-                if (downloadLink.isAborted()) return;
             }
             throw e;
         }

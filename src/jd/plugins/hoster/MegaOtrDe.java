@@ -62,7 +62,6 @@ public class MegaOtrDe extends PluginForHost {
         try {
             ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(dllink, downloadLink, false);
         } catch (InterruptedIOException e) {
-            if (downloadLink.isAborted()) return;
             throw e;
         }
     }

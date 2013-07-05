@@ -44,8 +44,6 @@ public class RemixShareCom extends PluginForHost {
 
     public static final String BLOCKED = "(class=\"blocked\"|>Von Deiner IP Adresse kamen zu viele Anfragen innerhalb kurzer Zeit\\.)";
 
-    public static Object       LOCK    = new Object();
-
     public RemixShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(3000l);
@@ -122,11 +120,6 @@ public class RemixShareCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        synchronized (LOCK) {
-            if (this.isAborted(downloadLink)) return AvailableStatus.TRUE;
-            /* wait 1.5 seconds between filechecks */
-            Thread.sleep(1500);
-        }
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://remixshare.com", "lang_en", "english");

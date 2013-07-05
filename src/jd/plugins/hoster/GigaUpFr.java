@@ -90,7 +90,6 @@ public class GigaUpFr extends PluginForHost {
         try {
             ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(Encoding.urlDecode(dllink, true), downloadLink, false);
         } catch (InterruptedIOException e) {
-            if (downloadLink.isAborted()) return;
             throw e;
         } catch (IOException e) {
             if (e.toString().contains("maximum number of clients")) {
