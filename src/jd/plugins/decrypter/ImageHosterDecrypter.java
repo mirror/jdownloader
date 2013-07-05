@@ -151,7 +151,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             if (finallink == null) {
                 finallink = br.getRegex("\"(http://ist\\d+\\-\\d+\\.filesor\\.com/pimpandhost\\.com/.*?)\"").getMatch(0);
             }
-        } else if (parameter.matches("imgchili\\.(com|net)/.+")) {
+        } else if (parameter.matches(".+imgchili\\.(com|net)/.+")) {
             br.getPage(parameter.replace(".net/", ".com/"));
             if (br.containsHTML("does not exist\\. <")) {
                 logger.info("Link offline: " + parameter);
@@ -161,7 +161,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             if (finallink == null) {
                 finallink = br.getRegex("\"(http://i\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_]+\\.[a-z]{1,5})\"").getMatch(0);
             }
-            finalfilename = new Regex(parameter, "imgchili\\.(com|net)/show/\\d+/(.+)").getMatch(0);
+            finalfilename = new Regex(parameter, "imgchili\\.(com|net)/show/\\d+/(.+)").getMatch(1);
         } else if (parameter.contains("9gag.com/")) {
             br.setFollowRedirects(true);
             br.getPage(parameter);
