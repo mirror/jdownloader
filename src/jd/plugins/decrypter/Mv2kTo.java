@@ -36,6 +36,8 @@ public class Mv2kTo extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)?movie4k\\.to/[a-z0-9\\-_]+\\-all\\-\\d+\\.html";
+
     /**
      * Description of the regexes array: 1= nowvideo.co,streamcloud.com 2=flashx.tv,veervid.com,ginbig
      * .com,vidbux.com,xvidstage.com,vidstream.in ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos .net,putlocker
@@ -46,9 +48,13 @@ public class Mv2kTo extends PluginForDecrypt {
         String parameter = param.toString().replace("movie2k.to/", "movie4k.to/");
         String initalMirror = parameter.substring(parameter.lastIndexOf("/") + 1);
         br.setFollowRedirects(true);
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (br.getURL().endsWith("/error404.php")) {
-            logger.info("Invalid URL, or the URL doesn't exist any longer");
+            logger.info("Invalid URL, or the URL doesn't exist any longer: " + parameter);
             return decryptedLinks;
         }
         String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online \\- Watch Movies Online, Full Movies, Download</title>").getMatch(0);

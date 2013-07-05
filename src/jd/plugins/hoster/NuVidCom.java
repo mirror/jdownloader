@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nuvid.com" }, urls = { "http://(www\\.)?nuvid\\.com/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nuvid.com" }, urls = { "http://(www\\.)?nuvid\\.com/(video|embed)/\\d+" }, flags = { 0 })
 public class NuVidCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -43,6 +43,10 @@ public class NuVidCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.nuvid.com/static/terms";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload("http://www.nuvid.com/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
     private void getDllink(final String linkPart) throws IOException {

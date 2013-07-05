@@ -11,7 +11,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "http://(www\\.)?redtube(\\.cn)?\\.com/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "http://(www\\.)?(redtube(\\.cn)?\\.com/|embed\\.redtube\\.com/video/info/\\?id=)\\d+" }, flags = { 0 })
 public class RedTubeCom extends PluginForHost {
     private String dlink = null;
 
@@ -84,7 +84,7 @@ public class RedTubeCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("redtube\\.cn\\.com", "redtube.com"));
+        link.setUrlDownload("http://www.redtube.com/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
     @Override

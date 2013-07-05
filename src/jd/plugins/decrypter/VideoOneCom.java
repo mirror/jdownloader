@@ -63,13 +63,29 @@ public class VideoOneCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        String fuu = jsString();
-        if (fuu == null) fuu = "";
-        String externID = new Regex(fuu, "starturl = \"(http[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
+        String externID = null;
+        String fuu = null;
+        final String continueURL = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/visions/[^<>\"]*?)\"").getMatch(0);
+        /** Maybe crypted? */
+        if (continueURL != null) {
+            br.getPage(continueURL);
+            fuu = jsString();
+            final String embedID = new Regex(continueURL, "\\.html\\?(.+)$").getMatch(0);
+            if (fuu == null || embedID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            externID = new Regex(fuu, "starturl = \"(http[^<>\"]*?)\"").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            externID += embedID;
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+
+        /** Or not crypted... */
         externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         if (externID == null) externID = br.getRegex("\\.html\\?video(\\d+)").getMatch(0);
         if (externID != null) {
@@ -176,6 +192,11 @@ public class VideoOneCom extends PluginForDecrypt {
         externID = br.getRegex("src=\"http://(www\\.)?embed\\.porntube\\.com/(\\d+)\"").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://porntube.com/videos/x_" + externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?nuvid\\.com/embed/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         // filename needed for all IDs below here

@@ -14,7 +14,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "http://[\\w\\.]*?mangastream\\.com/read/.*?/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "http://(www\\.)?mangastream\\.com/read/[a-z0-9\\-_/]+" }, flags = { 0 })
 public class MngStrm extends PluginForDecrypt {
 
     public MngStrm(PluginWrapper wrapper) {
@@ -24,33 +24,38 @@ public class MngStrm extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         String url = parameter.toString();
+        final String currentpage = new Regex(url, "(/\\d+)$").getMatch(0);
+        if (currentpage != null) {
+            final int check = Integer.parseInt(currentpage.substring(currentpage.lastIndexOf("/") + 1));
+            if (check < 1000) {
+                url = url.replace(currentpage, "");
+            }
+        }
         br.getPage(url + "/1");
-        if (br.containsHTML(">We couldn\\'t find the page you were looking for<")) {
+        if (br.containsHTML(">Page Not Found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String title = br.getRegex("<title>(.*?)- Read").getMatch(0);
-        if (title == null) return null;
-        String prefix = new Regex(url, "(/read.+)").getMatch(0);
-        String pages[] = br.getRegex("\"(" + prefix + "/\\d+)\"").getColumn(0);
-        if (pages == null) return null;
-        ArrayList<String> done = new ArrayList<String>();
-        for (String page : pages) {
-            if (done.contains(page)) continue;
-            done.add(page);
-            // System.out.println("---- " + page);
+        String title = br.getRegex("<title>([^<>\"]*?) \\- Manga Stream</title>").getMatch(0);
+        if (title == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
-        progress.setRange(done.size());
+        final String lastP = br.getRegex(">Last Page \\((\\d+)\\)<").getMatch(0);
+        if (lastP == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        final int lastPage = Integer.parseInt(lastP);
         NumberFormat formatter = new DecimalFormat("00");
-        for (String page : done) {
-            DownloadLink link = createDownloadlink("mangastream://" + page);
+        String urlPart = new Regex(url, "mangastream\\.com(/read/.+)").getMatch(0);
+        for (int i = 1; i <= lastPage; i++) {
+            DownloadLink link = createDownloadlink("mangastream://" + urlPart + "/" + i);
             link.setAvailableStatus(AvailableStatus.TRUE);
-            link.setFinalFileName(title.trim() + " – page " + formatter.format(Double.parseDouble(new Regex(page, ".+/(\\d+)$").getMatch(0))) + ".png");
+            link.setFinalFileName(title.trim() + " – page " + formatter.format(i) + ".png");
             decryptedLinks.add(link);
-
-            progress.increase(1);
         }
         FilePackage fp = FilePackage.getInstance();
         fp.setName(title.trim());

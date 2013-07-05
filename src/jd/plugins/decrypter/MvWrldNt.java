@@ -40,13 +40,14 @@ public class MvWrldNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String UNSUPPORTEDLINKS = "http://(www\\.)?(xxx\\-4\\-free\\.net|mov\\-world\\.net|chili\\-warez\\.net)//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|streams/index|stories/index|partner/anmelden|kontakt).*?\\.html";
+    private static final String UNSUPPORTEDLINKS        = "http://(www\\.)?(xxx\\-4\\-free\\.net|mov\\-world\\.net|chili\\-warez\\.net)//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|streams/index|stories/index|partner/anmelden|kontakt).*?\\.html";
+    private static final String SPECIALUNSUPPORTEDLINKS = "http://(www\\.)?chili\\-warez\\.net//[a-z0-9\\-_]+/[a-z0-9\\-_]+/seite\\-\\d+\\.html";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        if (parameter.matches(UNSUPPORTEDLINKS)) {
+        if (parameter.matches(UNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS)) {
             logger.info("Invalid link: " + parameter);
             return decryptedLinks;
         }

@@ -54,7 +54,7 @@ public class MxCloudCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?mixcloud\\.com/((developers|categories|media)/.+|[\\w\\-]+/playlists.+)";
+    private static final String INVALIDLINKS = "http://(www\\.)?mixcloud\\.com/((developers|categories|media|competitions)/.+|[\\w\\-]+/playlists.+)";
 
     private byte[] AESdecrypt(final byte[] plain, final byte[] key, final byte[] iv) throws Exception {
         final KeyParameter keyParam = new KeyParameter(key);

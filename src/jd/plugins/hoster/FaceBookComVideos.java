@@ -46,15 +46,16 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?facebook\\.com/(video/video\\.php\\?v=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=|(photo/)?photo\\.php\\?v=|photo\\.php\\?fbid=)\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
 
-    private String              FACEBOOKMAINPAGE       = "http://www.facebook.com";
-    private String              PREFERHD               = "http://www.facebook.com";
-    private static Object       LOCK                   = new Object();
-    public static String        Agent                  = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:10.0.2) Gecko/20100101 Firefox/10.0.2";
-    private boolean             pluginloaded           = false;
-    private static final String PHOTOLINK              = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
+    private String              FACEBOOKMAINPAGE           = "http://www.facebook.com";
+    private String              PREFERHD                   = "http://www.facebook.com";
+    private static Object       LOCK                       = new Object();
+    public static String        Agent                      = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:10.0.2) Gecko/20100101 Firefox/10.0.2";
+    private boolean             pluginloaded               = false;
+    private static final String PHOTOLINK                  = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
 
-    private String              DLLINK                 = null;
-    private static final String FASTLINKCHECK_PICTURES = "FASTLINKCHECK_PICTURES";
+    private String              DLLINK                     = null;
+    private static final String FASTLINKCHECK_PICTURES     = "FASTLINKCHECK_PICTURES";
+    private static final String USE_ALBUM_NAME_IN_FILENAME = "USE_ALBUM_NAME_IN_FILENAME";
 
     public FaceBookComVideos(final PluginWrapper wrapper) {
         super(wrapper);
@@ -112,7 +113,11 @@ public class FaceBookComVideos extends PluginForHost {
                     link.setDownloadSize(con.getLongContentLength());
                 else
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                link.setFinalFileName(filename + "_" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + ".jpg");
+                if (this.getPluginConfig().getBooleanProperty(USE_ALBUM_NAME_IN_FILENAME, false)) {
+                    link.setFinalFileName(filename + "_" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + ".jpg");
+                } else {
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
+                }
                 return AvailableStatus.TRUE;
             } finally {
                 try {
@@ -280,9 +285,15 @@ public class FaceBookComVideos extends PluginForHost {
         }
     }
 
+    @Override
+    public String getDescription() {
+        return "JDownloader's Facebook Plugin helps downloading videoclips and photo galleries. Facebook provides two different video qualities.";
+    }
+
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFERHD, JDL.L("plugins.hoster.facebookcomvideos.preferhd", "Prefer HD quality")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_PICTURES, JDL.L("plugins.hoster.facebookcomvideos.fastlinkcheckpictures", "Fast linkcheck for photo links (filesize won't be shown in linkgrabber)?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFERHD, JDL.L("plugins.hoster.facebookcomvideos.preferhd", "Videos: Prefer HD quality")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_PICTURES, JDL.L("plugins.hoster.facebookcomvideos.fastlinkcheckpictures", "Photos: Enable fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_ALBUM_NAME_IN_FILENAME, JDL.L("plugins.hoster.facebookcomvideos.usealbumnameinfilename", "Photos: Use album name in filename [note that filenames change once the download starts]?")).setDefaultValue(true));
     }
 
     private String unescape(final String s) {
