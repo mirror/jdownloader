@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,15 +53,16 @@ public class SlideShareNet extends PluginForHost {
 
     // TODO: Implement API: http://www.slideshare.net/developers/documentation
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         try {
             br.getPage(link.getDownloadURL());
         } catch (Exception e) {
-            if (br.getHttpConnection().getResponseCode() == 410)
+            if (br.getHttpConnection().getResponseCode() == 410) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            else
+            } else {
                 throw e;
+            }
         }
         if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
