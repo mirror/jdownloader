@@ -16,16 +16,23 @@
 package jd.gui.swing.laf;
 
 import java.awt.Toolkit;
+import java.io.File;
 import java.lang.reflect.Field;
+import java.net.URL;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.synthetica.SyntheticaHelper;
+import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
@@ -89,6 +96,7 @@ public class LookAndFeelController implements LAFManagerInterface {
     public synchronized void setUIManager() {
         if (uiInitated) return;
         uiInitated = true;
+
         if (CrossSystem.isLinux()) initLinux();
         long t = System.currentTimeMillis();
         try {
@@ -116,13 +124,37 @@ public class LookAndFeelController implements LAFManagerInterface {
             if (laf.contains("Synthetica") || laf.equals(DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL)) {
 
                 //
+                String liz = null;
                 try {
+                    if (!Application.isJared(LookAndFeelController.class)) {
+                        // enable the synthetica dev license for people working on our offical repo at svn.jdownloader.org
+                        // for all other mirror repos: please do not use our license
+                        URL url = Application.getRessourceURL("");
+                        File bin = new File(url.toURI());
+                        String str = IO.readFileToString(new File(bin.getParent(), ".svn/entries"));
+                        if (str.contains("svn://svn.jdownloader.org/jdownloader/trunk")) {
+                            if (Application.getResource("JDownloader.jar").exists()) {
+                                JarFile jf = new JarFile(Application.getResource("JDownloader.jar"));
+                                try {
+                                    JarEntry je = jf.getJarEntry("cfg/synthetica-license.key");
+                                    liz = IO.readInputStreamToString(jf.getInputStream(je));
+                                } finally {
 
-                    SyntheticaHelper.init(laf);
-                    ExtTooltip.createConfig(ExtTooltip.DEFAULT).setForegroundColor(getLAFOptions().getTooltipForegroundColor());
-                } catch (Throwable e) {
-                    LogController.CL().log(e);
+                                    jf.close();
+                                }
+
+                            }
+
+                        }
+
+                    }
+                } catch (Exception e) {
+
                 }
+
+                SyntheticaHelper.init(laf, liz);
+                ExtTooltip.createConfig(ExtTooltip.DEFAULT).setForegroundColor(getLAFOptions().getTooltipForegroundColor());
+
             } else {
                 /* init for all other laf */
                 UIManager.setLookAndFeel(laf);
@@ -130,6 +162,17 @@ public class LookAndFeelController implements LAFManagerInterface {
 
         } catch (Throwable e) {
             LogController.CL().log(e);
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (ClassNotFoundException e1) {
+                e1.printStackTrace();
+            } catch (InstantiationException e1) {
+                e1.printStackTrace();
+            } catch (IllegalAccessException e1) {
+                e1.printStackTrace();
+            } catch (UnsupportedLookAndFeelException e1) {
+                e1.printStackTrace();
+            }
         } finally {
             LogController.GL.info("LAF init: " + (System.currentTimeMillis() - t));
         }
