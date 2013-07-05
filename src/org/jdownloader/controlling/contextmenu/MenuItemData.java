@@ -2,11 +2,14 @@ package org.jdownloader.controlling.contextmenu;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
@@ -40,9 +43,9 @@ public class MenuItemData implements Storable {
     public String _getIdentifier() {
         if (actionData != null) {
 
-            if (actionData.getData() != null) return actionData.getClazzName() + ":" + actionData.getData();
+            if (actionData.getData() != null) return actionData.getClazzName() + ":" + actionData.getData() + ":" + actionData.getSetup();
 
-            return actionData.getClazzName();
+            return actionData.getClazzName() + ":" + actionData.getSetup();
 
         }
         if (getClass() != MenuContainer.class && getClass() != MenuItemData.class) { return getClass().getName(); }
@@ -247,12 +250,13 @@ public class MenuItemData implements Storable {
                 if (StringUtils.isNotEmpty(actionData.getData())) {
                     Constructor<?> c = clazz.getConstructor(new Class[] { String.class });
                     AppAction action = (AppAction) c.newInstance(new Object[] { actionData.getData() });
-
+                    fill(clazz, action);
                     return customize(action);
 
                 } else {
                     Constructor<?> c = clazz.getConstructor(new Class[] {});
                     AppAction action = (AppAction) c.newInstance(new Object[] {});
+                    fill(clazz, action);
                     return customize(action);
                 }
 
@@ -270,8 +274,34 @@ public class MenuItemData implements Storable {
             Constructor<?> c = clazz.getConstructor(new Class[] { SelectionInfo.class });
             action = (AppAction) c.newInstance(new Object[] { selection });
         }
-
+        fill(clazz, action);
         return customize(action);
+
+    }
+
+    protected void fill(Class<?> clazz, AppAction action) throws IllegalAccessException {
+        for (Field f : clazz.getDeclaredFields()) {
+            Customizer an = f.getAnnotation(Customizer.class);
+            if (an != null) {
+                f.setAccessible(true);
+                try {
+
+                    Object v = actionData.fetchSetup(f.getName());
+                    try {
+                        // try Setter
+
+                        Method setter = clazz.getDeclaredMethod("set" + f.getName().substring(0, 1).toUpperCase(Locale.ENGLISH) + f.getName().substring(1), new Class[] { f.getType() });
+                        setter.invoke(action, v);
+                        continue;
+                    } catch (Exception e) {
+                    }
+                    // setter not possible. use field
+                    if (v != null) f.set(action, v);
+                } catch (Exception e) {
+
+                }
+            }
+        }
 
     }
 

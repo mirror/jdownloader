@@ -30,6 +30,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.DummyArchive;
@@ -47,9 +48,21 @@ public class ConfirmAutoAction extends AppAction {
     /**
      * 
      */
-    private static final long                          serialVersionUID = -3937346180905569896L;
+    private static final long serialVersionUID      = -3937346180905569896L;
 
-    private boolean                                    autostart;
+    @Customizer(name = "Autostart Downloads afterwards")
+    private boolean           autostart             = false;
+    @Customizer(name = "Clear Linkgrabber after adding links")
+    private boolean           clearListAfterConfirm = false;
+
+    public boolean isClearListAfterConfirm() {
+        return clearListAfterConfirm;
+    }
+
+    public void setClearListAfterConfirm(boolean clearListAfterConfirm) {
+        this.clearListAfterConfirm = clearListAfterConfirm;
+    }
+
     private SelectionInfo<CrawledPackage, CrawledLink> si;
 
     public boolean isAutostart() {

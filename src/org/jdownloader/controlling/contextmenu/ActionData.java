@@ -1,5 +1,6 @@
 package org.jdownloader.controlling.contextmenu;
 
+import java.util.HashMap;
 import java.util.HashSet;
 
 import org.appwork.storage.Storable;
@@ -50,9 +51,10 @@ public class ActionData implements Storable {
         return ret;
     }
 
-    private String clazzName;
-    private String name;
-    private String iconKey;
+    private String                  clazzName;
+    private String                  name;
+    private String                  iconKey;
+    private HashMap<String, Object> setup;
 
     public ActionData(/* Storable */) {
 
@@ -103,4 +105,26 @@ public class ActionData implements Storable {
     public void setIconKey(String iconKey) {
         this.iconKey = iconKey;
     }
+
+    public void putSetup(String key, Object value) {
+
+        if (setup == null) {
+            setup = new HashMap<String, Object>();
+        }
+        setup.put(key, value);
+    }
+
+    public HashMap<String, Object> getSetup() {
+        return setup;
+    }
+
+    public void setSetup(HashMap<String, Object> setup) {
+        this.setup = setup;
+    }
+
+    public Object fetchSetup(String name2) {
+        if (setup == null) return null;
+        return setup.get(name2);
+    }
+
 }

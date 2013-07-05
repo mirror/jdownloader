@@ -8,6 +8,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.lang.reflect.Field;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashSet;
@@ -34,6 +35,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuItemProperty;
@@ -65,6 +67,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
     private ExtTextField shortcut;
 
     protected KeyStroke  currentShortcut;
+    private CustomPanel  customPanel;
 
     public InfoPanel(ManagerFrame m) {
         super("ins 5,wrap 2", "[grow,fill][]", "[22!][]");
@@ -248,6 +251,9 @@ public class InfoPanel extends MigPanel implements ActionListener {
             add(label(_GUI._.InfoPanel_InfoPanel_hidden()));
             add(hidden, "spanx");
         }
+        add(new JSeparator(), "spanx");
+        customPanel = new CustomPanel();
+        add(customPanel, "spanx,growx");
     }
 
     private JLabel label(String infoPanel_InfoPanel_hideIfDisabled) {
@@ -307,6 +313,23 @@ public class InfoPanel extends MigPanel implements ActionListener {
         link(mid, hidden, MenuItemProperty.ALWAYS_HIDDEN);
         // renderer.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.RED));
         updateHeaderLabel(mid);
+        customPanel.removeAll();
+
+        AppAction actionClass;
+        try {
+            if (mid.getActionData() != null) {
+                actionClass = mid.createAction(null);
+
+                for (Field d : actionClass.getClass().getDeclaredFields()) {
+                    if (d.getAnnotation(Customizer.class) != null) {
+                        customPanel.add(mid.getActionData(), actionClass, d);
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
     }
 
