@@ -151,28 +151,17 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             if (finallink == null) {
                 finallink = br.getRegex("\"(http://ist\\d+\\-\\d+\\.filesor\\.com/pimpandhost\\.com/.*?)\"").getMatch(0);
             }
-        } else if (parameter.contains("imgchili.com/")) {
-            br.getPage(parameter);
+        } else if (parameter.matches("imgchili\\.(com|net)/.+")) {
+            br.getPage(parameter.replace(".net/", ".com/"));
             if (br.containsHTML("does not exist\\. <")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
             finallink = br.getRegex("id=\"show_image\" onload=\"scale\\(this\\);\" onclick=\"scale\\(this\\);\"[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
-                finallink = br.getRegex("\"(http://i\\d+\\.imgchili\\.com/\\d+/[a-z0-9_]+\\.[a-z]{1,5})\"").getMatch(0);
+                finallink = br.getRegex("\"(http://i\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_]+\\.[a-z]{1,5})\"").getMatch(0);
             }
-            finalfilename = new Regex(parameter, "imgchili\\.com/show/\\d+/(.+)").getMatch(0);
-        } else if (parameter.contains("imgchili.net/")) {
-            br.getPage(parameter);
-            if (br.containsHTML("does not exist\\. <")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            finallink = br.getRegex("id=\"show_image\" onload=\"scale\\(this\\);\" onclick=\"scale\\(this\\);\"[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("\"(http://i\\d+\\.imgchili\\.net/\\d+/[a-z0-9_]+\\.[a-z]{1,5})\"").getMatch(0);
-            }
-            finalfilename = new Regex(parameter, "imgchili\\.net/show/\\d+/(.+)").getMatch(0);
+            finalfilename = new Regex(parameter, "imgchili\\.(com|net)/show/\\d+/(.+)").getMatch(0);
         } else if (parameter.contains("9gag.com/")) {
             br.setFollowRedirects(true);
             br.getPage(parameter);

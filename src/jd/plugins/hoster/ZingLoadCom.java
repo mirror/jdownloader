@@ -62,15 +62,15 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "salefiles.com" }, urls = { "https?://(www\\.)?salefiles\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "zingload.com" }, urls = { "https?://(www\\.)?zingload\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
-public class SaleFilesCom extends PluginForHost {
+public class ZingLoadCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://salefiles.com";
+    private final String               COOKIE_HOST                  = "http://zingload.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(salefiles\\.com)";
+    private final String               DOMAINS                      = "(easybytes\\.com|zingload\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/dl)?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
@@ -91,26 +91,26 @@ public class SaleFilesCom extends PluginForHost {
     // XfileShare Version 3.0.6.1
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
-    // captchatype: 4dignum
+    // captchatype: null
     // other: no redirects
     // mods:
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
+            chunks = 0;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = -10;
+            chunks = 0;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2;
+            chunks = 0;
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -131,17 +131,17 @@ public class SaleFilesCom extends PluginForHost {
     }
 
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return true;
+            return false;
         }
         if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
-            return true;
+            return false;
         }
         return false;
     }
@@ -151,10 +151,10 @@ public class SaleFilesCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public SaleFilesCom(PluginWrapper wrapper) {
+    public ZingLoadCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @Override
@@ -602,7 +602,7 @@ public class SaleFilesCom extends PluginForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        final String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD[^>]+><b>([^<>\"']+)</b>").getMatch(0);
+        final String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
         if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
             // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
@@ -762,8 +762,9 @@ public class SaleFilesCom extends PluginForHost {
                 getDllink();
                 if (inValidate(dllink)) {
                     checkErrors(downloadLink, true);
-					Form dlform = cbr.getFormbyProperty("name", "F1");
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    Form dlform = cbr.getFormbyProperty("name", "F1");
+                    if (dlform == null)
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     else if (dlform != null && cbr.containsHTML(PASSWORDTEXT)) passCode = handlePassword(dlform, downloadLink);
                     sendForm(dlform);
                     checkErrors(downloadLink, true);
