@@ -1,12 +1,18 @@
 package org.jdownloader.settings;
 
 import java.awt.Frame;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.Storable;
+import org.appwork.utils.swing.EDTHelper;
 
 public class FrameStatus implements Storable {
     public static enum ExtendedState {
@@ -179,21 +185,51 @@ public class FrameStatus implements Storable {
 
     public static FrameStatus create(JFrame mainFrame, FrameStatus ret) {
         if (ret == null) ret = new FrameStatus();
-        if (mainFrame.isShowing()) {
-            try {
-                ret.setScreenID(mainFrame.getGraphicsConfiguration().getDevice().getIDstring());
-            } catch (final Throwable e) {
-                e.printStackTrace();
+
+        try {
+            ret.setScreenID(mainFrame.getGraphicsConfiguration().getDevice().getIDstring());
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+
+        Rectangle jdBounds = fetchBoundsFromEDT(mainFrame);
+
+        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        final GraphicsDevice[] screens = ge.getScreenDevices();
+        Rectangle jdRectange = new Rectangle(jdBounds);
+        boolean isok = false;
+        for (final GraphicsDevice screen : screens) {
+            final Rectangle bounds = screen.getDefaultConfiguration().getBounds();
+
+            Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(screen.getDefaultConfiguration());
+
+            bounds.x += insets.left;
+            bounds.y += insets.top;
+            bounds.width -= (insets.left + insets.right);
+            bounds.height -= (insets.top + insets.bottom);
+
+            jdRectange.height = 30;
+            Rectangle inter = jdRectange.intersection(bounds);
+
+            if (inter.width > 50 && inter.height >= 30) {
+                // ok. Titlebar is in screen.
+                isok = true;
+
+                break;
+
             }
-            if (mainFrame.getExtendedState() == Frame.NORMAL) {
-                ret.width = mainFrame.getSize().width;
-                ret.height = mainFrame.getSize().height;
-            }
-            /* we also have to save location in other modes! */
-            ret.x = mainFrame.getLocationOnScreen().x;
-            ret.y = mainFrame.getLocationOnScreen().y;
+
+        }
+
+        if (isok) {
+
+            if (jdBounds.width > 100 || ret.width < 100) ret.width = jdBounds.width;
+            if (jdBounds.height > 100 || ret.height < 100) ret.height = jdBounds.height;
+            ret.x = jdBounds.x;
+            ret.y = jdBounds.y;
             ret.locationSet = true;
         }
+
         ret.visible = mainFrame.isVisible();
         ShutdownRequest requ = ShutdownController.getInstance().getShutdownRequest();
         ret.silentShutdown = requ != null && requ.isSilent();
@@ -208,6 +244,33 @@ public class FrameStatus implements Storable {
         }
 
         return ret;
+    }
+
+    private static Rectangle fetchBoundsFromEDT(final JFrame mainFrame) {
+        return new EDTHelper<Rectangle>() {
+
+            @Override
+            public Rectangle edtRun() {
+                try {
+                    if (!mainFrame.isShowing()) return null;
+                    Rectangle ret = new Rectangle();
+
+                    ret.width = 30;
+                    ret.height = 30;
+                    if (mainFrame.getExtendedState() == Frame.NORMAL) {
+                        ret.width = mainFrame.getSize().width;
+                        ret.height = mainFrame.getSize().height;
+                    }
+                    /* we also have to save location in other modes! */
+                    ret.x = mainFrame.getLocationOnScreen().x;
+                    ret.y = mainFrame.getLocationOnScreen().y;
+
+                    return ret;
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+        }.getReturnValue();
     }
 
     /**

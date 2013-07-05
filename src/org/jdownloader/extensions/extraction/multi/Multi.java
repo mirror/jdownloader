@@ -777,7 +777,7 @@ public class Multi extends IExtraction {
             HashSet<String> checkedExtensions = new HashSet<String>();
 
             if (ArchiveFormat.SEVEN_ZIP == format) {
-                if (archive.isPassswordRequiredToOpen()) {
+                if (archive.isPasswordRequiredToOpen()) {
                     // archive is open. password seems to be ok.
                     passwordfound.set(true);
                     return true;
@@ -796,7 +796,7 @@ public class Multi extends IExtraction {
             } else {
                 SignatureCheckingOutStream signatureOutStream = new SignatureCheckingOutStream(passwordfound, ctl.getFileSignatures(), buffer, config.getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), optimized);
                 ISimpleInArchiveItem[] items = inArchive.getSimpleInterface().getArchiveItems();
-                if (archive.isPassswordRequiredToOpen()) {
+                if (archive.isPasswordRequiredToOpen()) {
                     // archive is open. password seems to be ok.
                     passwordfound.set(true);
                     return true;
@@ -852,7 +852,7 @@ public class Multi extends IExtraction {
             // this happens if the archive has encrypted filenames as well and thus needs a password to open it
             if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
                 /* password required */
-                archive.setPassswordRequiredToOpen(true);
+                archive.setPasswordRequiredToOpen(true);
                 return false;
             }
             throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
@@ -1017,7 +1017,7 @@ public class Multi extends IExtraction {
             if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
                 /* password required */
                 archive.setProtected(true);
-                archive.setPassswordRequiredToOpen(true);
+                archive.setPasswordRequiredToOpen(true);
                 return true;
             } else {
                 throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);

@@ -770,7 +770,7 @@ public class JDGui extends SwingGui {
             Rectangle inter = jdRectange.intersection(bounds);
 
             logger.info("Intersection(actual): " + inter);
-            if (jdRectange.width > 50 && jdRectange.height >= 30) {
+            if (inter.width > 50 && inter.height >= 30) {
                 // ok. Titlebar is in screen.
                 isok = true;
                 logger.info("Screen OK");

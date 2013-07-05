@@ -140,11 +140,11 @@ public class Archive {
         this.protect = b;
     }
 
-    public boolean isPassswordRequiredToOpen() {
+    public boolean isPasswordRequiredToOpen() {
         return passwordRequiredToOpen;
     }
 
-    public void setPassswordRequiredToOpen(final boolean b) {
+    public void setPasswordRequiredToOpen(final boolean b) {
         this.passwordRequiredToOpen = b;
     }
 
