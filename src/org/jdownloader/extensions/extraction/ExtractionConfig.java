@@ -1,7 +1,5 @@
 package org.jdownloader.extensions.extraction;
 
-import java.util.ArrayList;
-
 import jd.plugins.ExtensionConfigInterface;
 
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -132,12 +130,12 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     void setSubPathFilesTreshhold(int treshold);
 
     @AboutConfig
-    @DescriptionForConfigEntry("max kbytes the extractor may test for finding correct password when no signature is found")
-    @SpinnerValidator(min = 10, max = Integer.MAX_VALUE)
-    @DefaultIntValue(1000)
-    int getMaxPasswordCheckSize();
+    @DescriptionForConfigEntry("max bytes the extractor may test for finding correct password when no signature is found")
+    @SpinnerValidator(min = 1000 * 1024, max = Integer.MAX_VALUE)
+    @DefaultIntValue(1000 * 1024)
+    int getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes();
 
-    void setMaxPasswordCheckSize(int size);
+    void setMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(int size);
 
     @AboutConfig
     @DescriptionForConfigEntry("max buffer size for write operations in kb")

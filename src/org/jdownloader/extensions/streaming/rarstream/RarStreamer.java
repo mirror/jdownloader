@@ -307,7 +307,7 @@ public class RarStreamer implements Runnable {
                         try {
                             buffer.reset();
                             final ReusableByteArrayOutputStream signatureBuffer = buffer;
-                            final long maxPWCheckSize = extractor.getSettings().getMaxPasswordCheckSize() * 1024;
+                            final long maxPWCheckSize = extractor.getSettings().getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes();
 
                             final int signatureMinLength;
                             if (new Regex(path, ".+\\.iso").matches()) {

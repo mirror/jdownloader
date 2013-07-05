@@ -254,7 +254,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
                         try {
                             buffer.reset();
                             final ReusableByteArrayOutputStream signatureBuffer = buffer;
-                            final long maxPWCheckSize = extractionSettings.getMaxPasswordCheckSize() * 1024;
+                            final long maxPWCheckSize = extractionSettings.getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes();
 
                             final int signatureMinLength;
                             if (new Regex(path, ".+\\.iso").matches()) {

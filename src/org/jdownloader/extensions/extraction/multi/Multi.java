@@ -636,7 +636,9 @@ public class Multi extends IExtraction {
                 ExtractOperationResult res;
                 try {
                     if (item.isEncrypted()) {
-                        res = item.extractSlow(call, archive.getFinalPassword());
+                        String pw = archive.getFinalPassword();
+                        if (pw == null) { throw new IOException("Password is null!"); }
+                        res = item.extractSlow(call, pw);
                     } else {
                         res = item.extractSlow(call);
                     }
@@ -738,6 +740,7 @@ public class Multi extends IExtraction {
     public boolean findPassword(final ExtractionController ctl, String password, boolean optimized) throws ExtractionException {
         crack++;
         ReusableByteArrayOutputStream buffer = null;
+        final AtomicBoolean passwordfound = new AtomicBoolean(false);
         try {
             buffer = new ReusableByteArrayOutputStream(64 * 1024);
             try {
@@ -771,23 +774,34 @@ public class Multi extends IExtraction {
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
             }
 
-            final AtomicBoolean passwordfound = new AtomicBoolean(false);
             HashSet<String> checkedExtensions = new HashSet<String>();
+
             if (ArchiveFormat.SEVEN_ZIP == format) {
+                if (archive.isPassswordRequiredToOpen()) {
+                    // archive is open. password seems to be ok.
+                    passwordfound.set(true);
+                    return true;
+                }
                 int[] in = new int[inArchive.getNumberOfItems()];
                 for (int i = 0; i < in.length; i++) {
                     in[i] = i;
                 }
                 try {
-                    inArchive.extract(in, false, new Seven7ExtractorCallback(inArchive, passwordfound, password, buffer, config.getMaxPasswordCheckSize(), ctl.getFileSignatures()));
+                    inArchive.extract(in, false, new Seven7ExtractorCallback(inArchive, passwordfound, password, buffer, config.getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), ctl.getFileSignatures(), optimized));
                 } catch (SevenZipException e) {
                     // An error will be thrown if the write method
                     // returns
                     // 0.
                 }
             } else {
-                SignatureCheckingOutStream signatureOutStream = new SignatureCheckingOutStream(passwordfound, ctl.getFileSignatures(), buffer, config.getMaxPasswordCheckSize() * 1024);
-                for (final ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
+                SignatureCheckingOutStream signatureOutStream = new SignatureCheckingOutStream(passwordfound, ctl.getFileSignatures(), buffer, config.getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), optimized);
+                ISimpleInArchiveItem[] items = inArchive.getSimpleInterface().getArchiveItems();
+                if (archive.isPassswordRequiredToOpen()) {
+                    // archive is open. password seems to be ok.
+                    passwordfound.set(true);
+                    return true;
+                }
+                for (final ISimpleInArchiveItem item : items) {
                     if (item.isFolder() || (item.getSize() == 0 && item.getPackedSize() == 0)) {
                         /*
                          * we also check for items with size ==0, they should have a packedsize>0
@@ -809,7 +823,8 @@ public class Multi extends IExtraction {
                                 ExtractOperationResult result = item.extractSlow(signatureOutStream, password);
                                 if (ExtractOperationResult.DATAERROR.equals(result)) {
                                     /*
-                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native -> crash jvm)
+                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native ->
+                                     * crash jvm)
                                      */
                                     return false;
                                 }
@@ -817,7 +832,7 @@ public class Multi extends IExtraction {
                                     passwordfound.set(true);
                                 }
                             } catch (SevenZipException e) {
-
+                                e.printStackTrace();
                                 // An error will be thrown if the write method
                                 // returns
                                 // 0.
@@ -831,17 +846,23 @@ public class Multi extends IExtraction {
                 }
             }
             if (!passwordfound.get()) return false;
-            archive.setFinalPassword(password);
-            updateContentView(inArchive.getSimpleInterface());
+
             return true;
         } catch (SevenZipException e) {
+            // this happens if the archive has encrypted filenames as well and thus needs a password to open it
             if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
                 /* password required */
+                archive.setPassswordRequiredToOpen(true);
                 return false;
             }
             throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
         } catch (Throwable e) {
             throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
+        } finally {
+            if (passwordfound.get()) {
+                archive.setFinalPassword(password);
+                updateContentView(inArchive.getSimpleInterface());
+            }
         }
     }
 
@@ -996,6 +1017,7 @@ public class Multi extends IExtraction {
             if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
                 /* password required */
                 archive.setProtected(true);
+                archive.setPassswordRequiredToOpen(true);
                 return true;
             } else {
                 throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);

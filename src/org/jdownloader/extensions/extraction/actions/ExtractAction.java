@@ -2,6 +2,7 @@ package org.jdownloader.extensions.extraction.actions;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.text.DecimalFormat;
 
 import javax.swing.filechooser.FileFilter;
 
@@ -9,6 +10,8 @@ import jd.gui.UserIO;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionEvent;
@@ -19,8 +22,10 @@ import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.translate.T;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.images.NewTheme;
 
 public class ExtractAction extends AbstractExtractionAction {
 
@@ -71,12 +76,14 @@ public class ExtractAction extends AbstractExtractionAction {
                     archive.getSettings().setExtractPath(path.getAbsolutePath());
                 }
 
-                new Thread() {
-                    @Override
-                    public void run() {
+                ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
 
+                    private ExtractionController controller;
+
+                    @Override
+                    public void run() throws Exception {
                         if (archive.isComplete()) {
-                            final ExtractionController controller = _getExtension().addToQueue(archive);
+                            controller = _getExtension().addToQueue(archive);
                             if (controller != null) {
                                 final ExtractionListener listener = new ExtractionListener() {
 
@@ -102,19 +109,56 @@ public class ExtractAction extends AbstractExtractionAction {
                                     }
 
                                 };
-                                _getExtension().getEventSender().addListener(listener);
+                                try {
+                                    _getExtension().getEventSender().addListener(listener);
+                                    while (!controller.isFinished()) {
+                                        Thread.sleep(1000);
+                                    }
+                                } catch (InterruptedException e) {
+                                    controller.kill();
+                                    throw e;
+                                }
+
                             }
                         } else {
 
                             new ValidateArchiveAction(_getExtension(), archive).actionPerformed(null);
                         }
                     }
-                }.start();
+
+                    private DecimalFormat format = new DecimalFormat("00.00 %");
+
+                    @Override
+                    public String getString() {
+
+                        if (controller != null) {
+                            return T._.extractprogress_label(format.format(controller.getProgress() / 100d), controller.getArchiv().getExtractedFiles().size() + "");
+                        } else {
+                            return format.format(0d);
+                        }
+                    }
+
+                    @Override
+                    public int getProgress() {
+                        if (controller == null) return 0;
+                        int ret = (int) (controller.getProgress());
+
+                        return Math.min(99, ret);
+                    }
+
+                    @Override
+                    public String getLabelString() {
+
+                        return null;
+                    }
+                }, 0, T._.extracting(archive.getName()), T._.extracting_wait(archive.getName()), NewTheme.I().getIcon(IconKey.ICON_ARCHIVE_RUN, 32), null, null);
+
+                // UIOManager.I().show(class1, impl)
+                Dialog.getInstance().showDialog(dialog);
             } catch (ArchiveException e1) {
                 _getExtension().getLogger().log(e1);
             } catch (DialogNoAnswerException e1) {
             }
         }
     }
-
 }

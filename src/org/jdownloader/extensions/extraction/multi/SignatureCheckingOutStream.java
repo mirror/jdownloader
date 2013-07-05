@@ -19,12 +19,14 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
     private final long                          maxPWCheckSize;
     private String                              itemName;
     private long                                itemSize           = -1;
+    private boolean                             optimized;
 
-    public SignatureCheckingOutStream(AtomicBoolean passwordfound, FileSignatures filesignatures, ReusableByteArrayOutputStream buffer, long maxPWCheckSize) {
+    public SignatureCheckingOutStream(AtomicBoolean passwordfound, FileSignatures filesignatures, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, boolean optimized) {
         this.passwordfound = passwordfound;
         this.filesignatures = filesignatures;
         this.buffer = buffer;
         this.maxPWCheckSize = maxPWCheckSize;
+        this.optimized = optimized;
     }
 
     public int write(byte[] data) throws SevenZipException {
@@ -51,7 +53,7 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
                 }
             }
         }
-        if (itemSize >= 0 && itemSize <= maxPWCheckSize) {
+        if ((itemSize >= 0 && itemSize <= maxPWCheckSize) || !optimized) {
             /* we still allow further extraction as the itemSize <= maxPWCheckSize */
             return data.length;
         } else {

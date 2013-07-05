@@ -287,4 +287,13 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extracting... thus disabled" })
     String extracting();
 
+    @Default(lngs = { "en" }, values = { "Extracting Archive: %s1" })
+    String extracting(String name);
+
+    @Default(lngs = { "en" }, values = { "Please wait: Extracting Archive: %s1" })
+    String extracting_wait(String name);
+
+    @Default(lngs = { "en" }, values = { "Extracted %s1: %s2 files" })
+    String extractprogress_label(String percent, String extractedFiles);
+
 }

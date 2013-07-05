@@ -21,12 +21,14 @@ public class Seven7ExtractorCallback implements IArchiveExtractCallback, ICrypto
     private final ISevenZipInArchive   inArchive;
     private final String               password;
     private SignatureCheckingOutStream signatureOutStream;
+    private boolean                    optimized;
 
-    public Seven7ExtractorCallback(ISevenZipInArchive inArchive, AtomicBoolean passwordfound, String password, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, FileSignatures filesignatures) {
+    public Seven7ExtractorCallback(ISevenZipInArchive inArchive, AtomicBoolean passwordfound, String password, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, FileSignatures filesignatures, boolean optimized) {
         this.passwordfound = passwordfound;
         this.inArchive = inArchive;
         this.password = password;
-        signatureOutStream = new SignatureCheckingOutStream(passwordfound, filesignatures, buffer, maxPWCheckSize);
+        this.optimized = optimized;
+        signatureOutStream = new SignatureCheckingOutStream(passwordfound, filesignatures, buffer, maxPWCheckSize, optimized);
     }
 
     Boolean skipExtraction = null;
