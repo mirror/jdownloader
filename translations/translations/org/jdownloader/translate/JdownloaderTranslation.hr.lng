@@ -1,6 +1,7 @@
 AddContainerAction_delete_container_msg=Želite li obrisati %s1 nakon dodavanja linka(ova) u JDownloader?
 AddContainerAction_delete_container_title=Brisanje kontejner datoteka?
 CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Pristup postavkama prepoznavanja potvrdnih kôdova
+DisableRevFilesPackageRulee_rule_name=Onemogući arhivu *.rev datoteke
 DownloadLink_setSkipped_statusmessage=Preskočeno
 DownloadLink_setSkipped_statusmessage_account=Preskočeno - Nedostaje račun
 DownloadLink_setSkipped_statusmessage_captcha=Preskočeno - Potreban je potvrdno kôd
@@ -25,6 +26,9 @@ LinkgrabberFilterRule_duplicate=%s1 (kopiranje)
 Main_run_autostart_=Pokretanje preuzimanja
 Main_run_autostart_msg=Preuzimanje će biti pokrenuto za par sekundi...
 Mainstart_now=Pokreni SADA!
+MyJDownloaderController_onError_account_unconfirmed=Vaš 'My JDownloader' email još nije potvrđen.\r\nMolimo provjerite svoje e-mailove i kliknite na link za potvrdu
+MyJDownloaderController_onError_badlogins=Vaša 'My JDownloader' prijava nije ispravna.\r\nMolimo provjerite korisničko ime/email i lozinku!
+MyJDownloaderController_onError_unknown=JDownloader se nemože povezati na My JDownloader servis: %s1
 OptionalContainer_OptionalContainer=Više...
 PackagizerSettings_folderbypackage_rule_name=Stvori podmapu po nazivu paketa
 RemoveAction_actionPerformed_rly_msg=Želite li obrisati odabrane uvjete?
