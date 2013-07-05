@@ -129,16 +129,19 @@ public class NCryptIn extends PluginForDecrypt {
                     for (int i = 0; i <= 3; i++) {
                         final String captchaLink = new Regex(aBrowser, ANICAPTCHA).getMatch(-1);
                         if (captchaLink == null) { return null; }
-
+                        String code = null;
                         final File captchaFile = this.getLocalCaptchaFile(".gif");
-                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://ncrypt.in" + captchaLink));
                         try {
-                            jd.captcha.specials.Ncrypt.setDelay(captchaFile, 80);
-                        } catch (final Throwable e) {
-                            /* not existing in 09581 stable */
+                            Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://ncrypt.in" + captchaLink));
+                            try {
+                                jd.captcha.specials.Ncrypt.setDelay(captchaFile, 80);
+                            } catch (final Throwable e) {
+                                /* not existing in 09581 stable */
+                            }
+                            code = getCaptchaCode(captchaFile, param);
+                        } finally {
+                            captchaFile.delete();
                         }
-                        final String code = getCaptchaCode(captchaFile, param);
-
                         allForm.setAction(parameter);
                         allForm.put("captcha", code);
                         if (allForm.containsHTML(PASSWORDTEXT)) {
@@ -167,9 +170,14 @@ public class NCryptIn extends PluginForDecrypt {
                     captcha = true;
                     for (int i = 0; i <= 3; i++) {
                         final File captchaFile = this.getLocalCaptchaFile(".png");
-                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://ncrypt.in/classes/captcha/circlecaptcha.php"));
-                        final Point p = UserIO.getInstance().requestClickPositionDialog(captchaFile, "Click on the open circle", null);
-                        if (p == null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                        Point p = null;
+                        try {
+                            Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://ncrypt.in/classes/captcha/circlecaptcha.php"));
+                            p = UserIO.getInstance().requestClickPositionDialog(captchaFile, "Click on the open circle", null);
+                            if (p == null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                        } finally {
+                            captchaFile.delete();
+                        }
                         allForm.put("circle.x", String.valueOf(p.x));
                         allForm.put("circle.y", String.valueOf(p.y));
                         if (allForm.containsHTML(PASSWORDTEXT)) {

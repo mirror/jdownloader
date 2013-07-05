@@ -314,37 +314,41 @@ public class Srnnks extends PluginForDecrypt {
                                     if (crawlStatus == null) crawlStatus = "";
                                     crawlStatus += "(" + RUNNING.intValue() + " pending)";
                                     final File captcha = this.getLocalCaptchaFile(".png");
-                                    // captcha laden
-                                    synchronized (Srnnks.GLOBAL_LOCK) {
-                                        Thread.sleep(FW_WAIT);
-                                        try {
-                                            if (isAbort()) return new ArrayList<DownloadLink>(ret);
-                                        } catch (final Throwable e) {
-                                            /* not available in old 09581 stable */
+                                    String code = null;
+                                    try {
+                                        // captcha laden
+                                        synchronized (Srnnks.GLOBAL_LOCK) {
+                                            Thread.sleep(FW_WAIT);
+                                            try {
+                                                if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                            } catch (final Throwable e) {
+                                                /* not available in old 09581 stable */
+                                            }
+                                            final URLConnectionAdapter urlc = this.br.cloneBrowser().openGetConnection(captchaLink);
+                                            Browser.download(captcha, urlc);
                                         }
-                                        final URLConnectionAdapter urlc = this.br.cloneBrowser().openGetConnection(captchaLink);
-                                        Browser.download(captcha, urlc);
-                                    }
-                                    if ("7ebca510a6a18c1e8f6e8d98c3118874".equals(JDHash.getMD5(captcha))) {
-                                        // dummy captcha without content.. wait before reloading
-                                        logger.warning("Dummy Captcha. wait 3 seconds");
-                                        Thread.sleep(3000);
-                                        try {
-                                            if (isAbort()) return new ArrayList<DownloadLink>(ret);
-                                        } catch (final Throwable e) {
-                                            /* not available in old 09581 stable */
+                                        if ("7ebca510a6a18c1e8f6e8d98c3118874".equals(JDHash.getMD5(captcha))) {
+                                            // dummy captcha without content.. wait before reloading
+                                            logger.warning("Dummy Captcha. wait 3 seconds");
+                                            Thread.sleep(3000);
+                                            try {
+                                                if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                            } catch (final Throwable e) {
+                                                /* not available in old 09581 stable */
+                                            }
+                                            continue;
                                         }
-                                        continue;
-                                    }
-                                    String code;
-                                    // wenn es ein Einzellink ist soll die Captchaerkennung benutzt werden
 
-                                    if (captchaLink.contains(".gif")) {
-                                        code = this.getCaptchaCode("einzellinks.serienjunkies.org", captcha, parameter);
-                                    } else {
-                                        code = this.getCaptchaCode(captcha, parameter);
-                                    }
+                                        // wenn es ein Einzellink ist soll die Captchaerkennung benutzt werden
 
+                                        if (captchaLink.contains(".gif")) {
+                                            code = this.getCaptchaCode("einzellinks.serienjunkies.org", captcha, parameter);
+                                        } else {
+                                            code = this.getCaptchaCode(captcha, parameter);
+                                        }
+                                    } finally {
+                                        captcha.delete();
+                                    }
                                     if (code == null) { return ret; }
                                     if (code.length() != 3) {
                                         progress.setStatus(30);

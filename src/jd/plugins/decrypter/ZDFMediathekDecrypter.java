@@ -130,25 +130,25 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         if (fmt != null) {
                             /* best selection is done at the end */
                             if ("low".equals(fmt)) {
-                                if ((cfg.getBooleanProperty(Q_LOW, false) || BEST) == false) {
+                                if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
                                     continue;
                                 } else {
                                     fmt = "low";
                                 }
                             } else if ("high".equals(fmt)) {
-                                if ((cfg.getBooleanProperty(Q_HIGH, false) || BEST) == false) {
+                                if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
                                     continue;
                                 } else {
                                     fmt = "high";
                                 }
                             } else if ("veryhigh".equals(fmt)) {
-                                if ((cfg.getBooleanProperty(Q_VERYHIGH, false) || BEST) == false) {
+                                if ((cfg.getBooleanProperty(Q_VERYHIGH, true) || BEST) == false) {
                                     continue;
                                 } else {
                                     fmt = "veryhigh";
                                 }
                             } else if ("hd".equals(fmt)) {
-                                if ((cfg.getBooleanProperty(Q_HD, false) || BEST) == false) {
+                                if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {
                                     continue;
                                 } else {
                                     if (streams[0].contains("mp4_rtmp")) {

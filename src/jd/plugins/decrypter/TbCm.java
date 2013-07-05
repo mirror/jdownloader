@@ -731,6 +731,9 @@ public class TbCm extends PluginForDecrypt {
                     if (id != null) YT_FILENAME = id;
                 }
 
+                String ytID = new Regex(currentVideoUrl, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
+                if (ytID != null) ytID = ytID.toLowerCase(Locale.ENGLISH);
+
                 /*
                  * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
                  * if they are in the same quality rating
@@ -893,6 +896,7 @@ public class TbCm extends PluginForDecrypt {
                         }
                         thislink.setFinalFileName(YT_FILENAME + desc + convertTo.getExtFirst());
                         thislink.setProperty("size", info.size);
+                        if (info.size > 0) thislink.setProperty("VERIFIEDFILESIZE", info.size);
                         String name = null;
                         if (convertTo != DestinationFormat.AUDIOMP3) {
                             name = YT_FILENAME + desc + convertTo.getExtFirst();
@@ -906,7 +910,7 @@ public class TbCm extends PluginForDecrypt {
                         thislink.setProperty("videolink", currentVideoUrl);
                         thislink.setProperty("valid", true);
                         thislink.setProperty("fmtNew", info.fmt);
-                        thislink.setProperty("LINKDUPEID", name);
+                        thislink.setProperty("LINKDUPEID", "ytID" + ytID + "." + info.fmt);
                         decryptedLinks.add(thislink);
                     }
                 }
