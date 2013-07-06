@@ -108,6 +108,8 @@ public class FrShrdFldr extends PluginForDecrypt {
             br.getPage(parameter.replace(".com/folder", ".com/minifolder") + "?firstFileToShow=" + currentFirstLink);
 
             filter = br.getRegex("<tr valign=\"top\">[\r\n\t ]+<td width=\"\\d+\"(.*?)</td>[\r\n\t ]+</tr>").getColumn(0);
+            // different layouts/displays based on how many files within folder?
+            if (filter != null && filter.length == 0) filter = br.getRegex("(<a class=\"miniFolderItem\".*?</a>)").getColumn(0);
             if (filter == null) {
                 logger.warning("Couldn't filter /minifolder/ page!");
                 if (decryptedLinks.size() > 0) {
@@ -129,7 +131,7 @@ public class FrShrdFldr extends PluginForDecrypt {
                             decryptedLinks.add(createDownloadlink(subDir));
                         }
                     } else {
-                        final String dllink = new Regex(entry, "\"(.*?4shared(\\-china)?\\.com/(?!folder/|dir/)[^\"]+\\.html)").getMatch(0);
+                        final String dllink = new Regex(entry, "\"(http.*?4shared(\\-china)?\\.com/(?!folder/|dir/)[^\"]+\\.html)").getMatch(0);
                         if (dllink == null) {
                             // logger.warning("Couldn't find dllink!");
                             continue;
@@ -139,6 +141,9 @@ public class FrShrdFldr extends PluginForDecrypt {
                             dlink.setProperty("pass", pass);
                         }
                         String fileName = new Regex(entry, "[^\\,]+, [\\d,]+ [^\"]+\">([^\"']+)</a>").getMatch(0);
+                        // minifolder layout
+                        if (fileName == null) fileName = new Regex(entry, "\"itemName\">(.*?)</div>").getMatch(0);
+
                         final String fileSize = new Regex(entry, "[^\\,]+, ([\\d,]+ [^\"]+)").getMatch(0);
 
                         if (fileName != null) {
