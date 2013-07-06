@@ -73,7 +73,7 @@ public class SaleFilesCom extends PluginForHost {
     private final String               DOMAINS                      = "(salefiles\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/dl)?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
+    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
     private final boolean              videoHoster                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              supportsHTTPS                = false;
@@ -88,7 +88,7 @@ public class SaleFilesCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.1
+    // XfileShare Version 3.0.6.2
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: 4dignum
@@ -333,7 +333,7 @@ public class SaleFilesCom extends PluginForHost {
         }
         // Fourth, continue like normal.
         if (inValidate(dllink)) {
-            checkErrors(downloadLink, false);
+            checkErrors(downloadLink, account, false);
             Form download1 = getFormByKey(cbr, "op", "download1");
             if (download1 != null) {
                 // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
@@ -341,7 +341,7 @@ public class SaleFilesCom extends PluginForHost {
                 // end of backward compatibility
                 download1.remove("method_premium");
                 sendForm(download1);
-                checkErrors(downloadLink, false);
+                checkErrors(downloadLink, account, false);
                 getDllink();
             }
         }
@@ -370,7 +370,7 @@ public class SaleFilesCom extends PluginForHost {
                 if (!skipWaitTime) waitTime(timeBefore, downloadLink);
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
-                checkErrors(downloadLink, true);
+                checkErrors(downloadLink, account, true);
                 getDllink();
                 if (inValidate(dllink) && (getFormByKey(cbr, "op", "download2") == null || i == repeat)) {
                     if (i == repeat)
@@ -456,10 +456,10 @@ public class SaleFilesCom extends PluginForHost {
         // remove custom rules first!!! As html can change because of generic cleanup rules.
 
         // generic cleanup
-        // this checks for fake or empty forms from original source, and adds form html to regexStuff.
+        // this checks for fake or empty forms from original source and corrects
         for (final Form f : br.getForms()) {
-            if (!f.containsHTML("<input[^>]+type=\"submit\"[^>]+>")) {
-                regexStuff.add("(" + f.getHtmlCode() + ")");
+            if (!f.containsHTML("(<input[^>]+type=\"submit\"[^>]+>|<form[^>]+onSubmit=(\"|').*?(\"|')(>|[\\s\r\n][^>]+>))")) {
+                toClean = toClean.replace(f.getHtmlCode(), "");
             }
         }
         regexStuff.add("<\\!(--.*?--)>");
@@ -507,7 +507,7 @@ public class SaleFilesCom extends PluginForHost {
         }
     }
 
-    private void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
+    private void checkErrors(final DownloadLink theLink, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (cbr.containsHTML("Wrong password|" + PASSWORDTEXT)) {
                 // handle password has failed in the past, additional try catching / resetting values
@@ -529,7 +529,12 @@ public class SaleFilesCom extends PluginForHost {
              * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
              * previous happened, as in past tense and not a wait time going forward... unknown wait time!
              */
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
+            if (account != null) {
+                logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
+                account.setTempDisabled(true);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
+            }
         }
         /** Wait time reconnect handling */
         if (cbr.containsHTML("You have to wait")) {
@@ -761,27 +766,27 @@ public class SaleFilesCom extends PluginForHost {
                 }
                 getDllink();
                 if (inValidate(dllink)) {
-                    checkErrors(downloadLink, true);
-					Form dlform = cbr.getFormbyProperty("name", "F1");
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    checkErrors(downloadLink, account, true);
+                    Form dlform = cbr.getFormbyProperty("name", "F1");
+                    if (dlform == null)
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     else if (dlform != null && cbr.containsHTML(PASSWORDTEXT)) passCode = handlePassword(dlform, downloadLink);
                     sendForm(dlform);
-                    checkErrors(downloadLink, true);
+                    checkErrors(downloadLink, account, true);
                     getDllink();
+                    if (inValidate(dllink)) {
+                        logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
-            }
-            if (inValidate(dllink)) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
             controlHost(account, downloadLink, true);
             logger.info("Final downloadlink = " + dllink + " starting the download...");
+            // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
             } catch (UnknownHostException e) {
-                // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
-
                 // dump the saved host from directlinkproperty
                 downloadLink.setProperty(directlinkproperty, Property.NULL);
                 // remove usedHost slot from hostMap
@@ -995,30 +1000,33 @@ public class SaleFilesCom extends PluginForHost {
         doFree(downloadLink, null);
     }
 
+    /**
+     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
+     * which is based on fuid.
+     * 
+     * @author raztoki
+     * */
     private void fixFilename(final DownloadLink downloadLink) {
-        String oldName = downloadLink.getFinalFileName();
-        if (oldName == null) oldName = downloadLink.getName();
-        final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        String newExtension = null;
-        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
-        if (serverFilename == null) {
-            logger.info("Server filename is null, keeping filename: " + oldName);
-        } else {
-            if (serverFilename.contains(".")) {
-                newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
-            } else {
-                logger.info("HTTP headers don't contain filename.extension information");
-            }
-        }
-        if (newExtension != null && !oldName.endsWith(newExtension)) {
-            String oldExtension = null;
-            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
-            if (oldExtension != null && oldExtension.length() <= 5) {
-                downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
-            } else {
-                downloadLink.setFinalFileName(oldName + newExtension);
-            }
-        }
+        String orgName = null;
+        String orgExt = null;
+        String servExt = null;
+        String orgNameExt = downloadLink.getFinalFileName();
+        if (orgNameExt == null) orgNameExt = downloadLink.getName();
+        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
+        if (!inValidate(orgExt))
+            orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
+        else
+            orgName = orgNameExt;
+        String servNameExt = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        if (!inValidate(servNameExt) && servNameExt.contains(".")) servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
+        String FFN = null;
+        if (orgName.equalsIgnoreCase(fuid.toLowerCase()))
+            FFN = servNameExt;
+        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt.toLowerCase()))
+            FFN = orgName + servExt;
+        else
+            FFN = orgNameExt;
+        downloadLink.setFinalFileName(FFN);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink) {
