@@ -207,9 +207,9 @@ public class DlPrtcCom extends PluginForDecrypt {
         // remove custom rules first!!! As html can change because of generic cleanup rules.
 
         // generic cleanup
-		// this checks for fake or empty forms from original source and corrects
+        // this checks for fake or empty forms from original source and corrects
         for (final Form f : br.getForms()) {
-            if (!f.containsHTML("(<input[^>]+type=\"submit\"[^>]+>|<form[^>]+onSubmit=(\"|').*?(\"|')(>|[\\s\r\n][^>]+>))")) {
+            if (!f.containsHTML("(<input[^>]+type=\"submit\"(>|[^>]+(?!\\s*disabled\\s*)([^>]+>|>))|<input[^>]+type=\"button\"(>|[^>]+(?!\\s*disabled\\s*)([^>]+>|>))|<form[^>]+onSubmit=(\"|').*?(\"|')(>|[\\s\r\n][^>]+>))")) {
                 toClean = toClean.replace(f.getHtmlCode(), "");
             }
         }

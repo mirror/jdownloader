@@ -88,7 +88,7 @@ public class DownloadAniMe extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.2
+    // XfileShare Version 3.0.6.3
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: 4dignum
@@ -458,11 +458,11 @@ public class DownloadAniMe extends PluginForHost {
         // generic cleanup
         // this checks for fake or empty forms from original source and corrects
         for (final Form f : br.getForms()) {
-            if (!f.containsHTML("(<input[^>]+type=\"submit\"[^>]+>|<form[^>]+onSubmit=(\"|').*?(\"|')(>|[\\s\r\n][^>]+>))")) {
+            if (!f.containsHTML("(<input[^>]+type=\"submit\"(>|[^>]+(?!\\s*disabled\\s*)([^>]+>|>))|<input[^>]+type=\"button\"(>|[^>]+(?!\\s*disabled\\s*)([^>]+>|>))|<form[^>]+onSubmit=(\"|').*?(\"|')(>|[\\s\r\n][^>]+>)|" + dllinkRegex + ")")) {
                 toClean = toClean.replace(f.getHtmlCode(), "");
             }
         }
-        regexStuff.add("<\\!(--.*?--)>");
+        regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<div[^>]+display: ?none;[^>]+>.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
