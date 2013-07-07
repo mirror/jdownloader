@@ -28,6 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "https?://(www\\.)?(ctdisk|400gb|pipipan|t00y)\\.com/u/\\d{6,7}(/\\d{6,7})?" }, flags = { 0 })
 public class CtDiskComFolder extends PluginForDecrypt {
 
@@ -68,16 +70,19 @@ public class CtDiskComFolder extends PluginForDecrypt {
     }
 
     private void parsePage(ArrayList<DownloadLink> ret, String parameter, String id) throws IOException {
-        String results = br.getRegex("(<td class=\"bold\">文件名称</td>.*</table>)").getMatch(0);
-        if (results == null) {
+        String results[][] = br.getRegex("(<tr >.*?(https?://(www\\.)?" + domains + "/file/\\d+)[^>]+>(.*?)<.*?>(\\d+(\\.\\d+)? ?(KB|MB|GB))<.*?</tr>)").getMatches();
+        if (results == null || results.length == 0) {
             logger.warning("Can not find 'results' : " + parameter);
             return;
         }
-        String[] links = new Regex(results, "<a href=\"(https?://(www\\.)?" + domains + "/file/\\d+)\" title").getColumn(0);
-        if (links == null || links.length == 0) new Regex(results, "<a href=\"(https?://(www\\.)?" + domains + "/file/\\d+)\" target=\"_blank\">").getColumn(0);
-        if (links != null && links.length != 0) {
-            for (String dl : links)
-                ret.add(createDownloadlink(dl));
+        for (String[] args : results) {
+            DownloadLink dl = createDownloadlink(args[1]);
+            if (args[4] != null) {
+                dl.setName(args[4]);
+                if (args[5] != null) dl.setDownloadSize(SizeFormatter.getSize(args[5]));
+                dl.setAvailable(true);
+            }
+            ret.add(dl);
         }
         // export folders back into decrypter again.
         String[] folders = new Regex(results, "<a href=\"(/u/" + id + "/\\d+)\">").getColumn(0);

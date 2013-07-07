@@ -83,7 +83,7 @@ public class CtDiskCom extends PluginForHost {
         if (filesize == null) filesize = br.getRegex("([\\d\\,\\.]+ (KB|MB|GB))").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll("(,|\\-)", "").replace("M", "MB").replace("K", "KB")));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -109,7 +109,7 @@ public class CtDiskCom extends PluginForHost {
             if (br.containsHTML(">验证码输入错误，请返回页面重新输入")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             String continueLink = br.getRegex("\"\\&downlink=(/downhtml/[^<>\"]*?)\";").getMatch(0);
             if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage("http://www.400gb.com" + continueLink);
+            br.getPage(continueLink);
 
             if (dllink == null) {
                 dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\" id=\"local_free\">").getMatch(0);
@@ -122,8 +122,7 @@ public class CtDiskCom extends PluginForHost {
             }
         }
 
-        // Check if link is working. If not try mirror. Limits can be
-        // extended/skipped using this method :D
+        // Check if link is working. If not try mirror. Limits can be extended/skipped using this method :D
         boolean failed = false;
         URLConnectionAdapter con = null;
         Browser br2 = br.cloneBrowser();

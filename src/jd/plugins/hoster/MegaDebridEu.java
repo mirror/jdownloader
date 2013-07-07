@@ -151,6 +151,9 @@ public class MegaDebridEu extends PluginForHost {
             if (br.containsHTML(">400 Bad Request<")) {
                 logger.info("Temporarily removing hoster from hostlist because of server error 400");
                 tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
+            } else if (br.containsHTML("Unable to load file")) {
+                logger.info("Unable to load file, Temporarily removing hoster from supported host array");
+                tempUnavailableHoster(account, link, 1 * 60 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
