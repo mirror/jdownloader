@@ -119,3 +119,5 @@ proxy_none=Direkt
 proxy_socks4=%s1:%s2 (Socks4 Proxy)
 proxy_socks5=%s1:%s2 (Socks5 Proxy)
 proxydialog_title=Ingen anslutning till Internet
+tableheader_tooltip_locked=%s1 (Storleksförändring låst)
+tableheader_tooltip_normal=%s1

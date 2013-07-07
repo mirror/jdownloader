@@ -1,5 +1,7 @@
 RestartController_confirmToExit_=Verkligen Avsluta?
 RestartController_confirmToExit_msg=Vill du verkligen avsluta JDownloader?
+RestartController_confirmTorestart_msg=Vill du starta om JDownloader?
+RestartController_confirmTorestart_title=Starta verkligen om?
 TranslationProxyDialogAuthRequired=JDownloader kan inte ansluta till %s1! Din Proxy Server kräven authentisering.\nKontrollera dina inställningar...
 TranslationProxyDialogNoConnection=JDownloader kan inte ansluta till %s1! Kontrollera dina uppkopplingsinställningar...
 close_jd=Otillräckliga rättigheter för att skriva %s1.\nStäng alla JDownloader & Java processer och försök igen efteråt!\nKontakta vår support om problemen kvarstår efter omstart av Windows,
