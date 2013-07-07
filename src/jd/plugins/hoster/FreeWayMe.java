@@ -224,21 +224,24 @@ public class FreeWayMe extends PluginForHost {
             } catch (Exception e) {
                 // we handle this few lines later
             }
-            if (error.equalsIgnoreCase("Ungültiger Login")) {
+            if (error.contains("ltiger Login")) { // Ungü
                 acc.setTempDisabled(true);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (error.equalsIgnoreCase("Ungültige URL")) {
+            } else if (error.contains("ltige URL")) { // Ungültige URL
                 tempUnavailableHoster(acc, link, 2 * 60 * 1000l);
-            } else if (error.equalsIgnoreCase("Sie haben nicht genug Traffic, um diesen Download durchzuführen.")) {
+            } else if (error.contains("Sie haben nicht genug Traffic, um diesen Download durchzuf")) { // ühren
                 tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
-            } else if (error.startsWith("Sie können nicht mehr parallele Downloads durchführen")) {
+            } else if (error.contains("nnen nicht mehr parallele Downloads durchf")) { // Sie kö... ...ühren
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 1 * 60 * 1000l);
-            } else if (error.startsWith("Ung&uuml;ltiger Hoster")) {
+            } else if (error.contains("ltiger Hoster")) { // Ungü...
                 tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Dieser Hoster ist aktuell leider nicht aktiv.")) {
                 tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Diese Datei wurde nicht gefunden.")) {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
+            } else if (error.contains("nnen nicht mehr parallele Downloads durchf")) { // Sie k&ouml;nnen nicht mehr parallele Downloads
+                                                                                       // durchf&uuml;hren (>2 aufgrund von Drosslung).
+                tempUnavailableHoster(acc, link, 1 * 60 * 1000l); // 1min
             } else if (error.equalsIgnoreCase("Unbekannter Fehler #2") || error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
                 /*
                  * after x retries we disable this host and retry with normal plugin
