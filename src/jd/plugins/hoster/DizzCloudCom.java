@@ -75,8 +75,12 @@ public class DizzCloudCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             if (br.containsHTML(">Only premium users can download this file|disabled the ability to free download a file larger than  \\d+ Mb\\.<")) {
@@ -188,35 +192,50 @@ public class DizzCloudCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex(">Premium till ([^<>\"]*?) \\&nbsp;\\&nbsp;</span>").getMatch(0);
         if (expire == null) {
-            account.setValid(false);
-            return ai;
+            logger.info("JD could not detect account expire time, your account has been determined as a free account");
+            account.setProperty("free", true);
+            ai.setStatus("Free User");
         } else {
+            account.setProperty("free", false);
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", Locale.ENGLISH));
+            ai.setStatus("Premium User");
         }
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
     @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        requestFileInformation(downloadLink);
         login(account, false);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.cloudstoreservice\\.net/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[^<>\"]*?)\" class=\"orange\\-btn\">DOWNLOAD</a>").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (account.getBooleanProperty("free")) {
+            br.getPage(downloadLink.getDownloadURL());
+            // if the cached cookie expired, relogin.
+            if (br.getCookie(MAINPAGE, "auth_hash") == null) {
+                synchronized (LOCK) {
+                    account.setProperty("cookies", Property.NULL);
+                    // if you retry, it can use another account...
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+            doFree(downloadLink);
+        } else {
+            br.setFollowRedirects(false);
+            br.getPage(downloadLink.getDownloadURL());
+            String dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.cloudstoreservice\\.net/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://[^<>\"]*?)\" class=\"orange\\-btn\">DOWNLOAD</a>").getMatch(0);
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), true, -10);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, -10);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override

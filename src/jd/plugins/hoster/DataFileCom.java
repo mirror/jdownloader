@@ -84,6 +84,10 @@ public class DataFileCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception {
         if (br.containsHTML(PREMIUMONLY)) {
             // not possible to download under handleFree!
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
@@ -195,7 +199,7 @@ public class DataFileCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("https://www.datafile.com/login.html", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=1&btn=Submit");
-                if (!br.containsHTML("Premium:\\&nbsp;\\(<span class=")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -230,22 +234,36 @@ public class DataFileCom extends PluginForHost {
         String expire = br.getRegex(">Premium Expires:</td>[\t\n\r ]+<td class=\"el\" >([\t\n\r ]+)?([^<>\"/\\&]*?) \\&nbsp;").getMatch(1);
         if (expire == null) expire = br.getRegex("([a-zA-Z]{3} \\d{1,2}, \\d{4} \\d{1,2}:\\d{1,2})").getMatch(0);
         if (expire == null) {
-            account.setValid(false);
-            return ai;
+            logger.info("JD could not detect account expire time, your account has been determined as a free account");
+            account.setProperty("free", true);
+            ai.setStatus("Free User");
         } else {
+            account.setProperty("free", false);
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMM dd, yyyy HH:mm", Locale.ENGLISH));
+            ai.setStatus("Premium User");
         }
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
     @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        requestFileInformation(downloadLink);
         login(account, false);
+        if (account.getBooleanProperty("free")) {
+            br.getPage(downloadLink.getDownloadURL());
+            // if the cached cookie expired, relogin.
+            if (br.getCookie(MAINPAGE, "auth_hash") == null) {
+                synchronized (LOCK) {
+                    account.setProperty("cookies", Property.NULL);
+                    // if you retry, it can use another account...
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+            doFree(downloadLink);
+        }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -261,7 +279,7 @@ public class DataFileCom extends PluginForHost {
 
     private void prepBrowser(final Browser br) {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(this.MAINPAGE, "lang", "en");
+        br.setCookie(MAINPAGE, "lang", "en");
     }
 
     @Override
