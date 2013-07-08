@@ -131,20 +131,41 @@ public class LookAndFeelController implements LAFManagerInterface {
                         // for all other mirror repos: please do not use our license
                         URL url = Application.getRessourceURL("");
                         File bin = new File(url.toURI());
-                        String str = IO.readFileToString(new File(bin.getParent(), ".svn/entries"));
-                        if (str.contains("svn://svn.jdownloader.org/jdownloader/trunk")) {
-                            if (Application.getResource("JDownloader.jar").exists()) {
-                                JarFile jf = new JarFile(Application.getResource("JDownloader.jar"));
-                                try {
-                                    JarEntry je = jf.getJarEntry("cfg/synthetica-license.key");
-                                    liz = IO.readInputStreamToString(jf.getInputStream(je));
-                                } finally {
+                        File db = new File(bin.getParent(), ".svn/wc.db");
+                        if (db.exists()) {
+                            String str = IO.readFileToString(db);
+                            if (str.contains("svn://svn.jdownloader.org/jdownloader")) {
+                                str = null;
+                                if (Application.getResource("JDownloader.jar").exists()) {
+                                    JarFile jf = new JarFile(Application.getResource("JDownloader.jar"));
+                                    try {
+                                        JarEntry je = jf.getJarEntry("cfg/synthetica-license.key");
+                                        liz = IO.readInputStreamToString(jf.getInputStream(je));
+                                    } finally {
 
-                                    jf.close();
+                                        jf.close();
+                                    }
+
                                 }
 
                             }
+                        } else {
+                            String str = IO.readFileToString(new File(bin.getParent(), ".svn/entries"));
+                            if (str.contains("svn://svn.jdownloader.org/jdownloader/trunk")) {
+                                str = null;
+                                if (Application.getResource("JDownloader.jar").exists()) {
+                                    JarFile jf = new JarFile(Application.getResource("JDownloader.jar"));
+                                    try {
+                                        JarEntry je = jf.getJarEntry("cfg/synthetica-license.key");
+                                        liz = IO.readInputStreamToString(jf.getInputStream(je));
+                                    } finally {
 
+                                        jf.close();
+                                    }
+
+                                }
+
+                            }
                         }
 
                     }
