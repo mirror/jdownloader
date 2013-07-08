@@ -84,7 +84,7 @@ public class EasyBytezCom extends PluginForHost {
     private final boolean              useAltEmbed                  = false;
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = false;
+    private final boolean              useRUA                       = true;
     private final boolean              useAltExpire                 = true;
     private final boolean              useAltLinkCheck              = false;
     private final boolean              skipableRecaptcha            = true;
@@ -786,7 +786,8 @@ public class EasyBytezCom extends PluginForHost {
                 if (inValidate(dllink)) {
                     checkErrors(downloadLink, account, true);
                     Form dlform = cbr.getFormbyProperty("name", "F1");
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (dlform == null)
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     else if (dlform != null && cbr.containsHTML(PASSWORDTEXT)) passCode = handlePassword(dlform, downloadLink);
                     sendForm(dlform);
                     checkErrors(downloadLink, account, true);
