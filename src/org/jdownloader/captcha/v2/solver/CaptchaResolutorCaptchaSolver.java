@@ -45,7 +45,7 @@ public class CaptchaResolutorCaptchaSolver extends ChallengeSolver<String> {
     public static final String                         YOUR_CREDIT_HAS_BEEN_SOLD = "Your credit is exhausted.";
     public static final String                         WRONG_PASSWORD            = "contraseña erronea";
     public static final String                         ERROR_INVALID_PASSWORD    = "The user or the password used to ResolutorCaptcha, not correct.";
-    public static final String                         SERVER_PRODUCTION         = "ks359250.kimsufi.com";
+    public static final String                         SERVER_PRODUCTION         = "5.255.147.248";
 
     public static CaptchaResolutorCaptchaSolver getInstance() {
         return INSTANCE;
