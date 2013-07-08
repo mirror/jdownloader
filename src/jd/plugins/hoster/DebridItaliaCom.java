@@ -136,7 +136,7 @@ public class DebridItaliaCom extends PluginForHost {
         // "&xjxargs[]=S%3C!%5BCDATA%5B" + encodedLink + "&xjxargs[]=S&xjxargs[]=Slink0&xjxargs[]=S&xjxargs[]=S");
         br.getPage("http://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()) + "&link=" + encodedLink);
         if (br.containsHTML("ERROR: not_available")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-        final String dllink = br.getRegex("(http://(www\\.)?debriditalia\\.com/dl/.+)").getMatch(0);
+        final String dllink = br.getRegex("(https?://(\\w+\\.)?debriditalia\\.com/dl/.+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink.trim()), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

@@ -107,10 +107,11 @@ public class CtDiskCom extends PluginForHost {
             }
             br.submitForm(free);
             if (br.containsHTML(">验证码输入错误，请返回页面重新输入")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            String continueLink = br.getRegex("\"\\&downlink=(/downhtml/[^<>\"]*?)\";").getMatch(0);
-            if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage(continueLink);
-
+            if (!br.getURL().matches(".+/downhtml/\\d+/.+")) {
+                String continueLink = br.getRegex("\"\\&downlink=(/downhtml/[^<>\"]*?)\";").getMatch(0);
+                if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage(continueLink);
+            }
             if (dllink == null) {
                 dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\" id=\"local_free\">").getMatch(0);
                 if (dllink == null) {
