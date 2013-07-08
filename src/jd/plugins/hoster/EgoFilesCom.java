@@ -92,6 +92,7 @@ public class EgoFilesCom extends PluginForHost {
         final String connectionType = (downloadLink.getDownloadURL().contains("https") ? "https" : "http");
         requestFileInformation(downloadLink);
 
+        if (br.containsHTML("Pobieranie free nie jest dostępne z twojego kraju|Free downloads are not available in your country")) throw new PluginException(LinkStatus.ERROR_FATAL, "Country blocked");
         Regex limitReached = br.getRegex(">For next free download you have to wait <strong>(\\d+)m (\\d+)s</strong>");
         if (limitReached.getMatches().length > 0) {
             logger.warning("Free download limit reached, waittime is applied.");
