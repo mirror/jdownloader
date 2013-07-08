@@ -12,6 +12,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageView;
 
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -34,6 +36,28 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
         online = NewTheme.I().getIcon("true", 16);
         mixed = NewTheme.I().getIcon("true-orange", 16);
         offline = NewTheme.I().getIcon("error", 16);
+
+        this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
+
+            @Override
+            public int compare(final AbstractNode o1, final AbstractNode o2) {
+                String o1s = getTooltipText(o1);
+                String o2s = getTooltipText(o2);
+                if (o1s == null) {
+                    o1s = "";
+                }
+                if (o2s == null) {
+                    o2s = "";
+                }
+                if (this.getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
+                    return o1s.compareToIgnoreCase(o2s);
+                } else {
+                    return o2s.compareToIgnoreCase(o1s);
+                }
+
+            }
+
+        });
     }
 
     @Override
