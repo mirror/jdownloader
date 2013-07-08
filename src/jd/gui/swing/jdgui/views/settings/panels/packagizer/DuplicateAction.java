@@ -27,8 +27,8 @@ public class DuplicateAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        // LinkgrabberFilterRule newRule = contextObject.duplicate();
-        // NewAction.add(newRule, filterTable);
+        PackagizerRule newRule = contextObject.duplicate();
+        NewAction.add(newRule);
     }
 
 }

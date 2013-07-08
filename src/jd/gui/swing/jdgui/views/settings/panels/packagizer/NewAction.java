@@ -24,6 +24,10 @@ public class NewAction extends AbstractAddAction {
 
     public void actionPerformed(ActionEvent e) {
         final PackagizerRule rule = new PackagizerRule();
+        add(rule);
+    }
+
+    public static void add(final PackagizerRule rule) {
         PackagizerFilterRuleDialog d = new PackagizerFilterRuleDialog(rule);
         try {
             Dialog.getInstance().showDialog(d);

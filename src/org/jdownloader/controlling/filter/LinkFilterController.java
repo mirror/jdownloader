@@ -68,9 +68,11 @@ public class LinkFilterController implements LinkCrawlerFilter {
             for (LinkgrabberFilterRule rule : filter) {
 
                 if (OfflineView.ID.equals(rule.getId())) {
-                    newList.add(new OfflineView());
+                    OfflineView r;
+                    newList.add(r = new OfflineView());
+                    r.setEnabled(rule.isEnabled());
                     offlineRule = true;
-                    break;
+                    continue;
 
                 }
                 newList.add(rule);
