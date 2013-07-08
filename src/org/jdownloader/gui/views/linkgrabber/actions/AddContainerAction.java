@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.actions;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.io.File;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -29,6 +30,7 @@ public class AddContainerAction extends AppAction {
     public AddContainerAction(SelectionInfo<CrawledPackage, CrawledLink> selection) {
         setIconKey("addContainer");
         setName(_GUI._.AddContainerAction());
+        setAccelerator(KeyEvent.VK_O);
     }
 
     private static final long serialVersionUID = -1758454550263991986L;

@@ -49,6 +49,9 @@ public class LAFOptions implements Storable {
     private int    highlightColor2            = Color.GREEN.getRGB();
     private String menuBackgroundPainterClass = "de.javasoft.plaf.synthetica.simple2D.MenuPainter";
 
+    private int    tablePackageRowForeground  = 0x0;
+    private int    tablePackageRowBackground  = 0xDEE7ED;
+
     public void setMenuBackgroundPainterClass(String menuBackgroundPainterClass) {
         this.menuBackgroundPainterClass = menuBackgroundPainterClass;
     }
@@ -145,5 +148,13 @@ public class LAFOptions implements Storable {
 
     public String getMenuBackgroundPainterClass() {
         return menuBackgroundPainterClass;
+    }
+
+    public int getTablePackageRowForeground() {
+        return tablePackageRowForeground;
+    }
+
+    public int getTablePackageRowBackground() {
+        return tablePackageRowBackground;
     }
 }

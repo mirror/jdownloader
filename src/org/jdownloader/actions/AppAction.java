@@ -1,7 +1,10 @@
 package org.jdownloader.actions;
 
+import java.awt.event.InputEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+
+import javax.swing.KeyStroke;
 
 import org.appwork.swing.action.BasicAction;
 import org.jdownloader.actions.event.AppActionEvent;
@@ -25,6 +28,25 @@ public abstract class AppAction extends BasicAction {
     public AppAction() {
         super();
 
+    }
+
+    /**
+     * e.g. KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK
+     * 
+     * @param vkQ
+     * @param ctrlDownMask
+     */
+    public void setAccelerator(int vkQ, int ctrlDownMask) {
+        setAccelerator(KeyStroke.getKeyStroke(vkQ, ctrlDownMask));
+    }
+
+    /**
+     * KeyEvent.VK_Q
+     * 
+     * @param vkQ
+     */
+    public void setAccelerator(int vkQ) {
+        setAccelerator(vkQ, InputEvent.CTRL_DOWN_MASK);
     }
 
     public synchronized AppActionEventSender getEventSender() {

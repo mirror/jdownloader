@@ -1,6 +1,10 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+
+import javax.swing.KeyStroke;
 
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.translate._GUI;
@@ -14,6 +18,8 @@ public class ExitToolbarAction extends ToolBarAction {
 
         setIconKey("exit");
         setName(_GUI._.action_exit());
+        setTooltipText(_GUI._.action_exit_tooltip());
+        setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));
 
     }
 

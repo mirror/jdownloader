@@ -1,5 +1,8 @@
 package org.jdownloader.gui.toolbar.action;
 
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.jdownloader.gui.translate._GUI;
@@ -15,6 +18,8 @@ public class MoveToBottomAction extends AbstractMoveAction {
     public MoveToBottomAction() {
         setName(_GUI._.MoveToBottomAction_MoveToBottomAction());
         setIconKey("go-bottom");
+
+        setAccelerator(KeyEvent.VK_END, InputEvent.ALT_DOWN_MASK);
 
     }
 

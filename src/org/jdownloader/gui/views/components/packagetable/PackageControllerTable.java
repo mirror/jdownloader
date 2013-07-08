@@ -26,6 +26,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
@@ -56,6 +57,22 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? new Color(LookAndFeelController.getInstance().getLAFOptions().getHighlightColor1()) : null;
         filterNotifyColor = CFG_GUI.CFG.isFilterHighlightEnabled() ? new Color(LookAndFeelController.getInstance().getLAFOptions().getHighlightColor2()) : null;
         initAppActions();
+        if (CFG_GUI.PACKAGES_BACKGROUND_HIGHLIGHT_ENABLED.isEnabled()) {
+            Color tableFG = new Color(LookAndFeelController.getInstance().getLAFOptions().getTablePackageRowForeground());
+            Color tableBG = new Color(LookAndFeelController.getInstance().getLAFOptions().getTablePackageRowBackground());
+            this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AbstractNode>(tableFG, tableBG, null) {
+                public int getPriority() {
+                    return 0;
+                }
+
+                @Override
+                public boolean accept(ExtColumn<AbstractNode> column, AbstractNode value, boolean selected, boolean focus, int row) {
+
+                    return value instanceof AbstractPackageNode;
+                }
+
+            });
+        }
     }
 
     @SuppressWarnings("unchecked")

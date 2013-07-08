@@ -1,6 +1,8 @@
 package org.jdownloader.gui.views.linkgrabber.actions;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
@@ -27,6 +29,8 @@ public class AddLinksAction extends AppAction {
         setName(string);
         setIconKey("add");
         setTooltipText(_GUI._.AddLinksAction_AddLinksAction_tt());
+        setAccelerator(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK);
+
     }
 
     public AddLinksAction(SelectionInfo<CrawledPackage, CrawledLink> selection) {

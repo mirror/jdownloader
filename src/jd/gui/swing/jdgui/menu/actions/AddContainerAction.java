@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.io.File;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -36,6 +37,7 @@ public class AddContainerAction extends AppAction {
         setName(_GUI._.action_addcontainer());
         setTooltipText(_GUI._.action_addcontainer_tooltip());
         setIconKey("load");
+        setAccelerator(KeyEvent.VK_O);
     }
 
     @Override

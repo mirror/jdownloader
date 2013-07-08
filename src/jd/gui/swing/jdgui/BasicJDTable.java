@@ -7,23 +7,18 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.ListSelectionModel;
 
 import jd.gui.swing.laf.LookAndFeelController;
-import jd.nutils.Colors;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.swing.exttable.AlternateHighlighter;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
-import org.appwork.swing.exttable.ExtOverlayRowHighlighter;
 import org.appwork.swing.exttable.ExtTable;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.ColorUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
@@ -59,45 +54,67 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             }
 
         });
-        addMouseMotionListener(new MouseMotionListener() {
 
-            @Override
-            public void mouseMoved(MouseEvent e) {
+        if (CFG_GUI.TABLE_MOUSE_OVER_HIGHLIGHT_ENABLED.isEnabled()) {
+            addMouseMotionListener(new MouseMotionListener() {
 
-                int newRow = getRowIndexByPoint(e.getPoint());
-                int oldRow = -1;
-                if (newRow != mouseOverRow) {
-                    oldRow = mouseOverRow;
-                    mouseOverRow = newRow;
+                @Override
+                public void mouseMoved(MouseEvent e) {
 
-                    if (oldRow >= 0) repaintRow(oldRow);
-                    if (mouseOverRow >= 0) repaintRow(mouseOverRow);
+                    int newRow = getRowIndexByPoint(e.getPoint());
+                    int oldRow = -1;
+                    if (newRow != mouseOverRow) {
+                        oldRow = mouseOverRow;
+                        mouseOverRow = newRow;
+
+                        if (oldRow >= 0) repaintRow(oldRow);
+                        if (mouseOverRow >= 0) repaintRow(mouseOverRow);
+                    }
+
                 }
 
-            }
+                protected void repaintRow(int newRow) {
+                    Rectangle rect = getCellRect(newRow, 0, true);
+                    rect.width = getWidth();
+                    repaint(rect.x, rect.y, rect.width, rect.height);
+                }
 
-            protected void repaintRow(int newRow) {
-                Rectangle rect = getCellRect(newRow, 0, true);
-                rect.width = getWidth();
-                repaint(rect.x, rect.y, rect.width, rect.height);
-            }
+                @Override
+                public void mouseDragged(MouseEvent e) {
+                }
+            });
 
-            @Override
-            public void mouseDragged(MouseEvent e) {
-            }
-        });
+            // addRowHighlighter(new ExtOverlayRowHighlighter(null, Colors.getColor(f2, 5)) {
+            //
+            // @Override
+            // public boolean doHighlight(final ExtTable<?> extTable, final int row) {
+            //
+            // return mouseOverRow == row;
+            // }
+            // });
+            //
 
-        addRowHighlighter(new ExtOverlayRowHighlighter(null, Colors.getColor(f2, 5)) {
+            this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(null, new Color(0, 0, 0, 20), null) {
+                public int getPriority() {
+                    return Integer.MAX_VALUE;
+                }
 
-            @Override
-            public boolean doHighlight(final ExtTable<?> extTable, final int row) {
+                @Override
+                public boolean accept(ExtColumn<T> column, T value, boolean selected, boolean focus, int row) {
 
-                return mouseOverRow == row;
-            }
-        });
+                    return mouseOverRow == row;
+                }
+
+            });
+        }
         initRowHeight();
-        this.addRowHighlighter(new AlternateHighlighter(null, ColorUtils.getAlphaInstance(new JLabel().getForeground(), 6)));
+        // this.addRowHighlighter(new AlternateHighlighter(null, ColorUtils.getAlphaInstance(new JLabel().getForeground(), 6)));
+
         this.setIntercellSpacing(new Dimension(0, 0));
+        if (CFG_GUI.TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED.isEnabled()) {
+
+            this.getModel().addExtComponentRowHighlighter(new AlternateHighlighter<T>(null, new Color(0, 0, 0, 6), null));
+        }
 
     }
 

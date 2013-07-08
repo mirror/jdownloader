@@ -462,4 +462,28 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setCustomTableRowHeight(int height);
 
+    @RequiresRestart
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Every  odd row get's a light shadow if enabled")
+    @AboutConfig
+    boolean isTableAlternateRowHighlightEnabled();
+
+    void setTableAlternateRowHighlightEnabled(boolean b);
+
+    @RequiresRestart
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("The row that is 'touched' by the mouse cursor gets a darker shadow")
+    @AboutConfig
+    boolean isTableMouseOverHighlightEnabled();
+
+    void setTableMouseOverHighlightEnabled(boolean b);
+
+    @RequiresRestart
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Packages get a different background color if enabled")
+    @AboutConfig
+    boolean isPackagesBackgroundHighlightEnabled();
+
+    void setPackagesBackgroundHighlightEnabled(boolean b);
+
 }

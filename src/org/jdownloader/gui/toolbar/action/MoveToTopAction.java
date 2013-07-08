@@ -1,5 +1,8 @@
 package org.jdownloader.gui.toolbar.action;
 
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.jdownloader.gui.translate._GUI;
@@ -15,7 +18,7 @@ public class MoveToTopAction extends AbstractMoveAction {
     public MoveToTopAction() {
         setName(_GUI._.MoveToTopAction_MoveToTopAction());
         setIconKey("go-top");
-
+        setAccelerator(KeyEvent.VK_HOME, InputEvent.ALT_DOWN_MASK);
     }
 
     @Override

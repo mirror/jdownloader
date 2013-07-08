@@ -1,5 +1,7 @@
 package org.jdownloader.gui.toolbar.action;
 
+import java.awt.event.KeyEvent;
+
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.jdownloader.gui.translate._GUI;
@@ -15,6 +17,7 @@ public class MoveDownAction extends AbstractMoveAction {
     public MoveDownAction() {
         setName(_GUI._.MoveDownAction_MoveDownAction());
         setIconKey("go-down");
+        setAccelerator(KeyEvent.VK_DOWN, 0);
 
     }
 

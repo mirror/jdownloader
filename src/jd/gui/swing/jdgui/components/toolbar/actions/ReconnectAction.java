@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.Reconnecter;
@@ -21,6 +22,7 @@ public class ReconnectAction extends ToolBarAction {
     public ReconnectAction(SelectionInfo<?, ?> selection) {
 
         setIconKey("reconnect");
+        setAccelerator(KeyEvent.VK_R);
 
     }
 
