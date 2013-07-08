@@ -8,7 +8,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.lang.reflect.Field;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashSet;
@@ -30,7 +29,9 @@ import javax.swing.event.ListSelectionListener;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.GetterSetter;
 import org.appwork.utils.KeyUtils;
+import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -252,7 +253,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
             add(hidden, "spanx");
         }
         add(new JSeparator(), "spanx");
-        customPanel = new CustomPanel();
+        customPanel = new CustomPanel(managerFrame);
         add(customPanel, "spanx,growx");
     }
 
@@ -315,14 +316,16 @@ public class InfoPanel extends MigPanel implements ActionListener {
         updateHeaderLabel(mid);
         customPanel.removeAll();
 
-        AppAction actionClass;
+        AppAction action;
         try {
             if (mid.getActionData() != null) {
-                actionClass = mid.createAction(null);
+                action = mid.createAction(null);
+                for (GetterSetter gs : ReflectionUtils.getGettersSetteres(action.getClass())) {
 
-                for (Field d : actionClass.getClass().getDeclaredFields()) {
-                    if (d.getAnnotation(Customizer.class) != null) {
-                        customPanel.add(mid.getActionData(), actionClass, d);
+                    if (gs.hasGetter() && gs.hasSetter()) {
+                        if (gs.hasAnnotation(Customizer.class)) {
+                            customPanel.add(mid.getActionData(), action, gs);
+                        }
                     }
                 }
             }
@@ -426,6 +429,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
                 if (hidden.isSelected()) newProperties.add(MenuItemProperty.ALWAYS_HIDDEN);
                 item.setProperties(newProperties);
                 item.setShortcut(currentShortcut == null ? null : currentShortcut.toString());
+                managerFrame.repaint();
             }
         }.waitForEDT();
 

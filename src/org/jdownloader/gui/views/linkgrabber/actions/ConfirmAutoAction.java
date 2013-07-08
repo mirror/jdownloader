@@ -20,6 +20,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.FilePackage;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
@@ -48,34 +49,36 @@ public class ConfirmAutoAction extends AppAction {
     /**
      * 
      */
-    private static final long serialVersionUID      = -3937346180905569896L;
+    private static final long serialVersionUID = -3937346180905569896L;
+
+    public static enum AutoStartOptions {
+        @EnumLabel("Autostart: Never start Downloads")
+        DISABLED,
+        @EnumLabel("Autostart: Always start Downloads")
+        ENABLED,
+        @EnumLabel("Autostart: Automode (Quicksettings)")
+        AUTO
+
+    }
+
+    private AutoStartOptions autoStart = AutoStartOptions.AUTO;
+
+    public AutoStartOptions getAutoStart() {
+
+        return autoStart;
+    }
 
     @Customizer(name = "Autostart Downloads afterwards")
-    private boolean           autostart             = false;
-    @Customizer(name = "Clear Linkgrabber after adding links")
-    private boolean           clearListAfterConfirm = false;
+    public ConfirmAutoAction setAutoStart(AutoStartOptions autoStart) {
+        if (autoStart == null) autoStart = AutoStartOptions.AUTO;
+        this.autoStart = autoStart;
 
-    public boolean isClearListAfterConfirm() {
-        return clearListAfterConfirm;
-    }
-
-    public void setClearListAfterConfirm(boolean clearListAfterConfirm) {
-        this.clearListAfterConfirm = clearListAfterConfirm;
-    }
-
-    private SelectionInfo<CrawledPackage, CrawledLink> si;
-
-    public boolean isAutostart() {
-        return autostart;
-    }
-
-    public ConfirmAutoAction setAutostart(boolean autostart) {
-        this.autostart = autostart;
-        if (autostart) {
+        if (doAutostart()) {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
             Image add = NewTheme.I().getImage("media-playback-start", 20);
             Image play = NewTheme.I().getImage("add", 14);
             setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, -2, 0, 8, 10)));
+            setIconKey(null);
         } else {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add());
             setIconKey(IconKey.ICON_GO_NEXT);
@@ -83,10 +86,26 @@ public class ConfirmAutoAction extends AppAction {
         return this;
     }
 
+    protected boolean doAutostart() {
+        return autoStart == AutoStartOptions.ENABLED || (autoStart == AutoStartOptions.AUTO && org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue());
+    }
+
+    private boolean clearListAfterConfirm = false;
+
+    @Customizer(name = "Clear Linkgrabber after adding links")
+    public boolean isClearListAfterConfirm() {
+        return clearListAfterConfirm;
+    }
+
+    @Customizer(name = "Clear Linkgrabber after adding links")
+    public void setClearListAfterConfirm(boolean clearListAfterConfirm) {
+        this.clearListAfterConfirm = clearListAfterConfirm;
+    }
+
+    private SelectionInfo<CrawledPackage, CrawledLink> si;
+
     public ConfirmAutoAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
-
-        setAutostart(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue());
-
+        setAutoStart(AutoStartOptions.AUTO);
         this.si = selectionInfo;
 
     }
@@ -160,7 +179,7 @@ public class ConfirmAutoAction extends AppAction {
                 if (frets != null) fpkgs.addAll(frets);
                 /* add the converted FilePackages to DownloadController */
                 DownloadController.getInstance().addAllAt(fpkgs, addTop ? 0 : -(fpkgs.size() + 10));
-                if (autostart) {
+                if (doAutostart()) {
                     IOEQ.add(new Runnable() {
 
                         public void run() {
@@ -180,6 +199,10 @@ public class ConfirmAutoAction extends AppAction {
                         }
                     };
 
+                }
+
+                if (isClearListAfterConfirm()) {
+                    new ClearLinkgrabberAction().actionPerformed(null);
                 }
             }
 

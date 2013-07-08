@@ -19,6 +19,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -39,6 +40,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 
 public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectionListener {
 
@@ -46,6 +48,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
     private ContextMenuManager<?, ?> manager;
     private ManagerTreeModel         model;
     private MenuManagerTree          tree;
+    private LogSource                logger;
 
     public ManagerFrame(ContextMenuManager<?, ?> manager) {
         super(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.BUTTONS_HIDE_OK, _GUI._.ManagerFrame_ManagerFrame_title(manager.getName()), null, null, null);
@@ -54,7 +57,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
         ext = manager.getFileExtension();
         setLocator(new RememberAbsoluteDialogLocator("dialogframe-" + manager.getClass().getName()));
         setDimensor(new RememberLastDialogDimension("dialogframe-" + manager.getClass().getName()));
-
+        logger = LogController.getInstance().getLogger(ManagerFrame.class.getName());
     }
 
     protected MigPanel createBottomPanel() {
@@ -357,6 +360,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
     }
 
     public void addAction(ActionData action) {
+
         TreePath sel = model.addAction(tree.getSelectionPath(), new MenuItemData(action));
         tree.setSelectionPath(sel);
     }
@@ -413,6 +417,14 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
     @Override
     protected Object createReturnValue() {
         return null;
+    }
+
+    public void repaint() {
+        fireUpdate();
+    }
+
+    public LogSource getLogger() {
+        return logger;
     }
 
 }

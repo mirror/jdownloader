@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.JLabel;
@@ -21,7 +20,6 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuItemData.Type;
 import org.jdownloader.gui.translate._GUI;
 
 public class AddActionAction extends AppAction {
@@ -43,31 +41,32 @@ public class AddActionAction extends AppAction {
 
         List<ActionData> actions = managerFrame.getManager().list();
         TreePath addAt = managerFrame.getSelectionPath();
-        MenuItemData parent = null;
-        if (((MenuItemData) addAt.getLastPathComponent()).getType() == Type.CONTAINER) {
-
-            parent = ((MenuItemData) addAt.getLastPathComponent());
-        } else {
-            parent = (MenuItemData) addAt.getPathComponent(addAt.getPathCount() - 2);
-
-        }
-        for (MenuItemData mid : parent.getItems()) {
-            for (Iterator<ActionData> it = actions.iterator(); it.hasNext();) {
-                ActionData next = it.next();
-                if (mid.getActionData() != null && StringUtils.equals(next.getClazzName(), mid.getActionData().getClazzName())) {
-                    it.remove();
-                }
-            }
-
-        }
+        // MenuItemData parent = null;
+        // if (((MenuItemData) addAt.getLastPathComponent()).getType() == Type.CONTAINER) {
+        //
+        // parent = ((MenuItemData) addAt.getLastPathComponent());
+        // } else {
+        // parent = (MenuItemData) addAt.getPathComponent(addAt.getPathCount() - 2);
+        //
+        // }
+        // for (MenuItemData mid : parent.getItems()) {
+        // for (Iterator<ActionData> it = actions.iterator(); it.hasNext();) {
+        // ActionData next = it.next();
+        // if (mid.getActionData() != null && StringUtils.equals(next.getClazzName(), mid.getActionData().getClazzName())&&) {
+        // it.remove();
+        // }
+        // }
+        //
+        // }
         actions = new ArrayList<ActionData>(actions);
         Collections.sort(actions, new Comparator<ActionData>() {
 
             @Override
             public int compare(ActionData o1, ActionData o2) {
-                return o1.getClazzName().compareTo(o2.getClazzName());
+                return getName(o1).compareTo(getName(o2));
             }
         });
+
         ComboBoxDialog d = new ComboBoxDialog(0, _GUI._.ManagerFrame_actionPerformed_addaction_title(), _GUI._.ManagerFrame_actionPerformed_addaction_msg(), actions.toArray(new Object[] {}), 0, null, _GUI._.lit_add(), null, null) {
             protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
                 // TODO Auto-generated method stub
@@ -115,4 +114,22 @@ public class AddActionAction extends AppAction {
         }
     }
 
+    protected String getName(ActionData value) {
+        AppAction mi;
+        try {
+            mi = new MenuItemData(((ActionData) value)).createValidatedItem().createAction(null);
+
+            String name = mi.getName();
+
+            if (StringUtils.isEmpty(name)) {
+                name = mi.getClass().getSimpleName() + "(" + mi.getTooltipText() + ")";
+            }
+
+            return name;
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            return value + "";
+        }
+    }
 }

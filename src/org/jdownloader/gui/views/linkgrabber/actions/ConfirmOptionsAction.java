@@ -17,6 +17,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction.AutoStartOptions;
 import org.jdownloader.images.NewTheme;
 
 public class ConfirmOptionsAction extends AbstractAction {
@@ -46,9 +47,9 @@ public class ConfirmOptionsAction extends AbstractAction {
         all.add(new JMenuItem(new ConfirmAllAction(false).setAccelerator(null)));
         all.add(new JMenuItem(new ConfirmAllAction(true).setAccelerator(null)));
         SelectionInfo<CrawledPackage, CrawledLink> selection = new SelectionInfo<CrawledPackage, CrawledLink>(null, table.getModel().getSelectedObjects(), null, null, e, table);
-        selected.add(new JMenuItem(new ConfirmAutoAction(selection).setAutostart(false).setAccelerator(null)));
+        selected.add(new JMenuItem(new ConfirmAutoAction(selection).setAutoStart(AutoStartOptions.DISABLED).setAccelerator(null)));
         ConfirmAutoAction action = new ConfirmAutoAction(selection);
-        action.setAutostart(true);
+        action.setAutoStart(AutoStartOptions.ENABLED);
         selected.add(new JMenuItem(action.setAccelerator(null)));
         int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
         popup.add(all);

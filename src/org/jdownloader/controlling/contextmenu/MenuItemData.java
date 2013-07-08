@@ -2,14 +2,11 @@ package org.jdownloader.controlling.contextmenu;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
@@ -22,8 +19,11 @@ import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
+import org.appwork.utils.GetterSetter;
+import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
@@ -280,25 +280,24 @@ public class MenuItemData implements Storable {
     }
 
     protected void fill(Class<?> clazz, AppAction action) throws IllegalAccessException {
-        for (Field f : clazz.getDeclaredFields()) {
+
+        for (GetterSetter f : ReflectionUtils.getGettersSetteres(clazz)) {
+
             Customizer an = f.getAnnotation(Customizer.class);
             if (an != null) {
-                f.setAccessible(true);
                 try {
 
-                    Object v = actionData.fetchSetup(f.getName());
-                    try {
-                        // try Setter
+                    Object v = actionData.fetchSetup(f.getKey());
+                    if (v == null) continue;
+                    if (Clazz.isEnum(f.getType())) {
 
-                        Method setter = clazz.getDeclaredMethod("set" + f.getName().substring(0, 1).toUpperCase(Locale.ENGLISH) + f.getName().substring(1), new Class[] { f.getType() });
-                        setter.invoke(action, v);
-                        continue;
-                    } catch (Exception e) {
+                        v = ReflectionUtils.getEnumValueOf((Class<? extends Enum>) f.getType(), v.toString());
+                        if (v == null) continue;
                     }
-                    // setter not possible. use field
-                    if (v != null) f.set(action, v);
-                } catch (Exception e) {
+                    f.set(action, v);
 
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }

@@ -19,6 +19,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction.AutoStartOptions;
 import org.jdownloader.images.NewTheme;
 
 public class ConfirmAllAction extends AppAction {
@@ -67,7 +68,7 @@ public class ConfirmAllAction extends AppAction {
                 java.util.List<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
 
                 ConfirmAutoAction ca = new ConfirmAutoAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, packages, null, null, e, LinkGrabberTableModel.getInstance().getTable()));
-                ca.setAutostart(autostart);
+                ca.setAutoStart(autostart ? AutoStartOptions.ENABLED : AutoStartOptions.DISABLED);
                 ca.actionPerformed(null);
             }
 

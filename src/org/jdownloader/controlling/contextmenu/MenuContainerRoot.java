@@ -76,14 +76,14 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                             ret = false;
                             continue main;
                         }
-
-                        if (!set.add(lr._getIdentifier()) && !(lr instanceof SeperatorData) && lr.getType() == Type.ACTION) {
-
-                            container.getItems().remove(i);
-                            ret = false;
-                            continue main;
-
-                        }
+                        // let's allow this. actions may have a different setup
+                        // if (!set.add(lr._getIdentifier()) && !(lr instanceof SeperatorData) && lr.getType() == Type.ACTION) {
+                        //
+                        // container.getItems().remove(i);
+                        // ret = false;
+                        // continue main;
+                        //
+                        // }
                         if (lr != mid) {
                             // let's replace
                             replaceMap.put(mid, lr);

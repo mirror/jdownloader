@@ -17,7 +17,7 @@ import org.jdownloader.controlling.contextmenu.MenuItemData.Type;
 public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
 
     private MenuContainerRoot data;
-    private MenuManagerTree           tree;
+    private MenuManagerTree   tree;
 
     public ManagerTreeModel(MenuContainerRoot menuContainerRoot) {
         super(null, false);
@@ -112,6 +112,7 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
 
     public TreePath addAction(TreePath treePath, MenuItemData menuItemData) {
         try {
+            menuItemData._setValidated(true);
             if (treePath != null && treePath.getLastPathComponent() != data) {
                 if (((MenuItemData) treePath.getLastPathComponent()).getType() == Type.CONTAINER) {
 
@@ -120,6 +121,7 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
                     return treePath.pathByAddingChild(menuItemData);
                 } else {
                     MenuItemData parent = (MenuItemData) treePath.getPathComponent(treePath.getPathCount() - 2);
+
                     int index = parent.getItems().indexOf(treePath.getLastPathComponent());
 
                     parent.getItems().add(index + 1, menuItemData);
