@@ -22,7 +22,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
@@ -67,16 +66,18 @@ public class UpdateController implements UpdateCallbackInterface {
      */
     private UpdateController() {
         confirmedThreads = new HashSet<Thread>();
+        eventSender = new UpdaterEventSender();
         logger = LogController.getInstance().getLogger(UpdateController.class.getName());
         settings = JsonConfig.create(UpdateSettings.class);
 
     }
 
-    private UpdateHandler   handler;
-    private boolean         running;
-    private HashSet<Thread> confirmedThreads;
-    private String          appid;
-    private String          updaterid;
+    private UpdateHandler      handler;
+    private boolean            running;
+    private HashSet<Thread>    confirmedThreads;
+    private String             appid;
+    private String             updaterid;
+    private UpdaterEventSender eventSender;
 
     public UpdateHandler getHandler() {
         return handler;
@@ -127,11 +128,6 @@ public class UpdateController implements UpdateCallbackInterface {
     public void updateGuiProgress(double progress) {
         lazyGetIcon().setIndeterminate(progress < 0);
         lazyGetIcon().setValue((int) progress);
-    }
-
-    public boolean hasWaitingUpdates() {
-        String[] list = Application.getResource("tmp/update/data").list();
-        return (list != null && list.length > 0);
     }
 
     public String getAppID() {
@@ -327,6 +323,7 @@ public class UpdateController implements UpdateCallbackInterface {
         try {
             logger.info("onResult");
             if (handler.hasPendingSelfupdate()) {
+                fireUpdatesAvailable(false, handler.createAWFInstallLog());
                 if (!isThreadConfirmed()) {
                     if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) return;
                     logger.info("ASK for installing selfupdate");
@@ -383,7 +380,7 @@ public class UpdateController implements UpdateCallbackInterface {
                 return;
 
             }
-
+            fireUpdatesAvailable(false, awfoverview);
             // we need at least one restart
             if (isThreadConfirmed()) {
                 installUpdates(awfoverview);
@@ -417,6 +414,15 @@ public class UpdateController implements UpdateCallbackInterface {
     // public static final String AFTER_SELF_UPDATE = "afterupdate";
 
     // public static final String OK = "OK";
+
+    private void fireUpdatesAvailable(boolean self, InstallLog installLog) {
+
+        eventSender.fireEvent(new UpdaterEvent(this, UpdaterEvent.Type.UPDATES_AVAILABLE, self, installLog));
+    }
+
+    public UpdaterEventSender getEventSender() {
+        return eventSender;
+    }
 
     private void confirm(int flags, String title, String message, String ok, String no) throws DialogCanceledException, DialogClosedException {
 

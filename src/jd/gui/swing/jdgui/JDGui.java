@@ -113,11 +113,13 @@ import org.jdownloader.settings.SilentModeSettings.DialogDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.updatev2.InstallLog;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.UpdateController;
+import org.jdownloader.updatev2.UpdaterListener;
 
-public class JDGui extends SwingGui {
+public class JDGui extends SwingGui implements UpdaterListener {
 
     private static JDGui INSTANCE;
 
@@ -175,8 +177,10 @@ public class JDGui extends SwingGui {
 
     private JDGui() {
         super("JDownloader");
+        updateTitle();
         // Important for unittests
         this.mainFrame.setName("MAINFRAME");
+        UpdateController.getInstance().getEventSender().addListener(this, true);
         RememberRelativeDialogLocator locator;
         // set a default locator to remmber dialogs position
         AbstractDialog.setDefaultLocator(locator = new RememberRelativeDialogLocator("", mainFrame) {
@@ -1396,6 +1400,29 @@ public class JDGui extends SwingGui {
                     }
                 }
             };
+        }
+    }
+
+    @Override
+    public void onUpdatesAvailable(final boolean selfupdate, final InstallLog installlog) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                updateTitle();
+            }
+        };
+    }
+
+    protected void updateTitle() {
+        try {
+            if (UpdateController.getInstance().hasPendingUpdates()) {
+                getMainFrame().setTitle(_GUI._.JDGui_updateTitle_updates_available("JDownloader"));
+            } else {
+                getMainFrame().setTitle("JDownloader");
+            }
+        } catch (Exception e) {
+            getMainFrame().setTitle("JDownloader");
         }
     }
 }

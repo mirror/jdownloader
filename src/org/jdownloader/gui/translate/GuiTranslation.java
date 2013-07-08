@@ -2765,4 +2765,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter your My JDownloader Logins below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_jd_logins();
 
+    @Default(lngs = { "en" }, values = { "%s1 - Updates available!" })
+    String JDGui_updateTitle_updates_available(String string);
+
 }
