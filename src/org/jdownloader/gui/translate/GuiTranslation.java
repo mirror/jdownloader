@@ -2768,4 +2768,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1 - Updates available!" })
     String JDGui_updateTitle_updates_available(String string);
 
+    @Default(lngs = { "en" }, values = { "Lock all Columns" })
+    String LockAllColumnsAction_LockAllColumnsAction_lockall_columns_();
+
+    @Default(lngs = { "en" }, values = { "Unlock all Columns" })
+    String LockAllColumnsAction_LockAllColumnsAction_unlockall_columns_();
+
 }

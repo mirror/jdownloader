@@ -7,6 +7,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 
 import javax.swing.JComponent;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.ListSelectionModel;
 
 import jd.gui.swing.laf.LookAndFeelController;
@@ -116,6 +118,19 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             this.getModel().addExtComponentRowHighlighter(new AlternateHighlighter<T>(null, new Color(0, 0, 0, 6), null));
         }
 
+    }
+
+    protected JPopupMenu columnControlMenu(final ExtColumn<T> extColumn) {
+        JPopupMenu popup = super.columnControlMenu(extColumn);
+        // popup.add(new JSeparator());
+        popup.add(new JMenuItem(new LockAllColumnsAction(this)));
+
+        return popup;
+    }
+
+    public boolean osResizeableColumns() {
+
+        return true;
     }
 
     /**

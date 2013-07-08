@@ -12,6 +12,7 @@ import java.util.EventObject;
 import javax.swing.DropMode;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.Timer;
@@ -113,6 +114,36 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 removeLoaderPanel(loaderPanel, orgLayout, rendererPane);
             }
         });
+
+    }
+
+    protected void fireColumnModelUpdate() {
+        super.fireColumnModelUpdate();
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+
+                boolean alllocked = true;
+                for (ExtColumn<?> c : getModel().getColumns()) {
+                    if (c.isResizable()) {
+                        alllocked = false;
+                        break;
+                    }
+                }
+                if (alllocked) {
+                    JScrollPane sp = (JScrollPane) getParent().getParent();
+
+                    CFG_GUI.HORIZONTAL_SCROLLBARS_IN_DOWNLOAD_TABLE_ENABLED.setValue(true);
+                    setColumnSaveID("hBAR");
+                    setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+                    sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+                    sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+                }
+            }
+        };
+
     }
 
     protected JPopupMenu columnControlMenu(final ExtColumn<AbstractNode> extColumn) {

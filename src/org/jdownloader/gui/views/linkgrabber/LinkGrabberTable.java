@@ -13,7 +13,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.TransferHandler;
 
@@ -119,6 +121,35 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                 removeLoaderPanel(loaderPanel, orgLayout, rendererPane);
             }
         });
+    }
+
+    protected void fireColumnModelUpdate() {
+        super.fireColumnModelUpdate();
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+
+                boolean alllocked = true;
+                for (ExtColumn<?> c : getModel().getColumns()) {
+                    if (c.isResizable()) {
+                        alllocked = false;
+                        break;
+                    }
+                }
+                if (alllocked) {
+                    JScrollPane sp = (JScrollPane) getParent().getParent();
+
+                    CFG_GUI.HORIZONTAL_SCROLLBARS_IN_LINKGRABBER_TABLE_ENABLED.setValue(true);
+                    setColumnSaveID("hBAR");
+                    setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+                    sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+                    sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+                }
+            }
+        };
+
     }
 
     protected void removeLoaderPanel(final MigPanel loaderPanel, final LayoutManager orgLayout, final Component rendererPane) {
