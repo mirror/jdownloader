@@ -232,6 +232,7 @@ public class FreeWayMe extends PluginForHost {
             } else if (error.contains("Sie haben nicht genug Traffic, um diesen Download durchzuf")) { // ühren
                 tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
             } else if (error.contains("nnen nicht mehr parallele Downloads durchf")) { // Sie kö... ...ühren
+                acc.setUpdateTime(30 * 1000); // 30s
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 1 * 60 * 1000l);
             } else if (error.contains("ltiger Hoster")) { // Ungü...
                 tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
@@ -239,9 +240,6 @@ public class FreeWayMe extends PluginForHost {
                 tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Diese Datei wurde nicht gefunden.")) {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
-            } else if (error.contains("nnen nicht mehr parallele Downloads durchf")) { // Sie k&ouml;nnen nicht mehr parallele Downloads
-                                                                                       // durchf&uuml;hren (>2 aufgrund von Drosslung).
-                tempUnavailableHoster(acc, link, 1 * 60 * 1000l); // 1min
             } else if (error.equalsIgnoreCase("Unbekannter Fehler #2") || error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
                 /*
                  * after x retries we disable this host and retry with normal plugin
@@ -300,6 +298,14 @@ public class FreeWayMe extends PluginForHost {
                 hostLabel.setIcon(account.getDomainInfo().getFavIcon());
                 panelGenerator.addLabel(hostLabel);
 
+                String revision = "$Revision$";
+                try {
+                    String[] revisions = revision.split(":");
+                    revision = revisions[1].replace('$', ' ').trim();
+                } catch (Exception e) {
+                    logger.info("free-way.me revision number error: " + e);
+                }
+
                 if ("de".equalsIgnoreCase(lang)) {
                     windowTitleLangText = "Account Zusatzinformationen";
 
@@ -326,6 +332,8 @@ public class FreeWayMe extends PluginForHost {
 
                 }
                 panelGenerator.addTable(hostList);
+
+                panelGenerator.addEntry("Plugin Revision:", revision);
 
                 ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panelGenerator.getPanel(), null, "Close", "");
                 try {
@@ -398,9 +406,10 @@ public class FreeWayMe extends PluginForHost {
             c.fill = GridBagConstraints.HORIZONTAL;
             c.weightx = 0.9;
             c.gridx = 0;
-            c.gridy = y + 1;
-            c.insets = new Insets(1, 0, 0, 0);
+            c.gridy = y;
+            c.insets = new Insets(1, 0, 8, 0);
             c.gridwidth = 2;
+            y++;
 
             JScrollPane spTable = new JScrollPane(table);
             spTable.setPreferredSize(new Dimension(180, 150));
