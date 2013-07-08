@@ -211,6 +211,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             isExpanded = false;
         }
         uniqueID = new UniqueAlltimeID();
+        lock = new ModifyLock();
     }
 
     /**
