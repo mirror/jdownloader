@@ -150,11 +150,11 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                     /* enabled links that are not running */
                     ProxyBlock timeout = null;
                     if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
-                        if (timeout.getLink() == value) {
-                            return null;
-                        } else {
-                            return iconWait;
-                        }
+                        // if (timeout.getLink() == value) {
+                        // return null;
+                        // } else {
+                        return iconWait;
+                        // }
                     }
 
                 }
