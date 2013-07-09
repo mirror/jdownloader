@@ -106,8 +106,12 @@ public class ZomgUploadCom extends PluginForDecrypt {
                 }
             }
         }
-        return new Form(data);
+        Form ret = new Form(data);
+        ret.setAction(form.getAction());
+        ret.setMethod(form.getMethod());
+        return ret;
     }
+
 
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**

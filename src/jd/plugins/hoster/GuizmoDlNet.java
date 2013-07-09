@@ -88,7 +88,7 @@ public class GuizmoDlNet extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.3
+    // XfileShare Version 3.0.6.4
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: 4dignum
@@ -590,8 +590,6 @@ public class GuizmoDlNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchAccount info */
-        totalMaxSimultanPremDownload.set(1);
         try {
             login(account, true);
         } catch (final PluginException e) {
@@ -621,7 +619,7 @@ public class GuizmoDlNet extends PluginForHost {
         }
         if (account.getBooleanProperty("free")) {
             ai.setStatus("Registered (free) User");
-            totalMaxSimultanPremDownload.set(20);
+            account.setProperty("totalMaxSim", 20);
         } else {
             long expire = 0, expireD = 0, expireS = 0;
             final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
@@ -655,7 +653,7 @@ public class GuizmoDlNet extends PluginForHost {
             } else {
                 expire = expireD;
             }
-            totalMaxSimultanPremDownload.set(20);
+            account.setProperty("totalMaxSim", 20);
             ai.setValidUntil(expire);
             ai.setStatus("Premium User");
         }
@@ -859,7 +857,6 @@ public class GuizmoDlNet extends PluginForHost {
     private final String                                      PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private final String                                      PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
 
-    private static AtomicInteger                              totalMaxSimultanPremDownload = new AtomicInteger(1);
     private static AtomicInteger                              maxFree                      = new AtomicInteger(1);
     private static AtomicInteger                              maxPrem                      = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
@@ -869,7 +866,7 @@ public class GuizmoDlNet extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Integer>> hostMap                      = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static final Object                               LOCK                         = new Object();
+    private static Object                                     LOCK                         = new Object();
 
     private static StringContainer                            agent                        = new StringContainer();
 
@@ -1220,7 +1217,7 @@ public class GuizmoDlNet extends PluginForHost {
             logger.info("maxFree was = " + was + " && maxFree now = " + maxFree.get());
         } else {
             int was = maxPrem.get();
-            maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), totalMaxSimultanPremDownload.get()));
+            maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), account.getIntegerProperty("totalMaxSim", 20)));
             logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
         }
     }
@@ -1368,7 +1365,7 @@ public class GuizmoDlNet extends PluginForHost {
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
      * */
-    private void setHashedHashKeyValue(final Account account, final Integer x) {
+    private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
         if (usedHost == null || x == null) return;
         HashMap<String, Integer> holder = new HashMap<String, Integer>();
         if (!hostMap.isEmpty()) {
@@ -1407,7 +1404,7 @@ public class GuizmoDlNet extends PluginForHost {
      * @param account
      *            Account that's been used, can be null
      * */
-    private String getHashedHashedKey(final Account account) {
+    private synchronized String getHashedHashedKey(final Account account) {
         if (usedHost == null) return null;
         if (hostMap.containsKey(account)) {
             final HashMap<String, Integer> accKeyValue = hostMap.get(account);
@@ -1427,7 +1424,7 @@ public class GuizmoDlNet extends PluginForHost {
      * @param account
      *            Account that's been used, can be null
      * */
-    private Integer getHashedHashedValue(final Account account) {
+    private synchronized Integer getHashedHashedValue(final Account account) {
         if (usedHost == null) return null;
         if (hostMap.containsKey(account)) {
             final HashMap<String, Integer> accKeyValue = hostMap.get(account);
@@ -1449,7 +1446,7 @@ public class GuizmoDlNet extends PluginForHost {
      * @param key
      *            String of what ever you want to find
      * */
-    private boolean isHashedHashedKey(final Account account, final String key) {
+    private synchronized boolean isHashedHashedKey(final Account account, final String key) {
         if (key == null) return false;
         final HashMap<String, Integer> accKeyValue = hostMap.get(account);
         if (accKeyValue != null) {
@@ -1527,8 +1524,12 @@ public class GuizmoDlNet extends PluginForHost {
                 }
             }
         }
-        return new Form(data);
+        Form ret = new Form(data);
+        ret.setAction(form.getAction());
+        ret.setMethod(form.getMethod());
+        return ret;
     }
+
 
     /**
      * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same

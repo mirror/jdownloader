@@ -160,9 +160,9 @@ public class GuploadBiz extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage(MAINPAGE + "/login.php", "loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&submitme=1");
+                br.postPage(MAINPAGE.replace("http://", "https://") + "/login.php", "loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&submitme=1");
                 if (br.getCookie(MAINPAGE, "spf") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.getPage(MAINPAGE + "/upgrade.php");
+                br.getPage("/upgrade.php");
                 if (!br.containsHTML("Account Type:[\r\n\t ]+</td>[\r\n\t ]+<td>[\r\n\t ]+Paid User")) {
                     logger.info("FREE Accounts are not supported!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -192,7 +192,7 @@ public class GuploadBiz extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        if (!br.getURL().endsWith("/upgrade.php")) br.getPage(MAINPAGE + "/upgrade.php");
+        if (!br.getURL().endsWith("/upgrade.php")) br.getPage("/upgrade.php");
         final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH));
         account.setValid(true);

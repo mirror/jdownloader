@@ -72,7 +72,7 @@ public class ShareProfiCom extends PluginForHost {
     private final String               DOMAINS                      = "(shareprofi\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
+    private final String               dllinkRegex                  = "https?://(//)?(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
     private final boolean              videoHoster                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              supportsHTTPS                = true;
@@ -87,7 +87,7 @@ public class ShareProfiCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.3
+    // XfileShare Version 3.0.6.4
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: 4dignum
@@ -277,8 +277,8 @@ public class ShareProfiCom extends PluginForHost {
     }
 
     /**
-     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this method doesn't give
-     * filename...
+     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
+     * method doesn't give filename...
      * 
      * */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
@@ -491,6 +491,7 @@ public class ShareProfiCom extends PluginForHost {
                 }
             }
         }
+        if (!inValidate(dllink)) dllink = dllink.replaceFirst(":////", "://");
     }
 
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
@@ -524,9 +525,9 @@ public class ShareProfiCom extends PluginForHost {
         // monitor this
         if (cbr.containsHTML("(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
             /*
-             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was recorded from x time
-             * (hours|days) which can trigger false positive below wait handling. As its only indication of what's previous happened, as in past tense and not a
-             * wait time going forward... unknown wait time!
+             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
+             * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
+             * previous happened, as in past tense and not a wait time going forward... unknown wait time!
              */
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
@@ -589,8 +590,6 @@ public class ShareProfiCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchAccount info */
-        totalMaxSimultanPremDownload.set(1);
         try {
             login(account, true);
         } catch (final PluginException e) {
@@ -620,38 +619,19 @@ public class ShareProfiCom extends PluginForHost {
         }
         if (account.getBooleanProperty("free")) {
             ai.setStatus("Registered (free) User");
-            totalMaxSimultanPremDownload.set(20);
+            account.setProperty("totalMaxSim", 20);
         } else {
             long expire = 0, expireD = 0, expireS = 0;
-            String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-            if (!inValidate(expireDay)) {
-                expireD = TimeFormatter.getMilliSeconds(expireDay, "dd MMMM yyyy", Locale.ENGLISH);
-            } else {
-                expireDay = cbr.getRegex("Premium expire:<.*?(\\d+-\\d+-\\d+ \\d+:\\d+)").getMatch(0);
-            }
-            if (!inValidate(expireDay)) {
-                expireD = TimeFormatter.getMilliSeconds(expireDay, "yyyy-MM-dd hh:mm", Locale.ENGLISH);
-            } else {
-                expireDay = cbr.getRegex("Premium expire:<.*?(\\d+.\\d+.\\d+ \\d+:\\d+)").getMatch(0);
-            }
+            final String expireDay = new Regex(cbr, "(\\d{4}\\.\\d{1,2}\\.\\d{1,2} \\d{1,2}:\\d{1,2})").getMatch(0);
             if (!inValidate(expireDay)) {
                 expireD = TimeFormatter.getMilliSeconds(expireDay, "yyyy.MM.dd hh:mm", Locale.ENGLISH);
             }
             if (inValidate(expireDay) || useAltExpire) {
                 // A more accurate expire time, down to the second. Usually shown on 'extend premium account' page.
                 getPage("/?op=payments");
-                String expireSecond = cbr.getRegex("Premium(\\-| )Account expires?:([^\n\r]+)").getMatch(1);
-                if (!inValidate(expireSecond)) {
-                    String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
-                    String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
-                    String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
-                    String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
-                    long days = 0, hours = 0, minutes = 0, seconds = 0;
-                    if (!inValidate(tmpdays)) days = Integer.parseInt(tmpdays);
-                    if (!inValidate(tmphrs)) hours = Integer.parseInt(tmphrs);
-                    if (!inValidate(tmpmin)) minutes = Integer.parseInt(tmpmin);
-                    if (!inValidate(tmpsec)) seconds = Integer.parseInt(tmpsec);
-                    expireS = ((days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
+                final String secondary = new Regex(cbr, "(\\d{4}-\\d{1,2}-\\d{1,2} \\d{1,2}:\\d{1,2})").getMatch(0);
+                if (!inValidate(secondary)) {
+                    expireS = TimeFormatter.getMilliSeconds(secondary, "yyyy-MM-dd hh:mm", Locale.ENGLISH);
                 }
                 if (expireD == 0 && expireS == 0) {
                     ai.setExpired(true);
@@ -659,12 +639,12 @@ public class ShareProfiCom extends PluginForHost {
                     return ai;
                 }
             }
-            if (expireS != 0) {
+            if (expireS >= System.currentTimeMillis()) {
                 expire = expireS;
             } else {
                 expire = expireD;
             }
-            totalMaxSimultanPremDownload.set(20);
+            account.setProperty("totalMaxSim", 20);
             ai.setValidUntil(expire);
             ai.setStatus("Premium User");
         }
@@ -848,40 +828,39 @@ public class ShareProfiCom extends PluginForHost {
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
 
-    private Browser                                           cbr                          = new Browser();
+    private Browser                                           cbr                    = new Browser();
 
-    private String                                            acctype                      = null;
-    private String                                            directlinkproperty           = null;
-    private String                                            dllink                       = null;
-    private String                                            fuid                         = null;
-    private String                                            passCode                     = null;
-    private String                                            usedHost                     = null;
+    private String                                            acctype                = null;
+    private String                                            directlinkproperty     = null;
+    private String                                            dllink                 = null;
+    private String                                            fuid                   = null;
+    private String                                            passCode               = null;
+    private String                                            usedHost               = null;
 
-    private int                                               chunks                       = 1;
+    private int                                               chunks                 = 1;
 
-    private boolean                                           resumes                      = false;
-    private boolean                                           skipWaitTime                 = false;
+    private boolean                                           resumes                = false;
+    private boolean                                           skipWaitTime           = false;
 
-    private final String                                      language                     = System.getProperty("user.language");
-    private final String                                      preferHTTPS                  = "preferHTTPS";
-    private final String                                      ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private final String                                      MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private final String                                      PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private final String                                      PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private final String                                      language               = System.getProperty("user.language");
+    private final String                                      preferHTTPS            = "preferHTTPS";
+    private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private final String                                      PREMIUMONLY1           = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private final String                                      PREMIUMONLY2           = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
 
-    private static AtomicInteger                              totalMaxSimultanPremDownload = new AtomicInteger(1);
-    private static AtomicInteger                              maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger                              maxPrem                      = new AtomicInteger(1);
+    private static AtomicInteger                              maxFree                = new AtomicInteger(1);
+    private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
-    private static AtomicInteger                              maxNonAccSimDlPerHost        = new AtomicInteger(20);
-    private static AtomicInteger                              maxFreeAccSimDlPerHost       = new AtomicInteger(20);
-    private static AtomicInteger                              maxPremAccSimDlPerHost       = new AtomicInteger(20);
+    private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
+    private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
 
-    private static HashMap<Account, HashMap<String, Integer>> hostMap                      = new HashMap<Account, HashMap<String, Integer>>();
+    private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static Object                                     LOCK                         = new Object();
+    private static Object                                     LOCK                   = new Object();
 
-    private static StringContainer                            agent                        = new StringContainer();
+    private static StringContainer                            agent                  = new StringContainer();
 
     public static class StringContainer {
         public String string = null;
@@ -1010,8 +989,8 @@ public class ShareProfiCom extends PluginForHost {
     }
 
     /**
-     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking which is based on
-     * fuid.
+     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
+     * which is based on fuid.
      * 
      * @author raztoki
      * */
@@ -1211,14 +1190,14 @@ public class ShareProfiCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
-     * singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
-     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
-     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
-     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
-     * begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlSlot
      *            (+1|-1)
@@ -1230,14 +1209,14 @@ public class ShareProfiCom extends PluginForHost {
             logger.info("maxFree was = " + was + " && maxFree now = " + maxFree.get());
         } else {
             int was = maxPrem.get();
-            maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), totalMaxSimultanPremDownload.get()));
+            maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), account.getIntegerProperty("totalMaxSim", 20)));
             logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
         }
     }
 
     /**
-     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going forward. Thus prevents
-     * new downloads starting when not possible and is self aware and requires no coder interaction.
+     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
+     * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
      * 
      * @param account
      * 
@@ -1270,9 +1249,9 @@ public class ShareProfiCom extends PluginForHost {
     }
 
     /**
-     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x connections to ip/host
-     * server. Currently JD allows a global connection controller and doesn't allow for handling of different hosts/IP setup. This will help with those
-     * situations by allowing more connection when possible.
+     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
+     * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
+     * hosts/IP setup. This will help with those situations by allowing more connection when possible.
      * 
      * @param Account
      *            Account that's been used, can be null
@@ -1347,9 +1326,9 @@ public class ShareProfiCom extends PluginForHost {
             // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
 
             /*
-             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads finishes. This is
-             * best practice otherwise you have to use some crude system of waits, but you have no control over to reset the count. Highly dependent on how fast
-             * or slow the users connections is.
+             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads
+             * finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control over to reset
+             * the count. Highly dependent on how fast or slow the users connections is.
              */
             if (isHashedHashedKey(account, usedHost)) {
                 Integer usedSlots = getHashedHashedValue(account);
@@ -1514,8 +1493,8 @@ public class ShareProfiCom extends PluginForHost {
     }
 
     /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re: InputField
-     * parse(final String data). Affects revision 19688 and earlier!
+     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
+     * InputField parse(final String data). Affects revision 19688 and earlier!
      * 
      * TODO: remove after JD2 goes stable!
      * 
@@ -1544,8 +1523,8 @@ public class ShareProfiCom extends PluginForHost {
     }
 
     /**
-     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same request id. This is
-     * needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
+     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
+     * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
      * 
      * @param ibr
      *            Import Browser
