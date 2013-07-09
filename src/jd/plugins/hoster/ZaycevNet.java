@@ -54,8 +54,8 @@ public class ZaycevNet extends PluginForHost {
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("\\{ windowTitle:'Добавление комментария ([^']+)' \\}").getMatch(0);
         if (filename == null) filename = br.getRegex("<h6>Загрузка mp3 : (.*?)</h6>").getMatch(0);
-        String filesize = br.getRegex("class=\"track\\-file\\-info__size\">Размер: ([^<>\"]*?)<meta").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesize = br.getRegex("Б<meta content=\"(.*?)\" itemprop=\"contentSize\"/>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -68,7 +68,6 @@ public class ZaycevNet extends PluginForHost {
         if (finallink == null) {
             String cryptedlink = br.getRegex("\"(/download\\.php\\?id=\\d+\\&ass=[^<>/\"]*?\\.mp3)\"").getMatch(0);
             if (cryptedlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            cryptedlink = "http://zaycev.net" + cryptedlink;
             br.getPage(cryptedlink);
             finallink = getDllink();
             if (finallink == null) {
@@ -77,7 +76,7 @@ public class ZaycevNet extends PluginForHost {
                         // Captcha handling
                         String captchaID = getCaptchaID();
                         if (captchaID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        String code = getCaptchaCode("http://www.zaycev.net/captcha/" + captchaID + "/", downloadLink);
+                        String code = getCaptchaCode("/captcha/" + captchaID + "/", downloadLink);
                         String captchapage = cryptedlink + "&captchaId=" + captchaID + "&text_check=" + code + "&ok=%F1%EA%E0%F7%E0%F2%FC";
                         br.getPage(captchapage);
                         if (br.containsHTML(CAPTCHATEXT)) continue;

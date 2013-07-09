@@ -284,7 +284,7 @@ public class PremiumizeMe extends PluginForHost {
             case 400:
                 /* not a valid link, do not try again with this multihoster */
                 if (statusMessage == null) statusMessage = "Invalid DownloadLink";
-                throw new PluginException(LinkStatus.ERROR_FATAL);
+                tempUnavailableHoster(account, downloadLink, 3 * 60 * 60 * 1000);
             case 401:
                 /* not logged in, disable account. */
                 if (statusMessage == null) statusMessage = "Login error";

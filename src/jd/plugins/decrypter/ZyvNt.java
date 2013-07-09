@@ -41,8 +41,8 @@ public class ZyvNt extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        final String artist = br.getRegex("<title>Автор ([^<>\"/]*?) и его композиции</title>").getMatch(0);
-        String[][] fileInfo = br.getRegex("class=\"track artist_img_left\"><a href=\"(/pages/\\d+/\\d+\\.shtml)\">([^<>/\"]*?)</a></td><td class=\"date\">\\d{2}\\.\\d{2}\\.\\d{2}</td><td class=\"bitrate\">[0-9\t\n\r ]+</td><td class=\"size\">(\\d+(\\.\\d+)?)</td>").getMatches();
+        final String artist = br.getRegex("<title>(.*?) - биография, онлайн биография, музыка</title>").getMatch(0);
+        String[][] fileInfo = br.getRegex("<tr[^\r\n]+<a href=\"(/pages/\\d+/\\d+\\.shtml)\" itemprop=\"url audio\">(.*?)</span>[^\r\n]+<td class=\"size\">(.*?)</td>[^\r\n]+</tr>").getMatches();
         if (fileInfo == null || fileInfo.length == 0) {
             if (br.containsHTML(">Нет информации<")) {
                 logger.info("Link offline: " + parameter);
@@ -53,7 +53,7 @@ public class ZyvNt extends PluginForDecrypt {
         }
         for (String[] file : fileInfo) {
             final DownloadLink dl = createDownloadlink("http://zaycev.net" + file[0]);
-            dl.setFinalFileName(Encoding.htmlDecode(file[1].trim()) + ".mp3");
+            dl.setFinalFileName(Encoding.htmlDecode(file[1].trim()).replaceAll("</?span[^>]+", "") + ".mp3");
             dl.setDownloadSize(SizeFormatter.getSize(file[2] + " MB"));
             dl.setAvailable(true);
             decryptedLinks.add(dl);
@@ -62,6 +62,7 @@ public class ZyvNt extends PluginForDecrypt {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(artist.trim()));
             fp.addLinks(decryptedLinks);
+            fp.setProperty("ALLOW_MERGE", true);
         }
         return decryptedLinks;
     }
