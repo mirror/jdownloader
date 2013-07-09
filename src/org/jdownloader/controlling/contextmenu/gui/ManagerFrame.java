@@ -14,7 +14,7 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.TreePath;
 
-import jd.gui.swing.laf.LookAndFeelController;
+import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -309,14 +309,14 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
         final MigPanel panel = new MigPanel("ins 2,wrap 2", "[grow,fill][]", "[grow,fill][]");
         panel.setOpaque(false);
 
-        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor((JComponent) getDialog().getContentPane());
-        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(panel);
+        LAFOptions.applyPanelBackground((JComponent) getDialog().getContentPane());
+        LAFOptions.applyPanelBackground(panel);
 
         model = new ManagerTreeModel(manager.getMenuData());
         tree = new MenuManagerTree(this);
 
         tree.getSelectionModel().addTreeSelectionListener(this);
-        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(tree);
+        LAFOptions.applyPanelBackground(tree);
 
         // tree.set
         // tree.setShowsRootHandles(false);
@@ -334,7 +334,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
         sp.setColumnHeaderView(new TreeHeader());
         panel.add(sp);
         infoPanel = new InfoPanel(this);
-        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(infoPanel);
+        LAFOptions.applyPanelBackground(infoPanel);
         sp = new HeaderScrollPane(infoPanel) {
             public Dimension getPreferredSize() {
                 Dimension ret = super.getPreferredSize();
@@ -345,7 +345,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
         sp.setColumnHeaderView(new OptionsPaneHeader());
         panel.add(sp);
 
-        LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(sp);
+        LAFOptions.applyPanelBackground(sp);
 
         if (tree.getRowCount() > 0) tree.setSelectionRow(0);
         return panel;

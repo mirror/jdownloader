@@ -29,6 +29,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.synthetica.SyntheticaHelper;
 import org.appwork.utils.Application;
@@ -41,6 +42,8 @@ import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.HexColorString;
+import org.jdownloader.settings.LAFSettings;
 
 public class LookAndFeelController implements LAFManagerInterface {
     private static final String                DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = JDDefaultLookAndFeel.class.getName();
@@ -174,7 +177,7 @@ public class LookAndFeelController implements LAFManagerInterface {
                 }
 
                 SyntheticaHelper.init(laf, liz);
-                ExtTooltip.createConfig(ExtTooltip.DEFAULT).setForegroundColor(getLAFOptions().getTooltipForegroundColor());
+                ExtTooltip.createConfig(ExtTooltip.DEFAULT).setForegroundColor(LAFOptions.createColor(getLAFOptions().getColorForTooltipForeground()).getRGB());
 
             } else {
                 /* init for all other laf */
@@ -220,7 +223,27 @@ public class LookAndFeelController implements LAFManagerInterface {
                 LogController.GL.info("Not LAF Options found: " + laf + ".json");
                 lafOptions = new LAFOptions();
             }
+            String c = null;
+            LAFSettings cfg = JsonConfig.create(LAFSettings.class);
+            for (KeyHandler m : cfg._getStorageHandler().getMap().values()) {
+                try {
+                    if (m.getAnnotation(HexColorString.class) != null) {
+                        Object v = m.getValue();
+
+                        if (v != null && LAFOptions.createColor(v.toString()) != null) {
+
+                            logger.info("Use Custom Color for " + m.getKey() + ": " + v);
+                            m.getSetter().getMethod().invoke(lafOptions, v);
+
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.log(e);
+                }
+            }
+
         }
+
         return lafOptions;
     }
 

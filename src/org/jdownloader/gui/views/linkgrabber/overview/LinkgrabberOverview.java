@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.linkgrabber.overview;
 
-import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
@@ -22,7 +21,7 @@ import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.laf.LookAndFeelController;
+import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -56,12 +55,8 @@ public class LinkgrabberOverview extends MigPanel implements ActionListener, Hie
     public LinkgrabberOverview(LinkGrabberTable table) {
         super("ins 0", "[][grow,fill][]", "[grow,fill]");
         this.table = table;
-        int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
 
-        if (c >= 0) {
-            setBackground(new Color(c));
-            setOpaque(true);
-        }
+        LAFOptions.applyPanelBackground(this);
         MigPanel info = new MigPanel("ins 2 0 0 0", "[grow]10[grow]", "[grow,fill]2[grow,fill]");
         info.setOpaque(false);
         GUIEventSender.getInstance().addListener(this, true);

@@ -11,7 +11,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.laf.LookAndFeelController;
+import jd.gui.swing.laf.LAFOptions;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.ValidationException;
@@ -107,7 +107,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             overView = new DownloadOverview(table);
             overViewScrollBar = new OverviewHeaderScrollPane(overView);
 
-            LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(overViewScrollBar);
+            LAFOptions.applyPanelBackground(overViewScrollBar);
 
             // overViewScrollBar.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
             // overViewScrollBar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);

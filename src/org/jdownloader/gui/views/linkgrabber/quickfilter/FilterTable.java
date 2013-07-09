@@ -21,6 +21,7 @@ import jd.controlling.IOEQ;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -92,17 +93,17 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         this.setShowHorizontalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-        int c = LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor();
+        Color c = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeader());
         Color b2;
         Color f2;
-        if (c >= 0) {
-            b2 = new Color(c);
-            f2 = new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderForegroundColor());
+        if (c != null) {
+            b2 = c;
+            f2 = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderForeground());
         } else {
             b2 = getForeground();
             f2 = getBackground();
         }
-        this.setBackground(new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor()));
+        this.setBackground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelBackground()));
 
         this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<Filter>(f2, b2, null) {
 

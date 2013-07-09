@@ -15,7 +15,7 @@ public class CFG_PACKAGIZER {
     // Static Mappings for interface
     // org.jdownloader.controlling.packagizer.PackagizerSettings
     public static final PackagizerSettings                 CFG                = JsonConfig.create(PackagizerSettings.class);
-    public static final StorageHandler<PackagizerSettings> SH                 = (StorageHandler<PackagizerSettings>) CFG.getStorageHandler();
+    public static final StorageHandler<PackagizerSettings> SH                 = (StorageHandler<PackagizerSettings>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers,
     // access is faster, and we get an error on init if mappings are wrong.
     // Keyhandler interface

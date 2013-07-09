@@ -18,7 +18,7 @@ public class CFG_GUI {
 
     // Static Mappings for interface org.jdownloader.settings.GraphicalUserInterfaceSettings
     public static final GraphicalUserInterfaceSettings                 CFG                                                  = JsonConfig.create(GraphicalUserInterfaceSettings.class);
-    public static final StorageHandler<GraphicalUserInterfaceSettings> SH                                                   = (StorageHandler<GraphicalUserInterfaceSettings>) CFG.getStorageHandler();
+    public static final StorageHandler<GraphicalUserInterfaceSettings> SH                                                   = (StorageHandler<GraphicalUserInterfaceSettings>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // MAINFRAME_IS_MAXIMIZED
@@ -237,4 +237,5 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              TOOLTIP_ENABLED                                      = SH.getKeyHandler("TooltipEnabled", BooleanKeyHandler.class);
     // TOTAL_PROGRESS
     public static final EnumKeyHandler                                 MAC_DOCK_PROGRESS_DISPLAY                            = SH.getKeyHandler("MacDockProgressDisplay", EnumKeyHandler.class);
+
 }

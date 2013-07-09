@@ -72,7 +72,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         close = NewTheme.I().getImage("close", -1);
 
         LAFOptions lafo = LookAndFeelController.getInstance().getLAFOptions();
-        bgColor = new Color(lafo.getPanelHeaderColor());
+        bgColor = LAFOptions.createColor(lafo.getColorForPanelHeader());
         setHelpText(_GUI._.SearchField_SearchField_helptext());
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         popIcon = NewTheme.I().getImage("popupButton", -1);

@@ -66,7 +66,7 @@ public class StatsManager implements GenericConfigEventListener<Object> {
             }
         });
         logEnabled();
-        config.getStorageHandler().getKeyHandler("enabled").getEventSender().addListener(this);
+        config._getStorageHandler().getKeyHandler("enabled").getEventSender().addListener(this);
     }
 
     private synchronized void logEnabled() {

@@ -2774,4 +2774,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Unlock all Columns" })
     String LockAllColumnsAction_LockAllColumnsAction_unlockall_columns_();
 
+    @Default(lngs = { "en" }, values = { "Choose new Color:" })
+    String AdvancedValueColumn_onSingleClick_colorchooser_title_();
+
+    @Default(lngs = { "en" }, values = { "Choose a Color or enter the Color manually!" })
+    String AdvancedValueColumn_onSingleClick_colorColumn_title();
+
+    @Default(lngs = { "en" }, values = { "... you can press ALT while clicking on this column to enter the Color code manually!" })
+    String AdvancedValueColumn_onSingleClick_colorColumn_help();
+
 }

@@ -14,7 +14,7 @@ public class CFG_API {
 
     // Static Mappings for interface org.jdownloader.api.RemoteAPIConfig
     public static final RemoteAPIConfig                 CFG                      = JsonConfig.create(RemoteAPIConfig.class);
-    public static final StorageHandler<RemoteAPIConfig> SH                       = (StorageHandler<RemoteAPIConfig>) CFG.getStorageHandler();
+    public static final StorageHandler<RemoteAPIConfig> SH                       = (StorageHandler<RemoteAPIConfig>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // true

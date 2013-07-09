@@ -28,9 +28,9 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
     public ExtensionConfigPanel(T plg, boolean clean) {
         super();
         this.extension = plg;
-        keyHandlerEnabled = plg.getSettings().getStorageHandler().getKeyHandler("enabled", BooleanKeyHandler.class);
+        keyHandlerEnabled = plg.getSettings()._getStorageHandler().getKeyHandler("enabled", BooleanKeyHandler.class);
 
-        plg.getSettings().getStorageHandler().getEventSender().addListener(this);
+        plg.getSettings()._getStorageHandler().getEventSender().addListener(this);
         if (!clean) {
             final Header header = new Header(plg.getName(), NewTheme.I().getIcon(extension.getIconKey(), 32), keyHandlerEnabled, extension.getVersion());
 

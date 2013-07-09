@@ -17,7 +17,6 @@
 package jd.gui.swing.jdgui.views.settings.sidebar;
 
 import java.awt.AlphaComposite;
-import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -39,6 +38,7 @@ import javax.swing.event.ListSelectionListener;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.ExtensionManager;
+import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
@@ -217,20 +217,15 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
 
         });
 
-        int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
-        if (c >= 0) {
-            list.setBackground(new Color(c));
-            list.setOpaque(true);
-        }
-
-        sp.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor())));
+        LAFOptions.applyBackground(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelBackground(), list);
+        sp.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderLine())));
         sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
             public void valueChanged(ListSelectionEvent e) {
                 SwitchPanel op = getSelectedPanel();
                 if (op instanceof ExtensionConfigPanel) {
-                    ((ExtensionConfigPanel<?>) op).getExtension().getSettings().getStorageHandler().getEventSender().addListener(ConfigSidebar.this, true);
+                    ((ExtensionConfigPanel<?>) op).getExtension().getSettings()._getStorageHandler().getEventSender().addListener(ConfigSidebar.this, true);
                 }
             }
         });

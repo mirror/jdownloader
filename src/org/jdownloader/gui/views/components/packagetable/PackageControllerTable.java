@@ -22,6 +22,7 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.gui.swing.jdgui.BasicJDTable;
+import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.exceptions.WTFException;
@@ -54,12 +55,12 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         this.setShowVerticalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-        sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? new Color(LookAndFeelController.getInstance().getLAFOptions().getHighlightColor1()) : null;
-        filterNotifyColor = CFG_GUI.CFG.isFilterHighlightEnabled() ? new Color(LookAndFeelController.getInstance().getLAFOptions().getHighlightColor2()) : null;
+        sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForSortedColumnView()) : null;
+        filterNotifyColor = CFG_GUI.CFG.isFilterHighlightEnabled() ? LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForFilteredTableView()) : null;
         initAppActions();
         if (CFG_GUI.PACKAGES_BACKGROUND_HIGHLIGHT_ENABLED.isEnabled()) {
-            Color tableFG = new Color(LookAndFeelController.getInstance().getLAFOptions().getTablePackageRowForeground());
-            Color tableBG = new Color(LookAndFeelController.getInstance().getLAFOptions().getTablePackageRowBackground());
+            Color tableFG = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTablePackageRowForeground());
+            Color tableBG = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTablePackageRowBackground());
             this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AbstractNode>(tableFG, tableBG, null) {
                 public int getPriority() {
                     return 0;

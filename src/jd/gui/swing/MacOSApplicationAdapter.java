@@ -113,7 +113,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                         com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", 128));
                     }
                 });
-                EnumKeyHandler MacDOCKProgressDisplay = JsonConfig.create(GraphicalUserInterfaceSettings.class).getStorageHandler().getKeyHandler("MacDockProgressDisplay", EnumKeyHandler.class);
+                EnumKeyHandler MacDOCKProgressDisplay = JsonConfig.create(GraphicalUserInterfaceSettings.class)._getStorageHandler().getKeyHandler("MacDockProgressDisplay", EnumKeyHandler.class);
 
                 MacDOCKProgressDisplay.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
 

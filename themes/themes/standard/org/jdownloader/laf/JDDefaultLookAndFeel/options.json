@@ -1,12 +1,12 @@
 {
   "paintStatusbarTopBorder" : false,
-  "panelBackgroundColor" :16121087,
-  "panelHeaderColor" : 14149616,
+  "panelBackgroundColor" :"#ffF5FCFF",
+  "panelHeaderColor" : "#ffD7E7F0",
   "popupBorderInsets" : [ 0,2,4,2],
-  "panelHeaderLineColor": -4144960,
-  "panelHeaderLineForegroundColor" : 0,
-  "errorForeground": 16711680,
-  "tooltipForegroundColor": 16121087,
-  "downloadOverviewHeaderColor":4671303
+  "panelHeaderLineColor": "#ffC0C0C0",
+  "panelHeaderLineForegroundColor" : "#ff000000",
+  "errorForeground": "#ffFF0000",
+  "tooltipForegroundColor": "#ffF5FCFF",
+  "downloadOverviewHeaderColor":"#ff474747"
   
 }

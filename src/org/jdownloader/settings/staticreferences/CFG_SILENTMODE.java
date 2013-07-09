@@ -15,7 +15,7 @@ public class CFG_SILENTMODE {
 
     // Static Mappings for interface org.jdownloader.settings.SilentModeSettings
     public static final SilentModeSettings                 CFG                                         = JsonConfig.create(SilentModeSettings.class);
-    public static final StorageHandler<SilentModeSettings> SH                                          = (StorageHandler<SilentModeSettings>) CFG.getStorageHandler();
+    public static final StorageHandler<SilentModeSettings> SH                                          = (StorageHandler<SilentModeSettings>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // WAIT_IN_BACKGROUND_UNTIL_WINDOW_GETS_FOCUS_OR_TIMEOUT

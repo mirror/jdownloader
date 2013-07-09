@@ -15,7 +15,7 @@ public class CFG_LINKCOLLECTOR {
     // Static Mappings for interface
     // jd.controlling.linkcollector.LinkCollectorConfig
     public static final LinkCollectorConfig                 CFG                 = JsonConfig.create(LinkCollectorConfig.class);
-    public static final StorageHandler<LinkCollectorConfig> SH                  = (StorageHandler<LinkCollectorConfig>) CFG.getStorageHandler();
+    public static final StorageHandler<LinkCollectorConfig> SH                  = (StorageHandler<LinkCollectorConfig>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers,
     // access is faster, and we get an error on init if mappings are wrong.
     // Keyhandler interface

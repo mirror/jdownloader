@@ -1,10 +1,8 @@
 package org.jdownloader.gui.views.linkgrabber;
 
-import java.awt.Color;
-
 import javax.swing.Box;
 
-import jd.gui.swing.laf.LookAndFeelController;
+import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -36,12 +34,7 @@ public class LinkGrabberSidebar extends MigPanel {
 
     public LinkGrabberSidebar(LinkGrabberTable table) {
         super("ins 0,wrap 1", "[grow,fill]", "[]");
-        int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
-
-        if (c >= 0) {
-            setBackground(new Color(c));
-            setOpaque(true);
-        }
+        LAFOptions.applyPanelBackground(this);
         // header
         hosterFilter = new Header(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_HOSTER_QUICKFILTER_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter());
         exceptions = new CustomFilterHeader();
@@ -57,10 +50,8 @@ public class LinkGrabberSidebar extends MigPanel {
         filetypeFilterTable.setVisible(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_FILETYPE_QUICKFILTER_ENABLED.getValue());
 
         quicksettings = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[]0[]0[]");
-        if (c >= 0) {
-            quicksettings.setBackground(new Color(c));
-            quicksettings.setOpaque(true);
-        }
+
+        LAFOptions.applyPanelBackground(quicksettings);
         quicksettings.add(new Checkbox(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop_tt()));
         quicksettings.add(new Checkbox(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_CONFIRM_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm_tt()));
         quicksettings.add(new Checkbox(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart_tt()));

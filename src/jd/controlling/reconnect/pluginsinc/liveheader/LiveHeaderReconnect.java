@@ -69,9 +69,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
         // only listen to system to autosend script
         // Send routerscript if there were 3 successful recoinnects in a row
-        JsonConfig.create(ReconnectConfig.class).getStorageHandler().getEventSender().addListener(this);
+        JsonConfig.create(ReconnectConfig.class)._getStorageHandler().getEventSender().addListener(this);
         settings = JsonConfig.create(LiveHeaderReconnectSettings.class);
-        settings.getStorageHandler().getEventSender().addListener(this);
+        settings._getStorageHandler().getEventSender().addListener(this);
         AdvancedConfigManager.getInstance().register(JsonConfig.create(LiveHeaderReconnectSettings.class));
 
     }

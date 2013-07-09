@@ -24,6 +24,7 @@ import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.LAFSettings;
 import org.jdownloader.settings.RtmpdumpSettings;
 import org.jdownloader.settings.SilentModeSettings;
 import org.jdownloader.settings.SoundSettings;
@@ -65,6 +66,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(SoundSettings.class));
         register(JsonConfig.create(CaptchaSettings.class));
         register(JsonConfig.create(SilentModeSettings.class));
+        register(JsonConfig.create(LAFSettings.class));
 
     }
 
@@ -76,7 +78,7 @@ public class AdvancedConfigManager {
 
         HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
 
-        for (KeyHandler m : cf.getStorageHandler().getMap().values()) {
+        for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
 
             if (map.containsKey(m)) continue;
 

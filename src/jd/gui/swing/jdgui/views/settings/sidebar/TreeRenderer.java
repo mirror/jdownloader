@@ -33,6 +33,7 @@ import javax.swing.border.MatteBorder;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.ExtensionManager;
+import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
@@ -86,9 +87,9 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
         f = lbl.getForeground();
         selectedBackground = ColorUtils.getAlphaInstance(f, 60);
 
-        int c = LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor();
-        if (c >= 0) {
-            selectedBackground = ColorUtils.getAlphaInstance((new Color(c)), 230);
+        Color c = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeader());
+        if (c != null) {
+            selectedBackground = ColorUtils.getAlphaInstance(c, 230);
         }
 
         alternateHighlight = ColorUtils.getAlphaInstance(lbl.getForeground(), 4);

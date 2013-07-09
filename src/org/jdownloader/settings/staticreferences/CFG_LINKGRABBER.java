@@ -17,7 +17,7 @@ public class CFG_LINKGRABBER {
     // Static Mappings for interface
     // org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings
     public static final LinkgrabberSettings                 CFG                                          = JsonConfig.create(LinkgrabberSettings.class);
-    public static final StorageHandler<LinkgrabberSettings> SH                                           = (StorageHandler<LinkgrabberSettings>) CFG.getStorageHandler();
+    public static final StorageHandler<LinkgrabberSettings> SH                                           = (StorageHandler<LinkgrabberSettings>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers,
     // access is faster, and we get an error on init if mappings are wrong.
     // true

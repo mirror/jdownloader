@@ -1,6 +1,5 @@
 package org.jdownloader.extensions.streaming.gui;
 
-import java.awt.Color;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
@@ -12,7 +11,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.laf.LookAndFeelController;
+import jd.gui.swing.laf.LAFOptions;
 import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
@@ -84,14 +83,11 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
         };
 
         // ScrollPaneUI udi = sp.getUI();
-        int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
+
+        LAFOptions.applyPanelBackground(sidebarScrollPane);
         // LayoutManager lm = sp.getLayout();
         sidebar.setSelectedIndex(0);
-        if (c >= 0) {
-            sidebarScrollPane.setBackground(new Color(c));
-            sidebarScrollPane.setOpaque(true);
 
-        }
         sidebarScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
         sidebarScrollPane.setColumnHeaderView(new SidebarHeader());
 

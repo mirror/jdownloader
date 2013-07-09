@@ -15,7 +15,7 @@ public class CFG_SHUTDOWN {
 
     // Static Mappings for interface org.jdownloader.extensions.shutdown.ShutdownConfig
     public static final ShutdownConfig                 CFG                                = JsonConfig.create(Application.getResource("cfg/" + ShutdownExtension.class.getName()), ShutdownConfig.class);
-    public static final StorageHandler<ShutdownConfig> SH                                 = (StorageHandler<ShutdownConfig>) CFG.getStorageHandler();
+    public static final StorageHandler<ShutdownConfig> SH                                 = (StorageHandler<ShutdownConfig>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // true

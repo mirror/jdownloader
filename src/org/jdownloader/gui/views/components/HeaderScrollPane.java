@@ -8,6 +8,7 @@ import javax.swing.JComponent;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 
+import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.BasicGui;
@@ -35,11 +36,11 @@ public class HeaderScrollPane extends JScrollPane {
 
     public HeaderScrollPane(JComponent sidebar) {
         super(sidebar);
-        int c = LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor();
+        Color c = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeader());
 
-        headerColor = new Color(c);
+        headerColor = c;
         // setBorder(new JTextField().getBorder());
-        headerlineColor = new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor());
+        headerlineColor = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderLine());
 
         setVerticalScrollBar(new JScrollBar() {
             public void setBounds(Rectangle rec) {

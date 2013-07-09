@@ -14,7 +14,7 @@ public class CFG_TRAY_CONFIG {
 
     // Static Mappings for interface org.jdownloader.extensions.jdtrayicon.TrayConfig
     public static final TrayConfig                 CFG                                            = JsonConfig.create(Application.getResource("cfg/" + TrayExtension.class.getName()), TrayConfig.class);
-    public static final StorageHandler<TrayConfig> SH                                             = (StorageHandler<TrayConfig>) CFG.getStorageHandler();
+    public static final StorageHandler<TrayConfig> SH                                             = (StorageHandler<TrayConfig>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // true

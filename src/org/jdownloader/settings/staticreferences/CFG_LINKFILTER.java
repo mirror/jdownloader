@@ -17,7 +17,7 @@ public class CFG_LINKFILTER {
 
     public static final LinkFilterSettings                 CFG                                        = JsonConfig.create(LinkFilterSettings.class);
 
-    public static final StorageHandler<LinkFilterSettings> SH                                         = (StorageHandler<LinkFilterSettings>) CFG.getStorageHandler();
+    public static final StorageHandler<LinkFilterSettings> SH                                         = (StorageHandler<LinkFilterSettings>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers,
     // access is faster, and we get an error on init if mappings are wrong.
     // Keyhandler interface

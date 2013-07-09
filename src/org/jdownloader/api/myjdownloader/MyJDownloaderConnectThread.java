@@ -371,7 +371,7 @@ public class MyJDownloaderConnectThread extends Thread {
                     deviceBound = true;
                     if (!device.getId().equals(CFG_MYJD.CFG.getUniqueDeviceID())) {
                         CFG_MYJD.CFG.setUniqueDeviceID(device.getId());
-                        CFG_MYJD.CFG.getStorageHandler().write();
+                        CFG_MYJD.CFG._getStorageHandler().write();
                     }
                 }
             } finally {

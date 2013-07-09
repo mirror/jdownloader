@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -17,6 +16,7 @@ import javax.swing.Timer;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.ProxyBlock;
 import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -66,15 +66,15 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
     public ExtTooltip createToolTip(final Point position, final AbstractNode obj) {
         TooltipPanel panel = new TooltipPanel("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]");
         final MultiProgressBar mpb = new MultiProgressBar(1000);
-        mpb.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getTooltipForegroundColor()));
+        mpb.setForeground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTooltipForeground()));
 
         updateRanges(obj, mpb);
 
         JLabel lbl = new JLabel(_GUI._.ProgressColumn_createToolTip_object_());
-        lbl.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getTooltipForegroundColor()));
+        lbl.setForeground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTooltipForeground()));
         SwingUtils.toBold(lbl);
         panel.add(lbl);
-        mpb.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, new Color(LookAndFeelController.getInstance().getLAFOptions().getTooltipForegroundColor())));
+        mpb.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTooltipForeground())));
         panel.add(mpb, "width 300!,height 24!");
 
         return new PanelToolTip(panel) {

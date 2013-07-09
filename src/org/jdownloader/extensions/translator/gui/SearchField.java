@@ -44,19 +44,19 @@ public class SearchField extends ExtTextField implements MouseMotionListener, Mo
      * 
      */
 
-    private static final int SIZE           = 20;
-    private Image            img;
-    private DelayedRunnable  delayedFilter;
+    private static final int           SIZE           = 20;
+    private Image                      img;
+    private DelayedRunnable            delayedFilter;
 
-    protected List<Pattern>  filterPatterns = null;
-    private JLabel           label;
-    private int              labelWidth;
-    private Color            bgColor;
+    protected List<Pattern>            filterPatterns = null;
+    private JLabel                     label;
+    private int                        labelWidth;
+    private Color                      bgColor;
     private LinktablesSearchCategory[] searchCategories;
-    private Image            popIcon;
-    private int              iconGap        = 38;
-    private Border           orgBorder;
-    private TranslateTable   table2Filter;
+    private Image                      popIcon;
+    private int                        iconGap        = 38;
+    private Border                     orgBorder;
+    private TranslateTable             table2Filter;
 
     public SearchField(TranslateTable table) {
         super();
@@ -64,7 +64,7 @@ public class SearchField extends ExtTextField implements MouseMotionListener, Mo
         this.table2Filter = table;
         img = NewTheme.I().getImage("search", SIZE);
         LAFOptions lafo = LookAndFeelController.getInstance().getLAFOptions();
-        bgColor = new Color(lafo.getPanelHeaderColor());
+        bgColor = LAFOptions.createColor(lafo.getColorForPanelHeader());
         setHelpText(_GUI._.SearchField_SearchField_helptext());
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         popIcon = NewTheme.I().getImage("popupButton", -1);

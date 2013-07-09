@@ -10,6 +10,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JTextArea;
 
+import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.components.circlebar.CircledProgressBar;
@@ -88,11 +89,11 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
         comp.setOpaque(false);
 
         JLabel lbl = new JLabel(toString());
-        lbl.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getTooltipForegroundColor()));
+        lbl.setForeground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTooltipForeground()));
         JTextArea txt = new JTextArea();
         SwingUtils.setOpaque(txt, false);
         txt.setBorder(null);
-        txt.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getTooltipForegroundColor()));
+        txt.setForeground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTooltipForeground()));
         // p.add(lbl);
         panel.add(comp, "spany 2,aligny top");
         panel.add(SwingUtils.toBold(lbl));

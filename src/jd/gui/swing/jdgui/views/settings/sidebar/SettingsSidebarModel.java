@@ -309,7 +309,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                                     if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;
                                     if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) continue;
                                     if (CrossSystem.isMac() && !plg.isMacRunnable()) continue;
-                                    plg._getSettings().getStorageHandler().getEventSender().addListener(SettingsSidebarModel.this, true);
+                                    plg._getSettings()._getStorageHandler().getEventSender().addListener(SettingsSidebarModel.this, true);
                                     new EDTRunner() {
 
                                         @Override

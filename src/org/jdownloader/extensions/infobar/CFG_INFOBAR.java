@@ -13,7 +13,7 @@ public class CFG_INFOBAR {
 
     // Static Mappings for interface org.jdownloader.extensions.infobar.InfoBarConfig
     public static final InfoBarConfig                 CFG           = JsonConfig.create(Application.getResource("cfg/" + InfoBarExtension.class.getName()), InfoBarConfig.class);
-    public static final StorageHandler<InfoBarConfig> SH            = (StorageHandler<InfoBarConfig>) CFG.getStorageHandler();
+    public static final StorageHandler<InfoBarConfig> SH            = (StorageHandler<InfoBarConfig>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // true

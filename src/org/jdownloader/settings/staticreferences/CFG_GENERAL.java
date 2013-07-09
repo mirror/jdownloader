@@ -19,7 +19,7 @@ public class CFG_GENERAL {
 
     // Static Mappings for interface org.jdownloader.settings.GeneralSettings
     public static final GeneralSettings                 CFG                                             = JsonConfig.create(GeneralSettings.class);
-    public static final StorageHandler<GeneralSettings> SH                                              = (StorageHandler<GeneralSettings>) CFG.getStorageHandler();
+    public static final StorageHandler<GeneralSettings> SH                                              = (StorageHandler<GeneralSettings>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // true

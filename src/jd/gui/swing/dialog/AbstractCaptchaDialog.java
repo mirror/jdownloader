@@ -688,20 +688,13 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
     @Override
     public JComponent layoutDialogContent() {
         // getDialog().setModalityType(ModalityType.MODELESS);
-        LAFOptions lafOptions = LookAndFeelController.getInstance().getLAFOptions();
+        final LAFOptions lafOptions = LookAndFeelController.getInstance().getLAFOptions();
         MigPanel field = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill]");
         // field.setOpaque(false);
         getDialog().setMinimumSize(new Dimension(0, 0));
         // getDialog().setIconImage(hosterInfo.getFavIcon().getImage());
         final JPanel panel = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[grow,fill]10[]"));
-        final int col = lafOptions.getPanelBackgroundColor();
-        if (col >= 0) {
-
-            field.setBackground(new Color(col));
-            field.setOpaque(true);
-            // getDialog().getContentPane().setBackground(new Color(col));
-            // panel.setBackground(new Color(col));
-        }
+        LAFOptions.applyBackground(lafOptions.getColorForPanelBackground(), field);
 
         MigPanel headerPanel = null;
         if (type == DialogType.HOSTER) {
@@ -709,10 +702,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             // setBorder(new JTextField().getBorder());
 
             headerPanel = new MigPanel("ins 0 0 1 0", "[grow,fill]", "[]");
-            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor())));
+            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderLine())));
 
-            headerPanel.setBackground(new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor()));
-            headerPanel.setOpaque(true);
+            LAFOptions.applyBackground(lafOptions.getColorForPanelHeader(), headerPanel);
 
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);
@@ -776,9 +768,11 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             // setBorder(new JTextField().getBorder());
 
             headerPanel = new MigPanel("ins 0 0 1 0", "[grow,fill]", "[grow,fill]");
-            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor())));
 
-            headerPanel.setBackground(new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor()));
+            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderLine())));
+
+            LAFOptions.applyBackground(lafOptions.getColorForPanelHeader(), headerPanel);
+
             headerPanel.setOpaque(true);
 
             // headerPanel.setOpaque(false);
@@ -841,6 +835,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
              * 
              */
             private static final long serialVersionUID = 1L;
+            private Color             col              = LAFOptions.createColor(lafOptions.getColorForPanelBackground());
 
             protected void paintChildren(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
@@ -859,7 +854,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
                 super.paintComponent(g);
 
                 BufferedImage scaled = IconIO.getScaledInstance(images[frame], getWidth() - 10, getHeight() - 10, Interpolation.BICUBIC, true);
-                g.drawImage(scaled, (getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, new Color(col), null);
+                g.drawImage(scaled, (getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, col, null);
                 scaleFaktor = images[frame].getWidth(null) / (double) scaled.getWidth();
                 offset = new Point((getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2);
 

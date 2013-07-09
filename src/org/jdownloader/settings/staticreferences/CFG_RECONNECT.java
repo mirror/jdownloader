@@ -16,7 +16,7 @@ public class CFG_RECONNECT {
 
     // Static Mappings for interface jd.controlling.reconnect.ReconnectConfig
     public static final ReconnectConfig                 CFG                                                = JsonConfig.create(ReconnectConfig.class);
-    public static final StorageHandler<ReconnectConfig> SH                                                 = (StorageHandler<ReconnectConfig>) CFG.getStorageHandler();
+    public static final StorageHandler<ReconnectConfig> SH                                                 = (StorageHandler<ReconnectConfig>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // 10000

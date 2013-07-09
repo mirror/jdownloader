@@ -25,7 +25,7 @@ public class ExtensionQuickToggleAction extends AppAction implements GenericConf
 
             }
             setSelected(extension._isEnabled());
-            BooleanKeyHandler keyHandler = extension._getSettings().getStorageHandler().getKeyHandler(ExtensionConfigInterface.KEY_ENABLED, BooleanKeyHandler.class);
+            BooleanKeyHandler keyHandler = extension._getSettings()._getStorageHandler().getKeyHandler(ExtensionConfigInterface.KEY_ENABLED, BooleanKeyHandler.class);
             keyHandler.getEventSender().addListener(this, true);
         }
     }

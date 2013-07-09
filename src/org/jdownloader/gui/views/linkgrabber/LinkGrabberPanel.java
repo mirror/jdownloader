@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.linkgrabber;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Insets;
@@ -27,7 +26,7 @@ import jd.gui.UIConstants;
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.laf.LookAndFeelController;
+import jd.gui.swing.laf.LAFOptions;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.ValidationException;
@@ -362,7 +361,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             overView = new LinkgrabberOverview(table);
             overViewScrollBar = new OverviewHeaderScrollPane(overView);
 
-            LookAndFeelController.getInstance().getLAFOptions().applyPanelBackgroundColor(overViewScrollBar);
+            LAFOptions.applyPanelBackground(overViewScrollBar);
 
             // overViewScrollBar.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
             // overViewScrollBar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -456,14 +455,8 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         };
 
         // ScrollPaneUI udi = sp.getUI();
-        int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
-        // LayoutManager lm = sp.getLayout();
 
-        if (c >= 0) {
-            sidebarScrollPane.setBackground(new Color(c));
-            sidebarScrollPane.setOpaque(true);
-
-        }
+        LAFOptions.applyPanelBackground(sidebarScrollPane);
         sidebarScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         sidebarScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         sidebarScrollPane.setColumnHeaderView(new LinkGrabberSideBarHeader(table));

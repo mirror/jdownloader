@@ -1,5 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.advanced;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -9,10 +10,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
 import javax.swing.Icon;
+import javax.swing.JColorChooser;
 import javax.swing.JMenuItem;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 
+import jd.gui.swing.laf.LAFOptions;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;
@@ -30,6 +33,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.HexColorString;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.RangeValidator;
 
@@ -44,6 +48,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
     private java.util.List<ExtColumn<AdvancedConfigEntry>> columns;
     private ExtSpinnerColumn<AdvancedConfigEntry>          longColumn;
     private ExtTextColumn<AdvancedConfigEntry>             enumColumn;
+    private ExtTextColumn<AdvancedConfigEntry>             colorColumn;
 
     public AdvancedValueColumn() {
         super(_GUI._.AdvancedValueColumn_AdvancedValueColumn_object_());
@@ -91,6 +96,94 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
         };
         register(stringColumn);
+
+        colorColumn = new ExtTextColumn<AdvancedConfigEntry>(getName()) {
+            private static final long serialVersionUID = 1L;
+            {
+                rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
+
+            }
+
+            public boolean onDoubleClick(final MouseEvent e, final AdvancedConfigEntry value) {
+
+                Object v = value.getValue();
+                Color c = v == null ? null : LAFOptions.createColor(v.toString());
+                Color newColor = JColorChooser.showDialog(getModel().getTable(), _GUI._.AdvancedValueColumn_onSingleClick_colorchooser_title_(), c);
+                if (newColor != null) {
+                    setStringValue("#" + LAFOptions.toHex(newColor), value);
+                }
+
+                return true;
+            }
+
+            @Override
+            public boolean isEditable(final AdvancedConfigEntry obj) {
+
+                return false;
+            }
+
+            public Color getContrastColor(Color color) {
+                double y = (299 * color.getRed() + 587 * color.getGreen() + 114 * color.getBlue()) / 1000;
+                return y >= 128 ? Color.black : Color.white;
+            }
+
+            @Override
+            public void configureEditorComponent(final AdvancedConfigEntry value, final boolean isSelected, final int row, final int column) {
+                super.configureEditorComponent(value, isSelected, row, column);
+                Object v = value.getValue();
+                Color c = v == null ? null : LAFOptions.createColor(v.toString());
+
+                if (c != null) {
+
+                    editorField.setBackground(c);
+                    editorField.setForeground(getContrastColor(c));
+                    editorField.setOpaque(true);
+                } else {
+                    editorField.setBackground(null);
+                    editorField.setForeground(null);
+                    editorField.setOpaque(false);
+                }
+            }
+
+            @Override
+            public void configureRendererComponent(final AdvancedConfigEntry value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
+
+                super.configureRendererComponent(value, isSelected, hasFocus, row, column);
+                Object v = value.getValue();
+                Color c = v == null ? null : LAFOptions.createColor(v.toString());
+
+                if (c != null) {
+                    rendererField.setBackground(c);
+                    rendererField.setForeground(getContrastColor(c));
+                    rendererField.setOpaque(true);
+                } else {
+                    rendererField.setBackground(null);
+                    rendererField.setForeground(null);
+                    rendererField.setOpaque(false);
+                }
+            }
+
+            @Override
+            public String getStringValue(AdvancedConfigEntry value) {
+                if (value.getValue() == null || LAFOptions.createColor(value.getValue().toString()) == null) { return null; }
+                return value.getValue() + "";
+            }
+
+            @Override
+            protected String getTooltipText(AdvancedConfigEntry obj) {
+                return obj.getDescription();
+            }
+
+            @Override
+            protected void setStringValue(String value, AdvancedConfigEntry object) {
+                Color c = value == null ? null : LAFOptions.createColor(value);
+                if (c != null) {
+                    object.setValue(value);
+                    AdvancedValueColumn.this.getModel().getTable().repaint();
+                }
+            }
+        };
+        register(colorColumn);
         defaultColumn = new ExtTextAreaColumn<AdvancedConfigEntry>(getName()) {
             private static final long serialVersionUID = 1L;
 
@@ -358,6 +451,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         if (Clazz.isBoolean(object.getType())) {
             return booleanColumn;
         } else if (object.getType() == String.class) {
+            if (object.getKeyHandler().getAnnotation(HexColorString.class) != null) return colorColumn;
             return stringColumn;
         } else if (Clazz.isDouble(object.getType()) || Clazz.isFloat(object.getType()) || Clazz.isLong(object.getType()) || Clazz.isInteger(object.getType()) || Clazz.isByte(object.getType())) {
             return longColumn;

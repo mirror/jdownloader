@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.linkgrabber.overview;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -15,6 +14,7 @@ import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
+import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.MigPanel;
@@ -78,9 +78,9 @@ public class LinkgrabberOverViewHeader extends MigPanel {
         add(Box.createHorizontalGlue());
         setOpaque(true);
         SwingUtils.setOpaque(lbl, false);
-        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor())));
+        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderLine())));
 
-        setBackground(new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor()));
+        setBackground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeader()));
         bt = new JButton(NewTheme.I().getIcon("close", -1)) {
 
             public void setBounds(int x, int y, int width, int height) {

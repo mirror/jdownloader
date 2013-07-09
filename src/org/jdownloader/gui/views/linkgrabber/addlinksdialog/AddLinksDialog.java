@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.linkgrabber.addlinksdialog;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -34,6 +33,7 @@ import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
+import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.parser.html.HTMLParser;
 
@@ -154,7 +154,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             }
         });
         errorLabel = new JLabel();
-        errorLabel.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getErrorForeground()));
+        errorLabel.setForeground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForErrorForeground()));
         errorLabel.setHorizontalAlignment(SwingConstants.RIGHT);
         ret.add(errorLabel, "alignx right");
         ret.add(this.okButton, "alignx right,sizegroup confirms,growx,pushx");
@@ -504,7 +504,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     okButton.setEnabled(false);
                     destination.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
                     confirmOptions.setEnabled(false);
-                    destination.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getErrorForeground()));
+                    destination.setForeground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForErrorForeground()));
                 } else {
                     destination.setToolTipText(null);
                     destination.setForeground(null);

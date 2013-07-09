@@ -15,7 +15,7 @@ public class CFG_CHAT {
 
     // Static Mappings for interface org.jdownloader.extensions.chat.ChatConfig
     public static final ChatConfig                 CFG                       = JsonConfig.create(Application.getResource("cfg/" + ChatExtension.class.getName()), ChatConfig.class);
-    public static final StorageHandler<ChatConfig> SH                        = (StorageHandler<ChatConfig>) CFG.getStorageHandler();
+    public static final StorageHandler<ChatConfig> SH                        = (StorageHandler<ChatConfig>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // true

@@ -15,7 +15,7 @@ public class CFG_CAPTCHA {
 
     // Static Mappings for interface jd.controlling.captcha.CaptchaSettings
     public static final CaptchaSettings                 CFG                                           = JsonConfig.create(CaptchaSettings.class);
-    public static final StorageHandler<CaptchaSettings> SH                                            = (StorageHandler<CaptchaSettings>) CFG.getStorageHandler();
+    public static final StorageHandler<CaptchaSettings> SH                                            = (StorageHandler<CaptchaSettings>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // true

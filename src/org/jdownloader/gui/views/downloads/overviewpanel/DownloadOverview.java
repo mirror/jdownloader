@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.downloads.overviewpanel;
 
-import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
@@ -26,7 +25,7 @@ import jd.gui.swing.jdgui.menu.ChunksEditor;
 import jd.gui.swing.jdgui.menu.ParalellDownloadsEditor;
 import jd.gui.swing.jdgui.menu.ParallelDownloadsPerHostEditor;
 import jd.gui.swing.jdgui.menu.SpeedlimitEditor;
-import jd.gui.swing.laf.LookAndFeelController;
+import jd.gui.swing.laf.LAFOptions;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -65,12 +64,8 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
     public DownloadOverview(DownloadsTable table) {
         super("ins 0", "[][grow,fill][]", "[grow,fill]");
         this.downloadTable = table;
-        int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
 
-        if (c >= 0) {
-            setBackground(new Color(c));
-            setOpaque(true);
-        }
+        LAFOptions.applyPanelBackground(this);
         GUIEventSender.getInstance().addListener(this, true);
         MigPanel info = new MigPanel("ins 2 0 0 0", "[grow]10[grow]", "[grow,fill]2[grow,fill]");
         info.setOpaque(false);

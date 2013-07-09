@@ -15,7 +15,7 @@ public class CFG_TRANSLATOR {
 
     // Static Mappings for interface org.jdownloader.extensions.translator.TranslatorConfig
     public static final TranslatorConfig                 CFG                     = JsonConfig.create(Application.getResource("cfg/" + TranslatorExtension.class.getName()), TranslatorConfig.class);
-    public static final StorageHandler<TranslatorConfig> SH                      = (StorageHandler<TranslatorConfig>) CFG.getStorageHandler();
+    public static final StorageHandler<TranslatorConfig> SH                      = (StorageHandler<TranslatorConfig>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // true

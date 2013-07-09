@@ -213,9 +213,9 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
                     /*
                      * Workaround to make sure the internal HashMap of JSonStorage is set to Property HashMap
                      */
-                    store.getStorageHandler().getPrimitiveStorage().getInternalStorageMap().put("addWorkaround", true);
-                    this.setProperties(store.getStorageHandler().getPrimitiveStorage().getInternalStorageMap());
-                    store.getStorageHandler().getPrimitiveStorage().getInternalStorageMap().remove("addWorkaround");
+                    store._getStorageHandler().getPrimitiveStorage().getInternalStorageMap().put("addWorkaround", true);
+                    this.setProperties(store._getStorageHandler().getPrimitiveStorage().getInternalStorageMap());
+                    store._getStorageHandler().getPrimitiveStorage().getInternalStorageMap().remove("addWorkaround");
                 }
 
                 @Override
@@ -224,7 +224,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
                     /*
                      * this changes changeFlag in JSonStorage to signal that it must be saved
                      */
-                    store.getStorageHandler().getPrimitiveStorage().put("saveWorkaround", System.currentTimeMillis());
+                    store._getStorageHandler().getPrimitiveStorage().put("saveWorkaround", System.currentTimeMillis());
                 }
 
             };

@@ -11,6 +11,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.ListSelectionModel;
 
+import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.storage.config.ValidationException;
@@ -22,12 +23,14 @@ import org.appwork.swing.exttable.ExtTable;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.settings.LAFSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventListener<Integer> {
 
     private static final long serialVersionUID = -9181860215412270250L;
     protected int             mouseOverRow;
+    private LAFSettings       lafo;
 
     public BasicJDTable(ExtTableModel<T> tableModel) {
         super(tableModel);
@@ -35,20 +38,15 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         this.setShowGrid(true);
         this.setShowHorizontalLines(true);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        lafo = LookAndFeelController.getInstance().getLAFOptions();
+        Color c = LAFOptions.createColor(lafo.getColorForPanelHeader());
 
-        int c = LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor();
-        Color b2;
-        Color f2;
-        if (c >= 0) {
-            b2 = new Color(c);
-            f2 = new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderForegroundColor());
-        } else {
-            b2 = getForeground();
-            f2 = getBackground();
-        }
-        this.setBackground(new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor()));
+        this.setBackground(LAFOptions.createColor(lafo.getColorForPanelBackground()));
 
-        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(f2, b2, null) {
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(LAFOptions.createColor(lafo.getColorForSelectedRowsForeground()), LAFOptions.createColor(lafo.getColorForSelectedRowsBackground()), null) {
+            public int getPriority() {
+                return Integer.MAX_VALUE;
+            }
 
             @Override
             public boolean accept(ExtColumn<T> column, T value, boolean selected, boolean focus, int row) {
@@ -96,9 +94,11 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             // });
             //
 
-            this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(null, new Color(0, 0, 0, 20), null) {
+            Color f = LAFOptions.createColor(lafo.getColorForMouseOverRowForeground());
+            Color b = LAFOptions.createColor(lafo.getColorForMouseOverRowBackground());
+            this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(f, b, null) {
                 public int getPriority() {
-                    return Integer.MAX_VALUE;
+                    return Integer.MAX_VALUE - 1;
                 }
 
                 @Override
@@ -115,7 +115,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         this.setIntercellSpacing(new Dimension(0, 0));
         if (CFG_GUI.TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED.isEnabled()) {
 
-            this.getModel().addExtComponentRowHighlighter(new AlternateHighlighter<T>(null, new Color(0, 0, 0, 6), null));
+            this.getModel().addExtComponentRowHighlighter(new AlternateHighlighter<T>(LAFOptions.createColor(lafo.getColorForAlternateRowForeground()), LAFOptions.createColor(lafo.getColorForAlternateRowBackground()), null));
         }
 
     }
