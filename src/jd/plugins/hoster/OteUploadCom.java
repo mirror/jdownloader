@@ -75,24 +75,24 @@ public class OteUploadCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://oteupload.com";
+    private final String         COOKIE_HOST                  = "http://oteupload.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(oteupload\\.com)";
-    private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
-    private final boolean              videoHoster                  = false;
-    private final boolean              useAltEmbed                  = false;
-    private final boolean              supportsHTTPS                = true;
-    private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = false;
-    private final boolean              useAltExpire                 = true;
-    private final boolean              useAltLinkCheck              = false;
-    private final boolean              skipableRecaptcha            = true;
+    private final String         DOMAINS                      = "(oteupload\\.com)";
+    private final String         PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private final String         MAINTENANCE                  = ">This server is in maintenance mode";
+    private final String         dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
+    private final boolean        videoHoster                  = false;
+    private final boolean        useAltEmbed                  = false;
+    private final boolean        supportsHTTPS                = true;
+    private final boolean        enforcesHTTPS                = false;
+    private final boolean        useRUA                       = false;
+    private final boolean        useAltExpire                 = true;
+    private final boolean        useAltLinkCheck              = false;
+    private final boolean        skipableRecaptcha            = true;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
     // XfileShare Version 3.0.6.3
@@ -302,8 +302,8 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
-     * method doesn't give filename...
+     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this method doesn't give
+     * filename...
      * 
      * */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
@@ -568,9 +568,9 @@ public class OteUploadCom extends PluginForHost {
         // monitor this
         if (cbr.containsHTML("(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
             /*
-             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
-             * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
-             * previous happened, as in past tense and not a wait time going forward... unknown wait time!
+             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was recorded from x time
+             * (hours|days) which can trigger false positive below wait handling. As its only indication of what's previous happened, as in past tense and not a
+             * wait time going forward... unknown wait time!
              */
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
@@ -1007,7 +1007,7 @@ public class OteUploadCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Integer>> hostMap                      = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static final Object                               LOCK                         = new Object();
+    private static Object                                     LOCK                         = new Object();
 
     private static StringContainer                            agent                        = new StringContainer();
 
@@ -1140,8 +1140,8 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
-     * which is based on fuid.
+     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking which is based on
+     * fuid.
      * 
      * @author raztoki
      * */
@@ -1341,14 +1341,14 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
+     * singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
+     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
+     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
+     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
+     * begins.
      * 
      * @param controlSlot
      *            (+1|-1)
@@ -1366,8 +1366,8 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
-     * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
+     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going forward. Thus prevents
+     * new downloads starting when not possible and is self aware and requires no coder interaction.
      * 
      * @param account
      * 
@@ -1400,9 +1400,9 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
-     * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
-     * hosts/IP setup. This will help with those situations by allowing more connection when possible.
+     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x connections to ip/host
+     * server. Currently JD allows a global connection controller and doesn't allow for handling of different hosts/IP setup. This will help with those
+     * situations by allowing more connection when possible.
      * 
      * @param Account
      *            Account that's been used, can be null
@@ -1477,9 +1477,9 @@ public class OteUploadCom extends PluginForHost {
             // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
 
             /*
-             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads
-             * finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control over to reset
-             * the count. Highly dependent on how fast or slow the users connections is.
+             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads finishes. This is
+             * best practice otherwise you have to use some crude system of waits, but you have no control over to reset the count. Highly dependent on how fast
+             * or slow the users connections is.
              */
             if (isHashedHashedKey(account, usedHost)) {
                 Integer usedSlots = getHashedHashedValue(account);
@@ -1508,7 +1508,7 @@ public class OteUploadCom extends PluginForHost {
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
      * */
-    private void setHashedHashKeyValue(final Account account, final Integer x) {
+    private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
         if (usedHost == null || x == null) return;
         HashMap<String, Integer> holder = new HashMap<String, Integer>();
         if (!hostMap.isEmpty()) {
@@ -1547,7 +1547,7 @@ public class OteUploadCom extends PluginForHost {
      * @param account
      *            Account that's been used, can be null
      * */
-    private String getHashedHashedKey(final Account account) {
+    private synchronized String getHashedHashedKey(final Account account) {
         if (usedHost == null) return null;
         if (hostMap.containsKey(account)) {
             final HashMap<String, Integer> accKeyValue = hostMap.get(account);
@@ -1567,7 +1567,7 @@ public class OteUploadCom extends PluginForHost {
      * @param account
      *            Account that's been used, can be null
      * */
-    private Integer getHashedHashedValue(final Account account) {
+    private synchronized Integer getHashedHashedValue(final Account account) {
         if (usedHost == null) return null;
         if (hostMap.containsKey(account)) {
             final HashMap<String, Integer> accKeyValue = hostMap.get(account);
@@ -1589,7 +1589,7 @@ public class OteUploadCom extends PluginForHost {
      * @param key
      *            String of what ever you want to find
      * */
-    private boolean isHashedHashedKey(final Account account, final String key) {
+    private synchronized boolean isHashedHashedKey(final Account account, final String key) {
         if (key == null) return false;
         final HashMap<String, Integer> accKeyValue = hostMap.get(account);
         if (accKeyValue != null) {
@@ -1644,8 +1644,8 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
-     * InputField parse(final String data). Affects revision 19688 and earlier!
+     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re: InputField
+     * parse(final String data). Affects revision 19688 and earlier!
      * 
      * TODO: remove after JD2 goes stable!
      * 
@@ -1671,8 +1671,8 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
-     * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
+     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same request id. This is
+     * needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
      * 
      * @param ibr
      *            Import Browser

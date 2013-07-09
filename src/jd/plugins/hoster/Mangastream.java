@@ -49,7 +49,7 @@ public class Mangastream extends PluginForHost {
             sizes = null;
 
             downloadLink.getLinkStatus().setStatusText("Working...");
-            downloadLink.getLinkStatus().setStatus(LinkStatus.PLUGIN_IN_PROGRESS);
+            downloadLink.getLinkStatus().setStatus(1 << 18);
             // We get every chunk of the image
             String[][] chunksData = br.getRegex("<div style=\"position:absolute;z-index:\\d+;width:\\d+px;height:\\d+px;top:(\\d+)px;left:(\\d+)px\"><a href=\"/read/.+?\"><img src=\"(http://img.mangastream.com/m/\\d+/\\d+/\\w+.(jpg|png))\" border=\"0\" /></a></div>").getMatches();
 

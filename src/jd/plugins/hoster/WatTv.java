@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -80,7 +78,7 @@ public class WatTv extends PluginForHost {
                 // from chrome 20130429,
                 // http://www.wat.tv/get/web/10481575?token=md5sum(32char)/517e4e96&domain=www.wat.tv&refererURL=www.wat.tv&revision=04.00.52&synd=0&helios=1&context=playerWat&pub=1&country=FR&sitepage=WAT%2Ftv%2Ft%2Fcatchup%2Ftf1%2Fnos-chers-voisins-tf1&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=WIN%2011,7,700,179
                 // kept old request string
-                br2.getPage("http://www.wat.tv/get" + quality + videoID + "?token=" + token + "&domain=www.wat.tv&domain2=www.wat.tv&revision=4.1.017&synd=0&helios=1&context=swf2&pub=5&country=" + country + "&sitepage=WAT%2Ftv%2Fkoh-lanta-9&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=WIN%2010,3,183,7");
+                br2.getPage("http://www.wat.tv/get" + quality + videoID + "?token=" + token + "&domain=www.wat.tv&refererURL=www.wat.tv&revision=04.00.131%0A&synd=0&helios=1&context=playerWat&pub=5&country=" + country + "&sitepage=WAT%2Ftv%2Ft%2Fcatchup%2Ftf1%2Fnos-chers-voisins-tf1&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=LNX%2011,2,202,291");
                 if (br2.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Video not available in your country!"); }
                 getVideoLink = br2.toString();
             }
@@ -144,7 +142,7 @@ public class WatTv extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
