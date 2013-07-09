@@ -19,6 +19,7 @@ package jd;
 
 import java.awt.AWTEvent;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.io.File;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -34,6 +35,10 @@ import java.util.TreeSet;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JWindow;
 
 import jd.controlling.AccountController;
 import jd.controlling.ClipboardMonitoring;
@@ -483,6 +488,26 @@ public class SecondLevelLaunch {
         final EDTHelper<Void> lafInit = new EDTHelper<Void>() {
             @Override
             public Void edtRun() {
+                // check if windows are already available.
+                // http://board.jdownloader.org/showthread.php?p=260100#post260100
+                try {
+                    LOG.info("LAF INIT");
+                    Window awindow[];
+                    int j = (awindow = Window.getWindows()).length;
+                    for (int i = 0; i < j; i++) {
+                        Window window = awindow[i];
+                        LOG.info("Window: " + window);
+
+                        boolean flag = !(window instanceof JWindow) && !(window instanceof JFrame) && !(window instanceof JDialog);
+                        if (!window.getClass().getName().contains("Popup$HeavyWeightWindow") && !flag) {
+                            LOG.info("Window: " + "Reshape: yes");
+                        }
+
+                    }
+                } catch (Exception e) {
+                    LOG.log(e);
+                }
+
                 Dialog.getInstance().initLaf();
 
                 return null;
