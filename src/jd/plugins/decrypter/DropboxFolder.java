@@ -16,10 +16,12 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -29,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/gallery/\\d+/\\d+/[^?]+\\?h=[0-9a-f]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/gallery/\\d+/\\d+/[^\\?]+\\?h=[0-9a-f]+" }, flags = { 0 })
 public class DropboxFolder extends PluginForDecrypt {
 
     private final String[] urlAttrs = { "video_url", "original", "extralarge", "large", "thumbnail" };
@@ -41,31 +43,18 @@ public class DropboxFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        String id = new Regex(parameter, "/gallery/(\\d+)/").getMatch(0);
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("<div id=\"errorbox\">")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<h2>(?:Pictures|Fotos) in '(.*?)'</h2>").getMatch(0);
-        final String[] links = br.getRegex("photos\\.push\\(\\{(.*?)\\}\\);").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
 
-        for (String singleLink : links) {
-            // Finds the JSON attribute with one of the keys of the array, by
-            // the order given (i.e. always highest quality)
-            for (String urlAttr : urlAttrs) {
-                String url = new Regex(singleLink, "'" + urlAttr + "': *'(.*?)'").getMatch(0);
-                if (url != null && url.length() != 0) {
-                    url = unescape(url);
-                    decryptedLinks.add(createDownloadlink(url));
-                    break;
-                }
-            }
-        }
+        parsePage(decryptedLinks, id);
+        parseNextPage(decryptedLinks, id);
 
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
@@ -73,6 +62,36 @@ public class DropboxFolder extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private void parsePage(ArrayList<DownloadLink> ret, String id) {
+        final String[] links = br.getRegex("photos\\.push\\(\\{(.*?)\\}\\);").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + br.getURL());
+            return;
+        }
+        for (String singleLink : links) {
+            // Finds the JSON attribute with one of the keys of the array, by the order given (i.e. always highest quality)
+            for (String urlAttr : urlAttrs) {
+                String url = new Regex(singleLink, "'" + urlAttr + "': ('|\")(.*?)('|\")").getMatch(1);
+                if (url != null && url.length() != 0) {
+                    url = unescape(url);
+                    ret.add(createDownloadlink(url));
+                    break;
+                }
+            }
+        }
+    }
+
+    private boolean parseNextPage(ArrayList<DownloadLink> ret, String id) throws IOException {
+        String nextPage = br.getRegex("<a href=\"(/gallery/" + id + "/\\d+/[^\"]+)\">Next[^<]+").getMatch(0);
+        if (nextPage != null) {
+            br.getPage(HTMLEntities.unhtmlentities(nextPage));
+            parsePage(ret, id);
+            parseNextPage(ret, id);
+            return true;
+        }
+        return false;
     }
 
     private static synchronized String unescape(final String s) {
