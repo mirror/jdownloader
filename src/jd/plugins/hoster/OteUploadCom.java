@@ -1667,7 +1667,10 @@ public class OteUploadCom extends PluginForHost {
                 }
             }
         }
-        return new Form(data);
+        Form ret = new Form(data);
+        ret.setAction(form.getAction());
+        ret.setMethod(form.getMethod());
+        return ret;
     }
 
     /**
