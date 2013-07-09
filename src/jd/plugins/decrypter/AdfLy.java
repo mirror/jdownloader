@@ -69,7 +69,7 @@ public class AdfLy extends PluginForDecrypt {
         String finallink = null;
         for (int i = 0; i <= 2; i++) {
             synchronized (LOCK) {
-                br.getPage(parameter);
+                br.getPage(parameter.replaceFirst("https?://", protocol));
                 if (parameter.contains("9.bb/") && br.getRedirectLocation() != null) {
                     br.getPage(br.getRedirectLocation());
                 }
