@@ -64,6 +64,7 @@ import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
+
     public static class StringContainer {
         public String string = null;
 
@@ -339,15 +340,14 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        setMainpage();
-        String finallink = checkDirectLink(downloadLink);
         checkShowFreeDialog();
         setBrowserExclusive();
-        String passCode = downloadLink.getStringProperty("pass", null);
         br.forceDebug(true);
         requestFileInformation(downloadLink);
+        String passCode = downloadLink.getStringProperty("pass", null);
+        String finallink = checkDirectLink(downloadLink);
         if (finallink == null) {
-            String link = fixLinkSSL(downloadLink.getDownloadURL());
+            String link = downloadLink.getDownloadURL();
             if (br.getRedirectLocation() != null) {
                 link = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
                 br.getPage(link);
@@ -500,7 +500,7 @@ public class DepositFiles extends PluginForHost {
         }
 
         String link = downloadLink.getDownloadURL();
-        br.getPage(fixLinkSSL(link));
+        br.getPage(link);
         if (br.getRedirectLocation() != null) {
             link = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
             br.getPage(link);
@@ -642,7 +642,7 @@ public class DepositFiles extends PluginForHost {
                         logger.info("Depositfiles download program login method  == success!");
                     }
                 }
-                if (dmVersion == null || useWebLogin.get() == true) {
+                if (dmVersion == null || useWebLogin.get()) {
                     // web fail over method
                     logger.info("Depositfiles website login method!");
                     String uprand = account.getStringProperty("uprand", null);
@@ -726,7 +726,7 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        setMainpage();
+        // correctlink fixes https|not https, and sets mainpage! no need to duplicate in other download areas!.
         correctDownloadLink(downloadLink);
         setBrowserExclusive();
         br.getHeaders().put("User-Agent", UA);
@@ -735,7 +735,7 @@ public class DepositFiles extends PluginForHost {
         /* needed so the download gets counted,any referer should work */
         // br.getHeaders().put("Referer", "http://www.google.de");
         br.setFollowRedirects(false);
-        br.getPage(fixLinkSSL(link));
+        br.getPage(link);
 
         // Datei geloescht?
         if (br.containsHTML(FILE_NOT_FOUND)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -814,7 +814,6 @@ public class DepositFiles extends PluginForHost {
         return false;
     }
 
-    @SuppressWarnings("deprecation")
     private void setConfigElements() {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.HotFileCom.com.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
