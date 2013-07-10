@@ -712,7 +712,7 @@ public class TbCm extends PluginForDecrypt {
 
                 // Use uploader name in filename
                 if (cfg.getBooleanProperty("USEUPLOADERINNAME", false)) {
-                    String uploadername = br.getRegex("feature=watch\"[^>]+dir=\"ltr\">(.*?)</a><span class=\"yt\\-user\\-separator\">").getMatch(0);
+                    String uploadername = br.getRegex("feature=watch\"[^>]+dir=\"ltr\">(.*?)</a>(\\s+)?<span class=\"yt\\-user").getMatch(0);
                     if (uploadername != null) YT_FILENAME = uploadername + " - " + YT_FILENAME;
                 }
 
@@ -735,8 +735,8 @@ public class TbCm extends PluginForDecrypt {
                 if (ytID != null) ytID = ytID.toLowerCase(Locale.ENGLISH);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
-                 * if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
+                 * return multiple results if they are in the same quality rating
                  */
                 if (best) {
                     final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
