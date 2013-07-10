@@ -8,6 +8,7 @@ import jd.controlling.linkchecker.LinkCheckerConfig;
 import jd.controlling.linkcollector.LinkCollectorConfig;
 import jd.controlling.linkcrawler.LinkCrawlerConfig;
 import jd.controlling.reconnect.ReconnectConfig;
+import jd.gui.swing.laf.LAFSettings;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
@@ -25,7 +26,6 @@ import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-import org.jdownloader.settings.LAFSettings;
 import org.jdownloader.settings.RtmpdumpSettings;
 import org.jdownloader.settings.SilentModeSettings;
 import org.jdownloader.settings.SoundSettings;

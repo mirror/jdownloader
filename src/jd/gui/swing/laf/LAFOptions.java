@@ -9,7 +9,6 @@ import javax.swing.JLabel;
 
 import org.appwork.storage.Storable;
 import org.appwork.storage.config.handler.StorageHandler;
-import org.jdownloader.settings.LAFSettings;
 
 public class LAFOptions implements Storable, LAFSettings {
     private static final String           BLACK = "FF000000";

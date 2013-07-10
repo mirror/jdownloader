@@ -12,6 +12,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.ListSelectionModel;
 
 import jd.gui.swing.laf.LAFOptions;
+import jd.gui.swing.laf.LAFSettings;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.storage.config.ValidationException;
@@ -23,7 +24,6 @@ import org.appwork.swing.exttable.ExtTable;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.settings.LAFSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventListener<Integer> {

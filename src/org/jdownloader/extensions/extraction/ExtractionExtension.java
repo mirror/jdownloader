@@ -25,10 +25,13 @@ import java.util.List;
 
 import jd.SecondLevelLaunch;
 import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
@@ -73,7 +76,7 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuM
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
-public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuExtenderHandler {
+public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuExtenderHandler, PackageControllerModifyVetoListener<FilePackage, DownloadLink> {
 
     private ExtractionQueue       extractionQueue = new ExtractionQueue();
 
@@ -206,8 +209,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             logger.info("First File does not exist " + archive.getFirstArchiveFile());
             return null;
         }
-        archives.add(archive);
+        synchronized (archives) {
 
+            archives.add(archive);
+        }
         archive.getFactory().fireArchiveAddedToQueue(archive);
 
         ExtractionController controller = new ExtractionController(this, archive);
@@ -265,14 +270,16 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             //
             return null;
         }
-        for (Archive archive : archives) {
-            if (archive.contains(link)) {
-                logger.info("Found Archive: " + archive);
-                return archive;
+        synchronized (archives) {
 
+            for (Archive archive : archives) {
+                if (archive.contains(link)) {
+                    logger.info("Found Archive: " + archive);
+                    return archive;
+
+                }
             }
         }
-
         Archive archive = extrctor.buildArchive(link);
         if (archive != null) {
             link.onArchiveFinished(archive);
@@ -354,7 +361,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * @param archive
      */
     synchronized void removeArchive(Archive archive) {
-        archives.remove(archive);
+        synchronized (archives) {
+
+            archives.remove(archive);
+        }
     }
 
     // @SuppressWarnings({ "unchecked", "deprecation" })
@@ -370,7 +380,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         LinkCollector.getInstance().setArchiver(null);
         DownloadListContextMenuManager.getInstance().unregisterExtender(dlListContextMenuExtender);
         LinkgrabberContextMenuManager.getInstance().unregisterExtender(lgContextMenuExtender);
-
+        DownloadController.getInstance().removeVetoListener(this);
         FileCreationManager.getInstance().getEventSender().removeListener(this);
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
@@ -399,6 +409,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         MainMenuManager.getInstance().registerExtender(this);
         MainToolbarManager.getInstance().registerExtender(this);
         LinkCollector.getInstance().setArchiver(this);
+        DownloadController.getInstance().addVetoListener(this);
 
         FileCreationManager.getInstance().getEventSender().addListener(this);
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -727,6 +738,36 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         OptionalContainer opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN);
         opt.add(ExtractAction.class);
         return opt;
+    }
+
+    @Override
+    public boolean onAskToRemovePackage(FilePackage pkg) {
+        boolean readL = pkg.getModifyLock().readLock();
+        List<DownloadLink> copy = null;
+        try {
+            copy = new ArrayList<DownloadLink>(pkg.getChildren());
+        } finally {
+            pkg.getModifyLock().readUnlock(readL);
+        }
+        return onAskToRemoveChildren(copy);
+
+    }
+
+    @Override
+    public boolean onAskToRemoveChildren(List<DownloadLink> children) {
+        synchronized (archives) {
+            for (DownloadLink dlink : children) {
+                DownloadLinkArchiveFactory link = new DownloadLinkArchiveFactory(dlink);
+                for (Archive archive : archives) {
+                    if (archive.contains(link)) {
+                        logger.info("Link is in active Archive do not remove: " + archive);
+                        return false;
+
+                    }
+                }
+            }
+        }
+        return true;
     }
 
 }

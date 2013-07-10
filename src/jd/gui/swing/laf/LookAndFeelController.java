@@ -44,7 +44,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.HexColorString;
-import org.jdownloader.settings.LAFSettings;
 
 public class LookAndFeelController implements LAFManagerInterface {
     private static final String                DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = JDDefaultLookAndFeel.class.getName();

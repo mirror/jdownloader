@@ -193,6 +193,21 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     @Override
+    public void removePackage(FilePackage pkg) {
+        super.removePackage(pkg);
+    }
+
+    @Override
+    public void removeChildren(List<DownloadLink> removechildren) {
+        super.removeChildren(removechildren);
+    }
+
+    @Override
+    public void removeChildren(FilePackage pkg, List<DownloadLink> children, boolean doNotifyParentlessLinks) {
+        super.removeChildren(pkg, children, doNotifyParentlessLinks);
+    }
+
+    @Override
     protected void _controllerStructureChanged(QueuePriority priority) {
         broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
     }

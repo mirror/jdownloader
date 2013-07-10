@@ -182,8 +182,48 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return packages.size();
     }
 
+    private List<PackageControllerModifyVetoListener<PackageType, ChildType>> vetoListener = new ArrayList<PackageControllerModifyVetoListener<PackageType, ChildType>>();
+
+    public void removeVetoListener(PackageControllerModifyVetoListener<PackageType, ChildType> list) {
+        synchronized (vetoListener) {
+            vetoListener.remove(list);
+        }
+    }
+
+    public void addVetoListener(PackageControllerModifyVetoListener<PackageType, ChildType> list) {
+        synchronized (vetoListener) {
+            vetoListener.add(list);
+        }
+    }
+
+    public boolean askForRemoveVetos(PackageType pkg) {
+        List<PackageControllerModifyVetoListener<PackageType, ChildType>> copy;
+        synchronized (vetoListener) {
+            copy = new ArrayList<PackageControllerModifyVetoListener<PackageType, ChildType>>(vetoListener);
+        }
+        for (PackageControllerModifyVetoListener<PackageType, ChildType> listener : copy) {
+            if (!listener.onAskToRemovePackage(pkg)) {
+                //
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean askForRemoveVetos(List<ChildType> children) {
+        List<PackageControllerModifyVetoListener<PackageType, ChildType>> copy;
+        synchronized (vetoListener) {
+            copy = new ArrayList<PackageControllerModifyVetoListener<PackageType, ChildType>>(vetoListener);
+        }
+        for (PackageControllerModifyVetoListener<PackageType, ChildType> listener : copy) {
+            if (!listener.onAskToRemoveChildren(children)) { return false; }
+        }
+        return true;
+    }
+
     /* remove the Package from this PackageController */
     public void removePackage(final PackageType pkg) {
+        if (!askForRemoveVetos(pkg)) return;
         if (pkg != null) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
@@ -231,6 +271,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     public void removeChildren(final List<ChildType> removechildren) {
+        if (!askForRemoveVetos(removechildren)) return;
         if (removechildren != null && removechildren.size() > 0) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
@@ -491,6 +532,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
      * @param children
      */
     public void removeChildren(final PackageType pkg, final List<ChildType> children, final boolean doNotifyParentlessLinks) {
+        if (!askForRemoveVetos(children)) return;
         if (pkg != null && children != null && children.size() > 0) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 

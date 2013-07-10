@@ -1,9 +1,10 @@
-package org.jdownloader.settings;
+package jd.gui.swing.laf;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
+import org.jdownloader.settings.HexColorString;
 
 public interface LAFSettings extends ConfigInterface {
 

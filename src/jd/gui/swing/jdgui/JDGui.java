@@ -415,31 +415,36 @@ public class JDGui extends SwingGui implements UpdaterListener {
             public <T> T showDialog(AbstractDialog<T> dialog) throws DialogClosedException, DialogCanceledException {
                 // synchronized (this) {
                 try {
+
+                    dialog.forceDummyInit();
+                    try {
+                        if (dialog.evaluateDontShowAgainFlag()) {
+                            final int mask = dialog.getReturnmask();
+                            if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) { throw new DialogClosedException(mask); }
+                            if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) { throw new DialogCanceledException(mask); }
+                            if (!BinaryLogic.containsSome(mask, Dialog.RETURN_OK)) { throw new DialogCanceledException(mask | Dialog.RETURN_CLOSED); }
+                            return dialog.getReturnValue();
+                        }
+                    } catch (DialogNoAnswerException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        // Dialogs are not initialized.... nullpointers are very likly
+                        // These nullpointers should be fixed
+                        // in this case, we should continue normal
+                        logger.log(e);
+                    }
+
                     boolean silentModeActive = isSilentModeActive();
                     if (silentModeActive && CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.CANCEL_DIALOG) {
                         // Cancel dialog
                         throw new DialogClosedException(Dialog.RETURN_CLOSED);
                     }
+
                     // if this is the edt, we should not block it.. NEVER
                     if (!SwingUtilities.isEventDispatchThread()) {
                         // block dialog calls... the shall appear as soon as isSilentModeActive is false.
                         long countdown = -1;
-                        dialog.forceDummyInit();
-                        try {
-                            if (dialog.evaluateDontShowAgainFlag()) {
-                                final int mask = dialog.getReturnmask();
-                                if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) { throw new DialogClosedException(mask); }
-                                if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) { throw new DialogCanceledException(mask); }
-                                return dialog.getReturnValue();
-                            }
-                        } catch (DialogNoAnswerException e) {
-                            throw e;
-                        } catch (Exception e) {
-                            // Dialogs are not initialized.... nullpointers are very likly
-                            // These nullpointers should be fixed
-                            // in this case, we should continue normal
-                            logger.log(e);
-                        }
+
                         if (dialog.isCountdownFlagEnabled()) {
                             long countdownDif = dialog.getCountdown() * 1000;
                             countdown = System.currentTimeMillis() + countdownDif;
@@ -481,8 +486,9 @@ public class JDGui extends SwingGui implements UpdaterListener {
                     throw e;
                 } catch (Exception e) {
                     logger.log(e);
+                } finally {
+                    dialog.resetDummyInit();
                 }
-                dialog.resetDummyInit();
                 return Dialog.getInstance().getDefaultHandler().showDialog(dialog);
                 // }
 
