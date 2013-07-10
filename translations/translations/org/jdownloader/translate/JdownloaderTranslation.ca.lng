@@ -1,5 +1,7 @@
 AddContainerAction_delete_container_msg=Voleu eliminar %s1 després d'afegir l'enllaç o enllaços al JDownloader?
 DownloadLink_setSkipped_statusmessage=Saltat
+DownloadLink_setSkipped_statusmessage_file_exists=Saltat - el fitxer ja existeix
+DownloadLink_setSkipped_statusmessage_invalid_path=Directori de descàrrega invàlid
 DownloadWatchDog_onShutdownRequest_=Descàrregues en progrés!
 DownloadWatchDog_onShutdownRequest_msg=Voleu aturar les descàrregues en progrés en sortir del JDownloader?
 DownloadWatchDog_onShutdownRequest_nonresumable=Descàrregues no continuables en progrés!
@@ -114,7 +116,8 @@ gui_warning_reconnectFailed=Reconecció fallada!
 gui_warning_reconnectSuccess=Reconecció completada correctament
 gui_warning_reconnect_running=executant...
 gui_warning_reconnectunknown=Reconecció desconeguda
-jd_controlling_SingleDownloadController_askexists=L'arxiu '%s1' en el paquet %s2 ja existeix. Que vols fer?
+image_description=FItxers d'imatge: jpg, png, gif, ...
+jd_controlling_SingleDownloadController_askexists=El fitxer '%s1' del paquet %s2 ja existeix. Que voleu fer?
 jd_controlling_SingleDownloadController_askexists_title=L'arxiu existeix
 jd_controlling_reconnect_Reconnector_progress_failed2=La reconnexió ha fallat molts cops i ha estat desactivada. Si us plau, revisa la teva configuració!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>S'ha triat no reconnectar</u></b><br/><p>La Reconnexió és un mètode per evitar els temps d'espera que imposen alguns servidors als seus serveis gratuïts. No serveix de res en comptes Premium.</p><p>Més informació sobre la reconnexió <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>aquí</a>.</p>
@@ -142,3 +145,4 @@ system_download_errors_couldnotoverwrite=No es pot sobreescriure el fitxer exist
 system_download_errors_couldnotrename=No es pot reanomenar la part
 system_download_errors_invalidoutputfile=Fitxer de sortida invàlid
 system_download_errors_linkisBlocked=Mirall %s1 s'està carregant
+video_description=Fitxers de vídeo: mp4, avi, mov, ...
