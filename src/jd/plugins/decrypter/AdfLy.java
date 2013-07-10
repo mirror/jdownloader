@@ -227,10 +227,10 @@ public class AdfLy extends PluginForDecrypt {
                     String title = null;
                     if ("de".equalsIgnoreCase(lng)) {
                         title = "Wähle bitte Dein Standard Request Protokoll aus.";
-                        message = "Dies ist eine einmalige Auswahl. Einmal gespeichert, nutzt der JDownloader Dein\r\ngewähltes Standard Protokoll auch für alle zukünftigen Verbindungen zu diesem Anbieter.";
+                        message = "Dies ist eine einmalige Auswahl. Einmal gespeichert, nutzt der JDownloader Dein\r\ngewähltes Standard Protokoll auch für alle zukünftigen Verbindungen zu " + this.getHost() + ".";
                     } else {
                         title = "Please select your default request Protocol.";
-                        message = "This is a once off choice. Once saved, JDownloader will reuse\r\n your default Protocol for all future requests to this provider.";
+                        message = "This is a once off choice. Once saved, JDownloader will reuse\r\n your default Protocol for all future requests to " + this.getHost() + ".";
                     }
                     String[] select = new String[] { "http (insecure)", "https (secure)" };
                     int userSelect = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolTitle", title), JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolMessage", message), select, 0, null, null, null, null);
