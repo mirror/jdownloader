@@ -33,6 +33,7 @@ import org.appwork.controlling.StateMachine;
 import org.appwork.shutdown.BasicShutdownRequest;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -56,9 +57,9 @@ import org.jdownloader.gui.mainmenu.MainMenuManager;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.ForcedShutdown;
 import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.SmartRlyExitRequest;
 
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener, MenuExtenderHandler {
 
@@ -505,6 +506,10 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 ShutdownRequest request = ShutdownController.getInstance().collectVetos(new BasicShutdownRequest(true));
 
                 if (request.hasVetos()) {
+                    for (ShutdownVetoException e : request.getVetos()) {
+                        logger.log(e);
+                        logger.info(e.getSource() + "");
+                    }
                     logger.info("Vetos: " + request.getVetos().size() + " Wait until there is no veto");
                     new Thread("Wait to Shutdown") {
                         public void run() {
