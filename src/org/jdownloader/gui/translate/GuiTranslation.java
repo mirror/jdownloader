@@ -2783,4 +2783,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "... you can press ALT while clicking on this column to enter the Color code manually!" })
     String AdvancedValueColumn_onSingleClick_colorColumn_help();
 
+    @Default(lngs = { "en" }, values = { "...you can use dynamic variables or Regular Expression matches here.\r\nJust do a rightclick in the textfield to explorer the full power of the Packagizer" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables();
+
+    @Default(lngs = { "en" }, values = { "It's a shame to hide these features!" })
+    String PackagizerFilterRuleDialog_mousePressed_help_title();
+
 }

@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
@@ -24,6 +25,7 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.text.JTextComponent;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionDialog;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterPanel;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
@@ -51,6 +53,7 @@ import org.jdownloader.controlling.filter.BooleanFilter;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.controlling.packagizer.PackagizerRuleWrapper;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
@@ -427,6 +430,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         };
 
         fpDest.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_dest_help());
+
         fpPriority = new FilterPanel("ins 0", "[]0[]8[]0[]8[]0[]8[]0[]8[]0[]", "[]");
         PriorityAction pa_1 = new PriorityAction(Priority.LOWER);
         PriorityAction pa0 = new PriorityAction(Priority.DEFAULT);
@@ -477,6 +481,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             }
         };
         txtPackagename.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_packagename_help_());
+
         txtNewFilename = new ExtTextField() {
             /**
              * 
@@ -497,6 +502,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             }
         };
         txtNewFilename.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_filename_help_());
+
         spChunks = new ExtSpinner(new SpinnerNumberModel(2, 1, 20, 1));
 
         cbDest = new ExtCheckBox(fpDest);
@@ -624,6 +630,14 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             }
         };
         txtRename.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_filename_help_());
+        focusHelp(txtRename, _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
+
+        focusHelp(txtPackagename, _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
+
+        focusHelp(txtNewFilename, _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
+        focusHelp(fpDest.getTxt(), _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
+        focusHelp(fpMove.getTxt(), _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
+
         cbRename = new ExtCheckBox(txtRename);
         ret.add(cbRename);
         ret.add(lblRename, "spanx 2");
@@ -639,6 +653,17 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         JScrollPane sp = new JScrollPane(ret);
         sp.setBorder(null);
         return sp;
+    }
+
+    private void focusHelp(final ExtTextField comp, final String help) {
+        comp.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                JDGui.help(comp.getHelpText(), help, NewTheme.I().getIcon(IconKey.ICON_INFO, 32));
+            }
+
+        });
     }
 
     private void disable(JComponent ret) {

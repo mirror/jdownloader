@@ -77,7 +77,7 @@ public class HelpDialog {
             }
             Integer ret = JSonStorage.getPlainStorage("Dialogs").get(d.getDontShowAgainKey(), -1);
             if (ret != null && ret > 0) return;
-            Dialog.getInstance().showDialog(d);
+            d.show();
         } catch (Throwable e) {
             Log.exception(e);
         }

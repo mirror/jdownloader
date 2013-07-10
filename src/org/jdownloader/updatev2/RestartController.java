@@ -33,6 +33,7 @@ public class RestartController implements ShutdownVetoListener {
         IGNORE_COMMAND_SWITCHES.add("selfupdateerror");
         IGNORE_COMMAND_SWITCHES.add("afterupdate");
         IGNORE_COMMAND_SWITCHES.add("restart");
+        IGNORE_COMMAND_SWITCHES.add("forceupdate");
     }
 
     /**
