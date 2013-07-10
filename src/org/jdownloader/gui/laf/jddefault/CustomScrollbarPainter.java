@@ -7,18 +7,13 @@ import java.awt.Shape;
 
 import javax.swing.plaf.synth.SynthContext;
 
-import jd.gui.swing.laf.LAFOptions;
-import jd.gui.swing.laf.LookAndFeelController;
-
-import org.jdownloader.settings.LAFSettings;
-
 import de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel;
 import de.javasoft.plaf.synthetica.simple2D.ScrollBarPainter;
 
 public class CustomScrollbarPainter extends ScrollBarPainter {
-    private LAFSettings lafo;
-    private Color       color;
-    private Color       colorMouseOver;
+
+    private Color color;
+    private Color colorMouseOver;
 
     private Shape createThumbShape(float f, float f1, float f2, float f3, float f4) {
         return new java.awt.geom.RoundRectangle2D.Float(f, f1, f2, f3, f4, f4);
@@ -26,10 +21,10 @@ public class CustomScrollbarPainter extends ScrollBarPainter {
 
     public CustomScrollbarPainter() {
         super();
-        lafo = LookAndFeelController.getInstance().getLAFOptions();
-        color = LAFOptions.createColor(lafo.getColorForScrollbarsNormalState());
+        jd.gui.swing.laf.LAFSettings lafo = jd.gui.swing.laf.LookAndFeelController.getInstance().getLAFOptions();
+        color = jd.gui.swing.laf.LAFOptions.createColor(lafo.getColorForScrollbarsNormalState());
 
-        colorMouseOver = LAFOptions.createColor(lafo.getColorForScrollbarsMouseOverState());
+        colorMouseOver = jd.gui.swing.laf.LAFOptions.createColor(lafo.getColorForScrollbarsMouseOverState());
     }
 
     // public void paintScrollBarThumbBorder(SynthContext synthcontext, Graphics g, int i, int j, int k, int l, int i1) {
