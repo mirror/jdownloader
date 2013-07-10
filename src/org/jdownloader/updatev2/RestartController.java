@@ -152,6 +152,7 @@ public class RestartController implements ShutdownVetoListener {
     @Override
     public void onShutdownVetoRequest(ShutdownRequest shutdownVetoExceptions) throws ShutdownVetoException {
         if (shutdownVetoExceptions.hasVetos()) { return; }
+        if (shutdownVetoExceptions.isSilent()) return;
         try {
             if (shutdownVetoExceptions instanceof RestartRequest) {
                 new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _UPDATE._.RestartController_confirmTorestart_title(), _UPDATE._.RestartController_confirmTorestart_msg(), AWUTheme.I().getIcon(IconKey.ICON_RESTART, 32), null, null) {

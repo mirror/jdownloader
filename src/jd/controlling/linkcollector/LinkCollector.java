@@ -1446,13 +1446,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     @Override
     public void onShutdownVetoRequest(ShutdownRequest request) throws ShutdownVetoException {
-        if (request.hasVetos()) {
-            /* we already abort shutdown, no need to ask again */
-            /*
-             * we need this ShutdownVetoException here to avoid count issues with shutdownRequests
-             */
-            throw new ShutdownVetoException("Shutdown already cancelled!", this);
-        }
+        if (request.hasVetos()) { return; }
 
         if (request.isSilent()) {
             synchronized (shutdownLock) {
