@@ -216,9 +216,10 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             finallink = parameter.replace("/photo/", "/download/");
             finalfilename = new Regex(parameter, "picsapart\\.com/photo/(\\d+)").getMatch(0) + ".jpg";
         } else if (parameter.matches(".+postim(age|g)\\.org/.+")) {
-            br.getPage(parameter);
+            br.setFollowRedirects(true);
+            br.getPage(parameter.replace("postimage/", "postimg/"));
             finallink = br.getRegex("<img src=\\'(http://[^<>\"]*?)\\'").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("\\'(http://s\\d+\\.postimage\\.org/[a-z0-9]+/[^<> \"/]*?)\\'").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("\\'(http://s\\d+\\.postim(age|g)\\.org/[a-z0-9]+/[^<> \"/]*?)\\'").getMatch(0);
             if (finallink != null) {
                 String fuid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
                 String filename = new Regex(finallink, "/([^/]+)$").getMatch(0);
