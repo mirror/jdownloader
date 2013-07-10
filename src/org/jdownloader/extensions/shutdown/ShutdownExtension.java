@@ -506,11 +506,12 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 ShutdownRequest request = ShutdownController.getInstance().collectVetos(new BasicShutdownRequest(true));
 
                 if (request.hasVetos()) {
+
+                    logger.info("Vetos: " + request.getVetos().size() + " Wait until there is no veto");
                     for (ShutdownVetoException e : request.getVetos()) {
                         logger.log(e);
                         logger.info(e.getSource() + "");
                     }
-                    logger.info("Vetos: " + request.getVetos().size() + " Wait until there is no veto");
                     new Thread("Wait to Shutdown") {
                         public void run() {
 
@@ -531,6 +532,10 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                                     }
                                 }
                                 logger.info("Vetos: " + request.getVetos().size() + " Wait until there is no veto");
+                                for (ShutdownVetoException e : request.getVetos()) {
+                                    logger.log(e);
+                                    logger.info(e.getSource() + "");
+                                }
                                 try {
                                     Thread.sleep(1000);
                                 } catch (InterruptedException e) {
