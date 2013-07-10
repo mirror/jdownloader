@@ -16,6 +16,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.logging2.LogConfig;
 import org.jdownloader.api.RemoteAPIConfig;
+import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerSettings;
 import org.jdownloader.gui.shortcuts.ShortcutSettings;
@@ -47,6 +48,7 @@ public class AdvancedConfigManager {
         this.register(JsonConfig.create(GeneralSettings.class));
         register(JsonConfig.create(LinkFilterSettings.class));
         register(JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class));
+        register(JsonConfig.create(MyJDownloaderSettings.class));
         register(JsonConfig.create(AccountSettings.class));
         register(JsonConfig.create(GraphicalUserInterfaceSettings.class));
         register(JsonConfig.create(LinkCheckerConfig.class));
