@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -9,7 +8,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
@@ -21,6 +19,7 @@ import jd.controlling.IOEQ;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.BasicJDTable;
 import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
@@ -29,12 +28,8 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.swing.exttable.AlternateHighlighter;
 import org.appwork.swing.exttable.ExtColumn;
-import org.appwork.swing.exttable.ExtComponentRowHighlighter;
-import org.appwork.swing.exttable.ExtTable;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
-import org.appwork.utils.ColorUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
@@ -46,25 +41,26 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveNonSelectedAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionLinkgrabberAction;
 
-public abstract class FilterTable extends ExtTable<Filter> implements PackageControllerTableModelFilter<CrawledPackage, CrawledLink>, GenericConfigEventListener<Boolean> {
+public abstract class FilterTable extends BasicJDTable<Filter> implements PackageControllerTableModelFilter<CrawledPackage, CrawledLink> {
 
     /**
      * 
      */
-    private static final long        serialVersionUID = -5917220196056769905L;
-    protected java.util.List<Filter> filters          = new ArrayList<Filter>();
-    protected volatile boolean       enabled          = false;
-    private HeaderInterface          header;
-    private LinkGrabberTable         linkgrabberTable;
-    private DelayedRunnable          delayedRefresh;
+    private static final long                   serialVersionUID = -5917220196056769905L;
+    protected java.util.List<Filter>            filters          = new ArrayList<Filter>();
+    protected volatile boolean                  enabled          = false;
+    private HeaderInterface                     header;
+    private LinkGrabberTable                    linkgrabberTable;
+    private DelayedRunnable                     delayedRefresh;
 
-    private TableModelListener       listener;
-    private BooleanKeyHandler        visibleKeyHandler;
-    private Filter                   filterException;
+    private TableModelListener                  listener;
+    private BooleanKeyHandler                   visibleKeyHandler;
+    private Filter                              filterException;
+    private GenericConfigEventListener<Boolean> sidebarListener;
 
-    protected static final long      REFRESH_MIN      = 200l;
-    protected static final long      REFRESH_MAX      = 2000l;
-    private static final Object      LOCK             = new Object();
+    protected static final long                 REFRESH_MIN      = 200l;
+    protected static final long                 REFRESH_MAX      = 2000l;
+    private static final Object                 LOCK             = new Object();
 
     public FilterTable(HeaderInterface hosterFilter, LinkGrabberTable table, final BooleanKeyHandler visible) {
         super(new FilterTableModel());
@@ -93,28 +89,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         this.setShowHorizontalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-        Color c = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeader());
-        Color b2;
-        Color f2;
-        if (c != null) {
-            b2 = c;
-            f2 = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderForeground());
-        } else {
-            b2 = getForeground();
-            f2 = getBackground();
-        }
         this.setBackground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelBackground()));
-
-        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<Filter>(f2, b2, null) {
-
-            @Override
-            public boolean accept(ExtColumn<Filter> column, Filter value, boolean selected, boolean focus, int row) {
-                return selected;
-            }
-
-        });
-
-        this.addRowHighlighter(new AlternateHighlighter(null, ColorUtils.getAlphaInstance(new JLabel().getForeground(), 6)));
 
         // this.addRowHighlighter(new SelectionHighlighter(null, b2));
         // this.getModel().addExtComponentRowHighlighter(new
@@ -132,14 +107,41 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         // ColorUtils.getAlphaInstance(new JLabel().getForeground(), 6)));
         this.setIntercellSpacing(new Dimension(0, 0));
 
-        visible.getEventSender().addListener(this);
         init();
-        org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this, true);
+        sidebarListener = new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                if (Boolean.TRUE.equals(newValue) && org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarEnabled()) {
+                    enabled = true;
+                    linkgrabberTable.getModel().addFilter(FilterTable.this);
+
+                    linkgrabberTable.getModel().addTableModelListener(listener);
+                    FilterTable.super.setVisible(true);
+                } else {
+                    FilterTable.this.linkgrabberTable.getModel().removeTableModelListener(listener);
+
+                    enabled = false;
+                    /* filter disabled */
+
+                    linkgrabberTable.getModel().removeFilter(FilterTable.this);
+                    FilterTable.super.setVisible(false);
+                }
+                updateAllFiltersInstant();
+                linkgrabberTable.getModel().recreateModel(false);
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        };
+        visible.getEventSender().addListener(sidebarListener);
+        org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(sidebarListener, true);
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
             public void run() {
-                onConfigValueModified(null, visible.getValue());
+                sidebarListener.onConfigValueModified(null, visible.getValue());
             }
         });
 
@@ -334,9 +336,6 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
 
     protected abstract java.util.List<Filter> updateQuickFilerTableData();
 
-    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-    }
-
     public void setVisible(final boolean aFlag) {
 
         new EDTRunner() {
@@ -351,26 +350,6 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
 
     protected List<CrawledLink> getVisibleLinks() {
         return ((PackageControllerTableModel<CrawledPackage, CrawledLink>) linkgrabberTable.getModel()).getAllChildrenNodes();
-    }
-
-    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        if (Boolean.TRUE.equals(newValue) && org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarEnabled()) {
-            enabled = true;
-            linkgrabberTable.getModel().addFilter(this);
-
-            this.linkgrabberTable.getModel().addTableModelListener(listener);
-            super.setVisible(true);
-        } else {
-            this.linkgrabberTable.getModel().removeTableModelListener(listener);
-
-            enabled = false;
-            /* filter disabled */
-
-            linkgrabberTable.getModel().removeFilter(this);
-            super.setVisible(false);
-        }
-        updateAllFiltersInstant();
-        linkgrabberTable.getModel().recreateModel(false);
     }
 
     protected void updateAllFiltersInstant() {

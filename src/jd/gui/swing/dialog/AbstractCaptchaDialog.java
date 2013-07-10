@@ -704,7 +704,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             headerPanel = new MigPanel("ins 0 0 1 0", "[grow,fill]", "[]");
             headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderLine())));
 
-            LAFOptions.applyBackground(lafOptions.getColorForPanelHeader(), headerPanel);
+            LAFOptions.applyBackground(lafOptions.getColorForPanelHeaderBackground(), headerPanel);
 
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);
@@ -771,7 +771,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
             headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderLine())));
 
-            LAFOptions.applyBackground(lafOptions.getColorForPanelHeader(), headerPanel);
+            LAFOptions.applyBackground(lafOptions.getColorForPanelHeaderBackground(), headerPanel);
 
             headerPanel.setOpaque(true);
 

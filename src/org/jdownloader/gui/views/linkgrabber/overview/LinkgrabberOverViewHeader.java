@@ -80,7 +80,7 @@ public class LinkgrabberOverViewHeader extends MigPanel {
         SwingUtils.setOpaque(lbl, false);
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderLine())));
 
-        setBackground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeader()));
+        setBackground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderBackground()));
         bt = new JButton(NewTheme.I().getIcon("close", -1)) {
 
             public void setBounds(int x, int y, int width, int height) {

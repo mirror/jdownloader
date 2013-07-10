@@ -55,8 +55,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         this.setShowVerticalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-        sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForSortedColumnView()) : null;
-        filterNotifyColor = CFG_GUI.CFG.isFilterHighlightEnabled() ? LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForFilteredTableView()) : null;
+        sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTableSortedColumnView()) : null;
+        filterNotifyColor = CFG_GUI.CFG.isFilterHighlightEnabled() ? LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTableFilteredView()) : null;
         initAppActions();
         if (CFG_GUI.PACKAGES_BACKGROUND_HIGHLIGHT_ENABLED.isEnabled()) {
             Color tableFG = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTablePackageRowForeground());

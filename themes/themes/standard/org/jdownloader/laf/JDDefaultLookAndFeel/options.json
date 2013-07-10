@@ -1,12 +1,4 @@
 {
-  "paintStatusbarTopBorder" : false,
-  "panelBackgroundColor" :"#ffF5FCFF",
-  "panelHeaderColor" : "#ffD7E7F0",
-  "popupBorderInsets" : [ 0,2,4,2],
-  "panelHeaderLineColor": "#ffC0C0C0",
-  "panelHeaderLineForegroundColor" : "#ff000000",
-  "errorForeground": "#ffFF0000",
-  "tooltipForegroundColor": "#ffF5FCFF",
-  "downloadOverviewHeaderColor":"#ff474747"
+
   
 }

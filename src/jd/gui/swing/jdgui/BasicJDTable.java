@@ -39,11 +39,11 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         this.setShowHorizontalLines(true);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         lafo = LookAndFeelController.getInstance().getLAFOptions();
-        Color c = LAFOptions.createColor(lafo.getColorForPanelHeader());
+        Color c = LAFOptions.createColor(lafo.getColorForPanelHeaderBackground());
 
         this.setBackground(LAFOptions.createColor(lafo.getColorForPanelBackground()));
 
-        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(LAFOptions.createColor(lafo.getColorForSelectedRowsForeground()), LAFOptions.createColor(lafo.getColorForSelectedRowsBackground()), null) {
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(LAFOptions.createColor(lafo.getColorForTableSelectedRowsForeground()), LAFOptions.createColor(lafo.getColorForTableSelectedRowsBackground()), null) {
             public int getPriority() {
                 return Integer.MAX_VALUE;
             }
@@ -94,8 +94,8 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             // });
             //
 
-            Color f = LAFOptions.createColor(lafo.getColorForMouseOverRowForeground());
-            Color b = LAFOptions.createColor(lafo.getColorForMouseOverRowBackground());
+            Color f = LAFOptions.createColor(lafo.getColorForTableMouseOverRowForeground());
+            Color b = LAFOptions.createColor(lafo.getColorForTableMouseOverRowBackground());
             this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(f, b, null) {
                 public int getPriority() {
                     return Integer.MAX_VALUE - 1;
@@ -115,7 +115,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         this.setIntercellSpacing(new Dimension(0, 0));
         if (CFG_GUI.TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED.isEnabled()) {
 
-            this.getModel().addExtComponentRowHighlighter(new AlternateHighlighter<T>(LAFOptions.createColor(lafo.getColorForAlternateRowForeground()), LAFOptions.createColor(lafo.getColorForAlternateRowBackground()), null));
+            this.getModel().addExtComponentRowHighlighter(new AlternateHighlighter<T>(LAFOptions.createColor(lafo.getColorForTableAlternateRowForeground()), LAFOptions.createColor(lafo.getColorForTableAlternateRowBackground()), null));
         }
 
     }

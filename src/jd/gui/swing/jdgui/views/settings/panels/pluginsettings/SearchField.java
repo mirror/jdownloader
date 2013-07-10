@@ -55,7 +55,7 @@ public class SearchField extends ExtTextField implements MouseMotionListener, Mo
 
         img = NewTheme.I().getImage("search", SIZE);
         LAFOptions lafo = LookAndFeelController.getInstance().getLAFOptions();
-        bgColor = LAFOptions.createColor(lafo.getColorForPanelHeader());
+        bgColor = LAFOptions.createColor(lafo.getColorForPanelHeaderBackground());
         setHelpText(_GUI._.pluginsettings_search_helptext());
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         popIcon = NewTheme.I().getImage("popupButton", -1);

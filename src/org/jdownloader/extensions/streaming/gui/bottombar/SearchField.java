@@ -61,7 +61,7 @@ public abstract class SearchField<SearchCat extends SearchCatInterface> extends 
         super();
         img = NewTheme.I().getImage("search", SIZE);
         LAFOptions lafo = LookAndFeelController.getInstance().getLAFOptions();
-        bgColor = LAFOptions.createColor(lafo.getColorForPanelHeader());
+        bgColor = LAFOptions.createColor(lafo.getColorForPanelHeaderBackground());
         setHelpText(_GUI._.SearchField_SearchField_helptext());
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         popIcon = NewTheme.I().getImage("popupButton", -1);

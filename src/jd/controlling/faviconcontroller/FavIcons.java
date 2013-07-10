@@ -221,9 +221,7 @@ public class FavIcons {
         Color bg = Color.WHITE;
         LOGGER.info("Create Favicon: " + host);
 
-        bg = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeader());
-
-        fg = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderForeground());
+        bg = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderBackground());
 
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice gd = ge.getDefaultScreenDevice();

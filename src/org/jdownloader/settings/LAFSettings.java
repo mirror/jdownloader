@@ -7,13 +7,6 @@ import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface LAFSettings extends ConfigInterface {
 
-    // if (StringUtils.isNotEmpty(c)) lafOptions.setDownloadOverviewHeaderColor(c);
-    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
-    @AboutConfig
-    @RequiresRestart
-    @HexColorString
-    String getColorForDownloadOverviewHeader();
-
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart
@@ -25,7 +18,7 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart
     @HexColorString
-    String getColorForFilteredTableView();
+    String getColorForTableFilteredView();
 
     // if (StringUtils.isNotEmpty(c)) lafOptions.setPanelBackgroundColor(c);
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
@@ -39,14 +32,7 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart
     @HexColorString
-    String getColorForPanelHeader();
-
-    // if (StringUtils.isNotEmpty(c)) lafOptions.setPanelHeaderForegroundColor(c);
-    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
-    @AboutConfig
-    @RequiresRestart
-    @HexColorString
-    String getColorForPanelHeaderForeground();
+    String getColorForPanelHeaderBackground();
 
     // if (StringUtils.isNotEmpty(c)) lafOptions.setPanelHeaderLineColor(c);
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
@@ -60,7 +46,7 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart
     @HexColorString
-    String getColorForSortedColumnView();
+    String getColorForTableSortedColumnView();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
@@ -81,21 +67,17 @@ public interface LAFSettings extends ConfigInterface {
     @HexColorString
     public String getColorForTooltipForeground();
 
-    void setColorForDownloadOverviewHeader(String colorHex);
-
     public void setColorForErrorForeground(String errorForeground);
 
-    void setColorForFilteredTableView(String colorHex);
+    void setColorForTableFilteredView(String colorHex);
 
     void setColorForPanelBackground(String colorHex);
 
-    void setColorForPanelHeader(String colorHex);
-
-    void setColorForPanelHeaderForeground(String colorHex);
+    void setColorForPanelHeaderBackground(String colorHex);
 
     void setColorForPanelHeaderLine(String colorHex);
 
-    void setColorForSortedColumnView(String colorHex);
+    void setColorForTableSortedColumnView(String colorHex);
 
     public void setColorForTablePackageRowBackground(String tablePackageRowBackground);
 
@@ -107,48 +89,63 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart
     @HexColorString
-    String getColorForSelectedRowsForeground();
+    String getColorForTableSelectedRowsForeground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart
     @HexColorString
-    String getColorForSelectedRowsBackground();
+    String getColorForTableSelectedRowsBackground();
 
-    void setColorForSelectedRowsForeground(String color);
+    void setColorForTableSelectedRowsForeground(String color);
 
-    void setColorForSelectedRowsBackground(String color);
-
-    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
-    @AboutConfig
-    @RequiresRestart
-    @HexColorString
-    String getColorForMouseOverRowForeground();
+    void setColorForTableSelectedRowsBackground(String color);
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart
     @HexColorString
-    String getColorForMouseOverRowBackground();
-
-    void setColorForMouseOverRowForeground(String color);
-
-    void setColorForMouseOverRowBackground(String color);
+    String getColorForTableMouseOverRowForeground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart
     @HexColorString
-    String getColorForAlternateRowForeground();
+    String getColorForTableMouseOverRowBackground();
+
+    void setColorForTableMouseOverRowForeground(String color);
+
+    void setColorForTableMouseOverRowBackground(String color);
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart
     @HexColorString
-    String getColorForAlternateRowBackground();
+    String getColorForTableAlternateRowForeground();
 
-    void setColorForAlternateRowForeground(String color);
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart
+    @HexColorString
+    String getColorForTableAlternateRowBackground();
 
-    void setColorForAlternateRowBackground(String color);
+    void setColorForTableAlternateRowForeground(String color);
 
+    void setColorForTableAlternateRowBackground(String color);
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart
+    @HexColorString
+    String getColorForScrollbarsNormalState();
+
+    void setColorForScrollbarsNormalState(String color);
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart
+    @HexColorString
+    String getColorForScrollbarsMouseOverState();
+
+    void setColorForScrollbarsMouseOverState(String color);
 }

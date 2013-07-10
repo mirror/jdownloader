@@ -26,7 +26,7 @@ public class LinkGrabberSideBarHeader extends MigPanel {
         SwingUtils.setOpaque(lbl, false);
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderLine())));
 
-        setBackground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeader()));
+        setBackground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderBackground()));
 
     }
 

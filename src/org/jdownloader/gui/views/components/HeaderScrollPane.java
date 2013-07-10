@@ -36,7 +36,7 @@ public class HeaderScrollPane extends JScrollPane {
 
     public HeaderScrollPane(JComponent sidebar) {
         super(sidebar);
-        Color c = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeader());
+        Color c = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderBackground());
 
         headerColor = c;
         // setBorder(new JTextField().getBorder());

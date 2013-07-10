@@ -88,7 +88,7 @@ public class ExtensionPanelListRenderer extends JPanel implements ListCellRender
         f = lbl.getForeground();
         b2 = ColorUtils.getAlphaInstance(f, 60);
 
-        Color c = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeader());
+        Color c = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderBackground());
         if (c != null) {
             b2 = ColorUtils.getAlphaInstance(c, 230);
         }

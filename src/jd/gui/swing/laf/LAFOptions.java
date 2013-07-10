@@ -6,8 +6,6 @@ import java.util.Locale;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JTable;
-import javax.swing.table.JTableHeader;
 
 import org.appwork.storage.Storable;
 import org.appwork.storage.config.handler.StorageHandler;
@@ -42,26 +40,37 @@ public class LAFOptions implements Storable, LAFSettings {
 
     private String  menuBackgroundPainterClass        = "de.javasoft.plaf.synthetica.simple2D.MenuPainter";
 
-    private boolean paintStatusbarTopBorder           = true;
+    private boolean paintStatusbarTopBorder           = false;
 
-    private String  colorForPanelBackground           = toHex(new JTable().getBackground());
+    private String  colorForPanelBackground           = "ffF5FCFF";
 
-    private String  colorForPanelHeader               = toHex(new JTableHeader().getBackground());
+    private String  colorForPanelHeader               = "ffD7E7F0";
 
     private String  colorForPanelHeaderForeground     = BLACK;
-    private String  colorForPanelHeaderLine           = toHex(Color.LIGHT_GRAY);
+    private String  colorForPanelHeaderLine           = "ffC0C0C0";
 
-    private int[]   popupBorderInsets                 = new int[] { 0, 0, 0, 0 };
+    private int[]   popupBorderInsets                 = new int[] { 0, 2, 4, 2 };
 
     private String  colorForTablePackageRowBackground = "FFDEE7ED";
     private String  colorForTablePackageRowForeground = BLACK;
-    private String  colorForTooltipForeground         = "ffcccccc";
+    private String  colorForTooltipForeground         = "ffF5FCFF";
     private String  colorForSelectedRowsForeground    = BLACK;
     private String  colorForSelectedRowsBackground    = "ffCAE8FA";
     private String  colorForMouseOverRowBackground    = "ccCAE8FA";
     private String  colorForMouseOverRowForeground    = null;
     private String  colorForAlternateRowForeground    = null;
     private String  colorForAlternateRowBackground    = "03000000";
+    private String  colorForScrollbarsNormalState     = "ffD7E7F0";
+    private String  colorForScrollbarsMouseOverState  = "ffABC7D8";
+
+    // "panelBackgroundColor" :"#ffF5FCFF",
+    // "panelHeaderColor" : "#ffD7E7F0",
+    // "popupBorderInsets" : [ 0,2,4,2],
+    // "panelHeaderLineColor": "#ffC0C0C0",
+    // "panelHeaderLineForegroundColor" : "#ff000000",
+    // "errorForeground": "#ffFF0000",
+    // "tooltipForegroundColor": "#ffF5FCFF",
+    // "downloadOverviewHeaderColor":"#ff474747"
 
     public LAFOptions() {
         // empty cosntructor required for Storable
@@ -110,11 +119,11 @@ public class LAFOptions implements Storable, LAFSettings {
         return colorForErrorForeground;
     }
 
-    public String getColorForSortedColumnView() {
+    public String getColorForTableSortedColumnView() {
         return colorForSortedColumnView;
     }
 
-    public String getColorForFilteredTableView() {
+    public String getColorForTableFilteredView() {
         return colorForFilteredTableView;
     }
 
@@ -126,7 +135,7 @@ public class LAFOptions implements Storable, LAFSettings {
         return colorForPanelBackground;
     }
 
-    public String getColorForPanelHeader() {
+    public String getColorForPanelHeaderBackground() {
         return colorForPanelHeader;
     }
 
@@ -177,11 +186,11 @@ public class LAFOptions implements Storable, LAFSettings {
         this.colorForDownloadOverviewHeader = downloadOverviewHeaderColor;
     }
 
-    public void setColorForSortedColumnView(String highlightColor1) {
+    public void setColorForTableSortedColumnView(String highlightColor1) {
         this.colorForSortedColumnView = highlightColor1;
     }
 
-    public void setColorForFilteredTableView(String highlightColor2) {
+    public void setColorForTableFilteredView(String highlightColor2) {
         this.colorForFilteredTableView = highlightColor2;
     }
 
@@ -197,7 +206,7 @@ public class LAFOptions implements Storable, LAFSettings {
         this.colorForPanelBackground = panelBackgroundColor;
     }
 
-    public void setColorForPanelHeader(String panelHeaderColor) {
+    public void setColorForPanelHeaderBackground(String panelHeaderColor) {
         this.colorForPanelHeader = panelHeaderColor;
     }
 
@@ -237,63 +246,83 @@ public class LAFOptions implements Storable, LAFSettings {
     }
 
     @Override
-    public String getColorForSelectedRowsForeground() {
+    public String getColorForTableSelectedRowsForeground() {
         return colorForSelectedRowsForeground;
     }
 
     @Override
-    public String getColorForSelectedRowsBackground() {
+    public String getColorForTableSelectedRowsBackground() {
         return colorForSelectedRowsBackground;
     }
 
     @Override
-    public void setColorForSelectedRowsForeground(String color) {
+    public void setColorForTableSelectedRowsForeground(String color) {
         colorForSelectedRowsForeground = color;
     }
 
     @Override
-    public void setColorForSelectedRowsBackground(String color) {
+    public void setColorForTableSelectedRowsBackground(String color) {
         colorForSelectedRowsBackground = color;
     }
 
     @Override
-    public String getColorForMouseOverRowForeground() {
+    public String getColorForTableMouseOverRowForeground() {
         return colorForMouseOverRowForeground;
     }
 
     @Override
-    public String getColorForMouseOverRowBackground() {
+    public String getColorForTableMouseOverRowBackground() {
         return colorForMouseOverRowBackground;
     }
 
     @Override
-    public void setColorForMouseOverRowForeground(String color) {
+    public void setColorForTableMouseOverRowForeground(String color) {
         colorForMouseOverRowForeground = color;
     }
 
     @Override
-    public void setColorForMouseOverRowBackground(String color) {
+    public void setColorForTableMouseOverRowBackground(String color) {
         colorForMouseOverRowBackground = color;
     }
 
     @Override
-    public String getColorForAlternateRowForeground() {
+    public String getColorForTableAlternateRowForeground() {
         return colorForAlternateRowForeground;
     }
 
     @Override
-    public String getColorForAlternateRowBackground() {
+    public String getColorForTableAlternateRowBackground() {
         return colorForAlternateRowBackground;
     }
 
     @Override
-    public void setColorForAlternateRowForeground(String color) {
+    public void setColorForTableAlternateRowForeground(String color) {
         colorForAlternateRowForeground = color;
     }
 
     @Override
-    public void setColorForAlternateRowBackground(String color) {
+    public void setColorForTableAlternateRowBackground(String color) {
         colorForAlternateRowBackground = color;
+    }
+
+    @Override
+    public String getColorForScrollbarsNormalState() {
+        return colorForScrollbarsNormalState;
+    }
+
+    @Override
+    public void setColorForScrollbarsNormalState(String color) {
+        colorForScrollbarsNormalState = color;
+    }
+
+    @Override
+    public String getColorForScrollbarsMouseOverState() {
+        return colorForScrollbarsMouseOverState;
+    }
+
+    @Override
+    public void setColorForScrollbarsMouseOverState(String color) {
+        colorForScrollbarsMouseOverState = color;
     }
 
 }
