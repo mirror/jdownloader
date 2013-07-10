@@ -88,7 +88,7 @@ public class RapidStoneCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.4
+    // XfileShare Version 3.0.6.5
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: 4dignum
@@ -307,7 +307,6 @@ public class RapidStoneCom extends PluginForHost {
         }
         // redirects need to be disabled for getDllink
         br.setFollowRedirects(false);
-        passCode = downloadLink.getStringProperty("pass");
         // First, bring up saved final links
         dllink = checkDirectLink(downloadLink);
         // Second, check for streaming links on the first page
@@ -353,20 +352,18 @@ public class RapidStoneCom extends PluginForHost {
             for (int i = 0; i <= repeat; i++) {
                 dlForm = cleanForm(dlForm);
                 final long timeBefore = System.currentTimeMillis();
-                boolean password = false;
-                if (cbr.containsHTML(PASSWORDTEXT)) {
-                    password = true;
-                    logger.info("The downloadlink seems to be password protected.");
-                }
                 // md5 can be on the subsequent pages
                 if (inValidate(downloadLink.getMD5Hash())) {
                     String md5hash = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
                     if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
                 }
+                if (cbr.containsHTML(PASSWORDTEXT)) {
+                    logger.info("The downloadlink seems to be password protected.");
+                    dlForm = handlePassword(dlForm, downloadLink);
+                }
                 /* Captcha START */
                 dlForm = captchaForm(downloadLink, dlForm);
                 /* Captcha END */
-                if (password) passCode = handlePassword(dlForm, downloadLink);
                 if (!skipWaitTime) waitTime(timeBefore, downloadLink);
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
@@ -386,6 +383,7 @@ public class RapidStoneCom extends PluginForHost {
                 }
             }
         }
+        if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
         // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
         controlHost(account, downloadLink, true);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -732,7 +730,6 @@ public class RapidStoneCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account);
-        passCode = downloadLink.getStringProperty("pass");
         requestFileInformation(downloadLink);
         login(account, false);
         if (account.getBooleanProperty("free")) {
@@ -768,7 +765,7 @@ public class RapidStoneCom extends PluginForHost {
                     Form dlform = cbr.getFormbyProperty("name", "F1");
                     if (dlform == null)
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    else if (dlform != null && cbr.containsHTML(PASSWORDTEXT)) passCode = handlePassword(dlform, downloadLink);
+                    else if (cbr.containsHTML(PASSWORDTEXT)) dlform = handlePassword(dlform, downloadLink);
                     sendForm(dlform);
                     checkErrors(downloadLink, account, true);
                     getDllink();
@@ -778,6 +775,7 @@ public class RapidStoneCom extends PluginForHost {
                     }
                 }
             }
+            if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
             // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
             controlHost(account, downloadLink, true);
             logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -1046,23 +1044,23 @@ public class RapidStoneCom extends PluginForHost {
         return dllink;
     }
 
-    private String handlePassword(final Form pwform, final DownloadLink downloadLink) throws PluginException {
+    private Form handlePassword(final Form pwform, final DownloadLink downloadLink) throws PluginException {
+        if (pwform == null) {
+            // so we know handlePassword triggered without any form
+            logger.info("Password Form == null");
+            return null;
+        }
+        passCode = downloadLink.getStringProperty("pass");
         if (inValidate(passCode)) passCode = Plugin.getUserInput("Password?", downloadLink);
         if (inValidate(passCode)) {
             logger.info("User has entered blank password, exiting handlePassword");
             passCode = null;
             downloadLink.setProperty("pass", Property.NULL);
-            return null;
+            return pwform;
         }
-        if (pwform == null) {
-            // so we know handlePassword triggered without any form
-            logger.info("Password Form == null");
-        } else {
-            logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-            pwform.put("password", Encoding.urlEncode(passCode));
-        }
-        downloadLink.setProperty("pass", passCode);
-        return passCode;
+        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+        pwform.put("password", Encoding.urlEncode(passCode));
+        return pwform;
     }
 
     /**

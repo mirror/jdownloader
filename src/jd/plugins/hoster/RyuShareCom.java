@@ -94,7 +94,7 @@ public class RyuShareCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.4
+    // XfileShare Version 3.0.6.5
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: keycaptcha
@@ -316,7 +316,6 @@ public class RyuShareCom extends PluginForHost {
         }
         // redirects need to be disabled for getDllink
         br.setFollowRedirects(false);
-        passCode = downloadLink.getStringProperty("pass");
         // First, bring up saved final links
         dllink = checkDirectLink(downloadLink);
         // Second, check for streaming links on the first page
@@ -362,20 +361,18 @@ public class RyuShareCom extends PluginForHost {
             for (int i = 0; i <= repeat; i++) {
                 dlForm = cleanForm(dlForm);
                 final long timeBefore = System.currentTimeMillis();
-                boolean password = false;
-                if (cbr.containsHTML(PASSWORDTEXT)) {
-                    password = true;
-                    logger.info("The downloadlink seems to be password protected.");
-                }
                 // md5 can be on the subsequent pages
                 if (inValidate(downloadLink.getMD5Hash())) {
                     String md5hash = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
                     if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
                 }
+                if (cbr.containsHTML(PASSWORDTEXT)) {
+                    logger.info("The downloadlink seems to be password protected.");
+                    dlForm = handlePassword(dlForm, downloadLink);
+                }
                 /* Captcha START */
                 dlForm = captchaForm(downloadLink, dlForm);
                 /* Captcha END */
-                if (password) passCode = handlePassword(dlForm, downloadLink);
                 if (!skipWaitTime) waitTime(timeBefore, downloadLink);
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
@@ -395,6 +392,7 @@ public class RyuShareCom extends PluginForHost {
                 }
             }
         }
+        if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
         // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
         controlHost(account, downloadLink, true);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -532,7 +530,8 @@ public class RyuShareCom extends PluginForHost {
             if (cbr.containsHTML("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         // monitor this
-        // premium = <font class="err">You have reached the download-limit: 88888 Mb for last 1 days</font> (even with accounts with unlimited traffic.)
+        // premium = <font class="err">You have reached the download-limit: 88888 Mb for last 1 days</font> (even with accounts with
+        // unlimited traffic.)
         // free = <div class="err">You have reached the download-limit!!!<br>
         if (cbr.containsHTML("class=\"err\">You have reached the download(-| )limit(!!!|[^<]+for last)[^<]+")) {
             /*
@@ -743,7 +742,6 @@ public class RyuShareCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account);
-        passCode = downloadLink.getStringProperty("pass");
         requestFileInformation(downloadLink);
         login(account, false);
         if (account.getBooleanProperty("free")) {
@@ -800,8 +798,9 @@ public class RyuShareCom extends PluginForHost {
                 if (inValidate(dllink)) {
                     checkErrors(downloadLink, account, true);
                     Form dlform = cbr.getFormbyProperty("name", "F1");
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    else if (dlform != null && cbr.containsHTML(PASSWORDTEXT)) passCode = handlePassword(dlform, downloadLink);
+                    if (dlform == null)
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    else if (dlform != null && cbr.containsHTML(PASSWORDTEXT)) dlform = handlePassword(dlform, downloadLink);
                     sendForm(dlform);
                     checkErrors(downloadLink, account, true);
                     getDllink();
@@ -811,6 +810,7 @@ public class RyuShareCom extends PluginForHost {
                     }
                 }
             }
+            if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
             // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
             controlHost(account, downloadLink, true);
             logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -903,39 +903,39 @@ public class RyuShareCom extends PluginForHost {
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
 
-    private Browser                                           cbr                          = new Browser();
+    private Browser                                           cbr                    = new Browser();
 
-    private String                                            acctype                      = null;
-    private String                                            directlinkproperty           = null;
-    private String                                            dllink                       = null;
-    private String                                            fuid                         = null;
-    private String                                            passCode                     = null;
-    private String                                            usedHost                     = null;
+    private String                                            acctype                = null;
+    private String                                            directlinkproperty     = null;
+    private String                                            dllink                 = null;
+    private String                                            fuid                   = null;
+    private String                                            passCode               = null;
+    private String                                            usedHost               = null;
 
-    private int                                               chunks                       = 1;
+    private int                                               chunks                 = 1;
 
-    private boolean                                           resumes                      = false;
-    private boolean                                           skipWaitTime                 = false;
+    private boolean                                           resumes                = false;
+    private boolean                                           skipWaitTime           = false;
 
-    private final String                                      language                     = System.getProperty("user.language");
-    private final String                                      preferHTTPS                  = "preferHTTPS";
-    private final String                                      ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private final String                                      MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private final String                                      PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private final String                                      PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private final String                                      language               = System.getProperty("user.language");
+    private final String                                      preferHTTPS            = "preferHTTPS";
+    private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private final String                                      PREMIUMONLY1           = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private final String                                      PREMIUMONLY2           = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
 
-    private static AtomicInteger                              maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger                              maxPrem                      = new AtomicInteger(1);
+    private static AtomicInteger                              maxFree                = new AtomicInteger(1);
+    private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
-    private static AtomicInteger                              maxNonAccSimDlPerHost        = new AtomicInteger(20);
-    private static AtomicInteger                              maxFreeAccSimDlPerHost       = new AtomicInteger(20);
-    private static AtomicInteger                              maxPremAccSimDlPerHost       = new AtomicInteger(20);
+    private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
+    private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
 
-    private static HashMap<Account, HashMap<String, Integer>> hostMap                      = new HashMap<Account, HashMap<String, Integer>>();
+    private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static Object                                     LOCK                         = new Object();
+    private static Object                                     LOCK                   = new Object();
 
-    private static StringContainer                            agent                        = new StringContainer();
+    private static StringContainer                            agent                  = new StringContainer();
 
     public static class StringContainer {
         public String string = null;
@@ -1112,23 +1112,23 @@ public class RyuShareCom extends PluginForHost {
         return dllink;
     }
 
-    private String handlePassword(final Form pwform, final DownloadLink downloadLink) throws PluginException {
+    private Form handlePassword(final Form pwform, final DownloadLink downloadLink) throws PluginException {
+        if (pwform == null) {
+            // so we know handlePassword triggered without any form
+            logger.info("Password Form == null");
+            return null;
+        }
+        passCode = downloadLink.getStringProperty("pass");
         if (inValidate(passCode)) passCode = Plugin.getUserInput("Password?", downloadLink);
         if (inValidate(passCode)) {
             logger.info("User has entered blank password, exiting handlePassword");
             passCode = null;
             downloadLink.setProperty("pass", Property.NULL);
-            return null;
+            return pwform;
         }
-        if (pwform == null) {
-            // so we know handlePassword triggered without any form
-            logger.info("Password Form == null");
-        } else {
-            logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-            pwform.put("password", Encoding.urlEncode(passCode));
-        }
-        downloadLink.setProperty("pass", passCode);
-        return passCode;
+        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+        pwform.put("password", Encoding.urlEncode(passCode));
+        return pwform;
     }
 
     /**
@@ -1596,7 +1596,6 @@ public class RyuShareCom extends PluginForHost {
         ret.setMethod(form.getMethod());
         return ret;
     }
-
 
     /**
      * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
