@@ -32,7 +32,7 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
     private ExtButton         reconnectTestButton;
 
     public ReconnectManager() {
-        super("ins 0,wrap 3,debug", "[grow,fill][]", "");
+        super("ins 0,wrap 3", "[grow,fill][]", "");
         initComponents();
         layoutComponents();
         fill();
