@@ -28,14 +28,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagearn.com" }, urls = { "http://(www\\.)?imagearn\\.com//(gallery|image)\\.php\\?id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagearn.com" }, urls = { "http://(www\\.)?imagearn\\.com//?(gallery|image)\\.php\\?id=\\d+" }, flags = { 0 })
 public class ImagEarnCom extends PluginForDecrypt {
 
     public ImagEarnCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String THUMBREGEX = "\"(http://thumbs\\d+\\.imagearn\\.com/\\d+/\\d+\\.jpg)\"";
+    private static final String THUMBREGEX = "\"(http://thumbs\\d+\\.imagearn\\.com//?\\d+/\\d+\\.jpg)\"";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -46,15 +46,15 @@ public class ImagEarnCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<h3 class=\"page\\-title\"><strong>([^<>\"/]+)</strong>").getMatch(0);
-        if (parameter.contains("imagearn.com//gallery.php?id=")) {
-            if (fpName == null) fpName = br.getRegex("<title>(.*?) \\- Image Earn</title>").getMatch(0);
+        String fpName = br.getRegex("<h3 class=\"page-title\"><strong>([^<>\"/]+)</strong>").getMatch(0);
+        if (parameter.contains("imagearn.com/gallery.php?id=")) {
+            if (fpName == null) fpName = br.getRegex("<title>(.*?) - Image Earn</title>").getMatch(0);
             if (fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             fpName = Encoding.htmlDecode(fpName.trim());
-            final String[] links = br.getRegex("\"(http://imagearn\\.com//image\\.php\\?id=\\d+)\"").getColumn(0);
+            final String[] links = br.getRegex("\"(http://imagearn\\.com/?/image\\.php\\?id=\\d+)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -77,7 +77,7 @@ public class ImagEarnCom extends PluginForDecrypt {
                 sleep(1500, param);
             }
         } else {
-            if (fpName == null) fpName = br.getRegex("<title>Image \\- (.*?) \\- Image Earn</title>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<title>Image - (.*?) \\- Image Earn</title>").getMatch(0);
             String finallink = getDirectlink();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -97,7 +97,7 @@ public class ImagEarnCom extends PluginForDecrypt {
 
     private String getDirectlink() {
         String finallink = br.getRegex("<div id=\"image\"><center><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("\"(http://img\\.imagearn\\.com/imags/\\d+/\\d+\\.jpg)\"").getMatch(0);
+        if (finallink == null) finallink = br.getRegex("\"(http://img\\.imagearn\\.com//?imags/\\d+/\\d+\\.jpg)\"").getMatch(0);
         return finallink;
     }
 

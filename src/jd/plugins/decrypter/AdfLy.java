@@ -56,7 +56,7 @@ public class AdfLy extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.setReadTimeout(3 * 60 * 1000);
 
-        if (parameter.matches(HOSTS + "/\\d+/.+")) {
+        if (parameter.matches(HOSTS + "/\\d+/(http|ftp).+")) {
             String linkInsideLink = new Regex(parameter, HOSTS + "/\\d+/(.+)").getMatch(2);
             linkInsideLink = protocol + linkInsideLink;
             if (!linkInsideLink.matches(HOSTS + "/.+")) {
@@ -102,7 +102,7 @@ public class AdfLy extends PluginForDecrypt {
             }
             if (finallink == null) {
                 finallink = br.getRegex("window\\.location = ('|\")(.*?)('|\");").getMatch(1);
-                if (finallink.contains("/noscript.php")) finallink = null;
+                if (finallink != null && finallink.contains("/noscript.php")) finallink = null;
             }
             if (finallink == null) {
                 finallink = br.getRegex("close_bar.*?self\\.location = \\'(.*?)\\';").getMatch(0);
@@ -194,7 +194,7 @@ public class AdfLy extends PluginForDecrypt {
         final Browser brAds = br.cloneBrowser();
         brAds.setConnectTimeout(5 * 1000);
         brAds.setReadTimeout(5 * 1000);
-        final String[] skpWaitLinks = { "cdn.adf.ly/css/adfly_1.css", "cdn.adf.ly/js/adfly.js", "cdn.adf.ly/images/logo_fb.png", "cdn.adf.ly/images/skip_ad/en.png", "adf.ly/favicon.ico", "cdn.adf.ly/images/ad_top_bg.png", "adf.ly/omnigy7425325410.swf" };
+        final String[] skpWaitLinks = { "cdn.adf.ly/css/adfly_1.css", "cdn.adf.ly/js/adfly.js", "cdn.adf.ly/images/logo_fb.png", "cdn.adf.ly/images/skip_ad/en.png", "adf.ly/favicon.ico", "cdn.adf.ly/images/ad_top_bg.png", "adf.ly/omnigy7425325410.swf", "adf.ly/holder.php" };
         for (final String skWaitLink : skpWaitLinks) {
             try {
                 brAds.openGetConnection(protocol + skWaitLink);
