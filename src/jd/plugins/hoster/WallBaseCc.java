@@ -89,6 +89,7 @@ public class WallBaseCc extends PluginForHost {
         /* simple Base64 */
         if (finallink == null) {
             finallink = br.getRegex("\\d+x\\d+ Wallpaper\"[^\\(]+\\(\'([^\']+)\'\\)").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("<img src=\"[^\\(]+\\('([a-zA-Z0-9\\+/\\=]+)").getMatch(0);
             if (finallink != null) finallink = Encoding.Base64Decode(finallink);
         }
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

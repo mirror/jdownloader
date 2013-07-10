@@ -192,6 +192,7 @@ public class OteUploadCom extends PluginForHost {
 
             if (useAltLinkCheck) {
                 altAvailStat(downloadLink, fileInfo);
+                if (downloadLink.getAvailableStatus().toString().equals("UNCHECKED")) downloadLink.setAvailable(true);
             }
 
             getPage(downloadLink.getDownloadURL());
@@ -271,9 +272,17 @@ public class OteUploadCom extends PluginForHost {
                             fileInfo[0] = br.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                             // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = br.getRegex("copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
+                                fileInfo[0] = br.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
                                 if (inValidate(fileInfo[0])) {
-                                    fileInfo[0] = br.getRegex("copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    fileInfo[0] = br.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    if (inValidate(fileInfo[0])) {
+                                        try {
+                                            // currently no identifier for offline files!
+                                            altAvailStat(downloadLink, fileInfo);
+                                            if (downloadLink.getAvailableStatus().toString().equals("FALSE")) return fileInfo;
+                                        } catch (Exception e) {
+                                        }
+                                    }
                                 }
                             }
                         }
