@@ -7,6 +7,7 @@ import javax.swing.JComponent;
 
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
+import org.appwork.utils.swing.SwingUtils;
 
 public class Checkbox extends ExtCheckBox implements SettingsComponent {
 
@@ -23,6 +24,7 @@ public class Checkbox extends ExtCheckBox implements SettingsComponent {
                 if (!setting) eventSender.fireEvent(new StateUpdateEvent<Checkbox>(Checkbox.this));
             }
         });
+        SwingUtils.setOpaque(this, false);
     }
 
     public Checkbox(boolean selected) {
@@ -35,6 +37,7 @@ public class Checkbox extends ExtCheckBox implements SettingsComponent {
                 if (!setting) eventSender.fireEvent(new StateUpdateEvent<Checkbox>(Checkbox.this));
             }
         });
+        SwingUtils.setOpaque(this, false);
     }
 
     public void addStateUpdateListener(StateUpdateListener listener) {

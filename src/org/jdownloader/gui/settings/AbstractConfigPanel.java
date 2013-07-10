@@ -25,8 +25,8 @@ import org.jdownloader.extensions.Header;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
-import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.SmartRlyExitRequest;
 
 public abstract class AbstractConfigPanel extends SwitchPanel {
 
@@ -88,6 +88,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         add(lbl = createLabel(name), (enabled == null ? "" : "split 3,") + "gapleft 37,aligny " + (comp.isMultiline() ? "top" : "center"));
         if (enabled != null) {
             ExtCheckBox cb = new ExtCheckBox(enabled, lbl, (JComponent) comp);
+            SwingUtils.setOpaque(cb, false);
             add(Box.createHorizontalGlue(), "pushx,growx");
             add(cb, "width " + cb.getPreferredSize().width + "!,aligny " + (comp.isMultiline() ? "top" : "center"));
             cb.setToolTipText(_GUI._.AbstractConfigPanel_addPair_enabled());

@@ -442,6 +442,7 @@ public class UpdateController implements UpdateCallbackInterface {
 
     public void installUpdates(InstallLog log) {
         handler.installPendingUpdates(log);
+        handler.clearInstallLogs();
     }
 
     @Override

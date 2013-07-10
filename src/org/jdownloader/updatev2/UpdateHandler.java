@@ -55,4 +55,6 @@ public interface UpdateHandler {
 
     HTTPProxy getUpdatedProxy(HTTPProxy proxy);
 
+    List<InstallLog> clearInstallLogs();
+
 }

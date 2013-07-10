@@ -25,6 +25,7 @@ import java.util.jar.JarFile;
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -187,6 +188,12 @@ public class LookAndFeelController implements LAFManagerInterface {
         } catch (Throwable e) {
             LogController.CL().log(e);
             try {
+                LookAndFeel currentLaf = UIManager.getLookAndFeel();
+                // this may happen if the updater launcher already has set the look and feel.
+                if (currentLaf != null && !(currentLaf instanceof MetalLookAndFeel)) {
+                    LogController.CL().info("Don't set System look and feel " + currentLaf + " is already set");
+                    return;
+                }
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             } catch (ClassNotFoundException e1) {
                 e1.printStackTrace();
