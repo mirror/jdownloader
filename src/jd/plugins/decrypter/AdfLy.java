@@ -204,8 +204,7 @@ public class AdfLy extends PluginForDecrypt {
     }
 
     /**
-     * Issue the user with a dialog prompt and asks them to select a default request protocol. Saves users preference for future
-     * communication requests!<br/>
+     * Issue the user with a dialog prompt and asks them to select a default request protocol. Saves users preference for future communication requests!<br/>
      * <br/>
      * Decrypter Template: Default Request Protocol.
      * 
@@ -218,40 +217,39 @@ public class AdfLy extends PluginForDecrypt {
             defaultProtocol = "http";
         } else {
             SubConfiguration config = null;
-            try {
-                config = getPluginConfig();
-                defaultProtocol = config.getStringProperty("defaultProtocol", null);
-                if (defaultProtocol == null) {
-                    String lng = System.getProperty("user.language");
-                    String message = null;
-                    String title = null;
-                    if ("de".equalsIgnoreCase(lng)) {
-                        title = "Wähle bitte Dein Standard Request Protokoll aus.";
-                        message = "Dies ist eine einmalige Auswahl. Einmal gespeichert, nutzt der JDownloader Dein\r\ngewähltes Standard Protokoll auch für alle zukünftigen Verbindungen zu " + this.getHost() + ".";
-                    } else {
-                        title = "Please select your default request Protocol.";
-                        message = "This is a once off choice. Once saved, JDownloader will reuse\r\n your default Protocol for all future requests to " + this.getHost() + ".";
+            synchronized (LOCK) {
+                try {
+                    config = getPluginConfig();
+                    defaultProtocol = config.getStringProperty("defaultProtocol", null);
+                    if (defaultProtocol == null) {
+                        String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = "Wähle bitte Dein Standard Request Protokoll aus.";
+                            message = "Dies ist eine einmalige Auswahl. Einmal gespeichert, nutzt der JDownloader Dein\r\ngewähltes Standard Protokoll auch für alle zukünftigen Verbindungen zu " + this.getHost() + ".";
+                        } else {
+                            title = "Please select your default request Protocol.";
+                            message = "This is a once off choice. Once saved, JDownloader will reuse\r\n your default Protocol for all future requests to " + this.getHost() + ".";
+                        }
+                        String[] select = new String[] { "http (insecure)", "https (secure)" };
+                        int userSelect = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolTitle", title), JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolMessage", message), select, 0, null, null, null, null);
+                        if (userSelect != -1) {
+                            defaultProtocol = userSelect == 0 ? "http" : "https";
+                        } else {
+                            // no need to save again, and again..
+                            config = null;
+                        }
                     }
-                    String[] select = new String[] { "http (insecure)", "https (secure)" };
-                    int userSelect = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolTitle", title), JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolMessage", message), select, 0, null, null, null, null);
-                    if (userSelect != -1) {
-                        defaultProtocol = userSelect == 0 ? "http" : "https";
-                    } else {
-                        // user cancelled! or dialog timed out! respect imported protocol, as fail over!
-                        defaultProtocol = protocol;
-                        config = null;
+                } catch (final Throwable e) {
+                } finally {
+                    if (config != null) {
+                        config.setProperty("defaultProtocol", defaultProtocol);
+                        config.save();
                     }
-                } else {
-                    // no need to save again, and again..
-                    config = null;
-                }
-            } catch (final Throwable e) {
-            } finally {
-                if (config != null) {
-                    config.setProperty("defaultProtocol", defaultProtocol);
-                    config.save();
                 }
             }
+
         }
         return defaultProtocol;
     }

@@ -62,6 +62,7 @@ public class UGoUploadNet extends PluginForHost {
     private static final String PREMIUMONLY              = "?e=You+must+register+for+a+premium+account+to+download+files+of+this+size";
     private static final String PREMIUMONLYUSERTEXT      = "Only downloadable for premium users";
     private static final String SIMULTANDLSLIMIT         = "?e=You+have+reached+the+maximum+concurrent+downloads";
+    private static final String ERRORFILE                = "?e=Error%3A+Could+not+open+file+for+reading";
     private static final String SIMULTANDLSLIMITUSERTEXT = "Max. simultan downloads limit reached, wait to start more downloads from this host";
 
     /** Uses same script as filegig.com */
@@ -99,6 +100,7 @@ public class UGoUploadNet extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.getURL().contains(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         if (br.getURL().contains(SIMULTANDLSLIMIT)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
+        if (br.getURL().contains(ERRORFILE) || br.containsHTML("Error: Could not open file for reading.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         boolean captcha = false;
         int wait = 420;
         final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
@@ -106,7 +108,9 @@ public class UGoUploadNet extends PluginForHost {
         sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "?d=1", RESUME, MAXCHUNKS);
         if (!dl.getConnection().isContentDisposition()) {
+            if (br.getURL().contains(ERRORFILE) || br.containsHTML("Error: Could not open file for reading.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
             br.followConnection();
+
             final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
             final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
             if (captchaAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

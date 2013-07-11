@@ -182,10 +182,7 @@ public class UltraMegaBitCom extends PluginForHost {
         if (expire == null) {
             // some premiums have no expiration date, page shows only: Account status: Premium
             final String accountStatus = getData("Account status").trim();
-            if (!accountStatus.equalsIgnoreCase("Premium")) {
-                account.setValid(false);
-                return ai;
-            }
+            if (!accountStatus.equalsIgnoreCase("Premium")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free account is not supported", PluginException.VALUE_ID_PREMIUM_DISABLE); }
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd yyyy", Locale.ENGLISH));
         }

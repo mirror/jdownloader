@@ -685,7 +685,7 @@ public class TbCm extends PluginForDecrypt {
                 String error = br.getRegex("<div id=\"unavailable\\-message\" class=\"\">[\t\n\r ]+<span class=\"yt\\-alert\\-vertical\\-trick\"></span>[\t\n\r ]+<div class=\"yt\\-alert\\-message\">([^<>\"]*?)</div>").getMatch(0);
                 // Removed due wrong offline detection
                 // if (error == null) error = br.getRegex("<div class=\"yt\\-alert\\-message\">(.*?)</div>").getMatch(0);
-                if (error == null) error = br.getRegex("\\&reason=([^<>\"/]*?)\\&").getMatch(0);
+                if (error == null) error = br.getRegex("reason=([^<>\"/]*?)(\\&|$)").getMatch(0);
                 if (br.containsHTML(UNSUPPORTEDRTMP)) error = "RTMP video download isn't supported yet!";
                 if ((LinksFound == null || LinksFound.isEmpty()) && error != null) {
                     error = Encoding.urlDecode(error, false);
@@ -717,7 +717,7 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 if (cfg.getBooleanProperty("IDINFILENAME_V2", false) && !cfg.getBooleanProperty("ISASFILENAME", false)) {
-                    String id = new Regex(currentVideoUrl, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
+                    String id = getVideoID(currentVideoUrl);
                     if (id != null) YT_FILENAME = YT_FILENAME + " - " + id;
                 }
 
@@ -727,16 +727,16 @@ public class TbCm extends PluginForDecrypt {
 
                 /* prefer videoID as filename? */
                 if (cfg.getBooleanProperty("ISASFILENAME", false)) {
-                    String id = new Regex(currentVideoUrl, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
+                    String id = getVideoID(currentVideoUrl);
                     if (id != null) YT_FILENAME = id;
                 }
 
-                String ytID = new Regex(currentVideoUrl, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
+                String ytID = getVideoID(currentVideoUrl);
                 if (ytID != null) ytID = ytID.toLowerCase(Locale.ENGLISH);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
-                 * return multiple results if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
+                 * if they are in the same quality rating
                  */
                 if (best) {
                     final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
@@ -989,6 +989,10 @@ public class TbCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private String getVideoID(String URL) {
+        return new Regex(URL, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
+    }
+
     private DownloadLink createThumbnailDownloadLink(String name, String link, String browserurl, FilePackage filePackage) {
         DownloadLink dlink = this.createDownloadlink(link.replaceFirst("http", "httpJDYoutube"));
         dlink.setProperty("ALLOW_DUPE", true);
@@ -1000,6 +1004,140 @@ public class TbCm extends PluginForDecrypt {
         dlink.setProperty("thumbnail", true);
 
         return dlink;
+    }
+
+    private HashMap<Integer, String[]> parseLinks(Browser br, final String videoURL, String YT_FILENAME, boolean ythack, boolean tryGetDetails) throws InterruptedException, IOException {
+        final HashMap<Integer, String[]> links = new HashMap<Integer, String[]>();
+        String html5_fmt_map = br.getRegex("\"html5_fmt_map\": \\[(.*?)\\]").getMatch(0);
+
+        if (html5_fmt_map != null) {
+            String[] html5_hits = new Regex(html5_fmt_map, "\\{(.*?)\\}").getColumn(0);
+            if (html5_hits != null) {
+                for (String hit : html5_hits) {
+                    String hitUrl = new Regex(hit, "url\": \"(http:.*?)\"").getMatch(0);
+                    String hitFmt = new Regex(hit, "itag\": (\\d+)").getMatch(0);
+                    String hitQ = new Regex(hit, "quality\": \"(.*?)\"").getMatch(0);
+                    if (hitUrl != null && hitFmt != null && hitQ != null) {
+                        hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
+                        links.put(Integer.parseInt(hitFmt), new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ });
+                    }
+                }
+            }
+        } else {
+            /* new format since ca. 1.8.2011 */
+            html5_fmt_map = br.getRegex("\"url_encoded_fmt_stream_map\": \"(.*?)\"").getMatch(0);
+            if (html5_fmt_map == null) {
+                html5_fmt_map = br.getRegex("url_encoded_fmt_stream_map=(.*?)(&|$)").getMatch(0);
+                if (html5_fmt_map != null) {
+                    html5_fmt_map = html5_fmt_map.replaceAll("%2C", ",");
+                    if (!html5_fmt_map.contains("url=")) {
+                        html5_fmt_map = html5_fmt_map.replaceAll("%3D", "=");
+                        html5_fmt_map = html5_fmt_map.replaceAll("%26", "&");
+                    }
+                }
+            }
+            if (html5_fmt_map != null && !html5_fmt_map.contains("signature") && !html5_fmt_map.contains("sig") && !html5_fmt_map.contains("s=")) {
+                Thread.sleep(5000);
+                br.clearCookies(getHost());
+                return null;
+            }
+            if (html5_fmt_map != null) {
+                if (html5_fmt_map.contains(UNSUPPORTEDRTMP)) { return links; }
+                String[] html5_hits = new Regex(html5_fmt_map, "(.*?)(,|$)").getColumn(0);
+                if (html5_hits != null) {
+                    for (String hit : html5_hits) {
+                        hit = unescape(hit);
+                        String hitUrl = new Regex(hit, "url=(http.*?)(\\&|$)").getMatch(0);
+                        String sig = new Regex(hit, "url=http.*?(\\&|$)(sig|signature)=(.*?)(\\&|$)").getMatch(2);
+                        if (sig == null) sig = new Regex(hit, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
+                        if (sig == null) sig = decryptSignature(new Regex(hit, "s=(.*?)(\\&|$)").getMatch(0));
+                        String hitFmt = new Regex(hit, "itag=(\\d+)").getMatch(0);
+                        String hitQ = new Regex(hit, "quality=(.*?)(\\&|$)").getMatch(0);
+                        if (hitUrl != null && hitFmt != null && hitQ != null) {
+                            hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
+                            if (hitUrl.startsWith("http%253A")) {
+                                hitUrl = Encoding.htmlDecode(hitUrl);
+                            }
+                            String[] inst = null;
+                            if (hitUrl.contains("sig")) {
+                                inst = new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ };
+                            } else {
+                                inst = new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true) + "&signature=" + sig), hitQ };
+                            }
+                            links.put(Integer.parseInt(hitFmt), inst);
+                        }
+                    }
+                }
+            } else {
+                if (br.containsHTML("reason=Unfortunately")) return null;
+                if (tryGetDetails == true) {
+                    br.getPage("http://www.youtube.com/get_video_info?el=detailpage&video_id=" + getVideoID(videoURL));
+                    return parseLinks(br, videoURL, YT_FILENAME, ythack, false);
+                } else {
+                    return null;
+                }
+            }
+        }
+
+        /* normal links */
+        final HashMap<String, String> fmt_list = new HashMap<String, String>();
+        String fmt_list_str = "";
+        if (ythack) {
+            fmt_list_str = (br.getMatch("&fmt_list=(.+?)&") + ",").replaceAll("%2F", "/").replaceAll("%2C", ",");
+        } else {
+            fmt_list_str = (br.getMatch("\"fmt_list\":\\s+\"(.+?)\",") + ",").replaceAll("\\\\/", "/");
+        }
+        final String fmt_list_map[][] = new Regex(fmt_list_str, "(\\d+)/(\\d+x\\d+)/\\d+/\\d+/\\d+,").getMatches();
+        for (final String[] fmt : fmt_list_map) {
+            fmt_list.put(fmt[0], fmt[1]);
+        }
+        if (links.size() == 0 && ythack) {
+            /* try to find fallback links */
+            String urls[] = br.getRegex("url%3D(.*?)($|%2C)").getColumn(0);
+            int index = 0;
+            for (String vurl : urls) {
+                String hitUrl = new Regex(vurl, "(.*?)%26").getMatch(0);
+                String hitQ = new Regex(vurl, "%26quality%3D(.*?)%").getMatch(0);
+                if (hitUrl != null && hitQ != null) {
+                    hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
+                    if (fmt_list_map.length >= index) {
+                        links.put(Integer.parseInt(fmt_list_map[index][0]), new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, false)), hitQ });
+                        index++;
+                    }
+                }
+            }
+        }
+        for (Integer fmt : links.keySet()) {
+            String fmt2 = fmt + "";
+            if (fmt_list.containsKey(fmt2)) {
+                String Videoq = links.get(fmt)[1];
+                final Integer q = Integer.parseInt(fmt_list.get(fmt2).split("x")[1]);
+                if (fmt == 17) {
+                    Videoq = "144p";
+                } else if (fmt == 40) {
+                    Videoq = "240p Light";
+                } else if (q > 1080) {
+                    Videoq = "Original";
+                } else if (q > 720) {
+                    Videoq = "1080p";
+                } else if (q > 576) {
+                    Videoq = "720p";
+                } else if (q > 480) {
+                    Videoq = "520p";
+                } else if (q > 360) {
+                    Videoq = "480p";
+                } else if (q > 240) {
+                    Videoq = "360p";
+                } else {
+                    Videoq = "240p";
+                }
+                links.get(fmt)[1] = Videoq;
+            }
+        }
+        if (YT_FILENAME != null && links != null && !links.isEmpty()) {
+            links.put(-1, new String[] { YT_FILENAME });
+        }
+        return links;
     }
 
     public HashMap<Integer, String[]> getLinks(final String video, final boolean prem, Browser br, int retrycount) throws Exception {
@@ -1075,128 +1213,7 @@ public class TbCm extends PluginForDecrypt {
             YT_FILENAME = Encoding.htmlDecode(br.getRegex(TbCm.YT_FILENAME_PATTERN).getMatch(0).trim());
             fileNameFound = true;
         }
-        final HashMap<Integer, String[]> links = new HashMap<Integer, String[]>();
-        String html5_fmt_map = br.getRegex("\"html5_fmt_map\": \\[(.*?)\\]").getMatch(0);
-
-        if (html5_fmt_map != null) {
-            String[] html5_hits = new Regex(html5_fmt_map, "\\{(.*?)\\}").getColumn(0);
-            if (html5_hits != null) {
-                for (String hit : html5_hits) {
-                    String hitUrl = new Regex(hit, "url\": \"(http:.*?)\"").getMatch(0);
-                    String hitFmt = new Regex(hit, "itag\": (\\d+)").getMatch(0);
-                    String hitQ = new Regex(hit, "quality\": \"(.*?)\"").getMatch(0);
-                    if (hitUrl != null && hitFmt != null && hitQ != null) {
-                        hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
-                        links.put(Integer.parseInt(hitFmt), new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ });
-                    }
-                }
-            }
-        } else {
-            /* new format since ca. 1.8.2011 */
-            html5_fmt_map = br.getRegex("\"url_encoded_fmt_stream_map\": \"(.*?)\"").getMatch(0);
-            if (html5_fmt_map == null) {
-                html5_fmt_map = br.getRegex("url_encoded_fmt_stream_map=(.*?)(&|$)").getMatch(0);
-                if (html5_fmt_map != null) {
-                    html5_fmt_map = html5_fmt_map.replaceAll("%2C", ",");
-                    if (!html5_fmt_map.contains("url=")) {
-                        html5_fmt_map = html5_fmt_map.replaceAll("%3D", "=");
-                        html5_fmt_map = html5_fmt_map.replaceAll("%26", "&");
-                    }
-                }
-            }
-            if (html5_fmt_map != null && !html5_fmt_map.contains("signature") && !html5_fmt_map.contains("sig") && !html5_fmt_map.contains("s=")) {
-                Thread.sleep(5000);
-                br.clearCookies(getHost());
-                return getLinks(video, prem, br, retrycount + 1);
-            }
-            if (html5_fmt_map != null) {
-                if (html5_fmt_map.contains(UNSUPPORTEDRTMP)) { return null; }
-                String[] html5_hits = new Regex(html5_fmt_map, "(.*?)(,|$)").getColumn(0);
-                if (html5_hits != null) {
-                    for (String hit : html5_hits) {
-                        hit = unescape(hit);
-                        String hitUrl = new Regex(hit, "url=(http.*?)(\\&|$)").getMatch(0);
-                        String sig = new Regex(hit, "url=http.*?(\\&|$)(sig|signature)=(.*?)(\\&|$)").getMatch(2);
-                        if (sig == null) sig = new Regex(hit, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
-                        if (sig == null) sig = decryptSignature(new Regex(hit, "s=(.*?)(\\&|$)").getMatch(0));
-                        String hitFmt = new Regex(hit, "itag=(\\d+)").getMatch(0);
-                        String hitQ = new Regex(hit, "quality=(.*?)(\\&|$)").getMatch(0);
-                        if (hitUrl != null && hitFmt != null && hitQ != null) {
-                            hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
-                            if (hitUrl.startsWith("http%253A")) {
-                                hitUrl = Encoding.htmlDecode(hitUrl);
-                            }
-                            String[] inst = null;
-                            if (hitUrl.contains("sig")) {
-                                inst = new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ };
-                            } else {
-                                inst = new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true) + "&signature=" + sig), hitQ };
-                            }
-                            links.put(Integer.parseInt(hitFmt), inst);
-                        }
-                    }
-                }
-            }
-        }
-
-        /* normal links */
-        final HashMap<String, String> fmt_list = new HashMap<String, String>();
-        String fmt_list_str = "";
-        if (ythack) {
-            fmt_list_str = (br.getMatch("&fmt_list=(.+?)&") + ",").replaceAll("%2F", "/").replaceAll("%2C", ",");
-        } else {
-            fmt_list_str = (br.getMatch("\"fmt_list\":\\s+\"(.+?)\",") + ",").replaceAll("\\\\/", "/");
-        }
-        final String fmt_list_map[][] = new Regex(fmt_list_str, "(\\d+)/(\\d+x\\d+)/\\d+/\\d+/\\d+,").getMatches();
-        for (final String[] fmt : fmt_list_map) {
-            fmt_list.put(fmt[0], fmt[1]);
-        }
-        if (links.size() == 0 && ythack) {
-            /* try to find fallback links */
-            String urls[] = br.getRegex("url%3D(.*?)($|%2C)").getColumn(0);
-            int index = 0;
-            for (String vurl : urls) {
-                String hitUrl = new Regex(vurl, "(.*?)%26").getMatch(0);
-                String hitQ = new Regex(vurl, "%26quality%3D(.*?)%").getMatch(0);
-                if (hitUrl != null && hitQ != null) {
-                    hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
-                    if (fmt_list_map.length >= index) {
-                        links.put(Integer.parseInt(fmt_list_map[index][0]), new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, false)), hitQ });
-                        index++;
-                    }
-                }
-            }
-        }
-        for (Integer fmt : links.keySet()) {
-            String fmt2 = fmt + "";
-            if (fmt_list.containsKey(fmt2)) {
-                String Videoq = links.get(fmt)[1];
-                final Integer q = Integer.parseInt(fmt_list.get(fmt2).split("x")[1]);
-                if (fmt == 17) {
-                    Videoq = "144p";
-                } else if (fmt == 40) {
-                    Videoq = "240p Light";
-                } else if (q > 1080) {
-                    Videoq = "Original";
-                } else if (q > 720) {
-                    Videoq = "1080p";
-                } else if (q > 576) {
-                    Videoq = "720p";
-                } else if (q > 480) {
-                    Videoq = "520p";
-                } else if (q > 360) {
-                    Videoq = "480p";
-                } else if (q > 240) {
-                    Videoq = "360p";
-                } else {
-                    Videoq = "240p";
-                }
-                links.get(fmt)[1] = Videoq;
-            }
-        }
-        if (YT_FILENAME != null && links != null && !links.isEmpty()) {
-            links.put(-1, new String[] { YT_FILENAME });
-        }
+        HashMap<Integer, String[]> links = parseLinks(br, video, YT_FILENAME, ythack, false);
         return links;
     }
 
@@ -1252,15 +1269,7 @@ public class TbCm extends PluginForDecrypt {
             sb.append(new StringBuilder(s.substring(4, 26)).reverse());
             sb.append(s.charAt(26));
         } else if (s.length() == 83) {
-            sb.append(s.charAt(52));
-            sb.append(new StringBuilder(s.substring(56, 82)).reverse());
-            sb.append(s.charAt(2));
-            sb.append(new StringBuilder(s.substring(53, 55)).reverse());
-            sb.append(s.charAt(82));
-            sb.append(new StringBuilder(s.substring(37, 52)).reverse());
-            sb.append(s.charAt(55));
-            sb.append(new StringBuilder(s.substring(3, 36)).reverse());
-            sb.append(s.charAt(36));
+            sb.append(s.substring(0, 81));
         } else if (s.length() == 82) {
             sb.append(s.charAt(36));
             sb.append(new StringBuilder(s.substring(68, 80)).reverse());
