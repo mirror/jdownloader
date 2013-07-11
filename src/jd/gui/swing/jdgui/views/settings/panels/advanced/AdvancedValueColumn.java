@@ -20,6 +20,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.EnumLabel;
+import org.appwork.storage.config.annotations.HexColorString;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtCompoundColumn;
@@ -33,7 +34,6 @@ import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.HexColorString;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.RangeValidator;
 
