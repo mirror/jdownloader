@@ -1,8 +1,8 @@
 ABSTRACTDIALOG_BUTTON_CANCEL=Cancelar
 ABSTRACTDIALOG_BUTTON_OK=Aceptar
 ABSTRACTDIALOG_STYLE_SHOW_DO_NOT_DISPLAY_AGAIN=No volver a mostrar
-AccountNew_AccountNew_message=Por favor introduce tus datos aquí
-AccountNew_AccountNew_title=Introduce la cuenta
+AccountNew_AccountNew_message=Por favor introduzca sus datos aquí
+AccountNew_AccountNew_title=Introduzca la cuenta
 AccountNew_layoutDialogContent_accountname=Usuario
 AccountNew_layoutDialogContent_password=Contraseña
 AccountNew_layoutDialogContent_save=Recordar

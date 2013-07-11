@@ -1,6 +1,7 @@
 AddContainerAction_delete_container_msg=¿Desea borrar %s1 despues de añadir los enlaces a JDownloader?
 AddContainerAction_delete_container_title=Borrar Contenedor de Enlaces?
 CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Acceder a la configuración del Captcha
+DisableRevFilesPackageRulee_rule_name=Deshabilitar archivos comprimidos de extensión .rev
 DownloadLink_setSkipped_statusmessage=Descarga omitida
 DownloadLink_setSkipped_statusmessage_account=Omitida - Se necesita cuenta para descargar
 DownloadLink_setSkipped_statusmessage_captcha=Omitida - Se requiere Captcha
@@ -25,6 +26,8 @@ LinkgrabberFilterRule_duplicate=%s1 (copia)
 Main_run_autostart_=Comenzando Descargas...
 Main_run_autostart_msg=Las descargas empezarán en unos segundos...
 Mainstart_now=Comenzar ahora!
+MyJDownloaderController_onError_account_unconfirmed=El Correo Electrónico de 'My JDownloader' aún no ha sido confirmado.\nPor favor, consulte su Correo Electrónico y haga click en el enlace de confirmación.
+MyJDownloaderController_onError_badlogins=Los datos de la cuenta de 'My JDownloader' no son correctos.\nCompruebe su Nombre de Usuario/Correo Electrónico y Contraseña!
 MyJDownloaderController_onError_unknown=JDownloader no se ha podido conectar con el servicio de My JDownloader: %s1
 OptionalContainer_OptionalContainer=Más Acciones...
 PackagizerSettings_folderbypackage_rule_name=Crear una subcarpeta con el nombre del Paquete
