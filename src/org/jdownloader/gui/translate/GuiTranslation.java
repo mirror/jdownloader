@@ -2792,4 +2792,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Delete Selection" })
     String ToolbarDeleteAction_ToolbarDeleteAction_delete_Selection();
 
+    @Default(lngs = { "en" }, values = { "Delete disabled selected Links" })
+    String RemoveDisabledAction_RemoveDisabledAction_object_();
+
+    @Default(lngs = { "en" }, values = { "Do you really want to remove all selected and disabled link(s)?" })
+    String RemoveDisabledAction_actionPerformed_msg();
+
 }

@@ -49,6 +49,7 @@ import org.jdownloader.gui.mainmenu.container.CaptchaQuickSettingsContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.toolbar.action.CaptchaDialogsToogleAction;
 import org.jdownloader.gui.toolbar.action.CaptchaExchangeToogleAction;
+import org.jdownloader.gui.toolbar.action.DeleteDisabledSelectedLinksToolbarAction;
 import org.jdownloader.gui.toolbar.action.JAntiCaptchaToogleAction;
 import org.jdownloader.gui.toolbar.action.MoveDownAction;
 import org.jdownloader.gui.toolbar.action.MoveToBottomAction;
@@ -59,10 +60,6 @@ import org.jdownloader.gui.toolbar.action.ToolbarDeleteAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
-import org.jdownloader.gui.views.downloads.action.DeleteDisabledSelectedLinks;
-import org.jdownloader.gui.views.downloads.action.DeleteSelectedAndFailedLinksAction;
-import org.jdownloader.gui.views.downloads.action.DeleteSelectedFinishedLinksAction;
-import org.jdownloader.gui.views.downloads.action.DeleteSelectedOfflineLinksAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
@@ -191,7 +188,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         ocr.add(RemoteCaptchaToogleAction.class);
 
         mr.add(ToolbarDeleteAction.class);
-        // mr.add(createDeleteMenu());
+        mr.add(createDeleteMenu());
 
         ocr.add(CaptchaDialogsToogleAction.class);
         return mr;
@@ -200,10 +197,10 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
     private MenuItemData createDeleteMenu() {
         DeleteMenuContainer delete = new DeleteMenuContainer();
 
-        delete.add(new MenuItemData(new ActionData(DeleteDisabledSelectedLinks.class)));
-        delete.add(new MenuItemData(new ActionData(DeleteSelectedAndFailedLinksAction.class)));
-        delete.add(new MenuItemData(new ActionData(DeleteSelectedFinishedLinksAction.class)));
-        delete.add(new MenuItemData(new ActionData(DeleteSelectedOfflineLinksAction.class)));
+        delete.add(DeleteDisabledSelectedLinksToolbarAction.class);
+        // delete.add(new MenuItemData(new ActionData(DeleteSelectedAndFailedLinksAction.class)));
+        // delete.add(new MenuItemData(new ActionData(DeleteSelectedFinishedLinksAction.class)));
+        // delete.add(new MenuItemData(new ActionData(DeleteSelectedOfflineLinksAction.class)));
         return delete;
     }
 
