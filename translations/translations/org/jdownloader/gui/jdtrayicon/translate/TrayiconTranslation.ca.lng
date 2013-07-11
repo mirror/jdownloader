@@ -1,7 +1,7 @@
-JDGui_windowClosing_try_answer_totaskbar=Minimitza'l a la barra de tasques
-JDGui_windowClosing_try_answer_tray=Oculta'l a l'àrea de notificacions
-JDGui_windowClosing_try_asnwer_close=Tanca el JDownloader
-JDGui_windowClosing_try_msg_2=Si us plau, escolliu entre\n  - Tanca el JDownloader (els processos en execució es cancel·laran)\n  - Minimitza'l a la Barra de tasques (les descàrregues continuaran)\n  - Amaga'l a l'Àrea de notificacions (les descàrregues continuaran en segon pla)
+JDGui_windowClosing_try_answer_totaskbar=Minimitza'l
+JDGui_windowClosing_try_answer_tray=Oculta'l
+JDGui_windowClosing_try_asnwer_close=Tanca'l
+JDGui_windowClosing_try_msg_2=Si us plau, escolliu entre\n  - Tanca el JDownloader (els processos en execució es cancel·laran)\n  - Minimitza'l a la Barra de tasques (les descàrregues continuaran)\n  - Oculta'l a l'Àrea de notificacions (les descàrregues continuaran en segon pla)
 OnCloseAction_exit=Tanca l'aplicació
 OnCloseAction_totaskbar=Minimitza'l a la barra de tasques
 OnMinimizeAction_totaskbar=Minimitza'l a la barra de tasques
