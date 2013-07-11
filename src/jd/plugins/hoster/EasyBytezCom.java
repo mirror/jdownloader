@@ -76,7 +76,7 @@ public class EasyBytezCom extends PluginForHost {
     // primary website url, take note of redirects
     private final String               COOKIE_HOST                  = "http://easybytez.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(easybytez\\.com|zingload\\.com)";
+    private final String               DOMAINS                      = "(easybytez\\.com|zingload\\.com|easyload\\.to)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
