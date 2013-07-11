@@ -14,3 +14,5 @@ popup_downloadfolder=Obre la carpeta de descàrregues
 popup_exit=Tanca el JDownloader
 popup_pause=Pausa les Descàrregues
 popup_reconnect=Reconnecta ara
+popup_reconnecttoggle=Reconnexió automàtica habilitada
+popup_update=Cerca actualitzacions

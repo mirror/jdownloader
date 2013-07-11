@@ -125,6 +125,7 @@ jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=No reconnectis
 jd_plugins_PluginUtils_askPassword=Si us plau, introduïu la contrasenya per %s1
 literally_offline=En línia
 literally_yes=Sí
+other_files_description=Tots els fitxers excepte els de so, d'arxiu, de vídeo i d'imatge
 pattern_password=пароль|пасс|pa?s?w|passwort|password|passw?|pw
 pluginforhost_infogenerator_title=Compte %s1@%s2
 plugins_error_downloadfailed=Descarrega fallida
