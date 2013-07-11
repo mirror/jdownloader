@@ -276,7 +276,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         }
                     });
 
-                    add(bt, "width 32!,height 32!");
+                    add(bt, "width 32!,height 32!,hidemode 3");
                     bt.setHideActionText(true);
                     continue;
                 } else if (menudata.getActionData() != null) {
@@ -294,13 +294,13 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         bt.setRolloverIcon(icon);
                         bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, 24));
                         bt.setRolloverSelectedIcon(icon);
-                        add(bt, "width 32!,height 32!");
+                        add(bt, "width 32!,height 32!,hidemode 3");
                         bt.setHideActionText(true);
                     } else {
                         bt = new ExtButton(action);
 
                         bt.setIcon(NewTheme.I().getIcon(action.getIconKey(), 24));
-                        add(bt, "width 32!,height 32!");
+                        add(bt, "width 32!,height 32!,hidemode 3");
                         bt.setHideActionText(true);
                     }
                     final AbstractButton finalBt = bt;
@@ -390,7 +390,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         add(bt, "width 32!,height 32!,hidemode 3");
                         bt.setHideActionText(true);
                     } else {
-                        add(item, "aligny center");
+                        add(item, "aligny center,hidemode 3");
                     }
                 }
 
