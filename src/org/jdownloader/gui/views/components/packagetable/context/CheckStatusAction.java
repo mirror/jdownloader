@@ -13,19 +13,19 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class CheckStatusAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
+public class CheckStatusAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends SelectionAppAction<PackageType, ChildrenType> {
 
-    private static final long                        serialVersionUID = 6821943398259956694L;
-    private SelectionInfo<PackageType, ChildrenType> si;
+    private static final long serialVersionUID = 6821943398259956694L;
 
     public CheckStatusAction(SelectionInfo<PackageType, ChildrenType> si) {
+        super(si);
         setIconKey("ok");
         setName(_GUI._.gui_table_contextmenu_check());
-        this.si = si;
+
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -33,7 +33,7 @@ public class CheckStatusAction<PackageType extends AbstractPackageNode<ChildrenT
         IOEQ.add(new Runnable() {
 
             public void run() {
-                List<ChildrenType> children = si.getChildren();
+                List<ChildrenType> children = getSelection().getChildren();
                 java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(children.size());
                 for (AbstractPackageChildrenNode l : children) {
                     if (l instanceof DownloadLink) {
@@ -49,11 +49,6 @@ public class CheckStatusAction<PackageType extends AbstractPackageNode<ChildrenT
             }
 
         }, true);
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return !si.isEmpty();
     }
 
 }

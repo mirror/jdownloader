@@ -24,6 +24,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.List;
 
 import javax.swing.AbstractAction;
@@ -280,6 +282,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                 } else if (menudata.getActionData() != null) {
 
                     action = menudata.createAction(null);
+
                     if (StringUtils.isNotEmpty(menudata._getShortcut())) {
                         action.setAccelerator(KeyStroke.getKeyStroke(menudata._getShortcut()));
                     }
@@ -300,6 +303,18 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         add(bt, "width 32!,height 32!");
                         bt.setHideActionText(true);
                     }
+                    final AbstractButton finalBt = bt;
+                    action.addPropertyChangeListener(new PropertyChangeListener() {
+
+                        @Override
+                        public void propertyChange(PropertyChangeEvent evt) {
+                            if ("visible".equals(evt.getPropertyName())) {
+                                Boolean value = (Boolean) evt.getNewValue();
+                                finalBt.setVisible(value);
+                            }
+                        }
+                    });
+                    bt.setVisible(action.isVisible());
                     last = menudata;
                     final Object value = action.getValue(Action.ACCELERATOR_KEY);
                     if (value == null) {
@@ -311,15 +326,15 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                     this.rootpane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
                     this.rootpane.getActionMap().put(action, action);
 
-                    final String shortCut = action.getShortCutString();
-                    if (bt != null) {
-                        if (StringUtils.isEmpty(action.getTooltipText())) {
-                            bt.setToolTipText(shortCut != null ? " [" + shortCut + "]" : null);
-                        } else {
-                            bt.setToolTipText(action.getTooltipText() + (shortCut != null ? " [" + shortCut + "]" : ""));
-                        }
-
-                    }
+                    // final String shortCut = action.getShortCutString();
+                    // if (bt != null) {
+                    // if (StringUtils.isEmpty(action.getTooltipText())) {
+                    // bt.setToolTipText(shortCut != null ? " [" + shortCut + "]" : null);
+                    // } else {
+                    // bt.setToolTipText(action.getTooltipText() + (shortCut != null ? " [" + shortCut + "]" : ""));
+                    // }
+                    //
+                    // }
                 } else if (menudata instanceof MenuLink) {
                     final JComponent item = menudata.createItem(null);
                     if (StringUtils.isNotEmpty(menudata.getIconKey())) {
@@ -372,7 +387,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                         });
 
-                        add(bt, "width 32!,height 32!");
+                        add(bt, "width 32!,height 32!,hidemode 3");
                         bt.setHideActionText(true);
                     } else {
                         add(item, "aligny center");

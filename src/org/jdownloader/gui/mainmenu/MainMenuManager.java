@@ -195,7 +195,7 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
 
     public void show() {
 
-        new MenuManagerAction(null).actionPerformed(null);
+        new MenuManagerAction().actionPerformed(null);
     }
 
     public boolean supportsProperty(MenuItemProperty property) {

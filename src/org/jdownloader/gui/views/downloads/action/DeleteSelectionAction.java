@@ -6,19 +6,17 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class DeleteSelectionAction extends AppAction {
+public class DeleteSelectionAction extends SelectionAppAction<FilePackage, DownloadLink> {
 
-    private static final long                        serialVersionUID = -5721724901676405104L;
-
-    private SelectionInfo<FilePackage, DownloadLink> si;
+    private static final long serialVersionUID = -5721724901676405104L;
 
     public DeleteSelectionAction(SelectionInfo<FilePackage, DownloadLink> si) {
+        super(si);
 
-        this.si = si;
         setIconKey("delete");
         setName(_GUI._.gui_table_contextmenu_deletelist2());
 
@@ -27,17 +25,16 @@ public class DeleteSelectionAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
 
-        final SelectionInfo<FilePackage, DownloadLink> si = this.si;
         String msg = _GUI._.RemoveSelectionAction_actionPerformed_();
-        DownloadController.deleteLinksRequest(si, msg);
+        DownloadController.deleteLinksRequest(getSelection(), msg);
 
     }
 
     @Override
     public boolean isEnabled() {
 
-        if (si.isAltDown() || si.isAltGraphDown()) return false;
-        return !si.isEmpty();
+        if (getSelection().isAltDown() || getSelection().isAltGraphDown()) return false;
+        return !getSelection().isEmpty();
     }
 
 }

@@ -13,32 +13,35 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.translate._JDT;
 
-public abstract class SetDownloadFolderAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
+public abstract class SetDownloadFolderAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends SelectionAppAction<PackageType, ChildrenType> {
 
-    protected SelectionInfo<PackageType, ChildrenType> si;
-    private File                                       path;
-    private boolean                                    retOkay = false;
+    private File    path;
+    private boolean retOkay = false;
 
     public SetDownloadFolderAction(SelectionInfo<PackageType, ChildrenType> si) {
-
-        this.si = si;
+        super(si);
 
         setName(_GUI._.SetDownloadFolderAction_SetDownloadFolderAction_());
 
-        if (si != null) path = LinkTreeUtils.getRawDownloadDirectory(si.getContextPackage());
         setIconKey("save");
     }
 
     @Override
+    public void setSelection(SelectionInfo<PackageType, ChildrenType> selection) {
+        super.setSelection(selection);
+        if (getSelection() != null) path = LinkTreeUtils.getRawDownloadDirectory(getSelection().getContextPackage());
+    }
+
+    @Override
     public boolean isEnabled() {
-        return !si.isEmpty();
+        return !getSelection().isEmpty();
     }
 
     /**
@@ -70,12 +73,12 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
 
                 public void run() {
 
-                    for (PackageType pkg : si.getFullPackages()) {
+                    for (PackageType pkg : getSelection().getFullPackages()) {
                         set(pkg, file.getAbsolutePath());
 
                     }
 
-                    for (final PackageType entry : si.getIncompletePackages()) {
+                    for (final PackageType entry : getSelection().getIncompletePackages()) {
 
                         try {
                             File oldPath = LinkTreeUtils.getDownloadDirectory(entry);
@@ -83,7 +86,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
                             if (oldPath.equals(newPath)) continue;
                             Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
 
-                            _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT._.SetDownloadFolderAction_msg(entry.getName(), si.getSelectedLinksByPackage(entry).size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
+                            _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT._.SetDownloadFolderAction_msg(entry.getName(), getSelection().getSelectedLinksByPackage(entry).size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
                             set(entry, file.getAbsolutePath());
 
                             continue;
@@ -92,13 +95,13 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
                         } catch (DialogCanceledException e) {
                             /* user clicked no */
                         }
-                        final PackageType pkg = createNewByPrototype(si, entry);
+                        final PackageType pkg = createNewByPrototype(getSelection(), entry);
                         set(pkg, file.getAbsolutePath());
                         IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>() {
 
                             @Override
                             protected Object run() {
-                                move(pkg, si.getSelectedLinksByPackage(entry));
+                                move(pkg, getSelection().getSelectedLinksByPackage(entry));
                                 return null;
                             }
 
@@ -112,7 +115,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     }
 
     protected File dialog(File path) throws DialogClosedException, DialogCanceledException {
-        return DownloadFolderChooserDialog.open(path, true, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(si.getContextPackage().getName()));
+        return DownloadFolderChooserDialog.open(path, true, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(getSelection().getContextPackage().getName()));
     }
 
     abstract protected void move(PackageType pkg, List<ChildrenType> selectedLinksByPackage);

@@ -20,9 +20,10 @@ import java.awt.event.ActionEvent;
 
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.translate._GUI;
 
-public class LatestChangesAction extends AppAction {
+public class LatestChangesAction extends AppAction implements CachableInterface {
 
     private static final long serialVersionUID = 2705114922279833817L;
 
@@ -35,6 +36,10 @@ public class LatestChangesAction extends AppAction {
     @Override
     public void actionPerformed(ActionEvent e) {
         CrossSystem.openURLOrShowMessage("http://jdownloader.org/changes/index");
+    }
+
+    @Override
+    public void setData(String data) {
     }
 
 }

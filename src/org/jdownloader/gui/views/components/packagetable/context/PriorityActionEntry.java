@@ -9,30 +9,30 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
-public class PriorityActionEntry<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
+public class PriorityActionEntry<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends SelectionAppAction<PackageType, ChildrenType> {
 
     /**
      * 
      */
-    private static final long                        serialVersionUID = 1L;
-    private Priority                                 priority;
-    private SelectionInfo<PackageType, ChildrenType> si;
+    private static final long serialVersionUID = 1L;
+    private Priority          priority;
 
     public PriorityActionEntry(Priority priority, SelectionInfo<PackageType, ChildrenType> si) {
+        super(si);
         setName(priority._());
         setSmallIcon(priority.loadIcon(18));
         this.priority = priority;
-        this.si = si;
+
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (si.isEmpty()) return;
+        if (getSelection().isEmpty()) return;
         IOEQ.add(new Runnable() {
 
             @Override
@@ -40,7 +40,7 @@ public class PriorityActionEntry<PackageType extends AbstractPackageNode<Childre
 
                 boolean linkGrabber = false;
                 boolean downloadList = false;
-                for (AbstractNode l : si.getChildren()) {
+                for (AbstractNode l : getSelection().getChildren()) {
                     if (l instanceof CrawledLink) {
                         linkGrabber = true;
                         ((CrawledLink) l).setPriority(priority);

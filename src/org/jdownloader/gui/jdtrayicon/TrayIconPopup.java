@@ -290,6 +290,7 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
                 } else if (menudata.getActionData() != null) {
 
                     action = menudata.createAction(null);
+
                     if (StringUtils.isNotEmpty(menudata._getShortcut())) {
                         action.setAccelerator(KeyStroke.getKeyStroke(menudata._getShortcut()));
                     }

@@ -2,6 +2,9 @@ package org.jdownloader.extensions.shutdown.actions;
 
 import java.awt.event.ActionEvent;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -11,13 +14,28 @@ import org.jdownloader.extensions.shutdown.ShutdownExtension;
 import org.jdownloader.extensions.shutdown.translate.T;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class ShutdownToggleAction extends AbstractExtensionAction<ShutdownExtension> implements GenericConfigEventListener<Boolean> {
+public class ShutdownToggleAction extends AbstractExtensionAction<ShutdownExtension, FilePackage, DownloadLink> implements GenericConfigEventListener<Boolean> {
 
-    public ShutdownToggleAction(SelectionInfo<?, ?> selection) {
-
+    public ShutdownToggleAction() {
+        super(null);
         setIconKey(this._getExtension().getIconKey());
         CFG_SHUTDOWN.SHUTDOWN_ACTIVE.getEventSender().addListener(this, true);
         onConfigValueModified(null, null);
+    }
+
+    @Override
+    public SelectionInfo<FilePackage, DownloadLink> getSelection() {
+        return null;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return super.isSuperEnabled();
+    }
+
+    @Override
+    public void setSelection(SelectionInfo<FilePackage, DownloadLink> selection) {
+
     }
 
     public void setSelected(final boolean selected) {

@@ -6,8 +6,6 @@ import java.awt.event.KeyEvent;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.LinkCrawler;
 
 import org.appwork.utils.swing.dialog.Dialog;
@@ -15,11 +13,11 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.AddLinksDialog;
 
-public class AddLinksAction extends AppAction {
+public class AddLinksAction extends AppAction implements CachableInterface {
     /**
      * 
      */
@@ -33,7 +31,7 @@ public class AddLinksAction extends AppAction {
 
     }
 
-    public AddLinksAction(SelectionInfo<CrawledPackage, CrawledLink> selection) {
+    public AddLinksAction() {
         this(_GUI._.AddLinksToLinkgrabberAction());
 
     }
@@ -79,6 +77,10 @@ public class AddLinksAction extends AppAction {
 
         } catch (DialogNoAnswerException e1) {
         }
+    }
+
+    @Override
+    public void setData(String data) {
     }
 
 }

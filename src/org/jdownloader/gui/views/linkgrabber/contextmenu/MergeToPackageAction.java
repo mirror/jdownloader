@@ -11,22 +11,22 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class MergeToPackageAction extends AppAction {
+public class MergeToPackageAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
      */
-    private static final long                          serialVersionUID = -4468197802870765463L;
-    private SelectionInfo<CrawledPackage, CrawledLink> selection;
+    private static final long serialVersionUID = -4468197802870765463L;
 
     public MergeToPackageAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
+        super(si);
         setName(_GUI._.MergeToPackageAction_MergeToPackageAction_());
         setIconKey("package_new");
-        this.selection = si;
+
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -34,13 +34,13 @@ public class MergeToPackageAction extends AppAction {
         try {
             String defValue = _GUI._.MergeToPackageAction_actionPerformed_newpackage_();
             try {
-                defValue = selection.getFirstPackage().getName();
+                defValue = getSelection().getFirstPackage().getName();
             } catch (Throwable e2) {
                 // too many unsafe casts. catch problems - just to be sure
                 Log.exception(e2);
             }
 
-            final NewPackageDialog d = new NewPackageDialog(selection);
+            final NewPackageDialog d = new NewPackageDialog(getSelection());
             Dialog.getInstance().showDialog(d);
             final String name = d.getName();
 
@@ -56,18 +56,13 @@ public class MergeToPackageAction extends AppAction {
                     newPackage.setDownloadFolder(f);
                     // HashSet<String> rawDownloadFolder = new HashSet<String>();
 
-                    LinkCollector.getInstance().moveOrAddAt(newPackage, selection.getChildren(), 0);
+                    LinkCollector.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0);
                     return null;
                 }
 
             });
         } catch (DialogNoAnswerException e1) {
         }
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return !selection.isEmpty();
     }
 
 }

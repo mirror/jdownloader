@@ -29,7 +29,7 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
     }
 
     protected File dialog(File path) throws DialogClosedException, DialogCanceledException {
-        return DownloadFolderChooserDialog.open(path, true, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(si.getContextPackage().getName()));
+        return DownloadFolderChooserDialog.open(path, true, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(getSelection().getContextPackage().getName()));
     }
 
     @Override
@@ -42,7 +42,7 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
         final CrawledPackage pkg = new CrawledPackage();
         pkg.setExpanded(true);
         if (TYPE.NORMAL != entry.getType()) {
-            pkg.setName(LinknameCleaner.cleanFileName(si.getSelectedLinksByPackage(entry).get(0).getName()));
+            pkg.setName(LinknameCleaner.cleanFileName(getSelection().getSelectedLinksByPackage(entry).get(0).getName()));
         } else {
             pkg.setName(entry.getName());
         }

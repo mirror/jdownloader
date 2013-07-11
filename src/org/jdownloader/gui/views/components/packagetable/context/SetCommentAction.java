@@ -15,16 +15,14 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
-
-    private SelectionInfo<FilePackage, DownloadLink> si;
+public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends SelectionAppAction<FilePackage, DownloadLink> {
 
     public SetCommentAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        this.si = si;
+        super(si);
         setName(_GUI._.SetCommentAction_SetCommentAction_object_());
         setIconKey("list");
     }
@@ -32,7 +30,7 @@ public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenTy
     @Override
     public void actionPerformed(ActionEvent e) {
         String def = null;
-        for (AbstractNode n : si.getRawSelection()) {
+        for (AbstractNode n : getSelection().getRawSelection()) {
             if (n instanceof DownloadLink) {
                 def = ((DownloadLink) n).getComment();
             } else if (n instanceof CrawledLink) {
@@ -51,7 +49,7 @@ public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenTy
 
                 @Override
                 public void run() {
-                    for (AbstractNode n : si.getRawSelection()) {
+                    for (AbstractNode n : getSelection().getRawSelection()) {
                         if (n instanceof DownloadLink) {
                             ((DownloadLink) n).setComment(comment);
                         } else if (n instanceof CrawledLink) {

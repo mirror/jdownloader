@@ -7,19 +7,17 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class OpenInBrowserAction extends AppAction {
+public class OpenInBrowserAction extends SelectionAppAction<FilePackage, DownloadLink> {
 
-    private static final long                        serialVersionUID = 7911375550836173693L;
-    private static final int                         MAX_LINKS        = 4;
-
-    private SelectionInfo<FilePackage, DownloadLink> si;
+    private static final long serialVersionUID = 7911375550836173693L;
+    private static final int  MAX_LINKS        = 4;
 
     public OpenInBrowserAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        this.si = si;
+        super(si);
 
         setIconKey("browse");
         setName(_GUI._.gui_table_contextmenu_browselink());
@@ -27,7 +25,7 @@ public class OpenInBrowserAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        List<DownloadLink> links = si.getChildren();
+        List<DownloadLink> links = getSelection().getChildren();
         if (links.size() > MAX_LINKS) return false;
         if (!CrossSystem.isOpenBrowserSupported()) return false;
         for (DownloadLink link : links) {
@@ -41,7 +39,7 @@ public class OpenInBrowserAction extends AppAction {
         if (this.isEnabled()) { // additional security measure. Someone may call
                                 // actionPerformed in the code although the
                                 // action should be disabled
-            for (DownloadLink link : si.getChildren()) {
+            for (DownloadLink link : getSelection().getChildren()) {
                 CrossSystem.openURLOrShowMessage(link.getBrowserUrl());
             }
         }

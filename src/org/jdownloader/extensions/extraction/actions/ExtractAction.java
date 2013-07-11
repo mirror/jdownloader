@@ -6,6 +6,8 @@ import java.text.DecimalFormat;
 
 import javax.swing.filechooser.FileFilter;
 
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.UserIO;
 
 import org.appwork.utils.swing.dialog.Dialog;
@@ -27,14 +29,14 @@ import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class ExtractAction extends AbstractExtractionAction {
+public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractExtractionAction<PackageType, ChildrenType> {
 
     /**
      * 
      */
     private static final long serialVersionUID = 1612595219577059496L;
 
-    public ExtractAction(SelectionInfo<?, ?> selection) {
+    public ExtractAction(SelectionInfo<PackageType, ChildrenType> selection) {
         super(selection);
         setName(T._.menu_tools_extract_files());
         setIconKey("unpack");

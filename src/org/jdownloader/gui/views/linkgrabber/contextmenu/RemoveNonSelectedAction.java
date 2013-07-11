@@ -12,20 +12,20 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class RemoveNonSelectedAction extends AppAction {
+public class RemoveNonSelectedAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
      */
     private static final long serialVersionUID = 6855083561629297363L;
-    private List<CrawledLink> selection;
 
     public RemoveNonSelectedAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        if (si != null) this.selection = si.getChildren();
+        super(si);
+
         setName(_GUI._.RemoveNonSelectedAction_RemoveNonSelectedAction_object_());
         setIconKey("ok");
     }
@@ -42,7 +42,7 @@ public class RemoveNonSelectedAction extends AppAction {
                     List<CrawledLink> nonselected = LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
 
                         public boolean acceptNode(CrawledLink node) {
-                            return !selection.contains(node);
+                            return !getSelection().getChildren().contains(node);
                         }
 
                         public int returnMaxResults() {
@@ -56,11 +56,6 @@ public class RemoveNonSelectedAction extends AppAction {
             }, true);
         } catch (DialogNoAnswerException e1) {
         }
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return selection != null && selection.size() > 0;
     }
 
 }

@@ -12,7 +12,7 @@ import jd.gui.swing.jdgui.interfaces.View;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.DownloadsPanel;
@@ -23,12 +23,10 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
-public class RenameAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
-
-    private SelectionInfo<FilePackage, DownloadLink> si;
+public class RenameAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends SelectionAppAction<FilePackage, DownloadLink> {
 
     public RenameAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        this.si = si;
+        super(si);
         setName(_GUI._.RenameAction_RenameAction());
         setTooltipText(_GUI._.RenameAction_RenameAction_tt());
         setIconKey("edit");
@@ -40,10 +38,10 @@ public class RenameAction<PackageType extends AbstractPackageNode<ChildrenType, 
     public void actionPerformed(ActionEvent e) {
         try {
             // LinkgrabberContextMenuManager.getInstance().getPanel().getTable().get
-            if (si != null) {
-                FileColumn col = si.getContextColumn().getModel().getColumnByClass(FileColumn.class);
+            if (getSelection() != null) {
+                FileColumn col = getSelection().getContextColumn().getModel().getColumnByClass(FileColumn.class);
                 if (col != null) {
-                    col.startEditing(si.getRawContext());
+                    col.startEditing(getSelection().getRawContext());
                 }
             } else {
                 View view = MainTabbedPane.getInstance().getSelectedView();

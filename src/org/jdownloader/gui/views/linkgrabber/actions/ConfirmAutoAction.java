@@ -31,6 +31,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
@@ -44,7 +45,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 
-public class ConfirmAutoAction extends AppAction {
+public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
@@ -102,11 +103,9 @@ public class ConfirmAutoAction extends AppAction {
         this.clearListAfterConfirm = clearListAfterConfirm;
     }
 
-    private SelectionInfo<CrawledPackage, CrawledLink> si;
-
     public ConfirmAutoAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
+        super(selectionInfo);
         setAutoStart(AutoStartOptions.AUTO);
-        this.si = selectionInfo;
 
     }
 
@@ -119,7 +118,7 @@ public class ConfirmAutoAction extends AppAction {
                 try {
 
                     // this validation step also copies the passwords from the CRawledlinks in the archive settings
-                    for (Archive a : new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), si).getArchives()) {
+                    for (Archive a : new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), getSelection()).getArchives()) {
                         final DummyArchive da = a.createDummyArchive();
                         if (!da.isComplete()) {
 
@@ -162,7 +161,7 @@ public class ConfirmAutoAction extends AppAction {
                 boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP.getValue();
                 java.util.List<FilePackage> fpkgs = new ArrayList<FilePackage>();
                 java.util.List<CrawledLink> clinks = new ArrayList<CrawledLink>();
-                for (AbstractNode node : si.getRawSelection()) {
+                for (AbstractNode node : getSelection().getRawSelection()) {
                     if (node instanceof CrawledPackage) {
                         /* first convert all CrawledPackages to FilePackages */
                         List<CrawledLink> links = new ArrayList<CrawledLink>(((CrawledPackage) node).getView().getItems());
@@ -207,11 +206,6 @@ public class ConfirmAutoAction extends AppAction {
             }
 
         }, true);
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return !si.isEmpty();
     }
 
 }

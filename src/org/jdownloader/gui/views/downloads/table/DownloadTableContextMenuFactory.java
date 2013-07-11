@@ -4,8 +4,6 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.JPopupMenu;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -121,12 +119,11 @@ public class DownloadTableContextMenuFactory {
 
     private JPopupMenu emtpy(JPopupMenu p) {
 
-        p.add(new AddLinksAction((SelectionInfo<CrawledPackage, CrawledLink>) null));
-        p.add(new AddContainerAction((SelectionInfo<CrawledPackage, CrawledLink>) null));
+        p.add(new AddLinksAction());
+        p.add(new AddContainerAction());
 
         return p;
     }
-
     // public static java.util.List<Component> fillPropertiesMenu(SelectionInfo<FilePackage, DownloadLink> si, ExtColumn<AbstractNode>
     // column) {
     //

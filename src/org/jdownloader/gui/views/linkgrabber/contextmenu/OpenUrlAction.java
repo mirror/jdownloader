@@ -7,11 +7,11 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class OpenUrlAction extends AppAction {
+public class OpenUrlAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
@@ -19,13 +19,19 @@ public class OpenUrlAction extends AppAction {
     private static final long serialVersionUID = 1299668511027392364L;
     private CrawledLink       link;
 
-    public OpenUrlAction(SelectionInfo<CrawledPackage, CrawledLink> link) {
+    @Override
+    public void setSelection(SelectionInfo<CrawledPackage, CrawledLink> selection) {
+        super.setSelection(selection);
+        if (getSelection() != null) {
+            this.link = getSelection().getContextLink();
+        }
+    }
 
+    public OpenUrlAction(SelectionInfo<CrawledPackage, CrawledLink> link) {
+        super(link);
         setName(_GUI._.OpenUrlAction_OpenUrlAction_());
         setIconKey("browse");
-        if (link != null) {
-            this.link = link.getContextLink();
-        }
+
     }
 
     public void actionPerformed(ActionEvent e) {

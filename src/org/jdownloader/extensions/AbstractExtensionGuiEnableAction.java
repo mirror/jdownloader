@@ -4,20 +4,43 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.ImageIcon;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.jdownloader.gui.views.SelectionInfo;
 
-public abstract class AbstractExtensionGuiEnableAction<T extends AbstractExtension<?, ?>> extends AbstractExtensionAction<T> implements GenericConfigEventListener<Boolean> {
+public abstract class AbstractExtensionGuiEnableAction<T extends AbstractExtension<?, ?>> extends AbstractExtensionAction<T, FilePackage, DownloadLink> implements GenericConfigEventListener<Boolean> {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
     private ImageIcon         icon16Enabled;
     private ImageIcon         icon16Disabled;
     private BooleanKeyHandler keyHandler;
 
+    @Override
+    public SelectionInfo<FilePackage, DownloadLink> getSelection() {
+        return null;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return super.isSuperEnabled();
+    }
+
+    @Override
+    public void setSelection(SelectionInfo<FilePackage, DownloadLink> selection) {
+
+    }
+
     public AbstractExtensionGuiEnableAction(BooleanKeyHandler guiEnabled) {
 
-        super();
+        super(null);
         keyHandler = guiEnabled;
         setSelected(keyHandler.isEnabled());
         keyHandler.getEventSender().addListener(this, true);

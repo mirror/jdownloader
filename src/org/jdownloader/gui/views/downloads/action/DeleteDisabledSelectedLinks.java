@@ -8,18 +8,16 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
-public class DeleteDisabledSelectedLinks extends AppAction {
-
-    private SelectionInfo<FilePackage, DownloadLink> si;
+public class DeleteDisabledSelectedLinks extends SelectionAppAction<FilePackage, DownloadLink> {
 
     public DeleteDisabledSelectedLinks(SelectionInfo<FilePackage, DownloadLink> si) {
 
-        this.si = si;
+        super(si);
         setName(_GUI._.DeleteDisabledLinks_DeleteDisabledLinks_object_());
         setIconKey("remove_disabled");
 
@@ -29,7 +27,7 @@ public class DeleteDisabledSelectedLinks extends AppAction {
     public void actionPerformed(ActionEvent e) {
 
         List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
-        for (DownloadLink dl : si.getChildren()) {
+        for (DownloadLink dl : getSelection().getChildren()) {
             if (!dl.isEnabled()) {
                 nodesToDelete.add(dl);
             }

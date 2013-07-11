@@ -4,11 +4,10 @@ import java.awt.event.ActionEvent;
 
 import org.jdownloader.extensions.AbstractExtensionGuiEnableAction;
 import org.jdownloader.extensions.infobar.translate.T;
-import org.jdownloader.gui.views.SelectionInfo;
 
 public class EnableInfoBarGuiAction extends AbstractExtensionGuiEnableAction<InfoBarExtension> {
 
-    public EnableInfoBarGuiAction(SelectionInfo<?, ?> plg) {
+    public EnableInfoBarGuiAction() {
         super(CFG_INFOBAR.GUI_ENABLED);
         setName(T._.EnableInfoBarGuiAction());
         setIconKey("info");

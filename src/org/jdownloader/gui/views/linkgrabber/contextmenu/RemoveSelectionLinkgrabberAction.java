@@ -12,22 +12,21 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class RemoveSelectionLinkgrabberAction extends AppAction {
+public class RemoveSelectionLinkgrabberAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
      */
-    private static final long                          serialVersionUID = -3008851305036758872L;
-    private SelectionInfo<CrawledPackage, CrawledLink> si;
+    private static final long serialVersionUID = -3008851305036758872L;
 
     public RemoveSelectionLinkgrabberAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
+        super(si);
         setIconKey("remove");
         setName(_GUI._.RemoveSelectionLinkgrabberAction_RemoveSelectionLinkgrabberAction_object_());
-        this.si = si;
 
     }
 
@@ -36,7 +35,7 @@ public class RemoveSelectionLinkgrabberAction extends AppAction {
         try {
             boolean containsOnline = false;
 
-            for (CrawledLink cl : si.getChildren()) {
+            for (CrawledLink cl : getSelection().getChildren()) {
                 if (TYPE.OFFLINE == cl.getParentNode().getType()) continue;
                 if (TYPE.POFFLINE == cl.getParentNode().getType()) continue;
                 if (cl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
@@ -53,17 +52,12 @@ public class RemoveSelectionLinkgrabberAction extends AppAction {
 
                 public void run() {
 
-                    LinkCollector.getInstance().removeChildren(si.getChildren());
+                    LinkCollector.getInstance().removeChildren(getSelection().getChildren());
                 }
 
             }, true);
         } catch (DialogNoAnswerException e1) {
         }
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return !si.isEmpty();
     }
 
 }

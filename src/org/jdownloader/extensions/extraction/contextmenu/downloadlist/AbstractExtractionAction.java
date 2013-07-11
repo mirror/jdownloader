@@ -3,8 +3,8 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist;
 import java.util.List;
 
 import jd.controlling.IOEQ;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtensionAction;
@@ -12,14 +12,12 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public abstract class AbstractExtractionAction extends AbstractExtensionAction<ExtractionExtension> {
+public abstract class AbstractExtractionAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractExtensionAction<ExtractionExtension, PackageType, ChildrenType> {
 
-    private SelectionInfo<?, ?> selection;
-    protected List<Archive>     archives;
+    protected List<Archive> archives;
 
-    public AbstractExtractionAction(SelectionInfo<?, ?> selection) {
-
-        this.selection = selection;
+    public AbstractExtractionAction(SelectionInfo<PackageType, ChildrenType> selection) {
+        super(selection);
 
     }
 
@@ -31,7 +29,7 @@ public abstract class AbstractExtractionAction extends AbstractExtensionAction<E
 
     public void setEnabled(boolean newValue) {
 
-        if (!newValue && selection != null) {
+        if (!newValue && getSelection() != null) {
             IOEQ.add(new Runnable() {
 
                 @Override
@@ -56,7 +54,7 @@ public abstract class AbstractExtractionAction extends AbstractExtensionAction<E
     }
 
     protected void asynchInit() {
-        archives = ArchiveValidator.validate((SelectionInfo<FilePackage, DownloadLink>) selection).getArchives();
+        archives = ArchiveValidator.validate(getSelection()).getArchives();
     }
 
 }

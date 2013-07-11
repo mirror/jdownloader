@@ -25,6 +25,8 @@ public abstract class AppAction extends BasicAction {
 
     private AppActionEventSender eventSender;
 
+    private boolean              visible = true;
+
     public AppAction() {
         super();
 
@@ -85,6 +87,23 @@ public abstract class AppAction extends BasicAction {
             return NewTheme.I().getIcon(iconKey, size);
         }
         return super.getValue(key);
+    }
+
+    /**
+     * invalid actions should not be used.
+     * 
+     * @return
+     */
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean newValue) {
+        if (visible == newValue) return;
+        boolean oldValue = visible;
+        this.visible = newValue;
+
+        firePropertyChange("visible", Boolean.valueOf(oldValue), Boolean.valueOf(newValue));
     }
 
 }

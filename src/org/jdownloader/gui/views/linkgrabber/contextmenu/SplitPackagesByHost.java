@@ -15,22 +15,21 @@ import jd.controlling.packagecontroller.AbstractNode;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.translate._JDT;
 
-public class SplitPackagesByHost extends AppAction {
+public class SplitPackagesByHost extends SelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
      */
-    private static final long                          serialVersionUID = 2636706677433058054L;
-    private SelectionInfo<CrawledPackage, CrawledLink> si;
+    private static final long serialVersionUID = 2636706677433058054L;
 
     public SplitPackagesByHost(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        this.si = si;
+        super(si);
         setName(_GUI._.SplitPackagesByHost_SplitPackagesByHost_object_());
         setIconKey("split_packages");
     }
@@ -44,7 +43,7 @@ public class SplitPackagesByHost extends AppAction {
 
                 CrawledPackage samePkg = null;
                 boolean samePackage = true;
-                for (AbstractNode child : si.getChildren()) {
+                for (AbstractNode child : getSelection().getChildren()) {
                     if (child instanceof CrawledLink) {
                         CrawledLink cL = (CrawledLink) child;
                         if (samePkg == null) {

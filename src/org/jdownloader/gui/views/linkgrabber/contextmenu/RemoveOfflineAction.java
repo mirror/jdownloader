@@ -12,11 +12,11 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class RemoveOfflineAction extends AppAction {
+public class RemoveOfflineAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
@@ -24,6 +24,7 @@ public class RemoveOfflineAction extends AppAction {
     private static final long serialVersionUID = -6341297356888158708L;
 
     public RemoveOfflineAction(SelectionInfo<CrawledPackage, CrawledLink> selection) {
+        super(selection);
         setName(_GUI._.RemoveOfflineAction_RemoveOfflineAction_object_());
         setIconKey("remove_offline");
     }

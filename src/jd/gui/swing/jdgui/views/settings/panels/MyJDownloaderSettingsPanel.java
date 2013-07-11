@@ -57,7 +57,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
     private PasswordInput     passWord;
 
     private JTextArea         error;
-    private JLabel            status;
+    private JTextArea         status;
     private JButton           connectButton;
     private AppAction         connectAction;
     private AppAction         disconnectAction;
@@ -113,7 +113,15 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         error.setFocusable(false);
         error.setForeground(Color.RED);
         SwingUtils.toBold(error);
-        status = new JLabel();
+
+        status = new JTextArea();
+        SwingUtils.setOpaque(status, false);
+        status.setEditable(false);
+        status.setLineWrap(true);
+        status.setWrapStyleWord(true);
+        status.setFocusable(false);
+
+        SwingUtils.toBold(error);
         reconnectAction = new AppAction() {
             {
                 setName(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_reconnect_());
@@ -166,9 +174,9 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
 
         addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_devicename_(), null, deviceName);
 
-        MigPanel p = new MigPanel("ins 0 0 0 0", "[][grow, fill][][][][]", "[]");
+        MigPanel p = new MigPanel("ins 0 0 0 0", "[grow,fill][][][][]", "[]");
         p.setOpaque(false);
-        p.add(status);
+
         p.add(Box.createHorizontalGlue());
         JLabel lbl;
         p.add(lbl = new JLabel(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_autoconnect_()));
@@ -182,7 +190,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         add(Box.createHorizontalGlue(), "gapleft 37");
         add(p, "spanx,pushx,growx");
         add(Box.createHorizontalGlue(), "gapleft 37");
-        add(error, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10,hidemode 3");
+        add(status, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
 
         add(new JSeparator(), "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
 
@@ -271,7 +279,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                     }
 
                     status.setForeground(Color.GREEN);
-                    status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_connected_(MyJDownloaderController.getInstance().getCurrentEmail()));
+                    status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_connected_2());
 
                 } else {
 

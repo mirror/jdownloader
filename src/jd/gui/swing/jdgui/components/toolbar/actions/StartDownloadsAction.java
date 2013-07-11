@@ -36,7 +36,8 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
      * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
      */
-    public StartDownloadsAction(SelectionInfo<?, ?> selection) {
+    public StartDownloadsAction() {
+
         setIconKey("media-playback-start");
         setName(_JDT._.StartDownloadsAction_createTooltip_());
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);

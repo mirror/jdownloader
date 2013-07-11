@@ -25,6 +25,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
@@ -95,6 +97,8 @@ public class MenuItemData implements Storable {
     private String            mnemonic;
 
     private String            shortcut;
+
+    private AppAction         action;
 
     public void setMnemonic(String mnemonic) {
         this.mnemonic = mnemonic;
@@ -216,6 +220,7 @@ public class MenuItemData implements Storable {
             throw new WTFException("No ACTION");
         }
         AppAction action = createAction(selection);
+
         if (StringUtils.isNotEmpty(getShortcut())) {
             action.setAccelerator(KeyStroke.getKeyStroke(getShortcut()));
         }
@@ -233,6 +238,7 @@ public class MenuItemData implements Storable {
 
     }
 
+    @SuppressWarnings("unchecked")
     public AppAction createAction(SelectionInfo<?, ?> selection) throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ExtensionNotLoadedException {
         if (!validated) {
             //
@@ -242,37 +248,40 @@ public class MenuItemData implements Storable {
             //
             throw new WTFException("No ACTION");
         }
-        Class<?> clazz = actionData._getClazz();
-
-        if (selection == null) {
-
-            try {
+        if (action != null && action instanceof SelectionAppAction) {
+            ((SelectionAppAction) action).setSelection(selection);
+            if (action instanceof CachableInterface) {
                 if (StringUtils.isNotEmpty(actionData.getData())) {
-                    Constructor<?> c = clazz.getConstructor(new Class[] { String.class });
-                    AppAction action = (AppAction) c.newInstance(new Object[] { actionData.getData() });
-                    fill(clazz, action);
-                    return customize(action);
-
-                } else {
-                    Constructor<?> c = clazz.getConstructor(new Class[] {});
-                    AppAction action = (AppAction) c.newInstance(new Object[] {});
-                    fill(clazz, action);
-                    return customize(action);
+                    ((CachableInterface) action).setData(actionData.getData());
                 }
+            }
+            return action;
+        } else if (action != null && action instanceof CachableInterface) {
+            // no need to set selection. action does not need any selection
 
-            } catch (Exception e) {
-                // e.printStackTrace();
+            if (StringUtils.isNotEmpty(actionData.getData())) {
+                ((CachableInterface) action).setData(actionData.getData());
             }
 
+            return action;
+        } else if (action != null) {
+            System.out.println("Please Update Action " + action.getClass().getName());
         }
-        AppAction action = null;
+
+        Class<?> clazz = actionData._getClazz();
+
         if (StringUtils.isNotEmpty(actionData.getData())) {
             Constructor<?> c = clazz.getConstructor(new Class[] { SelectionInfo.class, String.class });
             action = (AppAction) c.newInstance(new Object[] { selection, actionData.getData() });
 
         } else {
-            Constructor<?> c = clazz.getConstructor(new Class[] { SelectionInfo.class });
-            action = (AppAction) c.newInstance(new Object[] { selection });
+            try {
+                Constructor<?> c = clazz.getConstructor(new Class[] { SelectionInfo.class });
+                action = (AppAction) c.newInstance(new Object[] { selection });
+            } catch (NoSuchMethodException e) {
+                Constructor<?> c = clazz.getConstructor(new Class[] {});
+                action = (AppAction) c.newInstance(new Object[] {});
+            }
         }
         fill(clazz, action);
         return customize(action);

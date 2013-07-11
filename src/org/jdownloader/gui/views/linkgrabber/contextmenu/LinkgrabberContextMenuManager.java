@@ -145,7 +145,7 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
 
     public void show() {
 
-        new MenuManagerAction(null).actionPerformed(null);
+        new MenuManagerAction().actionPerformed(null);
     }
 
     public void setPanel(LinkGrabberPanel linkGrabberPanel) {

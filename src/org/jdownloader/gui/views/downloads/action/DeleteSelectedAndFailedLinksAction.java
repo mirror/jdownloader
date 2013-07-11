@@ -8,18 +8,16 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
-public class DeleteSelectedAndFailedLinksAction extends AppAction {
-
-    private SelectionInfo<FilePackage, DownloadLink> si;
+public class DeleteSelectedAndFailedLinksAction extends SelectionAppAction<FilePackage, DownloadLink> {
 
     public DeleteSelectedAndFailedLinksAction(SelectionInfo<FilePackage, DownloadLink> si) {
+        super(si);
 
-        this.si = si;
         setName(_GUI._.DeleteFailedAction_DeleteFailedAction_object_());
         setIconKey("remove_failed");
     }
@@ -28,7 +26,7 @@ public class DeleteSelectedAndFailedLinksAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
 
         List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
-        for (DownloadLink dl : si.getChildren()) {
+        for (DownloadLink dl : getSelection().getChildren()) {
             if (dl.getLinkStatus().isFailed()) {
                 nodesToDelete.add(dl);
             }

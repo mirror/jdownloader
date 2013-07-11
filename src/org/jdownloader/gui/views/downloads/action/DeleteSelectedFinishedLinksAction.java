@@ -8,18 +8,16 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
-public class DeleteSelectedFinishedLinksAction extends AppAction {
-
-    private SelectionInfo<FilePackage, DownloadLink> si;
+public class DeleteSelectedFinishedLinksAction extends SelectionAppAction<FilePackage, DownloadLink> {
 
     public DeleteSelectedFinishedLinksAction(SelectionInfo<FilePackage, DownloadLink> si) {
 
-        this.si = si;
+        super(si);
         setName(_GUI._.DeleteSuccessFulAction_DeleteSuccessFulAction_object_());
         setIconKey("remove_ok");
 
@@ -29,7 +27,7 @@ public class DeleteSelectedFinishedLinksAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
 
         List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
-        for (DownloadLink dl : si.getChildren()) {
+        for (DownloadLink dl : getSelection().getChildren()) {
             if (dl.getLinkStatus().isFinished()) {
                 nodesToDelete.add(dl);
             }

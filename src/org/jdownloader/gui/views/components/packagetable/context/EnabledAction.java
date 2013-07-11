@@ -16,12 +16,12 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
+public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends SelectionAppAction<PackageType, ChildrenType> {
     /**
      * 
      */
@@ -33,13 +33,13 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
         MIXED;
     }
 
-    private State                                    state = State.MIXED;
+    private State state = State.MIXED;
 
-    private SelectionInfo<PackageType, ChildrenType> selection;
+    @Override
+    public void setSelection(SelectionInfo<PackageType, ChildrenType> selection) {
+        super.setSelection(selection);
+        if (getSelection() != null) {
 
-    public EnabledAction(SelectionInfo<PackageType, ChildrenType> si) {
-        if (si != null) {
-            this.selection = si;
             switch (state = getState()) {
             case MIXED:
                 setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("checkbox_undefined", 14), 0, 0, 9, 8)));
@@ -61,10 +61,15 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
 
     }
 
+    public EnabledAction(SelectionInfo<PackageType, ChildrenType> si) {
+        super(si);
+
+    }
+
     private State getState() {
-        if (selection.isEmpty()) return State.ALL_DISABLED;
+        if (getSelection().isEmpty()) return State.ALL_DISABLED;
         Boolean first = null;
-        for (ChildrenType a : selection.getChildren()) {
+        for (ChildrenType a : getSelection().getChildren()) {
 
             /* check a child */
             if (first == null) first = a.isEnabled();
@@ -84,7 +89,7 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
                 if (!enable) {
                     int count = 0;
                     if (DownloadWatchDog.getInstance().isRunning()) {
-                        for (ChildrenType a : selection.getChildren()) {
+                        for (ChildrenType a : getSelection().getChildren()) {
                             if (a instanceof DownloadLink) {
                                 DownloadLink link = (DownloadLink) a;
                                 if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
@@ -103,16 +108,11 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
                     }
 
                 }
-                for (ChildrenType a : selection.getChildren()) {
+                for (ChildrenType a : getSelection().getChildren()) {
                     a.setEnabled(enable);
                 }
             }
         }, true);
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return !selection.isEmpty();
     }
 
 }

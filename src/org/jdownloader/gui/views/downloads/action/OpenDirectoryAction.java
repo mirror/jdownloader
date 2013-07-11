@@ -7,11 +7,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class OpenDirectoryAction extends AppAction {
+public class OpenDirectoryAction extends SelectionAppAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = 3656369075540437063L;
 
@@ -20,18 +20,24 @@ public class OpenDirectoryAction extends AppAction {
     private File              file             = null;
 
     public OpenDirectoryAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        if (si != null) {
-            this.directory = new File(si.getContextPackage().getDownloadDirectory());
-            if (si.isLinkContext()) {
-
-                this.file = new File(si.getContextLink().getFileOutput());
-
-            }
-        }
+        super(si);
 
         setIconKey("package_open");
         setName(_GUI._.gui_table_contextmenu_downloaddir());
         setTooltipText("Open the current downloaddir in explorer");
+    }
+
+    @Override
+    public void setSelection(SelectionInfo<FilePackage, DownloadLink> selection) {
+        super.setSelection(selection);
+        if (getSelection() != null) {
+            this.directory = new File(getSelection().getContextPackage().getDownloadDirectory());
+            if (getSelection().isLinkContext()) {
+
+                this.file = new File(getSelection().getContextLink().getFileOutput());
+
+            }
+        }
     }
 
     public void actionPerformed(ActionEvent e) {

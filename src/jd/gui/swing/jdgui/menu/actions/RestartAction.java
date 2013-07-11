@@ -19,11 +19,12 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
-public class RestartAction extends AppAction {
+public class RestartAction extends AppAction implements CachableInterface {
 
     private static final long serialVersionUID = 1333126351380171619L;
 
@@ -36,6 +37,10 @@ public class RestartAction extends AppAction {
     @Override
     public void actionPerformed(ActionEvent e) {
         RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(false));
+    }
+
+    @Override
+    public void setData(String data) {
     }
 
 }

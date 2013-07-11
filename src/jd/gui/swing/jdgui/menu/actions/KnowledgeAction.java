@@ -20,9 +20,10 @@ import java.awt.event.ActionEvent;
 
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.translate._GUI;
 
-public class KnowledgeAction extends AppAction {
+public class KnowledgeAction extends AppAction implements CachableInterface {
 
     private static final long serialVersionUID = 2227665710503234763L;
 
@@ -38,6 +39,10 @@ public class KnowledgeAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         CrossSystem.openURLOrShowMessage("http://jdownloader.org/knowledge/index");
 
+    }
+
+    @Override
+    public void setData(String data) {
     }
 
 }

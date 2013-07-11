@@ -11,12 +11,12 @@ import jd.controlling.packagecontroller.ChildComparator;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 
-public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
+public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends SelectionAppAction<PackageType, ChildrenType> {
 
     /**
      * 
@@ -25,16 +25,22 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
     private ExtColumn<AbstractNode>                  column;
     private SelectionInfo<PackageType, ChildrenType> si;
 
-    public SortAction(SelectionInfo<PackageType, ChildrenType> si) {
-        if (si != null) {
-            this.column = si.getContextColumn();
-            this.si = si;
+    @Override
+    public void setSelection(SelectionInfo<PackageType, ChildrenType> selection) {
+        super.setSelection(selection);
+        if (getSelection() != null) {
+            this.column = getSelection().getContextColumn();
+
             setIconKey("sort");
             setName(_GUI._.SortAction_SortAction_object_(column.getName()));
         } else {
             setIconKey("sort");
             setName(_GUI._.SortAction_SortAction_object_empty());
         }
+    }
+
+    public SortAction(SelectionInfo<PackageType, ChildrenType> si) {
+        super(si);
 
     }
 

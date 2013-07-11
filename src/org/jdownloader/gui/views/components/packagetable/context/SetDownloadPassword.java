@@ -12,28 +12,27 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class SetDownloadPassword<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
+public class SetDownloadPassword<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends SelectionAppAction<PackageType, ChildrenType> {
 
     /**
      * 
      */
-    private static final long                        serialVersionUID = -8280535886054721277L;
-    private SelectionInfo<PackageType, ChildrenType> si;
+    private static final long serialVersionUID = -8280535886054721277L;
 
     public SetDownloadPassword(SelectionInfo<PackageType, ChildrenType> si) {
-        this.si = si;
+        super(si);
         setName(_GUI._.SetDownloadPassword_SetDownloadPassword_());
         setIconKey("password");
     }
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        final List<ChildrenType> newSelection = si.getChildren();
+        final List<ChildrenType> newSelection = getSelection().getChildren();
         String defaultPW = "";
         AbstractNode node = newSelection.get(0);
         if (node instanceof DownloadLink) {
@@ -61,11 +60,6 @@ public class SetDownloadPassword<PackageType extends AbstractPackageNode<Childre
             });
         } catch (DialogNoAnswerException e1) {
         }
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return !si.isEmpty();
     }
 
 }

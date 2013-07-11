@@ -2,9 +2,6 @@ package org.jdownloader.gui.mainmenu.action;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
@@ -24,7 +21,11 @@ public class AddLinksMenuAction extends AbstractMainMenuAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        new AddLinksAction((SelectionInfo<CrawledPackage, CrawledLink>) null).actionPerformed(e);
+        new AddLinksAction().actionPerformed(e);
+    }
+
+    @Override
+    public void setData(String data) {
     }
 
 }

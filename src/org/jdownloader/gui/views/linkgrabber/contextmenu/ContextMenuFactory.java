@@ -34,12 +34,11 @@ public class ContextMenuFactory {
 
         if (selection == null || selection.size() == 0) {
             JPopupMenu p = new JPopupMenu();
-            p.add(new AddLinksAction((SelectionInfo<CrawledPackage, CrawledLink>) null));
-            p.add(new AddContainerAction((SelectionInfo<CrawledPackage, CrawledLink>) null));
+            p.add(new AddLinksAction());
+            p.add(new AddContainerAction());
             return p;
         }
         return manager.build(si);
 
     }
-
 }

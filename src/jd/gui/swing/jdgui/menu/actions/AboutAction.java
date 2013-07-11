@@ -23,9 +23,10 @@ import jd.gui.swing.dialog.AboutDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.translate._GUI;
 
-public class AboutAction extends AppAction {
+public class AboutAction extends AppAction implements CachableInterface {
 
     private static final long serialVersionUID = -353145605693194634L;
 
@@ -42,6 +43,10 @@ public class AboutAction extends AppAction {
             Dialog.getInstance().showDialog(new AboutDialog());
         } catch (DialogNoAnswerException e1) {
         }
+    }
+
+    @Override
+    public void setData(String data) {
     }
 
 }

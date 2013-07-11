@@ -15,13 +15,13 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.SkipReason;
 
-public class SkipAction extends AppAction {
+public class SkipAction extends SelectionAppAction<FilePackage, DownloadLink> {
 
     enum State {
         ALL_SKIPPED,
@@ -29,15 +29,14 @@ public class SkipAction extends AppAction {
         MIXED;
     }
 
-    private State                                          state            = State.MIXED;
+    private State             state            = State.MIXED;
 
-    private static final long                              serialVersionUID = 7107840091963427544L;
+    private static final long serialVersionUID = 7107840091963427544L;
 
-    private final SelectionInfo<FilePackage, DownloadLink> si;
-
-    public SkipAction(final SelectionInfo<FilePackage, DownloadLink> si) {
-        this.si = si;
-        if (si != null) {
+    @Override
+    public void setSelection(SelectionInfo<FilePackage, DownloadLink> selection) {
+        super.setSelection(selection);
+        if (getSelection() != null) {
             switch (state = getState()) {
             case MIXED:
                 setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("skipped", 18), NewTheme.I().getImage("checkbox_undefined", 14), 0, 0, 9, 8)));
@@ -58,10 +57,15 @@ public class SkipAction extends AppAction {
         }
     }
 
+    public SkipAction(final SelectionInfo<FilePackage, DownloadLink> si) {
+        super(si);
+
+    }
+
     private State getState() {
-        if (si.isEmpty()) return State.ALL_UNSKIPPED;
+        if (getSelection().isEmpty()) return State.ALL_UNSKIPPED;
         Boolean first = null;
-        for (DownloadLink a : si.getChildren()) {
+        for (DownloadLink a : getSelection().getChildren()) {
 
             /* check a child */
             if (first == null) first = a.isSkipped();
@@ -80,7 +84,7 @@ public class SkipAction extends AppAction {
                 if (enable) {
                     int count = 0;
                     if (DownloadWatchDog.getInstance().isRunning()) {
-                        for (DownloadLink a : si.getChildren()) {
+                        for (DownloadLink a : getSelection().getChildren()) {
 
                             DownloadLink link = (DownloadLink) a;
                             if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
@@ -99,7 +103,7 @@ public class SkipAction extends AppAction {
                     }
                 }
 
-                for (DownloadLink a : si.getChildren()) {
+                for (DownloadLink a : getSelection().getChildren()) {
                     // keep skipreason if a reason is set
                     if (enable) {
                         if (!a.isSkipped()) {
@@ -116,7 +120,7 @@ public class SkipAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        return si != null && !si.isEmpty() && DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE);
+        return getSelection() != null && !getSelection().isEmpty() && DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE);
     }
 
 }

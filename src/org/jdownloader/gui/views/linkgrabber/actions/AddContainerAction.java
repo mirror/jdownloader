@@ -6,8 +6,6 @@ import java.io.File;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.io.JDFileFilter;
 
@@ -17,17 +15,17 @@ import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
-public class AddContainerAction extends AppAction {
+public class AddContainerAction extends AppAction implements CachableInterface {
     /**
      * @param selection
      *            TODO
      * 
      */
-    public AddContainerAction(SelectionInfo<CrawledPackage, CrawledLink> selection) {
+    public AddContainerAction() {
         setIconKey("addContainer");
         setName(_GUI._.AddContainerAction());
         setAccelerator(KeyEvent.VK_O);
@@ -65,6 +63,10 @@ public class AddContainerAction extends AppAction {
 
         } catch (DialogNoAnswerException e1) {
         }
+    }
+
+    @Override
+    public void setData(String data) {
     }
 
 }

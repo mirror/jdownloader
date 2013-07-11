@@ -7,31 +7,29 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class ResumeAction extends AppAction {
+public class ResumeAction extends SelectionAppAction<FilePackage, DownloadLink> {
 
-    private static final long                              serialVersionUID = 8087143123808363305L;
-
-    private final SelectionInfo<FilePackage, DownloadLink> si;
+    private static final long serialVersionUID = 8087143123808363305L;
 
     public ResumeAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        this.si = si;
+        super(si);
         setIconKey("resume");
         setName(_GUI._.gui_table_contextmenu_resume());
     }
 
     @Override
     public boolean isEnabled() {
-        return !si.isEmpty();
+        return !getSelection().isEmpty();
     }
 
     public void actionPerformed(ActionEvent e) {
         IOEQ.add(new Runnable() {
             public void run() {
-                for (DownloadLink link : si.getChildren()) {
+                for (DownloadLink link : getSelection().getChildren()) {
                     if (!link.getLinkStatus().isPluginActive() && (link.getLinkStatus().isFailed() || link.isSkipped())) {
                         link.getLinkStatus().reset(true);
                         DownloadWatchDog.getInstance().removeIPBlockTimeout(link);

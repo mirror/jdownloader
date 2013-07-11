@@ -2,21 +2,15 @@ package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 
-public class MenuManagerAction extends AppAction {
+public class MenuManagerAction extends AppAction implements CachableInterface {
 
-    private SelectionInfo<FilePackage, DownloadLink> si;
+    public MenuManagerAction() {
 
-    public MenuManagerAction(SelectionInfo<FilePackage, DownloadLink> si) {
-
-        this.si = si;
         setName(_GUI._.MenuManagerAction_MenuManagerAction());
         setIconKey("menu");
     }
@@ -25,6 +19,10 @@ public class MenuManagerAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         DownloadListContextMenuManager.getInstance().openGui();
 
+    }
+
+    @Override
+    public void setData(String data) {
     }
 
 }

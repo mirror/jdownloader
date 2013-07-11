@@ -103,6 +103,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
             protected void addAction(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
                 if (root instanceof JMenu) {
                     JComponent comp = inst.addTo(root, selection);
+                    if (comp == null) return;
                     if (comp instanceof AbstractButton) {
                         applyMnemonic(root, (AbstractButton) comp);
                     }

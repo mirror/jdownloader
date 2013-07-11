@@ -10,18 +10,16 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
-public class DeleteSelectedOfflineLinksAction extends AppAction {
-
-    private SelectionInfo<FilePackage, DownloadLink> si;
+public class DeleteSelectedOfflineLinksAction extends SelectionAppAction<FilePackage, DownloadLink> {
 
     public DeleteSelectedOfflineLinksAction(SelectionInfo<FilePackage, DownloadLink> si) {
 
-        this.si = si;
+        super(si);
         setName(_GUI._.DeleteOfflineAction_DeleteOfflineAction_object_());
         setIconKey("remove_offline");
     }
@@ -30,7 +28,7 @@ public class DeleteSelectedOfflineLinksAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
 
         List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
-        for (DownloadLink dl : si.getChildren()) {
+        for (DownloadLink dl : getSelection().getChildren()) {
             if (dl.getAvailableStatus() == AvailableStatus.FALSE || dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
                 nodesToDelete.add(dl);
             }

@@ -23,11 +23,12 @@ import java.awt.event.KeyEvent;
 import javax.swing.KeyStroke;
 
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
-public class ExitAction extends AppAction {
+public class ExitAction extends AppAction implements CachableInterface {
 
     private static final long serialVersionUID = -1428029294638573437L;
 
@@ -43,6 +44,10 @@ public class ExitAction extends AppAction {
     @Override
     public void actionPerformed(ActionEvent e) {
         RestartController.getInstance().exitAsynch(new SmartRlyExitRequest());
+    }
+
+    @Override
+    public void setData(String data) {
     }
 
 }

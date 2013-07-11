@@ -2726,8 +2726,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Your Account has been deactivated because the entered Username/Email or Password is wrong." })
     String MyJDownloaderSettingsPanel_runInEDT_account_badlogins();
 
-    @Default(lngs = { "en" }, values = { "Connection estabilished. Great! Account: %s1" })
-    String MyJDownloaderSettingsPanel_runInEDT_connected_(String email);
+    @Default(lngs = { "en" }, values = { "Connection estabilished. Great!" })
+    String MyJDownloaderSettingsPanel_runInEDT_connected_2();
 
     @Default(lngs = { "en" }, values = { "Not Connected!" })
     String MyJDownloaderSettingsPanel_runInEDT_disconnected_();
@@ -2788,5 +2788,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "It's a shame to hide these features!" })
     String PackagizerFilterRuleDialog_mousePressed_help_title();
+
+    @Default(lngs = { "en" }, values = { "Delete Selection" })
+    String ToolbarDeleteAction_ToolbarDeleteAction_delete_Selection();
 
 }

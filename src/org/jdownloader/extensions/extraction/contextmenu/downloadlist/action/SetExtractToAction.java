@@ -3,6 +3,9 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.extraction.Archive;
@@ -11,9 +14,9 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class SetExtractToAction extends AbstractExtractionAction {
+public class SetExtractToAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractExtractionAction<PackageType, ChildrenType> {
 
-    public SetExtractToAction(final SelectionInfo<?, ?> selection) {
+    public SetExtractToAction(final SelectionInfo<PackageType, ChildrenType> selection) {
         super(selection);
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_extract_to());
         setIconKey(IconKey.ICON_FOLDER);

@@ -2,23 +2,18 @@ package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class NewPackageAction extends AppAction {
+public class NewPackageAction extends AppAction implements CachableInterface {
 
-    private static final long                              serialVersionUID = -8544759375428602013L;
+    private static final long serialVersionUID = -8544759375428602013L;
 
-    private final SelectionInfo<FilePackage, DownloadLink> si;
+    public NewPackageAction() {
 
-    public NewPackageAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        this.si = si;
         setIconKey("package_new");
         setName(_GUI._.gui_table_contextmenu_newpackage());
     }
@@ -35,6 +30,10 @@ public class NewPackageAction extends AppAction {
             return;
         }
 
+    }
+
+    @Override
+    public void setData(String data) {
     }
 
 }

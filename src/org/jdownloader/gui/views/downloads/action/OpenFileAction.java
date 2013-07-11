@@ -9,35 +9,42 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class OpenFileAction extends AppAction {
+public class OpenFileAction extends SelectionAppAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = 1901008532686173167L;
 
     private File              file;
 
     public OpenFileAction(final SelectionInfo<FilePackage, DownloadLink> si) {
-
+        super(si);
         ImageIcon img;
-        if (si != null) {
-            if (si.isLinkContext()) {
-                this.file = si == null ? null : new File(si.getContextLink().getFileOutput());
 
-            } else {
-                this.file = si == null ? null : new File(si.getContextPackage().getDownloadDirectory());
-
-            }
-
-        }
         setIconKey("file");
         setName(_GUI._.gui_table_contextmenu_openfile());
 
     }
 
+    @Override
+    public void setSelection(SelectionInfo<FilePackage, DownloadLink> selection) {
+        super.setSelection(selection);
+        if (getSelection() != null) {
+            if (getSelection().isLinkContext()) {
+                this.file = getSelection() == null ? null : new File(getSelection().getContextLink().getFileOutput());
+
+            } else {
+                this.file = getSelection() == null ? null : new File(getSelection().getContextPackage().getDownloadDirectory());
+
+            }
+
+        }
+    }
+
     public OpenFileAction(File file) {
+        super(null);
         this.file = file;
     }
 

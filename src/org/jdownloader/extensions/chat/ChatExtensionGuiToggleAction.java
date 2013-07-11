@@ -3,11 +3,10 @@ package org.jdownloader.extensions.chat;
 import java.awt.event.ActionEvent;
 
 import org.jdownloader.extensions.AbstractExtensionGuiEnableAction;
-import org.jdownloader.gui.views.SelectionInfo;
 
 public class ChatExtensionGuiToggleAction extends AbstractExtensionGuiEnableAction<ChatExtension> {
 
-    public ChatExtensionGuiToggleAction(SelectionInfo<?, ?> selection) {
+    public ChatExtensionGuiToggleAction() {
         super(CFG_CHAT.GUI_ENABLED);
 
         setIconKey(_getExtension().getIconKey());

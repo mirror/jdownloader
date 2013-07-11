@@ -18,6 +18,7 @@ import jd.gui.swing.jdgui.components.toolbar.actions.SilentModeToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StartDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
+import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
 import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
@@ -36,6 +37,8 @@ import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.gui.event.GUIEventSender;
+import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.mainmenu.ChunksEditorLink;
 import org.jdownloader.gui.mainmenu.ParalellDownloadsEditorLink;
 import org.jdownloader.gui.mainmenu.ParallelDownloadsPerHostEditorLink;
@@ -52,13 +55,19 @@ import org.jdownloader.gui.toolbar.action.MoveToBottomAction;
 import org.jdownloader.gui.toolbar.action.MoveToTopAction;
 import org.jdownloader.gui.toolbar.action.MoveUpAction;
 import org.jdownloader.gui.toolbar.action.RemoteCaptchaToogleAction;
+import org.jdownloader.gui.toolbar.action.ToolbarDeleteAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
+import org.jdownloader.gui.views.downloads.action.DeleteDisabledSelectedLinks;
+import org.jdownloader.gui.views.downloads.action.DeleteSelectedAndFailedLinksAction;
+import org.jdownloader.gui.views.downloads.action.DeleteSelectedFinishedLinksAction;
+import org.jdownloader.gui.views.downloads.action.DeleteSelectedOfflineLinksAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
+import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 
-public class MainToolbarManager extends ContextMenuManager<FilePackage, DownloadLink> {
+public class MainToolbarManager extends ContextMenuManager<FilePackage, DownloadLink> implements GUIListener {
 
     private static final MainToolbarManager INSTANCE = new MainToolbarManager();
 
@@ -112,6 +121,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
             }
 
         };
+        GUIEventSender.getInstance().addListener(this, true);
 
     }
 
@@ -163,9 +173,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         opt.add(AddLinksMenuAction.class);
         opt.add(AddContainerAction.class);
         opt.add(RestartAction.class);
-
         opt.add(SettingsAction.class);
-
         opt.add(new ChunksEditorLink());
 
         opt.add(new ParalellDownloadsEditorLink());
@@ -181,8 +189,22 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         ocr.add(CaptchaExchangeToogleAction.class);
         ocr.add(JAntiCaptchaToogleAction.class);
         ocr.add(RemoteCaptchaToogleAction.class);
+
+        mr.add(ToolbarDeleteAction.class);
+        // mr.add(createDeleteMenu());
+
         ocr.add(CaptchaDialogsToogleAction.class);
         return mr;
+    }
+
+    private MenuItemData createDeleteMenu() {
+        DeleteMenuContainer delete = new DeleteMenuContainer();
+
+        delete.add(new MenuItemData(new ActionData(DeleteDisabledSelectedLinks.class)));
+        delete.add(new MenuItemData(new ActionData(DeleteSelectedAndFailedLinksAction.class)));
+        delete.add(new MenuItemData(new ActionData(DeleteSelectedFinishedLinksAction.class)));
+        delete.add(new MenuItemData(new ActionData(DeleteSelectedOfflineLinksAction.class)));
+        return delete;
     }
 
     protected void setHidden(MenuItemData ret) {
@@ -195,7 +217,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
 
     public void show() {
 
-        new MenuManagerAction(null).actionPerformed(null);
+        new MenuManagerAction().actionPerformed(null);
     }
 
     public boolean supportsProperty(MenuItemProperty property) {
@@ -217,6 +239,12 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
     @Override
     public String getName() {
         return _GUI._.MainToolbarManager_getName();
+    }
+
+    @Override
+    public void onGuiMainTabSwitch(View oldView, View newView) {
+
+        // MainToolBar.getInstance().updateToolbar();
     }
 
 }
