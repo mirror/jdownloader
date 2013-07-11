@@ -133,7 +133,7 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
         // -1));
         // lbl.setHorizontalAlignment(SwingConstants.LEFT);
         // lbl.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, new
-        // Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor())));
+        // Color(LAFOptions.getInstance().getPanelHeaderLineColor())));
         // ret.add(lbl);
         //
         // }
@@ -144,7 +144,7 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
         // ret.add(new JSeparator(), "spanx,pushx,growx,gaptop 5");
 
         // lbl.setBorder(BorderFactory.createMatteBorder(2, 0, 0, 0, new
-        // Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor())));
+        // Color(LAFOptions.getInstance().getPanelHeaderLineColor())));
 
         JLabel lbl = new JLabel(_GUI._.PremiumInfoDialog_layoutDialogContent_advantages_header());
         ret.add(SwingUtils.toBold(lbl), "spanx,pushx,growx");

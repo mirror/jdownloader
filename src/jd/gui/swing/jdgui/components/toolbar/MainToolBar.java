@@ -47,7 +47,6 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
@@ -63,6 +62,7 @@ import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.images.NewTheme;
@@ -204,7 +204,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                 new MenuBuilder(MainToolbarManager.getInstance(), lroot, null, (MenuContainer) menudata).run();
                                 Component button = (Component) e.getSource();
                                 Dimension prefSize = lroot.getPreferredSize();
-                                int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                                int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
                                 root = lroot;
                                 lroot.show(button, -insets[1], button.getHeight() - insets[0]);
 
@@ -364,7 +364,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                 if (e.getSource() instanceof Component) {
                                     Component button = (Component) e.getSource();
                                     Dimension prefSize = root.getPreferredSize();
-                                    int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                                    int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
                                     root.show(button, -insets[1], button.getHeight() - insets[0]);
 
                                 }

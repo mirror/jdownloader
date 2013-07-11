@@ -25,7 +25,6 @@ import jd.gui.swing.jdgui.menu.ChunksEditor;
 import jd.gui.swing.jdgui.menu.ParalellDownloadsEditor;
 import jd.gui.swing.jdgui.menu.ParallelDownloadsPerHostEditor;
 import jd.gui.swing.jdgui.menu.SpeedlimitEditor;
-import jd.gui.swing.laf.LAFOptions;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -40,6 +39,7 @@ import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.DownloadsView;
@@ -65,7 +65,7 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
         super("ins 0", "[][grow,fill][]", "[grow,fill]");
         this.downloadTable = table;
 
-        LAFOptions.applyPanelBackground(this);
+        LAFOptions.getInstance().applyPanelBackground(this);
         GUIEventSender.getInstance().addListener(this, true);
         MigPanel info = new MigPanel("ins 2 0 0 0", "[grow]10[grow]", "[grow,fill]2[grow,fill]");
         info.setOpaque(false);

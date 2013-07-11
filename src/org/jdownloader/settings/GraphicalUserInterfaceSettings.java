@@ -17,6 +17,7 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.annotations.ValidatorFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.View;
+import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
@@ -64,9 +65,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @DefaultEnumValue("SKIP_FILE")
     IfFileExistsAction getLastIfFileExists();
-
-    @AboutConfig
-    String getLookAndFeel();
 
     @AboutConfig
     public String getPassword();
@@ -291,8 +289,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setLogViewVisible(boolean b);
 
-    void setLookAndFeel(String laf);
-
     public void setPassword(String password);
 
     public void setPasswordProtectionEnabled(boolean b);
@@ -485,5 +481,52 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isPackagesBackgroundHighlightEnabled();
 
     void setPackagesBackgroundHighlightEnabled(boolean b);
+
+    @AboutConfig
+    @RequiresRestart
+    @DefaultEnumValue("DEFAULT")
+    LookAndFeelType getLookAndFeelTheme();
+
+    void setLookAndFeelTheme(LookAndFeelType type);
+
+    // org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel
+    public static enum LookAndFeelType {
+        BLACK_EYE("de.javasoft.plaf.synthetica.SyntheticaBlackEyeLookAndFeel"),
+        BLACK_MOON("de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel"),
+        BLACK_STAR("de.javasoft.plaf.synthetica.SyntheticaBlackStarLookAndFeel"),
+        BLUE_ICE("de.javasoft.plaf.synthetica.SyntheticaBlueIceLookAndFeel"),
+        BLUE_MOON("de.javasoft.plaf.synthetica.SyntheticaBlueMoonLookAndFeel"),
+        BLUE_STEEL("de.javasoft.plaf.synthetica.SyntheticaBlueSteelLookAndFeel"),
+        GREEN_DREAM("de.javasoft.plaf.synthetica.SyntheticaGreenDreamLookAndFeel"),
+        MAUVE_METALLIC("de.javasoft.plaf.synthetica.SyntheticaMauveMetallicLookAndFeel"),
+        ORANGE_METALLIC("de.javasoft.plaf.synthetica.SyntheticaOrangeMetallicLookAndFeel"),
+        SILVER_MOON("de.javasoft.plaf.synthetica.SyntheticaSilverMoonLookAndFeel"),
+        SIMPLE_2D("de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel"),
+        SKY_METALLIC("de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel"),
+        STANDARD("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel"),
+        WHITE_VISION("de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel"),
+
+        DEFAULT(JDDefaultLookAndFeel.class.getName());
+        private String clazz;
+
+        public String getClazz() {
+            return clazz;
+        }
+
+        private LookAndFeelType(String clazz) {
+
+            this.clazz = clazz;
+        }
+
+        public boolean isAvailable() {
+            try {
+                Class<?> c = Class.forName(clazz);
+                return c != null;
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            return false;
+        }
+    }
 
 }

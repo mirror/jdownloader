@@ -22,7 +22,6 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.gui.swing.jdgui.BasicJDTable;
-import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.exceptions.WTFException;
@@ -30,6 +29,7 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
 import org.jdownloader.images.NewTheme;
@@ -55,12 +55,12 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         this.setShowVerticalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-        sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTableSortedColumnView()) : null;
-        filterNotifyColor = CFG_GUI.CFG.isFilterHighlightEnabled() ? LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTableFilteredView()) : null;
+        sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? (LAFOptions.getInstance().getColorForTableSortedColumnView()) : null;
+        filterNotifyColor = CFG_GUI.CFG.isFilterHighlightEnabled() ? (LAFOptions.getInstance().getColorForTableFilteredView()) : null;
         initAppActions();
         if (CFG_GUI.PACKAGES_BACKGROUND_HIGHLIGHT_ENABLED.isEnabled()) {
-            Color tableFG = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTablePackageRowForeground());
-            Color tableBG = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTablePackageRowBackground());
+            Color tableFG = (LAFOptions.getInstance().getColorForTablePackageRowForeground());
+            Color tableBG = (LAFOptions.getInstance().getColorForTablePackageRowBackground());
             this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AbstractNode>(tableFG, tableBG, null) {
                 public int getPriority() {
                     return 0;

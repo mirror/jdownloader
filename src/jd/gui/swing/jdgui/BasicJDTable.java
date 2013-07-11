@@ -11,10 +11,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.ListSelectionModel;
 
-import jd.gui.swing.laf.LAFOptions;
-import jd.gui.swing.laf.LAFSettings;
-import jd.gui.swing.laf.LookAndFeelController;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -24,13 +20,13 @@ import org.appwork.swing.exttable.ExtTable;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventListener<Integer> {
 
     private static final long serialVersionUID = -9181860215412270250L;
     protected int             mouseOverRow;
-    private LAFSettings       lafo;
 
     public BasicJDTable(ExtTableModel<T> tableModel) {
         super(tableModel);
@@ -38,12 +34,12 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         this.setShowGrid(true);
         this.setShowHorizontalLines(true);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        lafo = LookAndFeelController.getInstance().getLAFOptions();
-        Color c = LAFOptions.createColor(lafo.getColorForPanelHeaderBackground());
 
-        this.setBackground(LAFOptions.createColor(lafo.getColorForPanelBackground()));
+        Color c = (LAFOptions.getInstance().getColorForPanelHeaderBackground());
 
-        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(LAFOptions.createColor(lafo.getColorForTableSelectedRowsForeground()), LAFOptions.createColor(lafo.getColorForTableSelectedRowsBackground()), null) {
+        this.setBackground((LAFOptions.getInstance().getColorForPanelBackground()));
+
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>((LAFOptions.getInstance().getColorForTableSelectedRowsForeground()), (LAFOptions.getInstance().getColorForTableSelectedRowsBackground()), null) {
             public int getPriority() {
                 return Integer.MAX_VALUE;
             }
@@ -94,16 +90,20 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             // });
             //
 
-            Color f = LAFOptions.createColor(lafo.getColorForTableMouseOverRowForeground());
-            Color b = LAFOptions.createColor(lafo.getColorForTableMouseOverRowBackground());
+            Color f = (LAFOptions.getInstance().getColorForTableMouseOverRowForeground());
+            Color b = (LAFOptions.getInstance().getColorForTableMouseOverRowBackground());
             this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(f, b, null) {
                 public int getPriority() {
                     return Integer.MAX_VALUE - 1;
                 }
 
                 @Override
-                public boolean accept(ExtColumn<T> column, T value, boolean selected, boolean focus, int row) {
+                protected Color getBackground(Color current) {
+                    return super.getBackground(current);
+                }
 
+                @Override
+                public boolean accept(ExtColumn<T> column, T value, boolean selected, boolean focus, int row) {
                     return mouseOverRow == row;
                 }
 
@@ -115,7 +115,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         this.setIntercellSpacing(new Dimension(0, 0));
         if (CFG_GUI.TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED.isEnabled()) {
 
-            this.getModel().addExtComponentRowHighlighter(new AlternateHighlighter<T>(LAFOptions.createColor(lafo.getColorForTableAlternateRowForeground()), LAFOptions.createColor(lafo.getColorForTableAlternateRowBackground()), null));
+            this.getModel().addExtComponentRowHighlighter(new AlternateHighlighter<T>((LAFOptions.getInstance().getColorForTableAlternateRowForeground()), (LAFOptions.getInstance().getColorForTableAlternateRowBackground()), null));
         }
 
     }

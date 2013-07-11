@@ -48,7 +48,6 @@ import javax.swing.Timer;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -62,6 +61,7 @@ import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.images.NewTheme;
 
@@ -194,7 +194,7 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
                             if (e.getSource() instanceof Component) {
                                 Component button = (Component) e.getSource();
                                 Dimension prefSize = root.getPreferredSize();
-                                int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                                int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
                                 root.show(button, button.getWidth(), -insets[0]);
                             }
 
@@ -275,7 +275,7 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
                     // if (e.getSource() instanceof Component) {
                     // Component button = (Component) e.getSource();
                     // Dimension prefSize = root.getPreferredSize();
-                    // int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                    // int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
                     // root.show(button, -insets[1], button.getHeight() - insets[0]);
                     //
                     // }

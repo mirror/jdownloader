@@ -7,7 +7,6 @@ import java.awt.event.KeyListener;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
@@ -15,6 +14,7 @@ import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.gui.VLCGui;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -78,7 +78,7 @@ public class RightBottomBar extends MigPanel {
 
             public void actionPerformed(ActionEvent e) {
                 QuickSettingsPopup pu = new QuickSettingsPopup();
-                int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
                 pu.show((Component) e.getSource(), -pu.getPreferredSize().width + insets[3] + ((Component) e.getSource()).getWidth() + 1, -pu.getPreferredSize().height + insets[2]);
                 // new CleanupMenu()
             }

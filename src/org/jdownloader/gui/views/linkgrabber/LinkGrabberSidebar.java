@@ -2,12 +2,12 @@ package org.jdownloader.gui.views.linkgrabber;
 
 import javax.swing.Box;
 
-import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.Checkbox;
 import org.jdownloader.gui.views.components.Header;
@@ -34,7 +34,7 @@ public class LinkGrabberSidebar extends MigPanel {
 
     public LinkGrabberSidebar(LinkGrabberTable table) {
         super("ins 0,wrap 1", "[grow,fill]", "[]");
-        LAFOptions.applyPanelBackground(this);
+        LAFOptions.getInstance().applyPanelBackground(this);
         // header
         hosterFilter = new Header(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_HOSTER_QUICKFILTER_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter());
         exceptions = new CustomFilterHeader();
@@ -51,7 +51,7 @@ public class LinkGrabberSidebar extends MigPanel {
 
         quicksettings = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[]0[]0[]");
 
-        LAFOptions.applyPanelBackground(quicksettings);
+        LAFOptions.getInstance().applyPanelBackground(quicksettings);
         quicksettings.add(new Checkbox(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_addtop_tt()));
         quicksettings.add(new Checkbox(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_CONFIRM_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autoconfirm_tt()));
         quicksettings.add(new Checkbox(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED, _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart(), _GUI._.LinkGrabberSidebar_LinkGrabberSidebar_autostart_tt()));

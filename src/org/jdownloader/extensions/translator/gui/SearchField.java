@@ -25,7 +25,6 @@ import javax.swing.JRootPane;
 import javax.swing.border.Border;
 
 import jd.controlling.IOEQ;
-import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -34,6 +33,7 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.images.NewTheme;
@@ -63,8 +63,8 @@ public class SearchField extends ExtTextField implements MouseMotionListener, Mo
 
         this.table2Filter = table;
         img = NewTheme.I().getImage("search", SIZE);
-        LAFOptions lafo = LookAndFeelController.getInstance().getLAFOptions();
-        bgColor = LAFOptions.createColor(lafo.getColorForPanelHeaderBackground());
+        LAFOptions lafo = LAFOptions.getInstance();
+        bgColor = (lafo.getColorForPanelHeaderBackground());
         setHelpText(_GUI._.SearchField_SearchField_helptext());
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         popIcon = NewTheme.I().getImage("popupButton", -1);
@@ -219,7 +219,7 @@ public class SearchField extends ExtTextField implements MouseMotionListener, Mo
                 }
             });
         }
-        int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();
         // pref.width = positionComp.getWidth() + ((Component)

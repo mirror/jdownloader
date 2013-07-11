@@ -35,7 +35,7 @@ public class Header extends MigPanel implements HeaderInterface {
         lbl = SwingUtils.toBold(new JLabel(title));
         counter = SwingUtils.toBold(new JLabel(""));
         // lbl.setForeground(new
-        // Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor()));
+        // Color(LAFOptions.getInstance().getPanelHeaderLineColor()));
         add(counter);
         add(lbl);
         keyHandler = visible;

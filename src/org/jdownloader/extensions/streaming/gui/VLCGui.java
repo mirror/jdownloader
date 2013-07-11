@@ -11,7 +11,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.laf.LAFOptions;
 import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
@@ -26,6 +25,7 @@ import org.jdownloader.extensions.streaming.gui.sidebar.Sidebar;
 import org.jdownloader.extensions.streaming.gui.sidebar.SidebarHeader;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveController;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveListener;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.logging.LogController;
 
@@ -84,7 +84,7 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
 
         // ScrollPaneUI udi = sp.getUI();
 
-        LAFOptions.applyPanelBackground(sidebarScrollPane);
+        LAFOptions.getInstance().applyPanelBackground(sidebarScrollPane);
         // LayoutManager lm = sp.getLayout();
         sidebar.setSelectedIndex(0);
 

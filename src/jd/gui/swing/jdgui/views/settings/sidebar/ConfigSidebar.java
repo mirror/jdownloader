@@ -38,7 +38,6 @@ import javax.swing.event.ListSelectionListener;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.ExtensionManager;
-import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
@@ -55,6 +54,7 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.translate._JDT;
 
 public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseListener, ConfigEventListener {
@@ -217,8 +217,8 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
 
         });
 
-        LAFOptions.applyBackground(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelBackground(), list);
-        sp.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderLine())));
+        LAFOptions.getInstance().applyBackground(LAFOptions.getInstance().getColorForPanelBackground(), list);
+        sp.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, (LAFOptions.getInstance().getColorForPanelHeaderLine())));
         sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 

@@ -14,11 +14,11 @@ import javax.swing.plaf.synth.SynthConstants;
 import javax.swing.plaf.synth.SynthContext;
 import javax.swing.plaf.synth.SynthStyle;
 
-import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.logging.LogController;
 
 public class ExtMenuButton extends ExtButton {
@@ -37,8 +37,8 @@ public class ExtMenuButton extends ExtButton {
     private SynthContext mouseOutContext;
     {
         try {
-            ;
-            Class<?> cls = Class.forName(LookAndFeelController.getInstance().getLAFOptions().getMenuBackgroundPainterClass());
+
+            Class<?> cls = LAFOptions.getInstance().getMenuBackgroundPainterClass();
             painter = cls.newInstance();
             paintMenuBackground = cls.getMethod("paintMenuBackground", new Class[] { SynthContext.class, Graphics.class, int.class, int.class, int.class, int.class });
             mouseOverContext = context = new SynthContext(new JMenu() {

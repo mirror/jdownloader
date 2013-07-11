@@ -21,10 +21,7 @@ public class CustomScrollbarPainter extends ScrollBarPainter {
 
     public CustomScrollbarPainter() {
         super();
-        jd.gui.swing.laf.LAFSettings lafo = jd.gui.swing.laf.LookAndFeelController.getInstance().getLAFOptions();
-        color = jd.gui.swing.laf.LAFOptions.createColor(lafo.getColorForScrollbarsNormalState());
 
-        colorMouseOver = jd.gui.swing.laf.LAFOptions.createColor(lafo.getColorForScrollbarsMouseOverState());
     }
 
     // public void paintScrollBarThumbBorder(SynthContext synthcontext, Graphics g, int i, int j, int k, int l, int i1) {
@@ -55,14 +52,31 @@ public class CustomScrollbarPainter extends ScrollBarPainter {
         float f1 = i1 != 0 ? 0.0F : calcRelativeGradientPos(graphics2d, 0.0F, j1);
         float f2 = i1 != 0 ? calcRelativeGradientPos(graphics2d, k - 1, -j1) : 0.0F;
         float f3 = i1 != 0 ? 0.0F : calcRelativeGradientPos(graphics2d, l - 1, -j1);
-        graphics2d.setPaint(createLinearGradientPaint(f, f1, f2, f3, new float[] { 0.0F, 1.0F }, new Color[] { color, color }));
+        graphics2d.setPaint(createLinearGradientPaint(f, f1, f2, f3, new float[] { 0.0F, 1.0F }, new Color[] { getColor(), getColor() }));
         graphics2d.fill(subtractStroke(graphics2d, shape));
         if ((synthcontext.getComponentState() & 2) > 0) {
             graphics2d.setPaint(SyntheticaSimple2DLookAndFeel.getHoverColor());
-            graphics2d.setPaint(createLinearGradientPaint(f, f1, f2, f3, new float[] { 0.0F, 1.0F }, new Color[] { colorMouseOver, colorMouseOver }));
+            graphics2d.setPaint(createLinearGradientPaint(f, f1, f2, f3, new float[] { 0.0F, 1.0F }, new Color[] { getColorMouseOver(), getColorMouseOver() }));
             graphics2d.fill(subtractStroke(graphics2d, shape));
         }
 
         restoreGraphics2D(graphics2d);
+    }
+
+    private Color getColorMouseOver() {
+        // no synth because we are in the EDT anyway
+        if (colorMouseOver != null) return colorMouseOver;
+
+        colorMouseOver = LAFOptions.getInstance().getColorForScrollbarsMouseOverState();
+        return colorMouseOver;
+    }
+
+    private Color getColor() {
+        // no synth because we are in the EDT anyway
+        if (color != null) return color;
+
+        color = LAFOptions.getInstance().getColorForScrollbarsNormalState();
+
+        return color;
     }
 }

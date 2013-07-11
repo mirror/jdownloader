@@ -21,7 +21,6 @@ import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -31,6 +30,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.AggregatedCrawlerNumbers;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.overviewpanel.DataEntry;
@@ -56,7 +56,7 @@ public class LinkgrabberOverview extends MigPanel implements ActionListener, Hie
         super("ins 0", "[][grow,fill][]", "[grow,fill]");
         this.table = table;
 
-        LAFOptions.applyPanelBackground(this);
+        LAFOptions.getInstance().applyPanelBackground(this);
         MigPanel info = new MigPanel("ins 2 0 0 0", "[grow]10[grow]", "[grow,fill]2[grow,fill]");
         info.setOpaque(false);
         GUIEventSender.getInstance().addListener(this, true);

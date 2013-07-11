@@ -12,8 +12,8 @@ import javax.swing.JSeparator;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.laf.LookAndFeelController;
 
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
@@ -63,7 +63,7 @@ public class RemoveOptionsAction extends AbstractAction {
         popup.add(new RemoveIncompleteArchives(new SelectionInfo<CrawledPackage, CrawledLink>(null, new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes()), null, null, e, table)));
         popup.add(new JSeparator());
         popup.add(new ResetPopupAction(null));
-        int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();
         // pref.width = positionComp.getWidth() + ((Component)

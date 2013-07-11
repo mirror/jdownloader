@@ -33,7 +33,6 @@ import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
-import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.parser.html.HTMLParser;
 
@@ -68,6 +67,7 @@ import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.images.NewTheme;
@@ -154,7 +154,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             }
         });
         errorLabel = new JLabel();
-        errorLabel.setForeground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForErrorForeground()));
+        errorLabel.setForeground((LAFOptions.getInstance().getColorForErrorForeground()));
         errorLabel.setHorizontalAlignment(SwingConstants.RIGHT);
         ret.add(errorLabel, "alignx right");
         ret.add(this.okButton, "alignx right,sizegroup confirms,growx,pushx");
@@ -504,7 +504,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     okButton.setEnabled(false);
                     destination.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
                     confirmOptions.setEnabled(false);
-                    destination.setForeground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForErrorForeground()));
+                    destination.setForeground((LAFOptions.getInstance().getColorForErrorForeground()));
                 } else {
                     destination.setToolTipText(null);
                     destination.setForeground(null);

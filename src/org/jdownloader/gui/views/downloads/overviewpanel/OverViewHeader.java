@@ -14,7 +14,6 @@ import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
-import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.MigPanel;
@@ -23,6 +22,7 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.components.CheckboxMenuItem;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -39,7 +39,7 @@ public class OverViewHeader extends MigPanel {
         // setOpaque(true);
 
         JLabel lbl = SwingUtils.toBold(new JLabel(_GUI._.OverViewHeader_OverViewHeader_()));
-        LookAndFeelController.getInstance().getLAFOptions().applyDownloadOverviewHeaderColor(lbl);
+        LAFOptions.getInstance().applyHeaderColorBackground(lbl);
         add(new JLabel(NewTheme.I().getIcon("download", 16)), "gapleft 1");
         add(lbl, "height 17!");
 
@@ -66,7 +66,7 @@ public class OverViewHeader extends MigPanel {
                 pu.add(new JSeparator(JSeparator.HORIZONTAL));
                 pu.add(new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_quicksettings(), CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE));
 
-                int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
 
                 Dimension pref = pu.getPreferredSize();
                 // pref.width = positionComp.getWidth() + ((Component)
@@ -81,9 +81,9 @@ public class OverViewHeader extends MigPanel {
         add(Box.createHorizontalGlue());
         setOpaque(true);
         SwingUtils.setOpaque(lbl, false);
-        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderLine())));
+        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, (LAFOptions.getInstance().getColorForPanelHeaderLine())));
 
-        setBackground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderBackground()));
+        setBackground((LAFOptions.getInstance().getColorForPanelHeaderBackground()));
         bt = new JButton(NewTheme.I().getIcon("close", -1)) {
 
             public void setBounds(int x, int y, int width, int height) {

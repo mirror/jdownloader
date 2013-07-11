@@ -111,6 +111,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
                 // Error-No Credits
                 String captchaID = ret.substring(3);
                 data = null;
+
                 int count9kw = 5;
                 Thread.sleep(5000);
                 while (true) {

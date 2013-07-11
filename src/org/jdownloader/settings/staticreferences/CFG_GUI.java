@@ -45,14 +45,14 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              PACKAGES_BACKGROUND_HIGHLIGHT_ENABLED                = SH.getKeyHandler("PackagesBackgroundHighlightEnabled", BooleanKeyHandler.class);
     // false
     /**
-     * Enable/disable Enable/disable Clipboard monitoring
-     **/
-    public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                                  = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
-    // false
-    /**
      * If true, java will try to use D3D for graphics
      **/
     public static final BooleanKeyHandler                              USE_D3D                                              = SH.getKeyHandler("UseD3D", BooleanKeyHandler.class);
+    // false
+    /**
+     * Enable/disable Enable/disable Clipboard monitoring
+     **/
+    public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                                  = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
     // false
     /**
      * Use horizontal Scrollbars in Linkgrabber
@@ -81,12 +81,10 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              DOWNLOAD_PANEL_OVERVIEW_VISIBLE                      = SH.getKeyHandler("DownloadPanelOverviewVisible", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              BALLOON_NOTIFICATION_ENABLED                         = SH.getKeyHandler("BalloonNotificationEnabled", BooleanKeyHandler.class);
-    // false
-    public static final BooleanKeyHandler                              CONFIG_VIEW_VISIBLE                                  = SH.getKeyHandler("ConfigViewVisible", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE             = SH.getKeyHandler("OverviewPanelVisibleOnlyInfoVisible", BooleanKeyHandler.class);
-    // null
-    public static final StringKeyHandler                               LOOK_AND_FEEL                                        = SH.getKeyHandler("LookAndFeel", StringKeyHandler.class);
+    // false
+    public static final BooleanKeyHandler                              CONFIG_VIEW_VISIBLE                                  = SH.getKeyHandler("ConfigViewVisible", BooleanKeyHandler.class);
     // SKIP_FILE
     public static final EnumKeyHandler                                 LAST_IF_FILE_EXISTS                                  = SH.getKeyHandler("LastIfFileExists", EnumKeyHandler.class);
     // 100
@@ -98,6 +96,8 @@ public class CFG_GUI {
     public static final EnumKeyHandler                                 SELECTED_DOWNLOAD_SEARCH_CATEGORY                    = SH.getKeyHandler("SelectedDownloadSearchCategory", EnumKeyHandler.class);
     // false
     public static final BooleanKeyHandler                              PASSWORD_PROTECTION_ENABLED                          = SH.getKeyHandler("PasswordProtectionEnabled", BooleanKeyHandler.class);
+    // DEFAULT
+    public static final EnumKeyHandler                                 LOOK_AND_FEEL_THEME                                  = SH.getKeyHandler("LookAndFeelTheme", EnumKeyHandler.class);
     // false
     /**
      * Set to true of you want jd to remember the latest selected download view
@@ -138,6 +138,11 @@ public class CFG_GUI {
      * The row that is 'touched' by the mouse cursor gets a darker shadow
      **/
     public static final BooleanKeyHandler                              TABLE_MOUSE_OVER_HIGHLIGHT_ENABLED                   = SH.getKeyHandler("TableMouseOverHighlightEnabled", BooleanKeyHandler.class);
+    // 0
+    /**
+     * by default, table row's height dynamicly adapts to the fontsize. Set a value>0 to set your own custom row height.
+     **/
+    public static final IntegerKeyHandler                              CUSTOM_TABLE_ROW_HEIGHT                              = SH.getKeyHandler("CustomTableRowHeight", IntegerKeyHandler.class);
     // ADD_ALL_LINKS_AND_START_DOWNLOADS
     /**
      * Choose what should happen when you click on the [Start Downloads] Button when you are in the Linkgrabber Tab
@@ -145,11 +150,6 @@ public class CFG_GUI {
     public static final EnumKeyHandler                                 START_BUTTON_ACTION_IN_LINKGRABBER_CONTEXT           = SH.getKeyHandler("StartButtonActionInLinkgrabberContext", EnumKeyHandler.class);
     // 2000
     public static final IntegerKeyHandler                              TOOLTIP_DELAY                                        = SH.getKeyHandler("TooltipDelay", IntegerKeyHandler.class);
-    // 0
-    /**
-     * by default, table row's height dynamicly adapts to the fontsize. Set a value>0 to set your own custom row height.
-     **/
-    public static final IntegerKeyHandler                              CUSTOM_TABLE_ROW_HEIGHT                              = SH.getKeyHandler("CustomTableRowHeight", IntegerKeyHandler.class);
     // MAINFRAME_IS_MAXIMIZED
     /**
      * Action that will be performed when the Linkgrabber adds new links.
@@ -208,13 +208,13 @@ public class CFG_GUI {
      * Use horizontal Scrollbars in DownloadTable
      **/
     public static final BooleanKeyHandler                              HORIZONTAL_SCROLLBARS_IN_DOWNLOAD_TABLE_ENABLED      = SH.getKeyHandler("HorizontalScrollbarsInDownloadTableEnabled", BooleanKeyHandler.class);
+    // null
+    public static final ObjectKeyHandler                               LAST_FRAME_STATUS                                    = SH.getKeyHandler("LastFrameStatus", ObjectKeyHandler.class);
     // true
     /**
      * Highlight Table in Downloadview if table is filtered
      **/
     public static final BooleanKeyHandler                              FILTER_HIGHLIGHT_ENABLED                             = SH.getKeyHandler("FilterHighlightEnabled", BooleanKeyHandler.class);
-    // null
-    public static final ObjectKeyHandler                               LAST_FRAME_STATUS                                    = SH.getKeyHandler("LastFrameStatus", ObjectKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_SMART_INFO_VISIBLE                    = SH.getKeyHandler("OverviewPanelSmartInfoVisible", BooleanKeyHandler.class);
     // true
@@ -237,5 +237,4 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              TOOLTIP_ENABLED                                      = SH.getKeyHandler("TooltipEnabled", BooleanKeyHandler.class);
     // TOTAL_PROGRESS
     public static final EnumKeyHandler                                 MAC_DOCK_PROGRESS_DISPLAY                            = SH.getKeyHandler("MacDockProgressDisplay", EnumKeyHandler.class);
-
 }

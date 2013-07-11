@@ -60,7 +60,7 @@ public class CustomFilterHeader extends MigPanel implements HeaderInterface {
         lbl = SwingUtils.toBold(new JLabel(_GUI._.LinkGrabberSidebar_LinkGrabberSidebar_exceptionfilter()));
         counter = SwingUtils.toBold(new JLabel(""));
         // lbl.setForeground(new
-        // Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor()));
+        // Color(LAFOptions.getInstance().getPanelHeaderLineColor()));
         add(counter);
         add(lbl);
         keyHandler = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_EXCEPTIONS_QUICKFILTER_ENABLED;

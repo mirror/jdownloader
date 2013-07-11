@@ -7,7 +7,6 @@ import java.awt.FontMetrics;
 
 import javax.swing.JLabel;
 
-import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.components.tooltips.PanelToolTip;
@@ -15,6 +14,7 @@ import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.translate.T;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 
 public class ExtractorToolTip extends PanelToolTip {
     /**
@@ -31,11 +31,11 @@ public class ExtractorToolTip extends PanelToolTip {
 
         super(new TooltipPanel("ins 0,wrap 2", "[grow,fill]", "[grow,fill]"));
         this.extractionExtension = extractionExtension;
-        color = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTooltipForeground());
+        color = (LAFOptions.getInstance().getColorForTooltipForeground());
         empty = new JLabel(T._.tooltip_empty());
         empty.setForeground(color);
         panel.add(empty, "hidemode 3");
-        table = new ExtractionJobTable(model = new ExtractionJobTableModel(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTooltipForeground())));
+        table = new ExtractionJobTable(model = new ExtractionJobTableModel((LAFOptions.getInstance().getColorForTooltipForeground())));
 
         panel.add(table, "hidemode 3");
     }

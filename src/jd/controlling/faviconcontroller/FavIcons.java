@@ -31,8 +31,6 @@ import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 import jd.captcha.utils.GifDecoder;
-import jd.gui.swing.laf.LAFOptions;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import net.sf.image4j.codec.ico.ICODecoder;
@@ -45,6 +43,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -221,7 +220,7 @@ public class FavIcons {
         Color bg = Color.WHITE;
         LOGGER.info("Create Favicon: " + host);
 
-        bg = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderBackground());
+        bg = LAFOptions.getInstance().getColorForPanelHeaderBackground();
 
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice gd = ge.getDefaultScreenDevice();

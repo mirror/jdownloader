@@ -9,10 +9,10 @@ import javax.swing.JButton;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
-import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.images.NewTheme;
 
 public class ConfirmUpdateDialog extends org.appwork.utils.swing.dialog.ConfirmDialog {
@@ -71,7 +71,7 @@ public class ConfirmUpdateDialog extends org.appwork.utils.swing.dialog.ConfirmD
 
         popup.add(mi);
 
-        int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();
         pref.height = 24 + insets[0] + insets[2];

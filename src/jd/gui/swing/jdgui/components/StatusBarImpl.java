@@ -43,7 +43,6 @@ import jd.controlling.linkcrawler.LinkCrawlerEvent;
 import jd.controlling.linkcrawler.LinkCrawlerListener;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
@@ -57,6 +56,7 @@ import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.DownloadLinkWalker;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -88,7 +88,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
     private void initGUI() {
 
-        if (LookAndFeelController.getInstance().getLAFOptions().isPaintStatusbarTopBorder()) {
+        if (LAFOptions.getInstance().isPaintStatusbarTopBorder()) {
             setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
         } else {
             setBorder(BorderFactory.createMatteBorder(0, 0, 0, 0, getBackground().darker()));

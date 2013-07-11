@@ -8,7 +8,6 @@ import jd.controlling.linkchecker.LinkCheckerConfig;
 import jd.controlling.linkcollector.LinkCollectorConfig;
 import jd.controlling.linkcrawler.LinkCrawlerConfig;
 import jd.controlling.reconnect.ReconnectConfig;
-import jd.gui.swing.laf.LAFSettings;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
@@ -16,13 +15,16 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.logging2.LogConfig;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerSettings;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.shortcuts.ShortcutSettings;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -41,8 +43,10 @@ public class AdvancedConfigManager {
 
     private java.util.List<AdvancedConfigEntry> configInterfaces;
     private AdvancedConfigEventSender           eventSender;
+    private LogSource                           logger;
 
     private AdvancedConfigManager() {
+        logger = LogController.getInstance().getLogger(AdvancedConfigManager.class.getName());
         configInterfaces = new ArrayList<AdvancedConfigEntry>();
         eventSender = new AdvancedConfigEventSender();
         this.register(JsonConfig.create(GeneralSettings.class));
@@ -68,8 +72,12 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(SoundSettings.class));
         register(JsonConfig.create(CaptchaSettings.class));
         register(JsonConfig.create(SilentModeSettings.class));
-        register(JsonConfig.create(LAFSettings.class));
-
+        try {
+            register(LAFOptions.getInstance().getCfg());
+        } catch (Exception e) {
+            // we need to take care that LookAndFeelController has been initialized before we init the advancedconfigManager!
+            logger.log(e);
+        }
     }
 
     public AdvancedConfigEventSender getEventSender() {
@@ -77,7 +85,7 @@ public class AdvancedConfigManager {
     }
 
     public void register(ConfigInterface cf) {
-
+        logger.info("Register " + cf._getStorageHandler().getConfigInterface());
         HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
 
         for (KeyHandler m : cf._getStorageHandler().getMap().values()) {

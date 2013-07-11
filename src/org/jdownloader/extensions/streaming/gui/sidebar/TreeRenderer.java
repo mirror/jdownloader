@@ -27,12 +27,12 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 
-import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ColorUtils;
 import org.jdownloader.extensions.streaming.gui.categories.RootCategory;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 
 public class TreeRenderer extends JPanel implements ListCellRenderer {
 
@@ -70,7 +70,7 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
         f = lbl.getForeground();
         selectedBackground = ColorUtils.getAlphaInstance(f, 60);
 
-        Color c = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderBackground());
+        Color c = (LAFOptions.getInstance().getColorForPanelHeaderBackground());
         if (c != null) {
             selectedBackground = ColorUtils.getAlphaInstance(c, 230);
         }

@@ -9,8 +9,8 @@ import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
-import jd.gui.swing.laf.LookAndFeelController;
 
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -63,7 +63,7 @@ public class ConfirmOptionsAction extends AbstractAction {
         // table.getModel().getSelectedObjects())));
         // selected.add(new JMenuItem(new ConfirmAction(true,
         // table.getModel().getSelectedObjects())));
-        int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
         JComponent comp = (JComponent) e.getSource();
 
         popup.show(comp, -popup.getPreferredSize().width + comp.getWidth() + insets[3], -popup.getPreferredSize().height + insets[2]);

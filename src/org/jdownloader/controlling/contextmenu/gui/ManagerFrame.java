@@ -14,7 +14,6 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.TreePath;
 
-import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -37,6 +36,7 @@ import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuStructure;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.images.NewTheme;
@@ -309,14 +309,14 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
         final MigPanel panel = new MigPanel("ins 2,wrap 2", "[grow,fill][]", "[grow,fill][]");
         panel.setOpaque(false);
 
-        LAFOptions.applyPanelBackground((JComponent) getDialog().getContentPane());
-        LAFOptions.applyPanelBackground(panel);
+        LAFOptions.getInstance().applyPanelBackground((JComponent) getDialog().getContentPane());
+        LAFOptions.getInstance().applyPanelBackground(panel);
 
         model = new ManagerTreeModel(manager.getMenuData());
         tree = new MenuManagerTree(this);
 
         tree.getSelectionModel().addTreeSelectionListener(this);
-        LAFOptions.applyPanelBackground(tree);
+        LAFOptions.getInstance().applyPanelBackground(tree);
 
         // tree.set
         // tree.setShowsRootHandles(false);
@@ -334,7 +334,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
         sp.setColumnHeaderView(new TreeHeader());
         panel.add(sp);
         infoPanel = new InfoPanel(this);
-        LAFOptions.applyPanelBackground(infoPanel);
+        LAFOptions.getInstance().applyPanelBackground(infoPanel);
         sp = new HeaderScrollPane(infoPanel) {
             public Dimension getPreferredSize() {
                 Dimension ret = super.getPreferredSize();
@@ -345,7 +345,7 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
         sp.setColumnHeaderView(new OptionsPaneHeader());
         panel.add(sp);
 
-        LAFOptions.applyPanelBackground(sp);
+        LAFOptions.getInstance().applyPanelBackground(sp);
 
         if (tree.getRowCount() > 0) tree.setSelectionRow(0);
         return panel;

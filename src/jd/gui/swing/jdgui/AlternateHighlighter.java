@@ -16,6 +16,10 @@ public class AlternateHighlighter<T> extends ExtComponentRowHighlighter<T> {
         return 10;
     }
 
+    protected Color getBackground(final Color current) {
+        return super.getBackground();
+    }
+
     @Override
     public boolean accept(ExtColumn<T> column, T value, boolean selected, boolean focus, int row) {
         return row % 2 != 0;

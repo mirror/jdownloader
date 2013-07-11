@@ -11,7 +11,6 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.laf.LAFOptions;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.ValidationException;
@@ -20,6 +19,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverview;
 import org.jdownloader.gui.views.downloads.overviewpanel.OverViewHeader;
@@ -107,7 +107,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             overView = new DownloadOverview(table);
             overViewScrollBar = new OverviewHeaderScrollPane(overView);
 
-            LAFOptions.applyPanelBackground(overViewScrollBar);
+            LAFOptions.getInstance().applyPanelBackground(overViewScrollBar);
 
             // overViewScrollBar.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
             // overViewScrollBar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -146,7 +146,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     //
     // // ScrollPaneUI udi = sp.getUI();
     // int c =
-    // LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
+    // LAFOptions.getInstance().getPanelBackgroundColor();
     // // LayoutManager lm = sp.getLayout();
     //
     // if (c >= 0) {

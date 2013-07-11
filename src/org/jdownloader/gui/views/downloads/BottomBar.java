@@ -14,7 +14,6 @@ import javax.swing.SwingUtilities;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -25,6 +24,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
@@ -262,7 +262,7 @@ public class BottomBar extends MigPanel {
                 //
 
                 if (!popup.isVisible()) {
-                    int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                    int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
                     popup.show((Component) e.getSource(), -popup.getPreferredSize().width + insets[3] + ((Component) e.getSource()).getWidth() + 1, -popup.getPreferredSize().height + insets[2]);
                 } else {
                     popup.superSetVisible(false);

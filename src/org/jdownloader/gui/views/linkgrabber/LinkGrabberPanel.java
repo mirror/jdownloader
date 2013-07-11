@@ -26,7 +26,6 @@ import jd.gui.UIConstants;
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.laf.LAFOptions;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.ValidationException;
@@ -38,6 +37,7 @@ import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
@@ -361,7 +361,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             overView = new LinkgrabberOverview(table);
             overViewScrollBar = new OverviewHeaderScrollPane(overView);
 
-            LAFOptions.applyPanelBackground(overViewScrollBar);
+            LAFOptions.getInstance().applyPanelBackground(overViewScrollBar);
 
             // overViewScrollBar.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
             // overViewScrollBar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -456,7 +456,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         // ScrollPaneUI udi = sp.getUI();
 
-        LAFOptions.applyPanelBackground(sidebarScrollPane);
+        LAFOptions.getInstance().applyPanelBackground(sidebarScrollPane);
         sidebarScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         sidebarScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         sidebarScrollPane.setColumnHeaderView(new LinkGrabberSideBarHeader(table));

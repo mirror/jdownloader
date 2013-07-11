@@ -15,7 +15,6 @@ import javax.swing.JMenuItem;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 
-import jd.gui.swing.laf.LAFOptions;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;
@@ -31,6 +30,7 @@ import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.HexColorString;
@@ -124,6 +124,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
             public Color getContrastColor(Color color) {
                 double y = (299 * color.getRed() + 587 * color.getGreen() + 114 * color.getBlue()) / 1000;
+                if (color.getAlpha() < 128) return Color.BLACK;
                 return y >= 128 ? Color.black : Color.white;
             }
 
@@ -165,7 +166,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
             @Override
             public String getStringValue(AdvancedConfigEntry value) {
-                if (value.getValue() == null || LAFOptions.createColor(value.getValue().toString()) == null) { return null; }
+                if (value.getValue() == null || (value.getValue().toString()) == null) { return null; }
                 return value.getValue() + "";
             }
 

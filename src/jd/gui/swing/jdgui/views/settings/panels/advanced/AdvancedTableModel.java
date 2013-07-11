@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.advanced;
 
 import java.util.Iterator;
+import java.util.Locale;
 
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
@@ -26,8 +27,10 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> {
             for (Iterator<AdvancedConfigEntry> it = newtableData.iterator(); it.hasNext();) {
                 next = it.next();
                 if (!next.getKey().toLowerCase().contains(ltext)) {
-                    if (next.getDescription() == null || !next.getDescription().toLowerCase().contains(ltext)) {
-                        it.remove();
+                    if (next.getDescription() == null || !next.getDescription().toLowerCase(Locale.ENGLISH).contains(ltext)) {
+                        if (!createKeyText(next).toLowerCase(Locale.ENGLISH).contains(ltext)) {
+                            it.remove();
+                        }
                     }
                 }
             }
@@ -47,7 +50,7 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> {
 
             @Override
             public String getStringValue(AdvancedConfigEntry value) {
-                return value.getKey();
+                return createKeyText(value);
             }
 
             @Override
@@ -120,6 +123,21 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> {
     public void refresh(final String filterText) {
         this.text = filterText;
         _fireTableStructureChanged(AdvancedConfigManager.getInstance().list(), true);
+    }
+
+    protected String createKeyText(AdvancedConfigEntry value) {
+        String getterName = value.getKeyHandler().getGetter().getMethod().getName();
+        if (getterName.startsWith("is")) {
+            getterName = getterName.substring(2);
+        } else if (getterName.startsWith("get")) {
+            getterName = getterName.substring(3);
+        }
+        getterName = getterName.replaceAll("([a-z])([A-Z])", "$1 $2");
+        if (getterName.endsWith(" Enabled")) {
+            getterName = getterName.substring(0, getterName.length() - 8);
+        }
+
+        return value.getConfigInterface()._getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + ": " + getterName;
     }
 
 }

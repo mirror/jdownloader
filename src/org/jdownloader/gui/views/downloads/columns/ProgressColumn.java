@@ -16,7 +16,6 @@ import javax.swing.Timer;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.ProxyBlock;
 import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -31,6 +30,7 @@ import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.appwork.swing.exttable.columns.ExtProgressColumn;
 import org.appwork.utils.swing.SwingUtils;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 
 public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
@@ -66,15 +66,15 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
     public ExtTooltip createToolTip(final Point position, final AbstractNode obj) {
         TooltipPanel panel = new TooltipPanel("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]");
         final MultiProgressBar mpb = new MultiProgressBar(1000);
-        mpb.setForeground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTooltipForeground()));
+        mpb.setForeground((LAFOptions.getInstance().getColorForTooltipForeground()));
 
         updateRanges(obj, mpb);
 
         JLabel lbl = new JLabel(_GUI._.ProgressColumn_createToolTip_object_());
-        lbl.setForeground(LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTooltipForeground()));
+        lbl.setForeground((LAFOptions.getInstance().getColorForTooltipForeground()));
         SwingUtils.toBold(lbl);
         panel.add(lbl);
-        mpb.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForTooltipForeground())));
+        mpb.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, (LAFOptions.getInstance().getColorForTooltipForeground())));
         panel.add(mpb, "width 300!,height 24!");
 
         return new PanelToolTip(panel) {

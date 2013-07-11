@@ -12,8 +12,8 @@ import javax.swing.JPopupMenu;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.gui.swing.laf.LookAndFeelController;
 
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
@@ -51,7 +51,7 @@ public class ConfirmOptionsAction extends AbstractAction {
         ConfirmAutoAction action = new ConfirmAutoAction(selection);
         action.setAutoStart(AutoStartOptions.ENABLED);
         selected.add(new JMenuItem(action.setAccelerator(null)));
-        int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
         popup.add(all);
         popup.add(selected);
         Dimension pref = popup.getPreferredSize();

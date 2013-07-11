@@ -27,23 +27,19 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.synthetica.SyntheticaHelper;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.LAFManagerInterface;
 import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-import org.jdownloader.settings.HexColorString;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.LookAndFeelType;
 
 public class LookAndFeelController implements LAFManagerInterface {
     private static final String                DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL = JDDefaultLookAndFeel.class.getName();
@@ -58,7 +54,6 @@ public class LookAndFeelController implements LAFManagerInterface {
         return LookAndFeelController.INSTANCE;
     }
 
-    private volatile LAFOptions            lafOptions;
     private GraphicalUserInterfaceSettings config;
     private String                         laf = null;
     private LogSource                      logger;
@@ -109,16 +104,12 @@ public class LookAndFeelController implements LAFManagerInterface {
             laf = DE_JAVASOFT_PLAF_SYNTHETICA_SYNTHETICA_SIMPLE2D_LOOK_AND_FEEL;
             LogController.GL.info("Use Look & Feel: " + laf);
             try {
-                if (!StringUtils.isEmpty(config.getLookAndFeel())) {
-                    logger.info("Try Custom Look And Feel: " + config.getLookAndFeel());
-                    Class<?> cl = Class.forName(config.getLookAndFeel());
-                    logger.info("Class: " + cl);
-                    if (LookAndFeel.class.isAssignableFrom(cl)) {
-                        logger.info("Custom LAF is a LookAndFeelClass");
-                        laf = config.getLookAndFeel();
-
-                    }
+                LookAndFeelType theme = config.getLookAndFeelTheme();
+                if (theme == null || !theme.isAvailable()) {
+                    theme = LookAndFeelType.DEFAULT;
                 }
+
+                laf = theme.getClazz();
 
             } catch (Throwable e) {
                 logger.log(e);
@@ -177,11 +168,14 @@ public class LookAndFeelController implements LAFManagerInterface {
                 }
 
                 SyntheticaHelper.init(laf, liz);
-                ExtTooltip.createConfig(ExtTooltip.DEFAULT).setForegroundColor(LAFOptions.createColor(getLAFOptions().getColorForTooltipForeground()).getRGB());
+                LAFOptions.init(laf);
+                ExtTooltip.createConfig(ExtTooltip.DEFAULT).setForegroundColor((LAFOptions.getInstance().getColorForTooltipForeground()).getRGB());
 
             } else {
                 /* init for all other laf */
+
                 UIManager.setLookAndFeel(laf);
+                LAFOptions.init(laf);
             }
 
         } catch (Throwable e) {
@@ -193,7 +187,9 @@ public class LookAndFeelController implements LAFManagerInterface {
                     LogController.CL().info("Don't set System look and feel " + currentLaf + " is already set");
                     return;
                 }
+
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                LAFOptions.init(UIManager.getSystemLookAndFeelClassName());
             } catch (ClassNotFoundException e1) {
                 e1.printStackTrace();
             } catch (InstantiationException e1) {
@@ -206,51 +202,6 @@ public class LookAndFeelController implements LAFManagerInterface {
         } finally {
             LogController.GL.info("LAF init: " + (System.currentTimeMillis() - t));
         }
-    }
-
-    public LAFOptions getLAFOptions() {
-        if (lafOptions != null) return lafOptions;
-        synchronized (this) {
-            if (lafOptions != null) return lafOptions;
-            String str = null;
-            try {
-                if (laf != null) {
-                    int i = laf.lastIndexOf(".");
-                    String path = "laf/" + (i >= 0 ? laf.substring(i + 1) : laf) + "/options.json";
-                    str = NewTheme.I().getText(path);
-                }
-            } catch (final Throwable e) {
-                LogController.CL().log(e);
-            }
-            if (str != null) {
-                lafOptions = JSonStorage.restoreFromString(str, new TypeRef<LAFOptions>() {
-                }, new LAFOptions());
-            } else {
-                LogController.GL.info("Not LAF Options found: " + laf + ".json");
-                lafOptions = new LAFOptions();
-            }
-            String c = null;
-            LAFSettings cfg = JsonConfig.create(LAFSettings.class);
-            for (KeyHandler m : cfg._getStorageHandler().getMap().values()) {
-                try {
-                    if (m.getAnnotation(HexColorString.class) != null) {
-                        Object v = m.getValue();
-
-                        if (v != null && LAFOptions.createColor(v.toString()) != null) {
-
-                            logger.info("Use Custom Color for " + m.getKey() + ": " + v);
-                            m.getSetter().getMethod().invoke(lafOptions, v);
-
-                        }
-                    }
-                } catch (Exception e) {
-                    logger.log(e);
-                }
-            }
-
-        }
-
-        return lafOptions;
     }
 
     @Override

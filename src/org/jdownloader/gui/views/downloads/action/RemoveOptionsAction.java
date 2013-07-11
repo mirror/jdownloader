@@ -8,11 +8,11 @@ import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
@@ -59,7 +59,7 @@ public class RemoveOptionsAction extends AppAction {
         // popup.add(new RemoveDisabledAction());
         // popup.add(new RemoveOfflineAction());
         // popup.add(new RemoveFailedAction());
-        int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();
         // pref.width = positionComp.getWidth() + ((Component)

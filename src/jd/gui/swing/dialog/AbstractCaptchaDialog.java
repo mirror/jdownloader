@@ -46,8 +46,6 @@ import javax.swing.Timer;
 
 import jd.captcha.utils.GifDecoder;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.laf.LAFOptions;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -72,6 +70,7 @@ import org.appwork.utils.swing.dialog.LocationStorage;
 import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.images.NewTheme;
@@ -445,7 +444,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             popup.add(mi);
         }
 
-        int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+        int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();
         pref.height = popup.getComponentCount() * 24 + insets[0] + insets[2];
@@ -688,13 +687,13 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
     @Override
     public JComponent layoutDialogContent() {
         // getDialog().setModalityType(ModalityType.MODELESS);
-        final LAFOptions lafOptions = LookAndFeelController.getInstance().getLAFOptions();
+        final LAFOptions lafOptions = LAFOptions.getInstance();
         MigPanel field = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill]");
         // field.setOpaque(false);
         getDialog().setMinimumSize(new Dimension(0, 0));
         // getDialog().setIconImage(hosterInfo.getFavIcon().getImage());
         final JPanel panel = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[grow,fill]10[]"));
-        LAFOptions.applyBackground(lafOptions.getColorForPanelBackground(), field);
+        LAFOptions.getInstance().applyBackground(lafOptions.getColorForPanelBackground(), field);
 
         MigPanel headerPanel = null;
         if (type == DialogType.HOSTER) {
@@ -702,9 +701,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             // setBorder(new JTextField().getBorder());
 
             headerPanel = new MigPanel("ins 0 0 1 0", "[grow,fill]", "[]");
-            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderLine())));
+            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForPanelHeaderLine()));
 
-            LAFOptions.applyBackground(lafOptions.getColorForPanelHeaderBackground(), headerPanel);
+            LAFOptions.getInstance().applyBackground(lafOptions.getColorForPanelHeaderBackground(), headerPanel);
 
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);
@@ -769,9 +768,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
             headerPanel = new MigPanel("ins 0 0 1 0", "[grow,fill]", "[grow,fill]");
 
-            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelHeaderLine())));
+            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, (LAFOptions.getInstance().getColorForPanelHeaderLine())));
 
-            LAFOptions.applyBackground(lafOptions.getColorForPanelHeaderBackground(), headerPanel);
+            LAFOptions.getInstance().applyBackground(lafOptions.getColorForPanelHeaderBackground(), headerPanel);
 
             headerPanel.setOpaque(true);
 
@@ -835,7 +834,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
              * 
              */
             private static final long serialVersionUID = 1L;
-            private Color             col              = LAFOptions.createColor(lafOptions.getColorForPanelBackground());
+            private Color             col              = (lafOptions.getColorForPanelBackground());
 
             protected void paintChildren(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;

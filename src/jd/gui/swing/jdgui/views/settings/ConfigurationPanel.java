@@ -12,7 +12,6 @@ import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
-import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
@@ -20,6 +19,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionConfigPanel;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class ConfigurationPanel extends SwitchPanel implements ListSelectionListener {
@@ -45,7 +45,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
         cfg = JsonConfig.create(GraphicalUserInterfaceSettings.class);
         // add(viewport);
         sidebar.addListener(this);
-        Color c = LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForPanelBackground());
+        Color c = (LAFOptions.getInstance().getColorForPanelBackground());
 
         if (c != null) {
             setBackground(c.brighter());

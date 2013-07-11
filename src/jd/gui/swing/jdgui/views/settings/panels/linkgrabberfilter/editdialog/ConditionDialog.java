@@ -37,7 +37,6 @@ import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.Onl
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatus;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatusMatchtype;
-import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.copycutpaste.CopyAction;
@@ -69,6 +68,7 @@ import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.controlling.filter.RegexFilter;
 import org.jdownloader.controlling.filter.RegexFilter.MatchType;
 import org.jdownloader.controlling.filter.RuleWrapper;
+import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -813,7 +813,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             } catch (Throwable e) {
                 ok = false;
-                txtFilename.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForErrorForeground())));
+                txtFilename.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, (LAFOptions.getInstance().getColorForErrorForeground())));
             }
         }
 
@@ -823,7 +823,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             } catch (Throwable e) {
                 ok = false;
-                txtCustumMime.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForErrorForeground())));
+                txtCustumMime.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, (LAFOptions.getInstance().getColorForErrorForeground())));
             }
         }
         if (cbHoster.isSelected()) {
@@ -832,7 +832,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             } catch (Throwable e) {
                 ok = false;
-                txtHoster.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForErrorForeground())));
+                txtHoster.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, (LAFOptions.getInstance().getColorForErrorForeground())));
             }
         }
         if (cbSource.isSelected()) {
@@ -841,7 +841,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             } catch (Throwable e) {
                 ok = false;
-                txtSource.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, LAFOptions.createColor(LookAndFeelController.getInstance().getLAFOptions().getColorForErrorForeground())));
+                txtSource.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, (LAFOptions.getInstance().getColorForErrorForeground())));
             }
         }
         if (!ok) {

@@ -54,7 +54,7 @@ public class QuickSettingsHeader extends MigPanel implements GenericConfigEventL
         lbl = SwingUtils.toBold(new JLabel(_GUI._.LinkGrabberSidebar_LinkGrabberSidebar_settings()));
 
         // lbl.setForeground(new
-        // Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor()));
+        // Color(LAFOptions.getInstance().getPanelHeaderLineColor()));
         add(Box.createGlue());
         add(lbl);
 
