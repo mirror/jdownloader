@@ -965,6 +965,10 @@ public class Uploadedto extends PluginForHost {
         String id = getID(downloadLink);
         br.postPage(getProtocol() + "api.uploaded.net/api/download/jdownloader", "access_token=" + token + "&auth=" + id);
         String url = br.getRegex("link\":\\s*?\"(http.*?)\"").getMatch(0);
+        if (url == null) {
+            url = br.getRegex("link\":\\s*?\"(\\\\/dl.*?)\"").getMatch(0);
+            if (url != null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download currently not possible", 20 * 60 * 1000l); }
+        }
         String sha1 = br.getRegex("sha1\":\\s*?\"([0-9a-fA-F]+)\"").getMatch(0);
         String name = br.getRegex("name\":\\s*?\"(.*?)\"").getMatch(0);
         String size = br.getRegex("size\":\\s*?\"?(\\d+)\"").getMatch(0);
