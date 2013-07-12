@@ -1269,7 +1269,16 @@ public class TbCm extends PluginForDecrypt {
             sb.append(new StringBuilder(s.substring(4, 26)).reverse());
             sb.append(s.charAt(26));
         } else if (s.length() == 83) {
-            sb.append(s.substring(0, 81));
+            sb.append(s.charAt(6));
+            sb.append(s.substring(3, 6));
+            sb.append(s.charAt(33));
+            sb.append(s.substring(7, 24));
+            sb.append(s.charAt(0));
+            sb.append(s.substring(25, 33));
+            sb.append(s.charAt(53));
+            sb.append(s.substring(34, 53));
+            sb.append(s.charAt(24));
+            sb.append(s.substring(54));
         } else if (s.length() == 82) {
             sb.append(s.charAt(36));
             sb.append(new StringBuilder(s.substring(68, 80)).reverse());
@@ -1283,6 +1292,17 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.charAt(67));
             sb.append(new StringBuilder(s.substring(1, 33)).reverse());
             sb.append(s.charAt(34));
+        } else if (s.length() == 81) {
+            sb.append(s.charAt(6));
+            sb.append(s.substring(3, 6));
+            sb.append(s.charAt(33));
+            sb.append(s.substring(7, 24));
+            sb.append(s.charAt(0));
+            sb.append(s.substring(25, 33));
+            sb.append(s.charAt(2));
+            sb.append(s.substring(34, 53));
+            sb.append(s.charAt(24));
+            sb.append(s.substring(54, 81));
         } else {
             logger.info("Unsupported SigLength: " + s.length());
             return null;
