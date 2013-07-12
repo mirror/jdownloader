@@ -173,7 +173,7 @@ public class ImgSrcRu extends PluginForDecrypt {
         // br.getURL() is the correct upid.
         if (br.getURL().contains("/a" + uaid)) {
             String currentID = br.getRegex("<img class=(cur|big) src=('|\")?https?://.+imgsrc\\.ru/[a-z]/" + username + "/\\d+/(\\d+)").getMatch(2);
-            if (currentID == null) currentID = br.getRegex("<a id=new_big_url href='/" + username + "/(\\d+)\\.html[^>]+><img class=big").getMatch(0);
+            if (currentID == null) currentID = br.getRegex("/abuse\\.php\\?id=(\\d+)").getMatch(0);
             if (currentID != null) {
                 currentID = "/" + username + "/" + currentID + ".html";
                 if (pwd != null) currentID += "?pwd=" + pwd;
