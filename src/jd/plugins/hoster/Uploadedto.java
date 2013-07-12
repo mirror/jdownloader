@@ -555,6 +555,7 @@ public class Uploadedto extends PluginForHost {
                 if (br.containsHTML("<h2>Authentification</h2>")) {
                     logger.info("Password protected link");
                     passCode = getPassword(downloadLink);
+                    if (passCode == null || passCode.equals("")) { throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!"); }
                     br.postPage(br.getURL(), "pw=" + Encoding.urlEncode(passCode));
                     if (br.containsHTML("<h2>Authentification</h2>")) {
                         downloadLink.setProperty("pass", null);

@@ -56,11 +56,30 @@ public class Keep2ShareCc extends PluginForHost {
         return "http://keep2share.cc/page/terms.html";
     }
 
-    private static final String DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
+    private static final String    DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
+
+    private static StringContainer agent            = new StringContainer();
+
+    public static class StringContainer {
+        public String string = null;
+    }
+
+    private Browser prepBrowser(final Browser prepBr) {
+        // define custom browser headers and language settings.
+        if (agent.string == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        return prepBr;
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Sorry, an error occurred while processing your request")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -129,20 +148,8 @@ public class Keep2ShareCc extends PluginForHost {
                         if (captchaLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         final String code = getCaptchaCode("http://keep2share.cc" + captchaLink, downloadLink);
                         br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
-                        if (br.containsHTML(">The verification code is incorrect|/site/captcha.html")) {
-                            try {
-                                invalidateLastChallengeResponse();
-                            } catch (final Throwable e) {
-                            }
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        } else {
-                            try {
-                                validateLastChallengeResponse();
-                            } catch (final Throwable e) {
-                            }
-                        }
+                        if (br.containsHTML(">The verification code is incorrect|/site/captcha.html")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
                     }
-
                     /** Skippable */
                     int wait = 30;
                     final String waittime = br.getRegex("<div id=\"download\\-wait\\-timer\">[\t\n\r ]+(\\d+)[\t\n\r ]+</div>").getMatch(0);
@@ -150,6 +157,7 @@ public class Keep2ShareCc extends PluginForHost {
                     sleep(wait * 1001l, downloadLink);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.postPage(br.getURL(), "free=1&uniqueId=" + uniqueID);
+                    br.getHeaders().put("X-Requested-With", null);
                     dllink = getDllink();
                     if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -170,7 +178,6 @@ public class Keep2ShareCc extends PluginForHost {
 
     private String getDllink() throws PluginException {
         String dllink = br.getRegex("(\\'|\")(/file/url\\.html\\?file=[a-z0-9]+)(\\'|\")").getMatch(1);
-        if (dllink != null) dllink = "http://keep2share.cc" + dllink;
         return dllink;
     }
 
@@ -217,8 +224,9 @@ public class Keep2ShareCc extends PluginForHost {
                         return;
                     }
                 }
+                prepBrowser(br);
                 br.setFollowRedirects(true);
-                br.getPage("http://keep2share.cc/login.html");
+                br.getPage(MAINPAGE + "/login.html");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 String postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
                 // Handle stupid login captcha
@@ -228,7 +236,8 @@ public class Keep2ShareCc extends PluginForHost {
                     final String code = getCaptchaCode("http://keep2share.cc" + captchaLink, dummyLink);
                     postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(code);
                 }
-                br.postPage("http://keep2share.cc/login.html", postData);
+                br.postPage("/login.html", postData);
+                br.getHeaders().put("X-Requested-With", null);
                 if (br.containsHTML(">Please fill in the form with your login credentials")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -255,12 +264,19 @@ public class Keep2ShareCc extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://keep2share.cc/site/profile.html");
+        String url = br.getRegex("url\":\"(.*?)\"").getMatch(0);
+        if (url != null) {
+            br.getPage(url.replaceAll("\\\\/", "/"));
+        } else {
+            br.getPage("/");
+        }
+        br.getPage("/site/profile.html");
         // if (!br.containsHTML(">Account type:<a href=\"/premium\\.html\"")) {
         // account.setValid(false);
         // return ai;
         // }
-        final String availableTraffic = br.getRegex("Available traffic: ([^<>\"]*?)</a>").getMatch(0);
+        String availableTraffic = br.getRegex("Available traffic: ([^<>\"]*?)</a>").getMatch(0);
+        if (availableTraffic == null) availableTraffic = br.getRegex("Available traffic:[\r\n\t ]+<b><a href=\"/user/statistic\\.html\">(.*?)</a>").getMatch(0);
         if (availableTraffic != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
         } else {
@@ -292,8 +308,8 @@ public class Keep2ShareCc extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = "http://keep2share.cc" + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 1);
+        dllink = Encoding.htmlDecode(dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();

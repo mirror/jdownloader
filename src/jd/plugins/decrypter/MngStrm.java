@@ -14,7 +14,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "http://(www\\.)?mangastream\\.com/read/([a-z0-9\\-_]+/){2}\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "http://(www\\.)?(mangastream|readms)\\.com/read/([a-z0-9\\-_]+/){2}\\d+" }, flags = { 0 })
 public class MngStrm extends PluginForDecrypt {
 
     public MngStrm(PluginWrapper wrapper) {
@@ -25,7 +25,8 @@ public class MngStrm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String url = parameter.toString();
+        String url = parameter.toString().replace("readms.com/", "mangastream.com/");
+        if (!parameter.equals(url)) parameter.setCryptedUrl(url);
         br.getPage(url + "/1");
         if (br.containsHTML(">Page Not Found<")) {
             logger.info("Link offline: " + parameter);

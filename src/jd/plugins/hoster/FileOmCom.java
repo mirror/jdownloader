@@ -88,7 +88,7 @@ public class FileOmCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.5
+    // XfileShare Version 3.0.6.6
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: 4dignum
@@ -247,9 +247,9 @@ public class FileOmCom extends PluginForHost {
                             fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                             // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = cbr.getRegex("copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
+                                fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
                                 if (inValidate(fileInfo[0])) {
-                                    fileInfo[0] = cbr.getRegex("copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
                                 }
                             }
                         }
@@ -567,15 +567,27 @@ public class FileOmCom extends PluginForHost {
         if (cbr.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         /** Error handling for only-premium links */
         if (cbr.containsHTML("( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only\\.<)")) {
+            String msg = null;
+            if (account != null) {
+                msg = account.getUser() + " @ " + acctype;
+            } else {
+                msg = "Guest @ " + acctype;
+            }
             String filesizelimit = cbr.getRegex("You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
-                logger.warning("As free user you can download files up to " + filesizelimit + " only");
-                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
+                msg += " :: You can download files up to " + filesizelimit + " only.";
             } else {
-                logger.warning("Only downloadable via premium");
-                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
+                if (account != null && account.getBooleanProperty("free", false)) {
+                    msg += " :: Only downloadable via premium account.";
+                } else if (account != null && !account.getBooleanProperty("free", false)) {
+                    msg += " :: Not downloadable via your account type.";
+                } else {
+                    msg += " :: Only downloadable via premium or registered.";
+                }
             }
+            logger.warning(msg);
+            throw new PluginException(LinkStatus.ERROR_FATAL, msg);
         }
         if (cbr.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
@@ -852,8 +864,6 @@ public class FileOmCom extends PluginForHost {
     private final String                                      preferHTTPS                  = "preferHTTPS";
     private final String                                      ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private final String                                      MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private final String                                      PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private final String                                      PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
 
     private static AtomicInteger                              maxFree                      = new AtomicInteger(1);
     private static AtomicInteger                              maxPrem                      = new AtomicInteger(1);
