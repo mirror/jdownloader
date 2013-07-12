@@ -26,10 +26,8 @@ import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.utils.Application;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
-import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
@@ -153,12 +151,12 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
 
         mr.add(ReconnectAction.class);
         mr.add(UpdateAction.class);
-        if (!Application.isJared(MainToolbarManager.class)) {
-            MenuContainer opt;
-            mr.add(opt = new MenuContainer("Dialog Debug", "menu"));
-            opt.add(ShowInputDialogDebugAction.class);
-
-        }
+        // if (!Application.isJared(MainToolbarManager.class)) {
+        // MenuContainer opt;
+        // mr.add(opt = new MenuContainer("Dialog Debug", "menu"));
+        // opt.add(ShowInputDialogDebugAction.class);
+        //
+        // }
         OptionalContainer opt;
         mr.add(opt = new OptionalContainer(false));
         opt.add(new MenuItemData(OpenDefaultDownloadFolderAction.class));

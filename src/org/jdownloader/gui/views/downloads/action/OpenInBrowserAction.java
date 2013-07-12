@@ -25,6 +25,7 @@ public class OpenInBrowserAction extends SelectionAppAction<FilePackage, Downloa
 
     @Override
     public boolean isEnabled() {
+        if (!super.isEnabled()) return false;
         List<DownloadLink> links = getSelection().getChildren();
         if (links.size() > MAX_LINKS) return false;
         if (!CrossSystem.isOpenBrowserSupported()) return false;

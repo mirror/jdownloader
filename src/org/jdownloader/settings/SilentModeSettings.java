@@ -41,12 +41,12 @@ public interface SilentModeSettings extends ConfigInterface {
     @AboutConfig
     DialogDuringSilentModeAction getOnDialogDuringSilentModeAction();
 
-    void setManualEnabled(boolean b);
+    void setAutoResetOnStartupEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Activate the Silent Mode")
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Auto Disable the Silent mode on each startup")
     @AboutConfig
-    boolean isManualEnabled();
+    boolean isAutoResetOnStartupEnabled();
 
     void setOnDialogDuringSilentModeActionTimeout(long b);
 
@@ -69,5 +69,12 @@ public interface SilentModeSettings extends ConfigInterface {
     @DefaultEnumValue("DISABLE_DIALOG_SOLVER")
     @AboutConfig
     CaptchaDuringSilentModeAction getOnCaptchaDuringSilentModeAction();
+
+    void setManualEnabled(boolean b);
+
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Activate the Silent Mode")
+    @AboutConfig
+    boolean isManualEnabled();
 
 }

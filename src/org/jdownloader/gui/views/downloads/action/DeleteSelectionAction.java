@@ -33,8 +33,7 @@ public class DeleteSelectionAction extends SelectionAppAction<FilePackage, Downl
     @Override
     public boolean isEnabled() {
 
-        if (getSelection().isAltDown() || getSelection().isAltGraphDown()) return false;
-        return !getSelection().isEmpty();
+        return super.isEnabled() && !getSelection().isAltDown() && !getSelection().isAltGraphDown();
     }
 
 }

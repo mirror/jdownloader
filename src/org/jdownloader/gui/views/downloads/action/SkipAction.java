@@ -120,7 +120,7 @@ public class SkipAction extends SelectionAppAction<FilePackage, DownloadLink> {
 
     @Override
     public boolean isEnabled() {
-        return getSelection() != null && !getSelection().isEmpty() && DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE);
+        return super.isEnabled() && DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE);
     }
 
 }

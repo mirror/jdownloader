@@ -30,7 +30,7 @@ public class ForceDownloadAction extends SelectionAppAction<FilePackage, Downloa
 
     @Override
     public boolean isEnabled() {
-        return !getSelection().isEmpty() && DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE, DownloadWatchDog.STOPPED_STATE);
+        return super.isEnabled() && DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE, DownloadWatchDog.STOPPED_STATE);
     }
 
     public void actionPerformed(ActionEvent e) {

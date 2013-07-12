@@ -23,7 +23,7 @@ public class ResumeAction extends SelectionAppAction<FilePackage, DownloadLink> 
 
     @Override
     public boolean isEnabled() {
-        return !getSelection().isEmpty();
+        return hasSelection() && super.isEnabled();
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -39,11 +39,6 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
         if (getSelection() != null) path = LinkTreeUtils.getRawDownloadDirectory(getSelection().getContextPackage());
     }
 
-    @Override
-    public boolean isEnabled() {
-        return !getSelection().isEmpty();
-    }
-
     /**
      * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
      * exist

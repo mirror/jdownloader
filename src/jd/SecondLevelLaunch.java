@@ -516,7 +516,9 @@ public class SecondLevelLaunch {
         lafInit.start();
         Locale.setDefault(TranslationFactory.getDesiredLocale());
         // Disable silentmode on each session start
-        CFG_SILENTMODE.MANUAL_ENABLED.setValue(false);
+        if (CFG_SILENTMODE.AUTO_RESET_ON_STARTUP_ENABLED.isEnabled()) {
+            CFG_SILENTMODE.MANUAL_ENABLED.setValue(false);
+        }
         GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
