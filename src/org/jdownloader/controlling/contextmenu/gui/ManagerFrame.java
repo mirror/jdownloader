@@ -205,7 +205,9 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                model.set(manager.setupDefaultStructure());
+                MenuContainerRoot data = manager.setupDefaultStructure();
+                data.validateFull();
+                model.set(data);
                 if (tree.getRowCount() > 0) tree.setSelectionRow(0);
             }
 
