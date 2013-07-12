@@ -401,7 +401,8 @@ public class LinkCrawler {
                     /* try to load the webpage and find links on it */
                     br.setLoadLimit(Math.max(1 * 1024 * 1024, JsonConfig.create(LinkCrawlerConfig.class).getDeepDecryptLoadLimit()));
                     br.followConnection();
-                    String baseUrl = new Regex(source.getURL(), "(.+)/").getMatch(0);
+                    // We need browser currentURL and not sourceURL, because of possible redirects will change domain and or relative path.
+                    String baseUrl = new Regex(br.getURL(), "(https?://.+)/").getMatch(0);
                     if (baseUrl != null && !baseUrl.endsWith("/")) {
                         baseUrl = baseUrl + "/";
                     }
