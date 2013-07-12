@@ -203,6 +203,7 @@ public class MenuItemData implements Storable {
             throw new WTFException("No ACTION");
         }
         AppAction action = createAction(selection);
+        if (!isVisible()) return null;
         if (!action.isVisible()) return null;
         if (StringUtils.isNotEmpty(getShortcut())) {
             action.setAccelerator(KeyStroke.getKeyStroke(getShortcut()));
