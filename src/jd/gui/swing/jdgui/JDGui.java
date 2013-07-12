@@ -538,7 +538,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                         if (counter != 1) {
                             try {
                                 logger.info("Delete jdu");
-                                Files.deleteRecursiv(Application.getResource("cfg/versioninfo/JDU"));
+                                Files.deleteRecursiv(Application.getResource("update/versioninfo/JDU"));
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
