@@ -74,7 +74,7 @@ public class OrtoFilesCom extends PluginForHost {
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
-    private final boolean              videoHoster                  = false;
+    private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              supportsHTTPS                = true;
     private final boolean              enforcesHTTPS                = false;
@@ -88,7 +88,7 @@ public class OrtoFilesCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.6
+    // XfileShare Version 3.0.6.7
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: http && https
     // captchatype: recaptcha
@@ -312,16 +312,14 @@ public class OrtoFilesCom extends PluginForHost {
         // Second, check for streaming links on the first page
         if (inValidate(dllink)) getDllink();
         // Third, do they provide video hosting?
-        if (inValidate(dllink) && videoHoster) {
+        if (inValidate(dllink) && (useVidEmbed || (useAltEmbed && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mpeg4?|mpg|ogm|vob|wmv|webm)$")))) {
             final Browser obr = br.cloneBrowser();
             final Browser obrc = cbr.cloneBrowser();
-            if (!useAltEmbed) {
+            if (useVidEmbed) {
                 getPage("/vidembed-" + fuid);
-            } else {
+            } else if (useAltEmbed) {
                 // alternative embed format
-                String embed = cbr.getRegex("(http[^\"']+" + DOMAINS + "/embed-" + fuid + "-\\d+x\\d+\\.html)").getMatch(0);
-                if (inValidate(embed) && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mpeg4?|mpg|ogm|vob|wmv|webm)$")) embed = "/embed-" + fuid + ".html";
-                if (!inValidate(embed)) getPage(embed);
+                getPage("/embed-" + fuid + ".html");
             }
             getDllink();
             if (inValidate(dllink)) {

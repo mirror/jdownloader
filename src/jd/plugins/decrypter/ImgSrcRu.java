@@ -142,7 +142,7 @@ public class ImgSrcRu extends PluginForDecrypt {
 
             FilePackage fp = FilePackage.getInstance();
             fp.setProperty("ALLOW_MERGE", true);
-            fp.setName(Encoding.htmlDecode(name.trim()));
+            fp.setName(Encoding.htmlDecode(name.replaceAll("\\.", " ").trim()));
 
             parsePage(param);
             parseNextPage(param);

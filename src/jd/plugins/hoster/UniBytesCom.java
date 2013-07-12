@@ -228,6 +228,7 @@ public class UniBytesCom extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         prepBrowser();
+        br.getPage(MAINPAGE);
         br.postPage(MAINPAGE, "lb_login=" + Encoding.urlEncode(account.getUser()) + "&lb_password=" + Encoding.urlEncode(account.getPass()) + "&lb_remember=true");
         if (br.getCookie(MAINPAGE, "hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }

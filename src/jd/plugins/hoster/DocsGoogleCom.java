@@ -109,22 +109,27 @@ public class DocsGoogleCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");
-        if (br.containsHTML("<p class=\"error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.")) {
-            // so its not possible to download at this time.
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time.", 60 * 60 * 1000);
-        }
-        String dllink = br.getRedirectLocation();
+        String dllink = br.getRegex("\"downloadUrl\":\"(https?[^\"]+docs\\.google\\.com[^\"]+)").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("href=\"([^\"]+)\">Download anyway</a>").getMatch(0);
+            br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");
+            if (br.containsHTML("<p class=\"error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.")) {
+                // so its not possible to download at this time.
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time.", 60 * 60 * 1000);
+            }
+            dllink = br.getRedirectLocation();
             if (dllink == null) {
-                dllink = br.getRegex("href=\"(/uc\\?export=download[^\"]+)\">").getMatch(0);
+                dllink = br.getRegex("href=\"([^\"]+)\">Download anyway</a>").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("href=\"(/uc\\?export=download[^\"]+)\">").getMatch(0);
+                    if (dllink == null) dllink = br.getRegex("\"downloadUrl\":\"(https?[^\"]+docs\\.google\\.com[^\"]+)").getMatch(0);
+                    if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(HTMLEntities.unhtmlentities(dllink));
+                dllink = br.getRedirectLocation();
                 if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage(HTMLEntities.unhtmlentities(dllink));
-            dllink = br.getRedirectLocation();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dllink = dllink.replaceAll("\\\\/", "/");
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

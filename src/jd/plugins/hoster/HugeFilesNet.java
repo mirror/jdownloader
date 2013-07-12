@@ -73,7 +73,7 @@ public class HugeFilesNet extends PluginForHost {
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
-    private final boolean              videoHoster                  = true;
+    private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = true;
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
@@ -87,12 +87,12 @@ public class HugeFilesNet extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.6
+    // XfileShare Version 3.0.6.7
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: recaptcha
     // other: no redirects
-    // mods: increased timeouts needed.
+    // mods: increased timeouts needed. changed the captcha look back to browser from form. removed mobile html
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -311,16 +311,14 @@ public class HugeFilesNet extends PluginForHost {
         // Second, check for streaming links on the first page
         if (inValidate(dllink)) getDllink();
         // Third, do they provide video hosting?
-        if (inValidate(dllink) && videoHoster) {
+        if (inValidate(dllink) && (useVidEmbed || (useAltEmbed && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mpeg4?|mpg|ogm|vob|wmv|webm)$")))) {
             final Browser obr = br.cloneBrowser();
             final Browser obrc = cbr.cloneBrowser();
-            if (!useAltEmbed) {
+            if (useVidEmbed) {
                 getPage("/vidembed-" + fuid);
-            } else {
+            } else if (useAltEmbed) {
                 // alternative embed format
-                String embed = cbr.getRegex("(http[^\"']+" + DOMAINS + "/embed-" + fuid + "-\\d+x\\d+\\.html)").getMatch(0);
-                if (inValidate(embed) && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mpeg4?|mpg|ogm|vob|wmv|webm)$")) embed = "/embed-" + fuid + ".html";
-                if (!inValidate(embed)) getPage(embed);
+                getPage("/embed-" + fuid + ".html");
             }
             getDllink();
             if (inValidate(dllink)) {
@@ -451,7 +449,7 @@ public class HugeFilesNet extends PluginForHost {
         ArrayList<String> regexStuff = new ArrayList<String>();
 
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-
+        regexStuff.add("(<div id=\"mobile\" class=\"mobile-version\">*>?)<div class=\"full-version\" id=\"pc-version\">");
         // generic cleanup
         // this checks for fake or empty forms from original source and corrects
         for (final Form f : br.getForms()) {
@@ -846,37 +844,37 @@ public class HugeFilesNet extends PluginForHost {
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
 
-    private Browser                                           cbr                          = new Browser();
+    private Browser                                           cbr                    = new Browser();
 
-    private String                                            acctype                      = null;
-    private String                                            directlinkproperty           = null;
-    private String                                            dllink                       = null;
-    private String                                            fuid                         = null;
-    private String                                            passCode                     = null;
-    private String                                            usedHost                     = null;
+    private String                                            acctype                = null;
+    private String                                            directlinkproperty     = null;
+    private String                                            dllink                 = null;
+    private String                                            fuid                   = null;
+    private String                                            passCode               = null;
+    private String                                            usedHost               = null;
 
-    private int                                               chunks                       = 1;
+    private int                                               chunks                 = 1;
 
-    private boolean                                           resumes                      = false;
-    private boolean                                           skipWaitTime                 = false;
+    private boolean                                           resumes                = false;
+    private boolean                                           skipWaitTime           = false;
 
-    private final String                                      language                     = System.getProperty("user.language");
-    private final String                                      preferHTTPS                  = "preferHTTPS";
-    private final String                                      ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private final String                                      MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private final String                                      language               = System.getProperty("user.language");
+    private final String                                      preferHTTPS            = "preferHTTPS";
+    private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
 
-    private static AtomicInteger                              maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger                              maxPrem                      = new AtomicInteger(1);
+    private static AtomicInteger                              maxFree                = new AtomicInteger(1);
+    private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
-    private static AtomicInteger                              maxNonAccSimDlPerHost        = new AtomicInteger(20);
-    private static AtomicInteger                              maxFreeAccSimDlPerHost       = new AtomicInteger(20);
-    private static AtomicInteger                              maxPremAccSimDlPerHost       = new AtomicInteger(20);
+    private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
+    private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
 
-    private static HashMap<Account, HashMap<String, Integer>> hostMap                      = new HashMap<Account, HashMap<String, Integer>>();
+    private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static Object                                     LOCK                         = new Object();
+    private static Object                                     LOCK                   = new Object();
 
-    private static StringContainer                            agent                        = new StringContainer();
+    private static StringContainer                            agent                  = new StringContainer();
 
     public static class StringContainer {
         public String string = null;
@@ -1098,7 +1096,7 @@ public class HugeFilesNet extends PluginForHost {
                 code.append(value);
             }
             form.put("code", code.toString());
-        } else if (form.containsHTML("/captchas/")) {
+        } else if (cbr.containsHTML("/captchas/")) {
             logger.info("Detected captcha method \"Standard Captcha\"");
             final String[] sitelinks = HTMLParser.getHttpLinks(form.getHtmlCode(), null);
             if (sitelinks == null || sitelinks.length == 0) {
@@ -1126,13 +1124,13 @@ public class HugeFilesNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             form.put("code", code);
-        } else if (form.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+        } else if (cbr.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("Detected captcha method \"Re Captcha\"");
             final Browser captcha = br.cloneBrowser();
-            cleanupBrowser(captcha, form.getHtmlCode());
+            cleanupBrowser(captcha, cbr.toString());
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha);
-            final String id = form.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+            final String id = cbr.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
             if (inValidate(id)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             rc.setId(id);
             rc.load();
@@ -1537,7 +1535,6 @@ public class HugeFilesNet extends PluginForHost {
         ret.setMethod(form.getMethod());
         return ret;
     }
-
 
     /**
      * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
