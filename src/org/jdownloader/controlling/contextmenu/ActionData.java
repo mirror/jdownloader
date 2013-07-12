@@ -1,7 +1,7 @@
 package org.jdownloader.controlling.contextmenu;
 
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Locale;
 
 import org.appwork.storage.Storable;
 import org.jdownloader.extensions.AbstractExtension;
@@ -9,12 +9,12 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 
 public class ActionData implements Storable {
-    private HashSet<MenuItemProperty> properties;
-    private String                    jsonData;
 
-    private Class<?>                  clazz;
-    private static final String       PACKAGE_NAME = AbstractExtension.class.getPackage().getName() + ".";
-    private String                    data;
+    private String              jsonData;
+
+    private Class<?>            clazz;
+    private static final String PACKAGE_NAME = AbstractExtension.class.getPackage().getName() + ".";
+    private String              data;
 
     public void setData(String data) {
         this.data = data;
@@ -60,18 +60,15 @@ public class ActionData implements Storable {
 
     }
 
-    public ActionData(Class<?> class1, MenuItemProperty... ps) {
-        this(class1, null, ps);
+    public ActionData(Class<?> class1) {
+        this(class1, null);
     }
 
-    public ActionData(Class<?> class1, String data, MenuItemProperty... ps) {
+    public ActionData(Class<?> class1, String data) {
         this.data = data;
         this.clazz = class1;
         this.clazzName = class1.getName();
-        properties = new HashSet<MenuItemProperty>();
-        for (MenuItemProperty ap : ps) {
-            properties.add(ap);
-        }
+
     }
 
     public String getClazzName() {
@@ -80,14 +77,6 @@ public class ActionData implements Storable {
 
     public void setClazzName(String clazzName) {
         this.clazzName = clazzName;
-    }
-
-    public HashSet<MenuItemProperty> getProperties() {
-        return properties;
-    }
-
-    public void setProperties(HashSet<MenuItemProperty> properties) {
-        this.properties = properties;
     }
 
     public void setName(String name) {
@@ -106,12 +95,13 @@ public class ActionData implements Storable {
         this.iconKey = iconKey;
     }
 
-    public void putSetup(String key, Object value) {
+    public ActionData putSetup(String key, Object value) {
 
         if (setup == null) {
             setup = new HashMap<String, Object>();
         }
-        setup.put(key, value);
+        setup.put(key.toUpperCase(Locale.ENGLISH), value);
+        return this;
     }
 
     public HashMap<String, Object> getSetup() {
@@ -124,7 +114,8 @@ public class ActionData implements Storable {
 
     public Object fetchSetup(String name2) {
         if (setup == null) return null;
-        return setup.get(name2);
+
+        return setup.get(name2.toUpperCase(Locale.ENGLISH));
     }
 
 }

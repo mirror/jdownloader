@@ -10,6 +10,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -22,6 +23,7 @@ public class StopDownloadsAction extends ToolBarAction implements DownloadWatchd
         setEnabled(false);
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
+        setHideIfDownloadsAreStopped(false);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -42,6 +44,23 @@ public class StopDownloadsAction extends ToolBarAction implements DownloadWatchd
         });
     }
 
+    private boolean            hideIfDownloadsAreStopped     = false;
+    public static final String HIDE_IF_DOWNLOADS_ARE_STOPPED = "HideIfDownloadsAreStopped";
+
+    @Customizer(name = "Hide if downloads are not running")
+    public boolean isHideIfDownloadsAreStopped() {
+        return hideIfDownloadsAreStopped;
+    }
+
+    public void setHideIfDownloadsAreStopped(boolean showIfDownloadsAreRunning) {
+        this.hideIfDownloadsAreStopped = showIfDownloadsAreRunning;
+        if (isHideIfDownloadsAreStopped() && !DownloadWatchDog.getInstance().isRunning()) {
+            setVisible(false);
+        } else {
+            setVisible(true);
+        }
+    }
+
     @Override
     public String createTooltip() {
         return _GUI._.action_stop_downloads_tooltip();
@@ -49,6 +68,14 @@ public class StopDownloadsAction extends ToolBarAction implements DownloadWatchd
 
     @Override
     public void onDownloadWatchdogStateIsStopping() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                setEnabled(false);
+
+            }
+        };
 
     }
 
@@ -59,6 +86,9 @@ public class StopDownloadsAction extends ToolBarAction implements DownloadWatchd
             @Override
             protected void runInEDT() {
                 setEnabled(false);
+                if (isHideIfDownloadsAreStopped()) {
+                    setVisible(false);
+                }
             }
         };
     }
@@ -70,6 +100,7 @@ public class StopDownloadsAction extends ToolBarAction implements DownloadWatchd
             @Override
             protected void runInEDT() {
                 setEnabled(true);
+                setVisible(true);
             }
         };
     }
@@ -85,6 +116,9 @@ public class StopDownloadsAction extends ToolBarAction implements DownloadWatchd
             @Override
             protected void runInEDT() {
                 setEnabled(false);
+                if (isHideIfDownloadsAreStopped()) {
+                    setVisible(false);
+                }
             }
         };
     }

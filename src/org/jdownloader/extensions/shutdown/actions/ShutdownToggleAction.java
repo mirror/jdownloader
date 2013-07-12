@@ -29,11 +29,6 @@ public class ShutdownToggleAction extends AbstractExtensionAction<ShutdownExtens
     }
 
     @Override
-    public boolean isEnabled() {
-        return super.isSuperEnabled();
-    }
-
-    @Override
     public void setSelection(SelectionInfo<FilePackage, DownloadLink> selection) {
 
     }

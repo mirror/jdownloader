@@ -71,7 +71,6 @@ import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -79,7 +78,6 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.chat.settings.ChatConfigPanel;
 import org.jdownloader.extensions.chat.translate.ChatTranslation;
 import org.jdownloader.gui.mainmenu.MainMenuManager;
-import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.logging.LogController;
 import org.schwering.irc.lib.IRCConnection;
@@ -1138,22 +1136,14 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
     }
 
     private MenuItemData updateMainToolbar(MenuContainerRoot mr) {
-        ExtensionsMenuContainer container = new ExtensionsMenuContainer(MenuItemProperty.ALWAYS_HIDDEN);
-        // ExtensionsMenuWindowContainer windows;
-        // container.add(windows = new ExtensionsMenuWindowContainer());
-        // windows.add(ChatExtensionGuiToggleAction.class);
 
-        return container;
+        return null;
 
     }
 
     private MenuItemData updateMainMenu(MenuContainerRoot mr) {
 
-        ExtensionsMenuContainer container = new ExtensionsMenuContainer();
-        // ExtensionsMenuWindowContainer windows = new ExtensionsMenuWindowContainer();
-        // container.add(windows);
-        // windows.add(ChatExtensionGuiToggleAction.class);
-        return container;
+        return null;
 
     }
 }

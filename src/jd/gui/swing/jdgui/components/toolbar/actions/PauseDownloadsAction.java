@@ -9,6 +9,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -25,7 +26,7 @@ public class PauseDownloadsAction extends ToolBarAction implements DownloadWatch
 
         org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
-
+        setHideIfDownloadsAreStopped(false);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -40,6 +41,23 @@ public class PauseDownloadsAction extends ToolBarAction implements DownloadWatch
 
     @Override
     public void onDownloadWatchdogDataUpdate() {
+    }
+
+    private boolean            hideIfDownloadsAreStopped     = false;
+    public static final String HIDE_IF_DOWNLOADS_ARE_STOPPED = "HideIfDownloadsAreStopped";
+
+    @Customizer(name = "Hide if downloads are not running")
+    public boolean isHideIfDownloadsAreStopped() {
+        return hideIfDownloadsAreStopped;
+    }
+
+    public void setHideIfDownloadsAreStopped(boolean showIfDownloadsAreRunning) {
+        this.hideIfDownloadsAreStopped = showIfDownloadsAreRunning;
+        if (isHideIfDownloadsAreStopped() && !DownloadWatchDog.getInstance().isRunning()) {
+            setVisible(false);
+        } else {
+            setVisible(true);
+        }
     }
 
     @Override
@@ -77,6 +95,7 @@ public class PauseDownloadsAction extends ToolBarAction implements DownloadWatch
             protected void runInEDT() {
                 setEnabled(true);
                 setSelected(false);
+                setVisible(true);
             }
         };
 
@@ -90,6 +109,9 @@ public class PauseDownloadsAction extends ToolBarAction implements DownloadWatch
             protected void runInEDT() {
                 setEnabled(false);
                 setSelected(false);
+                if (isHideIfDownloadsAreStopped()) {
+                    setVisible(false);
+                }
             }
         };
 

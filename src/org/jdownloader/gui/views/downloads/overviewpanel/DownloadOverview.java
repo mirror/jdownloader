@@ -156,6 +156,9 @@ public class DownloadOverview extends MigPanel implements ActionListener, Downlo
 
             @Override
             public void valueChanged(ListSelectionEvent e) {
+
+                if (e.getValueIsAdjusting()) { return; }
+
                 update();
                 onConfigValueModified(null, null);
             }

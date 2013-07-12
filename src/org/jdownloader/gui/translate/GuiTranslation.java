@@ -2798,4 +2798,24 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you really want to remove all selected and disabled link(s)?" })
     String RemoveDisabledAction_actionPerformed_msg();
 
+    @Default(lngs = { "en" }, values = { "Menuitem is visible" })
+    String InfoPanel_InfoPanel_hidden_2();
+
+    @Default(lngs = { "en" }, values = { "Delete selected & disabled Links" })
+    String DeleteDisabledSelectedLinksToolbarAction_object_();
+
+    @Default(lngs = { "en" }, values = { "disabled" })
+    String lit_disabled();
+
+    @Default(lngs = { "en" }, values = { "failed" })
+    String lit_failed();
+
+    @Default(lngs = { "en" }, values = { "offline" })
+    String lit_offline();
+
+    @Default(lngs = { "en" }, values = { "finished" })
+    String lit_finished();
+
+    @Default(lngs = { "en" }, values = { "Delete Links: Selected & " })
+    String GenericDeleteSelectedToolbarAction_updateName_object_();
 }

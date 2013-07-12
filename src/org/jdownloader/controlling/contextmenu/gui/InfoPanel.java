@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.HashSet;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -39,7 +38,6 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.translate._GUI;
@@ -48,13 +46,7 @@ import org.jdownloader.images.NewTheme;
 public class InfoPanel extends MigPanel implements ActionListener {
 
     private JLabel       label;
-    private JCheckBox    hideIfDownloadsRunning;
-    private JCheckBox    hideIfDownloadsNotRunning;
-    private JCheckBox    hideIfDisabled;
-    private JCheckBox    hideIfOpenFileIsUnsupported;
-    private JCheckBox    hideIfOutputNotExists;
-    private JCheckBox    linkContext;
-    private JCheckBox    packageContext;
+
     private MenuItemData item;
     private ExtTextField name;
     private ExtButton    iconChange;
@@ -63,7 +55,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
 
     private ManagerFrame managerFrame;
 
-    private JCheckBox    hidden;
+    private JCheckBox    visibleBox;
 
     private ExtTextField shortcut;
 
@@ -82,22 +74,9 @@ public class InfoPanel extends MigPanel implements ActionListener {
         // MenuItemProperty.HIDE_IF_DISABLED;
         // MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED;
         // MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING;
-        hideIfDisabled = new JCheckBox();
-        hideIfDisabled.addActionListener(this);
-        hideIfDownloadsRunning = new JCheckBox();
-        hideIfDownloadsRunning.addActionListener(this);
-        hideIfDownloadsNotRunning = new JCheckBox();
-        hideIfDownloadsNotRunning.addActionListener(this);
-        hideIfOpenFileIsUnsupported = new JCheckBox();
-        hideIfOpenFileIsUnsupported.addActionListener(this);
-        hideIfOutputNotExists = new JCheckBox();
-        hideIfOutputNotExists.addActionListener(this);
-        linkContext = new JCheckBox();
-        linkContext.addActionListener(this);
-        packageContext = new JCheckBox();
-        packageContext.addActionListener(this);
-        hidden = new JCheckBox();
-        hidden.addActionListener(this);
+
+        visibleBox = new JCheckBox();
+        visibleBox.addActionListener(this);
         name = new ExtTextField() {
 
             @Override
@@ -218,40 +197,10 @@ public class InfoPanel extends MigPanel implements ActionListener {
 
             }), "width 22!,height 22!");
         }
-        if (managerFrame.getManager().supportsProperty(MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_RUNNING)) {
-            add(label(_GUI._.InfoPanel_InfoPanel_hideIfDownloadesRunning()));
-            add(hideIfDownloadsRunning, "spanx");
-        }
 
-        if (managerFrame.getManager().supportsProperty(MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_NOT_RUNNING)) {
-            add(label(_GUI._.InfoPanel_InfoPanel_hideIfDownloadsNotRunning()));
-            add(hideIfDownloadsNotRunning, "spanx");
-        }
+        add(label(_GUI._.InfoPanel_InfoPanel_hidden_2()));
+        add(visibleBox, "spanx");
 
-        if (managerFrame.getManager().supportsProperty(MenuItemProperty.HIDE_IF_DISABLED)) {
-            add(label(_GUI._.InfoPanel_InfoPanel_hideIfDisabled()));
-            add(hideIfDisabled, "spanx");
-        }
-        if (managerFrame.getManager().supportsProperty(MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED)) {
-            add(label(_GUI._.InfoPanel_InfoPanel_hideIfOpenFileIsUnsupported()));
-            add(hideIfOpenFileIsUnsupported, "spanx");
-        }
-        if (managerFrame.getManager().supportsProperty(MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING)) {
-            add(label(_GUI._.InfoPanel_InfoPanel_hideIfFileNotExists()));
-            add(hideIfOutputNotExists, "spanx");
-        }
-        if (managerFrame.getManager().supportsProperty(MenuItemProperty.LINK_CONTEXT)) {
-            add(label(_GUI._.InfoPanel_InfoPanel_linkContext2()));
-            add(linkContext, "spanx");
-        }
-        if (managerFrame.getManager().supportsProperty(MenuItemProperty.PACKAGE_CONTEXT)) {
-            add(label(_GUI._.InfoPanel_InfoPanel_packageContext2()));
-            add(packageContext, "spanx");
-        }
-        if (managerFrame.getManager().supportsProperty(MenuItemProperty.ALWAYS_HIDDEN)) {
-            add(label(_GUI._.InfoPanel_InfoPanel_hidden()));
-            add(hidden, "spanx");
-        }
         add(new JSeparator(), "spanx");
         customPanel = new CustomPanel(managerFrame);
         add(customPanel, "spanx,growx");
@@ -277,7 +226,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
             label.setText("");
             return;
         }
-
+        visibleBox.setSelected(value.isVisible());
         if (StringUtils.isNotEmpty(value.getShortcut())) {
             currentShortcut = KeyStroke.getKeyStroke(value.getShortcut());
             if (currentShortcut != null) {
@@ -301,17 +250,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
         String n = mid.getName();
 
         name.setText(n);
-        link(mid, hideIfDownloadsRunning, MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_RUNNING);
-        link(mid, hideIfDownloadsNotRunning, MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_NOT_RUNNING);
-        link(mid, hideIfDisabled, MenuItemProperty.HIDE_IF_DISABLED);
-        link(mid, hideIfOpenFileIsUnsupported, MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED);
 
-        link(mid, hideIfOutputNotExists, MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING);
-
-        link(mid, linkContext, MenuItemProperty.LINK_CONTEXT);
-
-        link(mid, packageContext, MenuItemProperty.PACKAGE_CONTEXT);
-        link(mid, hidden, MenuItemProperty.ALWAYS_HIDDEN);
         // renderer.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.RED));
         updateHeaderLabel(mid);
         customPanel.removeAll();
@@ -401,12 +340,6 @@ public class InfoPanel extends MigPanel implements ActionListener {
         label.setIcon(icon);
     }
 
-    private void link(MenuItemData mid, JCheckBox hideIfDisabled, MenuItemProperty hideIfDisabled3) {
-
-        hideIfDisabled.setSelected(mid.mergeProperties().contains(hideIfDisabled3));
-        hideIfDisabled.setEnabled(mid.getActionData() == null || mid.getActionData().getProperties() == null || !mid.getActionData().getProperties().contains(hideIfDisabled3));
-    }
-
     @Override
     public void actionPerformed(ActionEvent e) {
         save();
@@ -418,16 +351,8 @@ public class InfoPanel extends MigPanel implements ActionListener {
 
             @Override
             protected void runInEDT() {
-                HashSet<MenuItemProperty> newProperties = new HashSet<MenuItemProperty>();
-                if (hideIfDownloadsNotRunning.isSelected()) newProperties.add(MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_NOT_RUNNING);
-                if (hideIfDownloadsRunning.isSelected()) newProperties.add(MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_RUNNING);
-                if (hideIfDisabled.isSelected()) newProperties.add(MenuItemProperty.HIDE_IF_DISABLED);
-                if (hideIfOpenFileIsUnsupported.isSelected()) newProperties.add(MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED);
-                if (hideIfOutputNotExists.isSelected()) newProperties.add(MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING);
-                if (linkContext.isSelected()) newProperties.add(MenuItemProperty.LINK_CONTEXT);
-                if (packageContext.isSelected()) newProperties.add(MenuItemProperty.PACKAGE_CONTEXT);
-                if (hidden.isSelected()) newProperties.add(MenuItemProperty.ALWAYS_HIDDEN);
-                item.setProperties(newProperties);
+
+                item.setVisible(visibleBox.isSelected());
                 item.setShortcut(currentShortcut == null ? null : currentShortcut.toString());
                 managerFrame.repaint();
             }

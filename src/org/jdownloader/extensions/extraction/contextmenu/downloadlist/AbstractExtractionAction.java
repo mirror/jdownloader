@@ -40,6 +40,7 @@ public abstract class AbstractExtractionAction<PackageType extends AbstractPacka
 
                         @Override
                         protected void runInEDT() {
+
                             onAsyncInitDone();
 
                         }

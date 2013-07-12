@@ -108,6 +108,8 @@ public class LinkgrabberOverview extends MigPanel implements ActionListener, Hie
 
             @Override
             public void valueChanged(ListSelectionEvent e) {
+                if (e.getValueIsAdjusting()) { return; }
+
                 update();
                 onConfigValueModified(null, null);
             }

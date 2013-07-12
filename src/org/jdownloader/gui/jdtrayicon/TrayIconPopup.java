@@ -134,7 +134,7 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
             AbstractButton bt = null;
             AppAction action;
             try {
-                if (!menudata.showItem(null)) continue;
+                if (!menudata.isVisible()) continue;
                 if (menudata instanceof SeperatorData) {
                     if (last != null && last instanceof SeperatorData) {
                         // no seperator dupes
@@ -290,7 +290,7 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
                 } else if (menudata.getActionData() != null) {
 
                     action = menudata.createAction(null);
-
+                    if (!action.isVisible()) continue;
                     if (StringUtils.isNotEmpty(menudata._getShortcut())) {
                         action.setAccelerator(KeyStroke.getKeyStroke(menudata._getShortcut()));
                     }

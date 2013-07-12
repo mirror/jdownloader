@@ -16,11 +16,11 @@ import jd.plugins.FilePackage;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.mainmenu.action.AddLinksMenuAction;
 import org.jdownloader.gui.mainmenu.action.LogSendAction;
@@ -124,7 +124,7 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
         mr.add(createAboutMenu());
 
         OptionalContainer opt;
-        mr.add(opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN));
+        mr.add(opt = new OptionalContainer(false));
 
         opt.add(RenameAction.class);
 
@@ -188,7 +188,7 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
         ret.add(AddContainerAction.class);
         ret.add(new SeperatorData());
         ret.add(RestartAction.class);
-        ret.add(new MenuItemData(ExitAction.class, MenuItemProperty.HIDE_ON_MAC));
+        ret.add(new ActionData(ExitAction.class).putSetup(ExitAction.HIDE_ON_MAC, true));
 
         return ret;
     }
@@ -196,22 +196,6 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
     public void show() {
 
         new MenuManagerAction().actionPerformed(null);
-    }
-
-    public boolean supportsProperty(MenuItemProperty property) {
-        switch (property) {
-
-        case HIDE_IF_DISABLED:
-        case HIDE_IF_OPENFILE_IS_UNSUPPORTED:
-        case HIDE_IF_OUTPUT_NOT_EXISTING:
-        case LINK_CONTEXT:
-        case PACKAGE_CONTEXT:
-            return false;
-
-        default:
-            return true;
-        }
-
     }
 
     public boolean isAcceleratorsEnabled() {

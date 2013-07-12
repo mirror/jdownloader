@@ -12,7 +12,6 @@ import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
-import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
@@ -29,6 +28,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     private SwitchPanel                    panel;
     private GraphicalUserInterfaceSettings cfg;
     private MigPanel                       right;
+    private String                         lastE;
 
     public ConfigurationPanel() {
         super(new MigLayout("ins 0", "[][grow,fill]", "[grow,fill]"));
@@ -116,6 +116,16 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     }
 
     public void valueChanged(ListSelectionEvent e) {
+        if (e.getValueIsAdjusting()) { return; }
+
+        if (lastE != null) {
+
+            if (lastE.equals(e.toString())) {
+
+            return; }
+        }
+
+        lastE = e.toString();
         new EDTRunner() {
 
             @Override

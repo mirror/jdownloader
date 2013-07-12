@@ -17,7 +17,6 @@ import org.appwork.utils.swing.renderer.RenderLabel;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.translate._GUI;
@@ -52,7 +51,7 @@ public class Renderer implements TreeCellRenderer {
         Rectangle bounds = null;
         TreePath path = tree.getPathForRow(row);
 
-        if (mid.getProperties() != null && mid.getProperties().contains(MenuItemProperty.ALWAYS_HIDDEN)) {
+        if (!mid.isVisible()) {
             renderer.setEnabled(false);
         } else {
             renderer.setEnabled(true);

@@ -44,11 +44,12 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuItemProperty;
+import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -57,9 +58,16 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.extraction.actions.ExtractAction;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
+import org.jdownloader.extensions.extraction.contextmenu.ArchivesSubMenu;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
-import org.jdownloader.extensions.extraction.contextmenu.downloadlist.DownloadListContextmenuExtender;
-import org.jdownloader.extensions.extraction.contextmenu.linkgrabber.LinkgrabberContextmenuExtender;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.CleanupSubMenu;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.AutoExtractEnabledToggleAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.CleanupAutoDeleteFilesEnabledToggleAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.CleanupAutoDeleteLinksEnabledToggleAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ExtractArchiveNowAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractPasswordAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractToAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ValidateArchivesAction;
 import org.jdownloader.extensions.extraction.gui.config.ExtractionConfigPanel;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.Multi;
@@ -71,7 +79,9 @@ import org.jdownloader.gui.mainmenu.MainMenuManager;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
+import org.jdownloader.gui.views.downloads.context.submenu.MoreMenuContainer;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkGrabberMoreSubMenu;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
@@ -99,10 +109,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     private ShutdownVetoListener              listener          = null;
 
     private boolean                           lazyInitOnStart   = false;
-
-    private DownloadListContextmenuExtender   dlListContextMenuExtender;
-
-    private LinkgrabberContextmenuExtender    lgContextMenuExtender;
 
     public ExtractionExtension() throws StartException {
         super();
@@ -378,8 +384,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     protected void stop() throws StopException {
         ShutdownController.getInstance().removeShutdownVetoListener(listener);
         LinkCollector.getInstance().setArchiver(null);
-        DownloadListContextMenuManager.getInstance().unregisterExtender(dlListContextMenuExtender);
-        LinkgrabberContextMenuManager.getInstance().unregisterExtender(lgContextMenuExtender);
+        DownloadListContextMenuManager.getInstance().unregisterExtender(this);
+        LinkgrabberContextMenuManager.getInstance().unregisterExtender(this);
         DownloadController.getInstance().removeVetoListener(this);
         FileCreationManager.getInstance().getEventSender().removeListener(this);
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -404,8 +410,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     @Override
     protected void start() throws StartException {
         lazyInitOnceOnStart();
-        DownloadListContextMenuManager.getInstance().registerExtender(dlListContextMenuExtender);
-        LinkgrabberContextMenuManager.getInstance().registerExtender(lgContextMenuExtender);
+        DownloadListContextMenuManager.getInstance().registerExtender(this);
+        LinkgrabberContextMenuManager.getInstance().registerExtender(this);
         MainMenuManager.getInstance().registerExtender(this);
         MainToolbarManager.getInstance().registerExtender(this);
         LinkCollector.getInstance().setArchiver(this);
@@ -510,8 +516,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         /* import old passwordlist */
         boolean oldPWListImported = false;
         ArchiveValidator.EXTENSION = this;
-        dlListContextMenuExtender = new DownloadListContextmenuExtender(this);
-        lgContextMenuExtender = new LinkgrabberContextmenuExtender(this);
 
         try {
             if ((oldPWListImported = getSettings().isOldPWListImported()) == false) {
@@ -723,7 +727,54 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
         if (manager instanceof MainToolbarManager) {
             return updateMainToolbar(mr);
-        } else if (manager instanceof MainMenuManager) { return updateMainMenu(mr); }
+        } else if (manager instanceof MainMenuManager) {
+            return updateMainMenu(mr);
+        } else if (manager instanceof LinkgrabberContextMenuManager) {
+            int addonLinkIndex = 0;
+            for (int i = 0; i < mr.getItems().size(); i++) {
+                if (mr.getItems().get(i) instanceof LinkGrabberMoreSubMenu) {
+                    addonLinkIndex = i;
+                    break;
+                }
+            }
+
+            ArchivesSubMenu root;
+            mr.getItems().add(addonLinkIndex, root = new ArchivesSubMenu());
+            root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
+            root.add(new SeperatorData());
+            root.add(new MenuItemData(new ActionData(AutoExtractEnabledToggleAction.class)));
+            root.add(new MenuItemData(new ActionData(SetExtractToAction.class)));
+            root.add(new MenuItemData(new ActionData(SetExtractPasswordAction.class)));
+            CleanupSubMenu cleanup = new CleanupSubMenu();
+            root.add(cleanup);
+            cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteFilesEnabledToggleAction.class)));
+            cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteLinksEnabledToggleAction.class)));
+            return null;
+
+        } else if (manager instanceof DownloadListContextMenuManager) {
+            int addonLinkIndex = 0;
+            for (int i = 0; i < mr.getItems().size(); i++) {
+                if (mr.getItems().get(i) instanceof MoreMenuContainer) {
+                    addonLinkIndex = i;
+                    break;
+                }
+            }
+
+            ArchivesSubMenu root;
+            mr.getItems().add(addonLinkIndex, root = new ArchivesSubMenu());
+            root.add(new MenuItemData(new ActionData(ExtractArchiveNowAction.class)));
+            root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
+
+            root.add(new SeperatorData());
+            root.add(new MenuItemData(new ActionData(AutoExtractEnabledToggleAction.class)));
+            root.add(new MenuItemData(new ActionData(SetExtractToAction.class)));
+            root.add(new MenuItemData(new ActionData(SetExtractPasswordAction.class)));
+            CleanupSubMenu cleanup = new CleanupSubMenu();
+            root.add(cleanup);
+            cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteFilesEnabledToggleAction.class)));
+            cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteLinksEnabledToggleAction.class)));
+            return null;
+        }
         return null;
     }
 
@@ -735,7 +786,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     private MenuItemData updateMainToolbar(MenuContainerRoot mr) {
-        OptionalContainer opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN);
+        OptionalContainer opt = new OptionalContainer(false);
         opt.add(ExtractAction.class);
         return opt;
     }

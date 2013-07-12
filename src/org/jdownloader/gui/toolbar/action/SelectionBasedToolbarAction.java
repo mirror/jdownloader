@@ -2,13 +2,12 @@ package org.jdownloader.gui.toolbar.action;
 
 import java.util.List;
 
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
 
+import org.appwork.swing.exttable.ExtTableEvent;
+import org.appwork.swing.exttable.ExtTableListener;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
@@ -20,7 +19,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
-public abstract class SelectionBasedToolbarAction extends ToolBarAction implements GUIListener, ListSelectionListener {
+public abstract class SelectionBasedToolbarAction extends ToolBarAction implements GUIListener, ExtTableListener {
 
     private PackageControllerTable<?, ?> table;
 
@@ -34,11 +33,12 @@ public abstract class SelectionBasedToolbarAction extends ToolBarAction implemen
     public void onGuiMainTabSwitch(View oldView, View newView) {
 
         try {
-            LinkGrabberTableModel.getInstance().getTable().getSelectionModel().removeListSelectionListener(this);
-            DownloadsTableModel.getInstance().getTable().getSelectionModel().removeListSelectionListener(this);
+            LinkGrabberTableModel.getInstance().getTable().getEventSender().removeListener(this);
+            DownloadsTableModel.getInstance().getTable().getEventSender().removeListener(this);
+
             if (newView instanceof LinkGrabberView) {
                 table = LinkGrabberTableModel.getInstance().getTable();
-                LinkGrabberTableModel.getInstance().getTable().getSelectionModel().addListSelectionListener(this);
+
             } else if (newView instanceof DownloadsView) {
                 table = DownloadsTableModel.getInstance().getTable();
 
@@ -47,11 +47,12 @@ public abstract class SelectionBasedToolbarAction extends ToolBarAction implemen
                 setEnabled(false);
             }
             if (table != null) {
-                table.getSelectionModel().addListSelectionListener(this);
+
+                table.getEventSender().addListener(this, true);
             }
-            valueChanged(null);
+            onSelectionUpdate(table == null ? null : table.getModel().getSelectedObjects());
         } catch (Exception e) {
-            valueChanged(null);
+            onSelectionUpdate(table == null ? null : table.getModel().getSelectedObjects());
             setEnabled(false);
         }
 
@@ -70,14 +71,17 @@ public abstract class SelectionBasedToolbarAction extends ToolBarAction implemen
         setVisible(false);
     }
 
-    public PackageControllerTable<?, ?> getTable() {
-        return table;
+    @Override
+    public void onExtTableEvent(ExtTableEvent<?> event) {
+        switch (event.getType()) {
+        case SELECTION_CHANGED:
+            onSelectionUpdate(table == null ? null : table.getModel().getSelectedObjects());
+        }
+
     }
 
-    @Override
-    public void valueChanged(ListSelectionEvent e) {
-        onSelectionUpdate(table == null ? null : table.getModel().getSelectedObjects());
-
+    public PackageControllerTable<?, ?> getTable() {
+        return table;
     }
 
     protected abstract void onSelectionUpdate(List<AbstractNode> list);

@@ -7,7 +7,6 @@ import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
@@ -65,10 +64,10 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
     public MenuContainerRoot createDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
         mr.setSource(VERSION);
-        mr.add(new MenuItemData(new ActionData(ConfirmAutoAction.class), MenuItemProperty.HIDE_IF_DISABLED));
+        mr.add(new MenuItemData(new ActionData(ConfirmAutoAction.class)));
         mr.add(new SeperatorData());
-        mr.add(new MenuItemData(new ActionData(AddLinksAction.class), MenuItemProperty.ALWAYS_HIDDEN));
-        mr.add(new MenuItemData(new ActionData(AddContainerAction.class), MenuItemProperty.ALWAYS_HIDDEN));
+        mr.add(new MenuItemData(new ActionData(AddLinksAction.class), false));
+        mr.add(new MenuItemData(new ActionData(AddContainerAction.class), false));
 
         mr.add(new SeperatorData());
         mr.add(createSettingsSubmenu());
@@ -77,7 +76,7 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
         mr.add(EnabledAction.class);
 
         mr.add(new SeperatorData());
-        mr.add(new ActionData(OpenUrlAction.class, MenuItemProperty.LINK_CONTEXT));
+        mr.add(new ActionData(OpenUrlAction.class));
         mr.add(new SeperatorData());
 
         mr.add(createOthersMenu());

@@ -29,19 +29,25 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
         this.version = version;
     }
 
+    public void validateFull() {
+        validate(this, true);
+    }
+
     public void validate() {
-        validate(this);
+        validate(this, false);
     }
 
     /**
      * Validates the items, and removes invalid entries. replaces generic entries with an actual class instance
      * 
      * @param container
+     * @param full
      */
-    private boolean validate(MenuItemData container) {
+    private boolean validate(MenuItemData container, boolean full) {
         container._setValidated(true);
         boolean ret = true;
         container._setRoot(_getRoot());
+        if (!container.isVisible() && !full) return true;
         main: while (true) {
             if (container.getItems() != null) {
 
@@ -50,11 +56,13 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                 MenuItemData last = null;
                 for (int i = 0; i < container.getItems().size(); i++) {
                     MenuItemData mid = container.getItems().get(i);
+                    if (!mid.isVisible() && !full) continue;
                     mid._setValidateException(null);
                     MenuItemData lr = null;
                     try {
                         try {
                             lr = mid.createValidatedItem();
+                            if (!lr.isVisible() && !full) continue;
                             if (lr.getActionData() != null) {
                                 lr.createAction(null);
                             }
@@ -111,7 +119,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                         container.getItems().set(i, rep);
                         mid = rep;
                     }
-                    ret &= validate(mid);
+                    ret &= validate(mid, full);
 
                 }
             }

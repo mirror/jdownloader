@@ -26,7 +26,6 @@ import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
 public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractExtractionAction<PackageType, ChildrenType> {
@@ -36,11 +35,15 @@ public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType,
      */
     private static final long serialVersionUID = 1612595219577059496L;
 
-    public ExtractAction(SelectionInfo<PackageType, ChildrenType> selection) {
-        super(selection);
+    public ExtractAction() {
+        super(null);
         setName(T._.menu_tools_extract_files());
         setIconKey("unpack");
-        this.setEnabled(true);
+
+    }
+
+    public boolean isEnabled() {
+        return true;
     }
 
     public void actionPerformed(ActionEvent e) {

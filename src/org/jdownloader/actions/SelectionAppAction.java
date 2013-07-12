@@ -29,22 +29,13 @@ public abstract class SelectionAppAction<PackageType extends AbstractPackageNode
         return selection;
     }
 
-    public boolean isSuperEnabled() {
-        return super.isEnabled();
-    }
-
-    @Override
-    public boolean isEnabled() {
-
-        return hasSelection() && super.isEnabled();
-    }
-
     public boolean hasSelection() {
         return getSelection() != null && !getSelection().isEmpty();
     }
 
     public void setSelection(SelectionInfo<PackageType, ChildrenType> selection) {
         this.selection = selection;
+        setEnabled(hasSelection());
     }
 
 }

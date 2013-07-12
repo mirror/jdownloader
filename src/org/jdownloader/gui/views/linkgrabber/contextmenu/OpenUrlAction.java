@@ -22,9 +22,14 @@ public class OpenUrlAction extends SelectionAppAction<CrawledPackage, CrawledLin
     @Override
     public void setSelection(SelectionInfo<CrawledPackage, CrawledLink> selection) {
         super.setSelection(selection);
-        if (getSelection() != null) {
+        if (getSelection() != null && getSelection().isLinkContext()) {
             this.link = getSelection().getContextLink();
+            setVisible(true);
+        } else {
+            link = null;
+            setVisible(false);
         }
+
     }
 
     public OpenUrlAction(SelectionInfo<CrawledPackage, CrawledLink> link) {

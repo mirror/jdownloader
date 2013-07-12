@@ -16,14 +16,14 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class RemoveDisabledAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
+public class RemoveDisabledLinksFromLinkgrabberAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
      */
     private static final long serialVersionUID = -6341297356888158708L;
 
-    public RemoveDisabledAction(SelectionInfo<CrawledPackage, CrawledLink> selection) {
+    public RemoveDisabledLinksFromLinkgrabberAction(SelectionInfo<CrawledPackage, CrawledLink> selection) {
         super(selection);
         setName(_GUI._.RemoveDisabledAction_RemoveDisabledAction_object_());
         setIconKey(IconKey.ICON_REMOVE_DISABLED);

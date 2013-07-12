@@ -358,10 +358,6 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
     public abstract String getName();
 
-    public boolean supportsProperty(MenuItemProperty property) {
-        return true;
-    }
-
     public boolean isAcceleratorsEnabled() {
         return false;
     }

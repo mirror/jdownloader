@@ -38,7 +38,6 @@ import javax.swing.event.ListSelectionListener;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.ExtensionManager;
-import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.controlling.SingleReachableState;
@@ -222,7 +221,19 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
         sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
+            private String lastE;
+
             public void valueChanged(ListSelectionEvent e) {
+                if (e.getValueIsAdjusting()) { return; }
+
+                if (lastE != null) {
+
+                    if (lastE.equals(e.toString())) {
+
+                    return; }
+                }
+
+                lastE = e.toString();
                 SwitchPanel op = getSelectedPanel();
                 if (op instanceof ExtensionConfigPanel) {
                     ((ExtensionConfigPanel<?>) op).getExtension().getSettings()._getStorageHandler().getEventSender().addListener(ConfigSidebar.this, true);

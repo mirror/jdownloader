@@ -1,6 +1,5 @@
 package org.jdownloader.controlling.contextmenu;
 
-import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -13,16 +12,11 @@ import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
 import org.appwork.utils.GetterSetter;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.CachableInterface;
@@ -34,13 +28,12 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
 public class MenuItemData implements Storable {
-    private HashSet<MenuItemProperty> properties;
 
-    private ArrayList<MenuItemData>   items;
-    private String                    name;
-    private String                    iconKey;
-    private String                    className;
-    private ActionData                actionData;
+    private ArrayList<MenuItemData> items;
+    private String                  name;
+    private String                  iconKey;
+    private String                  className;
+    private ActionData              actionData;
 
     public String _getIdentifier() {
         if (actionData != null) {
@@ -86,7 +79,7 @@ public class MenuItemData implements Storable {
         CONTAINER;
     }
 
-    private Type              type = Type.ACTION;
+    private Type              type    = Type.ACTION;
 
     private boolean           validated;
 
@@ -99,6 +92,7 @@ public class MenuItemData implements Storable {
     private String            shortcut;
 
     private AppAction         action;
+    private boolean           visible = true;
 
     public void setMnemonic(String mnemonic) {
         this.mnemonic = mnemonic;
@@ -150,29 +144,18 @@ public class MenuItemData implements Storable {
         items.add(child);
     }
 
-    public HashSet<MenuItemProperty> getProperties() {
-        return properties;
-    }
-
-    public void setProperties(HashSet<MenuItemProperty> properties) {
-
-        this.properties = properties;
-    }
-
-    public MenuItemData(MenuItemProperty... ps) {
-        properties = new HashSet<MenuItemProperty>();
-        for (MenuItemProperty p : ps) {
-            properties.add(p);
-        }
-    }
-
-    public MenuItemData(ActionData actionData, MenuItemProperty... itemProperties) {
-        this(itemProperties);
+    public MenuItemData(ActionData actionData) {
+        this();
         setActionData(actionData);
     }
 
-    public MenuItemData(Class<? extends AppAction> class1, MenuItemProperty... itemProperties) {
-        this(new ActionData(class1), itemProperties);
+    public MenuItemData(Class<? extends AppAction> class1) {
+        this(new ActionData(class1));
+    }
+
+    public MenuItemData(ActionData actionData, boolean visible) {
+        this(actionData);
+        setVisible(visible);
     }
 
     public MenuItemData createValidatedItem() throws InstantiationException, IllegalAccessException, ClassNotFoundException, ExtensionNotLoadedException {
@@ -202,12 +185,12 @@ public class MenuItemData implements Storable {
         } else {
             ret = (MenuItemData) Class.forName(menuItemData.getClassName()).newInstance();
         }
+        ret.setVisible(menuItemData.isVisible());
         ret.setActionData(getActionData());
         ret.setIconKey(menuItemData.getIconKey());
         ret.setName(menuItemData.getName());
         ret.setItems(menuItemData.getItems());
         ret.setType(menuItemData.getType());
-        ret.setProperties(menuItemData.getProperties());
 
         return ret;
 
@@ -220,7 +203,7 @@ public class MenuItemData implements Storable {
             throw new WTFException("No ACTION");
         }
         AppAction action = createAction(selection);
-
+        if (!action.isVisible()) return null;
         if (StringUtils.isNotEmpty(getShortcut())) {
             action.setAccelerator(KeyStroke.getKeyStroke(getShortcut()));
         }
@@ -255,6 +238,7 @@ public class MenuItemData implements Storable {
                     ((CachableInterface) action).setData(actionData.getData());
                 }
             }
+            fill(action.getClass(), action);
             return action;
         } else if (action != null && action instanceof CachableInterface) {
             // no need to set selection. action does not need any selection
@@ -262,7 +246,7 @@ public class MenuItemData implements Storable {
             if (StringUtils.isNotEmpty(actionData.getData())) {
                 ((CachableInterface) action).setData(actionData.getData());
             }
-
+            fill(action.getClass(), action);
             return action;
         } else if (action != null) {
             System.out.println("Please Update Action " + action.getClass().getName());
@@ -271,6 +255,7 @@ public class MenuItemData implements Storable {
         Class<?> clazz = actionData._getClazz();
 
         if (StringUtils.isNotEmpty(actionData.getData())) {
+
             Constructor<?> c = clazz.getConstructor(new Class[] { SelectionInfo.class, String.class });
             action = (AppAction) c.newInstance(new Object[] { selection, actionData.getData() });
 
@@ -328,84 +313,15 @@ public class MenuItemData implements Storable {
         return action;
     }
 
-    public boolean showItem(SelectionInfo<?, ?> selection) {
-
-        for (MenuItemProperty p : mergeProperties()) {
-            switch (p) {
-            case HIDE_ON_LINUX:
-                return !CrossSystem.isLinux();
-            case HIDE_ON_MAC:
-                return !CrossSystem.isMac();
-            case HIDE_ON_WINDOWS:
-                return !CrossSystem.isWindows();
-            case ALWAYS_HIDDEN:
-                return false;
-            case LINK_CONTEXT:
-                if (!selection.isLinkContext()) return false;
-                break;
-            case PACKAGE_CONTEXT:
-                if (!selection.isPackageContext()) return false;
-                break;
-            case HIDE_IF_DISABLED:
-                break;
-            case HIDE_IF_OPENFILE_IS_UNSUPPORTED:
-                if (!CrossSystem.isOpenFileSupported()) return false;
-                break;
-            case HIDE_IF_DOWNLOADS_ARE_NOT_RUNNING:
-                if (!DownloadWatchDog.getInstance().isRunning()) { return false; }
-                break;
-            case HIDE_IF_DOWNLOADS_ARE_RUNNING:
-                if (DownloadWatchDog.getInstance().isRunning()) { return false; }
-                break;
-            case HIDE_IF_OUTPUT_NOT_EXISTING:
-                if (selection == null) return false;
-
-                File file = null;
-
-                if (selection.isLinkContext()) {
-                    if (selection.getContextLink() instanceof DownloadLink) {
-                        file = new File(((DownloadLink) selection.getContextLink()).getFileOutput());
-                    } else {
-                        throw new WTFException("TODO");
-                    }
-
-                } else {
-                    if (selection.getContextPackage() instanceof FilePackage) {
-                        file = new File(((FilePackage) selection.getContextPackage()).getDownloadDirectory());
-                    } else {
-                        throw new WTFException("TODO");
-                    }
-
-                }
-                if (file == null || !file.exists()) return false;
-
-            }
-        }
-        return true;
-    }
-
     public JComponent addTo(JComponent root, SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-
-        if (!showItem(selection)) return null;
 
         JComponent it;
 
         it = createItem(selection);
-
         if (it == null) return null;
-
-        if (!it.isEnabled() && mergeProperties().contains(MenuItemProperty.HIDE_IF_DISABLED)) return null;
-
         root.add(it);
         return it;
 
-    }
-
-    public HashSet<MenuItemProperty> mergeProperties() {
-        HashSet<MenuItemProperty> ret = new HashSet<MenuItemProperty>();
-        if (getProperties() != null) ret.addAll(getProperties());
-        if (actionData != null && actionData.getProperties() != null) ret.addAll(actionData.getProperties());
-        return ret;
     }
 
     public List<MenuItemData> list() {
@@ -507,6 +423,15 @@ public class MenuItemData implements Storable {
             }
         }
         return null;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean b) {
+        visible = b;
+
     }
 
 }

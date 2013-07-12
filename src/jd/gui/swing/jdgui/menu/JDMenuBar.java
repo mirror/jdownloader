@@ -20,7 +20,6 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.mainmenu.MainMenuManager;
@@ -86,12 +85,9 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
             @Override
             protected void addContainer(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+                if (!inst.isVisible()) return;
                 final JMenu submenu = (JMenu) inst.addTo(root, selection);
 
-                // final Field f = KeyEvent.class.getField("VK_" + Character.toUpperCase(mnemonic));
-                // final int m = (Integer) f.get(null);
-                // putValue(AbstractAction.MNEMONIC_KEY, m);
-                // putValue(AbstractAction.DISPLAYED_MNEMONIC_INDEX_KEY, getName().indexOf(m));
                 if (submenu != null) {
                     applyMnemonic(root, submenu);
                     if (root == JDMenuBar.this) submenu.setIcon(null);
@@ -101,6 +97,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
             @Override
             protected void addAction(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+                if (!inst.isVisible()) return;
                 if (root instanceof JMenu) {
                     JComponent comp = inst.addTo(root, selection);
                     if (comp == null) return;
@@ -180,8 +177,6 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                     if (ret instanceof AbstractButton) {
                         applyMnemonic(root, (AbstractButton) ret);
                     }
-
-                    if (!ret.isEnabled() && inst.mergeProperties().contains(MenuItemProperty.HIDE_IF_DISABLED)) return;
 
                     root.add(ret);
                 }

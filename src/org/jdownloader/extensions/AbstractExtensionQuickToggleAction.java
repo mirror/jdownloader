@@ -33,11 +33,6 @@ public abstract class AbstractExtensionQuickToggleAction<T extends AbstractExten
     }
 
     @Override
-    public boolean isEnabled() {
-        return super.isSuperEnabled();
-    }
-
-    @Override
     public void setSelection(SelectionInfo<FilePackage, DownloadLink> selection) {
 
     }

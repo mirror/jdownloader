@@ -19,8 +19,8 @@ public class MenuContainer extends MenuItemData {
 
     }
 
-    public void add(Class<? extends AppAction> class1, MenuItemProperty... ps) {
-        add(new ActionData(class1, ps));
+    public void add(Class<? extends AppAction> class1) {
+        add(new ActionData(class1));
     }
 
     public void add(ActionData actionData) {

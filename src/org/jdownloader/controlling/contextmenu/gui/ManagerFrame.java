@@ -14,7 +14,6 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.TreePath;
 
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.uio.UIOManager;
@@ -385,8 +384,14 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
     }
 
     public void setVisible(boolean b) {
-        model.set(manager.getMenuData());
         super.setVisible(b);
+
+        MenuContainerRoot md = manager.getMenuData();
+        long t = System.currentTimeMillis();
+        md.validateFull();
+        System.out.println("Validate: " + (System.currentTimeMillis() - t));
+        model.set(md);
+
     }
 
     @Override

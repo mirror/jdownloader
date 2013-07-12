@@ -21,9 +21,8 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
     /**
      * 
      */
-    private static final long                        serialVersionUID = -3883739313644803093L;
-    private ExtColumn<AbstractNode>                  column;
-    private SelectionInfo<PackageType, ChildrenType> si;
+    private static final long       serialVersionUID = -3883739313644803093L;
+    private ExtColumn<AbstractNode> column;
 
     @Override
     public void setSelection(SelectionInfo<PackageType, ChildrenType> selection) {
@@ -56,7 +55,7 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
                     PackageControllerTableModel model = (PackageControllerTableModel) column.getModel();
 
                     ChildComparator<AbstractNode> comparator = null;
-                    for (AbstractNode node : si.getAllPackages()) {
+                    for (AbstractNode node : getSelection().getAllPackages()) {
                         if (node instanceof AbstractPackageNode) {
                             if (comparator == null) {
                                 if (((AbstractPackageNode) node).getCurrentSorter() == null || !((AbstractPackageNode) node).getCurrentSorter().getID().equals(column.getModel().getModelID() + ".Column." + column.getID()) || ((AbstractPackageNode) node).getCurrentSorter().isAsc()) {
@@ -109,8 +108,4 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
         });
     }
 
-    @Override
-    public boolean isEnabled() {
-        return si != null && !si.isEmpty();
-    }
 }

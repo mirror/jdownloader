@@ -174,7 +174,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
             AbstractButton bt = null;
             AppAction action;
             try {
-                if (!menudata.showItem(null)) continue;
+                if (!menudata.isVisible()) continue;
                 if (menudata instanceof SeperatorData) {
                     if (last != null && last instanceof SeperatorData) {
                         // no seperator dupes
@@ -257,7 +257,8 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                                 @Override
                                 public void actionPerformed(ActionEvent e) {
-                                    finalBt.doClick();
+                                    e.setSource(finalBt);
+                                    finalBt.getAction().actionPerformed(e);
                                 }
                             });
                             ltimer.setRepeats(false);

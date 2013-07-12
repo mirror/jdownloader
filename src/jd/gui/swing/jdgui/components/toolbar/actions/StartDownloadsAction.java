@@ -18,6 +18,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
@@ -45,6 +46,7 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
         CFG_GUI.START_BUTTON_ACTION_IN_LINKGRABBER_CONTEXT.getEventSender().addListener(this, true);
         GUIEventSender.getInstance().addListener(this, true);
         onGuiMainTabSwitch(null, MainTabbedPane.getInstance().getSelectedView());
+        setHideIfDownloadsAreRunning(false);
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -79,6 +81,25 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
         return _JDT._.StartDownloadsAction_createTooltip_();
     }
 
+    private boolean            hideIfDownloadsAreRunning     = false;
+
+    public static final String HIDE_IF_DOWNLOADS_ARE_RUNNING = "HideIfDownloadsAreRunning";
+
+    @Customizer(name = "Hide if downloads are not running")
+    public boolean isHideIfDownloadsAreRunning() {
+        return hideIfDownloadsAreRunning;
+    }
+
+    public void setHideIfDownloadsAreRunning(boolean showIfDownloadsAreRunning) {
+        this.hideIfDownloadsAreRunning = showIfDownloadsAreRunning;
+
+        if (isHideIfDownloadsAreRunning() && DownloadWatchDog.getInstance().isRunning()) {
+            setVisible(false);
+        } else {
+            setVisible(true);
+        }
+    }
+
     @Override
     public void onDownloadWatchdogDataUpdate() {
     }
@@ -97,6 +118,7 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
 
     @Override
     public void onDownloadWatchdogStateIsPause() {
+
     }
 
     @Override
@@ -106,6 +128,10 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
             @Override
             protected void runInEDT() {
                 setEnabled(false);
+                if (isHideIfDownloadsAreRunning()) {
+                    setVisible(false);
+
+                }
             }
         };
     }
@@ -117,6 +143,7 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
             @Override
             protected void runInEDT() {
                 setEnabled(true);
+                setVisible(true);
             }
         };
     }

@@ -10,6 +10,7 @@ import javax.swing.tree.TreePath;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuItemData.Type;
@@ -26,14 +27,25 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
 
     }
 
-    public void set(MenuContainerRoot menuContainerRoot) {
-        // create a copy
-        menuContainerRoot = JSonStorage.restoreFromString(JSonStorage.toString(menuContainerRoot), new TypeRef<MenuContainerRoot>() {
-        });
-        menuContainerRoot.validate();
-        data = menuContainerRoot;
+    public void set(final MenuContainerRoot menuContainerRoot) {
+        new Thread("LoadMenuContainerRoor") {
 
-        fireTreeStructureChanged(this, new Object[] { data }, null, null);
+            public void run() {
+                MenuContainerRoot menuContainerRoot2 = JSonStorage.restoreFromString(JSonStorage.toString(menuContainerRoot), new TypeRef<MenuContainerRoot>() {
+                });
+                menuContainerRoot2.validateFull();
+
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        data = menuContainerRoot;
+                        fireTreeStructureChanged(this, new Object[] { data }, null, null);
+                    }
+                };
+            }
+        }.start();
+        // create a copy
 
     }
 

@@ -41,7 +41,6 @@ import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.gui.mainmenu.MainMenuManager;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
@@ -531,7 +530,7 @@ public class ExtensionController implements MenuExtenderHandler {
         MenuContainerRoot root = new MenuContainerRoot();
         ExtensionsMenuContainer container = new ExtensionsMenuContainer();
 
-        OptionalContainer opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN);
+        OptionalContainer opt = new OptionalContainer(false);
         root.add(container);
         root.add(opt);
         // AddonsMenuWindowContainer windows = new AddonsMenuWindowContainer();
@@ -560,7 +559,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
         // AddonsMenuWindowContainer windows = new AddonsMenuWindowContainer();
         // container.add(windows);
-        OptionalContainer opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN);
+        OptionalContainer opt = new OptionalContainer(false);
         ExtensionsMenuContainer container = new ExtensionsMenuContainer();
         opt.add(container);
         for (final LazyExtension wrapper : pluginsOptional) {

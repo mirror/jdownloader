@@ -7,7 +7,6 @@ import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
@@ -76,8 +75,8 @@ public class DownloadListContextMenuManager extends ContextMenuManager<FilePacka
         mr.add(createSettingsMenu());
 
         mr.add(new SeperatorData());
-        mr.add(new MenuItemData(new ActionData(OpenFileAction.class), MenuItemProperty.HIDE_IF_OUTPUT_NOT_EXISTING, MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED));
-        mr.add(new MenuItemData(new ActionData(OpenDirectoryAction.class), MenuItemProperty.HIDE_IF_OPENFILE_IS_UNSUPPORTED));
+        mr.add(new MenuItemData(new ActionData(OpenFileAction.class)));
+        mr.add(new MenuItemData(new ActionData(OpenDirectoryAction.class)));
         mr.add(new MenuItemData(new ActionData(SortAction.class)));
         mr.add(new MenuItemData(new ActionData(EnabledAction.class)));
         mr.add(new MenuItemData(new ActionData(SkipAction.class)));
@@ -127,7 +126,7 @@ public class DownloadListContextMenuManager extends ContextMenuManager<FilePacka
         settings.add(new MenuItemData(new ActionData(CheckStatusAction.class)));
 
         settings.add(RenameAction.class);
-        settings.add(new MenuItemData(new ActionData(OpenInBrowserAction.class), MenuItemProperty.HIDE_IF_DISABLED));
+        settings.add(new MenuItemData(new ActionData(OpenInBrowserAction.class)));
         settings.add(new MenuItemData(new ActionData(URLEditorAction.class)));
         settings.add(new SeperatorData());
         settings.add(new MenuItemData(new ActionData(PackageNameAction.class)));

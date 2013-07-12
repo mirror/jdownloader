@@ -24,13 +24,15 @@ import javax.swing.KeyStroke;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
 public class ExitAction extends AppAction implements CachableInterface {
 
-    private static final long serialVersionUID = -1428029294638573437L;
+    public static final String HIDE_ON_MAC      = "HideOnMac";
+    private static final long  serialVersionUID = -1428029294638573437L;
 
     public ExitAction() {
 
@@ -39,6 +41,18 @@ public class ExitAction extends AppAction implements CachableInterface {
         setTooltipText(_GUI._.action_exit_tooltip());
         setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));
 
+    }
+
+    private boolean hideOnMac = false;
+
+    @Customizer(name = "Hide Action on MAC OS")
+    public boolean isHideOnMac() {
+
+        return hideOnMac;
+    }
+
+    public void setHideOnMac(boolean hideOnMac) {
+        this.hideOnMac = hideOnMac;
     }
 
     @Override

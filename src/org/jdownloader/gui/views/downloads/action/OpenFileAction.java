@@ -41,6 +41,7 @@ public class OpenFileAction extends SelectionAppAction<FilePackage, DownloadLink
             }
 
         }
+
     }
 
     public OpenFileAction(File file) {

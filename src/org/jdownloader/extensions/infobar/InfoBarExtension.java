@@ -11,7 +11,6 @@ import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -140,7 +139,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     }
 
     private MenuItemData updateMainToolbar(MenuContainerRoot mr) {
-        OptionalContainer opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN);
+        OptionalContainer opt = new OptionalContainer(false);
         opt.add(EnableInfoBarGuiAction.class);
         return opt;
 

@@ -1,7 +1,5 @@
 package org.jdownloader.gui.toolbar;
 
-import java.util.HashSet;
-
 import javax.swing.JPopupMenu;
 
 import jd.controlling.IOEQ;
@@ -35,7 +33,6 @@ import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
@@ -49,7 +46,7 @@ import org.jdownloader.gui.mainmenu.container.CaptchaQuickSettingsContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.toolbar.action.CaptchaDialogsToogleAction;
 import org.jdownloader.gui.toolbar.action.CaptchaExchangeToogleAction;
-import org.jdownloader.gui.toolbar.action.DeleteDisabledSelectedLinksToolbarAction;
+import org.jdownloader.gui.toolbar.action.GenericDeleteSelectedToolbarAction;
 import org.jdownloader.gui.toolbar.action.JAntiCaptchaToogleAction;
 import org.jdownloader.gui.toolbar.action.MoveDownAction;
 import org.jdownloader.gui.toolbar.action.MoveToBottomAction;
@@ -163,7 +160,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
 
         }
         OptionalContainer opt;
-        mr.add(opt = new OptionalContainer(MenuItemProperty.ALWAYS_HIDDEN));
+        mr.add(opt = new OptionalContainer(false));
         opt.add(new MenuItemData(OpenDefaultDownloadFolderAction.class));
         opt.add(new MenuItemData(ShowSettingsAction.class));
         opt.add(new MenuItemData(ExitToolbarAction.class));
@@ -187,7 +184,6 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         ocr.add(JAntiCaptchaToogleAction.class);
         ocr.add(RemoteCaptchaToogleAction.class);
 
-        mr.add(ToolbarDeleteAction.class);
         mr.add(createDeleteMenu());
 
         ocr.add(CaptchaDialogsToogleAction.class);
@@ -196,41 +192,21 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
 
     private MenuItemData createDeleteMenu() {
         DeleteMenuContainer delete = new DeleteMenuContainer();
-
-        delete.add(DeleteDisabledSelectedLinksToolbarAction.class);
+        delete.setVisible(false);
+        delete.add(ToolbarDeleteAction.class);
+        delete.add(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_DISABLED, true));
+        delete.add(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_FAILED, true));
+        delete.add(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_FINISHED, true));
+        delete.add(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_OFFLINE, true));
         // delete.add(new MenuItemData(new ActionData(DeleteSelectedAndFailedLinksAction.class)));
         // delete.add(new MenuItemData(new ActionData(DeleteSelectedFinishedLinksAction.class)));
         // delete.add(new MenuItemData(new ActionData(DeleteSelectedOfflineLinksAction.class)));
         return delete;
     }
 
-    protected void setHidden(MenuItemData ret) {
-        HashSet<MenuItemProperty> props = ret.getProperties();
-        if (props == null) {
-            ret.setProperties(props = new HashSet<MenuItemProperty>());
-        }
-
-    }
-
     public void show() {
 
         new MenuManagerAction().actionPerformed(null);
-    }
-
-    public boolean supportsProperty(MenuItemProperty property) {
-        switch (property) {
-
-        case HIDE_IF_DISABLED:
-        case HIDE_IF_OPENFILE_IS_UNSUPPORTED:
-        case HIDE_IF_OUTPUT_NOT_EXISTING:
-        case LINK_CONTEXT:
-        case PACKAGE_CONTEXT:
-            return false;
-
-        default:
-            return true;
-        }
-
     }
 
     @Override

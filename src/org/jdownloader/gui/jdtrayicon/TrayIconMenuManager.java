@@ -16,7 +16,6 @@ import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.MenuItemProperty;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.jdtrayicon.actions.ChunksEditorLink;
 import org.jdownloader.gui.jdtrayicon.actions.ParalellDownloadsEditorLink;
@@ -58,22 +57,6 @@ public class TrayIconMenuManager extends ContextMenuManager<FilePackage, Downloa
 
     }
 
-    public boolean supportsProperty(MenuItemProperty property) {
-        switch (property) {
-
-        case HIDE_IF_DISABLED:
-        case HIDE_IF_OPENFILE_IS_UNSUPPORTED:
-        case HIDE_IF_OUTPUT_NOT_EXISTING:
-        case LINK_CONTEXT:
-        case PACKAGE_CONTEXT:
-            return false;
-
-        default:
-            return true;
-        }
-
-    }
-
     private static final int VERSION = 0;
 
     public MenuContainerRoot createDefaultStructure() {
@@ -81,9 +64,9 @@ public class TrayIconMenuManager extends ContextMenuManager<FilePackage, Downloa
         mr.setSource(VERSION);
         // mr.add()
 
-        mr.add(new MenuItemData(new ActionData(StartDownloadsAction.class), MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_RUNNING));
-        mr.add(new MenuItemData(new ActionData(StopDownloadsAction.class), MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_NOT_RUNNING));
-        mr.add(new MenuItemData(new ActionData(TrayPauseAction.class), MenuItemProperty.HIDE_IF_DOWNLOADS_ARE_NOT_RUNNING));
+        mr.add(new MenuItemData(new ActionData(StartDownloadsAction.class).putSetup(StartDownloadsAction.HIDE_IF_DOWNLOADS_ARE_RUNNING, true)));
+        mr.add(new MenuItemData(new ActionData(StopDownloadsAction.class).putSetup(StopDownloadsAction.HIDE_IF_DOWNLOADS_ARE_STOPPED, true)));
+        mr.add(new MenuItemData(new ActionData(TrayPauseAction.class).putSetup(TrayPauseAction.HIDE_IF_DOWNLOADS_ARE_STOPPED, true)));
         mr.add(new MenuItemData(new ActionData(TrayUpdateAction.class)));
         mr.add(new MenuItemData(new ActionData(TrayReconnectAction.class)));
         mr.add(new MenuItemData(new ActionData(TrayOpenDefaultDownloadDirectory.class)));
@@ -101,7 +84,7 @@ public class TrayIconMenuManager extends ContextMenuManager<FilePackage, Downloa
         mr.add(new MenuItemData(new ActionData(TrayMenuManagerAction.class)));
 
         mr.add(new SeperatorData());
-        mr.add(new MenuItemData(ExitAction.class, MenuItemProperty.HIDE_ON_MAC));
+        mr.add(new MenuItemData(ExitAction.class));
 
         return mr;
     }
