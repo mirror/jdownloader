@@ -48,10 +48,11 @@ public class Free18Net extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("HTTP\\-EQUIV=\"Refresh\" CONTENT=\"1;URL=http://www\\.free18\\.net/\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("face=\"Verdana\" size=\"2\"><strong>Title: ([^<>\"]*?)<br /> ").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?), Watch, Free Porn Video</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)(, Watch, Free Porn Video| - Free18\\.net)</title>").getMatch(0);
         final String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
         if (cryptedScripts != null && cryptedScripts.length != 0) {
             for (String crypted : cryptedScripts) {

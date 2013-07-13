@@ -88,7 +88,7 @@ public class VidToMe extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.7
+    // XfileShare Version 3.0.6.8
     // last XfileSharingProBasic compare :: 2.6.2.1
     // mods: quality selection
     // protocol: no https
@@ -246,10 +246,11 @@ public class VidToMe extends PluginForHost {
                 // after uploading original files are no longer stored/kept, effectively they re-encode into formats they want for their
                 // flash
                 // player! All videos that i've seen have been changed into mp4 format,
-                String fileExtension = ".mp4";
-                if (!fileInfo[0].endsWith(".mp4") && inValidate(fileInfo[0])) fileInfo[0] = fileInfo[0].trim() + fileExtension.trim();
             }
         }
+        String fileExtension = ".mp4";
+        if (!inValidate(fileInfo[0]) && !fileInfo[0].endsWith(".mp4")) fileInfo[0] = fileInfo[0].trim() + fileExtension.trim();
+
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
@@ -416,7 +417,7 @@ public class VidToMe extends PluginForHost {
         } else {
             // we can not 'rename' filename once the download started, could be problematic!
             if (downloadLink.getDownloadCurrent() == 0) {
-                fixFilename(downloadLink);
+                // fixFilename(downloadLink);
             }
             try {
                 // add a download slot
@@ -586,7 +587,7 @@ public class VidToMe extends PluginForHost {
 
     private void checkServerErrors() throws NumberFormatException, PluginException {
         if (cbr.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
     }
 
     @Override
@@ -1003,11 +1004,13 @@ public class VidToMe extends PluginForHost {
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
      * 
+     * @version 0.2
      * @author raztoki
      * */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
+        String servName = null;
         String servExt = null;
         String orgNameExt = downloadLink.getFinalFileName();
         if (orgNameExt == null) orgNameExt = downloadLink.getName();
@@ -1016,12 +1019,20 @@ public class VidToMe extends PluginForHost {
             orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
         else
             orgName = orgNameExt;
+        // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
         String servNameExt = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        if (!inValidate(servNameExt) && servNameExt.contains(".")) servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
+        if (!inValidate(servNameExt) && servNameExt.contains(".")) {
+            servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
+            servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
+        } else
+            servName = servNameExt;
         String FFN = null;
         if (orgName.equalsIgnoreCase(fuid.toLowerCase()))
             FFN = servNameExt;
-        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt.toLowerCase()))
+        else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName)))
+            // when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster.
+            FFN = servNameExt;
+        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt))
             FFN = orgName + servExt;
         else
             FFN = orgNameExt;

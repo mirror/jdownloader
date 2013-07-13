@@ -62,21 +62,21 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "epicshare.net" }, urls = { "https?://(www\\.)?epicshare\\.net/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "livecloudz.com" }, urls = { "https?://(www\\.)?livecloudz\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
-public class EpicShareNet extends PluginForHost {
+public class LiveCloudzCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://epicshare.net";
+    private final String               COOKIE_HOST                  = "http://livecloudz.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(epicshare\\.net)";
+    private final String               DOMAINS                      = "(livecloudz\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
     private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = true;
-    private final boolean              supportsHTTPS                = true;
+    private final boolean              useAltEmbed                  = false;
+    private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
     private final boolean              useAltExpire                 = true;
@@ -90,16 +90,15 @@ public class EpicShareNet extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.6.8
     // last XfileSharingProBasic compare :: 2.6.2.1
+    // protocol: no https
+    // captchatype: recaptcha
+    // other: no redirects
     // mods:
-    // protocol: has https
-    // captchatype: solvemedia, but embeded used for video links!
-    // other: no redirects, but solve media fails with www as api key locks them to one domain...
-    // other: Id say 180upload are the owners... same ads are in the html.
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
+            chunks = 1;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -111,7 +110,7 @@ public class EpicShareNet extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2;
+            chunks = 1;
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -152,10 +151,10 @@ public class EpicShareNet extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public EpicShareNet(PluginWrapper wrapper) {
+    public LiveCloudzCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @Override
@@ -235,13 +234,43 @@ public class EpicShareNet extends PluginForHost {
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
         // standard traits from base page
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = cbr.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
+            fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + this.getHost() + "/" + fuid + "/(.*?)</font>").getMatch(1);
+            if (inValidate(fileInfo[0])) {
+                fileInfo[0] = cbr.getRegex("fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                if (inValidate(fileInfo[0])) {
+                    fileInfo[0] = cbr.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+                    if (inValidate(fileInfo[0])) {
+                        // can cause new line finds, so check if it matches.
+                        // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        // traits from download1 page below.
+                        if (inValidate(fileInfo[0])) {
+                            fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                            // next two are details from sharing box
+                            if (inValidate(fileInfo[0])) {
+                                fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
+                                if (inValidate(fileInfo[0])) {
+                                    fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         if (inValidate(fileInfo[1])) {
-            try {
-                // only needed in rare circumstances
-                altAvailStat(downloadLink, fileInfo);
-            } catch (Exception e) {
+            fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (inValidate(fileInfo[1])) {
+                fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                if (inValidate(fileInfo[1])) {
+                    fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    if (inValidate(fileInfo[1])) {
+                        try {
+                            // only needed in rare circumstances
+                            // altAvailStat(downloadLink, fileInfo);
+                        } catch (Exception e) {
+                        }
+                    }
+                }
             }
         }
         if (inValidate(fileInfo[2])) fileInfo[2] = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);

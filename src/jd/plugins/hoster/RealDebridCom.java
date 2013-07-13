@@ -53,8 +53,8 @@ public class RealDebridCom extends PluginForHost {
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2 (but disabled with interfaceVersion 3)
 
-    private static final String  mName             = "real-debrid.com";
-    private static final String  mProt             = "http://";
+    private final String         mName             = "real-debrid.com";
+    private final String         mProt             = "https://";
     private static Object        LOCK              = new Object();
     private static AtomicInteger RUNNING_DOWNLOADS = new AtomicInteger(0);
     private static AtomicInteger MAX_DOWNLOADS     = new AtomicInteger(Integer.MAX_VALUE);

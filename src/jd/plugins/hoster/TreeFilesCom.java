@@ -88,7 +88,7 @@ public class TreeFilesCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.7
+    // XfileShare Version 3.0.6.8
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: null
@@ -592,7 +592,7 @@ public class TreeFilesCom extends PluginForHost {
 
     private void checkServerErrors() throws NumberFormatException, PluginException {
         if (cbr.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
     }
 
     @Override
@@ -1007,11 +1007,13 @@ public class TreeFilesCom extends PluginForHost {
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
      * 
+     * @version 0.2
      * @author raztoki
      * */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
+        String servName = null;
         String servExt = null;
         String orgNameExt = downloadLink.getFinalFileName();
         if (orgNameExt == null) orgNameExt = downloadLink.getName();
@@ -1020,12 +1022,20 @@ public class TreeFilesCom extends PluginForHost {
             orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
         else
             orgName = orgNameExt;
+        // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
         String servNameExt = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        if (!inValidate(servNameExt) && servNameExt.contains(".")) servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
+        if (!inValidate(servNameExt) && servNameExt.contains(".")) {
+            servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
+            servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
+        } else
+            servName = servNameExt;
         String FFN = null;
         if (orgName.equalsIgnoreCase(fuid.toLowerCase()))
             FFN = servNameExt;
-        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt.toLowerCase()))
+        else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName)))
+            // when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster.
+            FFN = servNameExt;
+        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt))
             FFN = orgName + servExt;
         else
             FFN = orgNameExt;

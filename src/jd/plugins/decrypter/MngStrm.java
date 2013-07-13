@@ -28,7 +28,7 @@ public class MngStrm extends PluginForDecrypt {
         String url = parameter.toString().replace("readms.com/", "mangastream.com/");
         if (!parameter.equals(url)) parameter.setCryptedUrl(url);
         br.getPage(url + "/1");
-        if (br.containsHTML(">Page Not Found<")) {
+        if (br.containsHTML(">Page Not Found<|but unfortunately that chapter has expired or been removed from the website\\.[\r\n]</p>")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
