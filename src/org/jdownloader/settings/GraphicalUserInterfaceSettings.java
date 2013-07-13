@@ -409,6 +409,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @DefaultBooleanValue(false)
     @AboutConfig
+    boolean isCaptchaDebugModeEnabled();
+
+    void setCaptchaDebugModeEnabled(boolean b);
+
+    @DefaultBooleanValue(false)
+    @AboutConfig
     boolean isCaptchaDialogAOTWorkaroundEnabled();
 
     void setCaptchaDialogAOTWorkaroundEnabled(boolean b);
