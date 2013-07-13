@@ -407,6 +407,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setTaskBarFlashEnabled(boolean b);
 
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    boolean isCaptchaDialogAOTWorkaroundEnabled();
+
+    void setCaptchaDialogAOTWorkaroundEnabled(boolean b);
+
     @DefaultEnumValue("MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY")
     @DescriptionForConfigEntry("When should a Captcha Dialog get the Input Focus?")
     @AboutConfig
