@@ -237,7 +237,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     public void onCleanedUp(ExtractionController controller) {
         for (DownloadLink downloadLink : downloadLinks) {
             switch (CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
-
+            //
             case CLEANUP_IMMEDIATELY:
                 LogController.GL.info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately and Extrating finished!");
                 java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
