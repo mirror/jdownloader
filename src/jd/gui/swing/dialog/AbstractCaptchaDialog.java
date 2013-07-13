@@ -175,7 +175,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             getDialog().toFront();
 
             if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(true);
-            getDialog().setFocusableWindowState(false);
+
             getDialog().getOwner().toFront();
             JDGui.getInstance().getMainFrame().toFront();
 
