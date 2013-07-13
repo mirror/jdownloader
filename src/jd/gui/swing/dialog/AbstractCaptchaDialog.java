@@ -185,7 +185,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
                 public void actionPerformed(ActionEvent e) {
 
                     if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(false);
-                    getDialog().requestFocus();
+                    // getDialog().requestFocus();
                 }
 
             });
