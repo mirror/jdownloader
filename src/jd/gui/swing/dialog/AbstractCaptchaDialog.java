@@ -156,18 +156,41 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(false);
                     getDialog().setFocusableWindowState(true);
                     getDialog().getOwner().setFocusableWindowState(true);
                     JDGui.getInstance().getMainFrame().setFocusableWindowState(true);
                     JDGui.getInstance().getMainFrame().setFocusable(true);
                     System.out.println("Can Focus now");
+                    if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(false);
+
                 }
 
             });
             timer.setRepeats(false);
             timer.start();
             JDGui.getInstance().flashTaskbar();
+
+        } else {
+
+            getDialog().toFront();
+
+            if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(true);
+            getDialog().setFocusableWindowState(false);
+            getDialog().getOwner().toFront();
+            JDGui.getInstance().getMainFrame().toFront();
+
+            Timer timer = new Timer(1000, new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                    if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(false);
+
+                }
+
+            });
+            timer.setRepeats(false);
+            timer.start();
 
         }
 
