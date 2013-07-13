@@ -39,7 +39,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudstor.es" }, urls = { "http://(www\\.)?cloudstor\\.es/f/[A-Za-z0-9]+/(\\d+/)?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudstor.es" }, urls = { "http://(www\\.)?cloudstor\\.es/(f|file)/[A-Za-z0-9_]+/(\\d+/)?" }, flags = { 2 })
 public class CloudStorEs extends PluginForHost {
 
     private static final String veryBusy = "We are currently very busy\\. Please check back soon!";
@@ -52,6 +52,10 @@ public class CloudStorEs extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://cloudstor.es/policies/tos/";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload("http://cloudstor.es/file/" + new Regex(link.getDownloadURL(), "cloudstor\\.es/(f|file)/(.+)").getMatch(1));
     }
 
     @Override
@@ -80,12 +84,12 @@ public class CloudStorEs extends PluginForHost {
             // could be a temp issue?? but we can't download...
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000);
         }
-        final Regex dlInfo = br.getRegex("id: \\'(\\d+)\\', part: \\'(\\d+)\\', token: \\'([a-z0-9]+)\\'");
+        final Regex dlInfo = br.getRegex("hash: \\'([A-Za-z0-9_]+)\\', token: \\'([a-z0-9]+)\\'");
         if (dlInfo.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // jd0.9 doesn't set this following header with postPage or submitform. JD2 does!
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        br.postPage("http://cloudstor.es/submit/_dl_isozone.php", "id=" + dlInfo.getMatch(0) + "&part=" + dlInfo.getMatch(1) + "&token=" + dlInfo.getMatch(2));
+        br.postPage("http://cloudstor.es/submit/_dl_qs.php", "hash=" + dlInfo.getMatch(0) + "&token=" + dlInfo.getMatch(1));
         br.getHeaders().put("Content-Type", null);
         String dllink = br.toString();
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) dllink = br.getRegex("(http://[^\r\n]+)").getMatch(0);

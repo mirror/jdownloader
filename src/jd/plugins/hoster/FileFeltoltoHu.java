@@ -51,6 +51,7 @@ public class FileFeltoltoHu extends PluginForHost {
         if (link.getDownloadURL().matches("http://(www\\.)?filefeltolto\\.hu/(letoltes/[a-z0-9]+/[^<>\"/]+|x/[a-z0-9]+)")) {
             br.getPage(link.getDownloadURL());
             if (br.containsHTML("A fájl nem létezik, vagy törölve lett szerzői jogsértő tartalom miatt")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getURL().equals("http://filefeltolto.hu/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = br.getRegex("class=\"left\">Fájlnév</td><td>([^<>\"]*?)</td></tr>").getMatch(0);
             if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) letöltés :: FileFeltolto\\.hu</title>").getMatch(0);
             String filesize = br.getRegex("\\((\\d+ KB)\\)").getMatch(0);

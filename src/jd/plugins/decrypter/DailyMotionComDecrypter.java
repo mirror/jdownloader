@@ -166,10 +166,15 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             }
         }
         if (FOUNDQUALITIES.isEmpty()) {
+            final String manifestURL = new Regex(VIDEOSOURCE, "\"autoURL\":\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (manifestURL != null) {
+                logger.info("This video needs Adobe HDS streaming which is not supported yet: " + PARAMETER);
+                return decryptedLinks;
+            }
             String[] values = br.getRegex("new SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
             if (values == null || values.length != 2) {
                 /** RTMP */
-                final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted\\.com/video/" + System.currentTimeMillis() + new Random(10000));
+                final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new Random(10000));
                 dl.setProperty("isrtmp", true);
                 dl.setProperty("mainlink", PARAMETER);
                 dl.setFinalFileName(FILENAME + "_RTMP.mp4");

@@ -35,11 +35,23 @@ public class VideoDiscTv extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter + "/?action=getVideo&enteredCaptcha=0");
         String externID = br.getRegex("<iframe src=\"(http://vk\\.com/video_ext[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://[0-9\\.]+/rowaa\\.php[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            final String finallink = br.getRegex("http\\-equiv=\\'refresh\\' content=\\'\\d+; url=(http[^<>\"]*?)\\'").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
         }
         if (externID == null) {

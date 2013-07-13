@@ -147,8 +147,8 @@ public class HenchFileCom extends PluginForHost {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
-            logger.warning("filename equals null, throwing \"plugin defect\"");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.warning("filename equals null, site buggy, showing file not found");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");

@@ -16,16 +16,23 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "http://(www\\.)?goldesel\\.to/download/\\d+/.{1}" }, flags = { 0 })
 public class GldSlTo extends PluginForDecrypt {
@@ -44,6 +51,29 @@ public class GldSlTo extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        final Browser br2 = br.cloneBrowser();
+        br2.getPage("http://goldesel.to/script/main1.js");
+        final String reCaptchaID = br2.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
+        String[] postInfo = getAjaxPost(br2);
+        final String[] ajaxPost = getAjaxPost(br2);
+        if (br.containsHTML("class=\"recaptcha_only_if_image\"") && reCaptchaID != null) {
+            br.getHeaders().put("Referer", "");
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(reCaptchaID);
+            for (int i = 1; i <= 5; i++) {
+                rc.load();
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode(cf, param);
+                br.postPage(parameter, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&Module=CCap");
+                if (br.containsHTML("class=\"recaptcha_only_if_image\"")) {
+                    continue;
+                }
+                break;
+            }
+            if (br.containsHTML("class=\"recaptcha_only_if_image\"")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
+
         String fpName = br.getRegex("class=\"content_box_head\">Detailansicht von \"(.*?)\"</div>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("width=\"14\" height=\"14\" align=\"absbottom\" />\\&nbsp;\\&nbsp;(.*?)</span><div").getMatch(0);
@@ -66,11 +96,14 @@ public class GldSlTo extends PluginForDecrypt {
             return null;
         }
         final String[] streamIDs = br.getRegex("onClick=\"load_Stream\\(\\'(\\d+)\\'\\)").getColumn(0);
-        final String ajaxPost = getAjaxPost();
+        br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        for (final String cryptID : decryptIDs) {
-            br.postPage(ajaxPost, "ID=" + cryptID);
+        for (final String decryptID : decryptIDs) {
+            br.postPage(postInfo[0], postInfo[1] + "=" + decryptID);
             String finallink = br.toString();
+            if (finallink.contains("No input file specified")) {
+                continue;
+            }
             if (!finallink.startsWith("http") || finallink.length() > 500) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -96,13 +129,17 @@ public class GldSlTo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String getAjaxPost() {
-        String post = br.getRegex("function [A-Za-z0-9\\-_]+\\(ID\\) \\{ \\$\\.post\\(\"(ajax[^<>\"]*?)\"").getMatch(0);
-        if (post != null)
-            post = "http://goldesel.to/" + post;
-        else
-            post = "http://goldesel.to/ajax/gDL.php";
-        return post;
+    private String[] getAjaxPost(final Browser br) {
+        String[] postInfo = new String[2];
+        final Regex postInfoRegex = br.getRegex("function [A-Za-z0-9\\-_]+\\(([A-Z0-9]+)\\) \\{ \\$\\.post\\(\"(ajax[^<>\"]*?)\"");
+        if (postInfoRegex.getMatches().length != 0) {
+            postInfo[0] = "http://goldesel.to/" + postInfoRegex.getMatch(1);
+            postInfo[1] = postInfoRegex.getMatch(0);
+        } else {
+            postInfo[0] = "http://goldesel.to/ajax/jDL.php";
+            postInfo[1] = "LNK";
+        }
+        return postInfo;
     }
 
     /* NO OVERRIDE!! */

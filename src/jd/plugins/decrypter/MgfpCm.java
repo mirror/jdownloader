@@ -60,6 +60,10 @@ public class MgfpCm extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
+            if (br.getURL().contains("imagefap.com/404.php")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             if (br.getRedirectLocation() != null) {
                 if (br.getRedirectLocation().contains("/pictures/")) {
                     parameter = br.getRedirectLocation();

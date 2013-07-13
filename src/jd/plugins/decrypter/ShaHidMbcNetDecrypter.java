@@ -241,7 +241,13 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                 // Parsing -> video urls
                 String decompressedPlainData = new String(bos.toByteArray(), "UTF-8");
                 String[] finalContent = new Regex(decompressedPlainData, "(.{23}rtmp[^\r\n]+)").getColumn(0);
-                if (finalContent == null || finalContent.length == 0) { return null; }
+                if (finalContent == null || finalContent.length == 0) {
+                    if (decompressedPlainData.contains("com.delvenetworks.media.data.caching.service.PlaylistCachingServiceImplementation")) {
+                        logger.info("Link offline: " + parameter);
+                        return decryptedLinks;
+                    }
+                    return null;
+                }
 
                 for (String fC : finalContent) {
                     if (fC.length() < 40) {
@@ -254,9 +260,9 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                             quality = fixedHexValue(JDHexUtils.getHexString(fC.substring(0, 2)));
                             if (quality != null && qStr.containsKey(quality)) {
                                 /*
-                                 * Auf Anbieterseite wurden teilweise falsche Qualitätswerte eingepflegt. Funktioniert schon bei Einzellinks. Bei kompletten
-                                 * Staffeln und Qualitätsstufe HD wird auch die Mediumqualität als HD angegeben. Scheint ein Tippfehler zu sein ;-). Wird
-                                 * demnächst fixed
+                                 * Auf Anbieterseite wurden teilweise falsche Qualitätswerte eingepflegt. Funktioniert schon bei
+                                 * Einzellinks. Bei kompletten Staffeln und Qualitätsstufe HD wird auch die Mediumqualität als HD angegeben.
+                                 * Scheint ein Tippfehler zu sein ;-). Wird demnächst fixed
                                  */
                                 if (!completeSeason && links != null && links.containsValue(Quality.valueOf(qStr.get(quality)).getName()) && ("3f3f".equals(quality) || "3f20".equals(quality))) quality = "7d3f";
                                 links.put(new Regex(fC, "(rtmp[\\w:\\/\\.\\-]+)").getMatch(0), Quality.valueOf(qStr.get(quality)).getName());

@@ -51,6 +51,8 @@ public class PervClipsCom extends PluginForHost {
         if (br.containsHTML("(<title>404 Not Found</title>|>Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"/]+) \\- Porn tube</title>").getMatch(0);
         DLLINK = br.getRegex("video_url: encodeURIComponent\\(\\'(http://[^<>\"\\']+)\\'\\)").getMatch(0);
+        // Maybe external link
+        if (DLLINK == null) DLLINK = br.getRegex("video_url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
