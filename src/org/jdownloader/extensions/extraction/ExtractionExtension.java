@@ -603,7 +603,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     logger.info("archive active " + archive.isActive());
                     logger.info("archive size " + archive.getArchiveFiles().size());
                     logger.info("archive complete " + archive.isComplete());
-                    if (archive.isActive() || archive.getArchiveFiles().size() < 1 || !archive.isComplete() || !isAutoExtractEnabled(archive)) return;
+                    if (archive.isActive() || archive.getArchiveFiles().size() < 1 || !archive.isComplete() || !isAutoExtractEnabled(archive)) { return; }
                     this.addToQueue(archive);
                 }
 

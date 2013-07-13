@@ -28,7 +28,6 @@ public class SetExtractPasswordAction<PackageType extends AbstractPackageNode<Ch
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
-        if (archives != null && archives.size() > 0) setSelected(_getExtension().isAutoExtractEnabled(archives.get(0)));
 
     }
 

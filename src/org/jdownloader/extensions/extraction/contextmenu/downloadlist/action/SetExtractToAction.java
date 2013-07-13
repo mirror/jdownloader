@@ -26,7 +26,6 @@ public class SetExtractToAction<PackageType extends AbstractPackageNode<Children
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
-        if (archives != null && archives.size() > 0) setSelected(_getExtension().isAutoExtractEnabled(archives.get(0)));
 
     }
 
