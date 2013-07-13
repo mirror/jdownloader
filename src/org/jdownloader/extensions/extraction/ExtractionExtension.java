@@ -683,13 +683,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     public File getFinalExtractToFolder(Archive archive) {
         String path = null;
-        if (archive.getSettings().getExtractionInfo() != null) {
-            path = archive.getSettings().getExtractionInfo().getExtractToFolder();
-            if (!StringUtils.isEmpty(path)) {
-                /* archive already extracted, use extracttofolder */
-                return new File(path);
-            }
-        }
+
         if (StringUtils.isEmpty(path)) {
             path = archive.getSettings().getExtractPath();
             if (!StringUtils.isEmpty(path)) {
