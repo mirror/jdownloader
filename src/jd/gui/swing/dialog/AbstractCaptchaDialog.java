@@ -156,6 +156,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
+
+                    //
+
                     getDialog().setFocusableWindowState(true);
                     getDialog().getOwner().setFocusableWindowState(true);
                     JDGui.getInstance().getMainFrame().setFocusableWindowState(true);
