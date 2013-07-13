@@ -66,6 +66,7 @@ import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
@@ -172,7 +173,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         // }
         ret.setDeepAnalyse(isDeepAnalyse());
         ret.setPackageName(packagename.getText());
-        ret.setAutoExtract(this.extractToggle.isSelected());
+        ret.setAutoExtract(this.extractToggle.isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
         ret.setCustomComment(getComment());
         String passwordTxt = password.getText();
         if (!StringUtils.isEmpty(passwordTxt)) {
@@ -349,6 +350,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         downloadPassword.setBorder(BorderFactory.createCompoundBorder(downloadPassword.getBorder(), BorderFactory.createEmptyBorder(2, 6, 2, 6)));
 
         extractToggle = new ExtCheckBox();
+
         extractToggle.setSelected(config.isAutoExtractionEnabled());
         // extractToggle.setBorderPainted(false);
 

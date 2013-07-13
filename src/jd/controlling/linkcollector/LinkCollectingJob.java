@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Set;
 
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 
 public class LinkCollectingJob {
     private String   text;
@@ -55,8 +56,8 @@ public class LinkCollectingJob {
         this.customSourceUrl = customSource;
     }
 
-    private boolean autoExtract;
-    private boolean deepAnalyse;
+    private BooleanStatus autoExtract = BooleanStatus.UNSET;
+    private boolean       deepAnalyse;
 
     public LinkCollectingJob() {
         this(null);
@@ -74,11 +75,11 @@ public class LinkCollectingJob {
         this.text = text;
     }
 
-    public boolean isAutoExtract() {
+    public BooleanStatus getAutoExtract() {
         return autoExtract;
     }
 
-    public void setAutoExtract(boolean autoExtract) {
+    public void setAutoExtract(BooleanStatus autoExtract) {
         this.autoExtract = autoExtract;
     }
 

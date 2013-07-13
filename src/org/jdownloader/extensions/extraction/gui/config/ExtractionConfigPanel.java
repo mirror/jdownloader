@@ -35,6 +35,7 @@ import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
 public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtension> {
     private static final long         serialVersionUID = 1L;
@@ -51,10 +52,11 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     private Pair<ComboBox<String>>    cpupriority;
     private Pair<TextArea>            passwordlist;
     private Pair<Checkbox>            toggleDeleteArchiveDownloadLinks;
+    private Pair<Checkbox>            toggleDefaultEnabled;
 
     public ExtractionConfigPanel(ExtractionExtension plg) {
         super(plg);
-
+        toggleDefaultEnabled = this.addPair(T._.settings_auto_extract_default(), null, new Checkbox());
         this.addHeader(T._.settings_extractto(), NewTheme.I().getIcon("folder", 32));
         toggleCustomizedPath = this.addPair(T._.settings_extract_to_archive_folder(), null, new Checkbox());
         customPath = this.addPair(T._.settings_extract_to_path(), null, new FolderChooser());
@@ -208,6 +210,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         new EDTRunner() {
             @Override
             protected void runInEDT() {
+                toggleDefaultEnabled.getComponent().setSelected(CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.getValue());
                 toggleCustomizedPath.getComponent().setSelected(s.isCustomExtractionPathEnabled());
                 String path = s.getCustomExtractionPath();
                 if (path == null) path = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder(), "extracted").getAbsolutePath();
@@ -250,6 +253,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     @Override
     public void save() {
         final ExtractionConfig s = extension.getSettings();
+        CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.setValue(toggleDefaultEnabled.getComponent().isSelected());
         s.setCustomExtractionPathEnabled(toggleCustomizedPath.getComponent().isSelected());
         s.setCustomExtractionPath(customPath.getComponent().getText());
         s.setDeleteArchiveFilesAfterExtraction(toggleDeleteArchives.getComponent().isSelected());

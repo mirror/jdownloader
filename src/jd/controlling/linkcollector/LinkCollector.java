@@ -64,6 +64,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.translate._GUI;
@@ -661,10 +662,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
                 link.getArchiveInfo().getExtractionPasswords().addAll(job.getExtractPasswords());
             }
+            if (job.getAutoExtract() != null) {
+                if (link.getArchiveInfo().getAutoExtract() == BooleanStatus.UNSET) {
+                    link.getArchiveInfo().setAutoExtract(job.getAutoExtract());
+                }
+            }
             if (job.isAutoStart()) {
                 link.setAutoConfirmEnabled(true);
                 link.setAutoStartEnabled(true);
             }
+
             if (job.getPriority() != null) {
                 link.setPriority(job.getPriority());
             }

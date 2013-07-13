@@ -84,6 +84,7 @@ import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContex
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkGrabberMoreSubMenu;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuExtenderHandler, PackageControllerModifyVetoListener<FilePackage, DownloadLink> {
@@ -646,7 +647,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         case TRUE:
             return true;
         case UNSET:
-            return getSettings().isEnabled();
+            return CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled();
         }
         return false;
 
