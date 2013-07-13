@@ -50,4 +50,5 @@ update_dialog_msg_x_updates_available=L'actualització està preparada per insta
 update_dialog_news_button=Obre el llistat de canvis
 update_dialog_title_updates_available=Hi ha una actualització disponible
 update_dialog_yes=Sí (recomanat)
+update_in_next_session=Cancel·la, i no m'ho tornis a preguntar fins al proper reinici
 updatedplugins=S'han actualitzat les extensions.\nAra teniu l'última versió del JDownloader
