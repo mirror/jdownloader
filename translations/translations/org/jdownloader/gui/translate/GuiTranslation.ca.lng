@@ -250,6 +250,7 @@ ForceDownloadAction_ForceDownloadAction=Força l'inici de la descàrrega!
 ForceDownloadAction_SkipDownloadAction=Salta la descàrrega
 ForceDownloadAction_UnskipDownloadAction=Reprèn la descàrrega
 ForceDownloadAction_actionPerformed_help_title_=Inicia les descàrregues
+GUISettings_GUISettings_object_accessability=Accessibilitat
 GUISettings_GUISettings_resetdialog_positions_=Restableix la posició i dimensions de la finestra
 GUISettings_getTitle=Interfície d'usuari
 GUISettings_save_language_changed_restart_required_msg=Cal reiniciar el JDownloader per aplicar el canvi d'idioma. Voleu reinicar ara?
