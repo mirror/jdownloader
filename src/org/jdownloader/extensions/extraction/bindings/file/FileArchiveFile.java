@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.io.File;
 
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.ExtractionController;
 
 public class FileArchiveFile implements ArchiveFile {
 
@@ -72,6 +73,10 @@ public class FileArchiveFile implements ArchiveFile {
 
     @Override
     public void deleteLink() {
+    }
+
+    @Override
+    public void onCleanedUp(ExtractionController controller) {
     }
 
 }

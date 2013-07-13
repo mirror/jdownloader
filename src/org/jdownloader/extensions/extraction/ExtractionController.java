@@ -56,6 +56,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private FileSignatures         fileSignatures   = null;
     private boolean                overwriteFiles;
     private File                   extractToFolder;
+    private boolean                successful       = false;
+
+    public boolean isSuccessful() {
+        return successful;
+    }
 
     public File getExtractToFolder() {
         return extractToFolder;
@@ -229,6 +234,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         removeArchiveFiles();
                     }
                     archive.getSettings().setExtractionInfo(new ExtractionInfo(getExtractToFolder(), archive));
+                    successful = true;
                     fireEvent(ExtractionEvent.Type.FINISHED);
                     logger.clear();
                     break;

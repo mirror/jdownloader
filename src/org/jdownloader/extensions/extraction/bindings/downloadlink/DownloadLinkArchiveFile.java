@@ -8,13 +8,17 @@ import java.util.List;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
 
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionProgress;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class DownloadLinkArchiveFile implements ArchiveFile {
 
@@ -143,6 +147,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                 downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
                 downloadLink.getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_extractok());
                 downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+
                 break;
             }
         }
@@ -226,6 +231,36 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
             }
         }
         return downloadLinks.get(0).getAvailableStatus();
+    }
+
+    @Override
+    public void onCleanedUp(ExtractionController controller) {
+        for (DownloadLink downloadLink : downloadLinks) {
+            switch (CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
+
+            case CLEANUP_IMMEDIATELY:
+                LogController.GL.info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately and Extrating finished!");
+                java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
+                remove.add(downloadLink);
+                if (DownloadController.getInstance().askForRemoveVetos(remove)) {
+                    DownloadController.getInstance().removeChildren(remove);
+                }
+
+                break;
+
+            case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
+                LogController.GL.info("Remove Package " + downloadLink.getName() + " because Finished and CleanupImmediately and Extrating finished!");
+                FilePackage fp = downloadLink.getFilePackage();
+                if (fp.getControlledBy() != null) {
+                    DownloadController.removePackageIfFinished(fp);
+                }
+                break;
+            case CLEANUP_ONCE_AT_STARTUP:
+            case NEVER:
+                LogController.GL.info(CFG_GENERAL.CFG.getCleanupAfterDownloadAction() + "");
+
+            }
+        }
     }
 
 }

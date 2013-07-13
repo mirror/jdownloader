@@ -21,8 +21,8 @@ public interface ArchiveFile {
     public long getFileSize();
 
     /**
-     * returns false if this file matches the patterns, but is not a valid archive file due to other reasons. for example, because it contains a downloadlink
-     * that has not been downloaded.
+     * returns false if this file matches the patterns, but is not a valid archive file due to other reasons. for example, because it
+     * contains a downloadlink that has not been downloaded.
      * 
      * @return
      */
@@ -41,5 +41,7 @@ public interface ArchiveFile {
     public void setMessage(String plugins_optional_extraction_status_notenoughspace);
 
     public void setProgress(long value, long max, Color color);
+
+    public void onCleanedUp(ExtractionController controller);
 
 }

@@ -49,7 +49,6 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.ProxyAuthException;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
@@ -619,8 +618,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         }
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
-         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss
+         * in ms. value==0 macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());
@@ -767,20 +766,19 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
                     case CLEANUP_IMMEDIATELY:
                         LogController.GL.info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately!");
+
                         java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
                         remove.add(downloadLink);
-                        DownloadController.getInstance().removeChildren(remove);
+                        if (DownloadController.getInstance().askForRemoveVetos(remove)) {
+                            DownloadController.getInstance().removeChildren(remove);
+                        }
                         break;
 
                     case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
 
                         FilePackage fp = downloadLink.getFilePackage();
 
-                        if (new DownloadLinkAggregator(fp, true).isFinished()) {
-
-                            LogController.GL.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
-                            DownloadController.getInstance().removePackage(fp);
-                        }
+                        DownloadController.removePackageIfFinished(fp);
                         break;
                     }
 

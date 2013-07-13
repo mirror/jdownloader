@@ -8,13 +8,14 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 
 public class CrawledLinkArchiveFile implements ArchiveFile {
 
     private java.util.List<CrawledLink> links;
-    private String                 name;
-    private long                   size;
+    private String                      name;
+    private long                        size;
 
     public CrawledLinkArchiveFile(CrawledLink l) {
         links = new ArrayList<CrawledLink>();
@@ -134,5 +135,9 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     public boolean existsLocalFile() {
         return new File(LinkTreeUtils.getDownloadDirectory(links.get(0)), links.get(0).getName()).exists();
 
+    }
+
+    @Override
+    public void onCleanedUp(ExtractionController controller) {
     }
 }

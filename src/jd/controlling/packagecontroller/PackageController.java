@@ -223,7 +223,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     /* remove the Package from this PackageController */
     public void removePackage(final PackageType pkg) {
-        if (!askForRemoveVetos(pkg)) return;
+
         if (pkg != null) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
@@ -271,7 +271,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     public void removeChildren(final List<ChildType> removechildren) {
-        if (!askForRemoveVetos(removechildren)) return;
+
         if (removechildren != null && removechildren.size() > 0) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
@@ -532,7 +532,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
      * @param children
      */
     public void removeChildren(final PackageType pkg, final List<ChildType> children, final boolean doNotifyParentlessLinks) {
-        if (!askForRemoveVetos(children)) return;
+
         if (pkg != null && children != null && children.size() > 0) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 

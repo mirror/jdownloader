@@ -19,7 +19,6 @@ public class CleanupAutoDeleteLinksEnabledToggleAction<PackageType extends Abstr
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autodeletelinks());
         setIconKey(IconKey.ICON_LINK);
         setSelected(false);
-        setEnabled(false);
 
     }
 

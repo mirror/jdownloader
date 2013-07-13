@@ -202,6 +202,7 @@ public class ExtractionListenerList implements ExtractionListener {
                     if (link == null) continue;
                     link.setStatus(ArchiveFile.Status.SUCCESSFUL);
                 }
+
             } finally {
                 controller.getArchiv().setActive(false);
                 ex.onFinished(controller);
@@ -216,6 +217,7 @@ public class ExtractionListenerList implements ExtractionListener {
             break;
         case CLEANUP:
             try {
+
                 ArchiveFile af = null;
                 if (controller.getException() != null) {
                     if (controller.getException() instanceof ExtractionException) {
@@ -242,6 +244,14 @@ public class ExtractionListenerList implements ExtractionListener {
                 controller.getArchiv().setActive(false);
                 controller.getArchiv().getFirstArchiveFile().setProgress(0, 0, null);
                 ex.removeArchive(controller.getArchiv());
+                if (controller.isSuccessful()) {
+
+                    for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
+                        if (link == null) continue;
+                        link.onCleanedUp(controller);
+                    }
+
+                }
             }
             break;
         case FILE_NOT_FOUND:

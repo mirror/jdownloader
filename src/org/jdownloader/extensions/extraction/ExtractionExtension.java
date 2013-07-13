@@ -215,6 +215,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             logger.info("First File does not exist " + archive.getFirstArchiveFile());
             return null;
         }
+
         synchronized (archives) {
 
             archives.add(archive);

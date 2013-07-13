@@ -69,6 +69,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.AggregatedNumbers;
+import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -76,6 +77,7 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.action.ConfirmDeleteLinksDialog;
 import org.jdownloader.gui.views.downloads.action.ConfirmDeleteLinksDialogInterface;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
@@ -893,6 +895,18 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 }
 
             }, true);
+        }
+    }
+
+    /**
+     * @param fp
+     */
+    public static void removePackageIfFinished(FilePackage fp) {
+        if (new DownloadLinkAggregator(fp, true).isFinished()) {
+            if (DownloadController.getInstance().askForRemoveVetos(fp)) {
+                LogController.GL.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
+                DownloadController.getInstance().removePackage(fp);
+            }
         }
     }
 }

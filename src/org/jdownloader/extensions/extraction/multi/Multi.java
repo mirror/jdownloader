@@ -256,7 +256,10 @@ public class Multi extends IExtraction {
                 }
             }
         }
-        if (archive.getType() == null) throw new ArchiveException("Unsupported Archive: " + link.getFilePath());
+        if (archive.getType() == null) {
+            //
+            throw new ArchiveException("Unsupported Archive: " + link.getFilePath());
+        }
         return archive;
     }
 

@@ -22,7 +22,6 @@ public class SetExtractPasswordAction<PackageType extends AbstractPackageNode<Ch
         super(selection);
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_password());
         setIconKey(IconKey.ICON_PASSWORD);
-        setEnabled(false);
 
     }
 

@@ -25,8 +25,6 @@ public class ValidateArchivesAction<PackageType extends AbstractPackageNode<Chil
 
         setIconKey(IconKey.ICON_VALIDATE_ARCHIVE);
 
-        setEnabled(false);
-
     }
 
     @Override

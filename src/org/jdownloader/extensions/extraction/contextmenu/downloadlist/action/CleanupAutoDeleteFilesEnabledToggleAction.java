@@ -19,7 +19,6 @@ public class CleanupAutoDeleteFilesEnabledToggleAction<PackageType extends Abstr
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autodeletefiles());
         setIconKey(IconKey.ICON_FILE);
         setSelected(false);
-        setEnabled(false);
 
     }
 

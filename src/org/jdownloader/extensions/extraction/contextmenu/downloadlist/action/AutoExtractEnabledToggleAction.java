@@ -19,7 +19,6 @@ public class AutoExtractEnabledToggleAction<PackageType extends AbstractPackageN
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autoextract());
         setIconKey(IconKey.ICON_ARCHIVE_REFRESH);
         setSelected(false);
-        setEnabled(false);
 
     }
 

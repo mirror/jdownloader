@@ -25,6 +25,12 @@ public abstract class AbstractExtractionAction<PackageType extends AbstractPacka
         if (archives != null && archives.size() > 0) {
             setEnabled(true);
         }
+
+    }
+
+    public void setSelection(SelectionInfo<PackageType, ChildrenType> selection) {
+        this.selection = selection;
+        setEnabled(false);
     }
 
     public void setEnabled(boolean newValue) {

@@ -21,8 +21,6 @@ public class SetExtractToAction<PackageType extends AbstractPackageNode<Children
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_extract_to());
         setIconKey(IconKey.ICON_FOLDER);
 
-        setEnabled(false);
-
     }
 
     @Override

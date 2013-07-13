@@ -9,9 +9,9 @@ public abstract class SelectionAppAction<PackageType extends AbstractPackageNode
     /**
      * 
      */
-    private static final long                        serialVersionUID = 1L;
-    private SelectionInfo<PackageType, ChildrenType> selection;
-    private String                                   data;
+    private static final long                          serialVersionUID = 1L;
+    protected SelectionInfo<PackageType, ChildrenType> selection;
+    private String                                     data;
 
     public String getData() {
         return data;

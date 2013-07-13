@@ -21,7 +21,6 @@ public class ExtractArchiveNowAction<PackageType extends AbstractPackageNode<Chi
         super(selection);
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_extract());
         setIconKey(IconKey.ICON_ARCHIVE_RUN);
-        setEnabled(false);
 
     }
 
