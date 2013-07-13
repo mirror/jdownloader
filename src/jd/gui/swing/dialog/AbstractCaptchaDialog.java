@@ -172,26 +172,20 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
         } else {
             if (CFG_GUI.CFG.isCaptchaDebugModeEnabled()) {
-                getDialog().toFront();
+                // getDialog().toFront();
 
-                if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(true);
-                getDialog().requestFocus();
-                getDialog().requestFocusInWindow();
-                // getDialog().getOwner().toFront();
-                // JDGui.getInstance().getMainFrame().toFront();
-
-                Timer timer = new Timer(1000, new ActionListener() {
-
+                // if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(true);
+                // getDialog().requestFocus();
+                // getDialog().requestFocusInWindow();
+                java.awt.EventQueue.invokeLater(new Runnable() {
                     @Override
-                    public void actionPerformed(ActionEvent e) {
+                    public void run() {
 
-                        if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(false);
-                        // getDialog().requestFocus();
+                        getDialog().toFront();
+                        getDialog().repaint();
+
                     }
-
                 });
-                timer.setRepeats(false);
-                timer.start();
             }
 
         }
