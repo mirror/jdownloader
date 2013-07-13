@@ -22,6 +22,15 @@ public class AutoExtractEnabledToggleAction<PackageType extends AbstractPackageN
 
     }
 
+    public void setSelected(final boolean selected) {
+        super.setSelected(selected);
+        if (isSelected()) {
+            setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_disable_auto_extract());
+        } else {
+            setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_enable_auto_extract());
+        }
+    }
+
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
