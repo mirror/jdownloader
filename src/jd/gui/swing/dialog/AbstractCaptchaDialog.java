@@ -171,26 +171,28 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             JDGui.getInstance().flashTaskbar();
 
         } else {
+            if (CFG_GUI.CFG.isCaptchaDebugModeEnabled()) {
+                getDialog().toFront();
 
-            getDialog().toFront();
+                if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(true);
+                getDialog().requestFocus();
+                getDialog().requestFocusInWindow();
+                // getDialog().getOwner().toFront();
+                // JDGui.getInstance().getMainFrame().toFront();
 
-            if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(true);
-            // getDialog().requestFocus();
-            // getDialog().getOwner().toFront();
-            // JDGui.getInstance().getMainFrame().toFront();
+                Timer timer = new Timer(1000, new ActionListener() {
 
-            Timer timer = new Timer(1000, new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
 
-                @Override
-                public void actionPerformed(ActionEvent e) {
+                        if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(false);
+                        // getDialog().requestFocus();
+                    }
 
-                    if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(false);
-                    // getDialog().requestFocus();
-                }
-
-            });
-            timer.setRepeats(false);
-            timer.start();
+                });
+                timer.setRepeats(false);
+                timer.start();
+            }
 
         }
 
