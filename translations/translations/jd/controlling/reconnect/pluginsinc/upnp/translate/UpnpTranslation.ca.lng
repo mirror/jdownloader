@@ -1,5 +1,5 @@
 AutoDetectAction_run_failed=Dipositius UPNP trobats, però no es pot fer una reconnexió. Proveu de reconnectar amb Live header!
-AutoDetectUpnpAction_AutoDetectUpnpAction_=Intenta trobar tots els dispositius de reconnexió UPnP de la xarxa. \nLa majoria dels routers FritzBox poden ser reconectados d'aquesta manera.
+AutoDetectUpnpAction_AutoDetectUpnpAction_=Intenta trobar tots els dispositius de reconnexió UPnP de la vostra xarxa. \nLa majoria dels routers FritzBox es poden reconnectar d'aquesta manera.
 UPNPReconnectInvoker_getName_=Reconnectar router UPNP
 UPNPRouterPlugin_run_error=No es poden trobar dispositius UPNP. Prova amb la reconnexió Live Header!
 UPNPRouterPlugin_run_mesg=Analitzant totes les interfícies de xarxa
