@@ -147,6 +147,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         if (!focus) {
             System.out.println("Disable focus");
             getDialog().toFront();
+            if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(true);
             getDialog().setFocusableWindowState(false);
             getDialog().getOwner().setFocusableWindowState(false);
             JDGui.getInstance().getMainFrame().setFocusableWindowState(false);
@@ -155,7 +156,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
-
+                    if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(false);
                     getDialog().setFocusableWindowState(true);
                     getDialog().getOwner().setFocusableWindowState(true);
                     JDGui.getInstance().getMainFrame().setFocusableWindowState(true);
@@ -824,7 +825,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
             headerPanel.add(header);
         }
-        config = JsonConfig.create(Application.getResource("cfg/CaptchaDialogDimensions_" + Hash.getMD5(getTitle())), LocationStorage.class);
+        config = JsonConfig.create(Application.getResource("cfg/CaptchaDialogDimensions_" + Hash.getMD5(getHost())), LocationStorage.class);
 
         HeaderScrollPane sp;
 
