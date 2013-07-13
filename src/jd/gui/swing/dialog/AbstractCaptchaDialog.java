@@ -176,8 +176,8 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
             if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(true);
 
-            getDialog().getOwner().toFront();
-            JDGui.getInstance().getMainFrame().toFront();
+            // getDialog().getOwner().toFront();
+            // JDGui.getInstance().getMainFrame().toFront();
 
             Timer timer = new Timer(1000, new ActionListener() {
 
