@@ -395,7 +395,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setMacDockProgressDisplay(MacDockProgressDisplay value);
 
     @DefaultEnumValue("MAINFRAME_IS_MAXIMIZED")
-    @DescriptionForConfigEntry("Action that will be performed when the Linkgrabber adds new links.")
+    @DescriptionForConfigEntry("When should the Mainframe come to Front if new Links were added?")
     @AboutConfig
     WindowState getMainframePopupTriggerWhenNewLinksWereAdded();
 
@@ -408,7 +408,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setTaskBarFlashEnabled(boolean b);
 
     @DefaultEnumValue("MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY")
-    @DescriptionForConfigEntry("Action that will be performed when the Linkgrabber adds new links.")
+    @DescriptionForConfigEntry("When should a Captcha Dialog get the Input Focus?")
     @AboutConfig
     WindowState getFocusTriggerForCaptchaDialogs();
 

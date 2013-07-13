@@ -21,22 +21,24 @@ public abstract class AbstractExtensionAction<T extends AbstractExtension<?, ?>,
     {
 
         Class<?> myClass = getClass();
-        while (true) {
+        main: while (myClass != null && extension == null) {
             try {
                 Type supClass = myClass.getGenericSuperclass();
                 if (supClass instanceof ParameterizedTypeImpl) {
 
                     ParameterizedTypeImpl sc = ((ParameterizedTypeImpl) supClass);
-                    if (sc.getRawType() != AbstractExtensionAction.class) {
-                        myClass = sc.getRawType();
-                        continue;
+                    for (Type t : sc.getActualTypeArguments()) {
+                        if (t instanceof Class && AbstractExtension.class.isAssignableFrom((Class<?>) t)) {
+                            Class<? extends AbstractExtension> clazz = (Class<? extends AbstractExtension>) t;
+                            LazyExtension ex = ExtensionController.getInstance().getExtension(clazz);
+
+                            extension = ((T) ex._getExtension());
+                            break main;
+                        }
                     }
-                    Class<T> clazz = (Class<T>) sc.getActualTypeArguments()[0];
-                    LazyExtension ex = ExtensionController.getInstance().getExtension(clazz);
 
-                    extension = ((T) ex._getExtension());
+                    myClass = ((ParameterizedTypeImpl) supClass).getRawType();
 
-                    break;
                 } else if (supClass instanceof Class) {
                     myClass = (Class<?>) supClass;
                 } else {
@@ -44,7 +46,8 @@ public abstract class AbstractExtensionAction<T extends AbstractExtension<?, ?>,
                 }
 
             } catch (Exception e) {
-                throw new WTFException();
+                e.printStackTrace();
+                throw new WTFException(e);
 
             }
         }

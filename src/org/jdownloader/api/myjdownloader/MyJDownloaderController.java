@@ -63,7 +63,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
 
             @Override
             public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
-                System.out.println("MOD " + newValue);
+
                 // stop();
             }
         };

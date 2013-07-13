@@ -66,7 +66,7 @@ public interface SilentModeSettings extends ConfigInterface {
 
     void setOnCaptchaDuringSilentModeAction(CaptchaDuringSilentModeAction action);
 
-    @DefaultEnumValue("DISABLE_DIALOG_SOLVER")
+    @DefaultEnumValue("DEFAULT_DIALOG_HANDLING")
     @AboutConfig
     CaptchaDuringSilentModeAction getOnCaptchaDuringSilentModeAction();
 
