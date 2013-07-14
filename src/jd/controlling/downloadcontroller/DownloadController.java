@@ -756,6 +756,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 case RESET:
                 case ENABLED:
                 case AVAILABILITY:
+                case PRIORITY:
                     eventPropery.getDownloadLink().getParentNode().getView().requestUpdate();
                     break;
                 }
