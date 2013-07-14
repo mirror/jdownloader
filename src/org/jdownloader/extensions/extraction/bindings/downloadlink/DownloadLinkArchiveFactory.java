@@ -30,7 +30,7 @@ import org.jdownloader.settings.GeneralSettings;
 public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implements ArchiveFactory {
 
     public static final String DOWNLOADLINK_KEY_EXTRACTEDPATH = "EXTRACTEDPATH";
-    public static final String ID                             = "ARCHIVE_ID";
+
     private String             id;
     private static long        LAST_USED_TIMESTAMP;
 
@@ -199,7 +199,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     private String getIDFromFile(DownloadLinkArchiveFile file) {
         for (DownloadLink link : file.getDownloadLinks()) {
-            String id = link.getStringProperty(ID);
+            String id = link.getArchiveID();
             if (id != null) { return id; }
         }
         return null;
@@ -222,7 +222,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         for (ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof DownloadLinkArchiveFile) {
                 for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
-                    link.setProperty(ID, id);
+                    link.setArchiveID(id);
                 }
             }
         }

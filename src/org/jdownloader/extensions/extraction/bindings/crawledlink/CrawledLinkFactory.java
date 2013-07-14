@@ -188,7 +188,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
 
     private String getIDFromFile(CrawledLinkArchiveFile file) {
         for (CrawledLink link : file.getLinks()) {
-            String id = link.getDownloadLink().getStringProperty(DownloadLinkArchiveFactory.ID);
+            String id = link.getDownloadLink().getArchiveID();
             if (id != null) { return id; }
         }
         return null;
@@ -213,7 +213,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         for (ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof CrawledLinkArchiveFile) {
                 for (CrawledLink link : ((CrawledLinkArchiveFile) af).getLinks()) {
-                    link.getDownloadLink().setProperty(DownloadLinkArchiveFactory.ID, id);
+                    link.getDownloadLink().setArchiveID(id);
                     pws.addAll(link.getArchiveInfo().getExtractionPasswords());
                 }
             }

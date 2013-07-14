@@ -83,6 +83,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public static final String                 PROPERTY_RESUMEABLE                 = "PROPERTY_RESUMEABLE";
     public static final String                 PROPERTY_FINALLOCATION              = "FINALLOCATION";
     public static final String                 PROPERTY_ARCHIVE_ID                 = "ARCHIVE_ID";
+
     public static final String                 PROPERTY_EXTRACTION_STATUS          = "EXTRACTION_STATUS";
 
     public static final String                 PROPERTY_CUSTOM_LOCALFILENAME       = "CUSTOM_LOCALFILENAME";
