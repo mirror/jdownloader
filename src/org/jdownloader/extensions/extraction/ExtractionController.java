@@ -230,9 +230,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
                     logger.info("Unpacking successful for " + archive);
-                    if (!archive.getGotInterrupted()) {
-                        removeArchiveFiles();
-                    }
+
                     archive.getSettings().setExtractionInfo(new ExtractionInfo(getExtractToFolder(), archive));
                     successful = true;
                     fireEvent(ExtractionEvent.Type.FINISHED);
@@ -301,7 +299,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     /**
      * Deletes the archive files.
      */
-    private void removeArchiveFiles() {
+    void removeArchiveFiles() {
         java.util.List<File> removed = new ArrayList<File>();
         for (ArchiveFile link : archive.getArchiveFiles()) {
             if (removeAfterExtraction) {

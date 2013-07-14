@@ -244,12 +244,14 @@ public class ExtractionListenerList implements ExtractionListener {
                 controller.getArchiv().setActive(false);
                 controller.getArchiv().getFirstArchiveFile().setProgress(0, 0, null);
                 ex.removeArchive(controller.getArchiv());
-                if (controller.isSuccessful()) {
+                if (controller.isSuccessful() && !controller.getArchiv().getGotInterrupted()) {
 
                     for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                         if (link == null) continue;
                         link.onCleanedUp(controller);
                     }
+
+                    controller.removeArchiveFiles();
 
                 }
             }
