@@ -253,6 +253,8 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                 FilePackage fp = downloadLink.getFilePackage();
                 if (fp.getControlledBy() != null) {
                     DownloadController.removePackageIfFinished(fp);
+                } else {
+                    LogController.GL.info("Cannot remove. Package has no controller");
                 }
                 break;
             case CLEANUP_ONCE_AT_STARTUP:

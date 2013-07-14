@@ -77,7 +77,6 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.action.ConfirmDeleteLinksDialog;
 import org.jdownloader.gui.views.downloads.action.ConfirmDeleteLinksDialogInterface;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
@@ -904,9 +903,14 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     public static void removePackageIfFinished(FilePackage fp) {
         if (new DownloadLinkAggregator(fp, true).isFinished()) {
             if (DownloadController.getInstance().askForRemoveVetos(fp)) {
-                LogController.GL.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
+                DownloadController.getInstance().logger.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
                 DownloadController.getInstance().removePackage(fp);
+            } else {
+                DownloadController.getInstance().logger.info("Package cannot be removed. got veto");
             }
+        } else {
+
+            DownloadController.getInstance().logger.info("Package is not finised");
         }
     }
 }
