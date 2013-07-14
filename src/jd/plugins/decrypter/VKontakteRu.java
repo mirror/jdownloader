@@ -198,6 +198,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         }
                         parameter = "http://vk.com/wall" + wallID;
                         br.getPage(parameter);
+                        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
                     }
                     decryptedLinks = decryptWallLink(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a wall-link");
@@ -674,7 +675,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
 
             // First get all photo links
-            final String[][] photoInfo = br.getRegex("showPhoto\\(\\'((\\-)?\\d+_\\d+)\\', \\'((wall|album(\\-)?)\\d+_\\d+)\\', \\{temp:\\{(base:.*?\\]\\})").getMatches();
+            final String[][] photoInfo = br.getRegex("showPhoto\\(\\'((\\-)?\\d+_\\d+)\\', \\'((wall|album)(\\-)?\\d+_\\d+)\\', \\{temp:\\{(base:.*?\\]\\})").getMatches();
             if (photoInfo == null || photoInfo.length == 0) {
                 logger.info("Current offset has no downloadable links, continuing...");
                 continue;
@@ -878,8 +879,7 @@ public class VKontakteRu extends PluginForDecrypt {
         case 2:
             return 2;
         default:
-            logger.fine("No server is configured, returning default server (fdcserver.net)");
-            return 1;
+            return 0;
         }
     }
 
