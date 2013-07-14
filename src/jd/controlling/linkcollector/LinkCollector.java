@@ -1432,6 +1432,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 case NAME:
                 case ENABLED:
                 case AVAILABILITY:
+                case PRIORITY:
+
                     eventPropery.getCrawledLink().getParentNode().getView().requestUpdate();
                     break;
                 }

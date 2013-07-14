@@ -93,11 +93,12 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info about how to prozess
-     * the file afterwards.
+     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
+     * about how to prozess the file afterwards.
      * 
      * example:<br>
-     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID different.
+     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
+     * different.
      * 
      * @return
      */
@@ -349,14 +350,16 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public Priority getPriority() {
         try {
             if (dlLink == null) return Priority.DEFAULT;
-            return Priority.values()[dlLink.getPriority() + 1];
+            return dlLink.getPriorityEnum();
         } catch (Throwable e) {
             return Priority.DEFAULT;
         }
     }
 
     public void setPriority(Priority priority) {
-        if (dlLink != null) dlLink.setPriority(priority.getId());
+        if (dlLink != null) {
+            dlLink.setPriorityEnum(priority);
+        }
     }
 
     /**

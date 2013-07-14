@@ -779,6 +779,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                         FilePackage fp = downloadLink.getFilePackage();
 
                         DownloadController.removePackageIfFinished(fp);
+
                         break;
                     }
 

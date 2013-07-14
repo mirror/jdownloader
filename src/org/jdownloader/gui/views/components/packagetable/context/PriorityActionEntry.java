@@ -46,7 +46,7 @@ public class PriorityActionEntry<PackageType extends AbstractPackageNode<Childre
                         ((CrawledLink) l).setPriority(priority);
                     } else if (l instanceof DownloadLink) {
                         downloadList = true;
-                        ((DownloadLink) l).setPriority(priority.getId());
+                        ((DownloadLink) l).setPriorityEnum(priority);
                     }
                 }
                 if (linkGrabber) LinkGrabberTableModel.getInstance().setPriorityColumnVisible(true);

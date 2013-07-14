@@ -42,6 +42,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -229,6 +230,15 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return uniqueID;
     }
 
+    public Priority getPriorityEnum() {
+        return Priority.values()[getPriority() + 1];
+    }
+
+    @Deprecated
+    /**
+     * @deprecated use #getPriorityEnum
+     * @return
+     */
     public int getPriority() {
         return this.getIntegerProperty(PROPERTY_PRIORITY, 0);
     }
@@ -260,6 +270,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return this.getIntegerProperty(PROPERTY_SPEEDLIMIT, 0);
     }
 
+    @Deprecated
+    /**
+     * @deprecated Use #setPriorityEnum instead
+     * @param pr
+     */
     public void setPriority(int pr) {
         int oldPrio = getPriority();
         int priority = 0;
@@ -1164,6 +1179,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             setProperty(DownloadLink.PROPERTY_FINALLOCATION, Property.NULL);
         }
+    }
+
+    public void setPriorityEnum(Priority priority) {
+        setPriority(priority.ordinal() - 1);
     }
 
 }

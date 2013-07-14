@@ -10,6 +10,7 @@ import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.packagecontroller.ChildrenView;
 
 import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.Priority;
 
 public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
@@ -21,6 +22,8 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     private java.util.List<CrawledLink> items           = new ArrayList<CrawledLink>();
     private AtomicLong                  updatesRequired = new AtomicLong(0);
     private long                        updatesDone     = -1;
+    private Priority                    lowestPriority;
+    private Priority                    highestPriority;
 
     public CrawledPackageView() {
         this.fileSize = 0l;
@@ -35,10 +38,19 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             List<CrawledLink> litems = getItems();
             boolean newEnabled = false;
             int newOffline = 0;
+            Priority priorityLowset = Priority.HIGHEST;
+            Priority priorityHighest = Priority.LOWER;
             int newOnline = 0;
             long newFileSize = 0;
             HashMap<String, Long> names = new HashMap<String, Long>();
             for (CrawledLink item : litems) {
+
+                if (item.getPriority().ordinal() < priorityLowset.ordinal()) {
+                    priorityLowset = item.getPriority();
+                }
+                if (item.getPriority().ordinal() > priorityHighest.ordinal()) {
+                    priorityHighest = item.getPriority();
+                }
                 // enabled
                 if (item.isEnabled()) newEnabled = true;
                 if (item.getLinkState() == LinkState.OFFLINE) {
@@ -62,10 +74,20 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             }
             fileSize = newFileSize;
             enabled = newEnabled;
+            this.lowestPriority = priorityLowset;
+            this.highestPriority = priorityHighest;
             offline = newOffline;
             online = newOnline;
             updatesDone = lupdatesRequired;
         }
+    }
+
+    public Priority getLowestPriority() {
+        return lowestPriority;
+    }
+
+    public Priority getHighestPriority() {
+        return highestPriority;
     }
 
     public void setItems(List<CrawledLink> updatedItems) {
@@ -74,11 +96,19 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             /* this is called for tablechanged, so update everything for given items */
             boolean newEnabled = false;
             int newOffline = 0;
+            Priority priorityLowset = Priority.HIGHEST;
+            Priority priorityHighest = Priority.LOWER;
             int newOnline = 0;
             long newFileSize = 0;
             HashMap<String, Long> names = new HashMap<String, Long>();
             TreeSet<DomainInfo> domains = new TreeSet<DomainInfo>();
             for (CrawledLink item : updatedItems) {
+                if (item.getPriority().ordinal() < priorityLowset.ordinal()) {
+                    priorityLowset = item.getPriority();
+                }
+                if (item.getPriority().ordinal() > priorityHighest.ordinal()) {
+                    priorityHighest = item.getPriority();
+                }
                 // domain
                 domains.add(item.getDomainInfo());
                 // enabled
@@ -106,6 +136,8 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             enabled = newEnabled;
             offline = newOffline;
             online = newOnline;
+            this.lowestPriority = priorityLowset;
+            this.highestPriority = priorityHighest;
             items = updatedItems;
             domainInfos = domains.toArray(new DomainInfo[] {});
             updatesDone = lupdatesRequired;

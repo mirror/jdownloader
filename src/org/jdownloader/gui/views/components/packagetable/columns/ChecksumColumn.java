@@ -57,8 +57,18 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
         return false;
     }
 
+    // @Override
+    // public boolean isEditable(final E obj) {
+    // return false;
+
     @Override
     protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
+
+        return isEditable(obj);
+    }
+
+    @Override
+    public boolean isEditable(AbstractNode obj) {
         if (obj instanceof CrawledLink) return true;
         if (obj instanceof DownloadLink) return true;
         return false;

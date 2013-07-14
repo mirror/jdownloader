@@ -13,6 +13,7 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class FilePackageView extends ChildrenView<DownloadLink> {
@@ -52,6 +53,10 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     private long         done  = 0;
 
     private int          enabledCount;
+
+    private Priority     lowestPriority;
+
+    private Priority     highestPriority;
 
     public DomainInfo[] getDomainInfos() {
         return infos;
@@ -96,6 +101,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             long fpETA = -1;
             long fpTODO = 0;
             long fpSPEED = 0;
+            Priority priorityLowset = Priority.HIGHEST;
+            Priority priorityHighest = Priority.LOWER;
             boolean sizeKnown = false;
             boolean fpRunning = false;
             HashMap<String, Long> downloadSizes = new HashMap<String, Long>();
@@ -106,6 +113,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             boolean readL = fp.getModifyLock().readLock();
             try {
                 for (DownloadLink link : fp.getChildren()) {
+                    if (link.getPriorityEnum().ordinal() < priorityLowset.ordinal()) {
+                        priorityLowset = link.getPriorityEnum();
+                    }
+                    if (link.getPriorityEnum().ordinal() > priorityHighest.ordinal()) {
+                        priorityHighest = link.getPriorityEnum();
+                    }
                     if (AvailableStatus.FALSE == link.getAvailableStatus()) {
                         // offline
                         newOffline++;
@@ -220,10 +233,20 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                 /* no download running */
                 estimatedETA = -1;
             }
+            this.lowestPriority = priorityLowset;
+            this.highestPriority = priorityHighest;
             offline = newOffline;
             online = newOnline;
             updatesDone = lupdatesRequired;
         }
+    }
+
+    public Priority getLowestPriority() {
+        return lowestPriority;
+    }
+
+    public Priority getHighestPriority() {
+        return highestPriority;
     }
 
     @Override
@@ -240,6 +263,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             int newEnabledCount = 0;
             long fpETA = -1;
             long fpTODO = 0;
+            Priority priorityLowset = Priority.HIGHEST;
+            Priority priorityHighest = Priority.LOWER;
             long fpSPEED = 0;
             boolean sizeKnown = false;
             boolean fpRunning = false;
@@ -251,6 +276,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             boolean readL = fp.getModifyLock().readLock();
             try {
                 for (DownloadLink link : fp.getChildren()) {
+                    if (link.getPriorityEnum().ordinal() < priorityLowset.ordinal()) {
+                        priorityLowset = link.getPriorityEnum();
+                    }
+                    if (link.getPriorityEnum().ordinal() > priorityHighest.ordinal()) {
+                        priorityHighest = link.getPriorityEnum();
+                    }
                     newInfos.add(link.getDomainInfo(true));
                     if (AvailableStatus.FALSE == link.getAvailableStatus()) {
                         // offline
@@ -369,6 +400,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             }
             offline = newOffline;
             online = newOnline;
+            this.lowestPriority = priorityLowset;
+            this.highestPriority = priorityHighest;
             items = updatedItems;
             infos = newInfos.toArray(new DomainInfo[newInfos.size()]);
             updatesDone = lupdatesRequired;
