@@ -700,7 +700,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             path = archive.getFactory().createDefaultExtractToPath(archive);
         }
         if (StringUtils.isEmpty(path)) return null;
-        path = PackagizerController.replaceDynamicTags(path, archive.getName());
+
+        path = PackagizerController.replaceDynamicTags(path, ArchiveFactory.PACKAGENAME);
+
+        path = archive.getFactory().createExtractSubPath(path, archive);
         File ret = new File(path);
         if (getSettings().isSubpathEnabled()) {
             if (getSettings().getSubPathFilesTreshhold() > archive.getContentView().getFileCount() + archive.getContentView().getDirectoryCount()) return ret;
@@ -711,6 +714,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 if (!StringUtils.isEmpty(sub)) ret = new File(ret, sub);
             }
         }
+
         return ret;
     }
 
