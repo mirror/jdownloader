@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -47,48 +48,58 @@ public class FourTubeCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        String playpath = null;
         String configUrl = br.getRegex("'flashvars','config=(.*?)'\\)").getMatch(0);
         if (configUrl == null) configUrl = br.getRegex("addVariable\\('config',.*?'(.*?)'").getMatch(0);
-        if (configUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-        String playpath = br.getRegex("var videoUrl = (\'|\")([^\'\"]+)").getMatch(1);
-        if (playpath == null) {
-            br.getPage("http://" + br.getHost() + configUrl);
-            playpath = br.getRegex("<file>(.*?)</file>").getMatch(0);
-        }
-        String token = br.getRegex("<token>(.*?)</token>").getMatch(0);
-        String url = br.getRegex("<streamer>(.*?)</streamer>").getMatch(0);
-        if (playpath == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-        if (!playpath.startsWith("http")) {
-            dl = new RTMPDownload(this, downloadLink, url + "/" + playpath);
-            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
-            String host = url.substring(0, url.lastIndexOf("/") + 1);
-            String app = url.replace(host, "");
-            if (host == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-            if (app.equals("vod/")) {
-                rtmp.setLive(true);
-            } else {
-                rtmp.setResume(true);
+        if (configUrl != null) {
+            playpath = br.getRegex("var videoUrl = (\'|\")([^\'\"]+)").getMatch(1);
+            if (playpath == null) {
+                br.getPage("http://" + br.getHost() + configUrl);
+                playpath = br.getRegex("<file>(.*?)</file>").getMatch(0);
             }
-            rtmp.setToken(token);
-            rtmp.setPlayPath(playpath);
-            rtmp.setApp(app);
-            rtmp.setUrl(host + app);
-            rtmp.setSwfUrl("http://www.4tube.com/player2.swf");
+            String token = br.getRegex("<token>(.*?)</token>").getMatch(0);
+            String url = br.getRegex("<streamer>(.*?)</streamer>").getMatch(0);
+            if (playpath == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-            ((RTMPDownload) dl).startDownload();
-        } else {
-            br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(playpath), true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!playpath.startsWith("http")) {
+                dl = new RTMPDownload(this, downloadLink, url + "/" + playpath);
+                jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+
+                String host = url.substring(0, url.lastIndexOf("/") + 1);
+                String app = url.replace(host, "");
+                if (host == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+
+                if (app.equals("vod/")) {
+                    rtmp.setLive(true);
+                } else {
+                    rtmp.setResume(true);
+                }
+                rtmp.setToken(token);
+                rtmp.setPlayPath(playpath);
+                rtmp.setApp(app);
+                rtmp.setUrl(host + app);
+                rtmp.setSwfUrl("http://www.4tube.com/player2.swf");
+
+                ((RTMPDownload) dl).startDownload();
+                return;
             }
-            dl.startDownload();
         }
+        if (configUrl == null) {
+            // jwplayer
+            configUrl = br.getRegex("var playerConfigPlaylist =\\s+\\[(.*?)\\];").getMatch(0);
+            if (configUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            playpath = new Regex(configUrl, "sources: \\[\\{\"file\":\"(http[^\"]+)").getMatch(0);
+        }
+        if (playpath == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        playpath = playpath.replaceAll("\\\\/", "/");
+
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(playpath), true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
