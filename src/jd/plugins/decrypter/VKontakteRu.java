@@ -140,6 +140,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     // No case matched, in order to avoid too many requests we only access the link here in this case
                     if (!br.getURL().equals(parameter)) getPageSafe(parameter);
                     if (br.containsHTML("id=\"profile_main_actions\"")) {
+                        // Change profile links -> albums links
                         final String profileAlbums = br.getRegex("id=\"profile_albums\">[\t\n\r ]+<a href=\"(/albums\\d+)\"").getMatch(0);
                         if (profileAlbums == null) {
                             logger.warning("Failed to find profileAlbums for profile-link: " + parameter);
@@ -148,10 +149,19 @@ public class VKontakteRu extends PluginForDecrypt {
                         newLink = MAINPAGE + profileAlbums;
                         getPageSafe(newLink);
                     } else if (br.containsHTML("id=\"public_like_module\"")) {
-                        // Change group links -> wall links
-                        String wallID = br.getRegex("class=\"wall_text\"><a class=\"author\" href=\"/[A-Za-z0-9\\-_\\.]+\" data\\-from\\-id=\"((\\-)?\\d+)\"").getMatch(0);
+                        // Change public page links -> wall links
+                        final String wallID = br.getRegex("class=\"wall_text\"><a class=\"author\" href=\"/[A-Za-z0-9\\-_\\.]+\" data\\-from\\-id=\"((\\-)?\\d+)\"").getMatch(0);
                         if (wallID == null) {
-                            logger.warning("Failed to find profileAlbumsID for group-link: " + parameter);
+                            logger.warning("Failed to find wallID for public-page-link: " + parameter);
+                            return null;
+                        }
+                        newLink = MAINPAGE + "/wall" + wallID;
+                        getPageSafe(newLink);
+                    } else if (br.containsHTML("class=\"group_like_enter_desc\"")) {
+                        // For open community links
+                        final String wallID = br.getRegex("class=\"post all own\" onmouseover=\"wall\\.postOver\\(\\'((\\-)?\\d+)").getMatch(0);
+                        if (wallID == null) {
+                            logger.warning("Failed to find wallID for open-community-link: " + parameter);
                             return null;
                         }
                         newLink = MAINPAGE + "/wall" + wallID;
@@ -420,6 +430,14 @@ public class VKontakteRu extends PluginForDecrypt {
         int onlineCounter = 0;
         int offlineCounter = 0;
         while (totalCounter < numberOfEntrys) {
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user, stopping...");
+                    break;
+                }
+            } catch (final Throwable e) {
+                // Not available in 0.9.851 Stable
+            }
             String[] videos = null;
             if (totalCounter < 12) {
                 final String jsVideoArray = br.getRegex("videoList: \\{\\'all\\': \\[(.*?)\\]\\]\\}").getMatch(0);
@@ -473,7 +491,6 @@ public class VKontakteRu extends PluginForDecrypt {
     private ArrayList<DownloadLink> findVideolinks(final String parameter) throws IOException {
         br.setFollowRedirects(false);
         final ArrayList<DownloadLink> foundVideolinks = new ArrayList<DownloadLink>();
-        final String userID = new Regex(parameter, "(\\d+)_\\d+$").getMatch(0);
         final String vidID = new Regex(parameter, "(\\d+)$").getMatch(0);
         String correctedBR = br.toString().replace("\\", "");
         // Find youtube.com link if it exists
@@ -690,6 +707,14 @@ public class VKontakteRu extends PluginForDecrypt {
         int correntOffset = 0;
         int maxOffset = Integer.parseInt(endOffset);
         while (correntOffset < maxOffset) {
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user, stopping...");
+                    break;
+                }
+            } catch (final Throwable e) {
+                // Not available in 0.9.851 Stable
+            }
             correntOffset += 20;
             logger.info("Starting to decrypt offset " + correntOffset + " / " + maxOffset);
             if (correntOffset > 30) {
@@ -740,6 +765,14 @@ public class VKontakteRu extends PluginForDecrypt {
         int addedLinks = 0;
 
         for (int i = 0; i <= maxLoops; i++) {
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user, stopping...");
+                    break;
+                }
+            } catch (final Throwable e) {
+                // Not available in 0.9.851 Stable
+            }
             if (i > 0) {
                 br.postPage(postPage, postData + offset);
                 for (String regex[] : regexesAllOthers) {
@@ -800,6 +833,14 @@ public class VKontakteRu extends PluginForDecrypt {
         int addedLinks = 0;
 
         for (int i = 0; i <= maxLoops; i++) {
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user, stopping...");
+                    break;
+                }
+            } catch (final Throwable e) {
+                // Not available in 0.9.851 Stable
+            }
             if (i > 0) {
                 br.postPage(postPage, postData + offset);
                 for (String regex[] : regexesAllOthers) {
