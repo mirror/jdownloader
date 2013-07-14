@@ -297,10 +297,11 @@ public class Archive {
 
     public ArchiveSettings getSettings() {
         if (settings != null) return settings;
+        String id = getFactory().getID();
         synchronized (this) {
             if (settings != null) return settings;
             Application.getResource("cfg/archives/").mkdirs();
-            ArchiveSettings lsettings = JsonConfig.create(Application.getResource("cfg/archives/" + getFactory().getID()), ArchiveSettings.class);
+            ArchiveSettings lsettings = getSettingsByID(id);
             if (lsettings.getAutoExtract() == null || BooleanStatus.UNSET.equals(lsettings.getAutoExtract())) {
                 /* only set AutoExtract value when it is UNSET */
                 lsettings.setAutoExtract(getFactory().getDefaultAutoExtract());
@@ -308,6 +309,15 @@ public class Archive {
             settings = lsettings;
         }
         return settings;
+    }
+
+    /**
+     * @param id
+     * @return
+     */
+    public static ArchiveSettings getSettingsByID(String id) {
+        ArchiveSettings lsettings = JsonConfig.create(Application.getResource("cfg/archives/" + id), ArchiveSettings.class);
+        return lsettings;
     }
 
     public ArchiveFile getArchiveFileByPath(String filename) {
