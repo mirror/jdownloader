@@ -610,10 +610,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
             } else if (caller instanceof ExtractionController && getSettings().isDeepExtractionEnabled()) {
                 try {
+
                     for (File archiveStartFile : fileList) {
                         FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
                         if (isLinkSupported(fac)) {
                             Archive ar = buildArchive(fac);
+                            ar.getSettings().setExtractPath(archiveStartFile.getParent());
                             if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete() || !isAutoExtractEnabled(ar)) continue;
                             addToQueue(ar);
                         }
@@ -688,7 +690,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             path = archive.getSettings().getExtractPath();
             if (!StringUtils.isEmpty(path)) {
                 /* use customized extracttofolder */
-                return new File(path);
+                path = PackagizerController.replaceDynamicTags(path, ArchiveFactory.PACKAGENAME);
+
+                path = archive.getFactory().createExtractSubPath(path, archive);
+                File ret = new File(path);
+                // System.out.println(1);
+                ret = appendSubFolder(archive, ret);
+                return ret;
             }
         }
         if (getSettings().isCustomExtractionPathEnabled()) {
@@ -705,16 +713,30 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
         path = archive.getFactory().createExtractSubPath(path, archive);
         File ret = new File(path);
+        ret = appendSubFolder(archive, ret);
+
+        return ret;
+    }
+
+    /**
+     * @param archive
+     * @param ret
+     * @return
+     */
+    protected File appendSubFolder(Archive archive, File ret) {
         if (getSettings().isSubpathEnabled()) {
             if (getSettings().getSubPathFilesTreshhold() > archive.getContentView().getFileCount() + archive.getContentView().getDirectoryCount()) return ret;
             if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder() && archive.getContentView().getFileCount() == 0) return ret;
             String sub = getSettings().getSubPath();
             if (!StringUtils.isEmpty(sub)) {
                 sub = archive.getFactory().createExtractSubPath(sub, archive);
-                if (!StringUtils.isEmpty(sub)) ret = new File(ret, sub);
+
+                if (!StringUtils.isEmpty(sub)) {
+                    sub = sub.trim();
+                    ret = new File(ret, sub);
+                }
             }
         }
-
         return ret;
     }
 
