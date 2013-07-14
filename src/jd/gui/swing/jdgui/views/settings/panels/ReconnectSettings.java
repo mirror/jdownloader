@@ -40,9 +40,6 @@ public class ReconnectSettings extends AbstractConfigPanel {
 
     public ReconnectSettings() {
         super();
-        this.addHeader(_JDT._.gui_settings_reconnect_title_method(), NewTheme.I().getIcon("reconnect", 32));
-
-        add(new ReconnectManager());
         this.addHeader(_GUI._.ReconnectSettings_ReconnectSettings_settings_(), NewTheme.I().getIcon("settings", 32));
         this.addDescription(_GUI._.ReconnectSettings_ReconnectSettings_settings_desc());
 
@@ -50,6 +47,10 @@ public class ReconnectSettings extends AbstractConfigPanel {
 
         addPair(_GUI._.ReconnectSettings_ReconnectSettings_prefer_reconnect_desc(), null, new Checkbox(CFG_RECONNECT.DOWNLOAD_CONTROLLER_PREFERS_RECONNECT_ENABLED));
         addPair(_GUI._.ReconnectSettings_ReconnectSettings_interrupt_resumable_allowed(), null, new Checkbox(CFG_RECONNECT.RECONNECT_ALLOWED_TO_INTERRUPT_RESUMABLE_DOWNLOADS));
+
+        this.addHeader(_JDT._.gui_settings_reconnect_title_method(), NewTheme.I().getIcon("reconnect", 32));
+
+        add(new ReconnectManager());
 
     }
 
