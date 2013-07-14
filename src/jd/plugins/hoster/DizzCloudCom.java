@@ -224,7 +224,8 @@ public class DizzCloudCom extends PluginForHost {
         } else {
             br.setFollowRedirects(false);
             br.getPage(downloadLink.getDownloadURL());
-            String dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.cloudstoreservice\\.net/[^<>\"]*?)\"").getMatch(0);
+            String dllink = br.getRedirectLocation();
+            if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.cloudstoreservice\\.net/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\"(http://[^<>\"]*?)\" class=\"orange\\-btn\">DOWNLOAD</a>").getMatch(0);
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
