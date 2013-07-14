@@ -52,7 +52,7 @@ public class VKontakteRu extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String        REPLACEUSERLINKS              = "REPLACEUSERLINKS";
+    private final String        changetosstring               = "changetosstring";
     private final String        FASTLINKCHECK                 = "FASTLINKCHECK";
     private final String        FASTPICTURELINKCHECK          = "FASTPICTURELINKCHECK";
     private final String        FASTAUDIOLINKCHECK            = "FASTAUDIOLINKCHECK";
@@ -166,7 +166,7 @@ public class VKontakteRu extends PluginForDecrypt {
                      */
                     decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a single-photo-album-link");
-                } else if (parameter.matches(PATTERN_PHOTO_ALBUMS) || (!parameter.matches(PATTERN_WALL_LINK) && cfg.getBooleanProperty(REPLACEUSERLINKS, false))) {
+                } else if (parameter.matches(PATTERN_PHOTO_ALBUMS) || (!parameter.matches(PATTERN_WALL_LINK) && getConfiguredReplacementNumber() == 2)) {
                     /**
                      * Photo albums lists/overviews Example: http://vk.com/albums46486585
                      */
@@ -175,7 +175,8 @@ public class VKontakteRu extends PluginForDecrypt {
                             logger.info("Link offline: " + parameter);
                             return decryptedLinks;
                         }
-                        final String profileAlbumsID = br.getRegex("id=\"profile_albums\">[\t\n\r ]+<a href=\"(/albums\\d+)\"").getMatch(0);
+                        String profileAlbumsID = br.getRegex("id=\"profile_albums\">[\t\n\r ]+<a href=\"(/albums\\d+)\"").getMatch(0);
+                        if (profileAlbumsID == null) profileAlbumsID = br.getRegex("id=\"profile_photos_module\">[\t\n\r ]+<a href=\"(/albums\\d+)").getMatch(0);
                         if (profileAlbumsID == null) {
                             logger.warning("Failed to find profileAlbumsID for user-link: " + parameter);
                             return null;
@@ -186,7 +187,19 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " photo-album-links out of a multiple-photo-albums-link");
                 } else {
-                    decryptWallLink(decryptedLinks, parameter);
+                    if (!parameter.matches(PATTERN_WALL_LINK) && getConfiguredReplacementNumber() != 1) {
+                        logger.warning("Cannot decrypt unsupported linktype: " + parameter);
+                        return null;
+                    } else if (!parameter.matches(PATTERN_WALL_LINK) && getConfiguredReplacementNumber() == 1) {
+                        String wallID = br.getRegex("class=\"wall_text\"><a class=\"author\" href=\"/[A-Za-z0-9\\-_\\.]+\" data\\-from\\-id=\"((\\-)?\\d+)\"").getMatch(0);
+                        if (wallID == null) {
+                            logger.warning("Failed to find profileAlbumsID for user-link: " + parameter);
+                            return null;
+                        }
+                        parameter = "http://vk.com/wall" + wallID;
+                        br.getPage(parameter);
+                    }
+                    decryptedLinks = decryptWallLink(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a wall-link");
                 }
             } catch (BrowserException e) {
@@ -632,7 +645,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private ArrayList<DownloadLink> decryptWallLink(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
         br.setFollowRedirects(true);
         final String type = "walllink";
-        String userID = new Regex(parameter, "vk\\.com/wall\\-(\\d+)").getMatch(0);
+        String userID = new Regex(parameter, "vk\\.com/wall(\\-)?(\\d+)").getMatch(1);
         if (userID == null) {
             br.getPage("https://api.vk.com/method/resolveScreenName?screen_name=" + new Regex(parameter, "vk\\.com/(.+)").getMatch(0));
             userID = br.getRegex("\"object_id\":(\\d+)").getMatch(0);
@@ -644,7 +657,7 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Invalid walllink: " + parameter);
             return decryptedLinks;
         }
-        String endOffset = br.getRegex("href=\"/wall\\-" + userID + "[^<>\"/]*?offset=(\\d+)\" onclick=\"return nav\\.go\\(this, event\\)\"><div class=\"pg_in\">\\&raquo;</div>").getMatch(0);
+        String endOffset = br.getRegex("href=\"/wall(\\-)?" + userID + "[^<>\"/]*?offset=(\\d+)\" onclick=\"return nav\\.go\\(this, event\\)\"><div class=\"pg_in\">\\&raquo;</div>").getMatch(1);
         if (endOffset == null) endOffset = "10";
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int correntOffset = 0;
@@ -661,7 +674,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
 
             // First get all photo links
-            final String[][] photoInfo = br.getRegex("showPhoto\\(\\'((\\-)?\\d+_\\d+)\\', \\'((wall|album)\\-\\d+_\\d+)\\', \\{temp:\\{(base:.*?\\]\\})").getMatches();
+            final String[][] photoInfo = br.getRegex("showPhoto\\(\\'((\\-)?\\d+_\\d+)\\', \\'((wall|album(\\-)?)\\d+_\\d+)\\', \\{temp:\\{(base:.*?\\]\\})").getMatches();
             if (photoInfo == null || photoInfo.length == 0) {
                 logger.info("Current offset has no downloadable links, continuing...");
                 continue;
@@ -670,7 +683,7 @@ public class VKontakteRu extends PluginForDecrypt {
             for (final String[] singlePhotoInfo : photoInfo) {
                 final String pictureID = singlePhotoInfo[0];
                 final String other_id = singlePhotoInfo[2];
-                final String directlinks = singlePhotoInfo[4];
+                final String directlinks = singlePhotoInfo[5];
 
                 final DownloadLink dl = getSinglePhotoDownloadLink(pictureID);
                 if (other_id.matches("album\\-\\d+_\\d+")) {
@@ -854,6 +867,20 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
         return hasPassed;
+    }
+
+    private int getConfiguredReplacementNumber() {
+        switch (cfg.getIntegerProperty(changetosstring, -1)) {
+        case 0:
+            return 0;
+        case 1:
+            return 1;
+        case 2:
+            return 2;
+        default:
+            logger.fine("No server is configured, returning default server (fdcserver.net)");
+            return 1;
+        }
     }
 
     private void prepBrowser(final Browser br) {

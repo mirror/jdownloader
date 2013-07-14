@@ -55,7 +55,6 @@ public class GldSlTo extends PluginForDecrypt {
         br2.getPage("http://goldesel.to/script/main1.js");
         final String reCaptchaID = br2.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
         String[] postInfo = getAjaxPost(br2);
-        final String[] ajaxPost = getAjaxPost(br2);
         if (br.containsHTML("class=\"recaptcha_only_if_image\"") && reCaptchaID != null) {
             br.getHeaders().put("Referer", "");
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");

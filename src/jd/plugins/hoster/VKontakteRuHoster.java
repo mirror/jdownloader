@@ -66,6 +66,8 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String ALLOW_480P           = "ALLOW_480P";
     private static final String ALLOW_720P           = "ALLOW_720P";
     private static final String TEMPORARILYBLOCKED   = "You tried to load the same page more than once in one second|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
+    private final String        changetosstring      = "changetosstring";
+    private final String[]      CHANGETO             = new String[] { "Don't change", "Change to 'vk.com/wall-XXXX'", "Change to 'vk.com/albumsXXXX'" };
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
@@ -422,7 +424,7 @@ public class VKontakteRuHoster extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "General settings:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USECOOKIELOGIN, JDL.L("plugins.hoster.vkontakteruhoster.alwaysUseCookiesForLogin", "Always use cookies for login (this can cause out of date errors)")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), REPLACEUSERLINKS, JDL.L("plugins.hoster.vkontakteruhoster.replaceUserlinks", "Change 'vk.com/username' links to 'vk.com/albums' links")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), changetosstring, CHANGETO, JDL.L("plugins.hoster.vkontakteruhoster.changeuserlinks", "Select the handling for 'vk.com/username' links:")).setDefaultValue(0));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Linkcheck settings:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

@@ -271,7 +271,7 @@ public class ModDbCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), moddbservers, servers, JDL.L("plugins.host.L4dMapsCom.servers", "Use this server:")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), moddbservers, servers, JDL.L("plugins.hoster.L4dMapsCom.servers", "Use this server:")).setDefaultValue(0));
     }
 
 }

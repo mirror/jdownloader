@@ -79,6 +79,10 @@ public class UltraMegaBitCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         // Only seen in a log
         if (br.containsHTML(">Download slot limit reached<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         final String rcid = br.getRegex("\\?k=([^<>\"]*?)\"").getMatch(0);
@@ -178,16 +182,22 @@ public class UltraMegaBitCom extends PluginForHost {
         final String filesNum = getData("Total files served");
         if (filesNum != null) ai.setFilesNum(Long.parseLong(filesNum));
         ai.setUnlimitedTraffic();
+
+        String acctype = "Premium User";
+        // some premiums have no expiration date, page shows only: Account status: Premium
+        final String accountStatus = getData("Account status").trim();
         final String expire = br.getRegex("Premium[\t\n\r ]+</div>[\t\n\r ]+<div>([^<>\"]*? \\d{2} \\d{4})</div>").getMatch(0);
-        if (expire == null) {
-            // some premiums have no expiration date, page shows only: Account status: Premium
-            final String accountStatus = getData("Account status").trim();
-            if (!accountStatus.equalsIgnoreCase("Premium")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free account is not supported", PluginException.VALUE_ID_PREMIUM_DISABLE); }
-        } else {
+        if (expire == null && !accountStatus.equalsIgnoreCase("Premium")) {
+            acctype = "Registered (free) User";
+            account.setProperty("freeacc", true);
+        } else if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd yyyy", Locale.ENGLISH));
+            account.setProperty("freeacc", false);
+        } else {
+            account.setProperty("freeacc", false);
         }
         account.setValid(true);
-        ai.setStatus("Premium User");
+        ai.setStatus(acctype);
         return ai;
     }
 
@@ -195,20 +205,25 @@ public class UltraMegaBitCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        final String token = br.getCookie(MAINPAGE, "csrf_cookie");
-        if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(false);
-        br.postPage("http://ultramegabit.com/file/download", "csrf_token=" + token + "&encode=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
-        final String finallink = br.getRedirectLocation();
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -15);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (account.getBooleanProperty("freeacc", false)) {
+            br.getPage(link.getDownloadURL());
+            doFree(link);
+        } else {
+            final String token = br.getCookie(MAINPAGE, "csrf_cookie");
+            if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.setFollowRedirects(false);
+            br.postPage("http://ultramegabit.com/file/download", "csrf_token=" + token + "&encode=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
+            final String finallink = br.getRedirectLocation();
+            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -15);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+            dl.startDownload();
         }
-        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
-        dl.startDownload();
     }
 
     private String getData(final String parameter) {

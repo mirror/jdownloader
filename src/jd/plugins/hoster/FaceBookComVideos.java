@@ -102,10 +102,20 @@ public class FaceBookComVideos extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = Encoding.htmlDecode(filename.trim());
+
         if (link.getDownloadURL().matches(PHOTOLINK)) {
-            DLLINK = br.getRegex("class=\"fbPhotosPhotoActionsItem\" href=\"(https?://[^<>\"]*?\\?dl=1)\"").getMatch(0);
+            DLLINK = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("class=\"fbPhotosPhotoActionsItem\" href=\"(https?://[^<>\"]*?\\?dl=1)\"").getMatch(0);
             if (DLLINK == null) DLLINK = br.getRegex("id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            DLLINK = DLLINK.replace("\\", "");
+
+            // Try to change it to HD
+            final Regex urlSplit = new Regex(DLLINK, "(https?://fbcdn\\-sphotos\\-b\\-a\\.akamaihd\\.net/hphotos-ak-[a-z0-9]+)/q\\d+/s\\d+x\\d+(/.+)");
+            final String partOne = urlSplit.getMatch(0);
+            final String partTwo = urlSplit.getMatch(1);
+            if (partOne != null && partTwo != null) DLLINK = partOne + partTwo;
+
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(DLLINK);
