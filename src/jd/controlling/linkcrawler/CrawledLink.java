@@ -284,6 +284,12 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return enabledState;
     }
 
+    public void setArchiveID(String id) {
+        if (dlLink != null) {
+            dlLink.setArchiveID(id);
+        }
+    }
+
     public void setEnabled(boolean b) {
         if (b == enabledState) return;
         enabledState = b;

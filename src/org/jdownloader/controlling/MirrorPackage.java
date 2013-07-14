@@ -8,6 +8,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.extensions.extraction.ExtractionStatus;
 
 public class MirrorPackage {
 
@@ -63,7 +64,7 @@ public class MirrorPackage {
             // hash mismatch
             return id + "/" + link.getSha1Hash().toLowerCase(Locale.ENGLISH);
         }
-        finished |= link.getLinkStatus().isFinished() && new File(link.getFileOutput()).exists();
+        finished |= link.getLinkStatus().isFinished() && (new File(link.getFileOutput()).exists() || link.getExtractionStatus() == ExtractionStatus.SUCCESSFUL);
         if (link.isEnabled()) {
             bytesLoaded = Math.max(bytesLoaded, link.getDownloadCurrent());
         }

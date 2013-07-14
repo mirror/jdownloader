@@ -12,9 +12,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
 
+import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionProgress;
+import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -26,6 +28,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     private String             name;
     private String             filePath;
     private long               size;
+    private Archive            archive;
 
     public DownloadLinkArchiveFile(DownloadLink link) {
 
@@ -110,8 +113,9 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         return name;
     }
 
-    public void setStatus(Status error) {
+    public void setStatus(ExtractionStatus error) {
         for (DownloadLink downloadLink : downloadLinks) {
+
             switch (error) {
             case ERRROR_FILE_NOT_FOUND:
                 downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
@@ -150,6 +154,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
                 break;
             }
+            downloadLink.setExtractionStatus(error);
         }
     }
 
@@ -263,6 +268,22 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
             }
         }
+    }
+
+    @Override
+    public void setArchive(Archive archive) {
+        this.archive = archive;
+
+        if (archive != null && archive.getFactory() != null) {
+            for (DownloadLink downloadLink : downloadLinks) {
+                downloadLink.setArchiveID(archive.getFactory().getID());
+            }
+        }
+
+    }
+
+    public Archive getArchive() {
+        return archive;
     }
 
 }

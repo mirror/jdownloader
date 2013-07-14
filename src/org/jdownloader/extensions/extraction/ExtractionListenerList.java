@@ -74,13 +74,13 @@ public class ExtractionListenerList implements ExtractionListener {
                     if (link == null) continue;
                     if (af == link) {
 
-                        link.setStatus(ArchiveFile.Status.ERROR_CRC);
+                        link.setStatus(ExtractionStatus.ERROR_CRC);
                         link.setMessage(T._.failed(controller.getException().getMessage()));
                     } else if (controller.getException() != null) {
-                        link.setStatus(ArchiveFile.Status.ERROR);
+                        link.setStatus(ExtractionStatus.ERROR);
                         link.setMessage(T._.failed(controller.getException().getMessage()));
                     } else {
-                        link.setStatus(ArchiveFile.Status.ERROR);
+                        link.setStatus(ExtractionStatus.ERROR);
                         link.setMessage(T._.failed_no_details());
                     }
 
@@ -110,7 +110,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword(controller.getArchiv().getFirstArchiveFile().getName()), "");
                 if (pass == null || pass.length() == 0) {
 
-                    controller.getArchiv().getFirstArchiveFile().setStatus(ArchiveFile.Status.ERROR);
+                    controller.getArchiv().getFirstArchiveFile().setStatus(ExtractionStatus.ERROR);
                     controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_extractfailedpass());
                     ex.onFinished(controller);
                     break;
@@ -163,7 +163,7 @@ public class ExtractionListenerList implements ExtractionListener {
                     for (ArchiveFile link : controller.getArchiv().getCrcError()) {
                         if (link == null) continue;
 
-                        link.setStatus(ArchiveFile.Status.ERROR_CRC);
+                        link.setStatus(ExtractionStatus.ERROR_CRC);
 
                     }
                 } else {
@@ -200,7 +200,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 }
                 for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                     if (link == null) continue;
-                    link.setStatus(ArchiveFile.Status.SUCCESSFUL);
+                    link.setStatus(ExtractionStatus.SUCCESSFUL);
                 }
 
             } finally {
@@ -211,7 +211,7 @@ public class ExtractionListenerList implements ExtractionListener {
         case NOT_ENOUGH_SPACE:
             for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                 if (link == null) continue;
-                link.setStatus(ArchiveFile.Status.ERROR_NOT_ENOUGH_SPACE);
+                link.setStatus(ExtractionStatus.ERROR_NOT_ENOUGH_SPACE);
             }
             ex.onFinished(controller);
             break;
@@ -261,7 +261,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 if (controller.getArchiv().getCrcError().size() != 0) {
                     for (ArchiveFile link : controller.getArchiv().getCrcError()) {
                         if (link == null) continue;
-                        link.setStatus(ArchiveFile.Status.ERRROR_FILE_NOT_FOUND);
+                        link.setStatus(ExtractionStatus.ERRROR_FILE_NOT_FOUND);
                     }
                 } else {
                     for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {

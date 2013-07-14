@@ -1,11 +1,14 @@
 package org.jdownloader.controlling;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.jdownloader.extensions.extraction.ExtractionStatus;
 
 public class DownloadLinkAggregator {
 
@@ -104,7 +107,7 @@ public class DownloadLinkAggregator {
                 bytesLoaded += link.getDownloadCurrent();
                 bytesToDo += Math.max(0, link.getDownloadMax() - link.getDownloadSize());
                 total++;
-                if (link.getLinkStatus().isFinished()) {
+                if (link.getLinkStatus().isFinished() && (new File(link.getFileOutput()).exists() || link.getExtractionStatus() == ExtractionStatus.SUCCESSFUL)) {
                     finished++;
                 }
                 if (link.isEnabled()) {

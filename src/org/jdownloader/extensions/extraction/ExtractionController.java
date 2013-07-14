@@ -73,6 +73,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     ExtractionController(ExtractionExtension extractionExtension, Archive archiv) {
         this.archive = archiv;
+
         logger = LogController.CL(false);
         logger.setAllowTimeoutFlush(false);
         logger.info("Extraction of" + archive);

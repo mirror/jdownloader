@@ -44,6 +44,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReason;
@@ -81,6 +82,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String                PROPERTY_VERIFIEDFILESIZE           = "VERIFIEDFILESIZE";
     public static final String                 PROPERTY_RESUMEABLE                 = "PROPERTY_RESUMEABLE";
     public static final String                 PROPERTY_FINALLOCATION              = "FINALLOCATION";
+    public static final String                 PROPERTY_ARCHIVE_ID                 = "ARCHIVE_ID";
+    public static final String                 PROPERTY_EXTRACTION_STATUS          = "EXTRACTION_STATUS";
+
     public static final String                 PROPERTY_CUSTOM_LOCALFILENAME       = "CUSTOM_LOCALFILENAME";
     public static final String                 PROPERTY_CUSTOM_LOCALFILENAMEAPPEND = "CUSTOM_LOCALFILENAMEAPPEND";
     public static final String                 PROPERTY_LASTFPNAME                 = "LASTFPNAME";
@@ -153,6 +157,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     transient DomainInfo                       domainInfo                          = null;
     transient Boolean                          resumeable                          = null;
     private SkipReason                         skipReason                          = SkipReason.NONE;
+    private ExtractionStatus                   cachedStatus;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -637,6 +642,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         this.setEnabled(true);
         deleteFile(null, true, true);
         setFinalFileName(null);
+        setExtractionStatus(null);
         try {
             getDefaultPlugin().resetDownloadlink(this);
         } catch (final Throwable e) {
@@ -1183,6 +1189,42 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setPriorityEnum(Priority priority) {
         setPriority(priority.ordinal() - 1);
+    }
+
+    public String getArchiveID() {
+        return getStringProperty(DownloadLink.PROPERTY_ARCHIVE_ID);
+    }
+
+    public void setArchiveID(String id) {
+        if (!StringUtils.isEmpty(id)) {
+            setProperty(DownloadLink.PROPERTY_ARCHIVE_ID, id);
+        } else {
+            setProperty(DownloadLink.PROPERTY_ARCHIVE_ID, Property.NULL);
+        }
+    }
+
+    public ExtractionStatus getExtractionStatus() {
+        if (cachedStatus != null) return cachedStatus;
+        String string = getStringProperty(PROPERTY_EXTRACTION_STATUS, null);
+
+        if (string == null) return null;
+        try {
+            cachedStatus = ExtractionStatus.valueOf(string);
+
+        } catch (Exception e) {
+            cachedStatus = null;
+        }
+        return cachedStatus;
+    }
+
+    public void setExtractionStatus(ExtractionStatus error) {
+        cachedStatus = error;
+        if (error == null) {
+            setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, Property.NULL);
+        } else {
+            setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, error.toString());
+        }
+
     }
 
 }

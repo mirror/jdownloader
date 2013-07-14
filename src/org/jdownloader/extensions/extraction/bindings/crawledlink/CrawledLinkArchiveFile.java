@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
+import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 
 public class CrawledLinkArchiveFile implements ArchiveFile {
@@ -16,6 +18,7 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     private java.util.List<CrawledLink> links;
     private String                      name;
     private long                        size;
+    private Archive                     archive;
 
     public CrawledLinkArchiveFile(CrawledLink l) {
         links = new ArrayList<CrawledLink>();
@@ -86,7 +89,7 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
         return name;
     }
 
-    public void setStatus(Status error) {
+    public void setStatus(ExtractionStatus error) {
     }
 
     public void setMessage(String plugins_optional_extraction_status_notenoughspace) {
@@ -139,5 +142,21 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void onCleanedUp(ExtractionController controller) {
+    }
+
+    @Override
+    public void setArchive(Archive archive) {
+        this.archive = archive;
+
+        if (archive != null && archive.getFactory() != null) {
+            for (CrawledLink link : links) {
+
+                link.setArchiveID(archive.getFactory().getID());
+            }
+        }
+    }
+
+    public Archive getArchive() {
+        return archive;
     }
 }

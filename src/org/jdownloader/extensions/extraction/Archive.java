@@ -18,6 +18,7 @@ package org.jdownloader.extensions.extraction;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
@@ -162,12 +163,16 @@ public class Archive {
     }
 
     public java.util.List<ArchiveFile> getArchiveFiles() {
-        return archives;
+        return Collections.unmodifiableList(archives);
     }
 
     public void setArchiveFiles(java.util.List<ArchiveFile> collection) {
 
         this.archives = collection;
+        for (ArchiveFile af : archives) {
+            af.setArchive(this);
+
+        }
     }
 
     public void setGotInterrupted(final boolean gotInterrupted) {
