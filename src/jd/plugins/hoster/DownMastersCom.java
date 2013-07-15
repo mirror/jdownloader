@@ -99,11 +99,18 @@ public class DownMastersCom extends PluginForHost {
         ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
             if (!host.isEmpty()) {
-                if (host.equals("uploaded.net")) {
-                    supportedHosts.add("uploaded.to");
-                } else {
-                    supportedHosts.add(host.trim());
-                }
+                supportedHosts.add(host.trim());
+            }
+        }
+        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
+            if (!supportedHosts.contains("uploaded.net")) {
+                supportedHosts.add("uploaded.net");
+            }
+            if (!supportedHosts.contains("ul.to")) {
+                supportedHosts.add("ul.to");
+            }
+            if (!supportedHosts.contains("uploaded.to")) {
+                supportedHosts.add("uploaded.to");
             }
         }
 

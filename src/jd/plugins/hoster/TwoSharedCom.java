@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -54,47 +55,6 @@ public class TwoSharedCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        String finallink = null;
-        br.setFollowRedirects(true);
-        String uid = new Regex(downloadLink.getDownloadURL(), "\\.com/file/([^/]+)").getMatch(0);
-        String link = br.getRegex("(\'|\")(http://[0-9a-z]+\\.2shared\\.com/download/" + uid + "/.*?\\?tsid=[\\w\\-]+)(\'|\")").getMatch(1);
-        // special handling for picture-links
-        if (br.containsHTML(">Loading image")) {
-            br.getPage(MAINPAGE + link);
-            finallink = br.toString();
-        }
-        link = link == null ? br.getRegex("<div style=\"display:none\" id=\"\\w+\">(.*?)</div>").getMatch(0) : link;
-        finallink = finallink == null ? link : finallink;
-        finallink = finallink == null ? br.getRegex("window\\.location ='(.*?)';").getMatch(0) : finallink;
-        if (finallink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        finallink = finallink.trim();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
-        if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getURL().getQuery() == null || !dl.getConnection().isContentDisposition()) {
-            if (!dl.getConnection().isContentDisposition()) {
-                br.followConnection();
-            }
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            if (dl.getConnection().getURL().getQuery().contains("ip-lim")) {
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.2sharedcom.errors.sessionlimit", "Session limit reached! "), 10 * 60 * 1000l);
-            } else if (dl.getConnection().getURL().getQuery().contains("MAX_SESSION")) {
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.2sharedcom.errors.maxsession", "User downloading session limit is reached! "), 10 * 60 * 1000l);
-            }
-        }
-        dl.startDownload();
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     @Override
@@ -134,9 +94,55 @@ public class TwoSharedCom extends PluginForHost {
             filesize = br.getRegex("class=\"bodytitle\">Loading image \\((.*?)\\)\\.\\.\\. Please wait").getMatch(0);
         }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(filename.trim());
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",|\\.", "")));
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML("Your free download limit is over")) {
+            final String minutes = br.getRegex("wait <span>(\\d+) minutes</span>\\.").getMatch(0);
+            if (minutes != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(minutes) * 60 * 1001l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        }
+        String finallink = null;
+        br.setFollowRedirects(true);
+        String uid = new Regex(downloadLink.getDownloadURL(), "\\.com/file/([^/]+)").getMatch(0);
+        String link = br.getRegex("(\'|\")(http://[0-9a-z]+\\.2shared\\.com/download/" + uid + "/.*?\\?tsid=[\\w\\-]+)(\'|\")").getMatch(1);
+        // special handling for picture-links
+        if (br.containsHTML(">Loading image")) {
+            br.getPage(MAINPAGE + link);
+            finallink = br.toString();
+        }
+        link = link == null ? br.getRegex("<div style=\"display:none\" id=\"\\w+\">(.*?)</div>").getMatch(0) : link;
+        finallink = finallink == null ? link : finallink;
+        finallink = finallink == null ? br.getRegex("window\\.location ='(.*?)';").getMatch(0) : finallink;
+        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        finallink = finallink.trim();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
+        if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getURL().getQuery() == null || !dl.getConnection().isContentDisposition()) {
+            if (!dl.getConnection().isContentDisposition()) {
+                br.followConnection();
+            }
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            if (dl.getConnection().getURL().getQuery().contains("ip-lim")) {
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.2sharedcom.errors.sessionlimit", "Session limit reached! "), 10 * 60 * 1000l);
+            } else if (dl.getConnection().getURL().getQuery().contains("MAX_SESSION")) {
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.2sharedcom.errors.maxsession", "User downloading session limit is reached! "), 10 * 60 * 1000l);
+            }
+        }
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
