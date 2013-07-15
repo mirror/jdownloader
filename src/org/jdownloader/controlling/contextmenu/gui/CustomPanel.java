@@ -10,6 +10,7 @@ import javax.swing.JLabel;
 
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.GetterSetter;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -94,6 +95,28 @@ public class CustomPanel extends MigPanel {
                     }
                 });
                 add(cb, "growx,spanx,wrap");
+            } else if (gs.getType() == String.class) {
+
+                String value = (String) actionData.fetchSetup(gs.getKey());
+
+                if (value == null) {
+                    value = (String) gs.get(actionClass);
+
+                }
+
+                final ExtTextField cb = new ExtTextField() {
+
+                    @Override
+                    public void onChanged() {
+                        actionData.putSetup(gs.getKey(), getText());
+                        managerFrame.repaint();
+                    }
+
+                };
+                cb.setHelpText(gs.getAnnotation(Customizer.class).name());
+                cb.setText(value);
+
+                add(cb, "growx,spanx,wrap,pushx,growx");
             }
         } catch (Exception e) {
             logger.log(e);

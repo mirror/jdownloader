@@ -164,6 +164,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         opt.add(new MenuItemData(ExitToolbarAction.class));
         opt.add(AddLinksMenuAction.class);
         opt.add(AddContainerAction.class);
+        opt.add(SetProxySetupAction.class);
         opt.add(RestartAction.class);
         opt.add(SettingsAction.class);
         opt.add(new ChunksEditorLink());

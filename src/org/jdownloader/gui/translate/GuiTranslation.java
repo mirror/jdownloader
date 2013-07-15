@@ -2818,4 +2818,22 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Delete Links: Selected & " })
     String GenericDeleteSelectedToolbarAction_updateName_object_();
+
+    @Default(lngs = { "en" }, values = { "Load Proxy Setup" })
+    String SetProxySetupAction_SetProxySetupAction_();
+
+    @Default(lngs = { "en" }, values = { "Export Proxy Setup" })
+    String SaveAsProxyProfileAction_SaveAsProxyProfileAction_();
+
+    @Default(lngs = { "en" }, values = { "Export Proxy Setup" })
+    String ImportPlainTextAction_ImportPlainTextAction_();
+
+    @Default(lngs = { "en" }, values = { "Load Proxy Setup" })
+    String LoadProxyProfileAction_LoadProxyProfileAction_();
+
+    @Default(lngs = { "en" }, values = { "Save Proxy Setup" })
+    String SaveAsProxyProfileAction_actionPerformed_choose_file();
+
+    @Default(lngs = { "en" }, values = { "Load Proxy Setup" })
+    String LoadProxyProfileAction_actionPerformed_();
 }

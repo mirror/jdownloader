@@ -71,4 +71,8 @@ public interface InternetConnectionSettings extends ConfigInterface {
 
     @DefaultIntValue(5000)
     int getRouterIPCheckReadTimeout();
+
+    void setLatestProfile(String absolutePath);
+
+    String getLatestProfile();
 }

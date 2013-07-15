@@ -2,9 +2,6 @@ package jd.gui.swing.jdgui.views.settings.panels.proxy;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -23,15 +20,9 @@ import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.DefaultEventListener;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -60,6 +51,12 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
 
     private ComboBox<ProxyInfo> cb;
 
+    private ExtButton           im;
+
+    private ExtButton           expPopup;
+
+    private ExtButton           impPopup;
+
     public ProxyConfig() {
         super();
 
@@ -87,95 +84,35 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
         addPair(_GUI._.ProxyConfig_ProxyConfig_defaultproxy_(), null, cb);
         JScrollPane sp = new JScrollPane(table);
         this.add(sp, "gapleft 37,growx, pushx,spanx,pushy,growy");
-        MigPanel toolbar = new MigPanel("ins 0", "[][][][grow,fill][][]", "[]");
+        MigPanel toolbar = new MigPanel("ins 0", "[][][][grow,fill][]0[][]0[]", "[]");
         toolbar.setOpaque(false);
         btnAdd = new ExtButton(new ProxyAddAction(table));
         btnAuto = new ExtButton(new ProxyAutoAction());
         ProxyDeleteAction dl;
         btnRemove = new ExtButton(dl = new ProxyDeleteAction(table));
-        btImport = new ExtButton(new AppAction() {
-            {
-                setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_import());
-                setIconKey("import");
+        btImport = new ExtButton(new ImportPlainTextAction(table));
+        btExport = new ExtButton(new ExportPlainTextAction(table));
+
+        impPopup = new ExtButton(new ImportPopupAction(btImport, table)) {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            public void setBounds(int x, int y, int width, int height) {
+                super.setBounds(x - 2, y, width + 2, height);
             }
+        };
+        expPopup = new ExtButton(new ExportPopupAction(btExport, table)) {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
 
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                try {
-                    String txt = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, _GUI._.ProxyConfig_actionPerformed_import_title_(), _GUI._.ProxyConfig_actionPerformed_import_proxies_explain_(), null, NewTheme.I().getIcon("proxy", 32), null, null);
-                    final java.util.List<HTTPProxy> list = new ArrayList<HTTPProxy>();
-                    for (String s : Regex.getLines(txt)) {
-                        try {
-                            int i = s.indexOf("://");
-                            String protocol = "http";
-                            if (i > 0) {
-                                protocol = s.substring(0, i);
-                                s = "http://" + s.substring(i + 3);
-                            }
-                            URL url = null;
-
-                            url = new URL(s);
-
-                            String user = null;
-                            String pass = null;
-                            String userInfo = url.getUserInfo();
-                            if (userInfo != null) {
-                                int in = userInfo.indexOf(":");
-                                if (in >= 0) {
-                                    user = (userInfo.substring(0, in));
-                                    pass = (userInfo.substring(in + 1));
-                                } else {
-                                    user = (userInfo);
-                                }
-                            }
-                            if ("socks5".equalsIgnoreCase(protocol)) {
-
-                                final HTTPProxy ret = new HTTPProxy(HTTPProxy.TYPE.SOCKS5, url.getHost(), url.getPort());
-                                ret.setUser(user);
-                                ret.setPass(pass);
-                                list.add(ret);
-                            } else if ("socks4".equalsIgnoreCase(protocol)) {
-                                final HTTPProxy ret = new HTTPProxy(HTTPProxy.TYPE.SOCKS4, url.getHost(), url.getPort());
-                                ret.setUser(user);
-                                list.add(ret);
-                            } else {
-                                final HTTPProxy ret = new HTTPProxy(HTTPProxy.TYPE.HTTP, url.getHost(), url.getPort());
-                                ret.setUser(user);
-                                ret.setPass(pass);
-                                list.add(ret);
-
-                            }
-                        } catch (MalformedURLException e2) {
-                            e2.printStackTrace();
-                        }
-
-                    }
-                    IOEQ.add(new Runnable() {
-
-                        public void run() {
-                            ProxyController.getInstance().addProxy(list);
-                        }
-                    });
-                } catch (DialogClosedException e1) {
-                    e1.printStackTrace();
-                } catch (DialogCanceledException e1) {
-                    e1.printStackTrace();
-                }
+            public void setBounds(int x, int y, int width, int height) {
+                super.setBounds(x - 2, y, width + 2, height);
             }
-        });
-        btExport = new ExtButton(new AppAction() {
-            {
-                setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_export());
-                setIconKey("export");
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                ProxyTable.export(table.getModel().getElements());
-            }
-        });
+        };
         // tb.add(, "height 26!,sg 2");
         //
         // tb.add(, "height 26!,sg 2");
@@ -202,7 +139,10 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
         toolbar.add(Box.createHorizontalGlue(), "pushx,growx");
 
         toolbar.add(btImport, "sg 2,height 26!");
+        toolbar.add(impPopup, "height 26!,width 12!,aligny top");
+
         toolbar.add(btExport, "sg 2,height 26!");
+        toolbar.add(expPopup, "height 26!,width 12!,aligny top");
 
         add(toolbar, "gapleft 37,growx,spanx");
 
@@ -282,12 +222,15 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
-                    table.repaint();
+
+                    table.getModel()._fireTableStructureChanged(ProxyController.getInstance().getList(), false);
                     cb.setModel(ProxyController.getInstance().getList().toArray(new ProxyInfo[] {}));
                     cb.setValue(ProxyController.getInstance().getDefaultProxy());
+                    table.repaint();
                 };
             };
             break;
+
         default:
             new EDTRunner() {
                 @Override
@@ -295,6 +238,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
                     table.getModel()._fireTableStructureChanged(ProxyController.getInstance().getList(), false);
                     cb.setModel(ProxyController.getInstance().getList().toArray(new ProxyInfo[] {}));
                     cb.setValue(ProxyController.getInstance().getDefaultProxy());
+                    table.repaint();
                 };
             };
             break;

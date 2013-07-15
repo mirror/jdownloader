@@ -1,5 +1,8 @@
 package jd.controlling.proxy;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -19,7 +22,10 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.DefaultEventSender;
@@ -735,6 +741,43 @@ public class ProxyController {
 
     public ProxyInfo getNone() {
         return none;
+    }
+
+    public void exportTo(File saveTo) throws UnsupportedEncodingException, IOException {
+        ProxyExportImport save = new ProxyExportImport();
+
+        ProxyInfo ldefaultproxy = defaultproxy;
+        {
+            /* use own scope */
+            ArrayList<ProxyData> ret = new ArrayList<ProxyData>(proxies.size());
+            java.util.List<ProxyInfo> lproxies = proxies;
+            for (ProxyInfo proxy : lproxies) {
+                ProxyData pd = proxy.toProxyData();
+                pd.setDefaultProxy(proxy == ldefaultproxy);
+                ret.add(pd);
+            }
+            save.setCustomProxyList(ret);
+        }
+
+        save.setNoneDefault(none == ldefaultproxy);
+        save.setNoneRotationEnabled(none.isProxyRotationEnabled());
+
+        IO.secureWrite(saveTo, JSonStorage.toString(save).getBytes("UTF-8"));
+    }
+
+    public String getLatestProfilePath() {
+        return config.getLatestProfile();
+    }
+
+    public void importFrom(File selected) throws IOException {
+        ProxyExportImport restore = JSonStorage.restoreFromString(IO.readFileToString(selected), new TypeRef<ProxyExportImport>() {
+        });
+        config.setLatestProfile(selected.getAbsolutePath());
+        config.setCustomProxyList(restore.getCustomProxyList());
+        config.setNoneDefault(restore.isNoneDefault());
+        config.setNoneRotationEnabled(restore.isNoneRotationEnabled());
+        loadProxySettings();
+
     }
 
 }

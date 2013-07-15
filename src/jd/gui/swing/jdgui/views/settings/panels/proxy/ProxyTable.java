@@ -2,7 +2,6 @@ package jd.gui.swing.jdgui.views.settings.panels.proxy;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -37,9 +36,7 @@ public class ProxyTable extends BasicJDTable<ProxyInfo> {
     /*
      * (non-Javadoc)
      * 
-     * @see
-     * org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu
-     * , java.lang.Object, java.util.ArrayList,
+     * @see org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu , java.lang.Object, java.util.ArrayList,
      * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
@@ -106,6 +103,7 @@ public class ProxyTable extends BasicJDTable<ProxyInfo> {
         }
         ClipboardMonitoring.getINSTANCE().setCurrentContent(sb.toString());
         try {
+
             Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.ProxyTable_copy_export_title_(), null, sb.toString(), NewTheme.getInstance().getIcon("proxy", 32), null, null);
         } catch (DialogClosedException e) {
             e.printStackTrace();
