@@ -228,11 +228,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             }
 
             @Override
-            public int getMaxWidth() {
-                return 140;
-            }
-
-            @Override
             public int getDefaultWidth() {
                 return getMinWidth();
             }
