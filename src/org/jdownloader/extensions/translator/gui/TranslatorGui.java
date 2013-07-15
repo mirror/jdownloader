@@ -422,7 +422,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
                         @Override
                         public Dimension getPreferredSize() {
-                            return new Dimension(200, 40);
+                            return new Dimension(200, 100);
                         }
 
                     });
@@ -649,7 +649,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
                             @Override
                             public Dimension getPreferredSize() {
-                                return new Dimension(200, 40);
+                                return new Dimension(200, 100);
                             }
 
                         });
@@ -900,7 +900,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
                 @Override
                 public Dimension getPreferredSize() {
-                    return new Dimension(200, 40);
+                    return new Dimension(200, 100);
                 }
 
             });
