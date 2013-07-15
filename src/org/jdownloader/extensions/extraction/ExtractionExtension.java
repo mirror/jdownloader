@@ -29,6 +29,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
+import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -38,10 +39,13 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.ExceptionDialog;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.contextmenu.ActionData;
@@ -75,6 +79,7 @@ import org.jdownloader.extensions.extraction.split.HJSplit;
 import org.jdownloader.extensions.extraction.split.Unix;
 import org.jdownloader.extensions.extraction.split.XtreamSplit;
 import org.jdownloader.extensions.extraction.translate.ExtractionTranslation;
+import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.mainmenu.MainMenuManager;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
@@ -465,6 +470,34 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             }
 
         });
+        try {
+            Application.getResource("logs/extracting").mkdirs();
+
+            for (File f : Application.getResource("logs/extracting").listFiles()) {
+                if (f.getName().matches("\\d{13}\\.txt")) {
+                    getLogger().log(new Exception("Extraction Crashlog found!"));
+                    getLogger().info(IO.readFileToString(f));
+                    f.renameTo(new File(f.getParentFile(), "logged_" + f.getName()));
+                } else if (f.getName().matches("\\d{13}\\.open")) {
+                    getLogger().log(new Exception("Extraction Crashlog found!"));
+                    String log;
+                    getLogger().info(log = IO.readFileToString(f));
+                    f.renameTo(new File(f.getParentFile(), "logged_" + f.getName()));
+                    ExceptionDialog ed = new ExceptionDialog(0, T._.crash_title(), T._.crash_message(), null, null, null);
+                    ed.setMore(log);
+                    try {
+                        Dialog.getInstance().showDialog(ed);
+                    } catch (Exception e) {
+
+                    }
+                    LogAction la = new LogAction();
+                    la.actionPerformed(null);
+
+                }
+            }
+        } catch (Exception e) {
+            getLogger().log(e);
+        }
     }
 
     private void lazyInitOnceOnStart() {

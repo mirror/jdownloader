@@ -18,6 +18,7 @@ package org.jdownloader.extensions.extraction;
 
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
@@ -35,6 +36,14 @@ public abstract class IExtraction {
     protected LogSource            logger;
     protected ExtractionConfig     config;
     private Exception              exception;
+    private ArchiveFile            lastAccessedArchiveFile;
+    private CrashDetectFile        crashLog;
+
+    public void setLastAccessedArchiveFile(ArchiveFile lastAccessedArchiveFile) {
+
+        this.lastAccessedArchiveFile = lastAccessedArchiveFile;
+        writeCrashLog("Extracting from: " + lastAccessedArchiveFile);
+    }
 
     public Exception getException() {
         return exception;
@@ -42,6 +51,7 @@ public abstract class IExtraction {
 
     public void setException(Exception exception) {
         this.exception = exception;
+        writeCrashLog("Exception: \r\n" + Exceptions.getStackTrace(exception));
     }
 
     /**
@@ -187,5 +197,24 @@ public abstract class IExtraction {
     public abstract String createID(ArchiveFactory factory);
 
     public abstract boolean isMultiPartArchive(ArchiveFactory factory);
+
+    /**
+     * Some extrators can set this file information. this helps us to tell the user in which file extraction failed.
+     * 
+     * @return
+     */
+    public ArchiveFile getLastAccessedArchiveFile() {
+        return lastAccessedArchiveFile;
+    }
+
+    public void writeCrashLog(String string) {
+        if (crashLog != null) {
+            crashLog.write(string);
+        }
+    }
+
+    public void setCrashLog(CrashDetectFile crashLog) {
+        this.crashLog = crashLog;
+    }
 
 }

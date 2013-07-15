@@ -1,0 +1,84 @@
+7-Zip-JBinding Release Notes
+============================
+
+Main features of 4.65-1.06rc-extr-only (Release candidate, extraction only, cross-platform, based on zip/p7zip 4.65)
+
+    * Extraction of
+        - 7z, Zip, Tar, Rar, Lzma, Iso, GZip, Cpio, BZIP2,
+          Z, Arj, Lzh, Cab, Chm, Nsis, DEB, RPM, UDF, WIM
+    
+    * Support for password protected and volumed archives
+    
+    * Compression method auto detection
+    
+    * Simple extraction interface
+    
+    * Cross-platform. Binaries available for
+        - Windows 32/64
+        - Linux 32/64
+        - Mac OS X 32/64
+
+    * Multi-platform distributions (with platform auto-detection):
+        - AllWindows - includes Win32 and Win64
+        - AllLinux - includes Linux32 and Linux64
+        - AllMax - includes Mac OS X 32 and Mac OS X 64
+        - AllPlatforms - includes AllWindows, AllLinux and AllMac
+
+    * Over 3600 JUnit tests extraction of archive formats:
+        - 7z, Zip, Tar, Rar, Lzma, Iso, GZip, Cpio, BZIP2,
+          Z, Arj, Lzh, Cab, Chm, Nsis, DEB, RPM, UDF
+    
+    * 7-Zip-JBinding requires Java 1.5 or higher
+    
+    16 Januar 2013: 7-Zip-JBinding Release: 4.65-1.06rc-extr-only 
+
+Release candidate, extraction only, cross-platform, based on 7zip/p7zip 4.65
+Feature: WIM format support + tests
+Feature: Initialization performance boost. Don't delete extracted native libraries in the temporary directory (specified by -Djava.io.tmpdir=<dir>) and use those later during subsequent 7-Zip-JBinding initializations.
+Test: Test cross-platform encoding functionality
+Bugfix: Get ride of the dependency to USER32.DLL improving performance and robustness
+Bugfix: 7-Zip-JBinding compiles now with gcc 4.7 (Bug ID: 3593757)
+Special thanks to Daniel Santos for the provided patch!
+Bugfix: Simple Interface returns wrong CRC (Bug ID: 3535546)
+Special thanks to M. Hamer
+
+24 April 2012: 7-Zip-JBinding Release: 4.65-1.05rc-extr-only 
+
+Release candidate, extraction only, cross-platform, based on 7zip/p7zip 4.65
+Bugfix: Multipart CAB-archive extraction without implementing IArchiveOpenVolumeCallback
+Bugfix: A general protection fault raises when trying to list files in passworded RAR archive. The password length is 30+ characters.
+Feature: Initialize native module within a AccessController#doPrivileged block
+
+8 March 2010: 7-Zip-JBinding Release: 4.65-1.04rc-extr-only 
+
+Release candidate, extraction only, cross-platform, based on 7zip/p7zip 4.65
+Bugfix: it was not possible to open some archives over 4GB
+Special thanks for IKVM developer Jeroen Frijters for finding this bug!
+
+9 December 2009: 7-Zip-JBinding Release: 4.65-1.03rc-extr-only 
+
+Release candidate, extraction only, cross-platform, based on 7zip/p7zip 4.65
+Binary version for MacOS 64 bit (java 6)
+Support for multi-platform jars. Multi-platform releases:
+AllPlatforms - all available native libraries in a single jar
+AllWindows - native libraries for Windows 32 and 64
+AllLinux - native libraries for Linux 32 and 64
+AllMac - native libraries for Mac 32 and 64
+Initialization reworked. See JavaDoc for SevenZip for more information.
+Integration test for all platforms for single and multiple platform distributions
+Improved ISevenZipInArchive.extract(): Sort indices, if not already sorted, bug fixes.
+DEB format support + tests
+RPM format support + tests
+UDF format support + tests
+New Code snippets: opening multi-part 7z and RAR archives
+Source code repository: moved from svn to git
+
+9 October 2009: 7-Zip-JBinding Release: 4.65-1.02rc-extr-only 
+
+Bugfix release (Release candidate, extraction only, cross-platform, based on 7zip/p7zip 4.65)
+Binary version for Windows 64 XP and above (amd64)
+NSIS format support + tests
+New method ISevenZipInArchive.getArchiveFormat() returns format of the opened archive, even if archive format auto-detection was used.
+Better performance for archive format auto-detection
+
+1 September 2009: 7-Zip-JBinding Release: 4.65-1.01rc-extr-only 

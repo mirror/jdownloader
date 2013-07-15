@@ -254,6 +254,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      */
     private ConfigType buildStore() {
         return JsonConfig.create(Application.getResource("cfg/" + getClass().getName()), getConfigClass());
+
     }
 
     /**

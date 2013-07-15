@@ -146,7 +146,7 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
     }
 
     public void setCompleted(Long files, Long bytes) throws SevenZipException {
-        
+
     }
 
     public void setTotal(Long files, Long bytes) throws SevenZipException {
@@ -164,9 +164,16 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
 
     public void setLatestAccessedStream(ExtRandomAccessFileInStream extRandomAccessFileInStream) {
         if (extRandomAccessFileInStream != latestAccessedStream) {
-            logger.info("Extract from: " + extRandomAccessFileInStream.getFilename());
+
             latestAccessedStream = extRandomAccessFileInStream;
+            onStreamUpdate(extRandomAccessFileInStream);
+
         }
+    }
+
+    protected void onStreamUpdate(ExtRandomAccessFileInStream extRandomAccessFileInStream) {
+
+        logger.info("Extract from: " + extRandomAccessFileInStream.getFilename());
     }
 
     public ExtRandomAccessFileInStream getLatestAccessedStream() {

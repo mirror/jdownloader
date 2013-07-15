@@ -305,4 +305,10 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extract Archives after Download (Defaultvalue)" })
     String settings_auto_extract_default();
 
+    @Default(lngs = { "en" }, values = { "JDownloader crashed!" })
+    String crash_title();
+
+    @Default(lngs = { "en" }, values = { "It seems that there was a crash while extracting an archive.\r\nCheck the details below. Do you want to send a bug report?" })
+    String crash_message();
+
 }

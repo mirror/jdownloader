@@ -47,6 +47,7 @@ import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.ReusableByteArrayOutputStream;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.StringFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
@@ -514,6 +515,7 @@ public class Multi extends IExtraction {
             ctrl.setProgress(0.0d);
             final double size = archive.getContentView().getTotalSize() / 100.0d;
             progressInBytes = 0l;
+
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
                 // Skip folders
                 if (item == null || item.isFolder()) {
@@ -521,6 +523,7 @@ public class Multi extends IExtraction {
                 }
                 if (ctrl.gotKilled()) { throw new SevenZipException("Extraction has been aborted"); }
                 String path = item.getPath();
+
                 if (StringUtils.isEmpty(path)) {
                     // example: test.tar.gz contains a test.tar file, that has
                     // NO name. we create a dummy name here.
@@ -530,7 +533,9 @@ public class Multi extends IExtraction {
                         path = archivename.substring(0, in);
                     }
                 }
+                writeCrashLog("Start Extracting " + path + " " + SizeFormatter.formatBytes(item.getSize()));
                 if (filter(item.getPath())) {
+                    writeCrashLog("Skip File - filtered");
                     logger.info("Filtering file " + item.getPath() + " in " + archive.getFirstArchiveFile().getFilePath());
                     progressInBytes += item.getSize();
                     ctrl.setProgress(progressInBytes / size);
@@ -559,18 +564,24 @@ public class Multi extends IExtraction {
                 }
 
                 File extractTo = new File(filename);
+                writeCrashLog("Extract To " + extractTo.getAbsolutePath());
                 logger.info("Extract " + filename);
                 if (extractTo.exists()) {
                     /* file already exists */
-
+                    writeCrashLog("File exists");
                     if (controller.isOverwriteFiles()) {
+
                         if (!extractTo.delete()) {
+                            writeCrashLog("Overwrite Failed");
                             setException(new Exception("Could not overwrite(delete) " + extractTo));
                             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                             return;
+                        } else {
+                            writeCrashLog("Overwrite Done");
                         }
                     } else {
                         /* skip file */
+                        writeCrashLog("Skip File");
                         archive.addExtractedFiles(extractTo);
                         progressInBytes += item.getSize();
                         ctrl.setProgress(progressInBytes / size);
@@ -579,6 +590,7 @@ public class Multi extends IExtraction {
                 }
                 if ((!extractTo.getParentFile().exists() && !extractTo.getParentFile().mkdirs())) {
                     setException(new Exception("Could not create folder for File " + extractTo));
+                    writeCrashLog("Folder creation failed: " + extractTo.getParent());
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                     return;
                 }
@@ -586,6 +598,7 @@ public class Multi extends IExtraction {
                 while (true) {
                     try {
                         if (!extractTo.createNewFile()) {
+                            writeCrashLog("Could not create File");
                             setException(new Exception("Could not create File " + extractTo));
                             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                             return;
@@ -597,6 +610,7 @@ public class Multi extends IExtraction {
                             /* first try, we try again with lastTryFilename */
                             fixedFilename = lastTryFilename;
                             extractTo = new File(fixedFilename);
+                            writeCrashLog("Retry new Path: " + extractTo.getAbsolutePath());
                             continue;
                         } else if (fixedFilename == lastTryFilename) {
                             /* second try, we try with modified filename */
@@ -608,8 +622,10 @@ public class Multi extends IExtraction {
                             fixedFilename = new String(brokenFilename.replaceAll("[^\\w\\s\\.\\(\\)\\[\\],]", ""));
                             logger.severe("Replaced " + brokenFilename + " with " + fixedFilename);
                             extractTo = new File(parent, fixedFilename);
+                            writeCrashLog("Retry new Path: " + extractTo.getAbsolutePath());
                             continue;
                         } else {
+
                             setException(e);
                             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                             return;
@@ -633,6 +649,7 @@ public class Multi extends IExtraction {
                             progressInBytes += data.length;
                             ctrl.setProgress(progressInBytes / size);
                         }
+
                     }
 
                 };
@@ -669,6 +686,7 @@ public class Multi extends IExtraction {
                     }
                     logger.info("Size missmatch for " + item.getPath() + " is " + extractTo.length() + " but should be " + item.getSize());
                     for (ArchiveFile link : getAffectedArchiveFileFromArchvieFiles(item.getPath())) {
+                        writeCrashLog("CRC Error in " + link);
                         archive.addCrcError(link);
                     }
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
@@ -680,6 +698,7 @@ public class Multi extends IExtraction {
                     break;
                 case CRCERROR:
                     logger.info("CRC Error for " + item.getPath());
+                    writeCrashLog("CRC Error in " + item.getPath());
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
                     return;
                 default:
@@ -688,6 +707,7 @@ public class Multi extends IExtraction {
                 }
             }
         } catch (MultiSevenZipException e) {
+
             setException(e);
             logger.log(e);
             archive.setExitCode(e.getExitCode());
@@ -771,7 +791,15 @@ public class Multi extends IExtraction {
                 IInStream inStream = new VolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), multiopener);
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == ArchiveType.MULTI_RAR) {
-                raropener = new RarOpener(archive, password);
+                raropener = new RarOpener(archive, password) {
+
+                    @Override
+                    protected void onStreamUpdate(ExtRandomAccessFileInStream extRandomAccessFileInStream) {
+                        super.onStreamUpdate(extRandomAccessFileInStream);
+                        setLastAccessedArchiveFile(extRandomAccessFileInStream.getArchiveFile());
+                    }
+
+                };
                 raropener.setLogger(logger);
                 IInStream inStream = raropener.getStream(archive.getFirstArchiveFile());
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
@@ -799,7 +827,10 @@ public class Multi extends IExtraction {
             } else {
                 SignatureCheckingOutStream signatureOutStream = new SignatureCheckingOutStream(passwordfound, ctl.getFileSignatures(), buffer, config.getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), optimized);
                 ISimpleInArchiveItem[] items = inArchive.getSimpleInterface().getArchiveItems();
-                if (archive.isPasswordRequiredToOpen()) {
+                // we found some rar archives, that throw an exception when we try to open it with no or an invalid password, but do not
+                // throw any exceptions if we use - for example - their archive name as password.
+                // in this case, the archive opens fine, but does not show any contents. let's catch this case here
+                if (archive.isPasswordRequiredToOpen() && items != null && items.length > 0) {
                     // archive is open. password seems to be ok.
                     passwordfound.set(true);
                     return true;
@@ -999,7 +1030,14 @@ public class Multi extends IExtraction {
                 IInStream inStream = new VolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), multiopener);
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == ArchiveType.MULTI_RAR) {
-                raropener = new RarOpener(archive);
+                raropener = new RarOpener(archive) {
+
+                    @Override
+                    protected void onStreamUpdate(ExtRandomAccessFileInStream extRandomAccessFileInStream) {
+                        super.onStreamUpdate(extRandomAccessFileInStream);
+                        setLastAccessedArchiveFile(extRandomAccessFileInStream.getArchiveFile());
+                    }
+                };
                 raropener.setLogger(logger);
                 IInStream inStream = raropener.getStream(archive.getFirstArchiveFile());
 
@@ -1016,15 +1054,18 @@ public class Multi extends IExtraction {
             }
             updateContentView(inArchive.getSimpleInterface());
         } catch (SevenZipException e) {
-            logger.log(e);
+
             if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
                 /* password required */
+
                 archive.setProtected(true);
                 archive.setPasswordRequiredToOpen(true);
                 return true;
             } else {
+                logger.log(e);
                 throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
             }
+
         } catch (Throwable e) {
             logger.log(e);
             throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
