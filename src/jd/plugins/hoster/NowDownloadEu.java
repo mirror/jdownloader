@@ -102,8 +102,8 @@ public class NowDownloadEu extends PluginForHost {
                     /*
                      * == Fix original link ==
                      * 
-                     * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before proceed, to select
-                     * one available.
+                     * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before
+                     * proceed, to select one available.
                      */
 
                     String newDomain = validateHost();
@@ -134,7 +134,8 @@ public class NowDownloadEu extends PluginForHost {
         }
 
         final Regex fileInfo = br.getRegex(">Downloading</span> <br> (.*?) ([\\d+\\.]+ (B|KB|MB|GB|TB))");
-        String filename = fileInfo.getMatch(0).replace("<br>", "");
+        String filename = br.getRegex("nowdownload\\.(eu|co|ch)/dl/[a-z0-9]+/[a-z0-9]+/([^<>\"]*?)\"").getMatch(1);
+        if (filename == null) filename = fileInfo.getMatch(0).replace("<br>", "");
         String filesize = fileInfo.getMatch(1);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
@@ -143,7 +144,7 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(TEMPUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, TEMPUNAVAILABLEUSERTEXT, 60 * 60 * 1000l);
         String dllink = (checkDirectLink(downloadLink, "directlink"));
@@ -172,6 +173,7 @@ public class NowDownloadEu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink", dllink);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 
@@ -236,8 +238,8 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     /**
-     * Dev note: Never buy premium from them, as freeuser you have no limits, as premium neither and you can't even download the original videos as
-     * premiumuser->Senseless!!
+     * Dev note: Never buy premium from them, as freeuser you have no limits, as premium neither and you can't even download the original
+     * videos as premiumuser->Senseless!!
      */
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
