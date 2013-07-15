@@ -113,7 +113,7 @@ public class FaceBookComVideos extends PluginForHost {
             DLLINK = DLLINK.replace("\\", "");
 
             // Try to change it to HD
-            final Regex urlSplit = new Regex(DLLINK, "(https?://fbcdn\\-sphotos\\-[a-z]\\-[a-z]\\.akamaihd\\.net/hphotos\\-ak\\-[a-z0-9]+)/(q\\d+/)?s\\d+x\\d+(/.+)");
+            final Regex urlSplit = new Regex(DLLINK, "(https?://[a-z0-9\\-\\.]+/hphotos\\-ak\\-[a-z0-9]+)/(q\\d+/)?s\\d+x\\d+(/.+)");
             final String partOne = urlSplit.getMatch(0);
             final String partTwo = urlSplit.getMatch(2);
             if (partOne != null && partTwo != null) DLLINK = partOne + partTwo;
