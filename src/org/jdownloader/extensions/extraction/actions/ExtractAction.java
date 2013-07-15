@@ -156,7 +156,7 @@ public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType,
 
                         return null;
                     }
-                }, 0, T._.extracting(archive.getName()), T._.extracting_wait(archive.getName()), NewTheme.I().getIcon(IconKey.ICON_ARCHIVE_RUN, 32), null, null);
+                }, 0, T._.extracting_archive(archive.getName()), T._.extracting_wait(archive.getName()), NewTheme.I().getIcon(IconKey.ICON_ARCHIVE_RUN, 32), null, null);
 
                 // UIOManager.I().show(class1, impl)
                 Dialog.getInstance().showDialog(dialog);

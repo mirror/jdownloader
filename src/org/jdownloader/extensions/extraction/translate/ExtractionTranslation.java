@@ -288,7 +288,7 @@ public interface ExtractionTranslation extends TranslateInterface {
     String extracting();
 
     @Default(lngs = { "en" }, values = { "Extracting Archive: %s1" })
-    String extracting(String name);
+    String extracting_archive(String name);
 
     @Default(lngs = { "en" }, values = { "Please wait: Extracting Archive: %s1" })
     String extracting_wait(String name);
