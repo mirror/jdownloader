@@ -3,7 +3,9 @@ package org.jdownloader.extensions.extraction;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
+import org.appwork.storage.TypeRef;
 
 public class ArchiveSettings implements Storable {
     private ArchiveController      archiveController;
@@ -16,6 +18,7 @@ public class ArchiveSettings implements Storable {
     private HashSet<String>        passwords;
     private BooleanStatus          removeDownloadLinksAfterExtraction = BooleanStatus.UNSET;
     private BooleanStatus          removeFilesAfterExtraction         = BooleanStatus.UNSET;
+    private boolean                needsSaving                        = false;
 
     public ArchiveSettings(/* Storable */) {
 
@@ -23,6 +26,7 @@ public class ArchiveSettings implements Storable {
 
     public void assignController(ArchiveController archiveController) {
         this.archiveController = archiveController;
+        needsSaving = false;
     }
 
     public ArrayList<ArchiveItem> getArchiveItems() {
@@ -69,7 +73,11 @@ public class ArchiveSettings implements Storable {
     }
 
     private void fireUpdate() {
-        if (archiveController != null) archiveController.update(this);
+        if (archiveController != null) {
+            archiveController.update(this);
+            needsSaving = true;
+        }
+
     }
 
     public void setAutoExtract(BooleanStatus overwriteFiles) {
@@ -111,4 +119,19 @@ public class ArchiveSettings implements Storable {
         this.removeFilesAfterExtraction = overwriteFiles;
         fireUpdate();
     }
+
+    public static final TypeRef<ArchiveSettings> TYPEREF = new TypeRef<ArchiveSettings>() {
+                                                         };
+
+    public boolean needsSaving() {
+        return needsSaving;
+    }
+
+    public ArchiveSettings createClone() {
+        ArchiveSettings ret = JSonStorage.restoreFromString(JSonStorage.toString(this), TYPEREF);
+        ret.needsSaving = needsSaving;
+        ret.archiveController = archiveController;
+        return ret;
+    }
+
 }

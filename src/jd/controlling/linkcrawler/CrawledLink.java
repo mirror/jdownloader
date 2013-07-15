@@ -483,4 +483,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         lparent.nodeUpdated(lsource, notify, param);
     }
 
+    public String getArchiveID() {
+        if (dlLink != null) { return dlLink.getArchiveID(); }
+        return null;
+    }
+
 }

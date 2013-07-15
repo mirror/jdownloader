@@ -98,6 +98,7 @@ import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.dynamic.Dynamic;
 import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.extraction.ArchiveController;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
@@ -679,7 +680,8 @@ public class SecondLevelLaunch {
                     lafInit.waitForEDT();
                     SecondLevelLaunch.LOG.info("InitGUI->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
                     JDGui.getInstance();
-
+                    // init Archivecontroller.init has to be done AFTER downloadcontroller and linkcollector
+                    ArchiveController.getInstance();
                     Toolkit.getDefaultToolkit().addAWTEventListener(new CopyPasteSupport(), AWTEvent.MOUSE_EVENT_MASK);
 
                     SecondLevelLaunch.LOG.info("GUIDONE->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));

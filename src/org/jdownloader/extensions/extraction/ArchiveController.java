@@ -5,6 +5,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadControllerEvent;
+import jd.controlling.downloadcontroller.DownloadControllerListener;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkProperty;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -13,9 +22,10 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.logging.LogController;
 
-public class ArchiveController {
+public class ArchiveController implements DownloadControllerListener, LinkCollectorListener {
     private static final ArchiveController INSTANCE = new ArchiveController();
 
     /**
@@ -44,6 +54,7 @@ public class ArchiveController {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             {
                 setHookPriority(Integer.MIN_VALUE - 100);
+                setMaxDuration(3 * 60000);
             }
 
             @Override
@@ -51,6 +62,8 @@ public class ArchiveController {
                 save();
             }
         });
+        DownloadController.getInstance().addListener(this);
+        LinkCollector.getInstance().getEventsender().addListener(this);
     }
 
     protected void save() {
@@ -58,9 +71,11 @@ public class ArchiveController {
 
             for (Entry<String, ArchiveSettings> e : map.entrySet()) {
                 try {
-                    File path = getPathByID(e.getKey());
-                    logger.info("Save " + path);
-                    IO.secureWrite(path, JSonStorage.toString(e.getValue()).getBytes("UTF-8"));
+                    if (e.getValue().needsSaving()) {
+                        File path = getPathByID(e.getKey());
+                        logger.info("Save " + path);
+                        IO.secureWrite(path, JSonStorage.toString(e.getValue()).getBytes("UTF-8"));
+                    }
                 } catch (Exception e1) {
                     logger.log(e1);
                 }
@@ -113,6 +128,127 @@ public class ArchiveController {
 
     public void update(ArchiveSettings archiveSettings) {
         // we could start some kind of asynch saver delayer here.
+
+    }
+
+    @Override
+    public void onDownloadControllerEvent(DownloadControllerEvent event) {
+
+    }
+
+    @Override
+    public void onLinkCollectorAbort(LinkCollectorEvent event) {
+
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+
+    }
+
+    @Override
+    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+        try {
+            if (event.getType() == LinkCollectorEvent.TYPE.REFRESH_DATA) {
+                if (event.getParameters().length == 2) {
+                    if (event.getParameter(1) instanceof CrawledLinkProperty) {
+                        CrawledLinkProperty property = (CrawledLinkProperty) event.getParameter(1);
+                        if (event.getParameter(0) instanceof CrawledLink) {
+                            CrawledLink cLink = (CrawledLink) event.getParameter(0);
+                            if (cLink.getArchiveID() != null) {
+                                switch (property.getProperty()) {
+                                case NAME:
+                                    cloneSettings(cLink);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+        } catch (Exception e) {
+            // god knows what can happen in this CAST Armageddon
+            logger.log(e);
+        }
+    }
+
+    private void cloneSettings(CrawledLink cLink) {
+        String newID = DownloadLinkArchiveFactory.createUniqueAlltimeID() + "";
+        String oldID = cLink.getArchiveID();
+        File path = getPathByID(oldID);
+        File newPath = getPathByID(newID);
+        // if the oldfile does not exist, we do not have to clone
+        boolean doClone = path.exists();
+        ArchiveSettings clonedData = null;
+        // clone only if we already have settings
+        if (!doClone) {
+            synchronized (map) {
+                clonedData = map.get(oldID);
+                // if we alread have data in cache, we have to clone
+                doClone = clonedData != null;
+            }
+        }
+
+        if (doClone) {
+            boolean weNeedToCopyFile = false;
+            if (clonedData != null) {
+
+                ArchiveSettings clone = clonedData.createClone();
+                if (!clone.needsSaving()) {
+                    weNeedToCopyFile = true;
+                }
+                synchronized (map) {
+                    map.put(newID, clone);
+                }
+
+            }
+            if (weNeedToCopyFile && path.exists()) {
+                // we need to copy the file. clone has no write flag, and the oldfile exists;
+                newPath.delete();
+                try {
+                    IO.copyFile(path, newPath);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+            }
+            cLink.setArchiveID(newID);
+
+        }
+    }
+
+    @Override
+    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+
+    }
+
+    @Override
+    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+
+    }
+
+    @Override
+    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+
+    }
+
+    @Override
+    public void onLinkCollectorContentModified(LinkCollectorEvent event) {
+
+    }
+
+    @Override
+    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+
+    }
+
+    @Override
+    public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
 
     }
 }

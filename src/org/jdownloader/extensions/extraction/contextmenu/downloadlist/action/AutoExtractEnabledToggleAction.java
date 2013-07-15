@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
@@ -35,6 +36,14 @@ public class AutoExtractEnabledToggleAction<PackageType extends AbstractPackageN
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
         if (archives != null && archives.size() > 0) setSelected(_getExtension().isAutoExtractEnabled(archives.get(0)));
+
+        if (!Application.isJared(ExtractArchiveNowAction.class) && archives != null) {
+            StringBuilder sb = new StringBuilder();
+            for (Archive a : archives) {
+                sb.append(a.getFactory().getID() + ", ");
+            }
+            setName(getName() + " Debug ID: " + sb);
+        }
     }
 
     public void actionPerformed(ActionEvent e) {
